@@ -4,6 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import { createClient, processLock } from "@supabase/supabase-js";
 import { validateSupabaseUrl } from "./supabase-url";
+import { readWithDeadline } from "../native/readDeadline";
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -18,13 +19,13 @@ export const supabaseConfigurationError =
     : null);
 
 const secureStorage = {
-  getItem: (key: string) => SecureStore.getItemAsync(key),
+  getItem: (key: string) => readWithDeadline(() => SecureStore.getItemAsync(key)),
   setItem: (key: string, value: string) => SecureStore.setItemAsync(key, value),
   removeItem: (key: string) => SecureStore.deleteItemAsync(key),
 };
 
 const webStorage = {
-  getItem: (key: string) => AsyncStorage.getItem(key),
+  getItem: (key: string) => readWithDeadline(() => AsyncStorage.getItem(key)),
   setItem: (key: string, value: string) => AsyncStorage.setItem(key, value),
   removeItem: (key: string) => AsyncStorage.removeItem(key),
 };

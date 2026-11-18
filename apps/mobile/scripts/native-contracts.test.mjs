@@ -22,11 +22,11 @@ test("app lock waits five minutes and fails closed for invalid restoration state
 });
 
 test("normal sign-in bypasses restored app lock once, without authorizing later opens", () => {
-  recordFreshSignIn(1000);
-  assert.equal(consumeFreshSignIn(1001), true);
-  assert.equal(consumeFreshSignIn(1002), false);
-  recordFreshSignIn(1000);
-  assert.equal(consumeFreshSignIn(31000), false);
+  recordFreshSignIn("user-a", 1000);
+  assert.equal(consumeFreshSignIn("user-a", 1001), true);
+  assert.equal(consumeFreshSignIn("user-a", 1002), false);
+  recordFreshSignIn("user-a", 1000);
+  assert.equal(consumeFreshSignIn("user-a", 31000), false);
 });
 
 test("native directory/profile links retain their exact entity, including custom scheme", () => {
@@ -151,4 +151,11 @@ test("canonical homepage and empty app links reach native entry without a web ha
   for (const url of ["/", "https://hoopcheck.online/", "hoopcheck://", "hoopcheck:///"]) assert.equal(nativeDestination(url), "/");
   assert.equal(nativeDestination("https://hoopcheck.online/?token=discard"), "/");
 
+});
+
+
+test("fresh password authentication cannot unlock a different account", () => {
+  recordFreshSignIn("user-a", 1000);
+  assert.equal(consumeFreshSignIn("user-b", 1001), false);
+  assert.equal(consumeFreshSignIn("user-a", 1002), false);
 });

@@ -25,9 +25,10 @@ export default function SignInScreen() {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
       if (error) throw error;
+      if (!data.user) throw new Error("Sign-in did not return an account. Please try again.");
       stage = "profile";
       const profile = data.user ? await supabase.from("profiles").select("username").eq("id", data.user.id).maybeSingle() : null;
-      recordFreshSignIn();
+      recordFreshSignIn(data.user.id);
       router.replace((profile?.data && !profile.data.username?.trim() ? "/choose-username" : takeDestination() ?? "/dashboard") as "/dashboard");
     } catch (error) {
       const detail = error instanceof Error ? error.message : "Please try again.";

@@ -20,7 +20,8 @@ void SplashScreen.preventAutoHideAsync().catch(() => {});
 SplashScreen.setOptions({ duration: motion.logo, fade: true });
 void AccessibilityInfo.isReduceMotionEnabled().then(reduced => SplashScreen.setOptions({ duration: reduced ? motion.shortFade : motion.logo, fade: true })).catch(() => {});
 const splashDeadline = setTimeout(() => { void SplashScreen.hideAsync().catch(() => {}); }, motion.splashDeadline - motion.logo);
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createSessionBootstrap, type StartupSession } from "../src/native/sessionBootstrap";
 import { Stack, useGlobalSearchParams, usePathname, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -34,26 +35,23 @@ function RootLayout() {
   const router = useRouter();
   const segments = useSegments();
   const theme = useEntryTheme();
-  const [sessionReady, setSessionReady] = useState(false);
-  const [signedIn, setSignedIn] = useState(false);
+  const [session, setSession] = useState<StartupSession>({ ready: false, userId: null, error: null });
+  const bootstrap = useRef<ReturnType<typeof createSessionBootstrap> | null>(null);
+  const sessionReady = session.ready;
+  const signedIn = Boolean(session.userId);
   const pathname = usePathname();
   const routeParams = useGlobalSearchParams<{ post?: string | string[]; q?: string | string[]; gameId?: string | string[] }>();
 
   useEffect(() => {
-    let alive = true;
-    traceFlow("startup", () => supabase.auth.getSession()).then(({ data }) => {
-      if (!alive) return;
-      setSignedIn(Boolean(data.session));
-      setSessionReady(true);
-    }).catch(() => { if (alive) setSessionReady(true); });
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!alive) return;
-      setSignedIn(Boolean(session));
-      setSessionReady(true);
-    });
+    bootstrap.current = createSessionBootstrap(
+      () => traceFlow("startup", () => supabase.auth.getSession()),
+      receive => {
+        const { data } = supabase.auth.onAuthStateChange((_event, next) => receive(next));
+        return () => data.subscription.unsubscribe();
+      }, setSession,
+    );
     return () => {
-      alive = false;
-      listener.subscription.unsubscribe();
+      bootstrap.current?.dispose(); bootstrap.current = null;
     };
   }, []);
 
@@ -86,8 +84,8 @@ function RootLayout() {
     }
   }, [sessionReady, signedIn, segments, router, pathname, routeParams.post, routeParams.q, routeParams.gameId]);
 
-  if (!fontsLoaded && !fontError) return null;
-
+  // Mount the navigator on the first render. Font loading must never prevent
+  // Router from mounting or leave a blank screen after the splash deadline.
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.background }}><SafeAreaProvider><MotionProvider><DevicePreferences><NetworkProvider><NativeAccountProvider><NativeDraftProvider><BottomSheetModalProvider>
       <StatusBar style={theme.dark ? "light" : "dark"} /><RouteFade>
@@ -139,7 +137,7 @@ function RootLayout() {
         <Stack.Screen name="leagues" options={{ title: "Leagues" }} />
         <Stack.Screen name="leagues/[id]" options={{ title: "League profile" }} />
       </Stack></RouteFade>
-      {signedIn ? <TabBar /> : null}<AppLock authReady={sessionReady} protectedScreen={signedIn && !["sign-in", "sign-up", "reset-password", "auth"].includes(segments[0] ?? "")} />
+      {signedIn ? <TabBar /> : null}<AppLock authReady={sessionReady} userId={session.userId} startupError={session.error} retryStartup={() => { void bootstrap.current?.retry(); }} protectedScreen={signedIn && !["sign-in", "sign-up", "reset-password", "auth"].includes(segments[0] ?? "")} />
     </BottomSheetModalProvider></NativeDraftProvider></NativeAccountProvider></NetworkProvider></DevicePreferences></MotionProvider></SafeAreaProvider></GestureHandlerRootView>
 
 
