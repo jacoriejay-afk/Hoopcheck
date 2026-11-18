@@ -30,6 +30,7 @@ export default function DashboardScreen() {
   const [email, setEmail] = useState("");
   const [accountType, setAccountType] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [followedTeams, setFollowedTeams] = useState<Array<{ id: string; name: string; country: string | null; league_name: string | null }>>([]);
 
   useEffect(() => {
     let alive = true;
@@ -39,6 +40,21 @@ export default function DashboardScreen() {
       setDisplayName(String(data.user?.user_metadata?.display_name || data.user?.email?.split("@")[0] || "HoopCheck member"));
       const role = data.user?.user_metadata?.account_type;
       if (typeof role === "string") setAccountType(role.replaceAll("_", " "));
+      const userId = data.user?.id;
+      if (!userId) return;
+      void (async () => {
+        const { data: follows, error: followsError } = await supabase.from("follow_relationships")
+          .select("target_id").eq("follower_id", userId).eq("target_type", "team")
+          .order("created_at", { ascending: false }).limit(12);
+        if (!alive || followsError || !follows?.length) return;
+        const ids = follows.map(row => row.target_id).filter((id): id is string => typeof id === "string");
+        if (!ids.length) return;
+        const { data: teams, error: teamsError } = await supabase.from("teams")
+          .select("id,name,country,league_name").in("id", ids).eq("basketball_type", "mens").eq("active", true);
+        if (!alive || teamsError || !teams) return;
+        const order = new Map(ids.map((id, index) => [id, index]));
+        setFollowedTeams(teams.sort((a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99)).slice(0, 3));
+      })();
     });
     return () => { alive = false; };
   }, []);
@@ -97,6 +113,24 @@ export default function DashboardScreen() {
             ))}
           </View>
 
+          <View style={styles.sectionTitle}><SectionHeader>MY TEAMS</SectionHeader></View>
+          {followedTeams.length ? (
+            <View style={styles.followedList}>
+              {followedTeams.map(team => (
+                <Pressable key={team.id} accessibilityRole="link" onPress={() => router.push({ pathname: "/teams/[id]", params: { id: team.id } })} style={[styles.followedRow, panel]}>
+                  <View style={styles.directoryCopy}>
+                    <Text style={[styles.rowLabel, { color: theme.foreground }]}>{team.name}</Text>
+                    <Text style={[styles.detail, { color: theme.muted }]}>{team.league_name || team.country || "Basketball"}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color={theme.accent} />
+                </Pressable>
+              ))}
+            </View>
+          ) : (
+            <Pressable accessibilityRole="link" onPress={() => router.push("/teams")} style={[styles.followedRow, panel]}>
+              <Text style={[styles.detail, { color: theme.muted, flex: 1 }]}>Find your team →</Text>
+            </Pressable>
+          )}
           <View style={styles.sectionTitle}><SectionHeader>Account &amp; support</SectionHeader></View>
           <View style={[styles.account, panel]}>
             {email ? (
@@ -140,6 +174,8 @@ const styles = StyleSheet.create({
   sectionKicker: { fontSize: 11, fontWeight: "900", letterSpacing: 1.1 },
   title: { fontSize: 32, fontWeight: "900", letterSpacing: -0.7, marginBottom: 16 },
   directories: { gap: 8, marginTop: 12 },
+  followedList: { gap: 8 },
+  followedRow: { minHeight: 60, flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1, padding: 14 },
   directory: { minHeight: 70, flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1, padding: 12 },
   icon: { width: 42, height: 42, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   directoryCopy: { flex: 1 },
