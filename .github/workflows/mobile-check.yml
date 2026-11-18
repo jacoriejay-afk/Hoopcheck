@@ -38,6 +38,13 @@ jobs:
       - name: Expo dependency and configuration diagnostics
         run: npx expo-doctor
 
+      - name: Verify generated iOS permissions locally (no compilation or signing)
+        env:
+          EXPO_NO_TELEMETRY: "1"
+        run: |
+          npx --no-install expo prebuild --platform ios --no-install
+          python3 scripts/verify-ios-permissions.py
+
       - name: Export native iOS bundle locally (no EAS build)
         env:
           EXPO_PUBLIC_SUPABASE_URL: https://fixture.supabase.co
@@ -62,6 +69,7 @@ jobs:
           NATIVE_TEST_URL: http://127.0.0.1:8092
           CHROMIUM_PATH: /usr/bin/google-chrome
         run: |
+          node scripts/verify-media-browser.cjs
           node scripts/verify-profile-editor-browser.cjs
           node scripts/verify-club-groups-browser.cjs
           node scripts/verify-live-games-browser.cjs
