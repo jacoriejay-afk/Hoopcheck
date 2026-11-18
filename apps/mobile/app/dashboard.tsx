@@ -8,10 +8,10 @@ import { supabase } from "../src/lib/supabase";
 import { useEntryTheme } from "../src/theme";
 
 const directories = [
-  { href: "/teams", icon: "basketball-outline", title: "Teams", detail: "Research professional clubs" },
-  { href: "/leagues", icon: "earth-outline", title: "Leagues", detail: "Explore competitions" },
-  { href: "/players", icon: "people-outline", title: "Players", detail: "Find public player profiles" },
-  { href: "/coaches", icon: "school-outline", title: "Coaches", detail: "Find professional coaches" },
+  { href: "/teams", icon: "basketball-outline", title: "Check a Team", detail: "Research professional clubs" },
+  { href: "/leagues", icon: "earth-outline", title: "Explore Leagues", detail: "Explore competitions" },
+  { href: "/players", icon: "people-outline", title: "Find Players", detail: "Find public player profiles" },
+  { href: "/coaches", icon: "school-outline", title: "Find Coaches", detail: "Find professional coaches" },
 ] as const;
 
 const accountLinks = [
@@ -29,12 +29,14 @@ export default function DashboardScreen() {
   const [busy, setBusy] = useState(false);
   const [email, setEmail] = useState("");
   const [accountType, setAccountType] = useState("");
+  const [displayName, setDisplayName] = useState("");
 
   useEffect(() => {
     let alive = true;
     supabase.auth.getUser().then(({ data, error }) => {
       if (!alive || error) return;
       setEmail(data.user?.email ?? "");
+      setDisplayName(String(data.user?.user_metadata?.display_name || data.user?.email?.split("@")[0] || "HoopCheck member"));
       const role = data.user?.user_metadata?.account_type;
       if (typeof role === "string") setAccountType(role.replaceAll("_", " "));
     });
@@ -66,7 +68,18 @@ export default function DashboardScreen() {
     <SafeAreaView edges={["left", "right", "bottom"]} style={[styles.safe, { backgroundColor: theme.background }]}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.content}>
-          <SectionHeader>Explore basketball</SectionHeader>
+          <Pressable accessibilityRole="link" accessibilityLabel="Search players" onPress={() => router.push("/players")} style={[styles.searchShortcut, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <Ionicons name="search-outline" size={19} color={theme.muted} />
+            <Text style={[styles.searchPlaceholder, { color: theme.muted }]}>Search players, coaches, teams, or leagues…</Text>
+          </Pressable>
+          <View style={styles.greeting}>
+            <View style={styles.greetingTop}>
+              <Text accessibilityRole="header" style={[styles.greetingTitle, { color: theme.foreground }]}>Welcome back, {displayName}</Text>
+              {accountType ? <View style={{ alignSelf: "flex-start" }}><Chip>{accountType}</Chip></View> : null}
+            </View>
+            <Text style={[styles.tagline, { color: theme.muted }]}>Know who you’re signing with.</Text>
+          </View>
+          <Text style={[styles.sectionKicker, { color: theme.muted }]}>QUICK ACTIONS</Text>
           <View style={styles.directories}>
             {directories.map(({ href, icon, title, detail }) => (
               <Pressable key={href} onPress={() => router.push(href)} accessibilityRole="link" style={({ pressed }) => [
@@ -118,6 +131,13 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   scroll: { flexGrow: 1, padding: 20 },
   content: { width: "100%", maxWidth: 640, alignSelf: "center" },
+  searchShortcut: { minHeight: 46, borderWidth: 1, borderRadius: 12, flexDirection: "row", alignItems: "center", paddingHorizontal: 14, gap: 10, marginBottom: 16 },
+  searchPlaceholder: { flex: 1, fontSize: 13 },
+  greeting: { marginBottom: 22 },
+  greetingTop: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 8 },
+  greetingTitle: { fontSize: 19, fontWeight: "800", flexShrink: 1 },
+  tagline: { fontSize: 13, marginTop: 6 },
+  sectionKicker: { fontSize: 11, fontWeight: "900", letterSpacing: 1.1 },
   title: { fontSize: 32, fontWeight: "900", letterSpacing: -0.7, marginBottom: 16 },
   directories: { gap: 8, marginTop: 12 },
   directory: { minHeight: 70, flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1, padding: 12 },
