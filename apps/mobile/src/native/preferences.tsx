@@ -1,3 +1,4 @@
+import { setThemePreference } from "./themePreference";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { createPreferenceWriter, defaultPreferences, restorePreferences, type Preferences } from "./preferenceStore";
@@ -22,6 +23,7 @@ export function DevicePreferences({ children }: { children: ReactNode }) {
     void restore();
     return () => { active = false; writer.current = null; };
   }, []);
+  useEffect(() => { if (ready) setThemePreference(preferences.theme); }, [ready, preferences.theme]);
   async function update(value: Partial<Preferences>) {
     if (!writer.current) throw new Error("Device preferences are not ready");
     const currentWriter = writer.current;
