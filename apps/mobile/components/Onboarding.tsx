@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Image, Modal, Pressable, Text, View } from "react-native";
+import { Image, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDevicePreferences, type Role } from "../src/native/preferences";
 import { useEntryTheme } from "../src/theme";
@@ -28,7 +28,9 @@ export function Onboarding() {
     finally { setBusy(false); }
   }
   const panel = panels[step];
-  return <Modal visible={ready && !preferences.onboardingDone} animationType="none" onRequestClose={() => void finish()}>
+  // AppLock owns the sole native modal; onboarding only renders its content.
+  if (!ready || preferences.onboardingDone) return null;
+  return <>
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background, padding: 24 }}>
       <Pressable accessibilityRole="button" onPress={() => void finish()} disabled={busy} style={{ alignSelf: "flex-end", minHeight: 48, justifyContent: "center" }}><Text style={{ color: theme.accent, fontSize: 17 }}>Skip</Text></Pressable>
       <View style={{ flex: 1, justifyContent: "center", gap: 24 }}>
@@ -42,5 +44,5 @@ export function Onboarding() {
         {error ? <Text accessibilityRole="alert" style={{ color: theme.accent }}>{error}</Text> : null}
       </View>
     </SafeAreaView>
-  </Modal>;
+  </>;
 }

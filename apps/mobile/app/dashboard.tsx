@@ -8,6 +8,7 @@ import { supabase } from "../src/lib/supabase";
 import { useEntryTheme } from "../src/theme";
 
 const directories = [
+  { href: "/feed", icon: "basketball-outline", title: "HoopFeed", detail: "Community, comments and Reels" },
   { href: "/womens", icon: "basketball-outline", title: "Women’s teams", detail: "Explore women’s basketball" },
   { href: "/teams", icon: "basketball-outline", title: "Teams", detail: "Research professional clubs" },
   { href: "/leagues", icon: "earth-outline", title: "Leagues", detail: "Explore competitions" },
@@ -68,7 +69,7 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView edges={["left", "right", "bottom"]} style={[styles.safe, { backgroundColor: theme.background }]}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView testID="dashboard-scroll" contentContainerStyle={styles.scroll}>
         <View style={styles.content}>
           <Text style={{ color: theme.accent, fontSize: 12, fontWeight: "800", letterSpacing: 1.5 }}>THE GLOBAL BASKETBALL INTELLIGENCE HUB</Text>
           <Text accessibilityRole="header" style={[theme.type.display, { color: theme.foreground, marginVertical: 16 }]}>Know who you’re signing with.</Text>
@@ -78,7 +79,7 @@ export default function DashboardScreen() {
           <SectionHeader>Explore basketball</SectionHeader>
           <View style={styles.directories}>
             {directories.map(({ href, icon, title, detail }) => (
-              <Pressable key={href} onPress={() => router.push(href)} accessibilityRole="link" style={({ pressed }) => [
+              <Pressable key={href} testID={`directory-${title.toLowerCase()}`} onPress={() => router.push(href)} accessibilityRole="link" style={({ pressed }) => [
                   styles.directory, panel, pressed && { backgroundColor: theme.accentSurface },
                 ]}>
                   <View style={[styles.icon, { backgroundColor: theme.accentSurface }]}>

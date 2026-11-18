@@ -37,3 +37,39 @@ jobs:
         run: node --test scripts/test-auth-integration.mjs
       - name: Expo dependency and configuration diagnostics
         run: npx expo-doctor
+
+      - name: Export native iOS bundle locally (no EAS build)
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: https://fixture.supabase.co
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: fixture-publishable-key
+          EXPO_PUBLIC_HOOPCHECK_API_URL: https://api.test
+          EXPO_NO_TELEMETRY: "1"
+        run: npx --no-install expo export --platform ios --max-workers 2 --output-dir /tmp/hoopcheck-mobile-ios
+
+      - name: Export isolated native browser fixture
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: https://fixture.supabase.co
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: fixture-publishable-key
+          EXPO_PUBLIC_HOOPCHECK_API_URL: https://api.test
+          EXPO_NO_TELEMETRY: "1"
+        run: npx --no-install expo export --platform web --max-workers 2 --output-dir /tmp/hoopcheck-mobile-web
+
+      - name: Start localhost fixture server
+        run: python3 scripts/serve-native-fixture.py /tmp/hoopcheck-mobile-web 8092 > /tmp/hoopcheck-native-browser.log 2>&1 &
+
+      - name: Verify native community, permissions and navigation in both themes
+        env:
+          NATIVE_TEST_URL: http://127.0.0.1:8092
+          CHROMIUM_PATH: /usr/bin/google-chrome
+        run: |
+          node scripts/verify-feed-browser.cjs
+          node scripts/verify-discovery-browser.cjs
+          node scripts/verify-theme-preference-browser.cjs
+
+      - name: Upload native browser screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-browser-regressions
+          path: /tmp/hoopcheck-native-ui/*.png
+          if-no-files-found: warn

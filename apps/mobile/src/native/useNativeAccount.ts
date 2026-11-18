@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { createContext, createElement, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { AppState } from "react-native";
 import { supabase } from "../lib/supabase";
 import { useNetwork } from "./network";
 import { requestNativeAccount, type NativeAccount } from "./accountClient";
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
-export function useNativeAccount() {
+function useAccountRequest() {
   const [account, setAccount] = useState<NativeAccount | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -42,3 +42,10 @@ export function useNativeAccount() {
   }, [offline, revision, refresh]);
   return { account: offline ? null : account, loading, error, retry };
 }
+
+const AccountContext = createContext<ReturnType<typeof useAccountRequest>>({ account: null, loading: true, error: "", retry: () => {} });
+export function NativeAccountProvider({ children }: { children: ReactNode }) {
+  const value = useAccountRequest();
+  return createElement(AccountContext.Provider, { value }, children);
+}
+export function useNativeAccount() { return useContext(AccountContext); }
