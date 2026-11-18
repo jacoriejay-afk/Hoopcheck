@@ -128,3 +128,11 @@ test("Live Games links preserve the canonical game and reject malformed IDs", ()
   assert.equal(nativeDestination(`hoopcheck://fan-live?gameId=${id}`), `/fan-live?gameId=${id}`);
   assert.equal(nativeDestination("/fan-live?gameId=../secret"), "/fan-live");
 });
+
+
+test("club group canonical links retain group identity and malformed alternatives use the website", () => {
+  const id = "11111111-1111-4111-8111-111111111111";
+  assert.equal(nativeDestination(`hoopcheck://team-hub/groups/${id}`), `/team-hub/groups/${id}`);
+  assert.equal(nativeDestination("/team-hub/groups"), "/team-hub/groups");
+  assert.equal(nativeDestination("/groups/other"), "/web?path=%2Fgroups%2Fother");
+});

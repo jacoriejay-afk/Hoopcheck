@@ -1,3 +1,4 @@
+import { NativeDraftProvider } from "../src/native/drafts";
 import { NativeAccountProvider } from "../src/native/useNativeAccount";
 import { useFonts } from "expo-font";
 import { rememberDestination, takeDestination } from "../src/native/pendingDestination";
@@ -67,7 +68,7 @@ function RootLayout() {
   useEffect(() => {
     if (!sessionReady) return;
     const currentRoute = segments[0] ?? "";
-    const inAppArea = ["dashboard", "fan-live", "notifications", "feed", "fan-feed", "reels", "account", "search", "teams", "womens", "leagues", "players", "coaches", "choose-username", "settings"].includes(currentRoute);
+    const inAppArea = ["dashboard", "team-hub", "fan-live", "notifications", "feed", "fan-feed", "reels", "account", "search", "teams", "womens", "leagues", "players", "coaches", "choose-username", "settings"].includes(currentRoute);
     if (["web", "sign-in", "sign-up"].includes(currentRoute)) return;
     const onPasswordRecovery = currentRoute === "reset-password";
     // Let the OAuth callback exchange its PKCE code and choose the destination.
@@ -89,7 +90,7 @@ function RootLayout() {
   if (!fontsLoaded && !fontError) return null;
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.background }}><SafeAreaProvider><MotionProvider><DevicePreferences><NetworkProvider><NativeAccountProvider><BottomSheetModalProvider>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.background }}><SafeAreaProvider><MotionProvider><DevicePreferences><NetworkProvider><NativeAccountProvider><NativeDraftProvider><BottomSheetModalProvider>
       <StatusBar style={theme.dark ? "light" : "dark"} /><RouteFade>
       <Stack
         screenOptions={{
@@ -100,6 +101,8 @@ function RootLayout() {
           contentStyle: { backgroundColor: theme.background },
         }}
       >
+        <Stack.Screen name="team-hub/groups/index" options={{ title: "HoopGroups" }} />
+        <Stack.Screen name="team-hub/groups/[teamId]" options={{ title: "Club group" }} />
         <Stack.Screen name="fan-live" options={{ title: "Live Games" }} />
         <Stack.Screen name="notifications" options={{ title: "Alerts" }} />
         <Stack.Screen name="feed" options={{ headerShown: false }} />
@@ -137,7 +140,7 @@ function RootLayout() {
         <Stack.Screen name="leagues/[id]" options={{ title: "League profile" }} />
       </Stack></RouteFade>
       {signedIn ? <TabBar /> : null}<Onboarding /><AppLock authReady={sessionReady} protectedScreen={signedIn && !["sign-in", "sign-up", "reset-password", "auth"].includes(segments[0] ?? "")} />
-    </BottomSheetModalProvider></NativeAccountProvider></NetworkProvider></DevicePreferences></MotionProvider></SafeAreaProvider></GestureHandlerRootView>
+    </BottomSheetModalProvider></NativeDraftProvider></NativeAccountProvider></NetworkProvider></DevicePreferences></MotionProvider></SafeAreaProvider></GestureHandlerRootView>
 
   );
 }
