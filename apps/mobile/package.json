@@ -31,6 +31,7 @@
     "expo-splash-screen": "~31.0.13",
     "expo-status-bar": "~3.0.0",
     "expo-system-ui": "~6.0.9",
+    "expo-video": "~3.0.16",
     "expo-web-browser": "~15.0.11",
     "react": "19.1.0",
     "react-dom": "19.1.0",
@@ -50,9 +51,10 @@
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
-    "react-test-renderer": "19.1.0",
+    "playwright": "1.62.1",
     "sharp": "0.34.5",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "react-test-renderer": "19.1.0"
   },
   "expo": {
     "autolinking": {
