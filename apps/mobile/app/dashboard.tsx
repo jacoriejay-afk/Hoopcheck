@@ -131,6 +131,24 @@ export default function DashboardScreen() {
               <Text style={[styles.detail, { color: theme.muted, flex: 1 }]}>Find your team →</Text>
             </Pressable>
           )}
+          <View style={styles.sectionTitle}><SectionHeader>FROM THE COMMUNITY</SectionHeader></View>
+          <Pressable accessibilityRole="link" onPress={() => void openAccountLink("/feed")} style={[styles.followedRow, panel]}>
+            <Ionicons name="chatbubbles-outline" size={22} color={theme.accent} />
+            <View style={styles.directoryCopy}>
+              <Text style={[styles.rowLabel, { color: theme.foreground }]}>HoopFeed</Text>
+              <Text style={[styles.detail, { color: theme.muted }]}>Open HoopFeed on the website · membership rules apply</Text>
+            </View>
+            <Ionicons name="open-outline" size={18} color={theme.accent} />
+          </Pressable>
+          <View style={styles.sectionTitle}><SectionHeader>LIVE GAMES</SectionHeader></View>
+          <Pressable accessibilityRole="link" onPress={() => void openAccountLink("/live-games")} style={[styles.followedRow, panel]}>
+            <Ionicons name="basketball-outline" size={22} color={theme.accent} />
+            <View style={styles.directoryCopy}>
+              <Text style={[styles.rowLabel, { color: theme.foreground }]}>Live Games Hub</Text>
+              <Text style={[styles.detail, { color: theme.muted }]}>View schedules and game chat on the website</Text>
+            </View>
+            <Ionicons name="open-outline" size={18} color={theme.accent} />
+          </Pressable>
           <View style={styles.sectionTitle}><SectionHeader>Account &amp; support</SectionHeader></View>
           <View style={[styles.account, panel]}>
             {email ? (
