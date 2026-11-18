@@ -1,4 +1,4 @@
-import { createAuthIntents, browserAuthIntentStore, guardAuthResponses, bindAuthIntents } from "./auth/auth-intents";
+import { createAuthIntents, browserAuthIntentStore, browserAuthActionLock, guardAuthResponses, bindAuthIntents } from "./auth/auth-intents";
 import { createBrowserClient, stringFromBase64URL } from "@supabase/ssr";
 
 export const supabaseUrl =
@@ -44,7 +44,7 @@ export const supabase = createBrowserClient(supabaseUrl, supabaseKey, {
   },
 });
 
-bindAuthIntents(supabase.auth, authIntents);
+bindAuthIntents(supabase.auth, authIntents, browserAuthActionLock(supabaseUrl));
 
 let sessionPromise: ReturnType<typeof supabase.auth.getSession> | null = null;
 let sessionListenerStarted = false;
