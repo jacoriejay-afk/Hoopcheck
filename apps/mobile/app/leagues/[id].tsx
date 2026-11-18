@@ -67,7 +67,7 @@ export default function LeagueDetailScreen() {
     }
     void load();
     return () => { alive = false; };
-  }, [id, revision, refreshId, offline, read]);
+  }, [id, womens, revision, refreshId, offline, read]);
 
   async function openWebsite() {
     const url = safeWebsite(league?.website ?? null);
