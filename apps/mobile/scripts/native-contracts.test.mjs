@@ -38,8 +38,8 @@ test("native directory/profile links retain their exact entity, including custom
   }
 });
 
-test("unimplemented post and group pages keep canonical web paths", () => {
-  for (const path of ["/feed?post=abc", "/feed#post=abc", "/groups/abc", "/womens/teams/abc"]) {
+test("unimplemented group pages keep canonical web paths", () => {
+  for (const path of ["/groups/abc", "/womens/teams/abc"]) {
     assert.equal(nativeDestination(`https://hoopcheck.online${path}`), `/web?path=${encodeURIComponent(path)}`);
   }
 });
@@ -93,4 +93,14 @@ test("women's canonical team routes open natively and retain identity", () => {
   }
   assert.equal(nativeDestination("hoopcheck://womens/abc-123"), "/womens/abc-123");
   assert.equal(nativeDestination("https://evil.example/womens/abc-123"), "/");
+});
+
+
+test("native feed share URLs preserve exact posts and legacy fan feed resolves to HoopFeed", () => {
+  const id = "11111111-1111-4111-8111-111111111111";
+  assert.equal(nativeDestination(`https://hoopcheck.online/feed#post-${id}`), `/feed?post=${id}`);
+  assert.equal(nativeDestination(`hoopcheck://feed?post=${id}`), `/feed?post=${id}`);
+  assert.equal(nativeDestination(`https://hoopcheck.online/fan-feed?post=${id}`), `/feed?post=${id}`);
+  assert.equal(nativeDestination("https://hoopcheck.online/feed?post=invalid"), "/feed");
+  assert.equal(nativeDestination("https://hoopcheck.online/reels"), "/reels");
 });

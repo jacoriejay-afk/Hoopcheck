@@ -12,7 +12,12 @@ export function nativeDestination(path: string): string {
     const parts = url.pathname.split("/").filter(Boolean);
     if (parts.length === 3 && parts[0] === "womens" && parts[1] === "leagues" && safeId.test(parts[2])) return `/womens/leagues/${parts[2]}`;
     if (parts.length === 2 && ["teams", "womens", "leagues", "players"].includes(parts[0]) && safeId.test(parts[1])) return `/${parts[0]}/${parts[1]}`;
-    if (parts.length === 1 && ["account", "teams", "womens", "leagues", "players", "coaches", "dashboard", "settings"].includes(parts[0])) return url.pathname;
+    if (parts.length === 1 && ["notifications", "account", "teams", "womens", "leagues", "players", "coaches", "dashboard", "settings"].includes(parts[0])) return url.pathname;
+    if (url.pathname === "/feed" || url.pathname === "/fan-feed") {
+      const post = url.searchParams.get("post") || /^#post-([0-9a-f-]{36})$/i.exec(url.hash)?.[1];
+      return "/feed" + (post && /^[0-9a-f-]{36}$/i.test(post) ? `?post=${post}` : "");
+    }
+    if (url.pathname === "/reels") return "/reels";
     if (url.pathname === "/search") return "/search" + url.search;
     if (url.pathname === "/reset-password") return url.pathname + url.search;
     if (["r", "referral"].includes(parts[0]) && parts.length === 2 && /^[A-Za-z0-9_-]{4,40}$/.test(parts[1])) {

@@ -8,6 +8,7 @@ import { supabase } from "../src/lib/supabase";
 import { useEntryTheme } from "../src/theme";
 
 const directories = [
+  { href: "/feed", icon: "basketball-outline", title: "HoopFeed", detail: "Community, comments and Reels" },
   { href: "/womens", icon: "basketball-outline", title: "Women’s teams", detail: "Explore women’s basketball" },
   { href: "/teams", icon: "basketball-outline", title: "Teams", detail: "Research professional clubs" },
   { href: "/leagues", icon: "earth-outline", title: "Leagues", detail: "Explore competitions" },
