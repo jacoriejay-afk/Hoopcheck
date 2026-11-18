@@ -19,14 +19,17 @@ appId: online.hoopcheck.app
 - assertVisible:
     id: tab-home
 - tapOn:
-    id: tab-leagues
-- assertVisible: Leagues
+    id: tab-hoopfeed
+- assertVisible: Share something…
 - tapOn:
-    id: tab-players
-- assertVisible: Find players
+    id: tab-search
+- assertVisible: Search basketball
 - tapOn:
-    id: tab-settings
-- assertVisible: Settings
+    id: tab-alerts
+- assertVisible: Alerts
+- tapOn:
+    id: tab-account
+- assertVisible: Account
 - tapOn:
     id: tab-home
 - assertVisible: Explore basketball

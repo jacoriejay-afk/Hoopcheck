@@ -124,3 +124,19 @@ test('onboarding cannot cover an active app lock', async () => {
   assert.ok(tree.root.findByType('SafeAreaView'));
   await act(async () => tree.unmount());
 });
+
+// Integration guard: a correct AppLock cannot prevent competing presentations
+// if reconciliation accidentally mounts the old root Onboarding beside it.
+test('combined root owns startup presentation only through AppLock', () => {
+  const source = readFileSync(new URL('../app/_layout.tsx', import.meta.url), 'utf8');
+  const root = ts.createSourceFile('_layout.tsx', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const tags = [];
+  function visit(node) {
+    if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) tags.push(node.tagName.getText(root));
+    ts.forEachChild(node, visit);
+  }
+  visit(root);
+  assert.equal(tags.filter(tag => tag === 'AppLock').length, 1);
+  assert.equal(tags.includes('Onboarding'), false);
+  assert.equal(tags.filter(tag => tag === 'NativeAccountProvider').length, 1);
+});
