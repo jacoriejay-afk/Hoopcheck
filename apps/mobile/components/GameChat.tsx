@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { FlatList, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { useNativeDraft } from "../src/native/drafts";
 import { Button } from "../src/primitives";
 import { supabase } from "../src/lib/supabase";
 import { useEntryTheme } from "../src/theme";
@@ -12,7 +13,7 @@ export function GameChat({ gameId, userId, enabled }: { gameId: string; userId: 
   const current = useRef({ scope, enabled });
   useLayoutEffect(() => { current.current = { scope, enabled }; }, [scope, enabled]);
   const [snapshot, setSnapshot] = useState<{ scope: string; room: Room } | null>(null);
-  const [draft, setDraft] = useState({ scope: "", text: "" });
+  const [text, setDraft] = useNativeDraft(`game:chat:${gameId}`, userId);
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const request = useRef(false);
@@ -45,7 +46,6 @@ export function GameChat({ gameId, userId, enabled }: { gameId: string; userId: 
     return () => { valid = false; clearInterval(timer); clearTimeout(queued); void supabase.removeChannel(channel); };
   }, [enabled, gameId, userId, scope, revision]);
   const room = enabled && snapshot?.scope === scope ? snapshot.room : null;
-  const text = draft.scope === scope ? draft.text : "";
   const reportTarget = report?.scope === scope ? report.item : null;
   async function action(task: () => Promise<void>) {
     if (request.current || !enabled) return;
@@ -62,7 +62,7 @@ export function GameChat({ gameId, userId, enabled }: { gameId: string; userId: 
     if (!room?.open || !text.trim()) return;
     await action(async () => {
       await sendGameMessage(supabase, gameId, userId, text);
-      setDraft(previous => previous.scope === scope && previous.text === text ? { scope, text: "" } : previous);
+      setDraft(previous => previous === text ? "" : previous);
       if (current.current.scope === scope) setRevision(value => value + 1);
     });
   }
@@ -85,7 +85,7 @@ export function GameChat({ gameId, userId, enabled }: { gameId: string; userId: 
         <Text style={{ color: theme.foreground }}>{item.body}</Text><Text style={{ color: theme.muted }}>{new Date(item.created_at).toLocaleTimeString()}</Text>
         {item.user_id !== userId ? <View style={{ flexDirection: "row", gap: 12 }}>{["mute", "block", "report"].map(kind => <Pressable key={kind} accessibilityRole="button" accessibilityLabel={`${kind} ${room.names[item.user_id] || "member"}`} disabled={busy} onPress={() => { if (kind === "report") { setReason("harassment"); setDetails(""); setReport({ scope, item }); } else void control(item.user_id, kind as "block" | "mute"); }} style={{ minHeight: 44, justifyContent: "center" }}><Text style={{ color: theme.accent, textTransform: "capitalize" }}>{kind}</Text></Pressable>)}</View> : null}
       </View>} />
-      <TextInput accessibilityLabel="Game chat message" placeholder="Message the room" placeholderTextColor={theme.muted} value={text} maxLength={500} multiline onChangeText={value => setDraft({ scope, text: value })} style={{ color: theme.foreground, backgroundColor: theme.input, borderColor: theme.border, borderWidth: 1, borderRadius: theme.radius.control, padding: 12, minHeight: 48, maxHeight: 120 }} />
+      <TextInput accessibilityLabel="Game chat message" placeholder="Message the room" placeholderTextColor={theme.muted} value={text} maxLength={500} multiline onChangeText={setDraft} style={{ color: theme.foreground, backgroundColor: theme.input, borderColor: theme.border, borderWidth: 1, borderRadius: theme.radius.control, padding: 12, minHeight: 48, maxHeight: 120 }} />
       <Button disabled={busy || !text.trim()} onPress={() => void send()}>{busy ? "Sending…" : "Send message"}</Button>
     </>}
     {room?.controls.some(control => control.is_muted || control.is_blocked) ? <Button secondary onPress={() => setManaging(value => !value)}>{managing ? "Close hidden members" : "Manage hidden members"}</Button> : null}
