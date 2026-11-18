@@ -141,3 +141,8 @@ test("search links bound and safely re-encode terms for native routing", () => {
   assert.equal(nativeDestination("hoopcheck://search?q=%ZZ&token=discard"), "/search?q=%25ZZ");
   assert.equal(nativeDestination("/search?q=" + "x".repeat(200)), "/search?q=" + "x".repeat(100));
 });
+
+
+test("own profile customization uses a canonical native account route", () => {
+  assert.equal(nativeDestination("hoopcheck://account/edit"), "/account/edit");
+});
