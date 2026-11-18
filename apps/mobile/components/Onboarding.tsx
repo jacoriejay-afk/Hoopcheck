@@ -28,7 +28,9 @@ export function Onboarding() {
     finally { setBusy(false); }
   }
   const panel = panels[step];
-  return <Modal visible={ready && !preferences.onboardingDone} animationType="none" onRequestClose={() => void finish()}>
+  // Do not mount an invisible native Modal above the app's touch surfaces.
+  if (!ready || preferences.onboardingDone) return null;
+  return <Modal visible={true} animationType="none" onRequestClose={() => void finish()}>
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background, padding: 24 }}>
       <Pressable accessibilityRole="button" onPress={() => void finish()} disabled={busy} style={{ alignSelf: "flex-end", minHeight: 48, justifyContent: "center" }}><Text style={{ color: theme.accent, fontSize: 17 }}>Skip</Text></Pressable>
       <View style={{ flex: 1, justifyContent: "center", gap: 24 }}>
