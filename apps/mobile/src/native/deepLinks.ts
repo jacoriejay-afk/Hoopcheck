@@ -20,6 +20,10 @@ export function nativeDestination(path: string): string {
       const post = url.searchParams.get("post") || /^#post-([0-9a-f-]{36})$/i.exec(url.hash)?.[1];
       return "/feed" + (post && /^[0-9a-f-]{36}$/i.test(post) ? `?post=${post}` : "");
     }
+    if (url.pathname === "/fan-live") {
+      const id = url.searchParams.get("gameId");
+      return "/fan-live" + (id && /^[0-9a-f-]{36}$/i.test(id) ? `?gameId=${id}` : "");
+    }
     if (url.pathname === "/reels") return "/reels";
     if (url.pathname === "/search") return "/search" + url.search;
     if (url.pathname === "/auth/callback" || url.pathname === "/reset-password") {
