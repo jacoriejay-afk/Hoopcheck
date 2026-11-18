@@ -63,7 +63,44 @@ test('actual Supabase MFA verification cannot overwrite a newer password sign-in
  bindAuthIntents(client.auth,intents);
  assert.equal((await client.auth.setSession({access_token:jwt(owner),refresh_token:'fixture-a'})).error,null);
  const verification=client.auth.mfa.challengeAndVerify({factorId:factor,code:'123456'});await started.promise;
- const signedIn=await client.auth.signInWithPassword({email:'fixture-b@example.test',password:'fixture-only'});assert.equal(signedIn.data.user.id,next);
+ const signingIn=client.auth.signInWithPassword({email:'fixture-b@example.test',password:'fixture-only'});
  pending.resolve(Response.json(response(owner,'aal2')));assert.ok((await verification).error);
+ const signedIn=await signingIn;assert.equal(signedIn.data.user.id,next);
  assert.equal((await client.auth.getSession()).data.session.user.id,next);
+});
+
+
+test('queued older sign-out is skipped when a newer account intent wins before invocation',async()=>{
+ const intents=createAuthIntents();const calls=[];const blocked=deferred();
+ const auth={signInWithPassword:async value=>{calls.push('sign-in:'+value);if(value==='a')await blocked.promise;return {data:{user:{id:value}},error:null};},signOut:async()=>{calls.push('sign-out');return {error:null};},signUp:async()=>{},setSession:async()=>{},exchangeCodeForSession:async()=>{}};
+ bindAuthIntents(auth,intents);
+ const a=auth.signInWithPassword('a');await tick();const out=auth.signOut();const b=auth.signInWithPassword('b');blocked.resolve();
+ assert.ok((await a).error);assert.ok((await out).error);assert.equal((await b).data.user.id,'b');assert.deepEqual(calls,['sign-in:a','sign-in:b']);
+});
+test('binding twice cannot add nested locks or invoke a method twice',async()=>{
+ const intents=createAuthIntents();let calls=0;const auth={signInWithPassword:async()=>{calls++;return 'ok';},signOut:async()=>{},signUp:async()=>{},setSession:async()=>{},exchangeCodeForSession:async()=>{}};
+ bindAuthIntents(auth,intents);bindAuthIntents(auth,intents);assert.equal(await auth.signInWithPassword(), 'ok');assert.equal(calls,1);
+});
+
+test('actual Supabase sign-out cannot erase a newer queued password sign-in',async()=>{
+ const {createClient}=await import('@supabase/supabase-js');
+ const first='11111111-1111-4111-8111-111111111111',second='22222222-2222-4222-8222-222222222222';
+ const jwt=id=>token(id).split('.')[0]+'.'+Buffer.from(JSON.stringify({sub:id,exp:Math.floor(Date.now()/1000)+3600})).toString('base64url')+'.fixture';
+ const user=id=>({id,aud:'authenticated',email:'fixture@example.test'});
+ const pending=deferred(),started=deferred(),memory=new Map(),intents=createAuthIntents();
+ const request=guardAuthResponses('https://fixture.supabase.co',intents,async(input)=>{
+  const path=new URL(String(input)).pathname;
+  if(path==='/auth/v1/user')return Response.json(user(first));
+  if(path==='/auth/v1/logout'){started.resolve();return pending.promise;}
+  if(path==='/auth/v1/token')return Response.json({access_token:jwt(second),refresh_token:'fixture-b',expires_in:3600,token_type:'bearer',user:user(second)});
+  throw Error('Unexpected request '+path);
+ });
+ const client=createClient('https://fixture.supabase.co','fixture-key',{auth:{autoRefreshToken:false,persistSession:true,detectSessionInUrl:false,storage:serializeAuthStorage({getItem:async key=>memory.get(key)??null,setItem:async(key,value)=>{memory.set(key,value);},removeItem:async key=>{memory.delete(key);}})},global:{fetch:request}});
+ bindAuthIntents(client.auth,intents);
+ assert.equal((await client.auth.setSession({access_token:jwt(first),refresh_token:'fixture-a'})).error,null);
+ const signOut=client.auth.signOut();await started.promise;
+ const signIn=client.auth.signInWithPassword({email:'fixture-b@example.test',password:'fixture-only'});
+ pending.resolve(new Response(null,{status:204}));assert.ok((await signOut).error);
+ assert.equal((await signIn).data.user.id,second);
+ assert.equal((await client.auth.getSession()).data.session.user.id,second);
 });

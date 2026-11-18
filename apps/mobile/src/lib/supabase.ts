@@ -3,7 +3,7 @@ import { AppState, Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import { createClient, processLock } from "@supabase/supabase-js";
-import { createAuthIntents, browserAuthIntentStore, guardAuthResponses, bindAuthIntents } from "../../../../lib/auth/auth-intents";
+import { createAuthIntents, browserAuthIntentStore, browserAuthActionLock, guardAuthResponses, bindAuthIntents } from "../../../../lib/auth/auth-intents";
 import { serializeAuthStorage } from "../../../../lib/auth/serialized-storage";
 import { validateSupabaseUrl } from "./supabase-url";
 import { readWithDeadline } from "../native/readDeadline";
@@ -50,7 +50,7 @@ export const supabase = createClient(
   },
 );
 
-bindAuthIntents(supabase.auth, authIntents);
+bindAuthIntents(supabase.auth, authIntents, browserAuthActionLock(supabaseConfigurationError ? "https://placeholder.supabase.co" : projectUrl!));
 
 if (!supabaseConfigurationError && Platform.OS !== "web") {
   AppState.addEventListener("change", (state) => {

@@ -20,7 +20,7 @@ export function guardAuthResponses(project: string, intents: ReturnType<typeof c
   return async (input, init) => {
     const url = new URL(typeof input === "string" ? input : input instanceof URL ? input.href : input.url);
     const authRequest = url.origin === origin && url.pathname.startsWith("/auth/v1/");
-    const guarded = url.origin === origin && (url.pathname === "/auth/v1/token" || url.pathname === "/auth/v1/signup" || /^\/auth\/v1\/factors\/[0-9a-f-]{36}\/verify$/i.test(url.pathname));
+    const guarded = url.origin === origin && (url.pathname === "/auth/v1/token" || url.pathname === "/auth/v1/signup" || url.pathname === "/auth/v1/verify" || url.pathname === "/auth/v1/logout" || (url.pathname === "/auth/v1/user" && /^(PUT|PATCH)$/i.test(init?.method ?? (input instanceof Request ? input.method : "GET"))) || /^\/auth\/v1\/factors\/[0-9a-f-]{36}\/verify$/i.test(url.pathname));
     const intent = intents.read();
     const controller = new AbortController();
     const upstream = init?.signal ?? (input instanceof Request ? input.signal : undefined);
@@ -47,9 +47,35 @@ export function guardAuthResponses(project: string, intents: ReturnType<typeof c
 
   };
 }
-export function bindAuthIntents<T extends { signInWithPassword: (...args: never[]) => unknown; signUp: (...args: never[]) => unknown; signOut: (...args: never[]) => unknown; setSession: (...args: never[]) => unknown; exchangeCodeForSession: (...args: never[]) => unknown }>(auth: T, intents: ReturnType<typeof createAuthIntents>) {
-  for (const name of ["signInWithPassword", "signUp", "signOut", "setSession", "exchangeCodeForSession"] as const) {
-    const original = auth[name].bind(auth);
-    auth[name] = ((...args: never[]) => { intents.begin(); return original(...args); }) as T[typeof name];
+type Exclusive = (work: () => Promise<unknown>) => Promise<unknown>;
+export function browserAuthActionLock(project: string): Exclusive | undefined {
+  if (typeof navigator === "undefined" || !navigator.locks?.request) return undefined;
+  const name = `hoopcheck-auth-actions:${new URL(project).hostname}`;
+  return work => navigator.locks.request(name, { mode: "exclusive" }, work);
+}
+export function bindAuthIntents<T extends { signInWithPassword: (...args: never[]) => unknown; signUp: (...args: never[]) => unknown; signOut: (...args: never[]) => unknown; setSession: (...args: never[]) => unknown; exchangeCodeForSession: (...args: never[]) => unknown }>(auth: T, intents: ReturnType<typeof createAuthIntents>, exclusive?: Exclusive) {
+  const marker = Symbol.for("hoopcheck.auth-intents-bound");
+  const client = auth as unknown as Record<string | symbol, unknown>;
+  if (client[marker]) return;
+  Object.defineProperty(client, marker, { value: true });
+  let queue: Promise<unknown> = Promise.resolve();
+  const stale = () => ({ data: { user: null, session: null, url: null }, error: new Error("Your account changed. Please sign in again.") });
+  function bind(target: Record<string, unknown>, name: string, startsIntent: boolean) {
+    const original = target[name];
+    if (typeof original !== "function") return;
+    target[name] = (...args: unknown[]) => {
+      const intent = startsIntent ? intents.begin() : intents.read();
+      const work = async () => {
+        if (intent !== intents.read()) return stale();
+        const result = await original.apply(target, args);
+        return intent === intents.read() ? result : stale();
+      };
+      const result = queue.catch(() => {}).then(() => exclusive ? exclusive(work) : work());
+      queue = result.catch(() => {});
+      return result;
+    };
   }
+  for (const name of ["signInWithPassword", "signUp", "signOut", "setSession", "exchangeCodeForSession", "verifyOtp", "signInWithOAuth"]) bind(client, name, true);
+  bind(client, "updateUser", false);
+  if (client.mfa && typeof client.mfa === "object") for (const name of ["verify", "challengeAndVerify"]) bind(client.mfa as Record<string, unknown>, name, false);
 }
