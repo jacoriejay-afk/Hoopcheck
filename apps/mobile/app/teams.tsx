@@ -40,7 +40,7 @@ export default function TeamsScreen() {
     if (start === 0) setLoading(true);
     setError("");
     const clean = search.trim().replace(/[^\p{L}\p{N} '\-]/gu, " ").replace(/\s+/g, " ").trim();
-    let query = (side === "womens" ? supabase.from("womens_teams").select("id,name,country,city,league_name,website").eq("active", true) : supabase.from("teams").select("id,name,country,city,league_name,website").eq("active", true).eq("basketball_type", "mens")).order("name", { ascending: true }).range(start, start + PAGE_SIZE);
+    let query = (side === "womens" ? supabase.from("womens_teams").select("id,name,country,city,league_name").eq("active", true) : supabase.from("teams").select("id,name,country,city,league_name,website").eq("active", true).eq("basketball_type", "mens")).order("name", { ascending: true }).range(start, start + PAGE_SIZE);
     if (clean) query = query.or(`name.ilike.%${clean}%,country.ilike.%${clean}%,city.ilike.%${clean}%,league_name.ilike.%${clean}%`);
     const { data, error: queryError } = await read(`teams:${side}:${clean}:${start}`, () => query);
     if (currentRequest !== requestId.current) return;
@@ -49,7 +49,7 @@ export default function TeamsScreen() {
       if (!append) setItems([]);
       setLoading(false); setRefreshing(false); return;
     }
-    const rows = (data ?? []) as Team[];
+    const rows = (data ?? []).map(row => ({ ...row, website: "website" in row && typeof row.website === "string" ? row.website : null })) as Team[];
     setHasMore(rows.length > PAGE_SIZE);
     const page = rows.slice(0, PAGE_SIZE);
     setItems(append ? current => [...current, ...page] : page);
@@ -84,7 +84,7 @@ export default function TeamsScreen() {
         <Text style={styles.title}>Find a team</Text>
         <Text style={styles.subtitle}>Explore men’s and women’s professional basketball teams before you sign.</Text>
         <View style={{ flexDirection: "row", gap: 8, marginTop: 14 }}>
-          {(["mens", "womens"] as const).map(value => <Pressable key={value} accessibilityRole="button" accessibilityState={{ selected: side === value }} onPress={() => { requestId.current++; setItems([]); setSide(value); }} style={{ paddingHorizontal: 18, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: theme.border, backgroundColor: side === value ? theme.accentSurface : theme.surface }}><Text style={{ color: theme.foreground, fontWeight: "800" }}>{value === "mens" ? "Men’s" : "Women’s"}</Text></Pressable>)}
+          {(["mens", "womens"] as const).map(value => <Pressable key={value} accessibilityRole="button" accessibilityState={{ selected: side === value }} onPress={() => { requestId.current++; setItems([]); setHasMore(false); setLoading(true); setSide(value); }} style={{ paddingHorizontal: 18, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: theme.border, backgroundColor: side === value ? theme.accentSurface : theme.surface }}><Text style={{ color: theme.foreground, fontWeight: "800" }}>{value === "mens" ? "Men’s" : "Women’s"}</Text></Pressable>)}
         </View>
         <View style={styles.searchRow}>
           <Input onBlur={() => remember(term)} onSubmitEditing={() => remember(term)} value={term} onChangeText={value => { requestId.current++; setTerm(value); setLoading(true); setItems([]); setHasMore(false); }} returnKeyType="search" placeholder="Team, country, city or league" placeholderTextColor={theme.muted} style={styles.input} />
