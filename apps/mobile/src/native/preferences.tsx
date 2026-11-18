@@ -1,36 +1,32 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-
-export type Role = "player" | "fan" | "coach" | "agent" | "scout" | "manager";
-type Preferences = { haptics: boolean; appLock: boolean; onboardingDone: boolean; role?: Role };
-const defaults: Preferences = { haptics: true, appLock: false, onboardingDone: false };
+import { createPreferenceWriter, defaultPreferences, restorePreferences, type Preferences } from "./preferenceStore";
+export type { Role } from "./preferenceStore";
 const key = "hoopcheck:device-preferences:v1";
-const Context = createContext({ preferences: defaults, ready: false, update: (async () => {}) as (value: Partial<Preferences>) => Promise<void> });
+const Context = createContext({ preferences: defaultPreferences, ready: false, update: (async () => {}) as (value: Partial<Preferences>) => Promise<void> });
 
 export function DevicePreferences({ children }: { children: ReactNode }) {
-  const [preferences, setPreferences] = useState(defaults);
-  const current = useRef(defaults);
-  const writes = useRef(Promise.resolve());
+  const [preferences, setPreferences] = useState(defaultPreferences);
+  const writer = useRef<ReturnType<typeof createPreferenceWriter> | null>(null);
   const [ready, setReady] = useState(false);
   useEffect(() => {
     let active = true;
-    AsyncStorage.getItem(key).then(value => {
-      if (!active || !value) return;
-      const parsed = JSON.parse(value);
-      const next = { ...defaults, ...parsed };
-      current.current = next;
-      setPreferences(next);
-    }).catch(() => {}).finally(() => { if (active) setReady(true); });
-    return () => { active = false; };
+    const restore = async () => {
+      let next: Preferences;
+      try { next = restorePreferences(await AsyncStorage.getItem(key)); }
+      catch { next = { ...defaultPreferences, appLock: true }; }
+      if (!active) return;
+      writer.current = createPreferenceWriter(next, value => AsyncStorage.setItem(key, JSON.stringify(value)));
+      setPreferences(next); setReady(true);
+    };
+    void restore();
+    return () => { active = false; writer.current = null; };
   }, []);
   async function update(value: Partial<Preferences>) {
-    const next = { ...current.current, ...value };
-    // Serialize writes so completing onboarding cannot be overwritten by an older setting.
-    const pending = writes.current.catch(() => {}).then(() => AsyncStorage.setItem(key, JSON.stringify(next)));
-    writes.current = pending;
-    current.current = next;
-    await pending;
-    setPreferences(next);
+    if (!writer.current) throw new Error("Device preferences are not ready");
+    const currentWriter = writer.current;
+    const next = await currentWriter.update(value);
+    if (writer.current === currentWriter) setPreferences(next);
   }
   return <Context.Provider value={{ preferences, ready, update }}>{children}</Context.Provider>;
 }
