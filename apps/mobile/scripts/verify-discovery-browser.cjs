@@ -31,8 +31,10 @@ const rows = {
         const json = body => route.fulfill({ status: 200, contentType: 'application/json', headers: {'access-control-allow-origin':'*'}, body: JSON.stringify(body) });
         if (url.hostname === 'fixture.supabase.co') {
           if (url.pathname === '/auth/v1/user') return json(user);
+          if (url.pathname === '/rest/v1/rpc/search_public_players') return json(rows.profiles);
           if (url.pathname.startsWith('/rest/v1/')) return json(rows[url.pathname.split('/').pop()] || []);
         }
+        if (url.hostname === 'api.test' && url.pathname === '/api/mobile/bootstrap') return json({user:{id:uid,displayName:'Fixture Member',accountType:'player'},entitlements:{tier:'free',hasPaidMembership:false,canReadHoopFeed:true,canWriteHoopFeed:true,canUseLiveGameHub:false,canUseLiveGameChat:false,canSwitchBasketballSide:false,canUseFanGroups:false}});
         if (url.hostname === 'api.test' && url.pathname === '/api/review-access') return json({canReadFull:false,canWrite:false,reviews:[{id:'secret',body:'MUST NOT RENDER PRIVATE REVIEW',title:'Secret',overall_rating:5,created_at:'2026-11-18'}]});
         return route.abort();
       });

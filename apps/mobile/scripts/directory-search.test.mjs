@@ -8,26 +8,27 @@ function fixture(request) {
 test('global search preserves directory eligibility and emits only public fields', async () => {
   const requests = [];
   const groups = await searchDirectory(fixture(async (input, options) => {
-    requests.push({ url: new URL(String(input)), method: options.method });
+    requests.push({ url: new URL(String(input)), method: options.method, body: options.body ? JSON.parse(options.body) : null });
     return Response.json([{ id: 'fixture', name: 'Fixture' }]);
-  }), 'Olympia');
+  }), 'Olympia', true);
   assert.equal(groups.length, 6);
   assert.equal(requests.length, 6);
-  for (const { url, method } of requests) {
-    assert.equal(method, 'GET');
-    assert.equal(url.searchParams.get('limit'), '6');
-    assert.ok(!/email|birth|address|phone|salary/.test(url.searchParams.get('select')));
-    if (url.pathname.endsWith('/profiles')) {
-      for (const [key, value] of Object.entries({ account_type: 'eq.player', profile_visibility: 'eq.public', moderation_status: 'eq.normal', professional_experience: 'eq.true' })) assert.equal(url.searchParams.get(key), value);
-      assert.equal(url.searchParams.get('basketball_type'), 'in.(mens,womens)');
-      assert.equal(url.searchParams.get('username'), 'ilike.%olympia%');
+  for (const { url, method, body } of requests) {
+    if (url.pathname.endsWith('/rpc/search_public_players')) {
+      assert.equal(method, 'POST');
+      assert.deepEqual(body, { p_username: 'olympia', p_country: null, p_limit: 6, p_offset: 0 });
+      assert.equal(url.searchParams.has('select'), false);
     } else {
+      assert.equal(method, 'GET'); assert.equal(url.searchParams.get('limit'), '6');
+      assert.ok(!/email|birth|address|phone|salary/.test(url.searchParams.get('select')));
       assert.equal(url.searchParams.get('active'), 'eq.true');
       const mens = url.pathname === '/rest/v1/teams' || url.pathname === '/rest/v1/leagues';
       assert.equal(url.searchParams.get('basketball_type'), mens ? 'eq.mens' : null);
       assert.equal(url.searchParams.get('order'), 'name.asc,id.asc');
     }
   }
+  assert.ok(requests.every(({ url }) => !url.pathname.endsWith('/profiles')));
+
 });
 test('one unavailable directory does not hide successful search results', async () => {
   const groups = await searchDirectory(fixture(async input => {
@@ -52,4 +53,11 @@ test('results navigate to canonical native routes and reject path injection', ()
   assert.equal(searchResultPath('players', 'fixture'), '/players/fixture');
   assert.equal(searchResultPath('coaches', 'fixture'), '/web?path=%2Fcoaches%2Ffixture');
   for (const value of ['../other', 'https://evil.example', 'fixture?x=1']) assert.equal(searchResultPath('teams', value), null);
+});
+
+
+test('player search fails closed until a verified non-fan viewer allows it', async () => {
+  const requests = [];
+  await searchDirectory(fixture(async input => { requests.push(new URL(String(input)).pathname); return Response.json([]); }), 'player');
+  assert.equal(requests.length, 5); assert.ok(requests.every(path => !path.endsWith('/profiles')));
 });

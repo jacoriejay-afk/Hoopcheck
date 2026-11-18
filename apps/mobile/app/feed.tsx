@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Button } from "../src/primitives";
 import { Skeleton } from "../components/Motion";
+import { ProfileAvatar } from "../components/ProfileAvatar";
 import { FeedMedia } from "../components/FeedMedia";
 import { MediaPostComposer } from "../components/MediaPostComposer";
 import { FeedPoll } from "../components/FeedPoll";
@@ -176,7 +177,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
         const options = Array.isArray(post.poll_options) ? post.poll_options.filter((value): value is string => typeof value === "string").slice(0, 6).map(value => value.slice(0, 120)) : [];
         return <View style={reels ? { height, padding: 12 } : undefined}><View testID={`feed-post-${post.id}`} style={{ padding: 14, gap: 10, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, borderRadius: theme.radius.card, ...(reels ? { flex: 1 } : {}) }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 11 }}>
-            <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: theme.chip, alignItems: "center", justifyContent: "center" }}><Text style={{ color: theme.onChip, fontWeight: "800", fontSize: 12 }}>HC</Text></View>
+            <ProfileAvatar url={post.profiles?.avatar_moderation_status === "approved" ? post.profiles.avatar_url : null} name={post.profiles?.display_name || "HoopCheck member"} size={44} />
             <View style={{ flex: 1, gap: 3 }}><Text style={{ ...textStyle, fontWeight: "700", fontSize: 13 }}>{post.profiles?.display_name || "HoopCheck member"}</Text><Text style={{ color: theme.muted, fontSize: 11 }}>{new Date(post.created_at).toLocaleString()}</Text></View>
           </View>
           {post.body ? <Text numberOfLines={reels ? 3 : undefined} style={{ ...textStyle, fontSize: 15, lineHeight: 23 }}>{post.body}</Text> : null}
