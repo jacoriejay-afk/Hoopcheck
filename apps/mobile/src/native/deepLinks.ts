@@ -13,12 +13,22 @@ export function nativeDestination(path: string): string {
     }
     if (url.protocol !== "https:" || url.hostname !== host || url.username || url.password || url.port) return "/";
     const parts = url.pathname.split("/").filter(Boolean);
+    if (url.pathname === "/account/edit") return "/account/edit";
+    if (parts[0] === "team-hub" && parts[1] === "groups") {
+      if (parts.length === 2) return "/team-hub/groups";
+      if (parts.length === 3 && safeId.test(parts[2])) return `/team-hub/groups/${parts[2]}`;
+    }
+    if (url.pathname === "/") return "/";
     if (parts.length === 3 && parts[0] === "womens" && parts[1] === "leagues" && safeId.test(parts[2])) return `/womens/leagues/${parts[2]}`;
     if (parts.length === 2 && ["teams", "womens", "leagues", "players"].includes(parts[0]) && safeId.test(parts[1])) return `/${parts[0]}/${parts[1]}`;
     if (parts.length === 1 && ["notifications", "account", "teams", "womens", "leagues", "players", "coaches", "dashboard", "settings"].includes(parts[0])) return url.pathname;
     if (url.pathname === "/feed" || url.pathname === "/fan-feed") {
       const post = url.searchParams.get("post") || /^#post-([0-9a-f-]{36})$/i.exec(url.hash)?.[1];
       return "/feed" + (post && /^[0-9a-f-]{36}$/i.test(post) ? `?post=${post}` : "");
+    }
+    if (url.pathname === "/fan-live") {
+      const id = url.searchParams.get("gameId");
+      return "/fan-live" + (id && /^[0-9a-f-]{36}$/i.test(id) ? `?gameId=${id}` : "");
     }
     if (url.pathname === "/reels") return "/reels";
     if (url.pathname === "/search") {
@@ -49,7 +59,7 @@ export function nativeDestination(path: string): string {
       // No client-side attribution claim or user_metadata authorization is introduced.
       return `/web?path=${encodeURIComponent(`/referral/${parts[1].toUpperCase()}`)}`;
     }
-    // No pretend native post/group route: keep the actual canonical web path.
+    // Unimplemented routes retain their canonical website paths.
     return `/web?path=${encodeURIComponent(url.pathname + url.search + url.hash)}`;
   } catch { return "/"; }
 }

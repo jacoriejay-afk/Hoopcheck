@@ -123,7 +123,32 @@ test("auth errors and malformed escapes are safely re-encoded and oversized link
 });
 
 
+test("Live Games links preserve the canonical game and reject malformed IDs", () => {
+  const id = "11111111-1111-4111-8111-000000000001";
+  assert.equal(nativeDestination(`hoopcheck://fan-live?gameId=${id}`), `/fan-live?gameId=${id}`);
+  assert.equal(nativeDestination("/fan-live?gameId=../secret"), "/fan-live");
+});
+
+
+test("club group canonical links retain group identity and malformed alternatives use the website", () => {
+  const id = "11111111-1111-4111-8111-111111111111";
+  assert.equal(nativeDestination(`hoopcheck://team-hub/groups/${id}`), `/team-hub/groups/${id}`);
+  assert.equal(nativeDestination("/team-hub/groups"), "/team-hub/groups");
+  assert.equal(nativeDestination("/groups/other"), "/web?path=%2Fgroups%2Fother");
+});
+
 test("search links bound and safely re-encode terms for native routing", () => {
   assert.equal(nativeDestination("hoopcheck://search?q=%ZZ&token=discard"), "/search?q=%25ZZ");
   assert.equal(nativeDestination("/search?q=" + "x".repeat(200)), "/search?q=" + "x".repeat(100));
+});
+
+
+test("own profile customization uses a canonical native account route", () => {
+  assert.equal(nativeDestination("hoopcheck://account/edit"), "/account/edit");
+});
+
+test("canonical homepage and empty app links reach native entry without a web handoff", () => {
+  for (const url of ["/", "https://hoopcheck.online/", "hoopcheck://", "hoopcheck:///"]) assert.equal(nativeDestination(url), "/");
+  assert.equal(nativeDestination("https://hoopcheck.online/?token=discard"), "/");
+
 });

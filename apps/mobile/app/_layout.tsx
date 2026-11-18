@@ -1,7 +1,8 @@
+import "react-native-gesture-handler";
+import { NativeDraftProvider } from "../src/native/drafts";
 import { NativeAccountProvider } from "../src/native/useNativeAccount";
 import { useFonts } from "expo-font";
 import { rememberDestination, takeDestination } from "../src/native/pendingDestination";
-import "react-native-gesture-handler";
 import { AccessibilityInfo } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
@@ -36,7 +37,7 @@ function RootLayout() {
   const [sessionReady, setSessionReady] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
   const pathname = usePathname();
-  const routeParams = useGlobalSearchParams<{ post?: string | string[]; q?: string | string[] }>();
+  const routeParams = useGlobalSearchParams<{ post?: string | string[]; q?: string | string[]; gameId?: string | string[] }>();
 
   useEffect(() => {
     let alive = true;
@@ -66,7 +67,7 @@ function RootLayout() {
   useEffect(() => {
     if (!sessionReady) return;
     const currentRoute = segments[0] ?? "";
-    const inAppArea = ["dashboard", "notifications", "feed", "fan-feed", "reels", "account", "search", "teams", "womens", "leagues", "players", "coaches", "choose-username", "settings"].includes(currentRoute);
+    const inAppArea = ["dashboard", "team-hub", "fan-live", "notifications", "feed", "fan-feed", "reels", "account", "search", "teams", "womens", "leagues", "players", "coaches", "choose-username", "settings"].includes(currentRoute);
     if (["web", "sign-in", "sign-up"].includes(currentRoute)) return;
     const onPasswordRecovery = currentRoute === "reset-password";
     // Let the OAuth callback exchange its PKCE code and choose the destination.
@@ -78,16 +79,17 @@ function RootLayout() {
     if (!signedIn && inAppArea) {
       const query = new URLSearchParams();
       if (currentRoute === "feed" && typeof routeParams.post === "string" && /^[0-9a-f-]{36}$/i.test(routeParams.post)) query.set("post", routeParams.post);
+      if (currentRoute === "fan-live" && typeof routeParams.gameId === "string" && /^[0-9a-f-]{36}$/i.test(routeParams.gameId)) query.set("gameId", routeParams.gameId);
       if (currentRoute === "search" && typeof routeParams.q === "string") query.set("q", routeParams.q.slice(0, 100));
       const suffix = query.toString();
       rememberDestination(pathname + (suffix ? `?${suffix}` : "")); router.replace("/sign-in");
     }
-  }, [sessionReady, signedIn, segments, router, pathname, routeParams.post, routeParams.q]);
+  }, [sessionReady, signedIn, segments, router, pathname, routeParams.post, routeParams.q, routeParams.gameId]);
 
   if (!fontsLoaded && !fontError) return null;
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.background }}><SafeAreaProvider><MotionProvider><DevicePreferences><NetworkProvider><NativeAccountProvider><BottomSheetModalProvider>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.background }}><SafeAreaProvider><MotionProvider><DevicePreferences><NetworkProvider><NativeAccountProvider><NativeDraftProvider><BottomSheetModalProvider>
       <StatusBar style={theme.dark ? "light" : "dark"} /><RouteFade>
       <Stack
         screenOptions={{
@@ -98,11 +100,15 @@ function RootLayout() {
           contentStyle: { backgroundColor: theme.background },
         }}
       >
+        <Stack.Screen name="team-hub/groups/index" options={{ title: "HoopGroups" }} />
+        <Stack.Screen name="team-hub/groups/[teamId]" options={{ title: "Club group" }} />
+        <Stack.Screen name="fan-live" options={{ title: "Live Games" }} />
         <Stack.Screen name="notifications" options={{ title: "Alerts" }} />
         <Stack.Screen name="feed" options={{ headerShown: false }} />
         <Stack.Screen name="fan-feed" options={{ headerShown: false }} />
         <Stack.Screen name="reels" options={{ headerShown: false }} />
         <Stack.Screen name="account" options={{ title: "Account" }} />
+        <Stack.Screen name="account/edit" options={{ title: "Edit profile" }} />
         <Stack.Screen name="settings" options={{ title: "Settings" }} />
         <Stack.Screen name="web" options={{ title: "HoopCheck" }} />
         <Stack.Screen name="index" options={{ title: "HoopCheck™", headerShown: false }} />
@@ -134,7 +140,8 @@ function RootLayout() {
         <Stack.Screen name="leagues/[id]" options={{ title: "League profile" }} />
       </Stack></RouteFade>
       {signedIn ? <TabBar /> : null}<AppLock authReady={sessionReady} protectedScreen={signedIn && !["sign-in", "sign-up", "reset-password", "auth"].includes(segments[0] ?? "")} />
-    </BottomSheetModalProvider></NativeAccountProvider></NetworkProvider></DevicePreferences></MotionProvider></SafeAreaProvider></GestureHandlerRootView>
+    </BottomSheetModalProvider></NativeDraftProvider></NativeAccountProvider></NetworkProvider></DevicePreferences></MotionProvider></SafeAreaProvider></GestureHandlerRootView>
+
 
   );
 }

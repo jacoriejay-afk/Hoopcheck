@@ -70,6 +70,26 @@ export async function moderateFeedText(origin: string, token: string, kind: "pos
     parent_id: typeof comment.parent_id === "string" && uuid.test(comment.parent_id) ? comment.parent_id : null, profiles: null,
   } as FeedComment;
 }
+export function validatedPollOptions(input: unknown): string[] {
+  if (!Array.isArray(input) || input.length < 2 || input.length > 4 || input.some(value => typeof value !== "string" || !value.trim() || value.trim().length > 60)) throw new Error("Polls need 2 to 4 answers, each up to 60 characters.");
+  const options = (input as string[]).map(value => value.trim());
+  if (new Set(options.map(value => value.toLowerCase())).size !== options.length) throw new Error("Poll answers must be different.");
+  return options;
+}
+export async function publishFeedPoll(origin: string, token: string, question: string, input: readonly string[], request: typeof fetch = fetch) {
+  const target = apiUrl(origin, "/api/hoopfeed/moderate"); const text = question.trim();
+  const options = validatedPollOptions(input);
+  if (!token || !text || text.length > 2000) throw new Error("Add a poll question of up to 2,000 characters.");
+  const form = new FormData(); form.append("kind", "post"); form.append("text", text); form.append("post_kind", "poll"); form.append("poll_options", JSON.stringify(options)); form.append("audience", "community");
+  const controller = new AbortController(); const deadline = setTimeout(() => controller.abort(), 15000);
+  try {
+    const response = await request(target, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form, cache: "no-store", redirect: "error", signal: controller.signal });
+    const result = await response.json().catch(() => null);
+    if (!response.ok || result?.allowed !== true) throw new Error(typeof result?.message === "string" ? result.message.slice(0, 300) : "Publication could not be confirmed. Refresh before retrying; your draft is kept.");
+    // The current post endpoint acknowledges publication with { allowed: true };
+    // unlike comments and reshares, ordinary posts do not return a post ID.
+  } finally { clearTimeout(deadline); }
+}
 export async function authorizedFeedMedia(origin: string, projectOrigin: string, token: string, postId: string, reference: string, signal?: AbortSignal, request: typeof fetch = fetch) {
   const target = apiUrl(origin, "/api/hoopfeed/media");
   const project = new URL(projectOrigin);
