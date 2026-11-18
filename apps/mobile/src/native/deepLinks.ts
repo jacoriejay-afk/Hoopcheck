@@ -18,6 +18,7 @@ export function nativeDestination(path: string): string {
       if (parts.length === 2) return "/team-hub/groups";
       if (parts.length === 3 && safeId.test(parts[2])) return `/team-hub/groups/${parts[2]}`;
     }
+    if (url.pathname === "/") return "/";
     if (parts.length === 3 && parts[0] === "womens" && parts[1] === "leagues" && safeId.test(parts[2])) return `/womens/leagues/${parts[2]}`;
     if (parts.length === 2 && ["teams", "womens", "leagues", "players"].includes(parts[0]) && safeId.test(parts[1])) return `/${parts[0]}/${parts[1]}`;
     if (parts.length === 1 && ["notifications", "account", "teams", "womens", "leagues", "players", "coaches", "dashboard", "settings"].includes(parts[0])) return url.pathname;

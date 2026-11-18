@@ -146,3 +146,9 @@ test("search links bound and safely re-encode terms for native routing", () => {
 test("own profile customization uses a canonical native account route", () => {
   assert.equal(nativeDestination("hoopcheck://account/edit"), "/account/edit");
 });
+
+test("canonical homepage and empty app links reach native entry without a web handoff", () => {
+  for (const url of ["/", "https://hoopcheck.online/", "hoopcheck://", "hoopcheck:///"]) assert.equal(nativeDestination(url), "/");
+  assert.equal(nativeDestination("https://hoopcheck.online/?token=discard"), "/");
+
+});
