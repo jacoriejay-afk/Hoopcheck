@@ -78,6 +78,13 @@ export default function LeaguesScreen() {
         <View style={{ flexDirection: "row", gap: 8, marginTop: 14 }}>
           {(["mens", "womens"] as const).map(value => <Pressable key={value} accessibilityRole="button" accessibilityState={{ selected: side === value }} onPress={() => { requestId.current++; setItems([]); setHasMore(false); setLoading(true); setSide(value); }} style={{ paddingHorizontal: 18, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: theme.border, backgroundColor: side === value ? theme.accentSurface : theme.surface }}><Text style={{ color: theme.foreground, fontWeight: "800" }}>{value === "mens" ? "Men’s" : "Women’s"}</Text></Pressable>)}
         </View>
+        <Pressable
+          accessibilityRole="link"
+          onPress={() => router.push({ pathname: "/web", params: { path: "/womens" } })}
+          style={styles.womensLink}
+        >
+          <Text style={styles.openProfile}>Browse women’s teams and leagues on HoopCheck ↗</Text>
+        </Pressable>
         <View style={styles.searchRow}>
           <Input onBlur={() => remember(term)} onSubmitEditing={() => remember(term)} value={term} onChangeText={value => { requestId.current++; setTerm(value); setLoading(true); setItems([]); setHasMore(false); }} returnKeyType="search" placeholder="League, country or level" placeholderTextColor={theme.muted} style={styles.input} />
         </View>
@@ -123,6 +130,7 @@ const createStyles = (theme: EntryTheme) => StyleSheet.create({
   kicker: { color: theme.accent, fontSize: 11, fontWeight: "900", letterSpacing: 1.5 },
   title: { color: theme.foreground, fontSize: 28, fontWeight: "400", fontFamily: "HoopCheckDisplay", marginTop: 5 },
   subtitle: { color: theme.muted, fontSize: 14, lineHeight: 20, marginTop: 7 },
+  womensLink: { alignSelf: "flex-start", justifyContent: "center", minHeight: 44 },
   searchRow: { flexDirection: "row", gap: 8, marginTop: 18 },
   input: { flex: 1, minWidth: 0, height: 48, backgroundColor: theme.input, borderRadius: theme.radius.control, paddingHorizontal: 12, color: theme.foreground, fontSize: 14 },
   searchButton: { backgroundColor: theme.surface, borderRadius: 10, alignItems: "center", justifyContent: "center", paddingHorizontal: 15 },
