@@ -185,6 +185,7 @@ test("protected native links preserve bounded post/search destinations without r
   for (const [segments, pathname, params, expected] of [
     [["feed"], "/feed", { post: id, code: "secret" }, `/feed?post=${id}`],
     [["feed"], "/feed", { post: "bad" }, "/feed"],
+    [["fan-live"], "/fan-live", { gameId: id, code: "secret" }, `/fan-live?gameId=${id}`],
     [["search"], "/search", { q: "x".repeat(200), token: "secret" }, "/search?q=" + "x".repeat(100)],
   ]) {
     const f = screen("app/_layout.tsx", { state: [true, false], segments, pathname, params });
