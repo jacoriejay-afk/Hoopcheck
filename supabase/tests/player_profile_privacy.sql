@@ -19,7 +19,7 @@ INSERT INTO public.profiles(id,account_type,profile_visibility,moderation_status
  ('66666666-6666-4666-8666-666666666666','coach','players_only','normal','Coach','coach',null,false,null,'approved',null);
 GRANT USAGE ON SCHEMA public,auth TO anon,authenticated;
 GRANT SELECT ON public.profiles TO anon,authenticated;
-\ir ../migrations/20261118160000_player_profile_country_privacy.sql
+\ir ../migrations/20261118162305_player_profile_country_privacy.sql
 SET LOCAL ROLE anon;
 DO $$ BEGIN
  IF (SELECT current_country FROM public.get_public_player_profile('11111111-1111-4111-8111-111111111111')) IS NOT NULL THEN RAISE EXCEPTION 'private country leaked'; END IF;

@@ -14,7 +14,7 @@ public-country check. Approved avatars and verified-player badges render on nati
 player profiles; native feed avatars require approved status. Profile avatar
 images accept HTTPS URLs and fall back to initials on image failure.
 
-The candidate migration 20261118160000_player_profile_country_privacy.sql masks
+The candidate migration 20261118162305_player_profile_country_privacy.sql masks
 private country in the existing profile RPC and introduces search_public_players
 for web/native directories and unified native player search. Its explicit output
 masks private current location and unapproved avatars. Literal substring search
