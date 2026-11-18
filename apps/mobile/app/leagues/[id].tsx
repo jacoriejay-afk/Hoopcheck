@@ -89,7 +89,7 @@ export default function LeagueDetailScreen() {
             <CountryChip country={league.country} />
             <Text style={[styles.kicker, { color: theme.entityHero.muted }]}>LEAGUE PROFILE</Text>
             <Text style={[styles.title, { color: theme.entityHero.ink }]}>{league.name}</Text>
-            <ShareSheet onHero title={league.name} path={womens ? `/womens` : `/leagues/${league.id}`} />
+            {!womens ? <ShareSheet onHero title={league.name} path={`/leagues/${league.id}`} /> : null}
             <Text style={[styles.location, { color: theme.entityHero.muted }]}>{league.country || "Country not listed"}</Text>
             </View>
             <GlassCard style={styles.card}>
