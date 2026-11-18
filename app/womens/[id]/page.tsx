@@ -33,7 +33,6 @@ export default function WomensTeam(){
    return()=>window.removeEventListener("hashchange",syncSection);
  },[]);
  const [coaches,setCoaches]=useState<Array<{id:string;name:string;city:string|null;country:string|null}>>([]);
- const [leagueSeason,setLeagueSeason]=useState<string|null>(null);
  const [coachesLoadError,setCoachesLoadError]=useState(false);
  const {id}=useParams<{id:string}>(); const [team,setTeam]=useState<any>(null); const [reviews,setReviews]=useState<any[]>([]); const [loading,setLoading]=useState(true); const [canViewReviews,setCanViewReviews]=useState(false); const [canSeeRatings,setCanSeeRatings]=useState(false); const [canReview,setCanReview]=useState(false); const [accountType,setAccountType]=useState(""); const [ratingAverage,setRatingAverage]=useState<number|null>(null); const [ratingCount,setRatingCount]=useState(0); const [reviewTier,setReviewTier]=useState<"free"|"pro"|"premium"|"player"|"member">("free"); const [teamFollowerCount,setTeamFollowerCount]=useState(0); const [trustScoreData,setTrustScoreData]=useState<any>(null);
  useEffect(() => {
@@ -42,7 +41,6 @@ export default function WomensTeam(){
    setTeam(null);
    setCoaches([]);
    setCoachesLoadError(false);
-   setLeagueSeason(null);
    setReviews([]);
    setRatingCount(0);
    setRatingAverage(null);
@@ -63,8 +61,6 @@ export default function WomensTeam(){
      setTeam(teamData || null);
      setCoaches([]);
      setCoachesLoadError(false);
-     setLeagueSeason(null);
-     if(teamData?.league_id){const {data:leagueRow,error:leagueError}=await supabase.from("leagues").select("season").eq("id",teamData.league_id).maybeSingle();if(leagueError)console.error("Unable to load women’s team season:",leagueError);if(active)setLeagueSeason(typeof leagueRow?.season==="string"&&leagueRow.season.trim()?leagueRow.season.trim():null);}
      if(teamData){const {data:coachRows,error:coachError}=await supabase.from("coaches").select("id,name,city,country").eq("current_team_id",teamData.id).eq("active",true).order("name");if(active){setCoachesLoadError(Boolean(coachError));if(coachError)console.error("Unable to load women’s team coaches:",coachError);setCoaches(coachError?[]:(coachRows||[]));}}
      if (!active) return;
      setTeamFollowerCount(followerCount || 0);
@@ -115,7 +111,6 @@ export default function WomensTeam(){
  <TeamProfileHero
    className="hc-womens-branded-hero"
    gender="womens"
-   seasonLabel={leagueSeason}
    teamId={team.id}
    name={team.name}
    country={team.country || t("international")}
@@ -150,10 +145,24 @@ export default function WomensTeam(){
  <div id="womens-team-fan-group-panel" role="tabpanel" aria-labelledby="womens-team-fan-group-tab" hidden={activeSection!=="fan-group"} style={{display:activeSection==="fan-group"?undefined:"none"}}><div id="fan-hq"><TeamFanGroupEntry teamId={team.id} /></div></div>
  {canReview && <div className="entity-actions"><Link href={"/womens/" + team.id + "/review"} className="btn">Write a Review</Link></div>}
  <ClaimedTeamLogoEditor teamId={team.id} teamName={team.name} teamTable="womens_teams" onSaved={(logoUrl, logoBg) => setTeam((current:any) => current ? { ...current, logo_url: logoUrl, logo_bg: logoBg } : current)} />
- <section className="grid compact-grid" id="womens-team-overview-panel" role="tabpanel" aria-labelledby="womens-team-overview-tab" hidden={activeSection!=="overview"} style={{display:activeSection==="overview"?undefined:"none"}}>
-    {canSeeRatings ? <Surface className="card"><span className="card-kicker">{t("rating")}</span><h2>{average===null?"—":average.toFixed(1)+"/5"}</h2><p className="muted">{formatNumber(ratingCount)+" "+(ratingCount===1?t("publishedReview"):t("publishedReviews"))}</p></Surface> : null}
-    <Surface className="card"><span className="card-kicker">{t("league")}</span><h2>{team.league_name||t("professional")}</h2><p className="muted">{team.country||t("international")}</p></Surface>
-  </section>
+ <div id="womens-team-overview-panel" role="tabpanel" aria-labelledby="womens-team-overview-tab" hidden={activeSection!=="overview"} style={{display:activeSection==="overview"?undefined:"none"}} className="hc-team-profile-overview-grid">
+   <section className="hc-team-profile-about" aria-labelledby="hc-womens-team-about-title">
+     <p className="hc-team-profile-kicker">CLUB OVERVIEW</p>
+     <h2 id="hc-womens-team-about-title">About {team.name}</h2>
+     <p>{team.name} is a basketball club{team.city ? ` based in ${team.city}` : team.country ? ` based in ${team.country}` : ""}{team.league_name ? `, competing in ${team.league_name}` : ""}.</p>
+     <dl className="hc-team-profile-facts">
+       <div><dt>League</dt><dd>{team.league_id ? <Link href={`/womens/leagues/${team.league_id}`}>{team.league_name || "View league"}</Link> : team.league_name || "Not listed"}</dd></div>
+       <div><dt>Location</dt><dd>{[team.city,team.country].filter(Boolean).join(", ") || "Not listed"}</dd></div>
+     </dl>
+   </section>
+   <section className="hc-team-profile-snapshot" aria-labelledby="hc-womens-team-snapshot-title">
+     <p className="hc-team-profile-kicker">PLAYER EXPERIENCE</p>
+     <h2 id="hc-womens-team-snapshot-title">Trust Snapshot</h2>
+     <p className="hc-team-profile-snapshot-note">{ratingCount ? `${formatNumber(ratingCount)} published team reviews` : "No published reviews yet"}</p>
+     {canSeeRatings && average !== null ? <p><strong>{average.toFixed(1)}/5</strong> average player rating</p> : <p className="hc-team-profile-snapshot-note">{ratingCount ? "Full review details require an eligible membership." : "Players can be the first to review this club."}</p>}
+     <button type="button" className="hc-team-profile-inline-link" onClick={()=>setActiveSection("reviews")}>Explore team reviews</button>
+   </section>
+ </div>
   <Surface as="section" id="womens-team-reviews-panel" className="dashboard-card compact-section" role="tabpanel" aria-labelledby="womens-team-reviews-tab" hidden={activeSection!=="reviews"} style={{display:activeSection==="reviews"?undefined:"none"}}>
     {!canViewReviews ? (
       <ReviewMembershipGate
