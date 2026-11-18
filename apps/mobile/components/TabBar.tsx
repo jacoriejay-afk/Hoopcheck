@@ -11,9 +11,9 @@ import { useEntryTheme } from "../src/theme";
 
 const tabs = [
   { route: "/dashboard", label: "Home", icon: "home-outline", active: "home" },
+  { route: "/feed", label: "HoopFeed", icon: "chatbubbles-outline", active: "chatbubbles" },
   { route: "/search", label: "Search", icon: "search-outline", active: "search" },
-  { route: "/leagues", label: "Leagues", icon: "trophy-outline", active: "trophy" },
-  { route: "/players", label: "Players", icon: "people-outline", active: "people" },
+  { route: "/notifications", label: "Alerts", icon: "notifications-outline", active: "notifications" },
   { route: "/account", label: "Account", icon: "person-outline", active: "person" },
 ] as const;
 export function TabBar() {
