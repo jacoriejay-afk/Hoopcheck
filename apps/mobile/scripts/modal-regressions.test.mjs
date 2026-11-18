@@ -12,6 +12,7 @@ import { lockScreenRequired } from '../src/native/lockPolicy.ts';
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 const require = createRequire(import.meta.url);
 function load(name, state, overrides = {}) {
+  state.preferences = { onboardingDone: true, ...state.preferences };
   const source = readFileSync(new URL(`../components/${name}.tsx`, import.meta.url), 'utf8');
   const code = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } }).outputText;
   const exports = {};
@@ -27,6 +28,7 @@ function load(name, state, overrides = {}) {
     '../src/native/lockPolicy': { lockScreenRequired, consumeFreshSignIn: () => false, backgroundRequiresLock: () => true },
     '../src/lib/supabase': { supabase: { auth: { signOut: async () => ({ error: null }) } } },
   };
+  if (name === 'AppLock') stubs['./Onboarding'] = { Onboarding: load('Onboarding', state) };
   Object.assign(stubs, overrides);
   vm.runInNewContext(code, { exports, require: id => Object.hasOwn(stubs, id) ? stubs[id] : require(id) });
   return exports[name];
@@ -45,11 +47,12 @@ test('inactive onboarding has no mounted modal', async () => {
   }
 });
 
-test('completing onboarding removes its modal', async () => {
+test('completing onboarding removes its content', async () => {
   const state = { ready: true, preferences: { onboardingDone: false }, update: async value => { state.preferences = { ...state.preferences, ...value }; } };
   const Component = load('Onboarding', state);
   const tree = await render(Component);
-  assert.equal(tree.root.findByType('Modal').props.visible, true);
+  assert.equal(tree.root.findAllByType('Modal').length, 0);
+  assert.ok(tree.root.findByType('SafeAreaView'));
   await act(async () => { await tree.root.findAllByType('Pressable')[0].props.onPress(); });
   await act(async () => tree.update(React.createElement(Component)));
   assert.equal(tree.toJSON(), null);
@@ -94,3 +97,30 @@ for (const [label, authenticateAsync] of [
     await act(async () => tree.unmount());
   });
 }
+
+test('hydration and onboarding share one native presentation', async () => {
+  const state = { ready: false, preferences: { appLock: false, onboardingDone: false }, update: async value => { state.preferences = { ...state.preferences, ...value }; } };
+  const Component = load('AppLock', state);
+  const tree = await render(Component, { authReady: false, protectedScreen: true });
+  const modal = tree.root.findByType('Modal');
+  assert.equal(tree.root.findAllByType('SafeAreaView').length, 0);
+  state.ready = true;
+  await act(async () => tree.update(React.createElement(Component, { authReady: true, protectedScreen: true })));
+  assert.equal(tree.root.findAllByType('Modal').length, 1);
+  assert.equal(tree.root.findByType('Modal'), modal);
+  assert.ok(tree.root.findByType('SafeAreaView'));
+  await act(async () => { await tree.root.findAllByType('Pressable')[0].props.onPress(); });
+  await act(async () => tree.update(React.createElement(Component, { authReady: true, protectedScreen: true })));
+  assert.equal(tree.toJSON(), null);
+  await act(async () => tree.unmount());
+});
+
+test('onboarding cannot cover an active app lock', async () => {
+  const tree = await render(load('AppLock', { ready: true, preferences: { appLock: true, onboardingDone: false } }), { authReady: true, protectedScreen: true });
+  assert.equal(tree.root.findAllByType('Modal').length, 1);
+  assert.equal(tree.root.findAllByType('SafeAreaView').length, 0);
+  await act(async () => { await tree.root.findAllByType('Pressable')[0].props.onPress(); });
+  assert.equal(tree.root.findAllByType('Modal').length, 1);
+  assert.ok(tree.root.findByType('SafeAreaView'));
+  await act(async () => tree.unmount());
+});

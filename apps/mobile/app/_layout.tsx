@@ -8,7 +8,6 @@ import * as SplashScreen from "expo-splash-screen";
 import { DevicePreferences } from "../src/native/preferences";
 import { NetworkProvider } from "../src/native/network";
 import { MotionProvider } from "../src/motion/Provider";
-import { Onboarding } from "../components/Onboarding";
 import { AppLock } from "../components/AppLock";
 import { TabBar } from "../components/TabBar";
 import { RouteFade } from "../components/RouteFade";
@@ -117,7 +116,7 @@ function RootLayout() {
         <Stack.Screen name="leagues" options={{ title: "Leagues" }} />
         <Stack.Screen name="leagues/[id]" options={{ title: "League profile" }} />
       </Stack></RouteFade>
-      {signedIn ? <TabBar /> : null}<Onboarding /><AppLock authReady={sessionReady} protectedScreen={signedIn && !["sign-in", "sign-up", "reset-password"].includes(segments[0] ?? "")} />
+      {signedIn ? <TabBar /> : null}<AppLock authReady={sessionReady} protectedScreen={signedIn && !["sign-in", "sign-up", "reset-password"].includes(segments[0] ?? "")} />
     </BottomSheetModalProvider></NetworkProvider></DevicePreferences></MotionProvider></SafeAreaProvider></GestureHandlerRootView>
   );
 }

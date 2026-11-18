@@ -1,3 +1,4 @@
+import { Onboarding } from "./Onboarding";
 import { useEffect, useRef, useState } from "react";
 import { AppState, Modal, Pressable, Text, View } from "react-native";
 import * as LocalAuthentication from "expo-local-authentication";
@@ -62,9 +63,12 @@ export function AppLock({ authReady, protectedScreen }: { authReady: boolean; pr
     finally { setBusy(false); }
   }
   const bootstrapping = !authReady || !ready;
-  // An inactive native Modal must not remain mounted over the dashboard.
-  if (!lockScreenRequired(authReady, ready, protectedScreen, preferences.appLock, locked)) return null;
-  return <Modal visible={true} animationType="none" onRequestClose={() => {}}><View style={{ flex: 1, justifyContent: "center", backgroundColor: theme.background, padding: 28, gap: 24 }}>
+  const needsLock = lockScreenRequired(authReady, ready, protectedScreen, preferences.appLock, locked);
+  const needsOnboarding = ready && !preferences.onboardingDone;
+  // One native presentation owns both flows. Hydration and lock take priority.
+  // Switching content must not present/dismiss competing native modals.
+  if (!needsLock && !needsOnboarding) return null;
+  return <Modal visible={true} animationType="none" onRequestClose={() => {}}>{!needsLock ? <Onboarding /> : <View style={{ flex: 1, justifyContent: "center", backgroundColor: theme.background, padding: 28, gap: 24 }}>
     {bootstrapping ? <Text accessibilityLiveRegion="polite" style={{ color: theme.foreground }}>Preparing HoopCheck…</Text> : <>
     <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 28, fontWeight: "900" }}>Unlock HoopCheck</Text>
     <Text style={{ color: theme.muted }}>Use Face ID, fingerprint, or your device passcode.</Text>
@@ -72,5 +76,5 @@ export function AppLock({ authReady, protectedScreen }: { authReady: boolean; pr
     <Pressable disabled={busy} onPress={() => void normalSignIn()} style={{ minHeight: 48 }}><Text style={{ color: theme.accent, fontSize: 18 }}>Use normal sign-in</Text></Pressable>
     {message ? <Text accessibilityRole="alert" style={{ color: theme.foreground }}>{message}</Text> : null}
     </>}
-  </View></Modal>;
+  </View>}</Modal>;
 }
