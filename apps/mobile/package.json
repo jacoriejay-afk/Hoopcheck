@@ -51,6 +51,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
+    "playwright": "1.62.1",
     "sharp": "0.34.5",
     "typescript": "~5.9.2"
   },

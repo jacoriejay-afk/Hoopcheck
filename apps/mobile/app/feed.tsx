@@ -98,8 +98,8 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
     if (requests.current.has(requestKey)) return;
     requests.current.add(requestKey); setPending(value => ({ ...value, [key]: true })); setMessage("");
     try { await task(); }
-    catch (failure) { setMessage(failure instanceof Error ? failure.message : "The action could not be confirmed. Try again."); }
-    finally { requests.current.delete(requestKey); setPending(value => ({ ...value, [key]: false })); }
+    catch (failure) { if (viewer.current.uid === uid) setMessage(failure instanceof Error ? failure.message : "The action could not be confirmed. Try again."); }
+    finally { requests.current.delete(requestKey); if (viewer.current.uid === uid) setPending(value => ({ ...value, [key]: false })); }
   }
   async function publish() {
     if (!canWrite || draft.owner !== uid || !draft.text.trim()) return;
@@ -154,19 +154,24 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
           <Text style={{ ...textStyle, fontWeight: "800", fontSize: 17 }}>{post.profiles?.display_name || "HoopCheck member"}</Text>
           <Text style={{ color: theme.muted }}>{new Date(post.created_at).toLocaleString()}</Text>
           {post.body ? <Text numberOfLines={reels ? 3 : undefined} style={{ ...textStyle, fontSize: 16, lineHeight: 24 }}>{post.body}</Text> : null}
-          {post.video_url ? <FeedMedia postId={post.id} reference={post.video_url} video enabled={focused && visible.has(post.id)} loop={reels} height={reels ? Math.max(240, height - 230) : 300} /> : photos.map(reference => <FeedMedia key={reference} postId={post.id} reference={reference} enabled={focused && visible.has(post.id)} />)}
-          {post.post_kind === "poll" && options.length ? <FeedPoll postId={post.id} options={options} enabled={canWrite && focused} /> : null}
+          {post.video_url ? <FeedMedia userId={uid!} postId={post.id} reference={post.video_url} video enabled={focused && visible.has(post.id)} loop={reels} height={reels ? Math.max(240, height - 230) : 300} /> : photos.map(reference => <FeedMedia userId={uid!} key={reference} postId={post.id} reference={reference} enabled={focused && visible.has(post.id)} />)}
+          {post.post_kind === "poll" && options.length ? <FeedPoll userId={uid!} postId={post.id} options={options} enabled={canWrite && focused} /> : null}
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
-            <Pressable accessibilityRole="button" aria-pressed={checks[post.id]?.mine === true} disabled={!checks[post.id] || Boolean(pending[`check:${post.id}`])} onPress={() => void action(`check:${post.id}`, async () => {
+            <Pressable accessibilityRole="button" aria-pressed={checks[post.id]?.mine === true} disabled={!canWrite || !checks[post.id] || Boolean(pending[`check:${post.id}`])} onPress={() => void action(`check:${post.id}`, async () => {
               await token();
-              const activity = await toggleFeedCheck(supabase, uid!, post.id, checks[post.id]?.mine === true);
+              let activity;
+              try { activity = await toggleFeedCheck(supabase, uid!, post.id, checks[post.id]?.mine === true); }
+              catch {
+                if (viewer.current.uid === uid) setChecks(previous => { const result = { ...previous }; delete result[post.id]; return result; });
+                throw new Error("Check status could not be confirmed. Refresh the feed before trying again.");
+              }
               if (viewer.current.uid !== uid || !viewer.current.canRead) return;
               const total = activity.find(row => row.post_id === post.id);
               if (total && Number.isSafeInteger(Number(total.checks_count)) && Number(total.checks_count) >= 0) setChecks(previous => ({ ...previous, [post.id]: { count: Number(total.checks_count), mine: total.checked_by_me === true } }));
             })} style={touch}><Text style={linkStyle}>{!checks[post.id] ? "Checks unavailable" : checks[post.id].mine ? "Checked" : "Check"}{checks[post.id] ? ` · ${checks[post.id].count}` : ""}</Text></Pressable>
             <Pressable accessibilityRole="button" onPress={() => { if (reels) { router.push({ pathname: "/feed", params: { post: post.id, comments: "1" } }); return; } setOpenComments(previous => ({ ...previous, [post.id]: !previous[post.id] })); if (!page || page.error) void loadComments(post.id); }} style={touch}><Text style={linkStyle}>Comments</Text></Pressable>
             <Pressable accessibilityRole="button" onPress={() => void action(`share:${post.id}`, async () => { await Share.share({ title: "HoopFeed", message: `https://hoopcheck.online/feed#post-${post.id}` }); })} style={touch}><Text style={linkStyle}>Share</Text></Pressable>
-            <Pressable accessibilityRole="button" disabled={saved[post.id] === undefined || Boolean(pending[`save:${post.id}`])} onPress={() => void action(`save:${post.id}`, async () => { const value = !saved[post.id]; await feedAction(origin, await token(), "bookmark", post.id, value); if (viewer.current.uid === uid) setSaved(previous => ({ ...previous, [post.id]: value })); })} style={touch}><Text style={linkStyle}>{saved[post.id] === undefined ? "Saved status unavailable" : saved[post.id] ? "Saved" : "Save"}</Text></Pressable>
+            <Pressable accessibilityRole="button" disabled={!canWrite || saved[post.id] === undefined || Boolean(pending[`save:${post.id}`])} onPress={() => void action(`save:${post.id}`, async () => { const value = !saved[post.id]; await feedAction(origin, await token(), "bookmark", post.id, value); if (viewer.current.uid === uid) setSaved(previous => ({ ...previous, [post.id]: value })); })} style={touch}><Text style={linkStyle}>{saved[post.id] === undefined ? "Saved status unavailable" : saved[post.id] ? "Saved" : "Save"}</Text></Pressable>
           </View>
           {openComments[post.id] && !reels ? <View style={{ gap: 12 }}>
             {page?.loading ? <Text style={textStyle}>Loading comments…</Text> : page?.error ? <Text accessibilityRole="alert" style={textStyle}>{page.error}</Text> : !page?.rows.length ? <Text style={{ color: theme.muted }}>No comments yet.</Text> : page.rows.map(comment => <View key={comment.id} style={{ paddingLeft: comment.parent_id ? 12 : 0, borderLeftWidth: comment.parent_id ? 2 : 0, borderColor: theme.border }}><Text style={{ ...textStyle, fontWeight: "700" }}>{comment.profiles?.display_name || "HoopCheck member"}</Text><Text style={textStyle}>{comment.body}</Text><Pressable accessibilityRole="button" accessibilityLabel={`Reply to ${comment.profiles?.display_name || "HoopCheck member"}`} onPress={() => setReply({ owner: uid!, postId: post.id, id: comment.id, name: comment.profiles?.display_name || "HoopCheck member" })} style={touch}><Text style={linkStyle}>Reply</Text></Pressable></View>)}

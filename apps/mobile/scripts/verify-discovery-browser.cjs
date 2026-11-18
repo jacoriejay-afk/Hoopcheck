@@ -56,7 +56,8 @@ const rows = {
       await page.getByRole('heading',{name:'Olympia Women League',exact:true}).waitFor();
       await page.getByText('Olympia Women',{exact:true}).filter({visible:true}).click();
       await page.getByRole('heading',{name:'Olympia Women',exact:true}).waitFor();
-      await page.getByRole('tab',{name:'Teams',exact:true}).click();
+      await page.getByRole('tab',{name:'Home',exact:true}).click();
+      await page.getByText('Teams',{exact:true}).filter({visible:true}).click();
       await page.getByText('Explore men’s professional basketball teams before you sign.',{exact:true}).waitFor();
       await page.getByText('Browse women’s teams',{exact:true}).click();
       await page.getByText('Explore women’s professional basketball teams before you sign.',{exact:true}).filter({visible:true}).waitFor();

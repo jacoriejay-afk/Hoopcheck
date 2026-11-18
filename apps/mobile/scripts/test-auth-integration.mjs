@@ -15,7 +15,7 @@ function compile(path, imports, globals = {}) {
   return compiled.exports;
 }
 const theme = { radius: { control: 16 }, type: { display: {} } };
-function screen(path, { state = [], params = {}, segments = [], configurationError = null, pendingDestination = null, supabase = {} } = {}) {
+function screen(path, { state = [], params = {}, segments = [], pathname = "/", configurationError = null, pendingDestination = null, supabase = {} } = {}) {
   const calls = { push: [], replace: [], alerts: [], oauthUrls: [], freshSignIns: 0, remembered: [] };
   const effects = [];
   let slot = 0;
@@ -25,7 +25,7 @@ function screen(path, { state = [], params = {}, segments = [], configurationErr
   const imports = name => {
     if (name === "react") return { useState: initial => [state[slot++] ?? initial, () => {}], useEffect: f => effects.push(f) };
     if (name === "react-native") return { Platform: { OS: "ios" }, StyleSheet: { create: s => s }, Alert: { alert: (...args) => calls.alerts.push(args) }, AccessibilityInfo: { isReduceMotionEnabled: async () => false }, Image: "Image", ScrollView: "ScrollView", Text: "Text", View: "View", Pressable: "Pressable", KeyboardAvoidingView: "KeyboardAvoidingView", ActivityIndicator: "ActivityIndicator" };
-    if (name === "expo-router") return { Stack, Link: "Link", useRouter: () => router, useLocalSearchParams: () => params, useGlobalSearchParams: () => params, useSegments: () => segments, usePathname: () => "/" };
+    if (name === "expo-router") return { Stack, Link: "Link", useRouter: () => router, useLocalSearchParams: () => params, useGlobalSearchParams: () => params, useSegments: () => segments, usePathname: () => pathname };
     if (name === "expo-linking") return { createURL: p => `hoopcheck://${p}`, openURL: async url => calls.oauthUrls.push(url) };
     if (name === "expo-font") return { useFonts: () => [true, null] };
     if (name === "expo-status-bar") return { StatusBar: "StatusBar" };
@@ -176,5 +176,20 @@ test("OAuth exchange screen does not trigger app lock before fresh sign-in is re
   for (const [segments, expected] of [[["auth", "callback"], false], [["dashboard"], true]]) {
     const f = screen("app/_layout.tsx", { state: [true, true], segments });
     assert.equal(f.nodes.find(node => node.type === "AppLock").props.protectedScreen, expected);
+  }
+});
+
+
+test("protected native links preserve bounded post/search destinations without retaining auth secrets", () => {
+  const id = "11111111-1111-4111-8111-111111111111";
+  for (const [segments, pathname, params, expected] of [
+    [["feed"], "/feed", { post: id, code: "secret" }, `/feed?post=${id}`],
+    [["feed"], "/feed", { post: "bad" }, "/feed"],
+    [["search"], "/search", { q: "x".repeat(200), token: "secret" }, "/search?q=" + "x".repeat(100)],
+  ]) {
+    const f = screen("app/_layout.tsx", { state: [true, false], segments, pathname, params });
+    f.effects[2]();
+    assert.deepEqual(f.calls.remembered, [expected]);
+    assert.deepEqual(f.calls.replace, ["/sign-in"]);
   }
 });

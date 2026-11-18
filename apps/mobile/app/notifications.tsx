@@ -13,6 +13,7 @@ export default function Notifications() {
   const router = useRouter();
   const { offline } = useNetwork();
   const generation = useRef(0);
+  const focused = useRef(false);
   const owner = useRef<string | null>(null);
   const marking = useRef(false);
   const [rows, setRows] = useState<Notice[]>([]);
@@ -36,11 +37,20 @@ export default function Notifications() {
       if (current === generation.current) { setFailed(true); setError(failure instanceof Error ? failure.message : "Alerts could not load. Try again."); }
     } finally { if (current === generation.current) setLoading(false); }
   }, [offline]);
-  useFocusEffect(useCallback(() => { void load(); return () => { generation.current++; owner.current = null; setRows([]); }; }, [load]));
+  useFocusEffect(useCallback(() => {
+    focused.current = true; void load();
+    return () => { focused.current = false; generation.current++; owner.current = null; setRows([]); };
+  }, [load]));
   useEffect(() => {
-    const { data } = supabase.auth.onAuthStateChange(() => { generation.current++; owner.current = null; setRows([]); setFailed(true); setError("Verify your session to reload alerts."); });
-    return () => data.subscription.unsubscribe();
-  }, []);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const { data } = supabase.auth.onAuthStateChange(() => {
+      generation.current++; owner.current = null; setRows([]);
+      clearTimeout(timer);
+      // Leave the auth callback before querying Supabase again (its session lock is held).
+      timer = setTimeout(() => { if (focused.current) void load(); }, 0);
+    });
+    return () => { clearTimeout(timer); data.subscription.unsubscribe(); };
+  }, [load]);
   async function markAll() {
     if (marking.current || failed || offline || !owner.current) return;
     marking.current = true; setBusy(true); setError("");
