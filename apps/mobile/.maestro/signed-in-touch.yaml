@@ -1,0 +1,32 @@
+appId: online.hoopcheck.app
+---
+# Run against a locally installed candidate with an isolated test account already
+# signed in and onboarding complete. Never clears app data or spends an EAS build.
+- launchApp
+- tapOn:
+    id: tab-home
+- assertVisible: Explore basketball
+- scrollUntilVisible:
+    element:
+      text: Sign out
+    direction: DOWN
+- scrollUntilVisible:
+    element:
+      id: directory-teams
+    direction: UP
+- tapOn:
+    id: directory-teams
+- assertVisible:
+    id: tab-home
+- tapOn:
+    id: tab-leagues
+- assertVisible: Leagues
+- tapOn:
+    id: tab-players
+- assertVisible: Find players
+- tapOn:
+    id: tab-settings
+- assertVisible: Settings
+- tapOn:
+    id: tab-home
+- assertVisible: Explore basketball

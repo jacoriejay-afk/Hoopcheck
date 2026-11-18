@@ -40,7 +40,8 @@ export function TabBar() {
   if (index < 0) return null;
   return <View onLayout={event => setWidth(event.nativeEvent.layout.width)} style={{ backgroundColor: theme.surface, paddingBottom: insets.bottom, borderTopWidth: 1, borderColor: theme.border }}>
     <Animated.View pointerEvents="none" style={[{ position: "absolute", top: 0, left: 0, height: 3, width: width / tabs.length, backgroundColor: theme.accent }, indicator]} />
-    <View accessibilityRole="tablist" style={{ flexDirection: "row" }}>{tabs.map((tab, i) => <Pressable key={tab.route} accessibilityRole="tab" accessibilityState={{ selected: index === i }} accessibilityLabel={tab.label} onPress={() => { if (path !== tab.route) { pending.current = tab.route; router.navigate(tab.route); } }} style={{ flex: 1, minHeight: 60, justifyContent: "center", alignItems: "center", gap: 4 }}>
+    <View accessibilityRole="tablist" style={{ flexDirection: "row" }}>{tabs.map((tab, i) => <Pressable key={tab.route} testID={`tab-${tab.label.toLowerCase()}`} accessibilityRole="tab" accessibilityState={{ selected: index === i }} accessibilityLabel={tab.label} onPress={() => { if (path !== tab.route) { pending.current = tab.route; router.navigate(tab.route); } }} style={{ flex: 1, minHeight: 60, justifyContent: "center", alignItems: "center", gap: 4 }}>
+
       <Ionicons name={index === i ? tab.active : tab.icon} size={22} color={index === i ? theme.accent : theme.muted} />
       <Text style={{ fontSize: 11, color: index === i ? theme.accent : theme.muted }}>{tab.label}</Text>
     </Pressable>)}</View>
