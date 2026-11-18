@@ -19,3 +19,13 @@ authenticated no-store requests, server failures and rejecting unsafe API origin
 before sending a token. TypeScript, native contracts, changed-file ESLint and local
 iOS export pass. Isolated deployment account/RLS and physical-device checks remain
 release gates. Profile customization and store purchases are not implemented here.
+
+## Build 8 integration verification
+
+The account API is now merged through #706. This branch integrates the verified
+OAuth, preference, appearance and women’s directory repairs. The account request
+contracts, TypeScript, auth routing and lint pass with those changes. The separate
+community integration browser fixture also renders this account screen with a
+verified synthetic Pro membership in light and dark and navigates through native
+Settings. Hosted account, sign-out failure, identity transition and physical
+iPhone checks remain release verification; synthetic results do not prove them.

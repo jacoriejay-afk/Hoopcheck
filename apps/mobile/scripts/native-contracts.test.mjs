@@ -85,6 +85,16 @@ test("Sentry retains allowlisted flow timing and bundled symbolication locations
 });
 
 
+test("women's canonical team routes open natively and retain identity", () => {
+  for (const prefix of ["https://hoopcheck.online", "hoopcheck:/", ""]) {
+    assert.equal(nativeDestination(`${prefix}/womens/abc-123`), "/womens/abc-123");
+    assert.equal(nativeDestination(`${prefix}/womens`), "/womens");
+    assert.equal(nativeDestination(`${prefix}/womens/leagues/abc-123`), "/womens/leagues/abc-123");
+  }
+  assert.equal(nativeDestination("hoopcheck://womens/abc-123"), "/womens/abc-123");
+  assert.equal(nativeDestination("https://evil.example/womens/abc-123"), "/");
+});
+
 test("native PKCE callbacks preserve the code instead of opening the website", () => {
   for (const prefix of ["hoopcheck://auth", "hoopcheck:///auth", "https://hoopcheck.online/auth", "/auth"]) {
     assert.equal(nativeDestination(`${prefix}/callback?code=fixture-code`), "/auth/callback?code=fixture-code");
