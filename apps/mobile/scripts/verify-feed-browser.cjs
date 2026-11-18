@@ -12,7 +12,7 @@ const videoPath=process.env.FIXTURE_VIDEO || require('node:path').join(__dirname
 let png;
 async function fixture(browser,theme,allowed=true){
   const context=await browser.newContext({viewport:{width:390,height:844},colorScheme:theme});
-  const calls=[],errors=[];let mediaFailed=false;let denied=false,checked=false,saved=false,vote=null,read=false;
+  const calls=[],errors=[];let mediaFailed=false;let denied=false,checked=false,saved=false,vote=null,read=false,pollDeclined=false;
   const posts=[
     {id:id(1),body:'Fixture community discussion',image_url:'protected/photo.png',post_kind:'discussion'},
     {id:id(2),body:'Fixture poll',post_kind:'poll',poll_options:['Home team','Away team']},
@@ -41,6 +41,12 @@ async function fixture(browser,theme,allowed=true){
           const comment={id:id(9),post_id:fields.post_id,author_id:uid,body:fields.text,parent_id:fields.parent_id||null,created_at:'2026-11-18T12:00:00Z'};
           assert.equal(comment.parent_id,id(8));comments.push(comment);return json({allowed:true,comment});
         }
+        if(fields.post_kind==='poll'){
+          assert.equal(fields.kind,'post');assert.equal(fields.text,'Fixture new poll?');assert.deepEqual(JSON.parse(fields.poll_options),['Home','Away']);
+          if(!pollDeclined){pollDeclined=true;return json({allowed:false,message:'Fixture poll moderation declined.'},400);}
+          posts.unshift({id:id(20),author_id:uid,created_at:'2026-11-18T12:00:00Z',expires_at:null,profiles:{display_name:'Fixture Member',account_type:'player'},body:fields.text,post_kind:'poll',poll_options:JSON.parse(fields.poll_options)});
+          return json({allowed:true});
+        }
         if(!denied){denied=true;return json({allowed:false,message:'Fixture moderation declined; draft retained.'},400);}
         assert.equal(fields.text,'Fixture draft stays');return json({allowed:true});
       }
@@ -58,7 +64,7 @@ async function fixture(browser,theme,allowed=true){
       if(table==='get_hoopfeed_check_totals')return json(JSON.parse(body).post_ids.map(post_id=>({post_id,checks_count:checked?1:0,checked_by_me:checked})));
       if(table==='feed_post_checks'){checked=method==='POST';return route.fulfill({status:204});}
       if(table==='get_hoopfeed_poll_totals')return json([0,1].map(option_index=>({option_index,votes_count:vote===option_index?1:0,voted_by_me:vote===option_index})));
-      if(table==='feed_post_comments')return json(comments);
+      if(table==='feed_post_comments')return json(comments.filter(comment=>url.searchParams.get('post_id')===`eq.${comment.post_id}`));
       if(table==='notifications'){
         assert.equal(url.searchParams.get('user_id'),`eq.${uid}`);
         if(method==='PATCH'){assert.equal(url.searchParams.get('read_at'),'is.null');read=true;return json([{id:id(7)}]);}
@@ -89,13 +95,19 @@ async function fixture(browser,theme,allowed=true){
     await composer.fill('Fixture draft stays');await page.getByRole('button',{name:'Post',exact:true}).click();
     await page.getByText('Fixture moderation declined; draft retained.',{exact:true}).waitFor();assert.equal(await composer.inputValue(),'Fixture draft stays');
     await page.getByRole('button',{name:'Post',exact:true}).click();await page.getByText('Published after safety checks.',{exact:true}).waitFor();assert.equal(await composer.inputValue(),'');
-    await page.getByRole('button',{name:'Comments',exact:true}).first().click();
+    await page.getByRole('tab',{name:'Poll',exact:true}).click();await composer.fill('Fixture new poll?');
+    await page.getByRole('textbox',{name:'Poll answer 1',exact:true}).fill('Home');await page.getByRole('textbox',{name:'Poll answer 2',exact:true}).fill('home');assert.equal(await page.getByRole('button',{name:'Post',exact:true}).isDisabled(),true);
+    await page.getByRole('textbox',{name:'Poll answer 2',exact:true}).fill('Away');await page.getByRole('button',{name:'Add poll answer',exact:true}).click();await page.getByRole('textbox',{name:'Poll answer 3',exact:true}).fill('Other');await page.getByRole('button',{name:'Remove poll answer 3',exact:true}).click();
+    await page.getByRole('button',{name:'Post',exact:true}).click();await page.getByText('Fixture poll moderation declined.',{exact:true}).waitFor();assert.equal(await composer.inputValue(),'Fixture new poll?');assert.equal(await page.getByRole('textbox',{name:'Poll answer 2',exact:true}).inputValue(),'Away');
+    await page.getByRole('button',{name:'Post',exact:true}).click();await page.getByText('Published after safety checks.',{exact:true}).waitFor();await page.getByText('Fixture new poll?',{exact:true}).waitFor();assert.equal(await composer.inputValue(),'');assert.equal(await page.getByRole('textbox',{name:'Poll answer 1',exact:true}).count(),0);
+    const discussion=page.getByTestId(`feed-post-${id(1)}`);
+    await discussion.getByRole('button',{name:'Comments',exact:true}).click();
     await page.getByText('Original fixture comment',{exact:true}).waitFor();await page.getByRole('button',{name:'Reply to Fixture Member',exact:true}).first().click();
     await page.getByRole('textbox',{name:'Write a comment'}).fill('Fixture reply');await page.getByRole('button',{name:'Comment',exact:true}).click();
     await page.getByText('Fixture reply',{exact:true}).waitFor();
-    await page.getByRole('button',{name:'Check · 0',exact:true}).first().click();await page.getByRole('button',{name:'Checked · 1',exact:true}).first().waitFor();
-    await page.getByRole('button',{name:'Save',exact:true}).first().click();await page.getByRole('button',{name:'Saved',exact:true}).first().waitFor();
-    await page.getByRole('button',{name:'Share',exact:true}).first().click();
+    await discussion.getByRole('button',{name:'Check · 0',exact:true}).click();await discussion.getByRole('button',{name:'Checked · 1',exact:true}).waitFor();
+    await discussion.getByRole('button',{name:'Save',exact:true}).click();await discussion.getByRole('button',{name:'Saved',exact:true}).waitFor();
+    await discussion.getByRole('button',{name:'Share',exact:true}).click();
     assert.ok((await page.evaluate(()=>window.__sharedFeed))?.text?.includes('hoopcheck.online/feed#post-'),'Share uses canonical post link');
     const option=page.getByRole('button',{name:'Home team · 0',exact:true});await option.scrollIntoViewIfNeeded();await option.click();await page.getByRole('button',{name:'Home team · 1 ✓',exact:true}).waitFor();
     await page.getByRole('tab',{name:'Reels',exact:true}).click();

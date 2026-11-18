@@ -10,7 +10,7 @@ import { supabase } from "../src/lib/supabase";
 import { useEntryTheme } from "../src/theme";
 import { useNativeAccount } from "../src/native/useNativeAccount";
 import { useNetwork, requireOnline } from "../src/native/network";
-import { feedAction, isFeedId, moderateFeedText, readFeedChecks, readFeedComments, readFeedPage, readFeedSaved, readSharedFeedPost, toggleFeedCheck, type FeedComment, type FeedCursor, type FeedPost } from "../src/native/feedClient";
+import { feedAction, isFeedId, moderateFeedText, publishFeedPoll, readFeedChecks, readFeedComments, readFeedPage, readFeedSaved, readSharedFeedPost, toggleFeedCheck, validatedPollOptions, type FeedComment, type FeedCursor, type FeedPost } from "../src/native/feedClient";
 // eslint-disable-next-line @typescript-eslint/no-require-imports -- Metro bundles the official local artwork.
 const brandMark = require("../assets/hoopcheck-mark.png");
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
@@ -43,6 +43,11 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
   const requests = useRef(new Set<string>());
   const [pending, setPending] = useState<Record<string, boolean>>({});
   const [draft, setDraft] = useState({ owner: "", text: "" });
+  const [poll, setPoll] = useState({ owner: "", enabled: false, options: ["", ""] });
+  const pollEnabled = poll.owner === uid && poll.enabled;
+  const pollOptions = poll.owner === uid ? poll.options : ["", ""];
+  let pollValid = !pollEnabled;
+  if (pollEnabled) { try { validatedPollOptions(pollOptions); pollValid = true; } catch { /* Keep the draft editable until valid. */ } }
   const [drafts, setDrafts] = useState<{ owner: string; values: Record<string, string> }>({ owner: "", values: {} });
   const [comments, setComments] = useState<{ owner: string; values: Record<string, CommentPage> }>({ owner: "", values: {} });
   const [reply, setReply] = useState<{ owner: string; postId: string; id: string; name: string } | null>(null);
@@ -105,11 +110,13 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
     finally { requests.current.delete(requestKey); if (viewer.current.uid === uid) setPending(value => ({ ...value, [key]: false })); }
   }
   async function publish() {
-    if (!canWrite || draft.owner !== uid || !draft.text.trim()) return;
+    if (!canWrite || draft.owner !== uid || !draft.text.trim() || !pollValid) return;
     const text = draft.text;
     await action("post", async () => {
-      await moderateFeedText(origin, await token(), "post", text);
+      if (pollEnabled) await publishFeedPoll(origin, await token(), text, pollOptions);
+      else await moderateFeedText(origin, await token(), "post", text);
       setDraft(current => current.owner === uid && current.text === text ? { owner: uid!, text: "" } : current);
+      setPoll(current => current.owner === uid ? { owner: uid!, enabled: false, options: ["", ""] } : current);
       if (viewer.current.scope === scope && viewer.current.canRead) { setMessage("Published after safety checks."); await load(); }
     });
   }
@@ -149,8 +156,10 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
           <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: "#171717", alignItems: "center", justifyContent: "center" }}><Text style={{ color: "#FF8A5C", fontWeight: "900", fontSize: 12 }}>HC</Text></View><Text style={{ color: theme.muted, fontSize: 14 }}>Share something…</Text>
         </Pressable> : <View style={{ gap: 12, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 18, backgroundColor: theme.surface }}>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}><Text style={{ ...textStyle, fontSize: 22, fontWeight: "700" }}>Create a post</Text><Pressable accessibilityRole="button" onPress={() => setComposerExpanded(false)} style={touch}><Text style={textStyle}>Close</Text></Pressable></View>
-          <TextInput accessibilityLabel="Write a HoopFeed post" multiline maxLength={2000} placeholder="Start a post... (ask, share, discuss, update)" placeholderTextColor={theme.muted} value={draft.owner === uid ? draft.text : ""} onChangeText={text => setDraft({ owner: uid!, text })} style={{ ...textStyle, fontSize: 15, lineHeight: 23, minHeight: 90, maxHeight: 220, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: theme.radius.control, backgroundColor: theme.input }} />
-          <Button style={{ minHeight: 44, borderRadius: 999, alignSelf: "flex-end", paddingHorizontal: 24 }} disabled={!canWrite || pending.post || draft.owner !== uid || !draft.text.trim()} onPress={() => void publish()}>{pending.post ? "Checking safety…" : "Post"}</Button>
+          <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 8 }}>{[false, true].map(enabled => <Pressable key={String(enabled)} accessibilityRole="tab" accessibilityState={{ selected: pollEnabled === enabled }} disabled={pending.post} onPress={() => setPoll(current => ({ owner: uid!, enabled, options: current.owner === uid ? current.options : ["", ""] }))} style={[touch, { borderColor: pollEnabled === enabled ? theme.accent : theme.border }]}><Text style={textStyle}>{enabled ? "Poll" : "Discussion"}</Text></Pressable>)}</View>
+          <TextInput accessibilityLabel="Write a HoopFeed post" multiline maxLength={2000} editable={!pending.post} placeholder={pollEnabled ? "Ask your poll question…" : "Start a post... (ask, share, discuss, update)"} placeholderTextColor={theme.muted} value={draft.owner === uid ? draft.text : ""} onChangeText={text => setDraft({ owner: uid!, text })} style={{ ...textStyle, fontSize: 15, lineHeight: 23, minHeight: 90, maxHeight: 220, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: theme.radius.control, backgroundColor: theme.input }} />
+          {pollEnabled ? <View style={{ gap: 8 }}><Text style={{ color: theme.muted }}>Add 2–4 different answers, up to 60 characters each. Polls are text only.</Text>{pollOptions.map((option, index) => <View key={index} style={{ flexDirection: "row", gap: 8, alignItems: "center" }}><TextInput accessibilityLabel={`Poll answer ${index + 1}`} value={option} maxLength={60} editable={!pending.post} onChangeText={value => setPoll(current => current.owner === uid ? { ...current, options: current.options.map((item, i) => i === index ? value : item) } : current)} style={{ ...textStyle, flex: 1, minHeight: 48, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: theme.radius.control, backgroundColor: theme.input }} />{pollOptions.length > 2 ? <Pressable accessibilityRole="button" accessibilityLabel={`Remove poll answer ${index + 1}`} disabled={pending.post} onPress={() => setPoll(current => current.owner === uid ? { ...current, options: current.options.filter((_, i) => i !== index) } : current)} style={touch}><Text style={linkStyle}>Remove</Text></Pressable> : null}</View>)}{pollOptions.length < 4 ? <Button secondary disabled={pending.post} onPress={() => setPoll(current => current.owner === uid ? { ...current, options: [...current.options, ""] } : current)}>Add poll answer</Button> : null}</View> : null}
+          <Button style={{ minHeight: 44, borderRadius: 999, alignSelf: "flex-end", paddingHorizontal: 24 }} disabled={!canWrite || pending.post || draft.owner !== uid || !draft.text.trim() || !pollValid} onPress={() => void publish()}>{pending.post ? "Checking safety…" : "Post"}</Button>
         </View>}
         {!canWrite ? <Text style={{ color: theme.muted, marginTop: 8 }}>Your membership does not include posting.</Text> : null}
       </View> : null}
@@ -162,7 +171,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
         const commentDraft = drafts.owner === uid ? drafts.values[post.id] ?? "" : "";
         const photos = (Array.isArray(post.image_urls) && post.image_urls.length ? post.image_urls : post.image_url ? [post.image_url] : []).filter((value): value is string => typeof value === "string").slice(0, 4);
         const options = Array.isArray(post.poll_options) ? post.poll_options.filter((value): value is string => typeof value === "string").slice(0, 6).map(value => value.slice(0, 120)) : [];
-        return <View style={reels ? { height, padding: 12 } : undefined}><View style={{ padding: 14, gap: 10, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, borderRadius: theme.radius.card, ...(reels ? { flex: 1 } : {}) }}>
+        return <View style={reels ? { height, padding: 12 } : undefined}><View testID={`feed-post-${post.id}`} style={{ padding: 14, gap: 10, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, borderRadius: theme.radius.card, ...(reels ? { flex: 1 } : {}) }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 11 }}>
             <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: theme.chip, alignItems: "center", justifyContent: "center" }}><Text style={{ color: theme.onChip, fontWeight: "800", fontSize: 12 }}>HC</Text></View>
             <View style={{ flex: 1, gap: 3 }}><Text style={{ ...textStyle, fontWeight: "700", fontSize: 13 }}>{post.profiles?.display_name || "HoopCheck member"}</Text><Text style={{ color: theme.muted, fontSize: 11 }}>{new Date(post.created_at).toLocaleString()}</Text></View>
