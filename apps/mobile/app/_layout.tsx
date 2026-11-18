@@ -65,7 +65,7 @@ function RootLayout() {
   useEffect(() => {
     if (!sessionReady) return;
     const currentRoute = segments[0] ?? "";
-    const inAppArea = ["dashboard", "account", "search", "teams", "leagues", "players", "coaches", "choose-username", "settings"].includes(currentRoute);
+    const inAppArea = ["dashboard", "account", "feed", "notifications", "search", "teams", "leagues", "players", "coaches", "choose-username", "settings"].includes(currentRoute);
     if (["web", "sign-in", "sign-up"].includes(currentRoute)) return;
     const onPasswordRecovery = currentRoute === "reset-password";
     // Let the OAuth callback exchange its PKCE code and choose the destination.
@@ -109,6 +109,8 @@ function RootLayout() {
           contentStyle: { backgroundColor: theme.background },
         }} />
         <Stack.Screen name="account" options={{ title: "Account" }} />
+        <Stack.Screen name="feed" options={{ title: "HoopFeed™" }} />
+        <Stack.Screen name="notifications" options={{ title: "Alerts" }} />
         <Stack.Screen name="search" options={{ title: "Search" }} />
         <Stack.Screen name="players" options={{ title: "Find players" }} />
         <Stack.Screen name="players/[id]" options={{ title: "Player profile" }} />
