@@ -61,7 +61,7 @@ export default function TeamDetailScreen() {
       if (!id) { setError(true); setLoading(false); return; }
       const { data, error: queryError } = await read(`teams:profile:${womens ? "womens" : "mens"}:${id}`, () => (womens ? supabase.from("womens_teams").select("id,name,country,city,league_name").eq("id", id).eq("active", true).maybeSingle() : supabase.from("teams").select("id,name,country,city,league_name,website").eq("id", id).eq("active", true).eq("basketball_type", "mens").maybeSingle()));
       if (!alive) return;
-      if (queryError || !data) { setError(true); setTeam(null); } else { setError(false); setTeam({ id: data.id, name: data.name, country: data.country, city: data.city, league_name: data.league_name, website: womens ? null : (data as Team).website }); }
+      if (queryError || !data) { setError(true); setTeam(null); } else { setError(false); setTeam({ ...(data as unknown as Team), website: womens ? null : (data as unknown as Team).website }); }
       setLoading(false);
       setRefreshing(false);
     }
