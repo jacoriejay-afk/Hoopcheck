@@ -22,3 +22,20 @@ failure isolation, short queries and destination validation. TypeScript and
 changed-file ESLint pass. Device visuals, keyboard, scrolling and fast search-term
 changes remain unverified here. This does not implement native HoopFeed, Reels,
 chat, purchases or account customization and is not full parity.
+
+
+## Repeatable browser fixtures
+
+Export from apps/mobile with the synthetic configuration (never production keys):
+`EXPO_PUBLIC_SUPABASE_URL=https://fixture.supabase.co EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=fixture-publishable-key EXPO_PUBLIC_HOOPCHECK_API_URL=https://api.test npx expo export --platform web --clear --output-dir /tmp/hoopcheck-search-fixture-web`.
+Serve that output on localhost:8090, then run
+`node apps/mobile/scripts/verify-discovery-browser.cjs` with Playwright installed.
+The harness seeds a synthetic session, intercepts all backend requests, aborts
+unknown external requests and refuses non-local app origins. It checks homepage
+search, women’s team/league navigation, return-to-directory tabs and denied review
+content at 390x844 in light and dark themes. Both flows pass. Screenshots are written
+to /tmp/hoopcheck-native-ui. React Native Web does not exercise UIKit touch delivery.
+
+Earlier exports through shared node_modules symlinks were discarded as evidence.
+The verified iOS export uses an independent npm ci, and its Hermes bytecode contains
+the new route/search code. Device-level verification remains outstanding.
