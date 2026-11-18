@@ -70,7 +70,7 @@ export default function DashboardScreen() {
         <View style={styles.content}>
           <Pressable accessibilityRole="link" accessibilityLabel="Search players" onPress={() => router.push("/players")} style={[styles.searchShortcut, { backgroundColor: theme.surface, borderColor: theme.border }]}>
             <Ionicons name="search-outline" size={19} color={theme.muted} />
-            <Text style={[styles.searchPlaceholder, { color: theme.muted }]}>Search players, coaches, teams, or leagues…</Text>
+            <Text style={[styles.searchPlaceholder, { color: theme.muted }]}>Search players by username…</Text>
           </Pressable>
           <View style={styles.greeting}>
             <View style={styles.greetingTop}>
