@@ -25,7 +25,7 @@ export function GamePrediction({ game, userId, homeName, awayName, active }: { g
         const { data, error } = await supabase.auth.getSession();
         if (error || data.session?.user.id !== userId) throw new Error("Missing session");
         const prediction = await readPrediction(origin, data.session.access_token, game.id);
-        if (valid) setSnapshot({ scope, data: prediction });
+        if (valid) { setSnapshot({ scope, data: prediction }); setMessage(previous => previous === "Predictions could not load. Reconnecting…" ? "" : previous); }
       } catch { if (valid) { setSnapshot(null); setMessage("Predictions could not load. Reconnecting…"); } }
     };
     void refresh(); const timer = setInterval(() => void refresh(), 15000);

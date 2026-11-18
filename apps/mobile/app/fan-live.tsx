@@ -6,10 +6,10 @@ import { GameChat } from "../components/GameChat";
 import { GamePrediction } from "../components/GamePrediction";
 import { useNativeAccount } from "../src/native/useNativeAccount";
 import { useActiveScreen } from "../src/native/useActiveScreen";
-import { useNetwork } from "../src/native/network";
+import { requireOnline, useNetwork } from "../src/native/network";
 import { useEntryTheme } from "../src/theme";
 import { supabase } from "../src/lib/supabase";
-import { readLiveGames } from "../src/native/liveGames";
+import { readBasketballSide, readLiveGames, saveBasketballSide } from "../src/native/liveGames";
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
 type Games = Awaited<ReturnType<typeof readLiveGames>>;
 export default function LiveGames() {
@@ -21,19 +21,27 @@ export default function LiveGames() {
   const active = useActiveScreen();
   useFocusEffect(useCallback(() => { retry(); }, [retry]));
   const uid = account?.user.id;
-  const [side, setSide] = useState<"mens" | "womens">("mens");
+  const [error, setError] = useState("");
+  const [sideChoice, setSideChoice] = useState<{ owner: string; side: "mens" | "womens" } | null>(null);
+  const side = sideChoice && sideChoice.owner === uid ? sideChoice.side : "mens";
+  const [savingSide, setSavingSide] = useState(false);
   const [panel, setPanel] = useState<"chat" | "predictions">("chat");
   useEffect(() => { if (account?.user.accountType === "player" && !account.features.canUseLiveGameChat) setPanel("predictions"); }, [account?.user.accountType, account?.features.canUseLiveGameChat]);
   const allowed = Boolean(uid && !offline && (account.features.canUseLiveGameHub || account.user.accountType === "player"));
   const scope = `${uid ?? ""}:${side}`;
+  useEffect(() => {
+    if (!allowed || !uid) { setSideChoice(null); return; }
+    let valid = true;
+    void readBasketballSide(supabase, uid).then(value => { if (valid) setSideChoice({ owner: uid, side: value }); }).catch(() => { if (valid) setError("Game preferences could not load. Verify access again."); });
+    return () => { valid = false; };
+  }, [allowed, uid]);
   const viewer = useRef({ scope, allowed });
   useLayoutEffect(() => { viewer.current = { scope, allowed }; }, [scope, allowed]);
   const [snapshot, setSnapshot] = useState<{ scope: string; data: Games } | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [revision, setRevision] = useState(0);
   useEffect(() => {
-    if (!allowed || !uid || !active) { setSnapshot(null); return; }
+    if (!allowed || !uid || sideChoice?.owner !== uid || !active) { setSnapshot(null); return; }
     let valid = true, inFlight = false;
     const load = async () => {
       if (inFlight) return; inFlight = true; setLoading(true); setError("");
@@ -47,18 +55,30 @@ export default function LiveGames() {
     };
     void load(); const timer = setInterval(() => void load(), 20000);
     return () => { valid = false; clearInterval(timer); };
-  }, [allowed, uid, active, side, scope, revision, account?.features.canUseLiveGameHub]);
+  }, [allowed, uid, active, side, sideChoice?.owner, scope, revision, account?.features.canUseLiveGameHub]);
   const data = allowed && snapshot?.scope === scope ? snapshot.data : null;
   const game = typeof gameId === "string" ? data?.games.find(item => item.id === gameId) : undefined;
   const textStyle = { color: theme.foreground };
   if (accountLoading) return <View style={{ flex: 1, backgroundColor: theme.background, padding: 24 }}><Text style={textStyle}>Verifying game access…</Text></View>;
   if (!allowed || !account) return <View style={{ flex: 1, backgroundColor: theme.background, padding: 24, gap: 16, justifyContent: "center" }}><Text accessibilityRole="header" style={{ ...textStyle, fontSize: 28, fontWeight: "900" }}>Live Games</Text><Text style={textStyle}>{offline ? "Reconnect to verify game access." : account ? "Live Games chat is available to eligible Pro and Premium members. Free players retain game predictions." : accountError}</Text><Button secondary onPress={retry}>Verify access again</Button><Button secondary onPress={() => router.push("/account")}>Your account</Button></View>;
+  async function chooseSide(value: "mens" | "womens") {
+    if (!account?.features.canSwitchBasketballSide || !uid || sideChoice?.owner !== uid || savingSide) return;
+    setSavingSide(true); setError("");
+    try {
+      await requireOnline();
+      const session = await supabase.auth.getSession();
+      if (session.error || session.data.session?.user.id !== uid || !viewer.current.allowed) throw new Error("Session changed");
+      await saveBasketballSide(supabase, uid, value);
+      if (viewer.current.scope === scope) setSideChoice({ owner: uid, side: value });
+    } catch { if (viewer.current.scope === scope) setError("Basketball preference could not be saved. Try again."); }
+    finally { setSavingSide(false); }
+  }
   const chatEnabled = active && account.features.canUseLiveGameChat && !offline;
   return <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={100} style={{ flex: 1, backgroundColor: theme.background }}>
     <View style={{ padding: 16, gap: 10 }}>
       {!game ? <><Text accessibilityRole="header" style={{ ...textStyle, fontSize: 28, fontWeight: "900" }}>Live Games</Text>
-      <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 16 }}>{(["mens", "womens"] as const).map(value => <Pressable key={value} accessibilityRole="tab" aria-selected={side === value} accessibilityState={{ selected: side === value }} onPress={() => setSide(value)} style={{ minHeight: 44, justifyContent: "center", borderBottomWidth: side === value ? 3 : 0, borderColor: theme.accent }}><Text style={{ color: theme.foreground, fontWeight: "800" }}>{value === "mens" ? "Men" : "Women"}</Text></Pressable>)}</View></> : null}
-      {error ? <Text accessibilityRole="alert" style={{ color: theme.muted }}>{error}</Text> : null}
+      {account.features.canSwitchBasketballSide ? <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 16 }}>{(["mens", "womens"] as const).map(value => <Pressable key={value} accessibilityRole="tab" aria-selected={side === value} accessibilityState={{ selected: side === value }} disabled={savingSide || sideChoice?.owner !== uid} onPress={() => void chooseSide(value)} style={{ minHeight: 44, justifyContent: "center", borderBottomWidth: side === value ? 3 : 0, borderColor: theme.accent }}><Text style={{ color: theme.foreground, fontWeight: "800" }}>{value === "mens" ? "Men" : "Women"}</Text></Pressable>)}</View> : <Text style={{ color: theme.muted }}>{side === "mens" ? "Men’s basketball" : "Women’s basketball"}</Text>}</> : null}
+      {error ? <View style={{ gap: 8 }}><Text accessibilityRole="alert" style={{ color: theme.muted }}>{error}</Text><Button secondary onPress={retry}>Verify access again</Button></View> : null}
       {gameId ? <Button secondary onPress={() => router.replace("/fan-live")}>All games</Button> : null}
     </View>
     {game ? <View style={{ flex: 1, paddingHorizontal: 16, paddingBottom: 12, gap: 10 }}>

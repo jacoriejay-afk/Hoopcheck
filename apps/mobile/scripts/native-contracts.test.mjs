@@ -121,3 +121,10 @@ test("auth errors and malformed escapes are safely re-encoded and oversized link
   assert.equal(nativeDestination("hoopcheck://auth/callback?code=" + "x".repeat(9000)), "/");
   assert.equal(nativeDestination("hoopcheck://reset-password?code=fixture-code"), "/reset-password?code=fixture-code");
 });
+
+
+test("Live Games links preserve the canonical game and reject malformed IDs", () => {
+  const id = "11111111-1111-4111-8111-000000000001";
+  assert.equal(nativeDestination(`hoopcheck://fan-live?gameId=${id}`), `/fan-live?gameId=${id}`);
+  assert.equal(nativeDestination("/fan-live?gameId=../secret"), "/fan-live");
+});

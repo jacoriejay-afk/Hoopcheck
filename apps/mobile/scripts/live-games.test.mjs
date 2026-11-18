@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createClient } from '@supabase/supabase-js';
-import { readLiveGames, readGameRoom, sendGameMessage, setGameChatControl, reportGameMessage, readPrediction, pickGameWinner } from '../src/native/liveGames.ts';
+import { readBasketballSide, saveBasketballSide, readLiveGames, readGameRoom, sendGameMessage, setGameChatControl, reportGameMessage, readPrediction, pickGameWinner } from '../src/native/liveGames.ts';
 const id=n=>`11111111-1111-4111-8111-${String(n).padStart(12,'0')}`;
 const now=new Date('2026-11-18T12:00:00Z');
 const game=(n,overrides={})=>({id:id(n),team_id:id(10),opponent_team_id:id(11),opponent_name:'Away',status:'scheduled',scheduled_at:'2026-11-18T12:30:00Z',...overrides});
@@ -61,4 +61,20 @@ test('predictions use verified server state and never fabricate lock, counts or 
   for(const invalid of [{...data,locked:'false'},{...data,total_picks:-1},{...data,results:{winner_team_id:id(10),total_picks:1,correct_picks:1,winner_percent:101}}])await assert.rejects(readPrediction('https://api.test','token',id(1),async()=>Response.json(invalid)));
   await pickGameWinner('https://api.test','token',id(1),id(10),async(_,options)=>{assert.deepEqual(JSON.parse(options.body),{gameId:id(1),pickedTeamId:id(10)});return Response.json({ok:true,picked_team_id:id(10)});});
   await assert.rejects(pickGameWinner('https://api.test','token',id(1),id(10),async()=>Response.json({error:'locked'},{status:409})),/locked/);
+});
+
+
+test('basketball preference reads and explicit saves target only the caller and confirm durable result',async()=>{
+  const calls=[];const db=client(async(input,options)=>{calls.push({url:new URL(String(input)),options});return Response.json({preferred_basketball_side:'womens'});});
+  assert.equal(await readBasketballSide(db,id(30)),'womens');await saveBasketballSide(db,id(30),'womens');
+  for(const call of calls)assert.equal(call.url.searchParams.get('id'),`eq.${id(30)}`);
+  assert.equal(calls[0].options.method,'GET');assert.equal(calls[1].options.method,'PATCH');assert.deepEqual(JSON.parse(calls[1].options.body),{preferred_basketball_side:'womens'});
+  await assert.rejects(saveBasketballSide(client(async()=>Response.json(null)),id(30),'womens'));
+});
+
+test('unresponsive game requests abort after the native deadline instead of leaving an infinite loader',async(t)=>{
+  t.mock.timers.enable({apis:['setTimeout']});
+  let started;const registered=new Promise(resolve=>{started=resolve;});
+  const db=client(async(_,options)=>new Promise((resolve,reject)=>{options.signal.addEventListener('abort',()=>reject(new Error('aborted')),{once:true});started();}));
+  const pending=readBasketballSide(db,id(30));await registered;t.mock.timers.tick(15000);await assert.rejects(pending,/could not load/);
 });

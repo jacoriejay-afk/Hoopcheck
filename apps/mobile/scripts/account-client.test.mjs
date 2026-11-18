@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { parseNativeAccount, requestNativeAccount } from '../src/native/accountClient.ts';
-const input = {user:{id:'11111111-1111-4111-8111-111111111111',displayName:'Fixture',accountType:'player',email:'private@example.test'},entitlements:{tier:'pro',hasPaidMembership:true,canReadHoopFeed:true,canWriteHoopFeed:false,canUseLiveGameHub:true,canUseLiveGameChat:true,canUseFanGroups:false}};
+const input = {user:{id:'11111111-1111-4111-8111-111111111111',displayName:'Fixture',accountType:'player',email:'private@example.test'},entitlements:{tier:'pro',hasPaidMembership:true,canReadHoopFeed:true,canWriteHoopFeed:false,canUseLiveGameHub:true,canUseLiveGameChat:true,canSwitchBasketballSide:false,canUseFanGroups:false}};
 test('native account projects only verified contract fields',()=>{
  const account=parseNativeAccount(input);
  assert.equal(account.tier,'pro');assert.equal(account.features.canWriteHoopFeed,false);
