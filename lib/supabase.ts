@@ -1,3 +1,4 @@
+import { createAuthIntents, browserAuthIntentStore, guardAuthResponses, bindAuthIntents } from "./auth/auth-intents";
 import { createBrowserClient, stringFromBase64URL } from "@supabase/ssr";
 
 export const supabaseUrl =
@@ -33,13 +34,17 @@ export function consumeInitialRecoveryCode() {
   return recovery;
 }
 
+const authIntents = createAuthIntents(browserAuthIntentStore(supabaseUrl));
 export const supabase = createBrowserClient(supabaseUrl, supabaseKey, {
+  global: { fetch: guardAuthResponses(supabaseUrl, authIntents) },
   auth: {
     autoRefreshToken: true,
     detectSessionInUrl: true,
     persistSession: true,
   },
 });
+
+bindAuthIntents(supabase.auth, authIntents);
 
 let sessionPromise: ReturnType<typeof supabase.auth.getSession> | null = null;
 let sessionListenerStarted = false;
