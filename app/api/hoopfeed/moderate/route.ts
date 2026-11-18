@@ -161,7 +161,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ allowed: false, message: "Invalid HoopFeed action." }, { status: 400 });
     }
     const kind = kindValues.length === 0 ? "post" : kindValues[0];
-    if (kind !== "post" && kind !== "edit" && kind !== "comment" && kind !== "share" && kind !== "vote" && kind !== "bookmark" && kind !== "pin" && kind !== "community-pin") {
+    if (kind !== "post" && kind !== "edit" && kind !== "comment" && kind !== "share" && kind !== "vote" && kind !== "bookmark" && kind !== "pin") {
       return NextResponse.json({ allowed: false, message: "Unsupported content type." }, { status: 400 });
     }
     const postIdValues = form.getAll("post_id");
@@ -248,20 +248,6 @@ export async function POST(request: Request) {
     const isAdmin = (adminRoleRows || []).some((r: any) => String(r?.role || "").trim().toLowerCase() === "admin");
     const entitlements = getHoopCheckEntitlements({ accountType: profile?.account_type, subscription: sub, isAdmin });
     if (!entitlements.canWriteHoopFeed) return NextResponse.json({ allowed: false, message: "An active Pro or Premium membership is required to use HoopFeed." }, { status: 403 });
-
-    if (kind === "community-pin") {
-      if (!isAdmin) return NextResponse.json({ allowed: false, message: "Admin access required." }, { status: 403 });
-      const values = form.getAll("pinned");
-      if (values.length !== 1 || (values[0] !== "true" && values[0] !== "false")) {
-        return NextResponse.json({ allowed: false, message: "Invalid pinned state." }, { status: 400 });
-      }
-      if (!(await canInteractWithPost(actionPostId))) return NextResponse.json({ allowed: false, message: "Post unavailable." }, { status: 404 });
-      const { error } = await db.from("feed_posts").update({
-        community_pinned_at: values[0] === "true" ? new Date().toISOString() : null,
-      }).eq("id", actionPostId).eq("status", "approved");
-      if (error) return NextResponse.json({ allowed: false, message: "Could not update the HoopFeed pin." }, { status: 400 });
-      return NextResponse.json({ allowed: true });
-    }
 
     // Poll vote: one vote per member per poll; voting again changes the vote.
     if (kind === "vote") {
