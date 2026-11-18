@@ -21,7 +21,14 @@ export function nativeDestination(path: string): string {
       return "/feed" + (post && /^[0-9a-f-]{36}$/i.test(post) ? `?post=${post}` : "");
     }
     if (url.pathname === "/reels") return "/reels";
-    if (url.pathname === "/search") return "/search" + url.search;
+    if (url.pathname === "/search") {
+      const query = new URLSearchParams();
+      const term = url.searchParams.get("q");
+      if (term) query.set("q", term.slice(0, 100));
+      const serialized = query.toString();
+      return "/search" + (serialized ? `?${serialized}` : "");
+    }
+
     if (url.pathname === "/auth/callback" || url.pathname === "/reset-password") {
       // Re-encode only the PKCE/error fields understood by native auth screens.
       // Invalid percent sequences must not reach the router's legacy decoder.
@@ -41,7 +48,7 @@ export function nativeDestination(path: string): string {
       // No client-side attribution claim or user_metadata authorization is introduced.
       return `/web?path=${encodeURIComponent(`/referral/${parts[1].toUpperCase()}`)}`;
     }
-    // No pretend native post/group route: keep the actual canonical web path.
+    // Unimplemented routes retain their canonical website paths.
     return `/web?path=${encodeURIComponent(url.pathname + url.search + url.hash)}`;
   } catch { return "/"; }
 }
