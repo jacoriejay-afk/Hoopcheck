@@ -1,8 +1,10 @@
+import { createClient } from "@supabase/supabase-js";
+import { requestMfaState } from "./lib/server/mfa-enforcement";
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { GOOGLE_SIGNUP_COOKIE, GOOGLE_SIGNUP_PATH, GOOGLE_SIGNUP_ROLE } from "./lib/google-auth";
 
-const protectedPage = /^\/(?:dashboard|settings|profile|feed|admin|ambassador-hq)(?:\/|$)|^\/(?:teams|coaches|leagues)\/[^/]+\/review\/?$/;
+const protectedPage = /^\/(?:dashboard|account|settings|profile|feed|admin|owner-hq|ambassador-hq)(?:\/|$)|^\/(?:teams|coaches|leagues)\/[^/]+\/review\/?$/;
 const pendingAllowed = new Set([GOOGLE_SIGNUP_PATH, "/auth/callback", "/login", "/terms", "/privacy", "/community-guidelines"]);
 
 function isPendingBearer(header: string | null) {
@@ -22,6 +24,33 @@ export async function proxy(request: NextRequest) {
   if (path.startsWith("/api/")) {
     if (isPendingBearer(request.headers.get("authorization"))) {
       return NextResponse.json({ error: "Finish setting up your HoopCheck account first." }, { status: 403 });
+    }
+    // Verify bearer credentials or existing SSR cookies before any authenticated
+    // handler can use a privileged database client. Webhooks without user auth
+    // continue to their own signature/secret checks.
+    const bearer = request.headers.get("authorization")?.match(/^Bearer\s+([\w-]+\.[\w-]+\.[\w-]+)$/i)?.[1];
+    const hasAuthCookie = request.cookies.getAll().some(cookie => /^sb-.*-auth-token(?:\.\d+)?$/.test(cookie.name));
+    if (bearer || hasAuthCookie) {
+      let response = NextResponse.next({ request });
+      const client = bearer ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, { auth: { persistSession: false, autoRefreshToken: false } }) : createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, {
+        cookies: { getAll: () => request.cookies.getAll(), setAll(values) { values.forEach(({ name, value }) => request.cookies.set(name, value)); response = NextResponse.next({ request }); values.forEach(({ name, value, options }) => response.cookies.set(name, value, options)); } },
+      });
+      try {
+        const token = bearer ?? (await client.auth.getSession()).data.session?.access_token;
+        if (token) {
+          const state = await requestMfaState(client, token);
+          if (state.required) {
+            const denied = NextResponse.json({ error: "Verify your authenticator to continue.", code: "mfa_required" }, { status: 403 });
+            response.cookies.getAll().forEach(cookie => denied.cookies.set(cookie));
+            denied.headers.set("Cache-Control", "no-store"); return denied;
+          }
+        }
+      } catch {
+        const denied = NextResponse.json({ error: "Your session could not be verified. Sign in again.", code: "session_unverified" }, { status: 401 });
+        response.cookies.getAll().forEach(cookie => denied.cookies.set(cookie));
+        denied.headers.set("Cache-Control", "no-store"); return denied;
+      }
+      return response;
     }
     return NextResponse.next({ request });
   }
@@ -81,6 +110,22 @@ export async function proxy(request: NextRequest) {
 
   const userId = typeof data.claims.sub === "string" ? data.claims.sub : null;
   if (userId) {
+    try {
+      const token = (await supabase.auth.getSession()).data.session?.access_token;
+      if (!token) throw new Error("Missing session");
+      const state = await requestMfaState(supabase, token);
+      if (state.required) {
+        const url = new URL("/auth/verify", request.url);
+        url.searchParams.set("returnTo", path + request.nextUrl.search);
+        const response = NextResponse.redirect(url);
+        supabaseResponse.cookies.getAll().forEach(cookie => response.cookies.set(cookie));
+        return response;
+      }
+    } catch {
+      const response = NextResponse.redirect(new URL("/login?session_error=verification", request.url));
+      supabaseResponse.cookies.getAll().forEach(cookie => response.cookies.set(cookie));
+      return response;
+    }
     const [{ data: profile }, { data: preferences }] = await Promise.all([
       supabase.from("profiles").select("preferred_language").eq("id", userId).maybeSingle(),
       supabase.from("user_preferences").select("language").eq("user_id", userId).maybeSingle(),
@@ -111,11 +156,13 @@ export const config = {
     "/coaches/:id/review",
     "/leagues/:id/review",
     "/dashboard/:path*",
+    "/account/:path*",
     "/settings/:path*",
     "/profile/:path*",
     "/feed/:path*",
     "/admin/:path*",
     "/ambassador-hq",
+    "/owner-hq",
     "/api/:path*",
     { source: "/((?!_next|api/|.*\\..*).*)", has: [{ type: "cookie", key: "hoopcheck-google-setup" }] },
   ],

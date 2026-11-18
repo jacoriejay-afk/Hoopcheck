@@ -39,6 +39,7 @@ function screen(path, { state = [], params = {}, segments = [], pathname = "/", 
     if (name === "react-native-gesture-handler") return { GestureHandlerRootView: "GestureHandlerRootView" };
     if (name === "@gorhom/bottom-sheet") return { BottomSheetModalProvider: "BottomSheetModalProvider" };
     if (name === "expo-splash-screen") return { preventAutoHideAsync: async () => {}, setOptions: () => {}, hideAsync: async () => {} };
+    if (name.endsWith("/native/mfa")) return { MfaSessionProvider: "MfaSessionProvider" };
     if (name.endsWith("/native/preferences")) return { DevicePreferences: "DevicePreferences" };
     if (name.endsWith("/native/drafts")) return { NativeDraftProvider: "NativeDraftProvider" };
     if (name.endsWith("/native/useNativeAccount")) return { NativeAccountProvider: "NativeAccountProvider" };

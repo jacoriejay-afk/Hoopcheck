@@ -60,19 +60,34 @@ export function bindAuthIntents<T extends { signInWithPassword: (...args: never[
   Object.defineProperty(client, marker, { value: true });
   let queue: Promise<unknown> = Promise.resolve();
   const stale = () => ({ data: { user: null, session: null, url: null }, error: new Error("Your account changed. Please sign in again.") });
+  function enqueue(intent: string, action: () => Promise<unknown>) {
+    const work = async () => {
+      if (intent !== intents.read()) return stale();
+      const result = await action();
+      return intent === intents.read() ? result : stale();
+    };
+    const result = queue.catch(() => {}).then(() => exclusive ? exclusive(work) : work());
+    queue = result.catch(() => {});
+    return result;
+  }
+  // MFA management must retain the UI's verified owner even if another sign-in
+  // is already queued. Inspect identity inside the same operation queue.
+  const mfa = client.mfa as Record<string, unknown> | undefined;
+  const originals = new Map<string, (...args: unknown[]) => Promise<unknown>>();
+  if (mfa) for (const name of ["enroll", "unenroll", "challengeAndVerify"]) {
+    if (typeof mfa[name] === "function") originals.set(name, (mfa[name] as (...args: unknown[]) => Promise<unknown>).bind(mfa));
+  }
+  Object.defineProperty(client, Symbol.for("hoopcheck.owned-mfa"), { value: (owner: string, name: string, args: unknown[]) => enqueue(intents.read(), async () => {
+    const session = await (client.getSession as () => Promise<{ data: { session: { user: { id: string } } | null }; error: unknown }>).call(auth);
+    if (session.error || session.data.session?.user.id !== owner || !originals.has(name)) return stale();
+    return originals.get(name)!(...args);
+  }) });
   function bind(target: Record<string, unknown>, name: string, startsIntent: boolean) {
     const original = target[name];
     if (typeof original !== "function") return;
     target[name] = (...args: unknown[]) => {
       const intent = startsIntent ? intents.begin() : intents.read();
-      const work = async () => {
-        if (intent !== intents.read()) return stale();
-        const result = await original.apply(target, args);
-        return intent === intents.read() ? result : stale();
-      };
-      const result = queue.catch(() => {}).then(() => exclusive ? exclusive(work) : work());
-      queue = result.catch(() => {});
-      return result;
+      return enqueue(intent, () => original.apply(target, args));
     };
   }
   for (const name of ["signInWithPassword", "signUp", "signOut", "setSession", "exchangeCodeForSession", "verifyOtp", "signInWithOAuth"]) bind(client, name, true);

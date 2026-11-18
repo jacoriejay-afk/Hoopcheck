@@ -1,5 +1,6 @@
 import "react-native-gesture-handler";
 import { NativeDraftProvider } from "../src/native/drafts";
+import { MfaSessionProvider } from "../src/native/mfa";
 import { NativeAccountProvider } from "../src/native/useNativeAccount";
 import { useFonts } from "expo-font";
 import { rememberDestination, takeDestination } from "../src/native/pendingDestination";
@@ -87,7 +88,7 @@ function RootLayout() {
   // Mount the navigator on the first render. Font loading must never prevent
   // Router from mounting or leave a blank screen after the splash deadline.
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.background }}><SafeAreaProvider><MotionProvider><DevicePreferences><NetworkProvider><NativeAccountProvider><NativeDraftProvider><BottomSheetModalProvider>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.background }}><SafeAreaProvider><MotionProvider><DevicePreferences><NetworkProvider><MfaSessionProvider userId={session.userId}><NativeAccountProvider><NativeDraftProvider><BottomSheetModalProvider>
       <StatusBar style={theme.dark ? "light" : "dark"} /><RouteFade>
       <Stack
         screenOptions={{
@@ -107,6 +108,7 @@ function RootLayout() {
         <Stack.Screen name="reels" options={{ headerShown: false }} />
         <Stack.Screen name="account" options={{ title: "Account" }} />
         <Stack.Screen name="account/edit" options={{ title: "Edit profile" }} />
+        <Stack.Screen name="account/security" options={{ title: "Account security" }} />
         <Stack.Screen name="settings" options={{ title: "Settings" }} />
         <Stack.Screen name="web" options={{ title: "HoopCheck" }} />
         <Stack.Screen name="index" options={{ title: "HoopCheck™", headerShown: false }} />
@@ -138,7 +140,7 @@ function RootLayout() {
         <Stack.Screen name="leagues/[id]" options={{ title: "League profile" }} />
       </Stack></RouteFade>
       {signedIn ? <TabBar /> : null}<AppLock authReady={sessionReady} userId={session.userId} startupError={session.error} retryStartup={() => { void bootstrap.current?.retry(); }} protectedScreen={signedIn && !["sign-in", "sign-up", "reset-password", "auth"].includes(segments[0] ?? "")} />
-    </BottomSheetModalProvider></NativeDraftProvider></NativeAccountProvider></NetworkProvider></DevicePreferences></MotionProvider></SafeAreaProvider></GestureHandlerRootView>
+    </BottomSheetModalProvider></NativeDraftProvider></NativeAccountProvider></MfaSessionProvider></NetworkProvider></DevicePreferences></MotionProvider></SafeAreaProvider></GestureHandlerRootView>
 
 
   );

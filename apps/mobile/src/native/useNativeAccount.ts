@@ -1,6 +1,7 @@
 import { createContext, createElement, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { AppState } from "react-native";
 import { supabase } from "../lib/supabase";
+import { useMfaSession } from "./mfa";
 import { useNetwork } from "./network";
 import { requestNativeAccount, type NativeAccount } from "./accountClient";
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
@@ -11,6 +12,7 @@ function useAccountRequest() {
   const [refresh, setRefresh] = useState(0);
   const generation = useRef(0);
   const { offline, revision } = useNetwork();
+  const security = useMfaSession();
   const retry = useCallback(() => { generation.current++; setAccount(null); setRefresh(value => value + 1); }, []);
   useEffect(() => {
     const listener = AppState.addEventListener("change", state => { if (state === "active") retry(); });
@@ -29,6 +31,7 @@ function useAccountRequest() {
     const load = async () => {
       try {
         if (offline) throw new Error("Offline");
+        if (security.phase !== "ready") throw new Error("Finish security verification first");
         const { data, error: sessionError } = await supabase.auth.getSession();
         if (sessionError || !data.session) throw new Error("Missing session");
         const result = await requestNativeAccount(origin, data.session.access_token, controller.signal);
@@ -39,8 +42,8 @@ function useAccountRequest() {
     };
     void load();
     return () => { active = false; clearTimeout(deadline); controller.abort(); };
-  }, [offline, revision, refresh]);
-  return { account: offline ? null : account, loading, error, retry };
+  }, [offline, revision, refresh, security.phase, security.owner]);
+  return { account: offline || security.phase !== "ready" ? null : account, loading, error, retry };
 }
 
 const AccountContext = createContext<ReturnType<typeof useAccountRequest>>({ account: null, loading: true, error: "", retry: () => {} });
