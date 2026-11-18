@@ -14,15 +14,16 @@ export default function FeedScreen() {
     void (async () => {
       const { data: auth } = await supabase.auth.getUser();
       if (!auth.user) { if (alive) setAccess("locked"); return; }
-      const [profile, subscription] = await Promise.all([
-        supabase.from("profiles").select("account_type,player_verified").eq("id", auth.user.id).maybeSingle(),
+      const [profile, subscription, adminRole] = await Promise.all([
+        supabase.from("profiles").select("account_type").eq("id", auth.user.id).maybeSingle(),
         supabase.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id", auth.user.id).maybeSingle(),
+        supabase.rpc("get_current_user_admin_role"),
       ]);
       if (!alive) return;
       if (profile.error || subscription.error || !profile.data) { setAccess("locked"); return; }
       const permissions = getHoopCheckEntitlements({
         accountType: profile.data.account_type,
-        playerVerified: profile.data.player_verified === true,
+        isAdmin: adminRole.data === "admin",
         subscription: subscription.data,
       });
       setAccess(permissions.canReadHoopFeed ? "allowed" : "locked");
