@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, Switch, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { ProfilePhotoEditor } from "../../components/ProfilePhotoEditor";
 import { Button, GlassCard } from "../../src/primitives";
 import { supabase } from "../../src/lib/supabase";
 import { useEntryTheme } from "../../src/theme";
@@ -48,6 +49,7 @@ export default function ProfileEditorScreen() {
     <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 28, fontWeight: "900" }}>Edit your profile</Text>
     {!canShow ? <><Text style={{ color: theme.muted }}>{accountLoading || loading ? "Loading your profile…" : "Your profile is unavailable. Reconnect and verify your account."}</Text><Button secondary onPress={() => setRevision(value => value + 1)}>Retry profile</Button></> : <>
       <GlassCard><Text style={{ color: theme.foreground }}>{[profile.first_name, profile.last_name].filter(Boolean).join(" ") || "Name managed by HoopCheck"}</Text><Text style={{ color: theme.muted }}>{profile.username ? `@${profile.username} · ` : ""}{profile.account_type.replaceAll("_", " ")}</Text><Text style={{ color: theme.muted }}>Identity, role and verification details are managed through verification.</Text></GlassCard>
+      <ProfilePhotoEditor key={uid} userId={uid} enabled={!pending && !accountLoading} />
       {cover?.owner === uid ? <><View accessibilityLabel="Profile cover preview" style={{ height: 84, borderRadius: 16, backgroundColor: profileCovers.find(item => item.id === cover.value)?.color }} /><Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 18, fontWeight: "700" }}>Profile cover</Text><View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{profileCovers.map(item => <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={`${item.label} cover`} accessibilityState={{ selected: cover.value === item.id }} disabled={pending} onPress={() => setCover({ owner: uid, value: item.id })} style={{ minHeight: 48, padding: 12, borderWidth: 2, borderColor: cover.value === item.id ? theme.accent : theme.border, borderRadius: 12 }}><Text style={{ color: theme.foreground }}>{item.label}</Text></Pressable>)}</View><Button secondary disabled={pending} onPress={() => void save("cover")}>Save profile cover</Button></> : null}
       {coverError ? <Text accessibilityRole="alert" style={{ color: theme.foreground }}>{coverError}</Text> : null}
       {field("display_name", 80)}{field("bio", 500, true)}{field("hometown", 120)}{field("nationality", 80)}
