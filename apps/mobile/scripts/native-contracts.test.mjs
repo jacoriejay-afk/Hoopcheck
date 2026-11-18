@@ -83,3 +83,14 @@ test("Sentry retains allowlisted flow timing and bundled symbolication locations
   assert.equal(event.exception.values[0].stacktrace.frames[0].filename, "app:///index.android.bundle");
   assert.ok(!JSON.stringify(event).includes("private"));
 });
+
+
+test("women's canonical team routes open natively and retain identity", () => {
+  for (const prefix of ["https://hoopcheck.online", "hoopcheck:/", ""]) {
+    assert.equal(nativeDestination(`${prefix}/womens/abc-123`), "/womens/abc-123");
+    assert.equal(nativeDestination(`${prefix}/womens`), "/womens");
+    assert.equal(nativeDestination(`${prefix}/womens/leagues/abc-123`), "/womens/leagues/abc-123");
+  }
+  assert.equal(nativeDestination("hoopcheck://womens/abc-123"), "/womens/abc-123");
+  assert.equal(nativeDestination("https://evil.example/womens/abc-123"), "/");
+});
