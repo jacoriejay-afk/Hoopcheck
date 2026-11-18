@@ -9,10 +9,10 @@ const id=n=>`22222222-2222-4222-8222-${String(n).padStart(12,'0')}`;
 const user={id:uid,aud:'authenticated',role:'authenticated',email:'fixture@example.test',user_metadata:{}};
 const token=Buffer.from('{"alg":"HS256"}').toString('base64url')+'.'+Buffer.from(JSON.stringify({sub:uid,aud:'authenticated',exp:Math.floor(Date.now()/1000)+3600,role:'authenticated'})).toString('base64url')+'.fixture';
 const videoPath=process.env.FIXTURE_VIDEO || require('node:path').join(__dirname,'fixtures/orange.webm');
-const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=','base64');
+let png;
 async function fixture(browser,theme,allowed=true){
   const context=await browser.newContext({viewport:{width:390,height:844},colorScheme:theme});
-  const calls=[],errors=[];let denied=false,checked=false,saved=false,vote=null,read=false;
+  const calls=[],errors=[];let mediaFailed=false;let denied=false,checked=false,saved=false,vote=null,read=false;
   const posts=[
     {id:id(1),body:'Fixture community discussion',image_url:'protected/photo.png',post_kind:'discussion'},
     {id:id(2),body:'Fixture poll',post_kind:'poll',poll_options:['Home team','Away team']},
@@ -29,7 +29,9 @@ async function fixture(browser,theme,allowed=true){
     if(method==='OPTIONS')return json({});
     if(url.hostname==='api.test'){
       assert.ok(request.headers().authorization?.startsWith('Bearer '),'API must receive bearer');
-      if(url.pathname==='/api/mobile/bootstrap')return json({user:{id:uid,displayName:'Fixture Member',accountType:'player'},entitlements:{tier:allowed?'pro':'free',hasPaidMembership:allowed,canReadHoopFeed:allowed,canWriteHoopFeed:allowed,canUseLiveGameHub:allowed,canUseLiveGameChat:allowed,canSwitchBasketballSide:false,canUseFanGroups:allowed}});
+      if(url.pathname==='/api/mobile/bootstrap')return json({user:{id:uid,displayName:'Fixture Member',accountType:'player'},entitlements:{tier:allowed?'pro':'free',hasPaidMembership:allowed,canReadHoopFeed:allowed,canWriteHoopFeed:allowed,canUseLiveGameHub:allowed,canUseLiveGameChat:allowed,canSwitchBasketballSide:false,canUseFanGroups:false}});
+      if(url.pathname==='/api/hoopfeed/media'&&body.includes('photo.png')&&!mediaFailed){mediaFailed=true;return json({error:'Synthetic media failure'},503);}
+
       if(url.pathname==='/api/hoopfeed/media')return json({url:`https://fixture.supabase.co/storage/v1/object/sign/feed/${body.includes('video.webm')?'video.webm':'photo.png'}?token=synthetic`});
       if(url.pathname==='/api/hoopfeed/moderate'){
         const fields=Object.fromEntries([...body.matchAll(/name="([^"]+)"\r\n\r\n([\s\S]*?)\r\n/g)].map(m=>[m[1],m[2]]));
@@ -67,6 +69,7 @@ async function fixture(browser,theme,allowed=true){
     throw new Error(`Unexpected external request: ${url.origin}${url.pathname}`);
   });
   await context.addInitScript(({token,user})=>{
+    Object.defineProperty(navigator,'share',{configurable:true,value:async data=>{window.__sharedFeed=data;}});
     localStorage.setItem('sb-fixture-auth-token',JSON.stringify({access_token:token,refresh_token:'fixture',token_type:'bearer',expires_at:Math.floor(Date.now()/1000)+3600,user}));
     localStorage.setItem('hoopcheck:device-preferences:v1',JSON.stringify({haptics:false,appLock:false,onboardingDone:true}));
   },{token,user});
@@ -75,8 +78,13 @@ async function fixture(browser,theme,allowed=true){
     await page.goto(`${base}/feed`);
     if(!allowed){await page.getByText('An active HoopCheck membership is required to use HoopFeed.',{exact:true}).waitFor();assert.ok(!calls.some(c=>c.path.endsWith('/feed_posts')));return;}
     await page.getByText('Fixture community discussion',{exact:true}).waitFor();
+    await page.getByRole('button',{name:'Media unavailable. Tap to retry.',exact:true}).click();
     await page.getByRole('img',{name:'HoopFeed photo',exact:true}).waitFor();
+    await page.waitForFunction(()=>{const image=document.querySelector('img[alt="HoopFeed photo"]');return image&&image.complete&&image.naturalWidth===640;});
+    const photoBox=await page.getByRole('img',{name:'HoopFeed photo',exact:true}).boundingBox();assert.ok(photoBox.width>250&&photoBox.height>120,'Photo has visible dimensions');
+    assert.equal(await page.getByRole('heading',{name:'HoopFeed',exact:true}).count(),0,'No duplicate headings');
     await page.screenshot({path:`/tmp/hoopcheck-native-ui/feed-posts-${theme}.png`,fullPage:true});
+    await page.getByRole('button',{name:'Create HoopFeed post',exact:true}).click();
     const composer=page.getByRole('textbox',{name:'Write a HoopFeed post'});
     await composer.fill('Fixture draft stays');await page.getByRole('button',{name:'Post',exact:true}).click();
     await page.getByText('Fixture moderation declined; draft retained.',{exact:true}).waitFor();assert.equal(await composer.inputValue(),'Fixture draft stays');
@@ -87,6 +95,8 @@ async function fixture(browser,theme,allowed=true){
     await page.getByText('Fixture reply',{exact:true}).waitFor();
     await page.getByRole('button',{name:'Check · 0',exact:true}).first().click();await page.getByRole('button',{name:'Checked · 1',exact:true}).first().waitFor();
     await page.getByRole('button',{name:'Save',exact:true}).first().click();await page.getByRole('button',{name:'Saved',exact:true}).first().waitFor();
+    await page.getByRole('button',{name:'Share',exact:true}).first().click();
+    assert.ok((await page.evaluate(()=>window.__sharedFeed))?.text?.includes('hoopcheck.online/feed#post-'),'Share uses canonical post link');
     const option=page.getByRole('button',{name:'Home team · 0',exact:true});await option.scrollIntoViewIfNeeded();await option.click();await page.getByRole('button',{name:'Home team · 1 ✓',exact:true}).waitFor();
     await page.getByRole('tab',{name:'Reels',exact:true}).click();
     const video=page.locator('video');await video.waitFor();
@@ -103,4 +113,4 @@ async function fixture(browser,theme,allowed=true){
     console.log(`PASS ${theme}: native feed moderation/draft/reply/check/save/poll/Reels playback/alerts/account/search/home`);
   }catch(error){console.log('Fixture failure URL:',page.url());console.log(await page.locator('body').innerText());throw error;}finally{await context.close();}
 }
-(async()=>{fs.mkdirSync('/tmp/hoopcheck-native-ui',{recursive:true});const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});try{for(const theme of ['light','dark'])await fixture(browser,theme);await fixture(browser,'light',false);console.log('PASS denied membership: protected feed queries never started');}finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});
+(async()=>{png=await require('sharp')({create:{width:640,height:360,channels:3,background:'#FF5A1F'}}).png().toBuffer();fs.mkdirSync('/tmp/hoopcheck-native-ui',{recursive:true});const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});try{for(const theme of ['light','dark'])await fixture(browser,theme);await fixture(browser,'light',false);console.log('PASS denied membership: protected feed queries never started');}finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});

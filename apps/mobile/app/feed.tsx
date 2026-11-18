@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { FlatList, Pressable, RefreshControl, Share, Text, TextInput, View, type ViewToken } from "react-native";
+import { FlatList, Image, Pressable, RefreshControl, Share, Text, TextInput, View, type ViewToken } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import { Button, GlassCard } from "../src/primitives";
+import { Button } from "../src/primitives";
 import { Skeleton } from "../components/Motion";
 import { FeedMedia } from "../components/FeedMedia";
 import { FeedPoll } from "../components/FeedPoll";
@@ -11,6 +11,8 @@ import { useEntryTheme } from "../src/theme";
 import { useNativeAccount } from "../src/native/useNativeAccount";
 import { useNetwork, requireOnline } from "../src/native/network";
 import { feedAction, isFeedId, moderateFeedText, readFeedChecks, readFeedComments, readFeedPage, readFeedSaved, readSharedFeedPost, toggleFeedCheck, type FeedComment, type FeedCursor, type FeedPost } from "../src/native/feedClient";
+// eslint-disable-next-line @typescript-eslint/no-require-imports -- Metro bundles the official local artwork.
+const brandMark = require("../assets/hoopcheck-mark.png");
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
 type CommentPage = { rows: FeedComment[]; more: boolean; offset: number; loading: boolean; error: string };
 export function FeedScreen({ initialReels = false }: { initialReels?: boolean }) {
@@ -23,6 +25,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
   const uid = account?.user.id;
   const canRead = Boolean(uid && account?.features.canReadHoopFeed && !offline);
   const canWrite = Boolean(uid && account?.features.canWriteHoopFeed && !offline);
+  const [composerExpanded, setComposerExpanded] = useState(false);
   const [reels, setReels] = useState(initialReels);
   const scope = `${uid ?? ""}:${reels}`;
   const viewer = useRef({ uid, canRead, scope });
@@ -127,21 +130,30 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
   const posts = canRead && rows.scope === scope ? rows.posts.filter(post => !post.expires_at || Date.parse(post.expires_at) > now) : [];
   const textStyle = { color: theme.foreground };
   const linkStyle = { color: theme.accent };
-  const touch = { minHeight: 48, paddingHorizontal: 8, justifyContent: "center" as const };
+  const touch = { minHeight: 44, paddingHorizontal: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 999, backgroundColor: theme.elevatedSurface, justifyContent: "center" as const };
   if (accountLoading) return <View style={{ flex: 1, padding: 24, backgroundColor: theme.background }}><Skeleton /></View>;
   if (!account || !canRead) return <View style={{ flex: 1, padding: 24, gap: 20, justifyContent: "center", backgroundColor: theme.background }}>
     <Text accessibilityRole="header" style={{ ...textStyle, fontSize: 28, fontWeight: "900" }}>HoopFeed</Text>
     <Text style={textStyle}>{offline ? "Reconnect to verify community access." : account ? "An active HoopCheck membership is required to use HoopFeed." : accountError}</Text>
     <Button secondary onPress={retry}>Verify access again</Button><Button secondary onPress={() => router.push("/account")}>Your account</Button>
   </View>;
-  return <SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: theme.background }}>
-    <View style={{ paddingHorizontal: 20, paddingVertical: 8, gap: 8 }}>
-      <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 12 }}>{[false, true].map(value => <Pressable key={String(value)} accessibilityRole="tab" accessibilityState={{ selected: reels === value }} aria-selected={reels === value} onPress={() => setReels(value)} style={[touch, { borderBottomWidth: reels === value ? 3 : 0, borderColor: theme.accent }]}><Text style={{ ...textStyle, fontSize: 20, fontWeight: "800" }}>{value ? "Reels" : "HoopFeed"}</Text></Pressable>)}</View>
-      {!reels ? <View style={{ gap: 8 }}><TextInput accessibilityLabel="Write a HoopFeed post" multiline maxLength={2000} placeholder="Share your basketball experience" placeholderTextColor={theme.muted} value={draft.owner === uid ? draft.text : ""} onChangeText={text => setDraft({ owner: uid!, text })} style={{ ...textStyle, minHeight: 70, maxHeight: 160, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: theme.radius.control, backgroundColor: theme.input }} />
-        <Button disabled={!canWrite || pending.post || draft.owner !== uid || !draft.text.trim()} onPress={() => void publish()}>{pending.post ? "Checking safety…" : "Post"}</Button></View> : null}
+  return <SafeAreaView edges={["top", "left", "right", "bottom"]} style={{ flex: 1, backgroundColor: theme.background }}>
+    <View style={{ paddingHorizontal: 16, paddingVertical: 8, flexDirection: "row", alignItems: "center", gap: 10 }}>
+      <Image alt="HoopCheck" source={brandMark} accessibilityLabel="HoopCheck" style={{ width: 36, height: 36 }} resizeMode="contain" />
+      <View accessibilityRole="tablist" style={{ flex: 1, flexDirection: "row", gap: 6 }}>{[false, true].map(value => <Pressable key={String(value)} accessibilityRole="tab" accessibilityState={{ selected: reels === value }} aria-selected={reels === value} onPress={() => setReels(value)} style={[touch, { backgroundColor: reels === value ? theme.surface : theme.background, borderColor: reels === value ? theme.accent : theme.border }]}><Text style={{ ...textStyle, fontSize: 14, fontWeight: "700" }}>{value ? "Reels" : "HoopFeed"}</Text></Pressable>)}</View>
       {message || loadError ? <Text accessibilityLiveRegion="polite" style={{ color: theme.muted }}>{loadError || message}</Text> : null}
     </View>
-    <FlatList style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 16, gap: reels ? 0 : 16 }} keyboardShouldPersistTaps="handled" initialNumToRender={4} maxToRenderPerBatch={4} windowSize={5} pagingEnabled={reels} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
+    <FlatList style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 16, gap: reels ? 0 : 14 }} keyboardShouldPersistTaps="handled" initialNumToRender={4} maxToRenderPerBatch={4} windowSize={5} pagingEnabled={reels} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
+      ListHeaderComponent={!reels ? <View style={{ marginBottom: 12 }}>
+        {!composerExpanded ? <Pressable accessibilityRole="button" accessibilityLabel="Create HoopFeed post" disabled={!canWrite} onPress={() => setComposerExpanded(true)} style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 18, backgroundColor: theme.surface }}>
+          <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: "#171717", alignItems: "center", justifyContent: "center" }}><Text style={{ color: "#FF8A5C", fontWeight: "900", fontSize: 12 }}>HC</Text></View><Text style={{ color: theme.muted, fontSize: 14 }}>Share something…</Text>
+        </Pressable> : <View style={{ gap: 12, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 18, backgroundColor: theme.surface }}>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}><Text style={{ ...textStyle, fontSize: 22, fontWeight: "700" }}>Create a post</Text><Pressable accessibilityRole="button" onPress={() => setComposerExpanded(false)} style={touch}><Text style={textStyle}>Close</Text></Pressable></View>
+          <TextInput accessibilityLabel="Write a HoopFeed post" multiline maxLength={2000} placeholder="Start a post... (ask, share, discuss, update)" placeholderTextColor={theme.muted} value={draft.owner === uid ? draft.text : ""} onChangeText={text => setDraft({ owner: uid!, text })} style={{ ...textStyle, fontSize: 15, lineHeight: 23, minHeight: 90, maxHeight: 220, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: theme.radius.control, backgroundColor: theme.input }} />
+          <Button style={{ minHeight: 44, borderRadius: 999, alignSelf: "flex-end", paddingHorizontal: 24 }} disabled={!canWrite || pending.post || draft.owner !== uid || !draft.text.trim()} onPress={() => void publish()}>{pending.post ? "Checking safety…" : "Post"}</Button>
+        </View>}
+        {!canWrite ? <Text style={{ color: theme.muted, marginTop: 8 }}>Your membership does not include posting.</Text> : null}
+      </View> : null}
       refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void load()} />}
       ListEmptyComponent={loading ? <Skeleton /> : <View style={{ padding: 24, gap: 12 }}><Text style={textStyle}>{loadError || (reels ? "No video posts are available in this page." : "No posts are available in this page.")}</Text><Button secondary onPress={() => void load()}>Refresh</Button></View>}
       renderItem={({ item: post }) => {
@@ -150,13 +162,15 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
         const commentDraft = drafts.owner === uid ? drafts.values[post.id] ?? "" : "";
         const photos = (Array.isArray(post.image_urls) && post.image_urls.length ? post.image_urls : post.image_url ? [post.image_url] : []).filter((value): value is string => typeof value === "string").slice(0, 4);
         const options = Array.isArray(post.poll_options) ? post.poll_options.filter((value): value is string => typeof value === "string").slice(0, 6).map(value => value.slice(0, 120)) : [];
-        return <View style={reels ? { height, padding: 12 } : undefined}><GlassCard style={{ padding: 16, gap: 12, ...(reels ? { flex: 1 } : {}) }}>
-          <Text style={{ ...textStyle, fontWeight: "800", fontSize: 17 }}>{post.profiles?.display_name || "HoopCheck member"}</Text>
-          <Text style={{ color: theme.muted }}>{new Date(post.created_at).toLocaleString()}</Text>
-          {post.body ? <Text numberOfLines={reels ? 3 : undefined} style={{ ...textStyle, fontSize: 16, lineHeight: 24 }}>{post.body}</Text> : null}
+        return <View style={reels ? { height, padding: 12 } : undefined}><View style={{ padding: 14, gap: 10, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, borderRadius: theme.radius.card, ...(reels ? { flex: 1 } : {}) }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 11 }}>
+            <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: theme.chip, alignItems: "center", justifyContent: "center" }}><Text style={{ color: theme.onChip, fontWeight: "800", fontSize: 12 }}>HC</Text></View>
+            <View style={{ flex: 1, gap: 3 }}><Text style={{ ...textStyle, fontWeight: "700", fontSize: 13 }}>{post.profiles?.display_name || "HoopCheck member"}</Text><Text style={{ color: theme.muted, fontSize: 11 }}>{new Date(post.created_at).toLocaleString()}</Text></View>
+          </View>
+          {post.body ? <Text numberOfLines={reels ? 3 : undefined} style={{ ...textStyle, fontSize: 15, lineHeight: 23 }}>{post.body}</Text> : null}
           {post.video_url ? <FeedMedia userId={uid!} postId={post.id} reference={post.video_url} video enabled={focused && visible.has(post.id)} loop={reels} height={reels ? Math.max(240, height - 230) : 300} /> : photos.map(reference => <FeedMedia userId={uid!} key={reference} postId={post.id} reference={reference} enabled={focused && visible.has(post.id)} />)}
           {post.post_kind === "poll" && options.length ? <FeedPoll userId={uid!} postId={post.id} options={options} enabled={canWrite && focused} /> : null}
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, paddingTop: 12, borderTopWidth: 1, borderColor: theme.border }}>
             <Pressable accessibilityRole="button" aria-pressed={checks[post.id]?.mine === true} disabled={!canWrite || !checks[post.id] || Boolean(pending[`check:${post.id}`])} onPress={() => void action(`check:${post.id}`, async () => {
               await token();
               let activity;
@@ -168,10 +182,10 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
               if (viewer.current.uid !== uid || !viewer.current.canRead) return;
               const total = activity.find(row => row.post_id === post.id);
               if (total && Number.isSafeInteger(Number(total.checks_count)) && Number(total.checks_count) >= 0) setChecks(previous => ({ ...previous, [post.id]: { count: Number(total.checks_count), mine: total.checked_by_me === true } }));
-            })} style={touch}><Text style={linkStyle}>{!checks[post.id] ? "Checks unavailable" : checks[post.id].mine ? "Checked" : "Check"}{checks[post.id] ? ` · ${checks[post.id].count}` : ""}</Text></Pressable>
-            <Pressable accessibilityRole="button" onPress={() => { if (reels) { router.push({ pathname: "/feed", params: { post: post.id, comments: "1" } }); return; } setOpenComments(previous => ({ ...previous, [post.id]: !previous[post.id] })); if (!page || page.error) void loadComments(post.id); }} style={touch}><Text style={linkStyle}>Comments</Text></Pressable>
-            <Pressable accessibilityRole="button" onPress={() => void action(`share:${post.id}`, async () => { await Share.share({ title: "HoopFeed", message: `https://hoopcheck.online/feed#post-${post.id}` }); })} style={touch}><Text style={linkStyle}>Share</Text></Pressable>
-            <Pressable accessibilityRole="button" disabled={!canWrite || saved[post.id] === undefined || Boolean(pending[`save:${post.id}`])} onPress={() => void action(`save:${post.id}`, async () => { const value = !saved[post.id]; await feedAction(origin, await token(), "bookmark", post.id, value); if (viewer.current.uid === uid) setSaved(previous => ({ ...previous, [post.id]: value })); })} style={touch}><Text style={linkStyle}>{saved[post.id] === undefined ? "Saved status unavailable" : saved[post.id] ? "Saved" : "Save"}</Text></Pressable>
+            })} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>{!checks[post.id] ? "Checks unavailable" : checks[post.id].mine ? "Checked" : "Check"}{checks[post.id] ? ` · ${checks[post.id].count}` : ""}</Text></Pressable>
+            <Pressable accessibilityRole="button" onPress={() => { if (reels) { router.push({ pathname: "/feed", params: { post: post.id, comments: "1" } }); return; } setOpenComments(previous => ({ ...previous, [post.id]: !previous[post.id] })); if (!page || page.error) void loadComments(post.id); }} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Comments</Text></Pressable>
+            <Pressable accessibilityRole="button" onPress={() => void action(`share:${post.id}`, async () => { await Share.share({ title: "HoopFeed", message: `https://hoopcheck.online/feed#post-${post.id}` }); })} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Share</Text></Pressable>
+            <Pressable accessibilityRole="button" disabled={!canWrite || saved[post.id] === undefined || Boolean(pending[`save:${post.id}`])} onPress={() => void action(`save:${post.id}`, async () => { const value = !saved[post.id]; await feedAction(origin, await token(), "bookmark", post.id, value); if (viewer.current.uid === uid) setSaved(previous => ({ ...previous, [post.id]: value })); })} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>{saved[post.id] === undefined ? "Saved status unavailable" : saved[post.id] ? "Saved" : "Save"}</Text></Pressable>
           </View>
           {openComments[post.id] && !reels ? <View style={{ gap: 12 }}>
             {page?.loading ? <Text style={textStyle}>Loading comments…</Text> : page?.error ? <Text accessibilityRole="alert" style={textStyle}>{page.error}</Text> : !page?.rows.length ? <Text style={{ color: theme.muted }}>No comments yet.</Text> : page.rows.map(comment => <View key={comment.id} style={{ paddingLeft: comment.parent_id ? 12 : 0, borderLeftWidth: comment.parent_id ? 2 : 0, borderColor: theme.border }}><Text style={{ ...textStyle, fontWeight: "700" }}>{comment.profiles?.display_name || "HoopCheck member"}</Text><Text style={textStyle}>{comment.body}</Text><Pressable accessibilityRole="button" accessibilityLabel={`Reply to ${comment.profiles?.display_name || "HoopCheck member"}`} onPress={() => setReply({ owner: uid!, postId: post.id, id: comment.id, name: comment.profiles?.display_name || "HoopCheck member" })} style={touch}><Text style={linkStyle}>Reply</Text></Pressable></View>)}
@@ -188,7 +202,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
               setReply(current => current && current.owner === uid && current.id === replyTarget?.id ? null : current);
             } })}>{pending[`comment:${post.id}`] ? "Checking safety…" : "Comment"}</Button>
           </View> : null}
-        </GlassCard></View>;
+        </View></View>;
       }}
       ListFooterComponent={next ? <View style={{ padding: 16 }}><Button secondary disabled={loading} onPress={() => void load(next)}>{loading ? "Loading…" : "Load more"}</Button></View> : null}
     />
