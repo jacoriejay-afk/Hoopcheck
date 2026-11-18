@@ -1,21 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
 import { usePathname } from "next/navigation";
 import { useAuthState } from "./AuthProvider";
-import { useLanguage } from "./LanguageProvider";
 
 const items = [
-  ["/", "home", "Home"],
-  ["/feed", "hoopFeed", "HoopFeed"],
-  ["/search", "search", "Search"],
-  ["/notifications", "alerts", "Alerts"],
-  ["/profile", "account", "Account"],
+  ["/dashboard", "Home"],
+  ["/teams", "Teams"],
+  ["/leagues", "Leagues"],
+  ["/players", "Players"],
+  ["/settings", "Settings"],
 ] as const;
 
-type TabLabel = (typeof items)[number][2];
+type TabLabel = (typeof items)[number][1];
 
 /* These icons are deliberately self-contained inline SVGs. They do not depend
    on icon fonts, external sprites, CSS masks, or runtime-fetched assets. */
@@ -35,87 +32,33 @@ function TabIcon({ label }: { label: TabLabel }) {
   };
 
   switch (label) {
-    case "Home":
-      return (
-        <svg {...svgProps}>
-          <path d="m3 10 9-7 9 7" />
-          <path d="M5.5 9v11h13V9M9.5 20v-6h5v6" />
-        </svg>
-      );
-    case "HoopFeed":
-      return (
-        <svg {...svgProps}>
-          <circle cx="12" cy="12" r="9" />
-          <path d="M3.5 9h17M3.5 15h17" />
-          <path d="M12 3c3 3 4.5 6 4.5 9S15 18 12 21M12 3C9 6 7.5 9 7.5 12S9 18 12 21" />
-        </svg>
-      );
-    case "Search":
-      return (
-        <svg {...svgProps}>
-          <circle cx="10.5" cy="10.5" r="6.5" />
-          <path d="m15.5 15.5 5 5" />
-        </svg>
-      );
-    case "Alerts":
-      return (
-        <svg {...svgProps}>
-          <path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
-          <path d="M10 21h4" />
-        </svg>
-      );
-    case "Account":
-      return (
-        <svg {...svgProps}>
-          <circle cx="12" cy="7.5" r="3.5" />
-          <path d="M4.5 21c.4-4.4 3-6.7 7.5-6.7s7.1 2.3 7.5 6.7Z" />
-        </svg>
-      );
+    case "Home": return <svg {...svgProps}><path d="m3 10 9-7 9 7" /><path d="M5.5 9v11h13V9M9.5 20v-6h5v6" /></svg>;
+    case "Teams": return <svg {...svgProps}><circle cx="12" cy="12" r="9"/><path d="M12 3c-3 4-3 14 0 18M12 3c3 4 3 14 0 18M3 12h18"/></svg>;
+    case "Leagues": return <svg {...svgProps}><path d="M8 4h8v7a4 4 0 0 1-8 0V4ZM8 6H4v2a4 4 0 0 0 4 4m8-6h4v2a4 4 0 0 1-4 4M12 15v4m-4 2h8m-8-2h8"/></svg>;
+    case "Players": return <svg {...svgProps}><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2M17 5a3 3 0 0 1 0 6m1 3a5 5 0 0 1 3 5v1"/></svg>;
+    case "Settings": return <svg {...svgProps}><circle cx="12" cy="12" r="3"/><path d="M10 2h4l.7 2.4 2 1.2 2.4-.6 2 3.5-1.7 1.8v2.4l1.7 1.8-2 3.5-2.4-.6-2 1.2L14 22h-4l-.7-2.4-2-1.2-2.4.6-2-3.5 1.7-1.8v-2.4L2.9 9.5l2-3.5 2.4.6 2-1.2L10 2Z"/></svg>;
   }
 }
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const { signedIn, userId } = useAuthState();
-  const { t } = useLanguage();
-  const [accountType, setAccountType] = useState<string | null>(null);
-  const [accountTypeLoading, setAccountTypeLoading] = useState(true);
-  useEffect(() => {
-    let active = true;
-    if (!userId) { setAccountType(null); setAccountTypeLoading(false); return; }
-    setAccountTypeLoading(true);
-    setAccountType(null);
-    void supabase.from("profiles").select("account_type").eq("id", userId).maybeSingle().then(({ data, error }) => {
-      if (active) {
-        setAccountType(error ? null : data?.account_type || null);
-        setAccountTypeLoading(false);
-      }
-    });
-    return () => { active = false; };
-  }, [userId]);
-
+  const { signedIn } = useAuthState();
   if (!signedIn || pathname.startsWith("/admin")) return null;
 
   return (
     <nav className="bottom-nav hc-bottom-tab-bar hc-mobile-tabbar-repair hc-lm2f-bottom-nav hc-liquid-glass-nav" aria-label="Mobile navigation">
-      {items.map(([href, translationKey, label]) => {
-        const destination = href === "/feed" && accountType === "fan" ? "/fan-feed" : href;
-        const feedResolving = href === "/feed" && accountTypeLoading;
-        const active = pathname === destination || pathname.startsWith(destination + "/")
-          || (href === "/" && pathname === "/dashboard")
-          || (href === "/feed" && pathname === "/feed")
-          || (href === "/profile" && pathname === "/account");
+      {items.map(([href, label]) => {
+        const active = pathname === href || pathname.startsWith(href + "/")
+          || (href === "/dashboard" && pathname === "/");
         return (
           <Link
             key={href}
-            href={destination}
+            href={href}
             className={active ? "hc-lm2f-tab hc-smooth-press active" : "hc-lm2f-tab hc-smooth-press"}
             aria-current={active ? "page" : undefined}
-            aria-disabled={feedResolving ? true : undefined}
-            onClick={feedResolving ? (event) => event.preventDefault() : undefined}
           >
             <span className="hc-lm2f-tab-icon"><TabIcon label={label} /></span>
-            <span className="hc-lm2f-tab-label">{translationKey === "hoopFeed" ? (accountType === "fan" ? "FAN HQ" : "HoopFeed") : t(translationKey)}</span>
+            <span className="hc-lm2f-tab-label">{label}</span>
             {active && <span className="hc-lm2f-active-indicator" aria-hidden="true" />}
           </Link>
         );
