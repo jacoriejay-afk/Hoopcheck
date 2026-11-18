@@ -1,7 +1,8 @@
 {
   "git": {
     "deploymentEnabled": {
-      "reconcile/build8-mobile-705-700-710-711": false
+      "reconcile/build8-mobile-705-700-710-711": false,
+      "reconcile/native-build8-complete": false
     }
   }
 }

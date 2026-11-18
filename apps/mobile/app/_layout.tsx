@@ -1,8 +1,8 @@
+import "react-native-gesture-handler";
 import { NativeDraftProvider } from "../src/native/drafts";
 import { NativeAccountProvider } from "../src/native/useNativeAccount";
 import { useFonts } from "expo-font";
 import { rememberDestination, takeDestination } from "../src/native/pendingDestination";
-import "react-native-gesture-handler";
 import { AccessibilityInfo } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
@@ -140,6 +140,7 @@ function RootLayout() {
       </Stack></RouteFade>
       {signedIn ? <TabBar /> : null}<AppLock authReady={sessionReady} protectedScreen={signedIn && !["sign-in", "sign-up", "reset-password", "auth"].includes(segments[0] ?? "")} />
     </BottomSheetModalProvider></NativeDraftProvider></NativeAccountProvider></NetworkProvider></DevicePreferences></MotionProvider></SafeAreaProvider></GestureHandlerRootView>
+
 
   );
 }

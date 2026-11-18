@@ -1,7 +1,8 @@
 # Build 8 readiness — 2026-11-18
 
-Status: NOT release ready. No EAS build, OTA, credentials mutation, payment request,
-production database mutation, or merge was performed in this investigation.
+Status: NOT release ready. The touch repair remains a draft. No EAS build, OTA,
+credentials mutation or production database writes were performed. Independent
+verified repairs have been merged: #702, #703, #704, #705, #706, #707, #708, #709.
 
 ## Freeze (#699, draft PR #700)
 
@@ -57,16 +58,28 @@ from renderer tests, web previews, exports or a green TypeScript check.
 
 ## Remaining scope
 
-Source inspection shows only native dashboard, directories, profiles, review,
-settings and auth routes. The dashboard remains an Explore basketball directory;
-web fallback links are not native feature parity. Native HoopFeed/comments/sharing/
-Reels, Live Games/chat, Groups, women's teams, account customization, Owner HQ and
-Ambassador HQ remain unaudited/unimplemented as complete native user flows.
+Current main includes native women’s discovery, grouped search, account status,
+canonical entitlement bootstrap, appearance controls, durable preferences and
+OAuth routing repairs. Draft #710 adds the feed, Reels, alerts and website tabs;
+#711 adds compact feed styling/media rendering. Draft #712 adds Live Games,
+chat safety and predictions; #714 adds current club-group flows and memory-only
+drafts. These have isolated client/browser evidence, not physical native or live
+role-matrix proof. #713 combines the earlier search/freeze/feed/styling heads;
+its input list must be reconciled with newer revisions before release.
 
-Commission/referral, subscriptions/entitlements, and full auth/security verification
-still require endpoint-by-endpoint review plus isolated payment/database tests.
-No production data was used to stand in for those tests. Do not declare these gates
-complete from existing web implementations or client-visible links.
+Full native parity is not complete: native media upload/poll creation, profile
+customization and store billing remain separate work. The broader community-group
+schema is unverified; native club groups do not change current fan membership rules.
+Owner/Ambassador HQ and commission/referral flows require endpoint-by-endpoint
+review and current-revision isolated payment/database delivery evidence; existing
+web code or links alone do not prove complete native flows. PR #673 explicitly
+requires current-preview Stripe delivery and payout verification.
+
+No production data is used as test data. Test-project metadata has schema/RLS
+drift and cannot substitute for production parity. Hosted identity transitions,
+OAuth/referral capture, subscription lifecycle, protected deletion and account
+security remain release gates. The existing deletion endpoint intentionally
+returns a safety-stop response until its complete lifecycle is implemented.
 
 ## Local evidence for this revision
 
@@ -76,8 +89,10 @@ complete from existing web implementations or client-visible links.
 - Expo Doctor: 18/18 pass (retry required Node environment proxy support).
 - Website lint: zero errors, 123 warnings.
 - Website production build, bundle audit and hub theme pairing: pass.
-- These are local results. Remote CI/Vercel checks must run on the pushed SHA;
-  older PR #700 Vercel success statuses do not verify this revision.
+- These are local results. Remote CI/Vercel checks must run on the updated merged
+  head; older PR #700 success statuses do not verify it. The root also initializes
+  gesture-handler before other app imports and retains the verified auth-callback
+  lock exclusion. Import order is not evidence of the reported freeze cause.
 
 
 ## Repeatable physical-device touch check
