@@ -3,7 +3,7 @@ import { AppState, Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import { createClient, processLock } from "@supabase/supabase-js";
-import { createAuthIntents, guardAuthResponses, bindAuthIntents } from "../../../../lib/auth/auth-intents";
+import { createAuthIntents, browserAuthIntentStore, guardAuthResponses, bindAuthIntents } from "../../../../lib/auth/auth-intents";
 import { serializeAuthStorage } from "../../../../lib/auth/serialized-storage";
 import { validateSupabaseUrl } from "./supabase-url";
 import { readWithDeadline } from "../native/readDeadline";
@@ -33,7 +33,7 @@ const webStorage = {
   removeItem: (key: string) => AsyncStorage.removeItem(key),
 };
 
-const authIntents = createAuthIntents();
+const authIntents = createAuthIntents(Platform.OS === "web" ? browserAuthIntentStore(supabaseConfigurationError ? "https://placeholder.supabase.co" : projectUrl!) : undefined);
 export const supabase = createClient(
   supabaseConfigurationError ? "https://placeholder.supabase.co" : projectUrl!,
   supabaseConfigurationError ? "placeholder-publishable-key" : publishableKey!,

@@ -1,4 +1,12 @@
 export type AuthIntentStore = { read: () => string; write: (value: string) => void };
+export function browserAuthIntentStore(project: string): AuthIntentStore | undefined {
+  if (typeof document === "undefined") return undefined;
+  const key = `hoopcheck-auth-intent-${new URL(project).hostname.split(".")[0]}`;
+  return {
+    read: () => document.cookie.split("; ").find(cookie => cookie.startsWith(`${key}=`))?.slice(key.length + 1) || "",
+    write: value => { document.cookie = `${key}=${value}; Path=/; SameSite=Lax${location.protocol === "https:" ? "; Secure" : ""}`; },
+  };
+}
 export function createAuthIntents(store?: AuthIntentStore) {
   let local = "initial";
   function read() { return store?.read() || local; }
