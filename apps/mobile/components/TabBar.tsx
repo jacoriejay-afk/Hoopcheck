@@ -11,7 +11,7 @@ import { useEntryTheme } from "../src/theme";
 
 const tabs = [
   { route: "/dashboard", label: "Home", icon: "home-outline", active: "home" },
-  { route: "/teams", label: "Teams", icon: "basketball-outline", active: "basketball" },
+  { route: "/search", label: "Search", icon: "search-outline", active: "search" },
   { route: "/leagues", label: "Leagues", icon: "trophy-outline", active: "trophy" },
   { route: "/players", label: "Players", icon: "people-outline", active: "people" },
   { route: "/settings", label: "Settings", icon: "settings-outline", active: "settings" },
