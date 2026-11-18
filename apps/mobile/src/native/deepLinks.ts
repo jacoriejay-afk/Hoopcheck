@@ -15,7 +15,7 @@ export function nativeDestination(path: string): string {
     const parts = url.pathname.split("/").filter(Boolean);
     if (parts.length === 3 && parts[0] === "womens" && parts[1] === "leagues" && safeId.test(parts[2])) return `/womens/leagues/${parts[2]}`;
     if (parts.length === 2 && ["teams", "womens", "leagues", "players"].includes(parts[0]) && safeId.test(parts[1])) return `/${parts[0]}/${parts[1]}`;
-    if (parts.length === 1 && ["teams", "womens", "leagues", "players", "coaches", "dashboard", "settings"].includes(parts[0])) return url.pathname;
+    if (parts.length === 1 && ["account", "teams", "womens", "leagues", "players", "coaches", "dashboard", "settings"].includes(parts[0])) return url.pathname;
     if (url.pathname === "/search") {
       const query = new URLSearchParams();
       const term = url.searchParams.get("q");
@@ -23,6 +23,7 @@ export function nativeDestination(path: string): string {
       const serialized = query.toString();
       return "/search" + (serialized ? `?${serialized}` : "");
     }
+
     if (url.pathname === "/auth/callback" || url.pathname === "/reset-password") {
       // Re-encode only the PKCE/error fields understood by native auth screens.
       // Invalid percent sequences must not reach the router's legacy decoder.

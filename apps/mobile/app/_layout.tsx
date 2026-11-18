@@ -66,7 +66,8 @@ function RootLayout() {
   useEffect(() => {
     if (!sessionReady) return;
     const currentRoute = segments[0] ?? "";
-    const inAppArea = ["dashboard", "search", "teams", "womens", "leagues", "players", "coaches", "choose-username", "settings"].includes(currentRoute);
+    const inAppArea = ["dashboard", "account", "search", "teams", "womens", "leagues", "players", "coaches", "choose-username", "settings"].includes(currentRoute);
+
 
     if (["web", "sign-in", "sign-up"].includes(currentRoute)) return;
     const onPasswordRecovery = currentRoute === "reset-password";
@@ -96,6 +97,7 @@ function RootLayout() {
           contentStyle: { backgroundColor: theme.background },
         }}
       >
+        <Stack.Screen name="account" options={{ title: "Account" }} />
         <Stack.Screen name="settings" options={{ title: "Settings" }} />
         <Stack.Screen name="web" options={{ title: "HoopCheck" }} />
         <Stack.Screen name="index" options={{ title: "HoopCheck™", headerShown: false }} />

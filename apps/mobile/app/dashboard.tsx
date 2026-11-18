@@ -45,6 +45,7 @@ export default function DashboardScreen() {
   }, []);
 
   async function openAccountLink(path: string) {
+    if (path === "/account") { router.push("/account"); return; }
     try {
       await Linking.openURL(`https://hoopcheck.online${path}`);
     } catch {
