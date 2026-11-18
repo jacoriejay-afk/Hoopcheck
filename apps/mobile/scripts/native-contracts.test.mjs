@@ -127,3 +127,9 @@ test("search links bound and safely re-encode terms for native routing", () => {
   assert.equal(nativeDestination("hoopcheck://search?q=%ZZ&token=discard"), "/search?q=%25ZZ");
   assert.equal(nativeDestination("/search?q=" + "x".repeat(200)), "/search?q=" + "x".repeat(100));
 });
+
+
+test("canonical homepage and empty app links reach native entry without a web handoff", () => {
+  for (const url of ["/", "https://hoopcheck.online/", "hoopcheck://", "hoopcheck:///"]) assert.equal(nativeDestination(url), "/");
+  assert.equal(nativeDestination("https://hoopcheck.online/?token=discard"), "/");
+});
