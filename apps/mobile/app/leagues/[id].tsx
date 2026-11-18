@@ -94,8 +94,8 @@ export default function LeagueDetailScreen() {
             </View>
             <GlassCard style={styles.card}>
               <Text style={styles.label}>COMPETITION LEVEL</Text><Text style={styles.value}>{league.level || "Not listed"}</Text>
-              <View style={styles.divider} />
-              <Text style={styles.label}>SEASON</Text><Text style={styles.value}>{league.season || "Not listed"}</Text>
+              {!womens ? <><View style={styles.divider} />
+              <Text style={styles.label}>SEASON</Text><Text style={styles.value}>{league.season || "Not listed"}</Text></> : null}
               <View style={styles.divider} />
               <Text style={styles.label}>COUNTRY</Text><Text style={styles.value}>{league.country || "Not listed"}</Text>
             </GlassCard>
