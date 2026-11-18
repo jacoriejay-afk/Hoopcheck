@@ -2,7 +2,9 @@
 
 Status: NOT release ready. The touch repair remains a draft. No EAS build, OTA,
 credentials mutation or production database writes were performed. Independent
-verified repairs have been merged: #702, #703, #704, #705, #706, #707, #708, #709.
+verified repairs have been merged: #702, #703, #704, #705, #706, #707, #708, #709,
+and the isolated-payment-verified #673. Another session merged #713 into main;
+its inclusion does not establish physical touch repair. #699 remains open.
 
 ## Freeze (#699, draft PR #700)
 
@@ -75,7 +77,8 @@ schema is unverified; native club groups do not change current fan membership ru
 Owner/Ambassador HQ and commission/referral flows require endpoint-by-endpoint
 review and current-revision isolated payment/database delivery evidence; existing
 web code or links alone do not prove complete native flows. PR #673 explicitly
-requires current-preview Stripe delivery and payout verification.
+now has current-preview signed sandbox refund and commission evidence and is merged.
+See build-8-reconciliation.md for the exact evidence and limits.
 
 No production data is used as test data. Test-project metadata has schema/RLS
 drift and cannot substitute for production parity. Hosted identity transitions,

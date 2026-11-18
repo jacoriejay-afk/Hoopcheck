@@ -5,7 +5,8 @@ production record write was performed. All three remaining Expo builds are prese
 
 ## Exact integrated inputs
 
-- Main: `0ded352495e676e83cf5e1ef1ececcaed1554f68` (includes merged #702–#709).
+- Main: `98d5ed6c152fd0bc7b1e2b0389391823630f3c1e` (includes #702–#709, #713 and #673).
+  The candidate originally started from `0ded352495e676e83cf5e1ef1ececcaed1554f68`.
 - #700 modal repair: `d7a75b6897702e2f6c2b0341f3a35f806df488a5`.
 - #710 feed, Reels, notifications and website tabs: `7c9101bc893b014bd65ba0b7ca311dc1bf0c167c`.
 - #711 compact feed/media styling: `82eacc21900f72a0dbc7be585d12a1c2570051a4`.
@@ -14,7 +15,8 @@ production record write was performed. All three remaining Expo builds are prese
 - #714 current club-group membership, moderation and memory-only drafts: `11137181d5326bdc4645fa6b77aedc006cb95444`.
 
 These inputs are reconciled on `reconcile/native-build8-complete`. Source branches
-remain intact. No draft PR is represented as merged. The prior integration branch's
+remain intact. Another session merged #713 into main as `7c60416993dfab57456e1cdc8d9e7075584bcb53`.
+This records repository state, not physical touch verification. The prior integration branch's
 Vercel opt-out remains scoped to that branch; this candidate permits ordinary PR
 preview checks, which do not invoke EAS or publish a native OTA.
 
@@ -83,14 +85,20 @@ It does not replace the lock, lifecycle, authorization or media checks.
 - Hosted authentication/security, referral attribution and subscription lifecycle
   require isolated end-to-end role/identity verification. Existing 2FA work and
   protected 30-day account deletion are incomplete; deletion currently fails closed.
-- Owner/Ambassador HQ financial and payout verification remains incomplete.
-  #673 is a narrow event-handler repair, now refreshed on main. Local tests and
-  current preview pass, but signed sandbox delivery was blocked by automatic
-  approval review of a webhook URL carrying an existing Vercel protection token.
-  No endpoint/refund/payout/database mutation occurred. It remains unmerged.
+- #673 is now merged after a current-preview signed TEST refund. Its exact head
+  `7338b356bda586dfcff69b85b98c0f785f5259c9` passed CI/Vercel. A 2-cent refund
+  produced a processed charge.refund.updated claim, one succeeded audit row and
+  the expected 108→110 cumulative deduction; current earnings are 173 cents from
+  net 455 at 5000 bps. No payout was created. Original TEST webhook URL, event list
+  and status were restored and verified. Automatic review initially held the URL
+  change, then approved after read-only proof that Stripe already held the identical
+  credential. No credential disclosure workaround was used. This verifies the
+  narrow event gap, not every financial/subscription/referral lifecycle.
 - Test-project schema/RLS drift prevents treating test metadata as production
   parity. No production record may be used as a test fixture or modified directly.
 - Signing credentials, provisioning expiry and next remote build number remain
   unverified: no authenticated EAS/Apple tooling or macOS runner is available.
+  The connected browser shows Expo login; its secure sign-in capability returned
+  unavailable. Account access is needed for the read-only remote metadata audit.
 - ITMS-90725 and the April 2027 SDK27 deadline are documented in build-8-readiness.md.
   Do not select Xcode latest for SDK54 or attempt a major Expo upgrade as a blind fix.
