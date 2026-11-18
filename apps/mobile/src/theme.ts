@@ -1,3 +1,5 @@
+import { useSyncExternalStore } from "react";
+import { getThemePreference, getServerThemePreference, subscribeThemePreference, themeIsDark } from "./native/themePreference";
 import { Platform, useColorScheme } from "react-native";
 
 // Canonical source: app/hoopcheck-theme-tokens.css and app/styles/liquid-glass.css.
@@ -40,5 +42,8 @@ export function getEntryTheme(dark: boolean) {
     shadow: { shadowColor: "#000000", shadowOffset: { width: 0, height: 12 }, shadowRadius: 32, shadowOpacity: dark ? .32 : .12, elevation: 8 },
   };
 }
-export function useEntryTheme() { return getEntryTheme(useColorScheme() !== "light"); }
+export function useEntryTheme() {
+  const preference = useSyncExternalStore(subscribeThemePreference, getThemePreference, getServerThemePreference);
+  return getEntryTheme(themeIsDark(preference, useColorScheme()));
+}
 export type EntryTheme = ReturnType<typeof getEntryTheme>;
