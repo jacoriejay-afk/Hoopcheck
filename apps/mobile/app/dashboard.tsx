@@ -68,7 +68,7 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView edges={["left", "right", "bottom"]} style={[styles.safe, { backgroundColor: theme.background }]}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView testID="dashboard-scroll" contentContainerStyle={styles.scroll}>
         <View style={styles.content}>
           <Text style={{ color: theme.accent, fontSize: 12, fontWeight: "800", letterSpacing: 1.5 }}>THE GLOBAL BASKETBALL INTELLIGENCE HUB</Text>
           <Text accessibilityRole="header" style={[theme.type.display, { color: theme.foreground, marginVertical: 16 }]}>Know who you’re signing with.</Text>
@@ -78,7 +78,7 @@ export default function DashboardScreen() {
           <SectionHeader>Explore basketball</SectionHeader>
           <View style={styles.directories}>
             {directories.map(({ href, icon, title, detail }) => (
-              <Pressable key={href} onPress={() => router.push(href)} accessibilityRole="link" style={({ pressed }) => [
+              <Pressable key={href} testID={`directory-${title.toLowerCase()}`} onPress={() => router.push(href)} accessibilityRole="link" style={({ pressed }) => [
                   styles.directory, panel, pressed && { backgroundColor: theme.accentSurface },
                 ]}>
                   <View style={[styles.icon, { backgroundColor: theme.accentSurface }]}>
