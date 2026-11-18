@@ -65,7 +65,7 @@ function RootLayout() {
   useEffect(() => {
     if (!sessionReady) return;
     const currentRoute = segments[0] ?? "";
-    const inAppArea = ["dashboard", "teams", "leagues", "players", "coaches", "choose-username", "settings"].includes(currentRoute);
+    const inAppArea = ["dashboard", "search", "teams", "leagues", "players", "coaches", "choose-username", "settings"].includes(currentRoute);
     if (["web", "sign-in", "sign-up"].includes(currentRoute)) return;
     const onPasswordRecovery = currentRoute === "reset-password";
     // Let the OAuth callback exchange its PKCE code and choose the destination.
@@ -108,6 +108,7 @@ function RootLayout() {
           headerShadowVisible: false,
           contentStyle: { backgroundColor: theme.background },
         }} />
+        <Stack.Screen name="search" options={{ title: "Search" }} />
         <Stack.Screen name="players" options={{ title: "Find players" }} />
         <Stack.Screen name="players/[id]" options={{ title: "Player profile" }} />
         <Stack.Screen name="coaches" options={{ title: "Find a coach" }} />
