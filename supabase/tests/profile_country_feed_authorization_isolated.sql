@@ -46,7 +46,7 @@ GRANT SELECT ON public.subscriptions,public.follow_relationships TO authenticate
 CREATE OR REPLACE FUNCTION public.is_current_user_admin_or_moderator() RETURNS boolean
  LANGUAGE sql STABLE AS $$ SELECT auth.uid()='77777777-7777-4777-8777-777777777777'::uuid $$;
 GRANT EXECUTE ON FUNCTION public.is_current_user_admin_or_moderator() TO authenticated;
--- Same predicates as production function, with raw country comparison replaced by protected boolean.
+-- Same predicates as production function; protected definer performs the private-country comparison internally.
 CREATE OR REPLACE FUNCTION public.can_view_player_feed_post(p_author_id uuid)
  RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $
  SELECT p_author_id=(SELECT auth.uid())
