@@ -57,11 +57,13 @@ export default function CompleteProfilePage() {
     if (!user) { router.replace("/login?returnTo=/complete-profile"); setLoading(false); return; }
     setUserId(user.id);
     const { data, error: loadError } = await supabase.from("profiles")
-      .select("id,account_type,basketball_type,display_name,username,avatar_url,position,current_team,free_agent,current_country,favorite_leagues,height,bio,hometown,profile_visibility")
+      .select("id,account_type,basketball_type,display_name,username,avatar_url,position,current_team,free_agent,favorite_leagues,height,bio,hometown,profile_visibility")
       .eq("id", user.id).maybeSingle();
     if (loadError) { setError("Unable to load your profile: " + loadError.message); setLoading(false); return; }
     if (!data || data.account_type !== "player") { setError("The player profile checklist is available to player accounts."); setLoading(false); return; }
-    setProfile(data as PlayerRecord);
+    const { data: ownCountry, error: ownCountryError } = await supabase.rpc("get_my_private_country");
+    if (ownCountryError) { setError("Unable to load private country: " + ownCountryError.message); setLoading(false); return; }
+    setProfile({ ...data, current_country: ownCountry ?? null } as PlayerRecord);
     setLoading(false);
   }, [router]);
 
@@ -113,11 +115,13 @@ export default function CompleteProfilePage() {
 
       const { data, error: saveError } = await supabase.from("profiles").update(updates)
         .eq("id", userId)
-        .select("id,account_type,basketball_type,display_name,username,avatar_url,position,current_team,free_agent,current_country,favorite_leagues,height,bio,hometown,profile_visibility")
+        .select("id,account_type,basketball_type,display_name,username,avatar_url,position,current_team,free_agent,favorite_leagues,height,bio,hometown,profile_visibility")
         .maybeSingle();
       if (saveError) throw saveError;
       if (!data) throw new Error("No profile row was updated. Refresh and sign in again, then retry.");
-      setProfile(data as PlayerRecord);
+      const { data: ownCountry, error: ownCountryError } = await supabase.rpc("get_my_private_country");
+      if (ownCountryError) throw ownCountryError;
+      setProfile({ ...data, current_country: ownCountry ?? null } as PlayerRecord);
       setActiveField(null);
       setPhoto(null);
       setNotice(fieldCopy[activeField].label + " saved.");
@@ -134,10 +138,12 @@ export default function CompleteProfilePage() {
     setError("");
     try {
       const { data, error: updateError } = await supabase.from("profiles").update({ profile_visibility: "public" })
-        .eq("id", userId).select("id,account_type,basketball_type,display_name,username,avatar_url,position,current_team,free_agent,current_country,favorite_leagues,height,bio,hometown,profile_visibility").maybeSingle();
+        .eq("id", userId).select("id,account_type,basketball_type,display_name,username,avatar_url,position,current_team,free_agent,favorite_leagues,height,bio,hometown,profile_visibility").maybeSingle();
       if (updateError) throw updateError;
       if (!data) throw new Error("Your profile could not be made public. Please try again.");
-      setProfile(data as PlayerRecord);
+      const { data: ownCountry, error: ownCountryError } = await supabase.rpc("get_my_private_country");
+      if (ownCountryError) throw ownCountryError;
+      setProfile({ ...data, current_country: ownCountry ?? null } as PlayerRecord);
       router.push("/players/" + encodeURIComponent(userId));
     } catch (cause) {
       console.error("Publishing player profile failed:", cause);
