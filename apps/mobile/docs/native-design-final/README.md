@@ -3,7 +3,7 @@
 Updated 2026-11-19. Branch `codex/native-design-final`, still based on #721
 (`d0b87b1e`). **Not ready for final Build 8 integration or iPhone sign-off.**
 The design changes are locally reviewable; authenticated live reference access,
-Build 8 reconciliation and physical-device gates remain open.
+approval of the combined Build 8 candidate and physical-device gates remain open.
 
 [Visual gallery](comparisons.html) · [Original audit](baseline-report.md)
 
@@ -75,7 +75,7 @@ native-web flows are not represented as live signed-in parity proof.
 | Onboarding / username | Official brand and display type, lifecycle regressions pass | On-device modal/lock/large-text verification |
 | Settings | Earlier single title/compact layout retained; appearance persistence/failure tests pass | Face ID, alternate icons and system keyboard theme on iPhone |
 | About | New native public copy and branded presentation; both-theme screenshots/test | Device readability; company/founder/partnership content remains on website |
-| Account security | No duplicate screen introduced | Existing native security screen is in #727, not this branch; reconcile and test its UI with that owner |
+| Account security | No duplicate screen introduced | Existing native security screen is in #727; its combined-source browser suite passes. Live reference/device review remains |
 | Owner HQ / Ambassador HQ | Audited as absent from this baseline | No native role-authorized data contract/screens; cannot implement truthful role dashboards as a styling-only change. Requires feature owner and authorized reference sessions, not merely an iPhone |
 | Website handoffs | Existing URL-validation/browser handoff retained | Actual browser session and return behavior on device |
 
@@ -171,29 +171,31 @@ new design browser suite is included in Mobile CI.
 
 ## Integration status
 
-A read-only `git merge-tree --write-tree HEAD origin/feat/storekit-membership-sync`
-simulation against #730 head `9645897d24da31ce66ab28ba90f07d17b82fae4b` found
-**three textual conflicts**: `apps/mobile/app/_layout.tsx`,
-`apps/mobile/app/account.tsx`, and `apps/mobile/scripts/modal-regressions.test.mjs`.
-No merge was applied and neither branch was changed by the simulation.
+The first read-only merge simulation found three additive-entry conflicts. They
+were removed by relocating the new Stack registrations, Account links and visual
+test stub away from Build 8's security additions; no auth logic was imported or
+changed. A subsequent `git merge-tree --write-tree HEAD
+origin/feat/storekit-membership-sync` completed **cleanly** against #730 at
+`9645897d24da31ce66ab28ba90f07d17b82fae4b`.
 
-Reconciliation requirements:
+The simulation inputs were design source commit
+`96208f4d5d06574c99c0571e03a1c7a197137faf` and #730 head above.
+Combined source tree: `cc1eaea5b142afbba7c3853d0e02326453ef58b5`. It was archived
+into `/tmp/hoopcheck-design-build8-candidate`, with no merge/rebase or branch-ref
+change. In that isolated archive, TypeScript, all 22 native test files and
+combined auth/URL suites pass. Existing media, player-privacy, MFA and new design
+browser suites pass in both themes. All ten combined browser suites pass: discovery, feed, Live Games, groups,
+profile editing, appearance, media, player privacy, MFA and design. The web export passes. These checks do not
+compile an iOS binary, apply #730 migrations or validate actual Apple billing.
 
-- Layout: start with Build 8's newer auth/MFA/providers/link protections; add
-  About as a public route, Connections to protected destinations, both stack
-  registrations, and the dashboard's `BrandLogo` header. Retain Build 8's native
-  security screen and all existing protected-route/identity logic.
-- Account: preserve the newer security/membership/StoreKit-owned entries and
-  authoritative account behavior; retain this PR's Connections/About links and
-  compact spacing. Do not overwrite it with this older baseline file.
-- Modal regression harness: retain the newer Build 8 security/lifecycle stubs and
-  cases; add the harmless `./BrandLogo` visual stub used by onboarding.
-- Although text auto-merged, review `feed.tsx` and `account/edit.tsx` to preserve
-  #722's media/photo handling, and review the combined CI workflow and test-auth
-  stubs. Textual success is not behavior proof.
+`integration-evidence/` is separately labeled evidence from that simulated
+combined source, including native MFA/security, media/profile and design
+screens. Those feature implementations remain owned by #722–#730 and were not
+copied into this design branch. Do not confuse those captures with `after/`,
+which shows this PR's standalone #721-based source.
 
-Keep draft. The combined candidate must run all newer media/player/MFA tests as
-well as this PR's design tests. Successful isolated checks do not establish
-integrated behavior. Remaining non-device blockers include live authenticated
-reference access, the feature gaps listed above, and reconciliation/verification
-with the newer Build 8 stack. No merge, EAS, OTA or production change performed.
+The design patch is ready for code-integration review against that specific
+snapshot, but **PR #729 is not ready for final integration sign-off**. Final
+integration still requires an approved combined candidate, live authenticated
+website comparison, feature-gap decisions above, and physical iPhone checks.
+Keep draft. No merge, EAS, OTA or production change performed.
