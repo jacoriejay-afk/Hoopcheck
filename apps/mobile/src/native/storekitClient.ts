@@ -53,6 +53,7 @@ export function createStoreKitClient(deps: {
   request: StoreRequest;
   onSynced(): void;
   available?(): boolean;
+  purchasesAvailable?: boolean;
 }) {
   let owner: string | null = null, epoch = 0, presenting = false;
   const syncing = new Map<string, Promise<boolean>>();
@@ -113,15 +114,20 @@ export function createStoreKitClient(deps: {
     },
     async catalog() {
       const captured = await scope(), native = bridge();
+      if (deps.purchasesAvailable === false) return { products: [] as StoreProduct[], canPurchase: false, reason: "New Apple purchases require iOS 16 or later. Existing membership and purchase restoration remain available." };
       const result = record(await deps.request("/api/mobile/purchases/config", captured.token)); current(captured);
       if (result.owner !== captured.owner || !["Production", "Sandbox"].includes(String(result.environment)) || typeof result.canPurchase !== "boolean") throw Error("Membership options could not be verified.");
       if (!result.canPurchase) return { products: [] as StoreProduct[], canPurchase: false, reason: typeof result.reason === "string" ? result.reason.slice(0, 500) : "New purchases are unavailable for this account." };
+      if (!Array.isArray(result.products) || ![3, 6].includes(result.products.length)) throw Error("Membership product permissions could not be verified.");
+      const allowed = result.products.map(value => { const row = record(value); if (!appleProduct(row.id)) throw Error("Membership product permissions could not be verified."); return row.id; });
+      if (new Set(allowed).size !== allowed.length) throw Error("Membership product permissions could not be verified.");
       const products = storeProducts(await readWithDeadline(() => native.products(), 15000)); current(captured);
       if (products.length !== 6) throw Error("Some Apple membership products are unavailable. Please try again later.");
-      return { products, canPurchase: true, reason: "" };
+      return { products: products.filter(product => allowed.includes(product.id)), canPurchase: true, reason: "" };
     },
     async prepare(product: StoreProduct): Promise<PreparedPurchase> {
       const captured = await scope(), native = bridge();
+      if (deps.purchasesAvailable === false) throw Error("New Apple purchases require iOS 16 or later. Restore remains available.");
       storeProducts([product]);
       const identity = record(await readWithDeadline(() => native.identity(), 15000)); current(captured);
       if (!identifier(identity.id) || !jws(identity.signedJWS) || !["Production", "Sandbox"].includes(String(identity.environment))) throw Error("Apple app identity could not be verified.");

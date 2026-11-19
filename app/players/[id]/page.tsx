@@ -1,4 +1,6 @@
 "use client";
+import { getEffectiveMembership } from "../../../lib/billing/client-membership";
+
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -96,7 +98,7 @@ export default function PlayerProfilePage() {
         if (user.id === params.id) {
           const [{ data: ownProfile }, { data: ownSubscription }, { data: count }] = await Promise.all([
             supabase.from("profiles").select("id,account_type,avatar_url,position,current_team,free_agent,current_country,favorite_leagues,height,bio,hometown,profile_visibility").eq("id", user.id).maybeSingle(),
-            supabase.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id", user.id).maybeSingle(),
+            getEffectiveMembership(user.id),
             supabase.rpc("get_follow_count", { p_target_type: "player", p_target_id: user.id }),
           ]);
           setFollowers(count === null ? null : Number(count));

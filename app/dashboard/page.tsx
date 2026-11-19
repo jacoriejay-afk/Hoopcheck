@@ -1,4 +1,6 @@
 "use client";
+import { getEffectiveMembership } from "../../lib/billing/client-membership";
+
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -105,7 +107,7 @@ export default function DashboardPage() {
 
       const [profileResult, subscriptionResult, followsResult] = await Promise.allSettled([
         withTimeout(supabase.from("profiles").select("id,display_name,first_name,last_name,bio,position,current_team,current_country,height,free_agent,profile_visibility,nationality,hometown,avatar_url,interests,favorite_leagues,player_verified,account_type").eq("id",user.id).maybeSingle(), 8000),
-        withTimeout(supabase.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id",user.id).maybeSingle(), 8000),
+        withTimeout(getEffectiveMembership(user.id), 8000),
         withTimeout(supabase.from("follow_relationships").select("target_id").eq("follower_id",user.id).eq("target_type","team").order("created_at",{ascending:false}).limit(100), 8000)
       ] as const);
       if (!mounted) return;
