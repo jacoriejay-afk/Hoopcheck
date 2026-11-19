@@ -34,4 +34,36 @@ begin
   raise exception 'unexpected reservation count';
  end if;
 end $$;
+-- Bind/redeem lifecycle regression (still rolled back).
+create function public.bind_stripe_trial_session(p_user_id uuid,p_session_id text)
+returns boolean language plpgsql security invoker set search_path = '' as $
+declare n integer;
+begin
+ if p_session_id is null or p_session_id !~ '^cs_' then return false; end if;
+ update public.stripe_trial_claims set checkout_session_id=p_session_id
+ where user_id=p_user_id and state='reserved'
+ and (checkout_session_id is null or checkout_session_id=p_session_id);
+ get diagnostics n=row_count;
+ return n=1;
+end $;
+create function public.redeem_stripe_trial(p_user_id uuid,p_session_id text)
+returns boolean language plpgsql security invoker set search_path = '' as $
+declare n integer;
+begin
+ update public.stripe_trial_claims set state='redeemed',redeemed_at=now()
+ where user_id=p_user_id and checkout_session_id=p_session_id and state='reserved';
+ get diagnostics n=row_count;
+ return n=1;
+end $;
+do $
+declare uid uuid := '11111111-1111-4111-8111-111111111111';
+begin
+ if public.bind_stripe_trial_session(uid,'invalid') then raise exception 'invalid session accepted'; end if;
+ if not public.bind_stripe_trial_session(uid,'cs_test_first') then raise exception 'binding failed'; end if;
+ if public.bind_stripe_trial_session(uid,'cs_test_other') then raise exception 'session replaced'; end if;
+ if public.redeem_stripe_trial(uid,'cs_test_other') then raise exception 'wrong session redeemed'; end if;
+ if not public.redeem_stripe_trial(uid,'cs_test_first') then raise exception 'redemption failed'; end if;
+ if public.redeem_stripe_trial(uid,'cs_test_first') then raise exception 'duplicate redemption'; end if;
+ if public.bind_stripe_trial_session(uid,'cs_test_first') then raise exception 'redeemed session rebound'; end if;
+end $;
 rollback;
