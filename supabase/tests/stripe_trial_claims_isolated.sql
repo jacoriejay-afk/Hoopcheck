@@ -91,6 +91,8 @@ begin
  if not public.bind_stripe_trial_session(uid2,'cs_test_expired') then raise exception 'second bind failed'; end if;
  if public.release_expired_stripe_trial(uid2,'cs_test_wrong') then raise exception 'wrong session released'; end if;
  if not public.release_expired_stripe_trial(uid2,'cs_test_expired') then raise exception 'expired reservation not released'; end if;
+ if public.release_expired_stripe_trial(uid2,'cs_test_expired') then raise exception 'expired claim released twice'; end if;
+ if public.bind_stripe_trial_session(uid2,'cs_test_reissued') then raise exception 'expired claim rebound'; end if;
  if public.reserve_stripe_trial(uid2) then raise exception 'expired claim reissued and enabled double trial'; end if;
  if (select state from public.stripe_trial_claims where user_id=uid2) <> 'expired' then raise exception 'expired claim missing'; end if;
  if public.redeem_stripe_trial(uid2,'cs_test_expired') then raise exception 'expired claim redeemed'; end if;
