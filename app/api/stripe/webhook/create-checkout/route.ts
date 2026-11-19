@@ -367,6 +367,21 @@ export async function POST(
       hasPriorStripeSubscription: false,
     });
 
+    // Atomic claim must succeed before any Stripe trial session is created.
+    // The rollout remains hard-disabled until abandoned-session reconciliation
+    // and the full sandbox lifecycle have been verified.
+    if (trialEligible) {
+      const { data: reserved, error: reservationError } = await supabase.rpc(
+        "reserve_stripe_trial", { p_user_id: user.id }
+      );
+      if (reservationError || reserved !== true) {
+        return NextResponse.json(
+          { error: "The introductory trial is unavailable for this account." },
+          { status: 409 }
+        );
+      }
+    }
+
     const session =
       await stripe.checkout.sessions.create(
         {
@@ -405,6 +420,7 @@ export async function POST(
             user_id: user.id,
             plan,
             billing_interval: interval,
+            ...(trialEligible ? { stripe_trial_reserved: "true" } : {}),
           },
 
           subscription_data: {
@@ -414,6 +430,7 @@ export async function POST(
               user_id: user.id,
               plan,
               billing_interval: interval,
+              ...(trialEligible ? { stripe_trial_reserved: "true" } : {}),
             },
           },
 
@@ -421,6 +438,28 @@ export async function POST(
             "hoopcheck_sub_AzQmLpRt",
         }
       );
+
+    if (trialEligible) {
+      const { data: bound, error: bindingError } = await supabase.rpc(
+        "bind_stripe_trial_session", {
+          p_user_id: user.id,
+          p_session_id: session.id,
+        }
+      );
+      if (bindingError || bound !== true) {
+        // Do not return an unbound trial session to the client.
+        // Attempt to expire it; keep the reservation locked for reconciliation.
+        try {
+          await stripe.checkout.sessions.expire(session.id);
+        } catch (expireError) {
+          console.error("Unable to expire unbound trial checkout", expireError);
+        }
+        return NextResponse.json(
+          { error: "Unable to secure the trial checkout session." },
+          { status: 503 }
+        );
+      }
+    }
 
     if (!session.url) {
       return NextResponse.json(
