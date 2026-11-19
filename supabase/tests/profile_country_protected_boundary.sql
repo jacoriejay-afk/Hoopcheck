@@ -89,6 +89,16 @@ DO $$ BEGIN
  IF (SELECT public.read_own_private_country('11111111-1111-4111-8111-111111111111')) <> 'SECRET FIXTURE' THEN
   RAISE EXCEPTION 'owner cannot read own private country';
  END IF;
+ -- The owner-only RPC must never return another signed-in user's country.
+ PERFORM set_config('request.jwt.claim.sub','22222222-2222-4222-8222-222222222222',true);
+ IF (SELECT public.get_my_private_country()) <> 'PUBLIC FIXTURE' THEN
+  RAISE EXCEPTION 'owner RPC returned another account country';
+ END IF;
+ PERFORM set_config('request.jwt.claim.sub','',true);
+ IF (SELECT public.get_my_private_country()) IS NOT NULL THEN
+  RAISE EXCEPTION 'owner RPC returned country with missing JWT subject';
+ END IF;
+ PERFORM set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',true);
  -- Owner edits must use safe RETURNING fields and then refresh the private value through the owner RPC.
  UPDATE public.profiles SET current_country='UPDATED SECRET FIXTURE' WHERE id='11111111-1111-4111-8111-111111111111';
  IF (SELECT public.get_my_private_country()) <> 'UPDATED SECRET FIXTURE' THEN
