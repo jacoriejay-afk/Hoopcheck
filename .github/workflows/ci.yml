@@ -87,6 +87,9 @@ jobs:
           createdb -h 127.0.0.1 -U postgres hoopcheck_trial_test
           psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_trial_test -f supabase/tests/stripe_trial_claims_isolated.sql
 
+      - name: Prevent premature Stripe trial activation
+        run: node scripts/check-stripe-trial-release-safety.mjs
+
       - name: Verify seven-day trial eligibility policy
         run: npm run test:stripe-trial
 
