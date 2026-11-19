@@ -317,7 +317,7 @@ export async function POST(
     // Never enable in production merely because this branch is deployed.
     const trialRolloutEnabled = process.env.STRIPE_SEVEN_DAY_TRIAL_ENABLED === "true" &&
       process.env.VERCEL_ENV !== "production";
-    let trialEligible = trialRolloutEnabled && interval === "month" && !promoCodeId && !existingSubscription?.stripe_subscription_id && Boolean(user.email_confirmed_at);
+    let trialEligible = trialRolloutEnabled && checkoutProfile.account_type === "player" && interval === "month" && !promoCodeId && !existingSubscription?.stripe_subscription_id && Boolean(user.email_confirmed_at);
     if (trialEligible) {
       const customers = customerId
         ? [await stripe.customers.retrieve(customerId)]
@@ -356,7 +356,7 @@ export async function POST(
     // Recheck the final policy after all history lookups. This remains disabled
     // in production until atomic one-time reservation is implemented.
     trialEligible = isEligibleForSevenDayTrial({
-      rolloutEnabled: trialRolloutEnabled,
+      rolloutEnabled: trialRolloutEnabled && checkoutProfile.account_type === "player",
       interval,
       hasPromoCode: Boolean(promoCodeId),
       hasExistingSubscription: Boolean(existingSubscription?.stripe_subscription_id),
