@@ -72,5 +72,16 @@ DO $check$ BEGIN
   RAISE EXCEPTION 'protected directory suppressed public country for authenticated';
  END IF;
 END $check$;
+-- Unauthenticated execution must be denied for any owner-only country reader.
+-- The directory reader is public but may never disclose a hidden value.
+RESET ROLE;
+DO $assert$ BEGIN
+ IF has_function_privilege('anon','public.directory_country_protected()','EXECUTE') IS NOT TRUE THEN
+  RAISE EXCEPTION 'anonymous lost access to public player directory';
+ END IF;
+ IF has_column_privilege('anon','public.profiles','current_country','SELECT') THEN
+  RAISE EXCEPTION 'directory prototype accidentally restored direct country access';
+ END IF;
+END $assert$;
 ROLLBACK;
 SELECT 'PASS: column revoke breaks masked invoker RPC; directory release needs protected implementation' AS result;
