@@ -47,7 +47,9 @@ AS $function$
         WHERE mine.follower_id = auth.uid() AND mine.target_type = 'team'
           AND mine.target_id = coalesce(team.id, womens_team.id)
       )
-    GROUP BY team.id, womens_team.id
+    GROUP BY team.id, womens_team.id, team.name, womens_team.name,
+      team.logo_url, womens_team.logo_url, team.country, womens_team.country,
+      team.league_name, womens_team.league_name
   )
   SELECT entity_type, entity_id, display_name, avatar_url, detail, player_verified
   FROM (
