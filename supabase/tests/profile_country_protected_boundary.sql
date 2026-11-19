@@ -52,6 +52,12 @@ DO $$ BEGIN
  IF (SELECT public.read_public_country('22222222-2222-4222-8222-222222222222')) <> 'PUBLIC FIXTURE' THEN
   RAISE EXCEPTION 'public country missing';
  END IF;
+ -- Verify that direct SQL cannot reveal the protected country even on a public profile.
+ BEGIN
+  EXECUTE 'SELECT current_country FROM public.profiles LIMIT 1';
+  RAISE EXCEPTION 'anonymous raw country SELECT unexpectedly succeeded';
+ EXCEPTION WHEN insufficient_privilege THEN NULL;
+ END;
  IF has_function_privilege('anon','public.read_own_private_country(uuid)','EXECUTE') THEN
   RAISE EXCEPTION 'anonymous role can execute owner-only RPC';
  END IF;
@@ -62,6 +68,11 @@ DO $$ BEGIN
  IF has_column_privilege('authenticated','public.profiles','current_country','SELECT') THEN
   RAISE EXCEPTION 'authenticated direct country SELECT unexpectedly granted';
  END IF;
+ BEGIN
+  EXECUTE 'SELECT current_country FROM public.profiles LIMIT 1';
+  RAISE EXCEPTION 'authenticated raw country SELECT unexpectedly succeeded';
+ EXCEPTION WHEN insufficient_privilege THEN NULL;
+ END;
  IF (SELECT public.read_own_private_country('11111111-1111-4111-8111-111111111111')) <> 'SECRET FIXTURE' THEN
   RAISE EXCEPTION 'owner cannot read own private country';
  END IF;
