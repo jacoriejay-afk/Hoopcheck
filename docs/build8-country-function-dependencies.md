@@ -27,3 +27,7 @@ Rechecked production `pg_get_functiondef` without reading profile rows or modify
 - `admin_list_users` and `admin_update_profile` are SECURITY DEFINER with admin/moderator checks. Preserve their authorized workflows while checking EXECUTE grants and role authorization independently.
 
 **Decision:** Do not apply a column-revocation migration yet. A safe rollout must first close the legacy RPC and social-suggestion disclosures, preserve the feed country-match authorization internally, and verify the public-profile masking and authorized admin flows. This audit did not modify production.
+
+## CI isolation correction
+
+The first attempt to append the social-suggestions replacement to the profile-privacy migration caused isolated PostgreSQL CI to fail: its minimal fixture does not contain `public.follow_relationships`, `public.teams`, or `public.womens_teams`. That addition was removed from the profile migration at commit `8614d92`; the social-suggestions change must be shipped as a separately staged, fully tested migration with the required schema, not silently bypass the isolated test. No production change occurred.
