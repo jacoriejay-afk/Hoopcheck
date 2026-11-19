@@ -73,7 +73,7 @@ DO $$ BEGIN
  IF (SELECT public.read_own_private_country('22222222-2222-4222-8222-222222222222')) IS NOT NULL THEN
   RAISE EXCEPTION 'owner-only RPC leaks another user country';
  END IF;
-END $;
+END $$;
 -- Verify UPDATE ... RETURNING can use a non-sensitive projection after country SELECT is revoked.
 UPDATE public.profiles SET display_name='Edited Player' WHERE id='11111111-1111-4111-8111-111111111111' RETURNING id,display_name;
 RESET ROLE;
