@@ -93,6 +93,9 @@ jobs:
       - name: Verify seven-day trial eligibility policy
         run: npm run test:stripe-trial
 
+      - name: Verify fail-closed Stripe trial recovery policy
+        run: npm run test:stripe-trial-recovery
+
       - name: Verify Ambassador HQ Stripe invoice and adjustment handling
         run: node --test scripts/test-ambassador-stripe.mjs
 
