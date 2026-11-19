@@ -21,7 +21,7 @@ DO $check$ BEGIN
        'public.search_public_players(text,text,integer,integer)'::regprocedure,
        'public.search_public_players(text,text,text,boolean,integer)'::regprocedure,
        'public.search_public_players_page(text,text,text,boolean,integer,integer)'::regprocedure
-     ) AND prosecdef AND proconfig @> ARRAY['search_path=']) <> 4 THEN
+     ) AND prosecdef AND EXISTS (SELECT 1 FROM unnest(coalesce(proconfig,ARRAY[]::text[])) AS setting WHERE setting LIKE 'search_path=%')) <> 4 THEN
   RAISE EXCEPTION 'one or more directory functions lack protected definer settings';
  END IF;
  IF NOT has_function_privilege('anon','public.search_public_players(text,text,integer,integer)','EXECUTE')
