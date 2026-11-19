@@ -70,6 +70,9 @@ DO $$ BEGIN
  IF (SELECT public.read_own_private_country('11111111-1111-4111-8111-111111111111')) <> 'UPDATED SECRET FIXTURE' THEN
   RAISE EXCEPTION 'owner country edit or protected refresh failed';
  END IF;
+ -- Owner must not be able to edit another user's private country through the table.
+ UPDATE public.profiles SET current_country='UNAUTHORIZED CHANGE' WHERE id='22222222-2222-4222-8222-222222222222';
+ IF FOUND THEN RAISE EXCEPTION 'owner could update another user country'; END IF;
  IF (SELECT public.read_own_private_country('22222222-2222-4222-8222-222222222222')) IS NOT NULL THEN
   RAISE EXCEPTION 'owner-only RPC leaks another user country';
  END IF;
