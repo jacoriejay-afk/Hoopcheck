@@ -1,3 +1,5 @@
+Latest audit: [FINAL-READINESS.md](FINAL-READINESS.md) supersedes the counts, #731 status and requirements findings in the earlier report below.
+
 # PR #729 — native design continuation
 
 Updated 2026-11-19. Branch `codex/native-design-final`, still based on #721
