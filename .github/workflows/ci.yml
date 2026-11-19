@@ -75,12 +75,68 @@ jobs:
           createdb -h 127.0.0.1 -U postgres hoopcheck_organization_test
           psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_organization_test -f supabase/tests/hoopfeed_organization_isolated.sql
 
+      - name: Verify social suggestions country masking with synthetic graph
+        env:
+          PGPASSWORD: postgres
+        run: |
+          createdb -h 127.0.0.1 -U postgres hoopcheck_social_country_test
+          psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_social_country_test -f supabase/tests/social_suggestions_private_country_isolated.sql
+
       - name: Verify player profile privacy with isolated synthetic roles
         env:
           PGPASSWORD: postgres
         run: |
           createdb -h 127.0.0.1 -U postgres hoopcheck_profile_privacy_test
           psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_profile_privacy_test -f supabase/tests/player_profile_privacy.sql
+
+      - name: Reproduce direct private-country read exposure with synthetic roles
+        env:
+          PGPASSWORD: postgres
+        run: |
+          createdb -h 127.0.0.1 -U postgres hoopcheck_profile_exposure_test
+          psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_profile_exposure_test -f supabase/tests/profile_country_direct_read_exposure.sql
+
+      - name: Verify candidate protected country boundary in isolated database
+        env:
+          PGPASSWORD: postgres
+        run: |
+          createdb -h 127.0.0.1 -U postgres hoopcheck_country_boundary_test
+          psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_country_boundary_test -f supabase/tests/profile_country_protected_boundary.sql
+
+      - name: Verify isolated private-country feed equality predicate
+        env:
+          PGPASSWORD: postgres
+        run: |
+          createdb -h 127.0.0.1 -U postgres hoopcheck_country_feed_match_test
+          psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_country_feed_match_test -f supabase/tests/profile_country_feed_match_isolated.sql
+
+      - name: Verify full HoopFeed authorization with protected country comparison
+        env:
+          PGPASSWORD: postgres
+        run: |
+          createdb -h 127.0.0.1 -U postgres hoopcheck_country_feed_authorization_test
+          psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_country_feed_authorization_test -f supabase/tests/profile_country_feed_authorization_isolated.sql
+
+      - name: Verify masked directory RPC dependency on revoked country column
+        env:
+          PGPASSWORD: postgres
+        run: |
+          createdb -h 127.0.0.1 -U postgres hoopcheck_country_directory_revoke_test
+          psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_country_directory_revoke_test -f supabase/tests/profile_country_directory_revoke_dependency.sql
+
+      - name: Verify protected player profile visibility in isolated PostgreSQL
+        env:
+          PGPASSWORD: postgres
+        run: |
+          createdb -h 127.0.0.1 -U postgres hoopcheck_country_visibility_test
+          psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_country_visibility_test -f supabase/tests/profile_country_profile_visibility_isolated.sql
+
+      - name: Execute actual protected directory migration against synthetic function signatures
+        env:
+          PGPASSWORD: postgres
+        run: |
+          createdb -h 127.0.0.1 -U postgres hoopcheck_country_directory_migration_test
+          psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_country_directory_migration_test -f supabase/tests/profile_country_directory_migration_isolated.sql
 
       - name: Verify optional MFA policies and privileged request enforcement
         env:

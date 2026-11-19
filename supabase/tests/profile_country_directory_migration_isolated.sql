@@ -1,0 +1,76 @@
+-- Execute the actual directory permission migration against synthetic functions.
+\set ON_ERROR_STOP on
+BEGIN;
+DO $roles$ BEGIN
+ IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='anon') THEN CREATE ROLE anon; END IF;
+ IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN CREATE ROLE authenticated; END IF;
+END $roles$;
+CREATE FUNCTION public.get_public_player_profile(uuid) RETURNS boolean
+ LANGUAGE sql SECURITY INVOKER AS $fn$ SELECT true $fn$;
+CREATE FUNCTION public.search_public_players(text,text,integer,integer) RETURNS boolean
+ LANGUAGE sql SECURITY INVOKER AS $fn$ SELECT true $fn$;
+CREATE FUNCTION public.search_public_players(text,text,text,boolean,integer) RETURNS boolean
+ LANGUAGE sql SECURITY INVOKER AS $fn$ SELECT true $fn$;
+CREATE FUNCTION public.search_public_players_page(text,text,text,boolean,integer,integer) RETURNS boolean
+ LANGUAGE sql SECURITY INVOKER AS $fn$ SELECT true $fn$;
+\i supabase/migrations/20261119170000_protected_player_directory_country.sql
+DO $check$ BEGIN
+ IF (SELECT count(*) FROM pg_proc
+     WHERE oid IN (
+       'public.get_public_player_profile(uuid)'::regprocedure,
+       'public.search_public_players(text,text,integer,integer)'::regprocedure,
+       'public.search_public_players(text,text,text,boolean,integer)'::regprocedure,
+       'public.search_public_players_page(text,text,text,boolean,integer,integer)'::regprocedure
+     ) AND prosecdef AND EXISTS (SELECT 1 FROM unnest(coalesce(proconfig,ARRAY[]::text[])) AS setting WHERE setting LIKE 'search_path=%')) <> 4 THEN
+  RAISE EXCEPTION 'one or more directory functions lack protected definer settings';
+ END IF;
+ IF NOT has_function_privilege('anon','public.search_public_players(text,text,integer,integer)','EXECUTE')
+ OR NOT has_function_privilege('authenticated','public.search_public_players_page(text,text,text,boolean,integer,integer)','EXECUTE') THEN
+  RAISE EXCEPTION 'public directory execution grants missing';
+ END IF;
+END $check$;
+-- PUBLIC execute is not allowed on privileged directory functions.
+-- A role outside the two explicitly approved API roles must be denied.
+DO $unauthorized$ BEGIN
+ IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='country_directory_untrusted') THEN
+  CREATE ROLE country_directory_untrusted;
+ END IF;
+END $unauthorized$;
+DO $check$ DECLARE fn regprocedure; BEGIN
+ FOREACH fn IN ARRAY ARRAY[
+   'public.get_public_player_profile(uuid)'::regprocedure,
+   'public.search_public_players(text,text,integer,integer)'::regprocedure,
+   'public.search_public_players(text,text,text,boolean,integer)'::regprocedure,
+   'public.search_public_players_page(text,text,text,boolean,integer,integer)'::regprocedure
+ ] LOOP
+   IF has_function_privilege('country_directory_untrusted',fn,'EXECUTE') THEN
+     RAISE EXCEPTION 'untrusted role can execute privileged directory function %',fn;
+   END IF;
+ END LOOP;
+END $check$;
+-- Assert actual invocation, not just catalog grants. Authorized API roles
+-- can call each overload; an unrelated role cannot execute any overload.
+GRANT USAGE ON SCHEMA public TO anon,authenticated,country_directory_untrusted;
+SET LOCAL ROLE anon;
+SELECT public.get_public_player_profile(NULL::uuid);
+SELECT public.search_public_players('test'::text,NULL::text,1,0);
+SELECT public.search_public_players('test'::text,NULL::text,NULL::text,false,1);
+SELECT public.search_public_players_page('test'::text,NULL::text,NULL::text,false,1,0);
+RESET ROLE;
+SET LOCAL ROLE authenticated;
+SELECT public.get_public_player_profile(NULL::uuid);
+SELECT public.search_public_players('test'::text,NULL::text,1,0);
+SELECT public.search_public_players('test'::text,NULL::text,NULL::text,false,1);
+SELECT public.search_public_players_page('test'::text,NULL::text,NULL::text,false,1,0);
+RESET ROLE;
+SET LOCAL ROLE country_directory_untrusted;
+DO $deny$ BEGIN
+ BEGIN
+  PERFORM public.get_public_player_profile(NULL::uuid);
+  RAISE EXCEPTION 'untrusted role executed profile reader';
+ EXCEPTION WHEN insufficient_privilege THEN NULL;
+ END;
+END $deny$;
+RESET ROLE;
+ROLLBACK;
+SELECT 'PASS: actual directory permission migration applies to all four signatures' AS result;

@@ -150,7 +150,7 @@ export default function AccountPage() {
       setEmailConfirmed(Boolean(user.email_confirmed_at));
       setUserId(user.id);
       const [{ data: profileData, error: profileError }, { data: subscriptionData }, { data: adminRoleData }] = await Promise.all([
-        supabase.from("profiles").select("account_type,basketball_type,display_name,username,first_name,last_name,professional_experience,bio,position,years_pro,current_country,current_country_public,current_team,favorite_teams,profile_visibility,player_verified,coach_verified,coach_profile_id,experience_summary,profile_claimed,avatar_url,avatar_moderation_status,moderation_status,moderation_note").eq("id", user.id).maybeSingle(),
+        supabase.from("profiles").select("account_type,basketball_type,display_name,username,first_name,last_name,professional_experience,bio,position,years_pro,current_country_public,current_team,favorite_teams,profile_visibility,player_verified,coach_verified,coach_profile_id,experience_summary,profile_claimed,avatar_url,avatar_moderation_status,moderation_status,moderation_note").eq("id", user.id).maybeSingle(),
         supabase.from("subscriptions").select("plan,status,access_status,current_period_end,cancel_at_period_end").eq("user_id", user.id).maybeSingle(),
         supabase.rpc("get_current_user_admin_role"),
       ]);
@@ -163,7 +163,9 @@ export default function AccountPage() {
       setBio(nextProfile.bio ?? "");
       setPosition(nextProfile.position ?? "");
       setYearsPro(nextProfile.years_pro?.toString() ?? "");
-      setCurrentCountry(nextProfile.current_country ?? "");
+      const { data: ownCountry, error: ownCountryError } = await supabase.rpc("get_my_private_country");
+      if (ownCountryError) throw ownCountryError;
+      setCurrentCountry(ownCountry ?? "");
       setCountryPublic(Boolean(nextProfile.current_country_public));
       setCurrentTeam((nextProfile as any).free_agent ? "" : nextProfile.current_team ?? "");
       setHeight(nextProfile.height ?? "");
