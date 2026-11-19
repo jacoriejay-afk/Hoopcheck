@@ -75,5 +75,19 @@ export function canReuseOpenTrialSession(
     session.metadata?.user_id === userId &&
     session.metadata?.stripe_trial_reserved === "true" &&
     typeof session.url === "string" &&
-    session.url.startsWith("https://checkout.stripe.com/");
+    isTrustedStripeCheckoutUrl(session.url);
+}
+
+/** Accept only Stripe-hosted HTTPS Checkout URLs, never redirects or lookalike hosts. */
+function isTrustedStripeCheckoutUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" &&
+      url.hostname === "checkout.stripe.com" &&
+      url.username === "" &&
+      url.password === "" &&
+      url.pathname.startsWith("/c/");
+  } catch {
+    return false;
+  }
 }
