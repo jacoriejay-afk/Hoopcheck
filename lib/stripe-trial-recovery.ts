@@ -2,7 +2,7 @@ import type Stripe from "stripe";
 
 /**
  * Only a verified, expired subscription Checkout Session with no subscription
- * attached can be considered for releasing an unredeemed reservation.
+ * attached can be considered for marking an unredeemed reservation permanently expired.
  * This policy is intentionally conservative: unknown states stay locked.
  * Caller must retrieve the session directly from Stripe using server credentials
  * and verify the session's account/user binding independently.
@@ -36,15 +36,15 @@ export async function reconcileExpiredTrialReservation(
   userId: string,
   boundSessionId: string,
   retrieveSession: (id: string) => Promise<Stripe.Checkout.Session>,
-  releaseClaim: (userId: string, sessionId: string) => Promise<boolean>
-): Promise<"released" | "retained"> {
+  markExpiredClaim: (userId: string, sessionId: string) => Promise<boolean>
+): Promise<"expired" | "retained"> {
   if (!userId || !boundSessionId.startsWith("cs_")) return "retained";
   const session = await retrieveSession(boundSessionId);
   if (!canReleaseExpiredTrialSession(session, userId, boundSessionId, session.id)) {
     return "retained";
   }
-  const released = await releaseClaim(userId, boundSessionId);
-  return released ? "released" : "retained";
+  const expired = await markExpiredClaim(userId, boundSessionId);
+  return expired ? "expired" : "retained";
 }
 
 /**
