@@ -37,4 +37,6 @@ assert.ok(checkout.includes("emailCustomers.some((customer) => customer.id === l
 assert.ok(checkout.includes("emailCustomers.length === 100"), "Truncated customer history must fail closed");
 assert.ok(checkout.includes('status: "all"'), "Historical canceled subscriptions must be included");
 assert.ok(checkout.includes("allow_promotion_codes: !promoCodeId && !trialEligible"), "Trial checkout must disable hosted promotion-code stacking");
+assert.ok(checkout.includes('automatic_tax: { enabled: true }'), "Trial Checkout must enable Stripe Tax");
+assert.ok(checkout.includes('billing_address_collection: "required"'), "Trial Checkout must collect the billing address for tax");
 console.log("Trial release safety checks passed (trial issuance disabled).");
