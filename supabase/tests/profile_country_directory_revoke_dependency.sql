@@ -41,5 +41,36 @@ DO $check$ BEGIN
  EXCEPTION WHEN insufficient_privilege THEN NULL;
  END;
 END $check$;
+-- Candidate protected directory boundary: keep raw column revoked while returning
+-- only public values. This is a synthetic prototype, not the production RPC.
+RESET ROLE;
+CREATE FUNCTION public.directory_country_protected()
+RETURNS TABLE(id integer, current_country text)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = ''
+AS $protected$
+ SELECT p.id,
+   CASE WHEN p.current_country_public IS TRUE THEN p.current_country ELSE NULL END
+ FROM public.profiles p ORDER BY p.id
+$protected$;
+REVOKE ALL ON FUNCTION public.directory_country_protected() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.directory_country_protected() TO anon,authenticated;
+SET LOCAL ROLE anon;
+DO $check$ BEGIN
+ IF (SELECT current_country FROM public.directory_country_protected() WHERE id=1) IS NOT NULL THEN
+  RAISE EXCEPTION 'protected directory disclosed private country to anonymous';
+ END IF;
+ IF (SELECT current_country FROM public.directory_country_protected() WHERE id=2) IS DISTINCT FROM 'VISIBLE' THEN
+  RAISE EXCEPTION 'protected directory suppressed public country';
+ END IF;
+END $check$;
+SET LOCAL ROLE authenticated;
+DO $check$ BEGIN
+ IF (SELECT current_country FROM public.directory_country_protected() WHERE id=1) IS NOT NULL THEN
+  RAISE EXCEPTION 'protected directory disclosed private country to authenticated';
+ END IF;
+ IF (SELECT current_country FROM public.directory_country_protected() WHERE id=2) IS DISTINCT FROM 'VISIBLE' THEN
+  RAISE EXCEPTION 'protected directory suppressed public country for authenticated';
+ END IF;
+END $check$;
 ROLLBACK;
 SELECT 'PASS: column revoke breaks masked invoker RPC; directory release needs protected implementation' AS result;
