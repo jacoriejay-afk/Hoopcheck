@@ -39,12 +39,19 @@ export async function reconcileExpiredTrialReservation(
   markExpiredClaim: (userId: string, sessionId: string) => Promise<boolean>
 ): Promise<"expired" | "retained"> {
   if (!userId || !boundSessionId.startsWith("cs_")) return "retained";
-  const session = await retrieveSession(boundSessionId);
-  if (!canReleaseExpiredTrialSession(session, userId, boundSessionId, session.id)) {
+  // Stripe or database outages must not alter the one-time claim.
+  // A later reconciliation attempt can inspect the same bound session.
+  try {
+    const session = await retrieveSession(boundSessionId);
+    if (!canReleaseExpiredTrialSession(session, userId, boundSessionId, session.id)) {
+      return "retained";
+    }
+    const expired = await markExpiredClaim(userId, boundSessionId);
+    return expired ? "expired" : "retained";
+  } catch (error) {
+    console.error("Trial expiration reconciliation failed", error);
     return "retained";
   }
-  const expired = await markExpiredClaim(userId, boundSessionId);
-  return expired ? "expired" : "retained";
 }
 
 /**
