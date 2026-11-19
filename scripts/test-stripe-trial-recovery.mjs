@@ -63,4 +63,9 @@ for (const [name, change] of [
 ]) {
  assert.equal(reusable({...openSession,...change},user,id),false,name);
 }
-console.log("Stripe trial same-session retry: 10 cases passed");
+// A recovered session cannot be reused across accounts or after a trial claim
+// has been redeemed. These checks are independent of Stripe's payment status.
+assert.equal(reusable({...openSession, metadata:{...openSession.metadata,user_id:"different-user"}},user,id),false,"metadata owner mismatch");
+assert.equal(reusable({...openSession, metadata:{...openSession.metadata,stripe_trial_reserved:"false"}},user,id),false,"trial marker false");
+assert.equal(reusable({...openSession, url:"https://checkout.stripe.com.evil.example/pay"},user,id),false,"lookalike checkout hostname");
+console.log("Stripe trial same-session retry: 13 cases passed");
