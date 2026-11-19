@@ -358,6 +358,7 @@ export async function POST(
     trialEligible = isEligibleForSevenDayTrial({
       rolloutEnabled: trialRolloutEnabled && checkoutProfile.account_type === "player",
       interval,
+      accountType: checkoutProfile.account_type,
       hasPromoCode: Boolean(promoCodeId),
       hasExistingSubscription: Boolean(existingSubscription?.stripe_subscription_id),
       hasVerifiedEmail: Boolean(user.email_confirmed_at),
