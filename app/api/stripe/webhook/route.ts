@@ -123,6 +123,23 @@ async function saveSubscription(
   const supabase =
     getAdminSupabase();
 
+  // Subscription and invoice webhooks may arrive before checkout.session.completed.
+  // Never grant a trial membership through those alternate paths before the
+  // signed Checkout event has redeemed the exact bound one-time claim.
+  if (subscription.metadata?.stripe_trial_reserved === "true") {
+    if (subscription.metadata?.user_id !== userId) {
+      throw new Error("Trial subscription owner metadata mismatch.");
+    }
+    const { data: claim, error: claimError } = await supabase
+      .from("stripe_trial_claims")
+      .select("state")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (claimError || claim?.state !== "redeemed") {
+      throw new Error("Trial subscription cannot synchronize before claim redemption.");
+    }
+  }
+
   const priceId =
     subscription.items.data[0]?.price?.id;
 
