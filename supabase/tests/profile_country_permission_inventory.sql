@@ -20,5 +20,5 @@ SELECT n.nspname AS schema_name, p.proname AS function_name,
 FROM pg_proc p
 JOIN pg_namespace n ON n.oid = p.pronamespace
 WHERE n.nspname = 'public'
-  AND pg_get_functiondef(p.oid) ILIKE '%current_country%'
+  AND p.prosrc ILIKE '%current_country%'
 ORDER BY 1,2,3;
