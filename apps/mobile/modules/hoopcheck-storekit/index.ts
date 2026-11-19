@@ -1,5 +1,6 @@
-import { requireOptionalNativeModule, type NativeModule } from "expo-modules-core";
-export type StoreKitNative = NativeModule<{ onTransaction: (value: unknown) => void }> & {
+import { requireOptionalNativeModule } from "expo-modules-core";
+export type StoreKitNative = {
+  addListener(event: "onTransaction", listener: (value: unknown) => void): { remove(): void };
   identity(): Promise<unknown>;
   products(): Promise<unknown>;
   purchase(id: string, owner: string, identityID: string, introJWS: string, price: string, currency: string): Promise<unknown>;

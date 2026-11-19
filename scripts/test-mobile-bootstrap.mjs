@@ -48,7 +48,7 @@ test('scoped reads use verified identity and never service credentials or metada
   assert.equal(response.status,200); assert.equal(data.entitlements.canReadHoopFeed,false);
   assert.deepEqual(data.user,{id,displayName:'Fixture',accountType:'player'});
   assert.ok(f.calls.some(c=>JSON.stringify(c)===JSON.stringify(['eq','profiles','id',id])));
-  assert.ok(f.calls.some(c=>JSON.stringify(c)===JSON.stringify(['eq','subscriptions','user_id',id])));
+  assert.ok(f.calls.some(c=>JSON.stringify(c)===JSON.stringify(['eq','membership_entitlements','user_id',id])));
   const client = f.calls.find(c=>c[0]==='client');
   assert.equal(client[2],'fixture-publishable'); assert.equal(client[3].global.headers.Authorization,'Bearer fixture-token');
   assert.equal(JSON.stringify(data).includes('private@example.test'),false);

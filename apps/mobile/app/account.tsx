@@ -30,6 +30,7 @@ export default function AccountScreen() {
       {loading ? <Skeleton profile /> : account ? <>
         <GlassCard><Text style={{ color: theme.foreground, fontSize: 23, fontWeight: "800" }}>{account.user.displayName || "HoopCheck member"}</Text><Text style={{ color: theme.muted }}>{account.user.accountType.replaceAll("_", " ")}</Text></GlassCard>
         <GlassCard><Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 19, fontWeight: "700" }}>Membership status</Text><Text style={{ color: theme.accent, fontSize: 22, fontWeight: "800", marginTop: 8 }}>{account.tier === "free" ? "Free" : account.tier === "pro" ? "Pro" : "Premium"}</Text><Text style={{ color: theme.muted }}>{account.hasPaidMembership ? "Active access verified by HoopCheck" : "No active paid membership"}</Text></GlassCard>
+        <Button secondary onPress={() => router.push("/membership")}>Membership and restore purchases</Button>
         <Button secondary onPress={retry}>Refresh account</Button>
         <Button secondary onPress={() => router.push("/account/edit")}>Edit profile</Button>
         {account.user.accountType === "player" ? <Button secondary onPress={() => router.push({ pathname: "/players/[id]", params: { id: account.user.id } })}>View public player profile</Button> : null}

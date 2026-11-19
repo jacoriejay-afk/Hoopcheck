@@ -25,7 +25,7 @@ export function appleAppSiteAssociation(prefix?: string) {
           { "/": "/womens/leagues/*" },
           { "/": "/womens/*/*", exclude: true },
           { "/": "/womens/leagues", exclude: true },
-          ...["/", "/dashboard", "/feed", "/fan-feed", "/reels", "/search", "/notifications", "/account", "/account/edit", "/fan-live", "/team-hub/groups", "/team-hub/groups/*", "/settings", "/teams", "/teams/*", "/leagues", "/leagues/*", "/players", "/players/*", "/coaches", "/womens", "/womens/*"].map(path => ({ "/": path })),
+          ...["/", "/dashboard", "/feed", "/fan-feed", "/reels", "/search", "/notifications", "/account", "/account/edit", "/account/security", "/membership", "/fan-live", "/team-hub/groups", "/team-hub/groups/*", "/settings", "/teams", "/teams/*", "/leagues", "/leagues/*", "/players", "/players/*", "/coaches", "/womens", "/womens/*"].map(path => ({ "/": path })),
         ],
       }],
     },

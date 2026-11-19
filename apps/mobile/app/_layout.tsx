@@ -1,4 +1,5 @@
 import "react-native-gesture-handler";
+import { StoreKitProvider } from "../src/native/storekit";
 import { NativeDraftProvider } from "../src/native/drafts";
 import { MfaSessionProvider } from "../src/native/mfa";
 import { NativeAccountProvider } from "../src/native/useNativeAccount";
@@ -66,7 +67,7 @@ function RootLayout() {
   useEffect(() => {
     if (!sessionReady) return;
     const currentRoute = segments[0] ?? "";
-    const inAppArea = ["dashboard", "team-hub", "fan-live", "notifications", "feed", "fan-feed", "reels", "account", "search", "teams", "womens", "leagues", "players", "coaches", "choose-username", "settings"].includes(currentRoute);
+    const inAppArea = ["dashboard", "team-hub", "fan-live", "notifications", "feed", "fan-feed", "reels", "account", "search", "teams", "womens", "leagues", "players", "coaches", "choose-username", "settings", "membership"].includes(currentRoute);
     if (["web", "sign-in", "sign-up"].includes(currentRoute)) return;
     const onPasswordRecovery = currentRoute === "reset-password";
     // Let the OAuth callback exchange its PKCE code and choose the destination.
@@ -88,7 +89,7 @@ function RootLayout() {
   // Mount the navigator on the first render. Font loading must never prevent
   // Router from mounting or leave a blank screen after the splash deadline.
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.background }}><SafeAreaProvider><MotionProvider><DevicePreferences><NetworkProvider><MfaSessionProvider userId={session.userId}><NativeAccountProvider><NativeDraftProvider><BottomSheetModalProvider>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.background }}><SafeAreaProvider><MotionProvider><DevicePreferences><NetworkProvider><MfaSessionProvider userId={session.userId}><NativeAccountProvider><StoreKitProvider><NativeDraftProvider><BottomSheetModalProvider>
       <StatusBar style={theme.dark ? "light" : "dark"} /><RouteFade>
       <Stack
         screenOptions={{
@@ -107,6 +108,7 @@ function RootLayout() {
         <Stack.Screen name="fan-feed" options={{ headerShown: false }} />
         <Stack.Screen name="reels" options={{ headerShown: false }} />
         <Stack.Screen name="account" options={{ title: "Account" }} />
+        <Stack.Screen name="membership" options={{ title: "Membership" }} />
         <Stack.Screen name="account/edit" options={{ title: "Edit profile" }} />
         <Stack.Screen name="account/security" options={{ title: "Account security" }} />
         <Stack.Screen name="settings" options={{ title: "Settings" }} />
@@ -140,7 +142,7 @@ function RootLayout() {
         <Stack.Screen name="leagues/[id]" options={{ title: "League profile" }} />
       </Stack></RouteFade>
       {signedIn ? <TabBar /> : null}<AppLock authReady={sessionReady} userId={session.userId} startupError={session.error} retryStartup={() => { void bootstrap.current?.retry(); }} protectedScreen={signedIn && !["sign-in", "sign-up", "reset-password", "auth"].includes(segments[0] ?? "")} />
-    </BottomSheetModalProvider></NativeDraftProvider></NativeAccountProvider></MfaSessionProvider></NetworkProvider></DevicePreferences></MotionProvider></SafeAreaProvider></GestureHandlerRootView>
+    </BottomSheetModalProvider></NativeDraftProvider></StoreKitProvider></NativeAccountProvider></MfaSessionProvider></NetworkProvider></DevicePreferences></MotionProvider></SafeAreaProvider></GestureHandlerRootView>
 
 
   );

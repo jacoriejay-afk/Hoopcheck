@@ -75,9 +75,35 @@ tracing. The native bridge's real Swift policy tests and full unsigned simulator
 compile passed in CI without EAS. Actual Sandbox purchase, notification delivery,
 restoration and upgrade/downgrade remain required; no physical test is claimed.
 
-Still being integrated: website/native membership readers and billing controls,
-transaction synchronization coordinator, native purchase/restore UI and full browser
-regressions. These are not completed by the backend-only candidate.
+Native integration now includes the membership screen, localized prices, explicit
+trial/full-price confirmation, user-initiated restoration and Apple management,
+foreground/startup transaction scans and one root observer. Scopes bind every
+asynchronous result to a session owner and generation. Account changes invalidate
+pending receipts immediately in the synchronous Auth callback. Only an owner-matched
+server acknowledgement permits native finish; unknown writes stay unfinished.
+Automatic scans never call AppStore.sync. Missing native modules or invalid optional
+billing configuration cannot prevent startup. The screen adds no native Modal.
+
+Native bootstrap reads membership_entitlements and refreshes on foreground, Auth
+changes and a 15-minute foreground interval. Bounded session reads recover instead
+of leaving account loading indefinitely. A successful receipt batch coalesces account
+refreshes. Existing expiry, role, moderation and independently verified admin rules
+still determine feature access. The membership and account-security paths are added
+to the owner-confirmed universal-link association.
+
+Validation: all 166 native cases; 18 transaction coordinator regressions; six actual
+screen/hook regressions including both themes, background clearing and stale-account
+preparation; two actual shared-button tests. The shared button now wraps interpolated
+JSX labels in native Text, fixing confirmed media photo action labels. Mobile
+TypeScript and changed-file ESLint pass. iOS Hermes export 7.17 MB, web export 4.30 MB.
+Ten isolated browser suites pass: membership (player/fan, light/dark), MFA, media,
+profile editor, player profiles, feed/Reels, Live Games/chat, club groups, discovery
+and appearance. No browser or renderer result establishes physical UIKit behavior.
+
+Website entitlement readers and provider-aware billing controls are the next focused
+integration. Existing website billing must not infer that an Apple source can be
+cancelled through Stripe. Both new migrations and code dependencies require an
+isolated deployment/review before production activation.
 
 Sandbox uses Apple's accelerated subscription clocks and may omit appAppleId;
 production still requires App Store ID 6835366982 and a seven-day trial receipt.
