@@ -41,22 +41,14 @@ CREATE POLICY follows_own ON public.follow_relationships FOR SELECT TO authentic
 GRANT USAGE ON SCHEMA public,auth TO anon,authenticated;
 GRANT SELECT(id,account_type,profile_visibility) ON public.profiles TO authenticated;
 GRANT SELECT ON public.subscriptions,public.follow_relationships TO authenticated;
-CREATE OR REPLACE FUNCTION public.is_my_player_country_match(p_author_id uuid)
- RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $$
- SELECT EXISTS(SELECT 1 FROM public.profiles viewer JOIN public.profiles author ON author.id=p_author_id
- WHERE viewer.id=(SELECT auth.uid()) AND viewer.account_type='player' AND author.account_type='player'
- AND viewer.current_country IS NOT NULL AND author.current_country IS NOT NULL
- AND lower(viewer.current_country)=lower(author.current_country))
-$$;
-REVOKE ALL ON FUNCTION public.is_my_player_country_match(uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.is_my_player_country_match(uuid) TO authenticated;
+-- No standalone public country-equality helper: prevent the equality oracle.
 -- Synthetic admin identity tests the override branch; production admin-role lookup is not reproduced.
 CREATE OR REPLACE FUNCTION public.is_current_user_admin_or_moderator() RETURNS boolean
  LANGUAGE sql STABLE AS $$ SELECT auth.uid()='77777777-7777-4777-8777-777777777777'::uuid $$;
 GRANT EXECUTE ON FUNCTION public.is_current_user_admin_or_moderator() TO authenticated;
 -- Same predicates as production function, with raw country comparison replaced by protected boolean.
 CREATE OR REPLACE FUNCTION public.can_view_player_feed_post(p_author_id uuid)
- RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER SET search_path='' AS $$
+ RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $
  SELECT p_author_id=(SELECT auth.uid())
  OR public.is_current_user_admin_or_moderator()
  OR EXISTS(
@@ -73,7 +65,8 @@ CREATE OR REPLACE FUNCTION public.can_view_player_feed_post(p_author_id uuid)
  AND coalesce(sub.access_status,'active') IN ('active','trialing','pro','premium')
  AND (sub.current_period_end IS NULL OR sub.current_period_end>now())
  AND (viewer.account_type<>'player' OR author.account_type<>'player'
-      OR public.is_my_player_country_match(p_author_id))
+      OR (viewer.current_country IS NOT NULL AND author.current_country IS NOT NULL
+          AND lower(viewer.current_country)=lower(author.current_country)))
  )
 $$;
 REVOKE ALL ON FUNCTION public.can_view_player_feed_post(uuid) FROM PUBLIC;
@@ -124,8 +117,8 @@ DO $ BEGIN
  IF has_function_privilege('anon','public.can_view_player_feed_post(uuid)','EXECUTE') THEN
   RAISE EXCEPTION 'anon can execute feed authorization';
  END IF;
- IF has_function_privilege('anon','public.is_my_player_country_match(uuid)','EXECUTE') THEN
-  RAISE EXCEPTION 'anon can execute country comparison';
+ IF to_regprocedure('public.is_my_player_country_match(uuid)') IS NOT NULL THEN
+  RAISE EXCEPTION 'standalone country comparison must not exist';
  END IF;
 END $;
 ROLLBACK;
