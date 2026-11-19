@@ -83,14 +83,14 @@ grant execute on function public.search_public_players(text, text, integer, inte
 
 -- Compatibility repair: production already exposes the five-argument directory RPC.
 -- The username/offset RPC above is a separate overload, not a replacement.
--- Preserve the existing caller contract while preventing private country or
+-- Keep five-argument positional calls; remove optional defaults to avoid\n-- ambiguous resolution against the new four-argument RPC. Audit named/partial\n-- legacy callers before production deployment.\n-- Prevent private country or
 -- unapproved avatar disclosure in the legacy result and its search predicates.
 CREATE OR REPLACE FUNCTION public.search_public_players(
-  p_query text DEFAULT ''::text,
-  p_country text DEFAULT ''::text,
-  p_position text DEFAULT ''::text,
-  p_verified_only boolean DEFAULT false,
-  p_limit integer DEFAULT 24
+  p_query text,
+  p_country text,
+  p_position text,
+  p_verified_only boolean,
+  p_limit integer
 )
 RETURNS TABLE(
   id uuid, display_name text, avatar_url text, country text, bio text,
