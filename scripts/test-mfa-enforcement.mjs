@@ -1,5 +1,10 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
+import test, {after} from 'node:test';
+// This suite exercises enforcement even when the parent CI browser job uses
+// its separately guarded synthetic-session mode.
+const visualMode=process.env.HOOPCHECK_THEME_TEST_MODE;
+process.env.HOOPCHECK_THEME_TEST_MODE='false';
+after(()=>{if(visualMode===undefined)delete process.env.HOOPCHECK_THEME_TEST_MODE;else process.env.HOOPCHECK_THEME_TEST_MODE=visualMode;});
 import {readFileSync} from 'node:fs';
 import {createRequire} from 'node:module';
 import ts from 'typescript';
