@@ -315,8 +315,9 @@ export async function POST(
     // a canceled subscription must never reset eligibility.
     // Explicitly disabled until isolated trial tests and atomic eligibility reservation pass.
     // Never enable in production merely because this branch is deployed.
-    const trialRolloutEnabled = process.env.STRIPE_SEVEN_DAY_TRIAL_ENABLED === "true" &&
-      process.env.VERCEL_ENV !== "production";
+    // Hard stop: do not allow a flag alone to bypass the missing atomic reservation.
+    // Replace this only after the reservation RPC and webhook lifecycle are verified.
+    const trialRolloutEnabled = false;
     let trialEligible = trialRolloutEnabled && checkoutProfile.account_type === "player" && interval === "month" && !promoCodeId && !existingSubscription?.stripe_subscription_id && Boolean(user.email_confirmed_at);
     if (trialEligible) {
       const customers = customerId
