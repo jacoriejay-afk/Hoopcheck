@@ -4,7 +4,7 @@ import { stripeMatchesDeployment } from "../../../../../lib/stripe-key-mode";
 import { createClient } from "@supabase/supabase-js";
 import { getActiveMembershipTier } from "../../../../../lib/membership-tier";
 import { isEligibleForSevenDayTrial } from "../../../../../lib/stripe-trial-eligibility";
-import { canReuseOpenTrialSession } from "../../../../../lib/stripe-trial-recovery";
+import { canReuseOpenTrialSession, isTrustedStripeCheckoutUrl } from "../../../../../lib/stripe-trial-recovery";
 
 function getAdminSupabase() {
   const supabaseUrl =
@@ -508,14 +508,14 @@ export async function POST(
       }
     }
 
-    if (!session.url) {
+    if (!session.url || (trialEligible && !isTrustedStripeCheckoutUrl(session.url))) {
       // Never leave a newly created trial Checkout Session open without a URL.
       // Keep its one-time reservation locked for server-side reconciliation.
       if (trialEligible) {
         try {
           await stripe.checkout.sessions.expire(session.id);
         } catch (expireError) {
-          console.error("Unable to expire trial checkout without URL", expireError);
+          console.error("Unable to expire trial checkout with missing or untrusted URL", expireError);
         }
       }
       return NextResponse.json(
