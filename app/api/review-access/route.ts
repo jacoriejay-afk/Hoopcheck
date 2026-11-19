@@ -36,7 +36,7 @@ export async function GET(request: Request) {
     if (user) {
       const [profileResult, subscriptionResult] = await Promise.all([
         db.from("profiles").select("account_type,basketball_type,player_verified,selected_womens_team_id").eq("id", user.id).maybeSingle(),
-        db.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id", user.id).maybeSingle(),
+        db.from("membership_entitlements").select("plan,status,access_status,current_period_end").eq("user_id", user.id).maybeSingle(),
       ]);
       profile = profileResult.data;
       subscription = subscriptionResult.data;

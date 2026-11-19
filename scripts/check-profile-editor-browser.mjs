@@ -43,6 +43,7 @@ try {
    else if(url.pathname.endsWith('/leagues')||url.pathname.endsWith('/womens_leagues'))data=[{id:'33333333-3333-4333-8333-333333333333',name:'QA League',country:'QA Country',basketball_type:gender}];
    await route.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify(data)});
   });
+  await page.route('**/api/membership', route => route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({owner:uid,subscription:{...subscription,cancel_at_period_end:false,billing_interval:'month',provider:'stripe'}})}));
   await page.goto(`${baseURL}/account`);
   await page.locator('#profile-editor').waitFor();
   await page.getByRole('radio',{name:'Violet'}).check();

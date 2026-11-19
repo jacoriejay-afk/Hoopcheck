@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && npm run audit:bundle && npm run check:hub-theme-pairing",
+    "build": "next build && npm run audit:bundle && npm run check:hub-theme-pairing && node scripts/check-apple-certificate-tracing.mjs",
     "start": "next start",
     "lint": "eslint .",
     "audit:surfaces": "node scripts/audit-hardcoded-surfaces.mjs",

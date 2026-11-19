@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';import test from 'node:test';import {readFileSync}from'node:fs';import{createRequire}from'node:module';import{generateKeyPairSync}from'node:crypto';import ts from'typescript';
 const require=createRequire(import.meta.url);
 function compile(path,imports=require){const compiled={exports:{}};const source=ts.transpileModule(readFileSync(new URL(path,import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;new Function('require','exports','module',source)(imports,compiled.exports,compiled);return compiled.exports;}
-const products=compile('../lib/billing/apple-products.ts');const core=compile('../lib/auth/mfa-core.ts');
+const products=compile('../lib/billing/apple-products.ts');const stripeMode=compile('../lib/stripe-key-mode.ts');const core=compile('../lib/auth/mfa-core.ts');
 const proofs=compile('../lib/server/apple/proofs.ts',name=>name==='server-only'?{}:name==='../../billing/apple-products'?products:require(name));
-const service=compile('../lib/server/apple/service.ts',name=>name==='server-only'?{}:name==='../../auth/mfa-core'?core:name==='../../billing/apple-products'?products:name==='./proofs'?proofs:require(name));
+const service=compile('../lib/server/apple/service.ts',name=>name==='server-only'?{}:name==='../../auth/mfa-core'?core:name==='../../stripe-key-mode'?stripeMode:name==='../../billing/apple-products'?products:name==='./proofs'?proofs:require(name));
 const http=compile('../lib/server/apple/http.ts',name=>name==='./proofs'?proofs:require(name));
 const owner='11111111-1111-4111-8111-111111111111',other='22222222-2222-4222-8222-222222222222';
 const now=Date.now();
@@ -101,4 +101,27 @@ test('accelerated Sandbox trials remain isolated from seven-day production recei
  assert.equal(proofs.checkedAppIdentity(identity,'Sandbox').id,'9001');
  assert.throws(()=>proofs.checkedAppIdentity({...identity,receiptType:'Production'},'Production'));
  assert.equal(proofs.checkedAppIdentity({...identity,receiptType:'Production',appAppleId:products.APPLE_APP_ID},'Production').id,'9001');
+});
+
+test('coach and manager purchases retain Premium-only rules while other role entitlements remain unchanged',async()=>{
+ for(const role of['coach','manager']){
+  const f=fixture({tables:{profiles:{account_type:role}}});const config=await service.appleCatalog(f.db,f.db,owner,f.provider);assert.equal(config.products.length,3);assert.ok(config.products.every(value=>value.plan==='premium'));
+  await assert.rejects(service.purchaseIntent(f.db,f.db,owner,{productId:'hoopcheck.pro.monthly',signedAppTransaction:'fixture-app'},f.provider),error=>error.code==='apple_product_restricted');
+  assert.equal((await service.purchaseIntent(f.db,f.db,owner,{productId:'hoopcheck.premium.annual',signedAppTransaction:'fixture-app'},f.provider)).productId,'hoopcheck.premium.annual');
+ }
+});
+test('existing Apple billing blocks another native purchase and is freshly checked before a Stripe transition',async()=>{
+ const owned={environment:'Sandbox',user_id:owner,original_transaction_id:'10000',verified_at:new Date().toISOString(),status:'active',current_period_end:new Date(Date.now()+86400000).toISOString()};
+ const f=fixture({tables:{apple_memberships:[owned]}});assert.equal((await service.appleCatalog(f.db,f.db,owner,f.provider)).canPurchase,false);assert.equal(await service.applePreventsStripeCheckout(f.db,owner,()=>f.provider),true);assert.equal(f.counts().readCurrent,1);
+ const empty=fixture();assert.equal(await service.applePreventsStripeCheckout(empty.db,owner,()=>{throw Error('must not load missing Apple credentials');}),false);
+ const unavailable=fixture({tables:{apple_memberships:[owned]}});await assert.rejects(service.applePreventsStripeCheckout(unavailable.db,owner,()=>{throw Error('Apple disabled');}));
+});
+
+
+test('a new purchase or refund cannot be acknowledged against an older live Apple API state',async()=>{
+ const paid={offerType:undefined,offerDiscountType:undefined,price:4990};
+ const f=fixture({observed:{...paid,purchaseDate:now-3600000},current:{...paid,purchaseDate:now-7200000}});
+ await assert.rejects(service.synchronizeApple(f.db,owner,'fixture-proof',f.provider),error=>error.code==='apple_status_pending');assert.equal(f.calls.some(value=>value.name==='apple_record_membership'),false);
+ const refunded=fixture({observed:{...paid,revocationDate:now},current:paid});
+ await assert.rejects(service.synchronizeApple(refunded.db,owner,'fixture-proof',refunded.provider),error=>error.code==='apple_status_pending');
 });

@@ -12,6 +12,7 @@ function createRuntime(initial: Snapshot) {
   let snapshot = initial, refreshTimer: ReturnType<typeof setTimeout> | undefined;
   const client = createStoreKitClient({
     native: Platform.OS === "ios" ? nativeStoreKit : null,
+    purchasesAvailable: Platform.OS === "ios" && Number.parseFloat(String(Platform.Version)) >= 16,
     session: async () => {
       const { data, error } = await supabase.auth.getSession();
       return !error && data.session ? { id: data.session.user.id, token: data.session.access_token } : null;

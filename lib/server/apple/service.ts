@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
+import { stripeMatchesDeployment } from "../../stripe-key-mode";
 import { createHash } from "node:crypto";
 import { assuranceForVerifiedUser } from "../../auth/mfa-core";
 import { APPLE_PRODUCTS, appleProduct, canPurchaseAppleMembership } from "../../billing/apple-products";
@@ -36,15 +37,17 @@ export async function appleCatalog(scoped:SupabaseClient,db:SupabaseClient,user:
   const role=profile.data.account_type;
   const activeStripe=!!stripe.data?.stripe_subscription_id && ["active","trialing","past_due","unpaid","incomplete","paused"].includes(stripe.data.status);
   const allowed=canPurchaseAppleMembership(role) && !["suspended","banned","removed"].includes(profile.data.moderation_status||"") && !deletion.data;
-  return{owner:user,environment:services.environment,products:APPLE_PRODUCTS,canPurchase:allowed&&!activeStripe,
-    reason:deletion.data?"Cancel your pending account deletion before purchasing membership.":!allowed?"Native membership purchases are unavailable for this account. Existing membership and restoration rules are unchanged.":activeStripe?"Manage your existing Stripe subscription before starting Apple billing.":null,
+  const activeApple=(apple.data??[]).some(row=>row.status==="billing_retry" || ["active","trialing"].includes(row.status) && Date.parse(row.current_period_end)>Date.now());
+  const products=APPLE_PRODUCTS.filter(product=>!["coach","manager"].includes(role) || product.plan==="premium");
+  return{owner:user,environment:services.environment,products,canPurchase:allowed&&!activeStripe&&!activeApple,
+    reason:deletion.data?"Cancel your pending account deletion before purchasing membership.":!allowed?"Native membership purchases are unavailable for this account. Existing membership and restoration rules are unchanged.":activeStripe?"Manage your existing Stripe subscription before starting Apple billing.":activeApple?"Manage your existing Apple membership to change plans.":null,
     stripe:stripe.data,apple:apple.data??[]};
 }
 type StripeHistoryClient=Pick<Stripe,"invoices"|"subscriptions">;
 export async function stripeIntroHistory(subscription:{stripe_customer_id?:string|null;stripe_subscription_id?:string|null}|null,client?:StripeHistoryClient,before=Infinity):Promise<"clear"|"paid"|"trial_used"|"unknown"> {
   if(!subscription?.stripe_customer_id)return subscription?.stripe_subscription_id?"unknown":"clear";
   if(!/^cus_[A-Za-z0-9]+$/.test(subscription.stripe_customer_id))return "unknown";
-  if(!client){const secret=process.env.STRIPE_SECRET_KEY;if(!secret)return "unknown";client=new Stripe(secret,{timeout:10000,maxNetworkRetries:0});}
+  if(!client){const secret=process.env.STRIPE_SECRET_KEY;if(!secret || !stripeMatchesDeployment(secret))return "unknown";client=new Stripe(secret,{timeout:10000,maxNetworkRetries:0});}
   try{
     let after:string|undefined,complete=false;
     for(let page=0;page<10;page++){
@@ -77,6 +80,7 @@ export async function purchaseIntent(scoped:SupabaseClient,db:SupabaseClient,use
   const product=appleProduct(input.productId);if(!product)throw new AppleBillingError("apple_product",400,"Choose an available membership product.");
   const catalog=await appleCatalog(scoped,db,user,services);
   if(!catalog.canPurchase)throw new AppleBillingError("apple_purchase_unavailable",409,catalog.reason||"Purchasing is unavailable.");
+  if (!catalog.products.some(value=>value.id===product.id)) throw new AppleBillingError("apple_product_restricted",403,"Coach and Team Manager accounts require HoopCheck Premium.");
   const budget=await db.rpc("apple_take_purchase_intent",{p_user:user});
   if(budget.error)throw new AppleBillingError("apple_intent_unverified",503,"Purchase preparation could not be confirmed. Try again later.");
   if(budget.data!==true)throw new AppleBillingError("apple_rate_limit",429,"Too many purchase attempts. Please wait before trying again.");
@@ -109,6 +113,7 @@ export async function synchronizeApple(db:SupabaseClient,user:string,signed:unkn
 }
 export async function persistAppleStatus(db:SupabaseClient,user:string,observed:Awaited<ReturnType<AppleServices["verifyTransaction"]>>,services:AppleServices) {
   const current=await services.currentStatus(observed.originalTransactionId,user);
+  if (current.purchaseDate < observed.purchaseDate || current.transactionId === observed.transactionId && observed.revocationDate && !current.revocationDate && current.status !== 5) throw new AppleBillingError("apple_status_pending",503,"Apple is still updating this purchase. It remains restorable; retry shortly.");
   return saveAppleStatus(db,user,current,observed,services);
 }
 async function saveAppleStatus(db:SupabaseClient,user:string,current:Awaited<ReturnType<AppleServices["currentStatus"]>>,observed:Awaited<ReturnType<AppleServices["verifyTransaction"]>>,services:AppleServices) {
@@ -153,4 +158,17 @@ export async function refreshAppleMemberships(db:SupabaseClient,user:string,serv
     const current=await services.currentStatus(row.original_transaction_id,user);
     await saveAppleStatus(db,user,current,current,services);
   }));
+}
+
+// Billing-provider transitions must verify existing Apple history, even if an
+// old projected expiry or the feature switch would otherwise hide that source.
+export async function applePreventsStripeCheckout(db:SupabaseClient,user:string,servicesFactory:()=>AppleServices=appleServices) {
+  const owned=await db.from("apple_memberships").select("original_transaction_id").eq("user_id",user).limit(1);
+  if(owned.error)throw new AppleBillingError("membership_unverified",503,"Your existing billing could not be verified. No checkout was started.");
+  if(!owned.data?.length)return false;
+  const services=servicesFactory();
+  await refreshAppleMemberships(db,user,services,true);
+  const current=await db.from("apple_memberships").select("status,current_period_end").eq("user_id",user).eq("environment",services.environment).limit(21);
+  if(current.error || (current.data?.length??0)>20)throw new AppleBillingError("membership_unverified",503,"Apple billing could not be verified. Restore or retry before starting Stripe billing.");
+  return(current.data??[]).some(row=>row.status==="billing_retry" || ["active","trialing"].includes(row.status) && Date.parse(row.current_period_end)>Date.now());
 }
