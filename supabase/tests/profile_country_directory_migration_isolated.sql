@@ -29,5 +29,24 @@ DO $check$ BEGIN
   RAISE EXCEPTION 'public directory execution grants missing';
  END IF;
 END $check$;
+-- PUBLIC execute is not allowed on privileged directory functions.
+-- A role outside the two explicitly approved API roles must be denied.
+DO $unauthorized$ BEGIN
+ IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='country_directory_untrusted') THEN
+  CREATE ROLE country_directory_untrusted;
+ END IF;
+END $unauthorized$;
+DO $check$ DECLARE fn regprocedure; BEGIN
+ FOREACH fn IN ARRAY ARRAY[
+   'public.get_public_player_profile(uuid)'::regprocedure,
+   'public.search_public_players(text,text,integer,integer)'::regprocedure,
+   'public.search_public_players(text,text,text,boolean,integer)'::regprocedure,
+   'public.search_public_players_page(text,text,text,boolean,integer,integer)'::regprocedure
+ ] LOOP
+   IF has_function_privilege('country_directory_untrusted',fn,'EXECUTE') THEN
+     RAISE EXCEPTION 'untrusted role can execute privileged directory function %',fn;
+   END IF;
+ END LOOP;
+END $check$;
 ROLLBACK;
 SELECT 'PASS: actual directory permission migration applies to all four signatures' AS result;
