@@ -18,6 +18,7 @@
     "test:hoopfeed-rls": "node scripts/test-unified-hoopfeed-rls.mjs"
   },
   "dependencies": {
+    "@apple/app-store-server-library": "3.1.0",
     "@supabase/ssr": "0.7.0",
     "@supabase/supabase-js": "2.76.1",
     "next": "16.4.5",

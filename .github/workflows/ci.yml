@@ -91,6 +91,14 @@ jobs:
           node --test scripts/test-mfa-enforcement.mjs
           PGHOST=127.0.0.1 PGUSER=postgres node scripts/test-mfa-sql-negative.mjs
 
+      - name: Verify StoreKit ownership, membership sources, trials and refund isolation
+        env:
+          PGPASSWORD: postgres
+        run: |
+          createdb -h 127.0.0.1 -U postgres hoopcheck_storekit_test
+          psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_storekit_test -f supabase/tests/storekit_membership_isolated.sql
+          node --test scripts/test-storekit-server.mjs
+
       - name: Verify Ambassador HQ database security and commission lifecycle
         env:
           PGPASSWORD: postgres
