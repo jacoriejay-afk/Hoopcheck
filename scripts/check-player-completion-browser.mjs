@@ -24,6 +24,7 @@ try {
       if (request.method() === "PATCH") profile = { ...profile, ...request.postDataJSON() };
       data = profile;
     } else if (url.pathname.includes("/rpc/get_public_player_profile")) data = [{ ...profile, player_position: profile.position }];
+    else if (url.pathname.includes("/rpc/get_my_private_country")) data = profile.current_country;
     else if (url.pathname.includes("/rpc/get_current_user_admin_role")) data = null;
     else if (url.pathname.includes("/rpc/is_current_user_admin_or_moderator")) data = false;
     else if (url.pathname.includes("/rpc/get_follow_count") || url.pathname.includes("/rpc/get_public_following_count")) data = 0;
