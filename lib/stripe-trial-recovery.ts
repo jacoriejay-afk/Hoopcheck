@@ -25,3 +25,24 @@ export function canReleaseExpiredTrialSession(
     session.metadata?.user_id === userId &&
     session.metadata?.stripe_trial_reserved === "true";
 }
+
+/**
+ * Server-only reconciliation primitive. Callers must obtain the reservation
+ * owner and bound session from the service-role database, never user input.
+ * This function does not run automatically and must not be exposed publicly.
+ * Fail closed on Stripe errors, unexpected state, or database RPC errors.
+ */
+export async function reconcileExpiredTrialReservation(
+  userId: string,
+  boundSessionId: string,
+  retrieveSession: (id: string) => Promise<Stripe.Checkout.Session>,
+  releaseClaim: (userId: string, sessionId: string) => Promise<boolean>
+): Promise<"released" | "retained"> {
+  if (!userId || !boundSessionId.startsWith("cs_")) return "retained";
+  const session = await retrieveSession(boundSessionId);
+  if (!canReleaseExpiredTrialSession(session, userId, boundSessionId, session.id)) {
+    return "retained";
+  }
+  const released = await releaseClaim(userId, boundSessionId);
+  return released ? "released" : "retained";
+}
