@@ -22,6 +22,8 @@ CREATE POLICY authenticated_read ON public.profiles FOR SELECT TO authenticated
  USING (profile_visibility='public' OR id=auth.uid());
 GRANT USAGE ON SCHEMA public,auth TO anon,authenticated;
 GRANT SELECT(id,profile_visibility,display_name,current_country_public) ON public.profiles TO anon,authenticated;
+GRANT UPDATE(display_name,current_country,current_country_public) ON public.profiles TO authenticated;
+CREATE POLICY owner_update ON public.profiles FOR UPDATE TO authenticated USING (id=auth.uid()) WITH CHECK (id=auth.uid());
 -- Base country column is NOT granted to either client role.
 CREATE OR REPLACE FUNCTION public.read_own_private_country(p_id uuid)
  RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $$
@@ -63,10 +65,17 @@ DO $$ BEGIN
  IF (SELECT public.read_own_private_country('11111111-1111-4111-8111-111111111111')) <> 'SECRET FIXTURE' THEN
   RAISE EXCEPTION 'owner cannot read own private country';
  END IF;
+ -- Owner edits must use safe RETURNING fields and then refresh the private value through the owner RPC.
+ UPDATE public.profiles SET current_country='UPDATED SECRET FIXTURE' WHERE id='11111111-1111-4111-8111-111111111111';
+ IF (SELECT public.read_own_private_country('11111111-1111-4111-8111-111111111111')) <> 'UPDATED SECRET FIXTURE' THEN
+  RAISE EXCEPTION 'owner country edit or protected refresh failed';
+ END IF;
  IF (SELECT public.read_own_private_country('22222222-2222-4222-8222-222222222222')) IS NOT NULL THEN
   RAISE EXCEPTION 'owner-only RPC leaks another user country';
  END IF;
-END $$;
+END $;
+-- Verify UPDATE ... RETURNING can use a non-sensitive projection after country SELECT is revoked.
+UPDATE public.profiles SET display_name='Edited Player' WHERE id='11111111-1111-4111-8111-111111111111' RETURNING id,display_name;
 RESET ROLE;
 ROLLBACK;
 SELECT 'PASS: candidate restricted-column/owner-RPC privacy boundary with synthetic data' AS result;
