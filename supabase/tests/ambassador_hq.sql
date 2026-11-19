@@ -1,9 +1,12 @@
 -- This fixture runs inside a rollback-only transaction. The test runner installs
--- the two versioned migrations and minimal platform tables before including it.
+-- the current ledger migrations and minimal platform tables before including it.
+-- Run only through ambassador_hq_isolated.sql against an isolated test database.
 insert into auth.users (id, email, email_confirmed_at, created_at, raw_app_meta_data, raw_user_meta_data)
 values
  ('10000000-0000-0000-0000-000000000001','amb1-owner@example.invalid',now(),now(),'{}',jsonb_build_object('full_name','AMB1 QA','username','amb1fixture1','account_type','fan','gender','male','position','PG','birthdate','1990-01-01','agreed_to_terms',true,'terms_accepted_at',now(),'terms_version','2026-10-01')),
  ('10000000-0000-0000-0000-000000000002','amb1-other@example.invalid',now(),now(),'{}',jsonb_build_object('full_name','AMB1 QA','username','amb1fixture2','account_type','fan','gender','male','position','PG','birthdate','1990-01-01','agreed_to_terms',true,'terms_accepted_at',now(),'terms_version','2026-10-01'));
+insert into hoopcheck_security.owner_accounts (user_id)
+values ('10000000-0000-0000-0000-000000000001');
 insert into public.ambassador_campaigns (code, display_name) values ('AMB1TEST', 'Test campaign');
 insert into public.ambassador_grants (id,user_id,code,status,agreement_signed_at,activated_at,ends_at,
  first_rate_bps,commission_rate_bps,agreement_reference,payout_terms_reference,approved_by)
@@ -73,6 +76,25 @@ begin
     raise exception 'Wrong rates, net revenue, or idempotency';
   end if;
   perform public.ambassador_subscription_status(a,user_id,'sub_amb1','cus_amb1','canceled',now());
+  -- Exercise the current owner guard before it can lock, approve, settle or cancel.
+  for i in select unnest(array['approve','settle','cancel']) as action loop
+    begin
+      perform public.ambassador_payout(grant_id,'usd',other_id,i.action,'fixture');
+      raise exception 'Non-owner payout action unexpectedly succeeded' using errcode='P0002';
+    exception when raise_exception then
+      if sqlerrm <> 'Unauthorized payout actor' then raise; end if;
+    end;
+  end loop;
+  begin
+    perform public.ambassador_payout(grant_id,'usd',null,'approve','');
+    raise exception 'Null payout actor unexpectedly succeeded' using errcode='P0002';
+  exception when raise_exception then
+    if sqlerrm <> 'Unauthorized payout actor' then raise; end if;
+  end;
+  if exists(select 1 from public.ambassador_payouts) or
+     exists(select 1 from public.ambassador_owner_audit where action like 'payout_%') then
+    raise exception 'Denied payout actor changed finance history';
+  end if;
   payout := public.ambassador_payout(grant_id,'usd',owner_id,'approve','');
   if (select amount_minor from public.ambassador_payouts where id = payout) <> 320 then raise exception 'Wrong payout'; end if;
   perform public.ambassador_reconcile_charge('ch_first',100,'refund',now()+interval '1 second');

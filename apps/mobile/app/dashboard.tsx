@@ -1,4 +1,4 @@
-import { Chip, SectionHeader } from "../src/primitives";
+import { Input, Button, Chip, SectionHeader } from "../src/primitives";
 import { useEffect, useState } from "react";
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
@@ -8,10 +8,12 @@ import { supabase } from "../src/lib/supabase";
 import { useEntryTheme } from "../src/theme";
 
 const directories = [
-  { href: "/teams", icon: "basketball-outline", title: "Check a Team", detail: "Research professional clubs" },
-  { href: "/leagues", icon: "earth-outline", title: "Explore Leagues", detail: "Explore competitions" },
-  { href: "/players", icon: "people-outline", title: "Find Players", detail: "Find public player profiles" },
-  { href: "/coaches", icon: "school-outline", title: "Find Coaches", detail: "Find professional coaches" },
+  { href: "/feed", icon: "basketball-outline", title: "HoopFeed", detail: "Community, comments and Reels" },
+  { href: "/womens", icon: "basketball-outline", title: "Women’s teams", detail: "Explore women’s basketball" },
+  { href: "/teams", icon: "basketball-outline", title: "Teams", detail: "Research professional clubs" },
+  { href: "/leagues", icon: "earth-outline", title: "Leagues", detail: "Explore competitions" },
+  { href: "/players", icon: "people-outline", title: "Players", detail: "Find public player profiles" },
+  { href: "/coaches", icon: "school-outline", title: "Coaches", detail: "Find professional coaches" },
 ] as const;
 
 const accountLinks = [
@@ -27,10 +29,10 @@ const accountLinks = [
 export default function DashboardScreen() {
   const router = useRouter();
   const theme = useEntryTheme();
+  const [search, setSearch] = useState("");
   const [busy, setBusy] = useState(false);
   const [email, setEmail] = useState("");
   const [accountType, setAccountType] = useState("");
-  const [displayName, setDisplayName] = useState("");
   const [followedTeams, setFollowedTeams] = useState<Array<{ id: string; name: string; country: string | null; league_name: string | null }>>([]);
 
   useEffect(() => {
@@ -38,7 +40,6 @@ export default function DashboardScreen() {
     supabase.auth.getUser().then(({ data, error }) => {
       if (!alive || error) return;
       setEmail(data.user?.email ?? "");
-      setDisplayName(String(data.user?.user_metadata?.display_name || data.user?.email?.split("@")[0] || "HoopCheck member"));
       const role = data.user?.user_metadata?.account_type;
       if (typeof role === "string") setAccountType(role.replaceAll("_", " "));
       const userId = data.user?.id;
@@ -61,6 +62,7 @@ export default function DashboardScreen() {
   }, []);
 
   async function openAccountLink(path: string) {
+    if (path === "/account") { router.push("/account"); return; }
     try {
       await Linking.openURL(`https://hoopcheck.online${path}`);
     } catch {
@@ -83,23 +85,17 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView edges={["left", "right", "bottom"]} style={[styles.safe, { backgroundColor: theme.background }]}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView testID="dashboard-scroll" contentContainerStyle={styles.scroll}>
         <View style={styles.content}>
-          <Pressable accessibilityRole="link" accessibilityLabel="Search players" onPress={() => router.push("/players")} style={[styles.searchShortcut, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-            <Ionicons name="search-outline" size={19} color={theme.muted} />
-            <Text style={[styles.searchPlaceholder, { color: theme.muted }]}>Search players by username…</Text>
-          </Pressable>
-          <View style={styles.greeting}>
-            <View style={styles.greetingTop}>
-              <Text accessibilityRole="header" style={[styles.greetingTitle, { color: theme.foreground }]}>Welcome back, {displayName}</Text>
-              {accountType ? <View style={{ alignSelf: "flex-start" }}><Chip>{accountType}</Chip></View> : null}
-            </View>
-            <Text style={[styles.tagline, { color: theme.muted }]}>Know who you’re signing with.</Text>
-          </View>
-          <Text style={[styles.sectionKicker, { color: theme.muted }]}>QUICK ACTIONS</Text>
+          <Text style={{ color: theme.accent, fontSize: 12, fontWeight: "800", letterSpacing: 1.5 }}>THE GLOBAL BASKETBALL INTELLIGENCE HUB</Text>
+          <Text accessibilityRole="header" style={[theme.type.display, { color: theme.foreground, marginVertical: 16 }]}>Know who you’re signing with.</Text>
+          <Text style={{ color: theme.muted, fontSize: 16, lineHeight: 24, marginBottom: 20 }}>Explore teams, coaches, leagues, and real basketball experiences.</Text>
+          <Input accessibilityLabel="Search basketball directory" placeholder="Search teams, leagues, coaches or players" value={search} maxLength={100} onChangeText={setSearch} returnKeyType="search" onSubmitEditing={() => router.push({ pathname: "/search", params: { q: search } })} />
+          <Button style={{ marginTop: 8, marginBottom: 24 }} onPress={() => router.push({ pathname: "/search", params: { q: search } })}>Search</Button>
+          <SectionHeader>Explore basketball</SectionHeader>
           <View style={styles.directories}>
             {directories.map(({ href, icon, title, detail }) => (
-              <Pressable key={href} onPress={() => router.push(href)} accessibilityRole="link" style={({ pressed }) => [
+              <Pressable key={href} testID={`directory-${title.toLowerCase()}`} onPress={() => router.push(href)} accessibilityRole="link" style={({ pressed }) => [
                   styles.directory, panel, pressed && { backgroundColor: theme.accentSurface },
                 ]}>
                   <View style={[styles.icon, { backgroundColor: theme.accentSurface }]}>
@@ -132,15 +128,6 @@ export default function DashboardScreen() {
               <Text style={[styles.detail, { color: theme.muted, flex: 1 }]}>Find your team →</Text>
             </Pressable>
           )}
-          <View style={styles.sectionTitle}><SectionHeader>FROM THE COMMUNITY</SectionHeader></View>
-          <Pressable accessibilityRole="link" onPress={() => void openAccountLink("/feed")} style={[styles.followedRow, panel]}>
-            <Ionicons name="chatbubbles-outline" size={22} color={theme.accent} />
-            <View style={styles.directoryCopy}>
-              <Text style={[styles.rowLabel, { color: theme.foreground }]}>HoopFeed</Text>
-              <Text style={[styles.detail, { color: theme.muted }]}>Open HoopFeed on the website · membership rules apply</Text>
-            </View>
-            <Ionicons name="open-outline" size={18} color={theme.accent} />
-          </Pressable>
           <View style={styles.sectionTitle}><SectionHeader>LIVE GAMES</SectionHeader></View>
           <Pressable accessibilityRole="link" onPress={() => void openAccountLink("/live-games")} style={[styles.followedRow, panel]}>
             <Ionicons name="basketball-outline" size={22} color={theme.accent} />

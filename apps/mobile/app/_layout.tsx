@@ -1,3 +1,4 @@
+import { NativeAccountProvider } from "../src/native/useNativeAccount";
 import { useFonts } from "expo-font";
 import { rememberDestination, takeDestination } from "../src/native/pendingDestination";
 import "react-native-gesture-handler";
@@ -8,7 +9,6 @@ import * as SplashScreen from "expo-splash-screen";
 import { DevicePreferences } from "../src/native/preferences";
 import { NetworkProvider } from "../src/native/network";
 import { MotionProvider } from "../src/motion/Provider";
-import { Onboarding } from "../components/Onboarding";
 import { AppLock } from "../components/AppLock";
 import { TabBar } from "../components/TabBar";
 import { RouteFade } from "../components/RouteFade";
@@ -20,7 +20,7 @@ SplashScreen.setOptions({ duration: motion.logo, fade: true });
 void AccessibilityInfo.isReduceMotionEnabled().then(reduced => SplashScreen.setOptions({ duration: reduced ? motion.shortFade : motion.logo, fade: true })).catch(() => {});
 const splashDeadline = setTimeout(() => { void SplashScreen.hideAsync().catch(() => {}); }, motion.splashDeadline - motion.logo);
 import { useEffect, useState } from "react";
-import { Stack, usePathname, useRouter, useSegments } from "expo-router";
+import { Stack, useGlobalSearchParams, usePathname, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { supabase } from "../src/lib/supabase";
@@ -36,6 +36,7 @@ function RootLayout() {
   const [sessionReady, setSessionReady] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
   const pathname = usePathname();
+  const routeParams = useGlobalSearchParams<{ post?: string | string[]; q?: string | string[] }>();
 
   useEffect(() => {
     let alive = true;
@@ -65,7 +66,7 @@ function RootLayout() {
   useEffect(() => {
     if (!sessionReady) return;
     const currentRoute = segments[0] ?? "";
-    const inAppArea = ["dashboard", "account", "feed", "notifications", "search", "teams", "leagues", "players", "coaches", "choose-username", "settings"].includes(currentRoute);
+    const inAppArea = ["dashboard", "notifications", "feed", "fan-feed", "reels", "account", "search", "teams", "womens", "leagues", "players", "coaches", "choose-username", "settings"].includes(currentRoute);
     if (["web", "sign-in", "sign-up"].includes(currentRoute)) return;
     const onPasswordRecovery = currentRoute === "reset-password";
     // Let the OAuth callback exchange its PKCE code and choose the destination.
@@ -74,13 +75,19 @@ function RootLayout() {
       const target = takeDestination();
       router.replace((target ?? "/dashboard") as "/dashboard");
     }
-    if (!signedIn && inAppArea) { rememberDestination(pathname); router.replace("/sign-in"); }
-  }, [sessionReady, signedIn, segments, router, pathname]);
+    if (!signedIn && inAppArea) {
+      const query = new URLSearchParams();
+      if (currentRoute === "feed" && typeof routeParams.post === "string" && /^[0-9a-f-]{36}$/i.test(routeParams.post)) query.set("post", routeParams.post);
+      if (currentRoute === "search" && typeof routeParams.q === "string") query.set("q", routeParams.q.slice(0, 100));
+      const suffix = query.toString();
+      rememberDestination(pathname + (suffix ? `?${suffix}` : "")); router.replace("/sign-in");
+    }
+  }, [sessionReady, signedIn, segments, router, pathname, routeParams.post, routeParams.q]);
 
   if (!fontsLoaded && !fontError) return null;
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.background }}><SafeAreaProvider><MotionProvider><DevicePreferences><NetworkProvider><BottomSheetModalProvider>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.background }}><SafeAreaProvider><MotionProvider><DevicePreferences><NetworkProvider><NativeAccountProvider><BottomSheetModalProvider>
       <StatusBar style={theme.dark ? "light" : "dark"} /><RouteFade>
       <Stack
         screenOptions={{
@@ -91,6 +98,11 @@ function RootLayout() {
           contentStyle: { backgroundColor: theme.background },
         }}
       >
+        <Stack.Screen name="notifications" options={{ title: "Alerts" }} />
+        <Stack.Screen name="feed" options={{ headerShown: false }} />
+        <Stack.Screen name="fan-feed" options={{ headerShown: false }} />
+        <Stack.Screen name="reels" options={{ headerShown: false }} />
+        <Stack.Screen name="account" options={{ title: "Account" }} />
         <Stack.Screen name="settings" options={{ title: "Settings" }} />
         <Stack.Screen name="web" options={{ title: "HoopCheck" }} />
         <Stack.Screen name="index" options={{ title: "HoopCheck™", headerShown: false }} />
@@ -115,14 +127,19 @@ function RootLayout() {
         <Stack.Screen name="players" options={{ title: "Find players" }} />
         <Stack.Screen name="players/[id]" options={{ title: "Player profile" }} />
         <Stack.Screen name="coaches" options={{ title: "Find a coach" }} />
+        <Stack.Screen name="womens/index" options={{ title: "Women’s teams" }} />
+        <Stack.Screen name="womens/leagues/[id]" options={{ title: "League profile" }} />
+        <Stack.Screen name="womens/[id]" options={{ title: "Team profile" }} />
+        <Stack.Screen name="search" options={{ title: "Search" }} />
         <Stack.Screen name="teams" options={{ title: "Teams" }} />
         <Stack.Screen name="teams/[id]" options={{ title: "Team profile" }} />
         <Stack.Screen name="teams/[id]/review" options={{ title: "Write a review" }} />
         <Stack.Screen name="leagues" options={{ title: "Leagues" }} />
         <Stack.Screen name="leagues/[id]" options={{ title: "League profile" }} />
       </Stack></RouteFade>
-      {signedIn ? <TabBar /> : null}<Onboarding /><AppLock authReady={sessionReady} protectedScreen={signedIn && !["sign-in", "sign-up", "reset-password"].includes(segments[0] ?? "")} />
-    </BottomSheetModalProvider></NetworkProvider></DevicePreferences></MotionProvider></SafeAreaProvider></GestureHandlerRootView>
+      {signedIn ? <TabBar /> : null}<AppLock authReady={sessionReady} protectedScreen={signedIn && !["sign-in", "sign-up", "reset-password", "auth"].includes(segments[0] ?? "")} />
+    </BottomSheetModalProvider></NativeAccountProvider></NetworkProvider></DevicePreferences></MotionProvider></SafeAreaProvider></GestureHandlerRootView>
+
   );
 }
 

@@ -126,6 +126,15 @@ test("multiple refunds are audited individually; replay and out-of-order events 
   // The DB upsert keys on Stripe refund ID, so replay updates status without a duplicate row.
 });
 
+test("Stripe charge.refund.updated event reconciles the associated charge", async () => {
+  const f = fixture();
+  const event = { type: "charge.refund.updated", data: { object: { charge: "ch_1" } } };
+  await reconcileAmbassadorEvent(f.stripe, f.rpc, event);
+  assert.equal(f.calls[0].name, "ambassador_has_charge");
+  assert.equal(f.calls[1].name, "ambassador_reconcile_charge");
+  assert.equal(f.calls[2].name, "ambassador_record_refund_audit");
+});
+
 test("refund pagination and mismatched charge fail reconciliation for safe retry", async () => {
   const f = fixture();
   const event = { type: "refund.updated", data: { object: { charge: "ch_1" } } };

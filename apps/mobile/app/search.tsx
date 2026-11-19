@@ -1,53 +1,55 @@
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { Input, GlassCard } from "../src/primitives";
+import { supabase } from "../src/lib/supabase";
 import { useEntryTheme } from "../src/theme";
-
-const categories = [
-  { route: "/players", title: "Players", description: "Search professional player usernames", icon: "people-outline" },
-  { route: "/teams", title: "Teams", description: "Find clubs by team, city, country, or league", icon: "basketball-outline" },
-  { route: "/leagues", title: "Leagues", description: "Browse basketball leagues", icon: "trophy-outline" },
-  { route: "/coaches", title: "Coaches", description: "Discover professional coaches", icon: "school-outline" },
-] as const;
-
+import { motion } from "../src/motion/config";
+import { searchDirectory, searchResultPath, type SearchGroup, type SearchKind } from "../src/native/directorySearch";
+import { useNetwork } from "../src/native/network";
+import { RecentSearches, useRecentSearches } from "../components/RecentSearches";
+import { Skeleton } from "../components/Motion";
+const labels: Record<SearchKind, string> = { teams: "Men’s teams", women: "Women’s teams", leagues: "Men’s leagues", "womens-leagues": "Women’s leagues", players: "Players", coaches: "Coaches" };
 export default function SearchScreen() {
   const theme = useEntryTheme();
   const router = useRouter();
-  return (
-    <SafeAreaView edges={["left", "right"]} style={[styles.safe, { backgroundColor: theme.background }]}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text accessibilityRole="header" style={[styles.heading, { color: theme.foreground }]}>Search HoopCheck</Text>
-        <Text style={[styles.description, { color: theme.muted }]}>Choose what you want to explore.</Text>
-        <View style={styles.list}>
-          {categories.map(category => (
-            <Pressable key={category.route} accessibilityRole="link" onPress={() => router.push(category.route)}
-              style={({ pressed }) => [styles.row, { backgroundColor: pressed ? theme.accentSurface : theme.surface, borderColor: theme.border }]}>
-              <View style={[styles.icon, { backgroundColor: theme.accentSurface }]}>
-                <Ionicons name={category.icon} size={22} color={theme.accent} />
-              </View>
-              <View style={styles.copy}>
-                <Text style={[styles.title, { color: theme.foreground }]}>{category.title}</Text>
-                <Text style={[styles.detail, { color: theme.muted }]}>{category.description}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={theme.accent} />
-            </Pressable>
-          ))}
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
+  const { q } = useLocalSearchParams<{ q?: string }>();
+  const [term, setTerm] = useState(typeof q === "string" ? q : "");
+  const [result, setResult] = useState<{ term: string; groups: SearchGroup[] } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const { offline, revision } = useNetwork();
+  const { recents, remember } = useRecentSearches("all-directories");
+  useEffect(() => { if (typeof q === "string") setTerm(q); }, [q]);
+  useEffect(() => {
+    let active = true;
+    if (term.trim().length < 2 || offline) { setLoading(false); return; }
+    setLoading(true);
+    const timer = setTimeout(() => {
+      void searchDirectory(supabase, term).then(groups => {
+        if (active) setResult({ term, groups });
+      }).finally(() => { if (active) setLoading(false); });
+    }, motion.searchDelay);
+    return () => { active = false; clearTimeout(timer); };
+  }, [term, offline, revision]);
+  const groups = result?.term === term && !offline ? result.groups : [];
+  return <SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: theme.background }}>
+    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 20, gap: 16 }}>
+      <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 30, fontWeight: "900" }}>Search basketball</Text>
+      <Input accessibilityLabel="Search basketball directory" placeholder="Team, country, league, coach or @username" value={term} maxLength={100} onChangeText={setTerm} returnKeyType="search" onSubmitEditing={() => remember(term)} onBlur={() => remember(term)} />
+      {!term ? <RecentSearches items={recents} onSelect={setTerm} /> : null}
+      {offline ? <Text accessibilityRole="alert" style={{ color: theme.muted }}>Reconnect to search the directories.</Text> : term.trim().length < 2 ? <Text style={{ color: theme.muted }}>Enter at least two characters. Player search uses public usernames.</Text> : loading ? <Skeleton /> : groups.every(group => !group.rows.length && !group.failed) ? <Text style={{ color: theme.muted }}>No matching results.</Text> : null}
+      {groups.map(group => <View key={group.kind} style={{ gap: 8 }}>
+        <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 19, fontWeight: "800" }}>{labels[group.kind]}</Text>
+        {group.failed ? <Text accessibilityRole="alert" style={{ color: theme.muted }}>These results could not be loaded. Try searching again.</Text> : !group.rows.length ? <Text style={{ color: theme.muted }}>No matches in this directory.</Text> : group.rows.map(row => {
+          const path = searchResultPath(group.kind, row.id);
+          return <Pressable key={row.id} accessibilityRole="link" disabled={!path} onPress={() => { remember(term); if (path) router.push(path as "/teams"); }}><GlassCard style={{ padding: 16 }}>
+            <Text style={{ color: theme.foreground, fontSize: 17, fontWeight: "700" }}>{row.name || row.display_name || (row.username ? `@${row.username}` : "Player")}</Text>
+            {row.country ? <Text style={{ color: theme.muted }}>{row.country}</Text> : null}
+          </GlassCard></Pressable>;
+        })}
+        {group.rows.length === 6 ? <Text style={{ color: theme.muted }}>Showing the first six matches.</Text> : null}
+      </View>)}
+    </ScrollView>
+  </SafeAreaView>;
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1 },
-  content: { padding: 20, paddingBottom: 32 },
-  heading: { fontSize: 29, fontFamily: "HoopCheckDisplay", marginTop: 8 },
-  description: { fontSize: 14, marginTop: 6 },
-  list: { gap: 10, marginTop: 22 },
-  row: { minHeight: 72, borderWidth: 1, borderRadius: 16, padding: 12, flexDirection: "row", alignItems: "center", gap: 12 },
-  icon: { width: 42, height: 42, borderRadius: 12, justifyContent: "center", alignItems: "center" },
-  copy: { flex: 1 },
-  title: { fontSize: 16, fontWeight: "800" },
-  detail: { fontSize: 12, marginTop: 3, lineHeight: 17 },
-});

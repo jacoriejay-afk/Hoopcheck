@@ -1,0 +1,7 @@
+{
+  "git": {
+    "deploymentEnabled": {
+      "reconcile/build8-mobile-705-700-710-711": false
+    }
+  }
+}
