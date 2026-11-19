@@ -21,7 +21,7 @@ export function Button({ children, secondary = false, style, ...props }: Pressab
     if (parts.every(part => typeof part === "string" || typeof part === "number")) return <Text style={labelStyle}>{value}</Text>;
     return parts.map((part, index) => typeof part === "string" || typeof part === "number" ? <Text key={index} style={labelStyle}>{part}</Text> : part);
   };
-  return <Pressable accessibilityRole="button" accessibilityState={{ disabled: !!props.disabled }} {...props} style={state => [{ minHeight: 48, padding: t.spacing.md, borderRadius: t.radius.control, borderWidth: 1, borderColor: secondary ? t.border : t.button, backgroundColor: secondary ? t.surface : t.button, alignItems: "center", justifyContent: "center", opacity: props.disabled ? .65 : state.pressed ? .75 : 1 }, typeof style === "function" ? style(state) : style]}>
+  return <Pressable accessibilityRole="button" {...props} style={state => [{ minHeight: 52, padding: t.spacing.md, borderRadius: t.radius.control, borderWidth: 1, borderColor: secondary ? t.border : t.button, backgroundColor: secondary ? t.surface : t.button, alignItems: "center", justifyContent: "center", opacity: props.disabled ? .65 : state.pressed ? .75 : 1 }, typeof style === "function" ? style(state) : style]}>
     {state => content(typeof children === "function" ? children(state) : children)}
   </Pressable>;
 }

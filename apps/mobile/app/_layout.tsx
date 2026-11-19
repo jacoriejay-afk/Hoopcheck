@@ -64,18 +64,19 @@ function RootLayout() {
   }, [sessionReady, fontsLoaded, fontError]);
 
   useEffect(() => {
-    if (!sessionReady) return;
+    if (!sessionReady || segments[0] === "about") return;
     const currentRoute = segments[0] ?? "";
-    const inAppArea = ["dashboard", "connections", "team-hub", "fan-live", "notifications", "feed", "fan-feed", "reels", "account", "search", "teams", "womens", "leagues", "players", "coaches", "choose-username", "settings"].includes(currentRoute);
-    if (["web", "sign-in", "sign-up", "about"].includes(currentRoute)) return;
+    const inAppArea = ["dashboard", "team-hub", "fan-live", "notifications", "feed", "fan-feed", "reels", "account", "search", "teams", "womens", "leagues", "players", "coaches", "choose-username", "settings"].includes(currentRoute);
+    if (["web", "sign-in", "sign-up"].includes(currentRoute)) return;
     const onPasswordRecovery = currentRoute === "reset-password";
     // Let the OAuth callback exchange its PKCE code and choose the destination.
     const onAuthCallback = currentRoute === "auth";
-    if (signedIn && !inAppArea && !onPasswordRecovery && !onAuthCallback) {
+    const designProtected = currentRoute === "connections";
+    if (signedIn && !(inAppArea || designProtected) && !onPasswordRecovery && !onAuthCallback) {
       const target = takeDestination();
       router.replace((target ?? "/dashboard") as "/dashboard");
     }
-    if (!signedIn && inAppArea) {
+    if (!signedIn && (inAppArea || designProtected)) {
       const query = new URLSearchParams();
       if (currentRoute === "feed" && typeof routeParams.post === "string" && /^[0-9a-f-]{36}$/i.test(routeParams.post)) query.set("post", routeParams.post);
       if (currentRoute === "fan-live" && typeof routeParams.gameId === "string" && /^[0-9a-f-]{36}$/i.test(routeParams.gameId)) query.set("gameId", routeParams.gameId);

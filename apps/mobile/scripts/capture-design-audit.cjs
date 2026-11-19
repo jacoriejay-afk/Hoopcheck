@@ -9,7 +9,7 @@ const leagueId = '33333333-3333-4333-8333-333333333333';
 const user = { id: uid, aud: 'authenticated', role: 'authenticated', email: 'fixture@example.test', user_metadata: { account_type: 'player' } };
 const token = Buffer.from(JSON.stringify({alg:'HS256',typ:'JWT'})).toString('base64url')+'.'+Buffer.from(JSON.stringify({sub:uid,aud:'authenticated',exp:Math.floor(Date.now()/1000)+3600,role:'authenticated'})).toString('base64url')+'.fixture';
 const rows = {
-  profiles: [{ id: uid, display_name: 'Olympia Player', username: 'olympia', country: 'France' }],
+  profiles: [{ id: uid, display_name: 'Olympia Player', username: 'olympia', country: 'France', years_pro: null }],
   teams: [{ id: '44444444-4444-4444-8444-444444444444', name: 'Olympia Men', country: 'France', city: 'Paris', league_name: 'Fixture League' }],
   womens_teams: [{ id: teamId, name: 'Olympia Women', country: 'France', city: 'Paris', league_id: leagueId, league_name: 'Olympia Women League' }],
   leagues: [{ id: '55555555-5555-4555-8555-555555555555', name: 'Olympia Men League', country: 'France', level: 'Professional' }],
