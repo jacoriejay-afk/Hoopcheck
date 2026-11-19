@@ -89,6 +89,13 @@ jobs:
           createdb -h 127.0.0.1 -U postgres hoopcheck_profile_exposure_test
           psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_profile_exposure_test -f supabase/tests/profile_country_direct_read_exposure.sql
 
+      - name: Verify candidate protected country boundary in isolated database
+        env:
+          PGPASSWORD: postgres
+        run: |
+          createdb -h 127.0.0.1 -U postgres hoopcheck_country_boundary_test
+          psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_country_boundary_test -f supabase/tests/profile_country_protected_boundary.sql
+
       - name: Verify optional MFA policies and privileged request enforcement
         env:
           PGPASSWORD: postgres
