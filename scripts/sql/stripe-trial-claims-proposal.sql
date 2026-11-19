@@ -96,3 +96,27 @@ end;
 $trialbody$;
 revoke all on function public.redeem_stripe_trial(uuid,text) from public, anon, authenticated;
 grant execute on function public.redeem_stripe_trial(uuid,text) to service_role;
+
+-- Release a reservation only after server-side Stripe reconciliation has
+-- independently confirmed the session is expired and no trial was granted.
+-- The caller must supply the exact bound session; never release redeemed rows.
+create or replace function public.release_expired_stripe_trial(
+  p_user_id uuid, p_session_id text
+)
+returns boolean language plpgsql security invoker set search_path = ''
+as $releasebody$
+declare v_deleted integer;
+begin
+  if p_session_id is null or p_session_id !~ '^cs_' then
+    return false;
+  end if;
+  delete from public.stripe_trial_claims
+   where user_id = p_user_id
+     and checkout_session_id = p_session_id
+     and state = 'reserved';
+  get diagnostics v_deleted = row_count;
+  return v_deleted = 1;
+end;
+$releasebody$;
+revoke all on function public.release_expired_stripe_trial(uuid,text) from public, anon, authenticated;
+grant execute on function public.release_expired_stripe_trial(uuid,text) to service_role;
