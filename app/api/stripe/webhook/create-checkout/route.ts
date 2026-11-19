@@ -321,12 +321,23 @@ export async function POST(
     const trialRolloutEnabled = false;
     let trialEligible = trialRolloutEnabled && checkoutProfile.account_type === "player" && interval === "month" && !promoCodeId && !existingSubscription?.stripe_subscription_id && Boolean(user.email_confirmed_at);
     if (trialEligible) {
-      const customers = customerId
-        ? [await stripe.customers.retrieve(customerId)]
-        : (await stripe.customers.list({ email: user.email || undefined, limit: 100 })).data;
+      // Check every customer under this email, even when a customer is already
+      // linked to the account. A linked ID alone can miss older Stripe history.
+      const emailCustomers = user.email
+        ? (await stripe.customers.list({ email: user.email, limit: 100 })).data
+        : [];
+      const linkedCustomer = customerId
+        ? await stripe.customers.retrieve(customerId)
+        : null;
+      const customers = [
+        ...emailCustomers,
+        ...(linkedCustomer && !emailCustomers.some((customer) => customer.id === linkedCustomer.id)
+          ? [linkedCustomer]
+          : []),
+      ];
 
-      // Never issue a trial if customer history cannot be established reliably.
-      if (!user.email || customers.length === 100 || customers.some((customer) => customer.deleted)) {
+      // Fail closed if email history is truncated or a linked record was deleted.
+      if (!user.email || emailCustomers.length === 100 || customers.some((customer) => customer.deleted)) {
         trialEligible = false;
       } else {
         for (const customer of customers) {
