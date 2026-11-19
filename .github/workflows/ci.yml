@@ -125,6 +125,9 @@ jobs:
       - name: Verify Ambassador HQ Stripe invoice and adjustment handling
         run: node --test scripts/test-ambassador-stripe.mjs
 
+      - name: Verify computed theme color arithmetic
+        run: node --test scripts/test-theme-color-math.mjs
+
       - name: Verify Apple universal-link association contracts
         run: node --test scripts/test-apple-app-site-association.mjs
 
