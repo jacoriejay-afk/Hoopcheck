@@ -79,8 +79,20 @@ begin
      and checkout_session_id = p_session_id
      and state = 'reserved';
   get diagnostics v_updated = row_count;
-  return v_updated = 1;
+  if v_updated = 1 then
+    return true;
+  end if;
+  -- Stripe can redeliver an event after the reservation was redeemed
+  -- but before the webhook's event ledger was marked complete.
+  -- A replay for the exact same session is safe; a different one is not.
+  return exists (
+    select 1 from public.stripe_trial_claims
+     where user_id = p_user_id
+       and checkout_session_id = p_session_id
+       and state = 'redeemed'
+       and redeemed_at is not null
+  );
 end;
-$$;
+$;
 revoke all on function public.redeem_stripe_trial(uuid,text) from public, anon, authenticated;
 grant execute on function public.redeem_stripe_trial(uuid,text) to service_role;
