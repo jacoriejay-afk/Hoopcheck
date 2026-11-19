@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const checkout = readFileSync("app/api/stripe/webhook/create-checkout/route.ts", "utf8");
+const webhook = readFileSync("app/api/stripe/webhook/route.ts", "utf8");
 const trialPolicy = readFileSync("lib/stripe-trial-eligibility.ts", "utf8");
 const migration = readFileSync("scripts/sql/stripe-trial-claims-proposal.sql", "utf8");
 
@@ -39,4 +40,12 @@ assert.ok(checkout.includes('status: "all"'), "Historical canceled subscriptions
 assert.ok(checkout.includes("allow_promotion_codes: !promoCodeId && !trialEligible"), "Trial checkout must disable hosted promotion-code stacking");
 assert.ok(checkout.includes('automatic_tax: { enabled: true }'), "Trial Checkout must enable Stripe Tax");
 assert.ok(checkout.includes('billing_address_collection: "required"'), "Trial Checkout must collect the billing address for tax");
-console.log("Trial release safety checks passed (trial issuance disabled).");
+assert.ok(webhook.includes('event.type ===\n      "checkout.session.completed"'), "Trial redemption must be in completed Checkout webhook");
+assert.ok(webhook.includes('session.metadata?.user_id !== userId'), "Webhook must verify Checkout user identity");
+assert.ok(webhook.includes('subscription.metadata?.user_id !== userId'), "Webhook must verify subscription user identity");
+assert.ok(webhook.includes('session.metadata?.stripe_trial_reserved === "true"'), "Trial redemption must require reservation marker");
+assert.ok(webhook.includes('subscription.status !== "trialing"'), "Trial redemption must require trialing subscription");
+assert.ok(webhook.includes('subscription.metadata?.stripe_trial_reserved !== "true"'), "Subscription must carry trial marker");
+assert.ok(webhook.includes('"redeem_stripe_trial"'), "Webhook must redeem bound claim");
+assert.ok(webhook.indexOf('"redeem_stripe_trial"') < webhook.indexOf('await saveSubscription(userId, subscription);'), "Trial claim must redeem before membership is saved");
+console.log("Trial release and webhook safety checks passed (trial issuance disabled).");
