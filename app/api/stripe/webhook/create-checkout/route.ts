@@ -434,6 +434,9 @@ export async function POST(
           // Non-trial checkout retains the existing promotion-code entry.
           allow_promotion_codes: !promoCodeId && !trialEligible,
 
+          // Stripe Tax for the trial rollout; existing non-trial checkout behavior is unchanged.
+          ...(trialEligible ? { automatic_tax: { enabled: true }, billing_address_collection: "required" as const } : {}),
+
           line_items: [
             {
               price: priceId,
