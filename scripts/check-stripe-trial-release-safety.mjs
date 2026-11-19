@@ -36,4 +36,5 @@ assert.ok(checkout.includes("const linkedCustomer = customerId"), "Trial eligibi
 assert.ok(checkout.includes("emailCustomers.some((customer) => customer.id === linkedCustomer.id)"), "Duplicate customer records must be deduplicated");
 assert.ok(checkout.includes("emailCustomers.length === 100"), "Truncated customer history must fail closed");
 assert.ok(checkout.includes('status: "all"'), "Historical canceled subscriptions must be included");
+assert.ok(checkout.includes("allow_promotion_codes: !promoCodeId && !trialEligible"), "Trial checkout must disable hosted promotion-code stacking");
 console.log("Trial release safety checks passed (trial issuance disabled).");
