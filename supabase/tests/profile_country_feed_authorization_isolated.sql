@@ -48,7 +48,7 @@ CREATE OR REPLACE FUNCTION public.is_current_user_admin_or_moderator() RETURNS b
 GRANT EXECUTE ON FUNCTION public.is_current_user_admin_or_moderator() TO authenticated;
 -- Same predicates as production function; protected definer performs the private-country comparison internally.
 CREATE OR REPLACE FUNCTION public.can_view_player_feed_post(p_author_id uuid)
- RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $
+ RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $$
  SELECT p_author_id=(SELECT auth.uid())
  OR public.is_current_user_admin_or_moderator()
  OR EXISTS(
