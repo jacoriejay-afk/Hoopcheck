@@ -68,4 +68,12 @@ for (const [name, change] of [
 assert.equal(reusable({...openSession, metadata:{...openSession.metadata,user_id:"different-user"}},user,id),false,"metadata owner mismatch");
 assert.equal(reusable({...openSession, metadata:{...openSession.metadata,stripe_trial_reserved:"false"}},user,id),false,"trial marker false");
 assert.equal(reusable({...openSession, url:"https://checkout.stripe.com.evil.example/pay"},user,id),false,"lookalike checkout hostname");
-console.log("Stripe trial same-session retry: 13 cases passed");
+for (const [name, url] of [
+  ["insecure http", "http://checkout.stripe.com/c/pay/session"],
+  ["embedded credentials", "https://user:pass@checkout.stripe.com/c/pay/session"],
+  ["non-checkout path", "https://checkout.stripe.com/account"],
+  ["malformed URL", "not-a-url"]
+]) {
+  assert.equal(reusable({...openSession,url},user,id),false,name);
+}
+console.log("Stripe trial same-session retry: 17 cases passed");
