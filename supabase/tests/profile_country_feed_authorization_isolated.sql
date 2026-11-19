@@ -85,6 +85,13 @@ DO $$ BEGIN
  IF public.can_view_player_feed_post('33333333-3333-4333-8333-333333333333') THEN RAISE EXCEPTION 'different private country follower allowed'; END IF;
  IF NOT public.can_view_player_feed_post('11111111-1111-4111-8111-111111111111') THEN RAISE EXCEPTION 'owner denied'; END IF;
  IF has_column_privilege('authenticated','public.profiles','current_country','SELECT') THEN RAISE EXCEPTION 'private column exposed'; END IF;
+ -- Prove a real SQL read fails, not merely that privilege metadata looks correct.
+ BEGIN
+  EXECUTE 'SELECT current_country FROM public.profiles LIMIT 1';
+  RAISE EXCEPTION 'raw country SELECT unexpectedly succeeded';
+ EXCEPTION WHEN insufficient_privilege THEN
+  NULL;
+ END;
 END $$;
 SELECT set_config('request.jwt.claim.sub','44444444-4444-4444-8444-444444444444',true);
 DO $$ BEGIN
