@@ -31,4 +31,9 @@ assert.ok(checkout.includes("existingSession.metadata?.plan === plan"), "Plan mu
 assert.ok(checkout.includes("existingSession.metadata?.billing_interval === interval"), "Interval must match");
 assert.ok(checkout.includes("await stripe.checkout.sessions.expire(session.id)"), "Unbound checkout must expire");
 assert.ok(checkout.includes("\"reserve_stripe_trial\""), "Reservation must be present");
+assert.ok(checkout.includes("const emailCustomers = user.email"), "Trial eligibility must inspect all Stripe customers matching the email");
+assert.ok(checkout.includes("const linkedCustomer = customerId"), "Trial eligibility must also inspect the linked Stripe customer");
+assert.ok(checkout.includes("emailCustomers.some((customer) => customer.id === linkedCustomer.id)"), "Duplicate customer records must be deduplicated");
+assert.ok(checkout.includes("emailCustomers.length === 100"), "Truncated customer history must fail closed");
+assert.ok(checkout.includes('status: "all"'), "Historical canceled subscriptions must be included");
 console.log("Trial release safety checks passed (trial issuance disabled).");
