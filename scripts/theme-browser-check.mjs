@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { makeThemeColorMath } from "./lib/theme-color-math.mjs";
 import { mkdir } from "node:fs/promises";
 import { chromium } from "playwright";
 
@@ -271,6 +272,7 @@ try {
         isMobile: true,
         hasTouch: true,
       });
+      await context.addInitScript({ content: `globalThis.__hoopcheckThemeColorMath = (${makeThemeColorMath.toString()})();` });
       const page = await context.newPage();
       const encodedSession = "base64-" + btoa(unescape(encodeURIComponent(JSON.stringify(session))))
         .replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
@@ -501,6 +503,7 @@ try {
       { name: "hoopcheck-theme", value: theme, url: baseURL },
       { name: "sb-ci-auth-token", value: encodedSession, url: baseURL },
     ]);
+    await context.addInitScript({ content: `globalThis.__hoopcheckThemeColorMath = (${makeThemeColorMath.toString()})();` });
     const page = await context.newPage();
     let activeRoutePath = "";
     let moderatorViewingGroup = false;
@@ -683,7 +686,15 @@ try {
         const routeRoot = document.body;
         const color = (element) => element ? getComputedStyle(element).backgroundColor : null;
         const scaffoldTerms = ["KICKER", "TITLE", "Subtitle", "TEAM FIRST", "Fan Only Note", "Composer Placeholder", "EMPTY TITLE", "EMPTY KICKER", "Empty Body", "Lorem", "TODO", "Placeholder"];
-        const renderedCopy = routeRoot?.innerText || "";
+        const walker = document.createTreeWalker(routeRoot, NodeFilter.SHOW_TEXT);
+        const copy = [];
+        while (walker.nextNode()) {
+          const node = walker.currentNode;
+          if (node.parentElement?.checkVisibility()) copy.push(node.textContent || "");
+        }
+        // Inspect authored visible text. CSS uppercase must not turn Spanish
+        // "Todo" (All) into a false developer TODO placeholder.
+        const renderedCopy = copy.join("\n");
         const renderedAttributes = Array.from(routeRoot?.querySelectorAll("*") || []).flatMap((element) =>
           ["placeholder", "aria-label", "title", "alt"].map((name) => element.getAttribute(name) || "")
         ).join("\\n");
@@ -737,24 +748,10 @@ try {
               if (/(logo|avatar|photo|portrait|image)/i.test(cls) || element.closest("[aria-hidden='true']")) return false;
               const style = getComputedStyle(element);
               if (style.display === "none" || style.visibility === "hidden" || Number(style.opacity) < 0.6) return false;
-              const rgb = (value) => {
-                const m = value.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([\d.]+))?\s*\)/);
-                return m ? [Number(m[1]), Number(m[2]), Number(m[3]), m[4] == null ? 1 : Number(m[4])] : null;
-              };
-              const luminance = (c) => c.slice(0, 3).map(v => { const x=v/255; return x<=0.04045?x/12.92:((x+0.055)/1.055)**2.4; }).reduce((a,v,i)=>a+v*[0.2126,0.7152,0.0722][i],0);
-              const foreground = rgb(style.color);
+              const colors = globalThis.__hoopcheckThemeColorMath;
+              const foreground = colors.parse(style.color);
               if (!foreground) return false;
-              let node = element;
-              let background = null;
-              while (node && node !== document.documentElement) {
-                const candidate = rgb(getComputedStyle(node).backgroundColor);
-                if (candidate && candidate[3] >= 0.95) { background = candidate; break; }
-                node = node.parentElement;
-              }
-              if (!background) background = rgb(getComputedStyle(document.body).backgroundColor);
-              if (!background) return false;
-              const l1=luminance(foreground), l2=luminance(background);
-              const ratio=(Math.max(l1,l2)+0.05)/(Math.min(l1,l2)+0.05);
+              const ratio = colors.contrast(foreground, colors.background(element));
               const fontSize=parseFloat(style.fontSize)||14;
               const large=fontSize>=24 || (fontSize>=18 && Number(style.fontWeight)>=700);
               return ratio < (large ? 3 : 4.5);
@@ -776,7 +773,7 @@ try {
         await page.getByRole("tab", { name: "Fan Group" }).click();
         await page.locator("main.hc-womens-profile-page .hc-team-fan-group-entry").waitFor({ state: "visible", timeout: 15000 });
         const fanGroupEntry = (await page.locator("main.hc-womens-profile-page .hc-team-fan-group-entry").innerText()).trim();
-        if (!/fan group/i.test(fanGroupEntry) || !/joined/i.test(fanGroupEntry)) errors.push("women team profile: Fan Group entry is missing or not joined: " + fanGroupEntry);
+        if (!/fan group/i.test(fanGroupEntry) || !/(?:joined|unido)/i.test(fanGroupEntry)) errors.push("women team profile: Fan Group entry is missing or not joined: " + fanGroupEntry);
       }
       if (requestedPath === "/fan-feed") {
         // HF-5: Fan Feed now redirects into the shared HoopFeed community.
@@ -830,7 +827,7 @@ try {
         await hub.getByRole("heading", { name: "Happening Now" }).waitFor({ state: "visible" });
         assert.equal(await hub.locator(".hc-live-hub-hero").count(), 0, "old hero must be removed");
         for (const label of ["Live Now", "Upcoming", "My Teams"]) {
-          assert.equal(await hub.getByRole("button", { name: label, exact: true }).count(), 1, "missing segment: " + label);
+          assert.equal(await hub.getByRole("button", { name: new RegExp(`^${label}$`, "i") }).count(), 1, "missing segment: " + label);
         }
         assert.equal(await hub.locator("select").count(), 0, "league dropdown must be removed");
         assert.equal(await hub.getByRole("searchbox", { name: "Search games" }).count(), 1);
@@ -838,7 +835,7 @@ try {
         liveGameFixtureMode = "populated";
         await page.reload({ waitUntil: "domcontentloaded", timeout: 20000 });
         await hub.getByRole("heading", { name: "Happening Now" }).waitFor({ state: "visible", timeout: 15000 });
-        await hub.getByRole("button", { name: "Upcoming", exact: true }).click();
+        await hub.getByRole("button", { name: /^Upcoming$/i }).click();
         await hub.locator(".hc-live-hub-card").first().waitFor({ state: "visible", timeout: 15000 });
         const sections = hub.locator("section button[aria-expanded]");
         assert.ok(await sections.count() > 0, "country/league groups should be collapsible");
@@ -876,7 +873,6 @@ try {
           await page.getByRole("tab", { name: "Reviews", exact: true }).click();
           await page.locator("#team-reviews-panel").waitFor({ state: "visible" });
         }
-        const visibleText = await page.locator("body").innerText();
         const expectedText = testLanguage === "es"
           ? requestedPath === "/dashboard" ? ["ACCIONES RÁPIDAS", "CONSULTAR UN EQUIPO"]
             : requestedPath === "/search" ? ["Explorar directorios"]
@@ -884,6 +880,8 @@ try {
           : requestedPath === "/dashboard" ? ["QUICK ACTIONS", "Check a Team"]
             : requestedPath === "/search" ? ["Browse directories"]
             : ["ROSTER BOARD", "No approved reviews yet"];
+        await page.waitForFunction(expected => expected.every(text => document.body.innerText.toLocaleUpperCase().includes(text.toLocaleUpperCase())), expectedText, { timeout: 15000 });
+        const visibleText = await page.locator("body").innerText();
         const missingText = expectedText.filter((expected) => !visibleText.toLocaleUpperCase().includes(expected.toLocaleUpperCase()));
         if (missingText.length) errors.push("language assertions missing: " + missingText.join(", "));
       }
@@ -996,6 +994,8 @@ try {
   }
   console.log("THEME_COMPONENT_INVENTORY=" + JSON.stringify(themeComponentInventory, null, 2));
   console.log("THEME_ROUTE_SWEEP=" + JSON.stringify(routeSweepResults, null, 2));
+  const failures = routeSweepResults.filter(result => result.status === "FAIL");
+  assert.equal(failures.length, 0, "Theme route failures: " + failures.map(result => `${result.theme} ${result.requestedPath}: ${result.reason}`).join("; "));
 
 } finally {
   await browser.close();
