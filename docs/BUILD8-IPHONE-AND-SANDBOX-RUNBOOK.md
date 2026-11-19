@@ -6,9 +6,9 @@ evidence for each numbered step; a blank result remains unverified.
 
 ## Owner checks before approving a build
 
-1. Review PR #741's current source SHA and its CI results. The source at
-   `a8831d81` passed all six workflows, including real unsigned simulator
-   compilation. The later search/migration compatibility fix needs its own CI.
+1. Review PR #741's current source SHA and its CI results. The product source at
+   `cd617139` passed all six workflows, including Main CI, Mobile checks and real
+   unsigned simulator compilation after the search/migration compatibility fix.
 2. On the owner's authenticated machine, from `apps/mobile`, use the official CLI:
    ```sh
    npx --yes eas-cli@latest whoami
