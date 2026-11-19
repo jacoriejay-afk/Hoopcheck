@@ -430,8 +430,9 @@ export async function POST(
         {
           mode: "subscription",
 
-          // Show Stripe’s built-in promotion-code entry on hosted Checkout.
-          allow_promotion_codes: !promoCodeId,
+          // Trial offers cannot be combined with hosted Checkout promo codes.
+          // Non-trial checkout retains the existing promotion-code entry.
+          allow_promotion_codes: !promoCodeId && !trialEligible,
 
           line_items: [
             {
