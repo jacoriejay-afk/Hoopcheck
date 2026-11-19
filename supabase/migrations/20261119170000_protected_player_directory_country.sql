@@ -1,3 +1,9 @@
+-- Security review gate: SECURITY DEFINER bypasses profile RLS. Before this
+-- migration is eligible for deployment, confirm every returned field and
+-- row predicate is safe without RLS, including players_only authorization,
+-- suspended profiles, fan exclusions and caller-supplied search filters.
+-- The separate direct-column revoke must not be applied until every
+-- dependent invoker function and direct client read has been migrated.
 -- DRAFT ONLY. Apply only after review of all profile RLS visibility contracts.
 -- The prior masked directory functions run as invoker and fail once SELECT
 -- on profiles.current_country is revoked. Use controlled definer execution
