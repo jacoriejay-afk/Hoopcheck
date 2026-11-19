@@ -15,7 +15,7 @@ async function verify(browser,theme,role='player'){
    if(url.pathname==='/auth/v1/user')return json(user);
    if(url.pathname.includes('/storage/v1/object/public/profile-avatars/'))return route.fulfill({status:200,contentType:'image/png',body:fs.readFileSync('/tmp/hoopcheck-fixture-avatar.png')});
    queries.push(url.pathname);assert.notEqual(role,'fan','Fan must not query any player data');
-   if(url.pathname.endsWith('/search_public_players'))return json([card]);
+   if(url.pathname.endsWith('/search_public_players_by_username'))return json([card]);
    if(url.pathname.endsWith('/get_public_player_profile')){const body=request.postDataJSON();return json(body.p_user_id===privateId?[]:[{...card,player_position:'PG',current_country:'Hidden exact location',bio:'Public fixture biography'}]);}
    if(url.pathname.endsWith('/is_player_country_public'))return json(countryPublic);
    throw Error('Raw profile query is forbidden in this fixture: '+url.pathname);

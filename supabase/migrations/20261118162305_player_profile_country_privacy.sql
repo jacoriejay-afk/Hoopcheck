@@ -51,7 +51,7 @@ $$;
 
 -- A shared read path keeps private location and moderated avatars out of web and
 -- native directory responses. INVOKER preserves the existing table RLS boundary.
-create or replace function public.search_public_players(
+create or replace function public.search_public_players_by_username(
   p_username text, p_country text default null, p_limit integer default 30, p_offset integer default 0
 )
 returns table(id uuid, display_name text, username text, country text,
@@ -77,20 +77,23 @@ as $$
   limit greatest(1, least(coalesce(p_limit, 30), 101))
   offset greatest(0, least(coalesce(p_offset, 0), 100000));
 $$;
-revoke all on function public.search_public_players(text, text, integer, integer) from public;
-grant execute on function public.search_public_players(text, text, integer, integer) to anon, authenticated;
+revoke all on function public.search_public_players_by_username(text, text, integer, integer) from public;
+grant execute on function public.search_public_players_by_username(text, text, integer, integer) to anon, authenticated;
 
 
 -- Compatibility repair: production already exposes the five-argument directory RPC.
--- The username/offset RPC above is a separate overload, not a replacement.
--- Keep five-argument positional calls; remove optional defaults to avoid\n-- ambiguous resolution against the new four-argument RPC. Audit named/partial\n-- legacy callers before production deployment.\n-- Prevent private country or
+-- The username/offset RPC above has a distinct name, preserving legacy calls.
+-- Preserve production defaults: CREATE OR REPLACE cannot remove defaults from
+-- an existing function. The separate username RPC preserves all legacy
+-- positional/defaulted calls without introducing overload ambiguity.
+-- Prevent private country or
 -- unapproved avatar disclosure in the legacy result and its search predicates.
 CREATE OR REPLACE FUNCTION public.search_public_players(
-  p_query text,
-  p_country text,
-  p_position text,
-  p_verified_only boolean,
-  p_limit integer
+  p_query text DEFAULT ''::text,
+  p_country text DEFAULT ''::text,
+  p_position text DEFAULT ''::text,
+  p_verified_only boolean DEFAULT false,
+  p_limit integer DEFAULT 24
 )
 RETURNS TABLE(
   id uuid, display_name text, avatar_url text, country text, bio text,

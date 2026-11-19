@@ -24,7 +24,7 @@ export async function searchDirectory(client: SupabaseClient, input: string, inc
       // Shared server-side visibility, role, location and avatar moderation rules.
       const username = clean.replace(/[^\p{L}\p{N}_]/gu, "").toLowerCase();
       if (username.length < 2) return { kind, rows: [], failed: false };
-      const result = await client.rpc("search_public_players", { p_username: username, p_country: null, p_limit: 6, p_offset: 0 });
+      const result = await client.rpc("search_public_players_by_username", { p_username: username, p_country: null, p_limit: 6, p_offset: 0 });
       const rows: SearchRow[] = Array.isArray(result.data) ? result.data.filter((row): row is SearchRow => Boolean(row && typeof row.id === "string")) : [];
       return { kind, rows: result.error ? [] : rows, failed: Boolean(result.error) || !Array.isArray(result.data) };
     } else {

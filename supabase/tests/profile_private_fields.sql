@@ -117,11 +117,11 @@ DO $$ DECLARE col text; BEGIN
  BEGIN PERFORM public.get_own_profile(); RAISE EXCEPTION 'anon own RPC succeeded'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  IF (SELECT current_country FROM public.get_public_player_profile('11111111-1111-4111-8111-111111111111')) IS NOT NULL THEN RAISE EXCEPTION 'canonical private country leaked'; END IF;
  IF (SELECT avatar_url FROM public.get_public_player_profile('11111111-1111-4111-8111-111111111111')) IS NOT NULL THEN RAISE EXCEPTION 'canonical rejected avatar leaked'; END IF;
- IF EXISTS(SELECT FROM public.search_public_players(p_username => 'player') WHERE username='player_one' AND (current_country IS NOT NULL OR avatar_url IS NOT NULL)) THEN RAISE EXCEPTION 'username discovery leak'; END IF;
- IF EXISTS(SELECT FROM public.search_public_players('player','Hidden Country',10,0)) THEN RAISE EXCEPTION 'private country filter leak'; END IF;
+ IF EXISTS(SELECT FROM public.search_public_players_by_username(p_username => 'player') WHERE username='player_one' AND (current_country IS NOT NULL OR avatar_url IS NOT NULL)) THEN RAISE EXCEPTION 'username discovery leak'; END IF;
+ IF EXISTS(SELECT FROM public.search_public_players_by_username('player','Hidden Country',10,0)) THEN RAISE EXCEPTION 'private country filter leak'; END IF;
  IF EXISTS(SELECT FROM public.search_public_players('','Hidden Country','',false,24)) THEN RAISE EXCEPTION 'legacy private country filter leak'; END IF;
  IF EXISTS(SELECT FROM public.search_public_players_page('','Hidden Country','',false,24,0)) THEN RAISE EXCEPTION 'paged private country filter leak'; END IF;
- IF (SELECT count(*) FROM public.search_public_players(p_username => 'player'))<>2 THEN RAISE EXCEPTION 'public eligible directory changed'; END IF;
+ IF (SELECT count(*) FROM public.search_public_players_by_username(p_username => 'player'))<>2 THEN RAISE EXCEPTION 'public eligible directory changed'; END IF;
  IF (SELECT count(*) FROM public.get_public_player_profile('33333333-3333-4333-8333-333333333333'))<>0 THEN RAISE EXCEPTION 'players-only leaked'; END IF;
 END $$;
 SET LOCAL ROLE authenticated;
@@ -144,7 +144,7 @@ INSERT INTO auth.mfa_factors VALUES('11111111-1111-4111-8111-111111111111','veri
 SET LOCAL ROLE authenticated;
 DO $$ BEGIN
  BEGIN PERFORM public.get_own_profile(); RAISE EXCEPTION 'unproved MFA private read succeeded'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
- IF EXISTS(SELECT FROM public.search_public_players(p_username => 'player')) THEN RAISE EXCEPTION 'discovery bypassed MFA'; END IF;
+ IF EXISTS(SELECT FROM public.search_public_players_by_username(p_username => 'player')) THEN RAISE EXCEPTION 'discovery bypassed MFA'; END IF;
  IF EXISTS(SELECT FROM public.get_public_player_profile('22222222-2222-4222-8222-222222222222')) THEN RAISE EXCEPTION 'detail bypassed MFA'; END IF;
 END $$;
 SELECT set_config('request.jwt.claims','{"role":"authenticated","aal":"aal2"}',true);
@@ -180,7 +180,7 @@ SELECT set_config('request.jwt.claim.sub','99999999-9999-4999-8999-999999999999'
 DO $$ BEGIN IF (SELECT count(*) FROM public.admin_list_users())<>6 OR NOT EXISTS(SELECT FROM public.admin_list_users() WHERE moderation_note='Owner-only moderation') THEN RAISE EXCEPTION 'existing administrator access lost'; END IF; END $$;
 RESET ROLE;
 DO $$ BEGIN
- IF EXISTS(SELECT FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname IN ('get_own_profile','get_public_player_profile','search_public_players','search_public_players_page','can_view_player_feed_post','get_social_suggestions') AND p.prosecdef) THEN RAISE EXCEPTION 'privileged public projection exposed'; END IF;
+ IF EXISTS(SELECT FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname IN ('get_own_profile','get_public_player_profile','search_public_players','search_public_players_by_username','search_public_players_page','can_view_player_feed_post','get_social_suggestions') AND p.prosecdef) THEN RAISE EXCEPTION 'privileged public projection exposed'; END IF;
  IF EXISTS(SELECT FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='hoopcheck_security' AND p.prosecdef AND NOT coalesce(p.proconfig,'{}') @> ARRAY['search_path=""']) THEN RAISE EXCEPTION 'unsafe private search path'; END IF;
 END $$;
 ROLLBACK;

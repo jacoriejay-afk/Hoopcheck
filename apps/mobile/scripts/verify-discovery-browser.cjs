@@ -31,7 +31,7 @@ const rows = {
         const json = body => route.fulfill({ status: 200, contentType: 'application/json', headers: {'access-control-allow-origin':'*'}, body: JSON.stringify(body) });
         if (url.hostname === 'fixture.supabase.co') {
           if (url.pathname === '/auth/v1/user') return json(user);
-          if (url.pathname === '/rest/v1/rpc/search_public_players') return json(rows.profiles);
+          if (url.pathname === '/rest/v1/rpc/search_public_players_by_username') return json(rows.profiles);
           if (url.pathname.startsWith('/rest/v1/')) return json(rows[url.pathname.split('/').pop()] || []);
         }
         if (url.hostname === 'api.test' && url.pathname === '/api/mobile/bootstrap') return json({user:{id:uid,displayName:'Fixture Member',accountType:'player'},entitlements:{tier:'free',hasPaidMembership:false,canReadHoopFeed:true,canWriteHoopFeed:true,canUseLiveGameHub:false,canUseLiveGameChat:false,canSwitchBasketballSide:false,canUseFanGroups:false}});

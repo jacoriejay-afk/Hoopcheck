@@ -14,7 +14,7 @@ test('global search preserves directory eligibility and emits only public fields
   assert.equal(groups.length, 6);
   assert.equal(requests.length, 6);
   for (const { url, method, body } of requests) {
-    if (url.pathname.endsWith('/rpc/search_public_players')) {
+    if (url.pathname.endsWith('/rpc/search_public_players_by_username')) {
       assert.equal(method, 'POST');
       assert.deepEqual(body, { p_username: 'olympia', p_country: null, p_limit: 6, p_offset: 0 });
       assert.equal(url.searchParams.has('select'), false);

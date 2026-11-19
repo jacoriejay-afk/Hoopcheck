@@ -222,7 +222,7 @@ function SearchContent() {
               })()
             : Promise.resolve({ data: [], error: null }),
           wantsPlayers && username && page === 1
-            ? supabase.rpc("search_public_players", { p_username: username, p_country: countryFilter || null, p_limit: 101, p_offset: 0 })
+            ? supabase.rpc("search_public_players_by_username", { p_username: username, p_country: countryFilter || null, p_limit: 101, p_offset: 0 })
                 .then(result => { const row = (result.data ?? []).find((row: { username: string | null }) => row.username?.toLowerCase() === username.toLowerCase()); return { error: result.error, data: row ? { ...row, player_position: row.position } : null }; })
             : Promise.resolve({ data: null, error: null }),
         ]);

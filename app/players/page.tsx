@@ -80,7 +80,7 @@ export default function PlayersPage() {
       void (async () => {
         setLoading(true);
         setSearchError("");
-        const request = supabase.rpc("search_public_players", {
+        const request = supabase.rpc("search_public_players_by_username", {
           p_username: username, p_country: country.trim() || null, p_limit: size, p_offset: page * size,
         });
 

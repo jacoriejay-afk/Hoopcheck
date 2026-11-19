@@ -39,7 +39,7 @@ test('owners can view their own private profile but cannot reveal an unapproved 
 });
 test('directory calls only shared RPC with literal username and bounded pagination',async()=>{
  const calls=[];const source=client(async(input,options)=>{calls.push({url:new URL(String(input)),body:JSON.parse(options.body)});return Response.json([]);});
- await readPlayerDirectory(source,'@player_one',30,30);assert.equal(calls[0].url.pathname,'/rest/v1/rpc/search_public_players');assert.deepEqual(calls[0].body,{p_username:'player_one',p_country:null,p_limit:31,p_offset:30});
+ await readPlayerDirectory(source,'@player_one',30,30);assert.equal(calls[0].url.pathname,'/rest/v1/rpc/search_public_players_by_username');assert.deepEqual(calls[0].body,{p_username:'player_one',p_country:null,p_limit:31,p_offset:30});
  for(const input of ['', 'a', '(),.%'])await readPlayerDirectory(source,input);
  await readPlayerDirectory(source,'player',-1);assert.equal(calls.length,1);
 });

@@ -5,7 +5,7 @@ export async function readPlayerDirectory(client: SupabaseClient, input: string,
   if (clean.length < 2 || clean.length > 100 || !Number.isSafeInteger(start) || start < 0 || !Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 100) return { data: [], error: null };
   const controller = new AbortController(); const deadline = setTimeout(() => controller.abort(), 15000);
   try {
-    const result = await client.rpc("search_public_players", { p_username: clean, p_country: null, p_limit: pageSize + 1, p_offset: start }).abortSignal(controller.signal);
+    const result = await client.rpc("search_public_players_by_username", { p_username: clean, p_country: null, p_limit: pageSize + 1, p_offset: start }).abortSignal(controller.signal);
     if (result.error) return { data: null, error: result.error };
     if (!Array.isArray(result.data) || result.data.some(row => !row || typeof row.id !== "string" || !/^[0-9a-f-]{36}$/i.test(row.id))) return { data: null, error: new Error("Player directory returned an invalid response.") };
     const text = (value: unknown, length = 160) => typeof value === "string" ? value.slice(0, length) : null;

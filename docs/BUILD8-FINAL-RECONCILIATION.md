@@ -232,3 +232,91 @@ For comparison, source `93541ea6` main CI failed the account contrast assertion
 Both failures were reproduced/repaired and their local replacement suites pass.
 A documentation-only follow-up records this snapshot without rerunning builds;
 product verification is pinned to `a8831d81`, not inferred for a different code tree.
+
+## Final blocker continuation — 2026-11-19 (supersedes earlier snapshots)
+
+**All six workflows on product source `a8831d81` completed successfully.**
+Main CI [44547930946](https://github.com/jacoriejay-afk/Hoopcheck/actions/runs/44547930946)
+and real unsigned iOS compilation
+[44547930097](https://github.com/jacoriejay-afk/Hoopcheck/actions/runs/44547930097)
+are now PASS, together with Mobile, launch, security and entitlement checks.
+The compile includes actual Swift product tests, Expo prebuild, permissions,
+Pods and unsigned simulator xcodebuild. It is not a running iPhone test.
+
+### Production-catalog rehearsal completed; compatibility blocker repaired
+
+The local PostgreSQL 17.12 rehearsal uses production 17.11 application metadata:
+101 tables, 110 functions, policies/triggers/constraints, grants, role memberships,
+300 default-privilege entries, and actual profile/subscription schemas. No real
+records copied. All five candidate migrations apply in order inside a rolled-back
+transaction; owner privacy/editing, cross-owner denial, legacy search, MFA and
+Stripe access/preservation checks pass. Details and reproducible safe commands:
+[BUILD8-CATALOG-REHEARSAL.md](BUILD8-CATALOG-REHEARSAL.md).
+
+This caught a real missed deployment failure: the previous legacy RPC replacement
+removed production defaults, which PostgreSQL rejects. Preserving those defaults
+also exposes ambiguous partial calls when the new username function shares its
+name. The unapplied migrations now preserve `search_public_players` and its
+legacy defaults and name the new API `search_public_players_by_username`.
+Native/web username callers and browser/SDK fixtures use that distinct name.
+Production has no deployed username overload, so no existing production RPC is
+dropped or renamed. The CI privacy fixture now installs production's defaulted
+legacy signature first and tests zero-argument/positional/explicit calls.
+
+The production-compatible application migration rehearsal gate is now satisfied
+for this captured catalog. Hosted Auth/Storage/Realtime behavior, platform-owned
+triggers/partitioning, indexes/performance and live payment integration still
+require isolated staging smoke tests; this is not a full Supabase platform clone.
+Refresh the catalog and rerun if production schema changes before approval.
+
+After the compatibility fix: root/mobile TypeScript, all 27 native test files,
+targeted ESLint (zero errors; two existing image warnings), both privacy SQL
+suites, catalog rehearsal, native web export and both affected player/discovery
+browser suites pass. The source change needs its own PR CI; earlier green runs
+are pinned evidence, not a claim that the new source already compiled remotely.
+
+### Association 404 diagnosed; approved deployment still required
+
+Read-only Vercel inspection confirms `hoopcheck.online` is a verified domain on
+project `prj_E9zgRLvBt6FcxgwNZ0q9USmrup7s`, team Hoopcheck. It resolves to production
+deployment `dpl_E7AdYPsgwTcSvTGvDSQHGjaHrEMg`, source main `5f3de0f9`.
+That source does not contain the AASA route. The final live HTTP response remains
+404 (the proxy CONNECT 200 is not the origin response). The local candidate
+serves HTTP 200 JSON with `Y778LM35G5.online.hoopcheck.app`, and route tests pass.
+No routing workaround, production promotion or domain mutation was made. Deploying
+the reviewed candidate with owner approval is the concrete fix for the live 404;
+verify signed prefix/capability and the final response again afterward.
+
+### Signing/configuration and runtime access limits
+
+Read-only Vercel metadata confirms production entries for Supabase URL/publishable/
+service-role, Stripe secret/webhook/Pro/Premium prices, checkout mode/enabled and
+site URL. Values were not decrypted or printed. Apple key/environment entries
+were not present in the returned metadata; Apple remains disabled by default.
+This does not establish the separate EAS production environment values.
+
+EAS CLI still lacks authentication from the prior read-only checks. The Expo
+connector exposes existing build metadata but not managed credential validity,
+remote counter or the production native env. Build-log retrieval failed with
+`Transport closed`. Current Apple team/profile/certificate expiry, Associated
+Domains entitlement and signed app-ID prefix still need owner verification.
+No account/signing change was attempted.
+
+Newly available Observe error lookup for Build 7 was attempted: it returns
+“Subscription to EAS is required,” not logs. No plan was changed. TestFlight had
+returned no submissions; no Sentry issue ID or device console logs were supplied.
+The iPhone 14 Pro/iOS 26.6.2 freeze remains unconfirmed physically. Existing
+source/component/browser startup and modal tests pass; no speculative native
+redesign or obsolete simulator artifact is used to claim a fix.
+
+Exact owner signing checks, approval/deployment sequence, physical test steps,
+freeze evidence collection and separate isolated Apple Sandbox matrix are in
+[BUILD8-IPHONE-AND-SANDBOX-RUNBOOK.md](BUILD8-IPHONE-AND-SANDBOX-RUNBOOK.md).
+Core iPhone testing keeps billing disabled. Sandbox cannot target the production
+database; use a separately approved isolated backend/configuration and test build.
+
+Remaining approval gates: current-source CI; owner signing/remote version/native
+environment verification; approved backend/client rollout and AASA deployment;
+live staging smoke/Sandbox matrix; physical iPhone touch/startup verification.
+No merge, EAS build, TestFlight submission, production migration/data write,
+production deployment, billing enablement or credential mutation performed.

@@ -123,7 +123,7 @@ LANGUAGE sql STABLE SECURITY INVOKER SET search_path='' AS $$ SELECT * FROM hoop
 REVOKE ALL ON FUNCTION public.get_public_player_profile(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_public_player_profile(uuid) TO anon,authenticated;
 
-create or replace function public.search_public_players(
+create or replace function public.search_public_players_by_username(
   p_username text, p_country text default null, p_limit integer default 30, p_offset integer default 0
 )
 returns table(id uuid, display_name text, username text, country text,
@@ -149,8 +149,8 @@ as $$
   limit greatest(1, least(coalesce(p_limit, 30), 101))
   offset greatest(0, least(coalesce(p_offset, 0), 100000));
 $$;
-revoke all on function public.search_public_players(text, text, integer, integer) from public;
-grant execute on function public.search_public_players(text, text, integer, integer) to anon, authenticated;
+revoke all on function public.search_public_players_by_username(text, text, integer, integer) from public;
+grant execute on function public.search_public_players_by_username(text, text, integer, integer) to anon, authenticated;
 
 create or replace function public.search_public_players(
   p_query text default '',
