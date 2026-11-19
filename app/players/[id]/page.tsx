@@ -1,4 +1,6 @@
 "use client";
+
+import { getOwnProfile } from "../../../lib/auth/own-profile";
 import { getEffectiveMembership } from "../../../lib/billing/client-membership";
 
 
@@ -67,12 +69,7 @@ export default function PlayerProfilePage() {
         setLoading(false);
       } else if (user?.id === params.id) {
         // Owners can always open their own player profile, even if they keep it private.
-        const { data: own } = await supabase
-          .from("profiles")
-          .select("id,display_name,avatar_url,country,bio,position,years_pro,current_country,current_country_public,current_team,player_verified,player_verified_at,account_type")
-          .eq("id", params.id)
-          .eq("account_type", "player")
-          .maybeSingle();
+        const { data: own } = await getOwnProfile(supabase, params.id);
         if (own) {
           setCountryPublic(Boolean(own.current_country_public));
           setPlayer({
@@ -97,7 +94,7 @@ export default function PlayerProfilePage() {
         setIsOwnProfile(user.id===params.id);
         if (user.id === params.id) {
           const [{ data: ownProfile }, { data: ownSubscription }, { data: count }] = await Promise.all([
-            supabase.from("profiles").select("id,account_type,avatar_url,position,current_team,free_agent,current_country,favorite_leagues,height,bio,hometown,profile_visibility").eq("id", user.id).maybeSingle(),
+            getOwnProfile(supabase, user.id),
             getEffectiveMembership(user.id),
             supabase.rpc("get_follow_count", { p_target_type: "player", p_target_id: user.id }),
           ]);

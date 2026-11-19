@@ -20,6 +20,7 @@ async function verify(browser,theme,role='player'){
     if(method==='PUT'){assert.equal(request.headers().authorization,`Bearer ${token}`);const body=request.postDataJSON();assert.deepEqual(Object.keys(body.data),['hoopcheck_profile_cover']);user={...user,user_metadata:{...user.user_metadata,...body.data}};}
     return json(user);
    }
+   if(url.pathname==='/rest/v1/rpc/get_own_profile'){assert.equal(request.headers().authorization,`Bearer ${token}`);assert.deepEqual(request.postDataJSON(),{});return json(profile);}
    if(url.pathname==='/rest/v1/profiles'){
     assert.equal(url.searchParams.get('id'),`eq.${uid}`);
     if(method==='PATCH'){

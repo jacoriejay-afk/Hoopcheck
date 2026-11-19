@@ -20,6 +20,7 @@ try {
     if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers });
     let data = [];
     if (url.pathname === "/auth/v1/user") data = user;
+    else if (url.pathname.endsWith("/rpc/get_own_profile")) data = profile;
     else if (url.pathname.endsWith("/profiles")) {
       if (request.method() === "PATCH") profile = { ...profile, ...request.postDataJSON() };
       data = profile;
