@@ -83,5 +83,24 @@ DO $assert$ BEGIN
   RAISE EXCEPTION 'directory prototype accidentally restored direct country access';
  END IF;
 END $assert$;
+-- A protected directory must not become an owner-only private-country oracle.
+-- Test a hidden row and a public row after an authenticated identity switch.
+RESET ROLE;
+CREATE SCHEMA IF NOT EXISTS auth;
+CREATE OR REPLACE FUNCTION auth.uid() RETURNS integer LANGUAGE sql STABLE AS $auth$
+ SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::integer
+$auth$;
+GRANT USAGE ON SCHEMA auth TO authenticated;
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','1',true);
+DO $check$ BEGIN
+ IF (SELECT current_country FROM public.directory_country_protected() WHERE id=1) IS NOT NULL THEN
+  RAISE EXCEPTION 'owner received hidden country through public directory';
+ END IF;
+ PERFORM set_config('request.jwt.claim.sub','2',true);
+ IF (SELECT current_country FROM public.directory_country_protected() WHERE id=1) IS NOT NULL THEN
+  RAISE EXCEPTION 'second identity received hidden country through public directory';
+ END IF;
+END $check$;
 ROLLBACK;
 SELECT 'PASS: column revoke breaks masked invoker RPC; directory release needs protected implementation' AS result;
