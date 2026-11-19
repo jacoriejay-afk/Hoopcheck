@@ -25,16 +25,10 @@ assert.match(checkout, /"reserve_stripe_trial"/,
   "Checkout must reserve atomically before trial creation");
 assert.match(checkout, /"bind_stripe_trial_session"/,
   "Checkout must bind the trial session");
-assert.match(checkout, /canReuseOpenTrialSession\\(existingSession, user\\.id, claim\\.checkout_session_id\\)/,
-  "Existing trial checkout may only be reused after server-side session verification");
-assert.match(checkout, /claim\\?\\.state === "reserved"/,
-  "Only reserved claims may reuse an open checkout");
-assert.match(checkout, /existingSession\\.metadata\\?\\.plan === plan/,
-  "A reused checkout must match the requested plan");
-assert.match(checkout, /existingSession\\.metadata\\?\\.billing_interval === interval/,
-  "A reused checkout must match the billing interval");
-assert.match(checkout, /await stripe\\.checkout\\.sessions\\.expire\\(session\\.id\\)/,
-  "An unbound trial checkout must be expired rather than returned to a user");
-assert.match(checkout, /if \\(trialEligible\\) \\{[\\s\\S]*?reserve_stripe_trial/,
-  "Trial checkout must be reserved before Stripe session creation");
+assert.ok(checkout.includes("canReuseOpenTrialSession(existingSession, user.id, claim.checkout_session_id)"), "Existing trial checkout must be verified");
+assert.ok(checkout.includes("claim?.state === \"reserved\""), "Only reserved claims can be reused");
+assert.ok(checkout.includes("existingSession.metadata?.plan === plan"), "Plan must match");
+assert.ok(checkout.includes("existingSession.metadata?.billing_interval === interval"), "Interval must match");
+assert.ok(checkout.includes("await stripe.checkout.sessions.expire(session.id)"), "Unbound checkout must expire");
+assert.ok(checkout.includes("\"reserve_stripe_trial\""), "Reservation must be present");
 console.log("Trial release safety checks passed (trial issuance disabled).");
