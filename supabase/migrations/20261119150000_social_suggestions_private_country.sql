@@ -3,7 +3,7 @@
 -- Do not apply before full-schema regression and owner approval.
 CREATE OR REPLACE FUNCTION public.get_social_suggestions()
 RETURNS TABLE(entity_type text, entity_id uuid, display_name text, avatar_url text, detail text, player_verified boolean)
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = ''
 AS $function$
   WITH followed_players AS (
     SELECT target_id FROM public.follow_relationships
