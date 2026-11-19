@@ -36,6 +36,14 @@
         {
           "faceIDPermission": "Unlock HoopCheck after five minutes away using Face ID. Normal sign-in is always available."
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Choose photos and videos to share on HoopCheck or customize your profile.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
       ]
     ],
     "experiments": {
