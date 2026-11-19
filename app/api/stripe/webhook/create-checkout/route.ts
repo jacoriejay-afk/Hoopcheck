@@ -309,6 +309,37 @@ export async function POST(
       existingSubscription?.stripe_customer_id ||
       undefined;
 
+    // The seven-day offer is for first-time monthly members only. Check both
+    // the HoopCheck subscription record and Stripe's complete customer history;
+    // a canceled subscription must never reset eligibility.
+    let trialEligible = interval === "month" && !promoCodeId && !existingSubscription?.stripe_subscription_id;
+    if (trialEligible) {
+      const customers = customerId
+        ? [await stripe.customers.retrieve(customerId)]
+        : (await stripe.customers.list({ email: user.email || undefined, limit: 100 })).data;
+
+      // Never issue a trial if customer history cannot be established reliably.
+      if (!user.email || customers.length === 100 || customers.some((customer) => customer.deleted)) {
+        trialEligible = false;
+      } else {
+        for (const customer of customers) {
+          if (customer.deleted) {
+            trialEligible = false;
+            break;
+          }
+          const history = await stripe.subscriptions.list({
+            customer: customer.id,
+            status: "all",
+            limit: 1,
+          });
+          if (history.data.length > 0) {
+            trialEligible = false;
+            break;
+          }
+        }
+      }
+    }
+
     const { data: attribution, error: attributionError } = await supabase.rpc(
       "ambassador_checkout_attribution", { p_user: user.id }
     );
@@ -358,6 +389,7 @@ export async function POST(
           },
 
           subscription_data: {
+            ...(trialEligible ? { trial_period_days: 7 } : {}),
             metadata: {
               ...(typeof attribution === "string" ? { ambassador_attribution_id: attribution } : {}),
               user_id: user.id,
