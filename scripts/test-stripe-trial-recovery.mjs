@@ -43,8 +43,8 @@ assert.equal(await reconcile(user,id,async () => ({...base,id,status:"complete"}
 assert.deepEqual(calls,[],"completed checkout must never call release");
 assert.equal(await reconcile(user,id,async () => ({...base,id,subscription:"sub_test"}),markExpired),"retained");
 assert.equal(await reconcile(user,id,async () => ({...base,id}),async () => false),"retained");
-await assert.rejects(reconcile(user,id,async () => { throw new Error("stripe unavailable"); },markExpired));
-await assert.rejects(reconcile(user,id,retrieve,async () => { throw new Error("database unavailable"); }));
+assert.equal(await reconcile(user,id,async () => { throw new Error("stripe unavailable"); },markExpired),"retained");
+assert.equal(await reconcile(user,id,retrieve,async () => { throw new Error("database unavailable"); }),"retained");
 assert.equal(await reconcile(user,"invalid",retrieve,markExpired),"retained");
 console.log("Stripe trial reconciliation: 7 additional cases passed");
 
