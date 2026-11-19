@@ -4,7 +4,7 @@ import { useEntryTheme } from "./theme";
 
 export function GlassCard({ style, children, ...props }: ViewProps) {
   const t = useEntryTheme();
-  const frame = [{ borderRadius: t.radius.hero, borderWidth: 1, borderColor: t.border, overflow: "hidden" as const, padding: t.spacing.xl, backgroundColor: t.surface }, t.shadow, style];
+  const frame = [{ borderRadius: t.radius.card, borderCurve: "continuous" as const, borderWidth: 1, borderColor: t.border, overflow: "hidden" as const, padding: t.spacing.lg, backgroundColor: t.surface }, style];
   return <View {...props} style={frame}>
     {Platform.OS === "ios" && <BlurView pointerEvents="none" intensity={12} tint={t.dark ? "dark" : "light"} style={{ position: "absolute", inset: 0, backgroundColor: t.glassFill }} />}
     {children}
@@ -12,7 +12,7 @@ export function GlassCard({ style, children, ...props }: ViewProps) {
 }
 export function Button({ children, secondary = false, style, ...props }: PressableProps & { secondary?: boolean }) {
   const t = useEntryTheme();
-  return <Pressable accessibilityRole="button" {...props} style={state => [{ minHeight: 52, padding: t.spacing.md, borderRadius: t.radius.control, borderWidth: 1, borderColor: secondary ? t.border : t.button, backgroundColor: secondary ? t.surface : t.button, alignItems: "center", justifyContent: "center", opacity: props.disabled ? .65 : state.pressed ? .75 : 1 }, typeof style === "function" ? style(state) : style]}>
+  return <Pressable accessibilityRole="button" accessibilityState={{ disabled: !!props.disabled }} {...props} style={state => [{ minHeight: 48, padding: t.spacing.md, borderRadius: t.radius.control, borderWidth: 1, borderColor: secondary ? t.border : t.button, backgroundColor: secondary ? t.surface : t.button, alignItems: "center", justifyContent: "center", opacity: props.disabled ? .65 : state.pressed ? .75 : 1 }, typeof style === "function" ? style(state) : style]}>
     {typeof children === "string" ? <Text style={{ color: secondary ? t.foreground : t.onButton, fontSize: 16, fontWeight: "800" }}>{children}</Text> : children}
   </Pressable>;
 }

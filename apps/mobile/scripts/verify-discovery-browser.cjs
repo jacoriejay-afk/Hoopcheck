@@ -48,12 +48,15 @@ const rows = {
       await page.getByRole('textbox',{name:'Search basketball directory'}).press('Enter');
       await page.getByText('Search basketball',{exact:true}).waitFor();
       await page.getByText('Olympia Women',{exact:true}).filter({visible:true}).waitFor();
+      await page.screenshot({path:`/tmp/hoopcheck-native-ui/search-${theme}.png`,fullPage:true});
       await page.getByText('Olympia Women',{exact:true}).filter({visible:true}).click();
       await page.getByRole('heading',{name:'Olympia Women',exact:true}).waitFor();
       await page.getByText('Review access follows your HoopCheck membership and account permissions.',{exact:true}).waitFor();
       assert.equal(await page.getByText('MUST NOT RENDER PRIVATE REVIEW').count(),0);
+      await page.screenshot({path:`/tmp/hoopcheck-native-ui/womens-profile-${theme}.png`,fullPage:true});
       await page.getByText('Open league profile',{exact:true}).click();
       await page.getByRole('heading',{name:'Olympia Women League',exact:true}).waitFor();
+      await page.screenshot({path:`/tmp/hoopcheck-native-ui/womens-league-${theme}.png`,fullPage:true});
       await page.getByText('Olympia Women',{exact:true}).filter({visible:true}).click();
       await page.getByRole('heading',{name:'Olympia Women',exact:true}).waitFor();
       await page.getByRole('tab',{name:'Home',exact:true}).click();

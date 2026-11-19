@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
+import { Pressable, RefreshControl, ScrollView, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { DirectoryCrest, CountryChip } from "../../components/DirectoryIdentity";
-import { ShareSheet } from "../../components/ShareSheet";
+import { EntityHero } from "../../components/EntityHero";
 import { OfflineBanner } from "../../components/OfflineBanner";
 import { Skeleton } from "../../components/Motion";
 import { GlassCard } from "../../src/primitives";
@@ -74,17 +73,10 @@ export default function WomensTeamScreen() {
   const touch = { minHeight: 48, justifyContent: "center" as const };
   return <SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: theme.background }}>
     <OfflineBanner savedAt={savedAt} />
-    <ScrollView contentContainerStyle={{ padding: 20, gap: 20 }} refreshControl={<RefreshControl refreshing={loading && refresh > 0} onRefresh={() => setRefresh(value => value + 1)} />}>
+    <ScrollView contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.lg }} refreshControl={<RefreshControl refreshing={loading && refresh > 0} onRefresh={() => setRefresh(value => value + 1)} />}>
       <Pressable accessibilityRole="link" onPress={() => router.push("/womens")} style={touch}><Text style={link}>‹ Women’s teams</Text></Pressable>
       {loading ? <Skeleton profile /> : !current ? <Text accessibilityRole="alert" style={text}>Team unavailable. Pull to retry.</Text> : <>
-        <View style={{ backgroundColor: theme.entityHero.background, padding: 24, borderRadius: theme.radius.hero, gap: 12 }}>
-          <DirectoryCrest name={current.name} kind="women" size={88} />
-          <CountryChip country={current.country} />
-          <Text style={{ color: theme.entityHero.muted }}>WOMEN’S TEAM PROFILE</Text>
-          <Text accessibilityRole="header" style={{ color: theme.entityHero.ink, fontSize: 30, fontWeight: "900" }}>{current.name}</Text>
-          <ShareSheet onHero title={current.name} path={`/womens/${current.id}`} />
-          <Text style={{ color: theme.entityHero.muted }}>{[current.city, current.country].filter(Boolean).join(", ") || "Location not listed"}</Text>
-        </View>
+        <EntityHero name={current.name} country={current.country} kind="women" label="WOMEN’S TEAM PROFILE" path={`/womens/${current.id}`} location={[current.city, current.country].filter(Boolean).join(", ") || "Location not listed"} />
         <GlassCard><Text style={{ color: theme.muted }}>LEAGUE</Text><Text style={text}>{current.league_name || "Not listed"}</Text>
           {current.league_id ? <Pressable accessibilityRole="link" onPress={() => router.push({ pathname: "/womens/leagues/[id]", params: { id: current.league_id! } })} style={touch}><Text style={link}>Open league profile</Text></Pressable> : null}
         </GlassCard>

@@ -14,7 +14,7 @@ function compile(path, imports, globals = {}) {
   new Function("require", "exports", "module", ...Object.keys(globals), js)(imports, compiled.exports, compiled, ...Object.values(globals));
   return compiled.exports;
 }
-const theme = { radius: { control: 16 }, type: { display: {} } };
+const theme = { radius: { control: 12 }, spacing: { lg: 16 }, entityHero: { background: "#111827", ink: "#FFFFFF", muted: "#E5E7EB" }, type: { display: {} } };
 function screen(path, { state = [], params = {}, segments = [], pathname = "/", configurationError = null, pendingDestination = null, fontsLoaded = true, supabase = {} } = {}) {
   const calls = { push: [], replace: [], alerts: [], oauthUrls: [], freshSignIns: 0, remembered: [] };
   const effects = [];
@@ -67,9 +67,10 @@ test("themed welcome buttons navigate explicitly to sign-in and sign-up", () => 
   const f = screen("app/index.tsx");
   const buttons = f.nodes.filter(n => n.type === "Button");
   assert.equal(buttons.length, 2);
-  buttons.forEach(b => b.props.onPress());
+  buttons.find(b => b.props.accessibilityLabel === "Sign in").props.onPress();
+  buttons.find(b => b.props.accessibilityLabel === "Create an account").props.onPress();
   assert.deepEqual(f.calls.push, ["/sign-in", "/sign-up"]);
-  assert.ok(f.nodes.some(n => n.type === "GlassCard"));
+  assert.ok(f.nodes.some(n => n.props.accessibilityRole === "header"));
 });
 
 test("password sign-in normalizes email and retains profile destination selection", async () => {

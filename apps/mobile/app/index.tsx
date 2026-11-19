@@ -1,4 +1,4 @@
-import { GlassCard, Button } from "../src/primitives";
+import { Button } from "../src/primitives";
 import { useRouter } from "expo-router";
 import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -15,20 +15,21 @@ export default function WelcomeScreen() {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <GlassCard style={styles.content}>
+        <View style={[styles.content, { backgroundColor: theme.entityHero.background, padding: theme.spacing.lg, borderRadius: theme.radius.control, borderCurve: "continuous" }]}>
           <View style={styles.brand}>
             <Image alt="HoopCheck" accessibilityLabel="HoopCheck" source={hoopcheckMark} style={styles.mark} />
 
           </View>
-          <Text accessibilityRole="header" style={[theme.type.display, styles.headline, { color: theme.foreground }]}>
+          <Text style={{ color: theme.button, fontSize: 11, fontWeight: "800", letterSpacing: 1 }}>THE GLOBAL BASKETBALL INTELLIGENCE HUB</Text>
+          <Text accessibilityRole="header" style={[theme.type.display, styles.headline, { color: theme.entityHero.ink }]}>
             Know who you’re signing with.
           </Text>
-          <Text style={[styles.description, { color: theme.muted }]}>
-            Research basketball teams, coaches, and leagues through the experiences of players who have been there.
+          <Text style={[styles.description, { color: theme.entityHero.muted }]}>
+            Explore teams, coaches, leagues, and real basketball experiences. Built for players and fans worldwide.
           </Text>
-          <Button accessibilityLabel="Sign in" onPress={() => router.push("/sign-in")}>Sign in</Button>
-          <Button secondary accessibilityLabel="Create an account" onPress={() => router.push("/sign-up")}>Create an account</Button>
-        </GlassCard>
+          <Button accessibilityLabel="Create an account" onPress={() => router.push("/sign-up")}>Create an account</Button>
+          <Button secondary accessibilityLabel="Sign in" onPress={() => router.push("/sign-in")}>Sign in</Button>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -36,12 +37,12 @@ export default function WelcomeScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
-  scroll: { flexGrow: 1, justifyContent: "center", padding: 24 },
+  scroll: { flexGrow: 1, padding: 16 },
   content: { width: "100%", maxWidth: 520, alignSelf: "center", gap: 12 },
-  brand: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 12, marginBottom: 20 },
+  brand: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 12, marginBottom: 8 },
   mark: { width: 48, height: 48, },
-  headline: {},
-  description: { fontSize: 17, lineHeight: 25, marginBottom: 16 },
+  headline: { fontSize: 32, lineHeight: 34 },
+  description: { fontSize: 15, lineHeight: 21, marginBottom: 16 },
   action: { minHeight: 52, padding: 14, alignItems: "center", justifyContent: "center" },
   actionLabel: { fontSize: 16, fontWeight: "800", textAlign: "center" },
 });

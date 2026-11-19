@@ -25,7 +25,7 @@ export default function AccountScreen() {
     finally { setSigningOut(false); }
   }
   return <SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: theme.background }}>
-    <ScrollView contentContainerStyle={{ padding: 24, gap: 20 }}>
+    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.lg }}>
       <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 30, fontWeight: "900" }}>Your account</Text>
       {loading ? <Skeleton profile /> : account ? <>
         <GlassCard><Text style={{ color: theme.foreground, fontSize: 23, fontWeight: "800" }}>{account.user.displayName || "HoopCheck member"}</Text><Text style={{ color: theme.muted }}>{account.user.accountType.replaceAll("_", " ")}</Text></GlassCard>
