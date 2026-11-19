@@ -4,6 +4,7 @@ import { stripeMatchesDeployment } from "../../../../../lib/stripe-key-mode";
 import { createClient } from "@supabase/supabase-js";
 import { getActiveMembershipTier } from "../../../../../lib/membership-tier";
 import { isEligibleForSevenDayTrial } from "../../../../../lib/stripe-trial-eligibility";
+import { canReuseOpenTrialSession } from "../../../../../lib/stripe-trial-recovery";
 
 function getAdminSupabase() {
   const supabaseUrl =
@@ -374,9 +375,41 @@ export async function POST(
       const { data: reserved, error: reservationError } = await supabase.rpc(
         "reserve_stripe_trial", { p_user_id: user.id }
       );
-      if (reservationError || reserved !== true) {
+      if (reservationError) {
+        console.error("Trial reservation failed", reservationError.code);
+        return NextResponse.json({ error: "Unable to verify trial availability." }, { status: 503 });
+      }
+      if (reserved !== true) {
+        // A concurrent request may already have created a Checkout Session.
+        // Reuse only the exact bound, open session for this user and plan.
+        // Never create another session or release a claim in this path.
+        const { data: claim, error: claimError } = await supabase
+          .from("stripe_trial_claims")
+          .select("state, checkout_session_id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (claimError) {
+          console.error("Trial claim lookup failed", claimError.code);
+          return NextResponse.json({ error: "Unable to verify trial availability." }, { status: 503 });
+        }
+        if (claim?.state === "reserved" && claim.checkout_session_id) {
+          try {
+            const existingSession = await stripe.checkout.sessions.retrieve(claim.checkout_session_id);
+            if (
+              canReuseOpenTrialSession(existingSession, user.id, claim.checkout_session_id) &&
+              existingSession.metadata?.plan === plan &&
+              existingSession.metadata?.billing_interval === interval &&
+              existingSession.line_items == null
+            ) {
+              return NextResponse.json({ url: existingSession.url });
+            }
+          } catch (lookupError) {
+            console.error("Trial session lookup failed", lookupError);
+            return NextResponse.json({ error: "Unable to verify trial availability." }, { status: 503 });
+          }
+        }
         return NextResponse.json(
-          { error: "The introductory trial is unavailable for this account." },
+          { error: "A trial checkout already exists or was previously used for this account." },
           { status: 409 }
         );
       }
