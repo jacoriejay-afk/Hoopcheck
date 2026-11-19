@@ -123,6 +123,23 @@ async function saveSubscription(
   const supabase =
     getAdminSupabase();
 
+  // Subscription and invoice webhooks may arrive before checkout.session.completed.
+  // Never grant a trial membership through those alternate paths before the
+  // signed Checkout event has redeemed the exact bound one-time claim.
+  if (subscription.metadata?.stripe_trial_reserved === "true") {
+    if (subscription.metadata?.user_id !== userId) {
+      throw new Error("Trial subscription owner metadata mismatch.");
+    }
+    const { data: claim, error: claimError } = await supabase
+      .from("stripe_trial_claims")
+      .select("state")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (claimError || claim?.state !== "redeemed") {
+      throw new Error("Trial subscription cannot synchronize before claim redemption.");
+    }
+  }
+
   const priceId =
     subscription.items.data[0]?.price?.id;
 
@@ -544,6 +561,26 @@ export async function POST(
         throw new Error(
           "Checkout session and subscription do not match the same HoopCheck user."
         );
+      }
+
+      // Future trial checkout sessions explicitly mark the reservation.
+      // Only a Stripe-signed completed Checkout event may redeem it.
+      // A missing/mismatched claim fails webhook processing for retry.
+      if (session.metadata?.stripe_trial_reserved === "true") {
+        if (subscription.status !== "trialing" ||
+            subscription.metadata?.stripe_trial_reserved !== "true" ||
+            session.mode !== "subscription") {
+          throw new Error("Trial checkout does not match a trialing subscription.");
+        }
+        const { data: redeemed, error: redemptionError } = await getAdminSupabase().rpc(
+          "redeem_stripe_trial", {
+            p_user_id: userId,
+            p_session_id: session.id,
+          }
+        );
+        if (redemptionError || redeemed !== true) {
+          throw new Error("Unable to redeem the reserved Stripe trial.");
+        }
       }
 
       await saveSubscription(userId, subscription);

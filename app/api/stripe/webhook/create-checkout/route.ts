@@ -3,6 +3,8 @@ import Stripe from "stripe";
 import { stripeMatchesDeployment } from "../../../../../lib/stripe-key-mode";
 import { createClient } from "@supabase/supabase-js";
 import { getActiveMembershipTier } from "../../../../../lib/membership-tier";
+import { isEligibleForSevenDayTrial } from "../../../../../lib/stripe-trial-eligibility";
+import { canReuseOpenTrialSession, isTrustedStripeCheckoutUrl } from "../../../../../lib/stripe-trial-recovery";
 
 function getAdminSupabase() {
   const supabaseUrl =
@@ -309,6 +311,53 @@ export async function POST(
       existingSubscription?.stripe_customer_id ||
       undefined;
 
+    // The seven-day offer is for first-time monthly members only. Check both
+    // the HoopCheck subscription record and Stripe's complete customer history;
+    // a canceled subscription must never reset eligibility.
+    // Explicitly disabled until isolated trial tests and atomic eligibility reservation pass.
+    // Never enable in production merely because this branch is deployed.
+    // Hard stop: do not allow a flag alone to bypass the missing atomic reservation.
+    // Replace this only after the reservation RPC and webhook lifecycle are verified.
+    const trialRolloutEnabled = false;
+    let trialEligible = trialRolloutEnabled && checkoutProfile.account_type === "player" && interval === "month" && !promoCodeId && !existingSubscription?.stripe_subscription_id && Boolean(user.email_confirmed_at);
+    if (trialEligible) {
+      // Check every customer under this email, even when a customer is already
+      // linked to the account. A linked ID alone can miss older Stripe history.
+      const emailCustomers = user.email
+        ? (await stripe.customers.list({ email: user.email, limit: 100 })).data
+        : [];
+      const linkedCustomer = customerId
+        ? await stripe.customers.retrieve(customerId)
+        : null;
+      const customers = [
+        ...emailCustomers,
+        ...(linkedCustomer && !emailCustomers.some((customer) => customer.id === linkedCustomer.id)
+          ? [linkedCustomer]
+          : []),
+      ];
+
+      // Fail closed if email history is truncated or a linked record was deleted.
+      if (!user.email || emailCustomers.length === 100 || customers.some((customer) => customer.deleted)) {
+        trialEligible = false;
+      } else {
+        for (const customer of customers) {
+          if (customer.deleted) {
+            trialEligible = false;
+            break;
+          }
+          const history = await stripe.subscriptions.list({
+            customer: customer.id,
+            status: "all",
+            limit: 1,
+          });
+          if (history.data.length > 0) {
+            trialEligible = false;
+            break;
+          }
+        }
+      }
+    }
+
     const { data: attribution, error: attributionError } = await supabase.rpc(
       "ambassador_checkout_attribution", { p_user: user.id }
     );
@@ -317,13 +366,76 @@ export async function POST(
       return NextResponse.json({ error: "Unable to verify your checkout details. Try again." }, { status: 503 });
     }
 
+    // Recheck the final policy after all history lookups. This remains disabled
+    // in production until atomic one-time reservation is implemented.
+    trialEligible = isEligibleForSevenDayTrial({
+      rolloutEnabled: trialRolloutEnabled && checkoutProfile.account_type === "player",
+      interval,
+      accountType: checkoutProfile.account_type,
+      hasPromoCode: Boolean(promoCodeId),
+      hasExistingSubscription: Boolean(existingSubscription?.stripe_subscription_id),
+      hasVerifiedEmail: Boolean(user.email_confirmed_at),
+      customerLookupComplete: trialEligible,
+      hasPriorStripeSubscription: false,
+    });
+
+    // Atomic claim must succeed before any Stripe trial session is created.
+    // The rollout remains hard-disabled until abandoned-session reconciliation
+    // and the full sandbox lifecycle have been verified.
+    if (trialEligible) {
+      const { data: reserved, error: reservationError } = await supabase.rpc(
+        "reserve_stripe_trial", { p_user_id: user.id }
+      );
+      if (reservationError) {
+        console.error("Trial reservation failed", reservationError.code);
+        return NextResponse.json({ error: "Unable to verify trial availability." }, { status: 503 });
+      }
+      if (reserved !== true) {
+        // A concurrent request may already have created a Checkout Session.
+        // Reuse only the exact bound, open session for this user and plan.
+        // Never create another session or release a claim in this path.
+        const { data: claim, error: claimError } = await supabase
+          .from("stripe_trial_claims")
+          .select("state, checkout_session_id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (claimError) {
+          console.error("Trial claim lookup failed", claimError.code);
+          return NextResponse.json({ error: "Unable to verify trial availability." }, { status: 503 });
+        }
+        if (claim?.state === "reserved" && claim.checkout_session_id) {
+          try {
+            const existingSession = await stripe.checkout.sessions.retrieve(claim.checkout_session_id);
+            if (
+              canReuseOpenTrialSession(existingSession, user.id, claim.checkout_session_id) &&
+              existingSession.metadata?.plan === plan &&
+              existingSession.metadata?.billing_interval === interval
+            ) {
+              return NextResponse.json({ url: existingSession.url });
+            }
+          } catch (lookupError) {
+            console.error("Trial session lookup failed", lookupError);
+            return NextResponse.json({ error: "Unable to verify trial availability." }, { status: 503 });
+          }
+        }
+        return NextResponse.json(
+          { error: "A trial checkout already exists or was previously used for this account." },
+          { status: 409 }
+        );
+      }
+    }
+
     const session =
       await stripe.checkout.sessions.create(
         {
           mode: "subscription",
 
-          // Show Stripe’s built-in promotion-code entry on hosted Checkout.
-          allow_promotion_codes: !promoCodeId,
+          // Trial offers cannot be combined with hosted Checkout promo codes.
+          // Non-trial checkout retains the existing promotion-code entry.
+          allow_promotion_codes: !promoCodeId && !trialEligible,
+
+          // Stripe Tax for the trial rollout; existing non-trial checkout behavior is unchanged.
+          ...(trialEligible ? { automatic_tax: { enabled: true }, billing_address_collection: "required" as const } : {}),
 
           line_items: [
             {
@@ -355,14 +467,17 @@ export async function POST(
             user_id: user.id,
             plan,
             billing_interval: interval,
+            ...(trialEligible ? { stripe_trial_reserved: "true" } : {}),
           },
 
           subscription_data: {
+            ...(trialEligible ? { trial_period_days: 7 } : {}),
             metadata: {
               ...(typeof attribution === "string" ? { ambassador_attribution_id: attribution } : {}),
               user_id: user.id,
               plan,
               billing_interval: interval,
+              ...(trialEligible ? { stripe_trial_reserved: "true" } : {}),
             },
           },
 
@@ -371,7 +486,38 @@ export async function POST(
         }
       );
 
-    if (!session.url) {
+    if (trialEligible) {
+      const { data: bound, error: bindingError } = await supabase.rpc(
+        "bind_stripe_trial_session", {
+          p_user_id: user.id,
+          p_session_id: session.id,
+        }
+      );
+      if (bindingError || bound !== true) {
+        // Do not return an unbound trial session to the client.
+        // Attempt to expire it; keep the reservation locked for reconciliation.
+        try {
+          await stripe.checkout.sessions.expire(session.id);
+        } catch (expireError) {
+          console.error("Unable to expire unbound trial checkout", expireError);
+        }
+        return NextResponse.json(
+          { error: "Unable to secure the trial checkout session." },
+          { status: 503 }
+        );
+      }
+    }
+
+    if (!session.url || (trialEligible && !isTrustedStripeCheckoutUrl(session.url))) {
+      // Never leave a newly created trial Checkout Session open without a URL.
+      // Keep its one-time reservation locked for server-side reconciliation.
+      if (trialEligible) {
+        try {
+          await stripe.checkout.sessions.expire(session.id);
+        } catch (expireError) {
+          console.error("Unable to expire trial checkout with missing or untrusted URL", expireError);
+        }
+      }
       return NextResponse.json(
         {
           error:
