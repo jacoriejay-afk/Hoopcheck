@@ -21,6 +21,7 @@ final class ProductPolicyTests: XCTestCase {
     XCTAssertThrowsError(try MembershipProductRule.validate(id: "hoopcheck.pro.annual", months: 12, currency: "USD", price: 1, trialDays: nil, freeTrial: false))
   }
   func testLocalizedPricesDoNotBecomeHardcodedUSDCharges() throws {
+    try MembershipProductRule.validate(id: "hoopcheck.pro.annual", months: 12, currency: "USD", price: Decimal(string: "59.99")!, trialDays: nil, freeTrial: false, referenceUSD: false)
     try MembershipProductRule.validate(id: "hoopcheck.pro.annual", months: 12, currency: "EUR", price: Decimal(string: "59.99")!, trialDays: nil, freeTrial: false)
   }
 }

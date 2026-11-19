@@ -5,9 +5,9 @@ public struct MembershipProductRule: Sendable {
   public let months: Int
   public let usd: Decimal
   public var monthly: Bool { months == 1 }
-  public static func validate(id: String, months: Int, currency: String, price: Decimal, trialDays: Int?, freeTrial: Bool) throws {
+  public static func validate(id: String, months: Int, currency: String, price: Decimal, trialDays: Int?, freeTrial: Bool, referenceUSD: Bool = true) throws {
     guard let rule = catalog[id], months == rule.months else { throw StoreFailure.configuration }
-    guard currency != "USD" || price == rule.usd else { throw StoreFailure.configuration }
+    guard !referenceUSD || currency != "USD" || price == rule.usd else { throw StoreFailure.configuration }
     if rule.monthly {
       guard freeTrial, trialDays == 7 else { throw StoreFailure.configuration }
     } else if trialDays != nil { throw StoreFailure.configuration }
@@ -86,9 +86,11 @@ public actor HoopcheckStoreKitCore {
       }
       guard trialDays == 7 else { throw StoreFailure.configuration }
     } else if rule.monthly { throw StoreFailure.configuration }
+    let storefront = await Storefront.current
     try MembershipProductRule.validate(id: product.id, months: months, currency: currency,
       price: product.price, trialDays: subscription.introductoryOffer == nil ? nil : trialDays,
-      freeTrial: subscription.introductoryOffer?.paymentMode == .freeTrial)
+      freeTrial: subscription.introductoryOffer?.paymentMode == .freeTrial,
+      referenceUSD: storefront?.countryCode == "USA")
     return StoreProduct(id: product.id, title: product.displayName, displayPrice: product.displayPrice,
       price: NSDecimalNumber(decimal: product.price).stringValue, currency: currency,
       groupID: subscription.subscriptionGroupID, months: months, trialDays: trialDays,

@@ -14,9 +14,9 @@ is granted by this module; server verification and membership integration are
 separate required gates. Purchases need iOS 16+ for signed AppTransaction identity;
 restoration remains supported at the app's existing iOS 15.1 deployment target.
 
-Catalog validation enforces owner-confirmed duration, USD reference pricing,
+Catalog validation enforces owner-confirmed duration, US-storefront USD reference pricing,
 seven free days for monthly products and no introductory offers on six-month or
-annual products. Localized StoreKit display prices remain authoritative elsewhere.
+annual products. Localized StoreKit display prices remain authoritative elsewhere, including other USD storefronts. The device locale is not used to guess the billing storefront.
 Monthly purchases require a server-signed introductory eligibility decision. App
 Store account or price changes require reloading before purchase.
 
