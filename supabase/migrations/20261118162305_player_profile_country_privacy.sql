@@ -79,3 +79,51 @@ as $$
 $$;
 revoke all on function public.search_public_players(text, text, integer, integer) from public;
 grant execute on function public.search_public_players(text, text, integer, integer) to anon, authenticated;
+
+
+-- Compatibility repair: production already exposes the five-argument directory RPC.
+-- The username/offset RPC above is a separate overload, not a replacement.
+-- Preserve the existing caller contract while preventing private country or
+-- unapproved avatar disclosure in the legacy result and its search predicates.
+CREATE OR REPLACE FUNCTION public.search_public_players(
+  p_query text DEFAULT ''::text,
+  p_country text DEFAULT ''::text,
+  p_position text DEFAULT ''::text,
+  p_verified_only boolean DEFAULT false,
+  p_limit integer DEFAULT 24
+)
+RETURNS TABLE(
+  id uuid, display_name text, avatar_url text, country text, bio text,
+  player_position text, years_pro integer, current_country text,
+  current_team text, player_verified boolean, player_verified_at timestamptz
+)
+LANGUAGE sql STABLE SECURITY INVOKER SET search_path = public
+AS $$
+  SELECT p.id, p.display_name,
+    CASE WHEN coalesce(p.avatar_moderation_status, 'approved') = 'approved'
+      THEN p.avatar_url ELSE NULL END,
+    p.country, p.bio, p.position, p.years_pro,
+    CASE WHEN p.current_country_public IS TRUE THEN p.current_country ELSE NULL END,
+    p.current_team, p.player_verified, p.player_verified_at
+  FROM public.profiles p
+  WHERE p.profile_visibility = 'public'
+    AND p.account_type = 'player'
+    AND coalesce(p.moderation_status, 'active') <> 'suspended'
+    AND coalesce(p.basketball_type, 'mens') = 'mens'
+    AND (
+      nullif(trim(p_query), '') IS NULL
+      OR p.display_name ILIKE '%' || trim(p_query) || '%'
+      OR p.username ILIKE '%' || trim(p_query) || '%'
+      OR p.country ILIKE '%' || trim(p_query) || '%'
+      OR (p.current_country_public IS TRUE AND p.current_country ILIKE '%' || trim(p_query) || '%')
+      OR p.current_team ILIKE '%' || trim(p_query) || '%'
+      OR p.position ILIKE '%' || trim(p_query) || '%'
+    )
+    AND (nullif(trim(p_country), '') IS NULL OR p.country = trim(p_country)
+      OR (p.current_country_public IS TRUE AND p.current_country = trim(p_country)))
+    AND (nullif(trim(p_position), '') IS NULL OR p.position = trim(p_position))
+    AND (coalesce(p_verified_only, false) = false OR p.player_verified = true)
+  ORDER BY p.player_verified DESC, p.display_name ASC
+  LIMIT least(greatest(coalesce(p_limit, 24), 1), 50);
+$$;
+-- CREATE OR REPLACE retains the legacy function's existing grants.
