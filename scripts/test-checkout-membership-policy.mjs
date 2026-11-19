@@ -13,6 +13,8 @@ function fixture(options={}){
   if(name==='@supabase/supabase-js')return{createClient:()=>db};
   if(name.endsWith('/stripe-key-mode'))return mode;
   if(name.endsWith('/membership-tier'))return tiers;
+  if(name.endsWith('/stripe-trial-eligibility'))return compile('../lib/stripe-trial-eligibility.ts',()=>{});
+  if(name.endsWith('/stripe-trial-recovery'))return compile('../lib/stripe-trial-recovery.ts',()=>{});
   if(name.endsWith('/apple/proofs'))return{AppleBillingError};
   if(name.endsWith('/apple/service'))return{applePreventsStripeCheckout:async(_,id)=>{assert.equal(id,owner);appleChecks++;if(options.appleUnavailable)throw Error('Fixture Apple verification unavailable');return options.apple??false;}};
   throw Error(name);
