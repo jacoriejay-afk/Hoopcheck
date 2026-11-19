@@ -48,5 +48,29 @@ DO $check$ DECLARE fn regprocedure; BEGIN
    END IF;
  END LOOP;
 END $check$;
+-- Assert actual invocation, not just catalog grants. Authorized API roles
+-- can call each overload; an unrelated role cannot execute any overload.
+GRANT USAGE ON SCHEMA public TO anon,authenticated,country_directory_untrusted;
+SET LOCAL ROLE anon;
+SELECT public.get_public_player_profile(NULL::uuid);
+SELECT public.search_public_players('test'::text,NULL::text,1,0);
+SELECT public.search_public_players('test'::text,NULL::text,NULL::text,false,1);
+SELECT public.search_public_players_page('test'::text,NULL::text,NULL::text,false,1,0);
+RESET ROLE;
+SET LOCAL ROLE authenticated;
+SELECT public.get_public_player_profile(NULL::uuid);
+SELECT public.search_public_players('test'::text,NULL::text,1,0);
+SELECT public.search_public_players('test'::text,NULL::text,NULL::text,false,1);
+SELECT public.search_public_players_page('test'::text,NULL::text,NULL::text,false,1,0);
+RESET ROLE;
+SET LOCAL ROLE country_directory_untrusted;
+DO $deny$ BEGIN
+ BEGIN
+  PERFORM public.get_public_player_profile(NULL::uuid);
+  RAISE EXCEPTION 'untrusted role executed profile reader';
+ EXCEPTION WHEN insufficient_privilege THEN NULL;
+ END;
+END $deny$;
+RESET ROLE;
 ROLLBACK;
 SELECT 'PASS: actual directory permission migration applies to all four signatures' AS result;
