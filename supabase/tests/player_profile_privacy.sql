@@ -33,6 +33,14 @@ DO $$ BEGIN
  IF (SELECT count(*) FROM public.search_public_players('pl%'))<>0 THEN RAISE EXCEPTION 'wildcard interpreted'; END IF;
  IF (SELECT count(*) FROM public.search_public_players('p'))<>0 THEN RAISE EXCEPTION 'short query accepted'; END IF;
  IF (SELECT count(*) FROM public.search_public_players('player',null,1,1))<>1 THEN RAISE EXCEPTION 'pagination failed'; END IF;
+ -- Verify the production five-argument legacy RPC and the main website paginated RPC.
+ IF (SELECT count(*) FROM public.search_public_players('player','','',false,24))<>1 THEN RAISE EXCEPTION 'legacy directory eligibility changed'; END IF;
+ IF EXISTS(SELECT FROM public.search_public_players('player','','',false,24) WHERE current_country IS NOT NULL OR avatar_url IS NOT NULL) THEN RAISE EXCEPTION 'legacy directory privacy leaked'; END IF;
+ IF (SELECT count(*) FROM public.search_public_players('Hidden Country','','',false,24))<>0 THEN RAISE EXCEPTION 'legacy search matches private country'; END IF;
+ IF (SELECT count(*) FROM public.search_public_players_page('player','','',false,24,0))<>1 THEN RAISE EXCEPTION 'website directory eligibility changed'; END IF;
+ IF EXISTS(SELECT FROM public.search_public_players_page('player','','',false,24,0) WHERE current_country IS NOT NULL OR avatar_url IS NOT NULL) THEN RAISE EXCEPTION 'website directory privacy leaked'; END IF;
+ IF (SELECT count(*) FROM public.search_public_players_page('Hidden Country','','',false,24,0))<>0 THEN RAISE EXCEPTION 'website search matches private country'; END IF;
+ IF (SELECT count(*) FROM public.search_public_players_page('player','Hidden Country','',false,24,0))<>0 THEN RAISE EXCEPTION 'website country filter leaks private country'; END IF;
 END $$;
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',true);
