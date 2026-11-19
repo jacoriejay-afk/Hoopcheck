@@ -6,7 +6,7 @@ import { readPlayerDirectory } from '../src/native/playerDirectory.ts';
 const owner='11111111-1111-4111-8111-111111111111',target='22222222-2222-4222-8222-222222222222';
 const viewer={id:owner,accountType:'player'};
 const profile={id:target,display_name:'Player',avatar_url:'https://fixture.test/approved.jpg',country:'Public country',current_country:'Hidden country',player_position:'PG',years_pro:3,current_team:'Club',player_verified:true};
-function client(request){return createClient('https://fixture.supabase.co','fixture',{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},global:{fetch:request}});}
+function client(request){const source=createClient('https://fixture.supabase.co','fixture',{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},global:{fetch:request}});source.auth.getSession=async()=>({data:{session:{user:{id:owner},access_token:'fixture-owner-token'}},error:null});return source;}
 
 test('fans and unknown roles fail closed before any profile or directory read',async()=>{
  let reads=0;const source=client(async()=>{reads++;return Response.json([]);});
@@ -33,8 +33,8 @@ test('owners can view their own private profile but cannot reveal an unapproved 
  const requests=[];const result=await readPlayerProfile(client(async input=>{
   const url=new URL(String(input));requests.push(url.pathname);
   if(url.pathname.endsWith('/get_public_player_profile'))return Response.json([]);
-  assert.equal(url.pathname,'/rest/v1/profiles');assert.equal(url.searchParams.get('id'),`eq.${owner}`);assert.equal(url.searchParams.get('account_type'),'eq.player');
-  return Response.json({...profile,id:owner,position:'SG',avatar_moderation_status:'rejected'});
+  assert.equal(url.pathname,'/rest/v1/rpc/get_own_profile');assert.equal(url.search,'');
+  return Response.json({...profile,id:owner,account_type:'player',position:'SG',avatar_moderation_status:'rejected'});
  }),viewer,owner);assert.equal(result.current_country,'Hidden country');assert.equal(result.avatar_url,null);assert.equal(result.position,'SG');assert.equal(requests.length,2);
 });
 test('directory calls only shared RPC with literal username and bounded pagination',async()=>{

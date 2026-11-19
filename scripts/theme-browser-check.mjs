@@ -301,7 +301,8 @@ try {
         }
         let data = [];
         if (url.pathname === "/auth/v1/user") data = user;
-        else if (url.pathname.includes("/rest/v1/profiles")) data = profile;
+        else if (url.pathname.endsWith("/rpc/get_own_profile")) data = profile;
+      else if (url.pathname.includes("/rest/v1/profiles")) data = profile;
         else if (url.pathname.includes("/rest/v1/subscriptions")) data = subscription;
         else if (url.pathname.includes("/rest/v1/rpc/is_current_user_admin_or_moderator")) data = true;
         else if (url.pathname.includes("/rest/v1/rpc/get_current_user_admin_role")) data = "admin";
@@ -552,6 +553,7 @@ try {
       let data = [];
       const single = request.headers()["accept"]?.includes("vnd.pgrst.object");
       if (url.pathname === "/auth/v1/user") data = user;
+      else if (url.pathname.endsWith("/rpc/get_own_profile")) data = profile;
       else if (url.pathname.includes("/rest/v1/profiles")) {
         const fanSurfaceRoute = activeRoutePath === "/fan-feed" || activeRoutePath === "/team-hub" || activeRoutePath.startsWith("/team-hub/groups/") || activeRoutePath.startsWith("/womens/");
         const accountTypeQuery = (url.searchParams.get("select") || "").includes("account_type") && (url.searchParams.get("id") || "").startsWith("eq.");
