@@ -34,9 +34,9 @@ REVOKE ALL ON FUNCTION public.read_own_private_country(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.read_own_private_country(uuid) TO authenticated;
 -- Match the proposed zero-argument owner RPC in the draft migration.
 CREATE OR REPLACE FUNCTION public.get_my_private_country()
- RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $
+ RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $$
  SELECT p.current_country FROM public.profiles p WHERE p.id=(SELECT auth.uid()) LIMIT 1
-$;
+$$;
 REVOKE ALL ON FUNCTION public.get_my_private_country() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_my_private_country() TO authenticated;
 -- Public RPC returns only safe projection, even for a row whose country is private.
