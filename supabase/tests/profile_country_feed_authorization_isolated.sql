@@ -46,31 +46,8 @@ GRANT SELECT ON public.subscriptions,public.follow_relationships TO authenticate
 CREATE OR REPLACE FUNCTION public.is_current_user_admin_or_moderator() RETURNS boolean
  LANGUAGE sql STABLE AS $$ SELECT auth.uid()='77777777-7777-4777-8777-777777777777'::uuid $$;
 GRANT EXECUTE ON FUNCTION public.is_current_user_admin_or_moderator() TO authenticated;
--- Same predicates as production function; protected definer performs the private-country comparison internally.
-CREATE OR REPLACE FUNCTION public.can_view_player_feed_post(p_author_id uuid)
- RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $$
- SELECT p_author_id=(SELECT auth.uid())
- OR public.is_current_user_admin_or_moderator()
- OR EXISTS(
- SELECT 1 FROM public.profiles viewer
- JOIN public.subscriptions sub ON sub.user_id=viewer.id
- JOIN public.profiles author ON author.id=p_author_id
- JOIN public.follow_relationships fr ON fr.follower_id=viewer.id
-   AND fr.target_id=p_author_id AND fr.target_type=author.account_type
- WHERE viewer.id=(SELECT auth.uid())
- AND viewer.account_type IN ('player','fan','coach','agent','scout','club_admin','manager')
- AND author.account_type IN ('player','fan','coach','agent','scout','club_admin','manager')
- AND sub.plan IN ('pro','premium')
- AND sub.status IN ('active','trialing')
- AND coalesce(sub.access_status,'active') IN ('active','trialing','pro','premium')
- AND (sub.current_period_end IS NULL OR sub.current_period_end>now())
- AND (viewer.account_type<>'player' OR author.account_type<>'player'
-      OR (viewer.current_country IS NOT NULL AND author.current_country IS NOT NULL
-          AND lower(viewer.current_country)=lower(author.current_country)))
- )
-$$;
-REVOKE ALL ON FUNCTION public.can_view_player_feed_post(uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.can_view_player_feed_post(uuid) TO authenticated;
+-- Execute the exact draft migration against this disposable synthetic database.
+\i supabase/migrations/20261119160000_protected_feed_country_authorization.sql
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',true);
 DO $$ BEGIN
