@@ -106,20 +106,20 @@ DO $$ BEGIN
 END $$;
 -- Missing authenticated identity must not pass any follower/subscription country gate.
 SELECT set_config('request.jwt.claim.sub','',true);
-DO $ BEGIN
+DO $$ BEGIN
  IF public.can_view_player_feed_post('22222222-2222-4222-8222-222222222222') THEN
   RAISE EXCEPTION 'missing JWT unexpectedly allowed feed access';
  END IF;
-END $;
+END $$;
 RESET ROLE;
 -- Anonymous callers must not be able to execute the feed or comparison functions.
-DO $ BEGIN
+DO $$ BEGIN
  IF has_function_privilege('anon','public.can_view_player_feed_post(uuid)','EXECUTE') THEN
   RAISE EXCEPTION 'anon can execute feed authorization';
  END IF;
  IF to_regprocedure('public.is_my_player_country_match(uuid)') IS NOT NULL THEN
   RAISE EXCEPTION 'standalone country comparison must not exist';
  END IF;
-END $;
+END $$;
 ROLLBACK;
 SELECT 'PASS: synthetic full feed predicate preserved key country/follow/subscription gates' AS result;
