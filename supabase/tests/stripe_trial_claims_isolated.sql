@@ -69,4 +69,28 @@ begin
  if not public.redeem_stripe_trial(uid,'cs_test_first') then raise exception 'idempotent retry rejected'; end if;
  if public.bind_stripe_trial_session(uid,'cs_test_first') then raise exception 'redeemed session rebound'; end if;
 end $trialtest$;
+-- Expired-session release must never erase redeemed claims.
+create function public.release_expired_stripe_trial(p_user_id uuid,p_session_id text)
+returns boolean language plpgsql security invoker set search_path = '' as $trialtest$
+declare n integer;
+begin
+ if p_session_id is null or p_session_id !~ '^cs_' then return false; end if;
+ delete from public.stripe_trial_claims
+ where user_id=p_user_id and checkout_session_id=p_session_id and state='reserved';
+ get diagnostics n=row_count;
+ return n=1;
+end $trialtest$;
+do $trialtest$
+declare uid uuid := '11111111-1111-4111-8111-111111111111';
+declare uid2 uuid := '22222222-2222-4222-8222-222222222222';
+begin
+ if public.release_expired_stripe_trial(uid,'cs_test_first') then raise exception 'redeemed claim released'; end if;
+ if public.release_expired_stripe_trial(uid,'cs_test_other') then raise exception 'wrong claim released'; end if;
+ insert into auth.users(id) values(uid2);
+ if not public.reserve_stripe_trial(uid2) then raise exception 'second reservation failed'; end if;
+ if not public.bind_stripe_trial_session(uid2,'cs_test_expired') then raise exception 'second bind failed'; end if;
+ if public.release_expired_stripe_trial(uid2,'cs_test_wrong') then raise exception 'wrong session released'; end if;
+ if not public.release_expired_stripe_trial(uid2,'cs_test_expired') then raise exception 'expired reservation not released'; end if;
+ if not public.reserve_stripe_trial(uid2) then raise exception 'reservation unavailable after release'; end if;
+end $trialtest$;
 rollback;
