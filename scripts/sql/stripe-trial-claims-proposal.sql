@@ -2,7 +2,7 @@
 -- Trial reservation uses a unique user key to serialize concurrent checkout claims.
 -- A claim is not proof of trial redemption; finalize only after Stripe confirms
 -- the subscription is trialing. Abandoned sessions need a separately audited
--- expiration/reconciliation workflow before any automatic release.
+-- expiration/reconciliation workflow. Expiration remains terminal: never reissue automatically.
 create table if not exists public.stripe_trial_claims (
   user_id uuid primary key references auth.users(id) on delete cascade,
   state text not null default 'reserved'
