@@ -77,7 +77,7 @@ export default function WomensTeamScreen() {
       <Pressable accessibilityRole="link" onPress={() => router.push("/womens")} style={touch}><Text style={link}>‹ Women’s teams</Text></Pressable>
       {loading ? <Skeleton profile /> : !current ? <Text accessibilityRole="alert" style={text}>Team unavailable. Pull to retry.</Text> : <>
         <EntityHero logoUrl={current.logo_url} logoBg={current.logo_bg} name={current.name} country={current.country} kind="women" label="WOMEN’S TEAM PROFILE" path={`/womens/${current.id}`} location={[current.city, current.country].filter(Boolean).join(", ") || "Location not listed"} />
-        <GlassCard><Text style={{ color: theme.muted }}>LEAGUE</Text><Text style={text}>{current.league_name || "Not listed"}</Text>
+        <GlassCard><Text style={{ color: theme.muted, fontSize: 11, fontWeight: "800", letterSpacing: 1 }}>LEAGUE</Text><Text style={{ ...text, fontSize: 16, fontWeight: "700", marginTop: 7 }}>{current.league_name || "Not listed"}</Text>
           {current.league_id ? <Pressable accessibilityRole="link" onPress={() => router.push({ pathname: "/womens/leagues/[id]", params: { id: current.league_id! } })} style={touch}><Text style={link}>Open league profile</Text></Pressable> : null}
         </GlassCard>
         <Text accessibilityRole="header" style={{ ...text, fontSize: 22, fontWeight: "800" }}>Latest reviews</Text>

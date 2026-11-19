@@ -136,7 +136,7 @@ export default function PlayerDetailScreen() {
               <Info label="Current team" value={player.current_team} />
               <Info label="Current country" value={player.current_country || player.country} />
               <Info label="Position" value={player.position} />
-              <Info label="Professional experience" value={player.years_pro === null ? null : `${player.years_pro} ${player.years_pro === 1 ? "year" : "years"}`} />
+              <Info label="Professional experience" value={typeof player.years_pro !== "number" || !Number.isFinite(player.years_pro) ? null : `${player.years_pro} ${player.years_pro === 1 ? "year" : "years"}`} />
               <Info label="Nationality" value={player.nationality} />
               <Info label="Hometown" value={player.hometown} />
             </GlassCard>

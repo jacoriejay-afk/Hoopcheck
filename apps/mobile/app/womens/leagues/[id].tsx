@@ -72,7 +72,7 @@ export default function WomensLeagueScreen() {
         <Pressable accessibilityRole="link" onPress={() => router.push("/womens")} style={{ minHeight: 48, justifyContent: "center" }}><Text style={{ color: theme.accent }}>‹ Women’s teams</Text></Pressable>
         {visible ? <>
           <EntityHero name={visible.name} country={visible.country} kind="leagues" label="WOMEN’S LEAGUE PROFILE" path={`/womens/leagues/${visible.id}`} />
-          <GlassCard><Text style={{ color: theme.muted }}>COMPETITION LEVEL</Text><Text style={{ color: theme.foreground }}>{visible.level || "Not listed"}</Text></GlassCard>
+          <GlassCard><Text style={{ color: theme.muted, fontSize: 11, fontWeight: "800", letterSpacing: 1 }}>COMPETITION LEVEL</Text><Text style={{ color: theme.foreground, fontSize: 16, fontWeight: "700", marginTop: 7 }}>{visible.level || "Not listed"}</Text></GlassCard>
           <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 22, fontWeight: "800" }}>Teams</Text>
         </> : loading ? <Skeleton profile /> : <Text style={{ color: theme.foreground }}>League unavailable.</Text>}
       </View>}

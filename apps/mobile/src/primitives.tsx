@@ -1,3 +1,4 @@
+import { Children, type ReactNode } from "react";
 import { BlurView } from "expo-blur";
 import { Platform, Pressable, Text, TextInput, View, type PressableProps, type TextInputProps, type ViewProps } from "react-native";
 import { useEntryTheme } from "./theme";
@@ -12,8 +13,16 @@ export function GlassCard({ style, children, ...props }: ViewProps) {
 }
 export function Button({ children, secondary = false, style, ...props }: PressableProps & { secondary?: boolean }) {
   const t = useEntryTheme();
+  const labelStyle = { color: secondary ? t.foreground : t.onButton, fontSize: 16, fontWeight: "800" as const };
+  const content = (value: ReactNode) => {
+    const parts = Children.toArray(value);
+    // JSX such as "Rotate photo {index + 1}" produces an array, even when
+    // the entire label is text. Native Pressable cannot contain raw strings.
+    if (parts.every(part => typeof part === "string" || typeof part === "number")) return <Text style={labelStyle}>{value}</Text>;
+    return parts.map((part, index) => typeof part === "string" || typeof part === "number" ? <Text key={index} style={labelStyle}>{part}</Text> : part);
+  };
   return <Pressable accessibilityRole="button" accessibilityState={{ disabled: !!props.disabled }} {...props} style={state => [{ minHeight: 48, padding: t.spacing.md, borderRadius: t.radius.control, borderWidth: 1, borderColor: secondary ? t.border : t.button, backgroundColor: secondary ? t.surface : t.button, alignItems: "center", justifyContent: "center", opacity: props.disabled ? .65 : state.pressed ? .75 : 1 }, typeof style === "function" ? style(state) : style]}>
-    {typeof children === "string" ? <Text style={{ color: secondary ? t.foreground : t.onButton, fontSize: 16, fontWeight: "800" }}>{children}</Text> : children}
+    {state => content(typeof children === "function" ? children(state) : children)}
   </Pressable>;
 }
 export function Input({ style, ...props }: TextInputProps) {
