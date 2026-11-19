@@ -79,7 +79,7 @@ export function canReuseOpenTrialSession(
 }
 
 /** Accept only Stripe-hosted HTTPS Checkout URLs, never redirects or lookalike hosts. */
-function isTrustedStripeCheckoutUrl(value: string): boolean {
+export function isTrustedStripeCheckoutUrl(value: string): boolean {
   try {
     const url = new URL(value);
     return url.protocol === "https:" &&
