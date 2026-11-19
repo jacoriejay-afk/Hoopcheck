@@ -11,6 +11,10 @@ Status: **draft plan, not authorization to deploy**. PR #739 has an owner-only R
 5. Only after all dependencies have secure alternatives and the owner approves, apply a **separately reviewed restrictive migration** that removes raw country SELECT from client roles. Review table-level SELECT grants, column-level grants, PUBLIC inheritance, views, RPC EXECUTE privileges, and feed authorization side channels. Do not assume `REVOKE SELECT(current_country)` is sufficient if a table-level SELECT grant remains.
 6. Verify direct PostgREST `profiles?select=current_country` is denied for anon and authenticated (including the profile owner), while authorized owner RPC, safe UPDATE ... RETURNING, masked public directory, admin workflow, and player feed all continue to work. Document evidence before declaring the leak closed.
 
+## Latest automated verification
+
+GitHub Actions run [44506264578](https://github.com/jacoriejay-afk/Hoopcheck/actions/runs/44506264578) completed successfully at commit `2546f89990269e4c3af8f03f7cd13da7e7cd23eb`. This covers the current draft branch's CI checks, including isolated SQL and browser profile-completion tests. It does **not** verify actual production privileges or the full feed/admin compatibility matrix.
+
 ## Failure / rollback
 
 If an additive RPC rollout fails, restore the prior web client before removing the RPC. If the restrictive rollout breaks owner flows, feed visibility, or admin operations, pause the rollout and restore the prior verified access policy **only through an approved migration**, noting that restoring raw SELECT reopens the privacy leak. Do not claim privacy is fixed until direct reads are denied and compatibility is verified.
