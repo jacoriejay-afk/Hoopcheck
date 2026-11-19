@@ -53,7 +53,10 @@ begin
  update public.stripe_trial_claims set state='redeemed',redeemed_at=now()
  where user_id=p_user_id and checkout_session_id=p_session_id and state='reserved';
  get diagnostics n=row_count;
- return n=1;
+ if n=1 then return true; end if;
+ return exists(select 1 from public.stripe_trial_claims
+  where user_id=p_user_id and checkout_session_id=p_session_id
+  and state='redeemed' and redeemed_at is not null);
 end $trialtest$;
 do $trialtest$
 declare uid uuid := '11111111-1111-4111-8111-111111111111';
@@ -63,7 +66,7 @@ begin
  if public.bind_stripe_trial_session(uid,'cs_test_other') then raise exception 'session replaced'; end if;
  if public.redeem_stripe_trial(uid,'cs_test_other') then raise exception 'wrong session redeemed'; end if;
  if not public.redeem_stripe_trial(uid,'cs_test_first') then raise exception 'redemption failed'; end if;
- if public.redeem_stripe_trial(uid,'cs_test_first') then raise exception 'duplicate redemption'; end if;
+ if not public.redeem_stripe_trial(uid,'cs_test_first') then raise exception 'idempotent retry rejected'; end if;
  if public.bind_stripe_trial_session(uid,'cs_test_first') then raise exception 'redeemed session rebound'; end if;
 end $trialtest$;
 rollback;
