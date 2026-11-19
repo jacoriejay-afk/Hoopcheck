@@ -1,3 +1,4 @@
+import { getOwnProfile } from "../../../../lib/auth/own-profile.ts";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -20,7 +21,6 @@ export type EditableProfile = {
 export type OwnProfile = EditableProfile & { id: string; account_type: string; first_name: string; last_name: string; years_pro: string; username: string };
 const text = (value: unknown, max: number) => typeof value === "string" ? value.slice(0, max) : "";
 const limits = { display_name: 80, bio: 500, hometown: 120, nationality: 80, favorite_teams: 500, favorite_leagues: 500, interests: 500, experience_summary: 1000, position: 30, height: 24, current_country: 120, current_team: 160 } as const;
-const columns = "id,account_type,first_name,last_name,username,years_pro,display_name,bio,hometown,nationality,favorite_teams,favorite_leagues,interests,experience_summary,position,height,current_country,current_team,free_agent,current_country_public,profile_visibility";
 export function parseProfileDraft(input: unknown): EditableProfile | null {
   if (!input || typeof input !== "object") return null;
   const source = input as Record<string, unknown>;
@@ -33,7 +33,7 @@ async function deadline<T>(work: (signal: AbortSignal) => PromiseLike<T>): Promi
 }
 export async function readOwnProfile(client: SupabaseClient, userId: string): Promise<OwnProfile> {
   if (!uuid.test(userId)) throw new Error("Invalid profile owner");
-  const { data, error } = await deadline(signal => client.from("profiles").select(columns).eq("id", userId).abortSignal(signal).maybeSingle());
+  const { data, error } = await getOwnProfile(client, userId);
   if (error || !data || data.id !== userId || !roles.includes(data.account_type)) throw new Error("Your profile could not be verified. Try again.");
   const fields = Object.fromEntries(Object.entries(limits).map(([key, limit]) => [key, text(data[key as keyof typeof limits], limit)]));
   return { ...fields, id: userId, account_type: data.account_type, first_name: text(data.first_name, 100), last_name: text(data.last_name, 100), username: text(data.username, 100), years_pro: Number.isSafeInteger(data.years_pro) && data.years_pro >= 0 ? String(data.years_pro) : "", free_agent: data.free_agent === true, current_country_public: data.current_country_public === true, profile_visibility: data.profile_visibility === "public" ? "public" : "players_only" } as OwnProfile;

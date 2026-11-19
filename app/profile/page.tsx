@@ -1,5 +1,7 @@
 "use client";
 
+import { getOwnProfile } from "../../lib/auth/own-profile";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import SocialProfileHeader, { profileCover } from "../../components/SocialProfileHeader";
@@ -68,11 +70,7 @@ export default function ProfilePage() {
       }
       setSocialLinks(safeLinks);
       const result = await Promise.race([
-        supabase
-          .from("profiles")
-          .select("id,display_name,username,first_name,last_name,account_type,bio,position,years_pro,current_country,current_team,height,player_verified,coach_verified,avatar_url,avatar_moderation_status,basketball_type,free_agent,hometown,nationality,interests,favorite_leagues,profile_visibility")
-          .eq("id", user.id)
-          .maybeSingle(),
+        getOwnProfile(supabase, user.id),
         new Promise<any>((resolve) => setTimeout(() => resolve({ data: null, error: new Error("Profile request timed out") }), 8000)),
       ]);
       if (!active) return;

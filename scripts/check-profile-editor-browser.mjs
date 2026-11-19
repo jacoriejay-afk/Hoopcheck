@@ -31,6 +31,7 @@ try {
     if(req.method()==='PUT') user.user_metadata={...user.user_metadata,...req.postDataJSON().data};
     data=user;
    }
+   else if(url.pathname.endsWith('/rpc/get_own_profile')) data=profile;
    else if(url.pathname.endsWith('/profiles')){
     if(req.method()==='PATCH'){const patch=req.postDataJSON();patches.push(patch);profile={...profile,...patch};data={id:uid};}
     else data=profile;

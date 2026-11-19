@@ -1,3 +1,4 @@
+import { getOwnProfile } from "../../../../lib/auth/own-profile.ts";
 import type { SupabaseClient } from "@supabase/supabase-js";
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const canBrowsePlayers = (role: string | undefined) => ["player", "coach", "agent", "scout", "manager", "club_admin"].includes(role ?? "");
@@ -18,9 +19,9 @@ export async function readPlayerProfile(client: SupabaseClient, viewer: PlayerVi
   let profile: Record<string, unknown> | null = !response.error && Array.isArray(response.data) ? response.data.find(row => row.id === id) ?? null : null;
   let ownCountryPublic = false;
   if (!profile && id === viewer.id && viewer.accountType === "player") {
-    const own = await client.from("profiles").select("id,display_name,avatar_url,avatar_moderation_status,country,bio,position,years_pro,current_country,current_country_public,current_team,player_verified").eq("id", id).eq("account_type", "player").abortSignal(controller.signal).maybeSingle();
+    const own = await getOwnProfile(client, id);
     if (own.error) throw new Error("Your player profile could not be loaded.");
-    if (own.data?.id === id) {
+    if (own.data?.id === id && own.data.account_type === "player") {
       profile = { ...own.data, player_position: own.data.position, avatar_url: own.data.avatar_moderation_status === "approved" ? own.data.avatar_url : null };
       ownCountryPublic = own.data.current_country_public === true;
     }
