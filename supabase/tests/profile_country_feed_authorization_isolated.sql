@@ -111,6 +111,22 @@ SELECT set_config('request.jwt.claim.sub','77777777-7777-4777-8777-777777777777'
 DO $$ BEGIN
  IF NOT public.can_view_player_feed_post('33333333-3333-4333-8333-333333333333') THEN RAISE EXCEPTION 'synthetic admin override denied'; END IF;
 END $$;
+-- Missing authenticated identity must not pass any follower/subscription country gate.
+SELECT set_config('request.jwt.claim.sub','',true);
+DO $ BEGIN
+ IF public.can_view_player_feed_post('22222222-2222-4222-8222-222222222222') THEN
+  RAISE EXCEPTION 'missing JWT unexpectedly allowed feed access';
+ END IF;
+END $;
 RESET ROLE;
+-- Anonymous callers must not be able to execute the feed or comparison functions.
+DO $ BEGIN
+ IF has_function_privilege('anon','public.can_view_player_feed_post(uuid)','EXECUTE') THEN
+  RAISE EXCEPTION 'anon can execute feed authorization';
+ END IF;
+ IF has_function_privilege('anon','public.is_my_player_country_match(uuid)','EXECUTE') THEN
+  RAISE EXCEPTION 'anon can execute country comparison';
+ END IF;
+END $;
 ROLLBACK;
 SELECT 'PASS: synthetic full feed predicate preserved key country/follow/subscription gates' AS result;
