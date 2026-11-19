@@ -67,6 +67,7 @@ begin
  if public.redeem_stripe_trial(uid,'cs_test_other') then raise exception 'wrong session redeemed'; end if;
  if not public.redeem_stripe_trial(uid,'cs_test_first') then raise exception 'redemption failed'; end if;
  if not public.redeem_stripe_trial(uid,'cs_test_first') then raise exception 'idempotent retry rejected'; end if;
+ if public.redeem_stripe_trial(uid,'cs_test_other') then raise exception 'replay accepted different session'; end if;
  if public.bind_stripe_trial_session(uid,'cs_test_first') then raise exception 'redeemed session rebound'; end if;
 end $trialtest$;
 -- Expired-session release must never erase redeemed claims.
@@ -89,6 +90,8 @@ begin
  insert into auth.users(id) values(uid2);
  if not public.reserve_stripe_trial(uid2) then raise exception 'second reservation failed'; end if;
  if not public.bind_stripe_trial_session(uid2,'cs_test_expired') then raise exception 'second bind failed'; end if;
+ if public.redeem_stripe_trial(uid,'cs_test_expired') then raise exception 'cross-user redemption succeeded'; end if;
+ if public.redeem_stripe_trial(uid2,'cs_test_first') then raise exception 'cross-session redemption succeeded'; end if;
  if public.mark_expired_stripe_trial(uid2,'cs_test_wrong') then raise exception 'wrong session released'; end if;
  if not public.mark_expired_stripe_trial(uid2,'cs_test_expired') then raise exception 'expired reservation not released'; end if;
  if public.mark_expired_stripe_trial(uid2,'cs_test_expired') then raise exception 'expired claim released twice'; end if;
