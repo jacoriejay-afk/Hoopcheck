@@ -124,6 +124,13 @@ jobs:
           createdb -h 127.0.0.1 -U postgres hoopcheck_country_directory_revoke_test
           psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_country_directory_revoke_test -f supabase/tests/profile_country_directory_revoke_dependency.sql
 
+      - name: Verify protected player profile visibility in isolated PostgreSQL
+        env:
+          PGPASSWORD: postgres
+        run: |
+          createdb -h 127.0.0.1 -U postgres hoopcheck_country_visibility_test
+          psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_country_visibility_test -f supabase/tests/profile_country_profile_visibility_isolated.sql
+
       - name: Execute actual protected directory migration against synthetic function signatures
         env:
           PGPASSWORD: postgres
