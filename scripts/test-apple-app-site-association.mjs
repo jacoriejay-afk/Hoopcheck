@@ -18,8 +18,8 @@ test('association uses the owner-confirmed signing prefix and rejects mismatched
 test('association allows implemented native paths while browser auth/referral and nested fallback paths remain excluded',()=>{
  const entries=helper.appleAppSiteAssociation().applinks.details[0].components;
  const matches=path=>{for(const entry of entries){const escaped=entry['/'].split('*').map(part=>part.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('.*');if(new RegExp('^'+escaped+'$').test(path))return entry.exclude!==true;}return false;};
- for(const path of ['/','/feed','/search','/account','/account/edit','/fan-live','/team-hub/groups','/team-hub/groups/fixture','/teams/fixture','/womens/fixture','/womens/leagues/fixture'])assert.equal(matches(path),true,path);
- for(const path of ['/auth/callback','/reset-password','/login','/signup','/referral/CODE','/r/CODE','/admin/ambassadors','/coaches/fixture','/teams/id/review','/womens/id/review','/womens/leagues/id/review','/womens/leagues','/account/security','/team-hub/groups/id/nested'])assert.equal(matches(path),false,path);
+ for(const path of ['/','/feed','/search','/account','/account/edit','/account/security','/membership','/fan-live','/team-hub/groups','/team-hub/groups/fixture','/teams/fixture','/womens/fixture','/womens/leagues/fixture'])assert.equal(matches(path),true,path);
+ for(const path of ['/auth/callback','/reset-password','/login','/signup','/referral/CODE','/r/CODE','/admin/ambassadors','/coaches/fixture','/teams/id/review','/womens/id/review','/womens/leagues/id/review','/womens/leagues','/account/delete','/membership/nested','/team-hub/groups/id/nested'])assert.equal(matches(path),false,path);
  assert.equal(entries.some(entry=>entry['/']==='*'||entry['/']==='/*'),false);
 });
 test('actual route serves the confirmed identity by default and never caches mismatched configuration',async()=>{

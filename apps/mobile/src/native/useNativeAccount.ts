@@ -3,6 +3,7 @@ import { AppState } from "react-native";
 import { supabase } from "../lib/supabase";
 import { useMfaSession } from "./mfa";
 import { useNetwork } from "./network";
+import { readWithDeadline } from "./readDeadline";
 import { requestNativeAccount, type NativeAccount } from "./accountClient";
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
 function useAccountRequest() {
@@ -16,7 +17,8 @@ function useAccountRequest() {
   const retry = useCallback(() => { generation.current++; setAccount(null); setRefresh(value => value + 1); }, []);
   useEffect(() => {
     const listener = AppState.addEventListener("change", state => { if (state === "active") retry(); });
-    return () => listener.remove();
+    const refreshTimer = setInterval(() => { if (AppState.currentState === "active") retry(); }, 15 * 60 * 1000);
+    return () => { listener.remove(); clearInterval(refreshTimer); };
   }, [retry]);
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange(retry);
@@ -32,8 +34,8 @@ function useAccountRequest() {
       try {
         if (offline) throw new Error("Offline");
         if (security.phase !== "ready") throw new Error("Finish security verification first");
-        const { data, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError || !data.session) throw new Error("Missing session");
+        const { data, error: sessionError } = await readWithDeadline(() => supabase.auth.getSession());
+        if (sessionError || !data.session || data.session.user.id !== security.owner) throw new Error("Missing session");
         const result = await requestNativeAccount(origin, data.session.access_token, controller.signal);
         if (result.user.id !== data.session.user.id) throw new Error("Account identity mismatch");
         if (active && current === generation.current) setAccount(result);

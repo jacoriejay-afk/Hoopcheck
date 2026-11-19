@@ -5,6 +5,8 @@ on:
     paths:
       - "apps/mobile/**"
       - "lib/auth/**"
+      - "lib/billing/**"
+      - "lib/membership-tier.ts"
   push:
     branches:
       - "feat/expo-mobile-foundation"
@@ -12,6 +14,8 @@ on:
     paths:
       - "apps/mobile/**"
       - "lib/auth/**"
+      - "lib/billing/**"
+      - "lib/membership-tier.ts"
       - ".github/workflows/mobile-check.yml"
 
 jobs:
@@ -71,6 +75,7 @@ jobs:
           NATIVE_TEST_URL: http://127.0.0.1:8092
           CHROMIUM_PATH: /usr/bin/google-chrome
         run: |
+          node scripts/verify-membership-browser.cjs
           node scripts/verify-mfa-browser.cjs
           node scripts/verify-player-profiles-browser.cjs
           node scripts/verify-media-browser.cjs
