@@ -117,6 +117,13 @@ jobs:
           createdb -h 127.0.0.1 -U postgres hoopcheck_country_feed_authorization_test
           psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_country_feed_authorization_test -f supabase/tests/profile_country_feed_authorization_isolated.sql
 
+      - name: Verify masked directory RPC dependency on revoked country column
+        env:
+          PGPASSWORD: postgres
+        run: |
+          createdb -h 127.0.0.1 -U postgres hoopcheck_country_directory_revoke_test
+          psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_country_directory_revoke_test -f supabase/tests/profile_country_directory_revoke_dependency.sql
+
       - name: Verify optional MFA policies and privileged request enforcement
         env:
           PGPASSWORD: postgres
