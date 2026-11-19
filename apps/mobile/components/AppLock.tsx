@@ -95,13 +95,13 @@ export function AppLock({ authReady, protectedScreen, userId, startupError, retr
     {bootstrapping ? <>
       <Text accessibilityLiveRegion="polite" style={{ color: theme.foreground }}>{recoveryMessage || "Preparing HoopCheck…"}</Text>
       {recoveryMessage ? <Pressable accessibilityRole="button" onPress={() => { if (startupError) retryStartup?.(); if (restoreError) void retryRestore(); if (security.phase === "error") security.retry(); }} style={{ minHeight: 48, justifyContent: "center" }}><Text style={{ color: theme.accent, fontSize: 18 }}>Try again</Text></Pressable> : null}
-      {recoveryMessage ? <Pressable accessibilityRole="button" disabled={busy} onPress={() => void normalSignIn()} style={{ minHeight: 48, justifyContent: "center" }}><Text style={{ color: theme.accent, fontSize: 18 }}>Use normal sign-in</Text></Pressable> : null}
+      {recoveryMessage ? <Pressable accessibilityRole="button" accessibilityState={{ busy, disabled: busy }} disabled={busy} onPress={() => void normalSignIn()} style={{ minHeight: 48, justifyContent: "center" }}><Text accessibilityLiveRegion="polite" style={{ color: theme.accent, fontSize: 18 }}>{busy ? "Preparing sign-in…" : "Use normal sign-in"}</Text></Pressable> : null}
     </> : <>
     <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 28, fontWeight: "900" }}>Unlock HoopCheck</Text>
     <Text style={{ color: theme.muted }}>Use Face ID, fingerprint, or your device passcode.</Text>
     <Pressable accessibilityRole="button" disabled={busy} onPress={() => void unlock()} style={{ minHeight: 48 }}><Text style={{ color: theme.accent, fontSize: 18 }}>{busy ? "Please wait…" : "Unlock"}</Text></Pressable>
     <Pressable accessibilityRole="button" disabled={busy} onPress={() => void normalSignIn()} style={{ minHeight: 48 }}><Text style={{ color: theme.accent, fontSize: 18 }}>Use normal sign-in</Text></Pressable>
-    {message ? <Text accessibilityRole="alert" style={{ color: theme.foreground }}>{message}</Text> : null}
     </>}
+    {message ? <Text accessibilityRole="alert" style={{ color: theme.foreground }}>{message}</Text> : null}
   </View>}</Modal>;
 }

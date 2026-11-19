@@ -25,6 +25,7 @@ async function verify(browser,theme){
   }
   if(url.hostname==='fixture.supabase.co'){
    if(url.pathname==='/auth/v1/user')return json(user);
+   if(url.pathname==='/rest/v1/rpc/get_own_profile'){assert.equal(request.headers().authorization,`Bearer ${token}`);assert.deepEqual(request.postDataJSON(),{});return json(profile);}
    if(url.pathname.startsWith(`/storage/v1/object/upload/sign/hoopfeed-private-videos/${uid}/`)){assert.equal(method,'PUT');assert.equal(url.searchParams.get('token'),'fixture-only');return json({Key:'private'});}
    if(url.pathname.startsWith(`/storage/v1/object/profile-avatars/${uid}/`)){assert.equal(method,'POST');assert.equal(request.headers().authorization,`Bearer ${token}`);return json({Key:'avatar'});}
    if(url.pathname==='/rest/v1/profiles'){

@@ -227,3 +227,21 @@ test('foreground after five minutes relocks and background invalidates an in-fli
   assert.equal(tree.root.findByType('Modal'), modal); assert.equal(tree.root.findAllByType('SafeAreaView').length, 0);
   await act(async () => tree.unmount());
 });
+
+test('startup recovery reports a failed normal sign-in without dismissing concealment', async () => {
+  for (const throws of [false, true]) {
+    const Component = load('AppLock', { ready: true, preferences: { appLock: false } }, {
+      '../src/lib/supabase': { supabase: { auth: { signOut: async () => {
+        if (throws) throw new Error('Synthetic bridge failure');
+        return { error: new Error('Synthetic auth failure') };
+      } } } },
+    });
+    const tree = await render(Component, { authReady: false, protectedScreen: false, userId: null, startupError: 'Could not restore sign-in' });
+    await act(async () => { tree.root.findAllByType('Pressable')[1].props.onPress(); await tick(); });
+    const alerts = tree.root.findAllByType('Text').filter(node => node.props.accessibilityRole === 'alert');
+    assert.ok(alerts.some(node => /Couldn’t/.test(node.props.children)), 'sign-out failure must be visible during startup recovery');
+    assert.equal(tree.root.findByType('Modal').props.visible, true);
+    assert.equal(tree.root.findAllByType('Pressable')[1].props.disabled, false);
+    await act(async () => tree.unmount());
+  }
+});

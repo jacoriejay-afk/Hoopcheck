@@ -25,7 +25,7 @@ const uid='11111111-1111-4111-8111-111111111111', team='22222222-2222-4222-8222-
      if(body.p_mode==='followers')return json([]);
      return json([{target_type:'team',target_id:team,display_name:'Design Club'},{target_type:'fan',target_id:uid,id:uid,display_name:'Design Fan'},{target_type:'player',target_id:uid,id:uid,account_type:'player',display_name:'MUST NOT SHOW PLAYER'}]);
     }
-    if(url.pathname==='/rest/v1/teams')return json({id:team,name:'Design Club',city:'Paris',country:'France',league_name:'Design League',logo_url:'https://media.test/logo.png',logo_bg:'light'});
+    if(url.pathname==='/rest/v1/teams'){const row={id:team,name:'Design Club',city:'Paris',country:'France',league_name:'Design League',logo_url:'https://media.test/logo.png',logo_bg:'light'};return json(route.request().headers().accept?.includes('vnd.pgrst.object')?row:[row]);}
     if(url.pathname==='/rest/v1/womens_teams')return json({id:team,name:'Design Women',city:'Paris',country:'France',league_name:'Design League',logo_url:'https://media.test/missing.png'});
     if(url.pathname.startsWith('/rest/v1/'))return json([]);
    }
@@ -33,8 +33,10 @@ const uid='11111111-1111-4111-8111-111111111111', team='22222222-2222-4222-8222-
    return route.abort();
   });
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
-  await page.addInitScript(()=>localStorage.setItem('hoopcheck:device-preferences:v1',JSON.stringify({haptics:false,appLock:false,onboardingDone:true})));
-  await page.goto(base);await page.getByRole('button',{name:'Create an account',exact:true}).waitFor();
+  await page.addInitScript(()=>{const key='hoopcheck:device-preferences:v1';if(!localStorage.getItem(key))localStorage.setItem(key,JSON.stringify({haptics:false,appLock:false,onboardingDone:false}));});
+  // Fresh launch: the sole startup presentation must dismiss and release input.
+  await page.goto(base);await page.getByRole('button',{name:'Skip',exact:true}).click();
+  await page.getByRole('button',{name:'Create an account',exact:true}).waitFor();
   await page.getByRole('img',{name:'HoopCheck™',exact:true}).waitFor();
   await page.getByRole('link',{name:'About HoopCheck™ →',exact:true}).click();await page.getByText('Our mission',{exact:true}).waitFor();
   await page.screenshot({path:`${output}/about-${theme}.png`,fullPage:true});
@@ -42,6 +44,16 @@ const uid='11111111-1111-4111-8111-111111111111', team='22222222-2222-4222-8222-
   await page.getByRole('textbox',{name:'Email',exact:true}).waitFor();assert.equal(new URL(page.url()).pathname,'/sign-in');
   const token=Buffer.from('{"alg":"HS256"}').toString('base64url')+'.'+Buffer.from(JSON.stringify({sub:uid,aud:'authenticated',exp:Math.floor(Date.now()/1000)+3600,role:'authenticated'})).toString('base64url')+'.fixture';
   await page.addInitScript(({token,user})=>localStorage.setItem('sb-fixture-auth-token',JSON.stringify({access_token:token,refresh_token:'fixture',token_type:'bearer',expires_at:Math.floor(Date.now()/1000)+3600,user})),{token,user});
+  // Restored auth with unfinished onboarding reproduces the reported startup
+  // conditions in RN Web. This cannot establish UIKit touch delivery on iPhone.
+  await page.evaluate(()=>localStorage.setItem('hoopcheck:device-preferences:v1',JSON.stringify({haptics:false,appLock:false,onboardingDone:false})));
+  await page.goto(base+'/dashboard');await page.getByRole('button',{name:'Skip',exact:true}).click();
+  await page.getByRole('heading',{name:'Explore basketball',exact:true}).filter({visible:true}).waitFor();
+  await page.getByText('Sign out',{exact:true}).scrollIntoViewIfNeeded();
+  await page.getByTestId('directory-teams').click();
+  await page.getByRole('tab',{name:'Home',exact:true}).click();
+  await page.getByRole('heading',{name:'Explore basketball',exact:true}).filter({visible:true}).waitFor();
+  console.log(`PASS ${theme}: fresh/restored-auth onboarding dismissal, dashboard scroll and directory/tab input`);
   await page.goto(base+'/account');
   for (const [label,path] of [['Owner HQ on website','/owner-hq'],['Ambassador HQ on website','/ambassador-hq']]) {
     await page.getByRole('button',{name:label,exact:true}).click();
@@ -61,7 +73,7 @@ const uid='11111111-1111-4111-8111-111111111111', team='22222222-2222-4222-8222-
   await page.screenshot({path:`${output}/team-artwork-${theme}.png`,fullPage:true});
   await page.goto(base+'/womens/'+team);await page.getByRole('img',{name:'Design Women crest',exact:true}).waitFor();
   await page.screenshot({path:`${output}/team-artwork-fallback-${theme}.png`,fullPage:true});
-  await page.setViewportSize({width:320,height:740});await page.goto(base+'/dashboard');await page.getByText('Explore basketball',{exact:true}).waitFor();
+  await page.setViewportSize({width:320,height:740});await page.goto(base+'/dashboard');await page.getByRole('heading',{name:'Explore basketball',exact:true}).filter({visible:true}).waitFor();
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));
   await page.screenshot({path:`${output}/dashboard-320-${theme}.png`,fullPage:true});
   assert.ok(rpcCalls>=3);assert.deepEqual(errors,[]);console.log(`PASS ${theme}: public About/search gate, native connections retry/fan scope/tabs/empty/navigation, decoded logo/failure fallback, 320px layout`);
