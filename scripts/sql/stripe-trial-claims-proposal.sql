@@ -33,3 +33,54 @@ end;
 $$;
 revoke all on function public.reserve_stripe_trial(uuid) from public, anon, authenticated;
 grant execute on function public.reserve_stripe_trial(uuid) to service_role;
+
+-- Bind a reservation to its Checkout Session once Stripe creates it.
+-- Service-role only. Refuse to replace a different session or redeem twice.
+create or replace function public.bind_stripe_trial_session(
+  p_user_id uuid, p_session_id text
+)
+returns boolean
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare v_updated integer;
+begin
+  if p_session_id is null or p_session_id !~ '^cs_' then
+    return false;
+  end if;
+  update public.stripe_trial_claims
+     set checkout_session_id = p_session_id
+   where user_id = p_user_id
+     and state = 'reserved'
+     and (checkout_session_id is null or checkout_session_id = p_session_id);
+  get diagnostics v_updated = row_count;
+  return v_updated = 1;
+end;
+$$;
+revoke all on function public.bind_stripe_trial_session(uuid,text) from public, anon, authenticated;
+grant execute on function public.bind_stripe_trial_session(uuid,text) to service_role;
+
+-- Redeem only when the signed Stripe webhook confirms trialing status
+-- and the session matches the previously bound reservation.
+create or replace function public.redeem_stripe_trial(
+  p_user_id uuid, p_session_id text
+)
+returns boolean
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare v_updated integer;
+begin
+  update public.stripe_trial_claims
+     set state = 'redeemed', redeemed_at = now()
+   where user_id = p_user_id
+     and checkout_session_id = p_session_id
+     and state = 'reserved';
+  get diagnostics v_updated = row_count;
+  return v_updated = 1;
+end;
+$$;
+revoke all on function public.redeem_stripe_trial(uuid,text) from public, anon, authenticated;
+grant execute on function public.redeem_stripe_trial(uuid,text) to service_role;
