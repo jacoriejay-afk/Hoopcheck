@@ -99,6 +99,8 @@ function RootLayout() {
           contentStyle: { backgroundColor: theme.background },
         }}
       >
+        <Stack.Screen name="connections" options={{ title: "Connections" }} />
+        <Stack.Screen name="about" options={{ title: "About HoopCheck" }} />
         <Stack.Screen name="team-hub/groups/index" options={{ title: "HoopGroups" }} />
         <Stack.Screen name="team-hub/groups/[teamId]" options={{ title: "Club group" }} />
         <Stack.Screen name="fan-live" options={{ title: "Live Games" }} />
@@ -108,8 +110,6 @@ function RootLayout() {
         <Stack.Screen name="reels" options={{ headerShown: false }} />
         <Stack.Screen name="account" options={{ title: "Account" }} />
         <Stack.Screen name="account/edit" options={{ title: "Edit profile" }} />
-        <Stack.Screen name="connections" options={{ title: "Connections" }} />
-        <Stack.Screen name="about" options={{ title: "About HoopCheck" }} />
         <Stack.Screen name="settings" options={{ title: "Settings" }} />
         <Stack.Screen name="web" options={{ title: "HoopCheck" }} />
         <Stack.Screen name="index" options={{ title: "HoopCheck™", headerShown: false }} />

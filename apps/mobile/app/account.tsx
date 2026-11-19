@@ -35,9 +35,9 @@ export default function AccountScreen() {
         {account.user.accountType === "player" ? <Button secondary onPress={() => router.push({ pathname: "/players/[id]", params: { id: account.user.id } })}>View public player profile</Button> : null}
         <Pressable accessibilityRole="link" onPress={() => router.push({ pathname: "/web", params: { path: "/account" } })} style={{ minHeight: 48, justifyContent: "center" }}><Text style={{ color: theme.accent }}>Edit profile and manage account on HoopCheck</Text></Pressable>
       </> : <View style={{ gap: 12 }}><Text accessibilityRole="alert" style={{ color: theme.foreground }}>{error}</Text><Button secondary onPress={retry}>Try again</Button></View>}
+      <Button secondary onPress={() => router.push("/settings")}>Device settings</Button>
       <Button secondary onPress={() => router.push("/connections")}>Connections</Button>
       <Button secondary onPress={() => router.push("/about")}>About HoopCheck</Button>
-      <Button secondary onPress={() => router.push("/settings")}>Device settings</Button>
       <Button secondary disabled={signingOut} onPress={() => void signOut()}>{signingOut ? "Signing out…" : "Sign out of this device"}</Button>
       {signOutError ? <Text accessibilityRole="alert" style={{ color: theme.foreground }}>{signOutError}</Text> : null}
     </ScrollView>

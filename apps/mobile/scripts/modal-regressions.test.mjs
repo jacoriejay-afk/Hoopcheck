@@ -18,11 +18,11 @@ function load(name, state, overrides = {}) {
   const code = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } }).outputText;
   const exports = {};
   const stubs = {
+    './BrandLogo': { BrandLogo: () => null },
     'react-native': { Modal: 'Modal', Pressable: 'Pressable', Text: 'Text', View: 'View', Image: 'Image', AppState: { addEventListener: () => ({ remove() {} }) } },
     'react-native-safe-area-context': { SafeAreaView: 'SafeAreaView' },
     '../src/native/preferences': { useDevicePreferences: () => state },
     '../src/theme': { useEntryTheme: () => ({}) },
-    './BrandLogo': { BrandLogo: () => null },
     './Motion': { Reveal: ({ children }) => children },
     '../assets/hoopcheck-mark.png': 1,
     'expo-local-authentication': { authenticateAsync: async () => ({ success: true }) },
