@@ -314,10 +314,9 @@ export async function POST(
     // The seven-day offer is for first-time monthly members only. Check both
     // the HoopCheck subscription record and Stripe's complete customer history;
     // a canceled subscription must never reset eligibility.
-    // Explicitly disabled until isolated trial tests and atomic eligibility reservation pass.
-    // Never enable in production merely because this branch is deployed.
-    // Hard stop: do not allow a flag alone to bypass the missing atomic reservation.
-    // Replace this only after the reservation RPC and webhook lifecycle are verified.
+    // Opt-in is production-only and defaults to off when the flag is absent.
+    // Stripe mode and key checks must also pass before trial eligibility is evaluated.
+    // Do not enable the flag until live billing and signed webhook readiness are approved.
     const trialRolloutEnabled =
       process.env.VERCEL_ENV === "production" &&
       process.env.HOOPCHECK_SEVEN_DAY_TRIAL_ENABLED === "true" &&
