@@ -29,7 +29,7 @@ export default function ClubGroups() {
   }, [uid, query, page, scope, offline, revision]);
   const current = !offline && result?.scope === scope ? result.data : null;
   return <View style={{ flex: 1, backgroundColor: theme.background }}>
-    <View style={{ padding: 20, gap: 12 }}><Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 30, fontWeight: "900" }}>HoopGroups</Text><Text style={{ color: theme.muted }}>Explore club fan spaces. Fans can join and take part under the existing group rules.</Text>
+    <View style={{ padding: 20, gap: 12 }}><Text style={{ color: theme.muted }}>Explore club fan spaces. Fans can join and take part under the existing group rules.</Text>
       <TextInput accessibilityLabel="Search club groups" placeholder="Search club groups" placeholderTextColor={theme.muted} maxLength={120} value={query} onChangeText={value => { setQuery(value); setPage(0); }} style={{ minHeight: 48, padding: 12, color: theme.foreground, backgroundColor: theme.input, borderColor: theme.border, borderWidth: 1, borderRadius: theme.radius.control }} />
       {accountError || error || offline ? <Text accessibilityRole="alert" style={{ color: theme.muted }}>{offline ? "Reconnect to browse club groups." : error || accountError}</Text> : null}
       {!account && !accountLoading ? <Button secondary onPress={retry}>Verify account again</Button> : null}
