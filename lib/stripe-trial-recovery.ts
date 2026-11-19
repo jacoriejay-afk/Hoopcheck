@@ -46,3 +46,27 @@ export async function reconcileExpiredTrialReservation(
   const released = await releaseClaim(userId, boundSessionId);
   return released ? "released" : "retained";
 }
+
+/**
+ * A retry may return the exact same still-open Stripe Checkout Session.
+ * Never create a second trial session for an existing claim.
+ * Session must be fetched server-side by the claim's stored session ID.
+ */
+export function canReuseOpenTrialSession(
+  session: Pick<Stripe.Checkout.Session,
+    "id" | "status" | "mode" | "subscription" | "metadata" | "client_reference_id" | "url">,
+  userId: string,
+  boundSessionId: string
+): boolean {
+  return Boolean(userId) &&
+    session.id === boundSessionId &&
+    boundSessionId.startsWith("cs_") &&
+    session.status === "open" &&
+    session.mode === "subscription" &&
+    session.subscription == null &&
+    session.client_reference_id === userId &&
+    session.metadata?.user_id === userId &&
+    session.metadata?.stripe_trial_reserved === "true" &&
+    typeof session.url === "string" &&
+    session.url.startsWith("https://checkout.stripe.com/");
+}
