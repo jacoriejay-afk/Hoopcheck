@@ -1,8 +1,38 @@
 # HoopCheck Build 8 — final release readiness
 
 Updated 2026-11-19. PR [#741](https://github.com/jacoriejay-afk/Hoopcheck/pull/741),
-branch `release/build8-final`. Product source: `cd61713919d9b98cdfcb8b54f88141b8ee078610`.
-Documentation-only follow-ups do not change that product source.
+branch `release/build8-final`. Previous tested product baseline:
+`cd61713919d9b98cdfcb8b54f88141b8ee078610`. The compatibility follow-up below
+changes migration 4 and regression coverage; historical CI is not proof for it.
+
+## Compatibility follow-up after production catalog audit
+
+Migration 4 now preserves legacy username matching, men's directory separation,
+signatures/defaults and masked country filtering. The new boolean-only
+`is_player_country_public(uuid)` RPC reuses canonical player-profile visibility,
+moderation and MFA authorization. Its public wrapper is an invoker; the private
+helper has an empty search path and no PUBLIC execution grant. It returns false
+for absent/hidden/suspended/MFA-denied targets and never returns a country value.
+
+Fresh read-only production metadata was restored into an isolated PostgreSQL 17
+database: 101 tables, 110 functions, actual role/column/function/schema ACLs and
+policies, synthetic records only. All five candidate migrations passed and rolled
+back, preserving Stripe/manual membership access and seeded application records;
+Apple remained disabled. No production migrations or records were changed.
+
+Local validation passed: both privacy SQL suites, StoreKit SQL suite, production
+catalog rehearsal, root/mobile TypeScript, all 27 native test files (including
+eight player-profile cases). Negative controls prove the suite rejects removed
+username matching, mixed directories, missing consent authorization and omitted
+private-column restrictions. CI now runs these compatibility negative controls.
+Remote CI for this follow-up must be checked on its own commit, not inferred from
+the six successful workflows on `8c53ea8b`.
+
+Remaining gates: migration 5 still breaks old raw-private-column clients. Exact
+Build 7 source was unavailable in the prior audit; minimum-version/support policy
+and physical-device validation remain required. Deploy prepared APIs and compatible
+web/native readers before separately approving migration 5. MFA activation needs
+enrollment/recovery compatibility validation. No merge or hosted rollout is implied.
 
 **Decision: not ready for owner approval to merge and start a production build.**
 Automated and isolated database evidence is recorded below. Physical iPhone
@@ -118,7 +148,7 @@ Apply only with explicit owner approval, in this order:
 | 1 | `20261118162305_player_profile_country_privacy.sql` | `bea4ed8b6256ce32d0a155b71a61939b336731b1d23e9d3dc7a15c94f4328349` |
 | 2 | `20261118162456_opted_in_mfa_enforcement.sql` | `212beab0423eae69baa0fe8416b45b6c35fbe1c42cf793ac66bc14fedf1f62a5` |
 | 3 | `20261119043244_storekit_membership_sources.sql` | `c6c48c49769d25c903bb29bd8efa7c7781038a6c87b2e520d22974c26348a708` |
-| 4 | `20261119074537_profile_private_field_boundary.sql` | `26fd5ef663c71c3b4c6cff64ed21adc5b8df4d86a5208986f243c58a1cc217ec` |
+| 4 | `20261119074537_profile_private_field_boundary.sql` | `34215c632e55b582f7331d2f563c19371130d77cec00ce6e60df6d4c6da49e0b` |
 | 5 | `20261119075626_restrict_private_profile_columns.sql` | `d4c7392ddd914de521ee93ee128318e34b62fb3aa89552baed2e038595ebdb63` |
 
 First four prepare APIs/MFA/membership. Deploy compatible owner and username

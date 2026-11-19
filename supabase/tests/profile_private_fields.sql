@@ -105,6 +105,13 @@ $function$
 ;
 \ir ../migrations/20261118162456_opted_in_mfa_enforcement.sql
 \ir ../migrations/20261119074537_profile_private_field_boundary.sql
+-- Phase 1 keeps old clients working until the separately approved restriction.
+SET LOCAL ROLE anon;
+DO $$ BEGIN
+ IF NOT has_column_privilege(current_user,'public.profiles','current_country','SELECT') THEN RAISE EXCEPTION 'prepare phase broke old raw-column clients'; END IF;
+ PERFORM current_country FROM public.profiles LIMIT 1;
+END $$;
+RESET ROLE;
 \ir ../migrations/20261119075626_restrict_private_profile_columns.sql
 SET LOCAL ROLE anon;
 SELECT set_config('request.jwt.claims','{"role":"anon"}',true);
@@ -182,6 +189,52 @@ RESET ROLE;
 DO $$ BEGIN
  IF EXISTS(SELECT FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname IN ('get_own_profile','get_public_player_profile','search_public_players','search_public_players_by_username','search_public_players_page','can_view_player_feed_post','get_social_suggestions') AND p.prosecdef) THEN RAISE EXCEPTION 'privileged public projection exposed'; END IF;
  IF EXISTS(SELECT FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='hoopcheck_security' AND p.prosecdef AND NOT coalesce(p.proconfig,'{}') @> ARRAY['search_path=""']) THEN RAISE EXCEPTION 'unsafe private search path'; END IF;
+END $$;
+-- Legacy web/native calls and the new username API must keep distinct contracts.
+SET LOCAL ROLE anon;
+SELECT set_config('request.jwt.claims','{"role":"anon"}',true);
+SELECT set_config('request.jwt.claim.sub','',true);
+DO $$ BEGIN
+ IF (SELECT count(*) FROM public.search_public_players())<>2 THEN RAISE EXCEPTION 'legacy defaulted men directory changed'; END IF;
+ IF NOT EXISTS(SELECT FROM public.search_public_players('player_one') WHERE id='11111111-1111-4111-8111-111111111111' AND current_country IS NULL AND avatar_url IS NULL) THEN RAISE EXCEPTION 'legacy username search or privacy lost'; END IF;
+ IF EXISTS(SELECT FROM public.search_public_players(p_query=>'player_two')) THEN RAISE EXCEPTION 'women leaked into men directory'; END IF;
+ IF NOT EXISTS(SELECT FROM public.search_public_players_by_username(p_username=>'player_two') WHERE basketball_type='womens') THEN RAISE EXCEPTION 'new cross-directory username contract lost'; END IF;
+ IF EXISTS(SELECT FROM public.search_public_players_page(p_query=>'player_two')) THEN RAISE EXCEPTION 'paged men directory changed'; END IF;
+ IF NOT EXISTS(SELECT FROM public.search_public_players_page(p_query=>'player_one') WHERE current_country IS NULL) THEN RAISE EXCEPTION 'paged username search lost'; END IF;
+ IF EXISTS(SELECT FROM public.search_public_players('Owner updated country')) OR EXISTS(SELECT FROM public.search_public_players(p_country=>'Owner updated country')) THEN RAISE EXCEPTION 'legacy private country inference'; END IF;
+ IF public.is_player_country_public(NULL) OR public.is_player_country_public('00000000-0000-4000-8000-000000000000') THEN RAISE EXCEPTION 'unknown identity consent proof'; END IF;
+ IF public.is_player_country_public('11111111-1111-4111-8111-111111111111') THEN RAISE EXCEPTION 'private country consent leaked'; END IF;
+ IF public.is_player_country_public('44444444-4444-4444-8444-444444444444') THEN RAISE EXCEPTION 'suspended consent leaked'; END IF;
+END $$;
+RESET ROLE;
+UPDATE public.profiles SET current_country_public=true WHERE id IN ('22222222-2222-4222-8222-222222222222','33333333-3333-4333-8333-333333333333');
+SET LOCAL ROLE anon;
+DO $$ BEGIN
+ IF NOT public.is_player_country_public('22222222-2222-4222-8222-222222222222') THEN RAISE EXCEPTION 'public opt-in unavailable'; END IF;
+ IF public.is_player_country_public('33333333-3333-4333-8333-333333333333') THEN RAISE EXCEPTION 'anonymous players-only consent leaked'; END IF;
+END $$;
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','55555555-5555-4555-8555-555555555555',true);
+SELECT set_config('request.jwt.claims','{"role":"authenticated","aal":"aal1"}',true);
+DO $$ BEGIN IF public.is_player_country_public('33333333-3333-4333-8333-333333333333') THEN RAISE EXCEPTION 'fan players-only consent leaked'; END IF; END $$;
+SELECT set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',true);
+DO $$ BEGIN IF public.is_player_country_public('22222222-2222-4222-8222-222222222222') THEN RAISE EXCEPTION 'consent bypassed MFA'; END IF; END $$;
+SELECT set_config('request.jwt.claims','{"role":"authenticated","aal":"aal2"}',true);
+DO $$ BEGIN
+ IF NOT public.is_player_country_public('33333333-3333-4333-8333-333333333333') THEN RAISE EXCEPTION 'authorized player consent unavailable'; END IF;
+ IF public.is_player_country_public('11111111-1111-4111-8111-111111111111') THEN RAISE EXCEPTION 'owner opt-out reported public'; END IF;
+END $$;
+SELECT set_config('request.jwt.claims','{"role":"authenticated","aal":"aal2","is_anonymous":true}',true);
+DO $$ BEGIN IF public.is_player_country_public('33333333-3333-4333-8333-333333333333') THEN RAISE EXCEPTION 'anonymous Auth players-only consent leaked'; END IF; END $$;
+RESET ROLE;
+UPDATE public.profiles SET profile_visibility='private' WHERE id='33333333-3333-4333-8333-333333333333';
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claims','{"role":"authenticated","aal":"aal2"}',true);
+DO $$ BEGIN IF public.is_player_country_public('33333333-3333-4333-8333-333333333333') THEN RAISE EXCEPTION 'hidden profile consent leaked'; END IF; END $$;
+RESET ROLE;
+DO $$ BEGIN
+ IF (SELECT prosecdef FROM pg_proc WHERE oid='public.is_player_country_public(uuid)'::regprocedure) THEN RAISE EXCEPTION 'public consent RPC must be invoker'; END IF;
+ IF EXISTS(SELECT FROM pg_proc p CROSS JOIN LATERAL aclexplode(p.proacl) a WHERE p.oid IN ('public.is_player_country_public(uuid)'::regprocedure,'hoopcheck_security.is_player_country_public(uuid)'::regprocedure) AND a.grantee=0) THEN RAISE EXCEPTION 'PUBLIC can execute consent helpers'; END IF;
 END $$;
 ROLLBACK;
 SELECT 'PASS: raw private fields denied, masked current/legacy RPCs, owner reads/updates, cross-account/anonymous/MFA/future-column isolation; fixtures rolled back' AS result;

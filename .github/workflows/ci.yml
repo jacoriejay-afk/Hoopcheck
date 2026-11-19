@@ -89,6 +89,7 @@ jobs:
           createdb -h 127.0.0.1 -U postgres hoopcheck_private_fields_test
           psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_private_fields_test -f supabase/tests/profile_private_fields.sql
           PGHOST=127.0.0.1 PGUSER=postgres node scripts/test-profile-private-sql-negative.mjs
+          PGHOST=127.0.0.1 PGUSER=postgres node scripts/test-profile-compatibility-sql-negative.mjs
 
       - name: Verify optional MFA policies and privileged request enforcement
         env:

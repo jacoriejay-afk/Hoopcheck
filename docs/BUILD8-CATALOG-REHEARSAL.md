@@ -19,6 +19,14 @@ Storage, Realtime, payment and performance smoke tests still need staging.
 
 ## Findings and fix
 
+Latest compatibility follow-up repeats the schema-only export/rehearsal after
+the migration 4 audit. It verifies legacy username/defaulted calls, men's versus
+cross-directory username search, privacy-safe country consent, owner/MFA boundaries,
+and both Stripe Premium and manual Pro membership preservation with Apple disabled.
+The isolated transaction rolls back, leaving zero profile fixtures and no new
+consent RPC or Apple configuration table. Focused SQL suites also cover the
+prepare-before-restrict transition; mutation controls fail on each repaired defect.
+
 The previous privacy migration failed against production's real legacy search
 signature: `cannot remove parameter defaults from existing function`. Retaining
 those defaults also made positional calls ambiguous with the new username RPC.
@@ -86,9 +94,9 @@ To clean up only this disposable test container:
 `docker rm -f hoop-build8-rehearsal`.
 
 Protected snapshot SHA-256:
-`aee57005c738377e6c1fe9b3e81b34623679a7f017cdda225afc43039f132314`.
+`3f4c32653ee9a43b09e34dd30e378708bef6848a4242a218521ef8606796264c`.
 Extras SHA-256:
-`03e8ad63d30b0565bfc78d71488a1f6762ce7b1f1d93c98f57d3301fd739f395`.
-Execution logs for this session: `/tmp/hoop-catalog-restore.log` and
-`/tmp/hoop-prod-catalog-rehearsal.log`. No protected snapshot content is included
+`09cddf77a42cb1dda108b093067cf53b1ea14fa19e5db94d9787549d64df0bcb`.
+Execution logs for this session: `/workspace/hoopcheck-rehearsal-private/restore.log`
+and `/workspace/hoopcheck-rehearsal-private/rehearsal.log`. No protected snapshot content is included
 in this repository. Refresh/rehearse if the target schema changes before approval.

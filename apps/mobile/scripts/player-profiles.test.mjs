@@ -29,6 +29,18 @@ test('canonical profile RPC and country opt-in mask private current location',as
 test('missing canonical profile never falls back to another user raw row',async()=>{
  const requests=[];const result=await readPlayerProfile(client(async input=>{requests.push(new URL(String(input)).pathname);return Response.json([]);}),viewer,target);assert.equal(result,null);assert.deepEqual(requests,['/rest/v1/rpc/get_public_player_profile']);
 });
+test('country consent errors and non-boolean responses fail closed without raw profile fallback',async()=>{
+ for(const proof of ['true',null,{error:'unavailable'}]){
+  const requests=[];
+  const result=await readPlayerProfile(client(async input=>{
+   const path=new URL(String(input)).pathname;requests.push(path);
+   if(path.endsWith('/get_public_player_profile'))return Response.json([profile]);
+   return Response.json(proof,proof?.error?{status:503}:undefined);
+  }),viewer,target);
+  assert.equal(result.current_country,null);
+  assert.deepEqual(requests,['/rest/v1/rpc/get_public_player_profile','/rest/v1/rpc/is_player_country_public']);
+ }
+});
 test('owners can view their own private profile but cannot reveal an unapproved avatar',async()=>{
  const requests=[];const result=await readPlayerProfile(client(async input=>{
   const url=new URL(String(input));requests.push(url.pathname);

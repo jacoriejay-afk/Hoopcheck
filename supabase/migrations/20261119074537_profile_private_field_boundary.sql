@@ -123,6 +123,26 @@ LANGUAGE sql STABLE SECURITY INVOKER SET search_path='' AS $$ SELECT * FROM hoop
 REVOKE ALL ON FUNCTION public.get_public_player_profile(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_public_player_profile(uuid) TO anon,authenticated;
 
+-- Boolean consent proof for native clients. Reuse the canonical profile boundary
+-- so a guessed UUID cannot reveal flags for hidden/suspended or MFA-denied rows.
+-- Country values never leave this helper. A public invoker exposes only a boolean.
+CREATE OR REPLACE FUNCTION hoopcheck_security.is_player_country_public(p_user_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
+ SELECT EXISTS (
+   SELECT 1 FROM public.profiles p
+   WHERE p.id = p_user_id AND p.current_country_public IS TRUE
+     AND EXISTS (SELECT 1 FROM hoopcheck_security.player_profile(p_user_id))
+ );
+$$;
+REVOKE ALL ON FUNCTION hoopcheck_security.is_player_country_public(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION hoopcheck_security.is_player_country_public(uuid) TO anon,authenticated;
+CREATE OR REPLACE FUNCTION public.is_player_country_public(p_user_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER SET search_path = '' AS $$
+ SELECT hoopcheck_security.is_player_country_public(p_user_id);
+$$;
+REVOKE ALL ON FUNCTION public.is_player_country_public(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.is_player_country_public(uuid) TO anon,authenticated;
+
 create or replace function public.search_public_players_by_username(
   p_username text, p_country text default null, p_limit integer default 30, p_offset integer default 0
 )
@@ -183,9 +203,13 @@ as $$
     p.current_team, p.player_verified, p.player_verified_at
   from hoopcheck_security.public_players() p
   where p.profile_visibility = 'public'
+    and p.account_type = 'player'
+    and coalesce(p.moderation_status, 'active') <> 'suspended'
+    and coalesce(p.basketball_type, 'mens') = 'mens'
     and (
       nullif(trim(p_query), '') is null
       or p.display_name ilike '%' || trim(p_query) || '%'
+      or p.username ilike '%' || trim(p_query) || '%'
       or p.country ilike '%' || trim(p_query) || '%'
       or p.current_country ilike '%' || trim(p_query) || '%'
       or p.current_team ilike '%' || trim(p_query) || '%'
