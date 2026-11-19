@@ -6,8 +6,9 @@ Documentation-only follow-ups do not change that product source.
 
 **Decision: not ready for owner approval to merge and start a production build.**
 Automated and isolated database evidence is recorded below. Physical iPhone
-startup/touch, live staging/Sandbox, owner signing/version/environment checks and
-approved production backend/AASA rollout remain gates. No merge, EAS build,
+startup/touch, live staging/Sandbox, remote version/environment checks and
+approved backend rollout/live AASA verification remain gates. Owner-supplied
+verified signing evidence is recorded below. No merge, EAS build,
 TestFlight submission, OTA, production deployment/migration/data/billing change,
 credential mutation or paid service provisioning was performed.
 
@@ -60,6 +61,30 @@ Earlier product source `a8831d81` also passed all six workflows, including Main
 and iOS [44547930097](https://github.com/jacoriejay-afk/Hoopcheck/actions/runs/44547930097).
 Its eleven native browser suites and English/Spanish strict theme sweeps each
 passed 78/78. Tests use synthetic accounts and intercepted localhost traffic.
+
+## Current PR and release-gate classification (2026-11-19)
+
+Audited PR head: `963ac76c15c7380871814b3e4bd9fcab5fe439a7`.
+Latest main: `9e11cb7bf6976174a49562cabf21dddee2f40ffb`.
+The audited head differs from tested product source `cd617139` only in two
+documentation files. This report update is also documentation-only.
+
+| Check | Classification | Evidence / remaining work |
+| --- | --- | --- |
+| Product-source CI | VERIFIED | All six linked Actions runs rechecked: completed/success on `cd617139`. |
+| Exact audited head Actions | PENDING / NOT RUN | Zero Actions runs on `963ac76c`; historical runs are not exact-head runs. |
+| Vercel at audited head | VERIFIED | `hoopcheck`, `hoopcheck-stripe-sandbox`, `next.js`: successful deployments. `app`, `hoopcheckk`: success statuses with “Canceled by Ignored Build Step”. Preview Comments check succeeds. Not native validation. |
+| GitHub mergeability | VERIFIED WITH FRESHNESS LIMIT | true / clean, draft; response base SHA remains old main `5f3de0f9`. Synthetic merge also references old main, so this is not a fresh latest-main calculation. |
+| Latest-main content integration | VERIFIED | Main advanced only by #742; both added blobs are identical on PR head. No content conflict found. |
+| Required-check enforcement | OBSERVED, LIMITED | Prior audit found branch metadata protection disabled and no rulesets; protection-detail API returned 403. Mergeability does not establish release readiness. |
+| Apple signing evidence | VERIFIED (owner-supplied) | Identity, entitlement, profile and expiry below; eventual archive and certificate checks remain separate. |
+| EAS counter / production variable names | PENDING | Authenticated read-only access unavailable; latest Build 7 history is not counter proof. |
+| Live AASA and backend/client rollout | PENDING | #742 is merged; verify live HTTP response and hosted staging compatibility. No production mutation here. |
+| Real isolated StoreKit Sandbox | PENDING | Real purchase, restore, cancellation, refund, ownership and sync need isolated backend/configuration. |
+| Physical iPhone startup / touch / native UI | PHYSICAL DEVICE ONLY | Test affected iPhone 14 Pro / iOS 26.6.2 and capture freeze logs. Browser and unsigned compile tests do not establish UIKit touch, Face ID, safe areas, keyboard or native lifecycle behavior. |
+
+Keep PR draft. No merge, EAS build, TestFlight submission, production mutation or
+Apple credential change was performed for this update.
 
 ## Database rehearsal and deployment dependencies
 
@@ -116,14 +141,26 @@ source tables or overwrite Stripe/commission records as rollback.
 
 ## Apple association and Expo/signing status
 
-Live canonical domain is verified on Vercel project
-`prj_E9zgRLvBt6FcxgwNZ0q9USmrup7s`. Production deployment
-`dpl_E7AdYPsgwTcSvTGvDSQHGjaHrEMg` serves main `5f3de0f9`, which lacks AASA.
-The origin returns HTTP 404 HTML (proxy CONNECT 200 is not the origin status).
-The candidate route returns HTTP 200 JSON locally for
-`Y778LM35G5.online.hoopcheck.app`. The concrete fix is an owner-approved deployment
-of the reviewed candidate, followed by live response and signed-identity checks.
-No production promotion, domain mutation or workaround was made.
+PR #742 is merged into latest main `9e11cb7bf6976174a49562cabf21dddee2f40ffb`.
+Its helper `lib/apple-app-site-association.ts` (blob `a106e2f6`) and single
+`app/.well-known/apple-app-site-association/route.ts` (blob `c725e2c7`) are
+byte-identical on this PR. No duplicate route, reversion or conflict repair is
+needed. The previous production 404 observation concerned old main `5f3de0f9`;
+it is historical, not a current live-domain check. Fresh origin HTTP 200 JSON
+and Apple CDN/device association verification remain pending.
+
+Verified signing evidence supplied by the owner on 2026-11-19:
+
+| Signing check | Status | Evidence |
+| --- | --- | --- |
+| Application identifier | VERIFIED (owner-supplied) | `Y778LM35G5.online.hoopcheck.app` |
+| Associated Domains entitlement | VERIFIED (owner-supplied) | `com.apple.developer.associated-domains` present |
+| Provisioning profile | VERIFIED (owner-supplied) | `K6289M66P8`, expires November 16, 2027 |
+
+This incorporates owner-supplied verified evidence; this audit did not download
+or independently decode the profile. Current certificate validity/revocation and
+the eventual signed Build 8 archive's identity/entitlements remain separate checks.
+No Apple credential was regenerated or changed.
 
 Source configuration: owner `hoopcheck`, project
 `62f822cb-ab9a-42ba-8456-007d2822ef70`, SDK 54, version 0.2.0, bundle
@@ -131,10 +168,25 @@ Source configuration: owner `hoopcheck`, project
 production environment/channel, remote versioning, autoIncrement and requireCommit;
 App Store app ID `6835366982`.
 
-EAS CLI is unauthenticated. Build-log connector failed `Transport closed`.
-Current managed certificate/profile expiry, Apple team/prefix/capability, remote
-counter and native production env remain unverified. Prior Build 7 FINISHED
-metadata is not current signing proof. No keys were downloaded or changed.
+Current remote iOS counter: **PENDING / UNVERIFIED**. Read-only Expo build
+history rechecked on 2026-11-19 shows latest production STORE build FINISHED
+Build 7 (`346afb80-2759-4bd1-95ec-87a4698dee07`). History does not establish the
+current remote version counter. Production autoIncrement would turn 7 into 8,
+but the exact next build number is not confirmed.
+
+EAS production variable names: **PENDING / UNVERIFIED**. Available Expo tools
+expose neither remote app-version counters nor environment listings. There is
+no installed/cached EAS CLI, EXPO_TOKEN is absent, and runtime metadata lists no
+configured secrets. Authenticated read-only queries could not be made. No EAS
+build or environment mutation was attempted; no secret values were requested,
+decrypted, printed or committed.
+
+Expected native names from the release contract (not a verified EAS production
+inventory): `EXPO_PUBLIC_SUPABASE_URL`,
+`EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `EXPO_PUBLIC_HOOPCHECK_API_URL`.
+Optional telemetry: `EXPO_PUBLIC_SENTRY_DSN`. The config also reads
+`SENTRY_ORG` and `SENTRY_PROJECT`. Names/presence alone do not prove valid
+values or matching backend configuration.
 
 Vercel variable names/targets, without decryption, show production Supabase URL/
 publishable/service-role, Stripe secret/webhook/Pro/Premium prices, checkout
