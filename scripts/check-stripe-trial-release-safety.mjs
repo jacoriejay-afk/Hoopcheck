@@ -15,4 +15,14 @@ assert.match(migration, /user_id uuid primary key/,
   "Claims must be unique per user");
 assert.match(migration, /revoke all on function public\.reserve_stripe_trial\(uuid\) from public, anon, authenticated/,
   "Reservation RPC must not be callable by public roles");
+assert.match(migration, /check \\(state in \\('reserved', 'redeemed', 'expired'\\)\\)/,
+  "Expired reservations must remain terminal");
+assert.match(migration, /set state = 'expired'/,
+  "Expiration must retain the claim rather than delete it");
+assert.doesNotMatch(migration, /delete from public\\.stripe_trial_claims/i,
+  "Never delete a trial claim during recovery");
+assert.match(checkout, /"reserve_stripe_trial"/,
+  "Checkout must reserve atomically before trial creation");
+assert.match(checkout, /"bind_stripe_trial_session"/,
+  "Checkout must bind the trial session");
 console.log("Trial release safety checks passed (trial issuance disabled).");
