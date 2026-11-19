@@ -19,7 +19,8 @@ INSERT INTO public.profiles VALUES
  ('33333333-3333-4333-8333-333333333333','player','Other Country','public'),
  ('44444444-4444-4444-8444-444444444444','fan',null,'public'),
  ('55555555-5555-4555-8555-555555555555','player',null,'public'),
- ('66666666-6666-4666-8666-666666666666','coach',null,'public');
+ ('66666666-6666-4666-8666-666666666666','coach',null,'public'),
+ ('77777777-7777-4777-8777-777777777777','manager',null,'public');
 INSERT INTO public.subscriptions VALUES
  ('11111111-1111-4111-8111-111111111111','pro','active','active',now()+interval '30 days'),
  ('44444444-4444-4444-8444-444444444444','premium','active','active',now()+interval '30 days'),
@@ -49,9 +50,9 @@ CREATE OR REPLACE FUNCTION public.is_my_player_country_match(p_author_id uuid)
 $$;
 REVOKE ALL ON FUNCTION public.is_my_player_country_match(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.is_my_player_country_match(uuid) TO authenticated;
--- Synthetic admin predicate returns false. Admin override remains part of production function and needs separate tests.
+-- Synthetic admin identity tests the override branch; production admin-role lookup is not reproduced.
 CREATE OR REPLACE FUNCTION public.is_current_user_admin_or_moderator() RETURNS boolean
- LANGUAGE sql STABLE AS $$ SELECT false $$;
+ LANGUAGE sql STABLE AS $ SELECT auth.uid()='77777777-7777-4777-8777-777777777777'::uuid $;
 GRANT EXECUTE ON FUNCTION public.is_current_user_admin_or_moderator() TO authenticated;
 -- Same predicates as production function, with raw country comparison replaced by protected boolean.
 CREATE OR REPLACE FUNCTION public.can_view_player_feed_post(p_author_id uuid)
@@ -98,6 +99,10 @@ SELECT set_config('request.jwt.claim.sub','66666666-6666-4666-8666-666666666666'
 DO $ BEGIN
  IF NOT public.can_view_player_feed_post('22222222-2222-4222-8222-222222222222') THEN RAISE EXCEPTION 'coach premium follower unexpectedly denied'; END IF;
  IF public.can_view_player_feed_post('33333333-3333-4333-8333-333333333333') THEN RAISE EXCEPTION 'coach without follow allowed'; END IF;
+END $;
+SELECT set_config('request.jwt.claim.sub','77777777-7777-4777-8777-777777777777',true);
+DO $ BEGIN
+ IF NOT public.can_view_player_feed_post('33333333-3333-4333-8333-333333333333') THEN RAISE EXCEPTION 'synthetic admin override denied'; END IF;
 END $;
 RESET ROLE;
 ROLLBACK;
