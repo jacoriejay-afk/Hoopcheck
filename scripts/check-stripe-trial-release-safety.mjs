@@ -48,6 +48,6 @@ assert.ok(webhook.includes('subscription.status !== "trialing"'), "Trial redempt
 assert.ok(webhook.includes('subscription.metadata?.stripe_trial_reserved !== "true"'), "Subscription must carry trial marker");
 assert.ok(webhook.includes('"redeem_stripe_trial"'), "Webhook must redeem bound claim");
 assert.ok(webhook.indexOf('"redeem_stripe_trial"') < webhook.indexOf('await saveSubscription(userId, subscription);'), "Trial claim must redeem before membership is saved");
-assert.ok(checkout.includes('if (!session.url) {'), "Checkout must reject missing hosted URL");
-assert.ok(checkout.includes('Unable to expire trial checkout without URL'), "Trial session without hosted URL must be expired for reconciliation");
+assert.ok(checkout.includes('if (!session.url || (trialEligible && !isTrustedStripeCheckoutUrl(session.url))) {'), "Checkout must reject missing hosted URL");
+assert.ok(checkout.includes('Unable to expire trial checkout with missing or untrusted URL'), "Trial session without hosted URL must be expired for reconciliation");
 console.log("Trial release and webhook safety checks passed (trial issuance disabled).");
