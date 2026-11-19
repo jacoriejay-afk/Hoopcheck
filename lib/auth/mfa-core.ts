@@ -13,7 +13,7 @@ type MfaActions = {
 };
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export type MfaFactor = { id: string; name: string; type: string; verified: boolean };
-export type MfaState = { owner: string; required: boolean; level: "aal1" | "aal2"; factors: MfaFactor[] };
+export type MfaState = { owner: string; required: boolean; level: "aal1" | "aal2"; expiresAt: number; factors: MfaFactor[] };
 export function assuranceForVerifiedUser(token: string, user: VerifiedMfaUser, now = Date.now()): MfaState {
   // The caller MUST first verify this exact token with Auth.getUser(token).
   // Decoding a token alone is not authorization.
@@ -23,7 +23,7 @@ export function assuranceForVerifiedUser(token: string, user: VerifiedMfaUser, n
   const factors = (user.factors ?? []).map(factor => ({ id: factor.id, name: factor.friendly_name?.slice(0, 50) || "Authenticator", type: factor.factor_type, verified: factor.status === "verified" }));
   if (factors.some(factor => !uuid.test(factor.id))) throw new Error("Security settings could not be verified.");
   const level = claims.aal === "aal2" ? "aal2" : "aal1";
-  return { owner: user.id, required: factors.some(factor => factor.verified) && level !== "aal2", level, factors };
+  return { owner: user.id, required: factors.some(factor => factor.verified) && level !== "aal2", level, expiresAt: claims.exp * 1000, factors };
 }
 async function boundedRead<T>(read: () => PromiseLike<T>) {
   let timer: ReturnType<typeof setTimeout>;

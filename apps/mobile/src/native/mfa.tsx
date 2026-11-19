@@ -22,9 +22,9 @@ export function MfaSessionProvider({ userId, children }: { userId: string | null
     return () => data.subscription.unsubscribe();
   }, [retry, userId]);
   useEffect(() => {
-    const listener = AppState.addEventListener("change", state => { if (state === "active") retry(); });
+    const listener = AppState.addEventListener("change", state => { if (state === "active") setRevision(value => value + 1); });
     return () => listener.remove();
-  }, [retry]);
+  }, []);
   useEffect(() => {
     let active = true;
     if (!userId) { setSnapshot({ owner: null, phase: "ready", state: null, error: "" }); return; }
@@ -32,11 +32,18 @@ export function MfaSessionProvider({ userId, children }: { userId: string | null
       const known = verified.current;
       // Retain only a previously server-verified, in-memory identity during a
       // connection loss. Protected features still require online bootstrap.
-      setSnapshot(known?.owner === userId && !known.required ? { owner: userId, phase: "ready", state: known, error: "" } : { owner: userId, phase: "error", state: null, error: "Reconnect to verify your security settings." });
+      setSnapshot(known?.owner === userId && !known.required && known.expiresAt > Date.now() ? { owner: userId, phase: "ready", state: known, error: "" } : { owner: userId, phase: "error", state: null, error: "Reconnect to verify your security settings." });
       return;
     }
-    setSnapshot({ owner: userId, phase: "loading", state: null, error: "" });
-    void readMfaState(supabase, userId).then(state => { if (active) { verified.current = state; setSnapshot({ owner: userId, phase: state.required ? "challenge" : "ready", state, error: "" }); } }).catch(() => { if (active) setSnapshot({ owner: userId, phase: "error", state: null, error: "Your security settings could not be verified. Please try again." }); });
+    const known = verified.current;
+    // A foreground read must not introduce a new native presentation while a
+    // verified session returns from Face ID or the App Store purchase sheet.
+    // Auth events clear this proof synchronously; expiry and account changes
+    // still conceal immediately. Server APIs retain authoritative checks.
+    if (!(known?.owner === userId && !known.required && known.expiresAt > Date.now())) {
+      setSnapshot({ owner: userId, phase: "loading", state: null, error: "" });
+    }
+    void readMfaState(supabase, userId).then(state => { if (active) { verified.current = state; setSnapshot({ owner: userId, phase: state.required ? "challenge" : "ready", state, error: "" }); } }).catch(() => { if (active) { verified.current = null; setSnapshot({ owner: userId, phase: "error", state: null, error: "Your security settings could not be verified. Please try again." }); } });
     return () => { active = false; };
   }, [userId, revision, offline]);
   const current = snapshot.owner === userId ? snapshot : { ...initial, owner: userId };

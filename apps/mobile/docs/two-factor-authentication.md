@@ -48,7 +48,7 @@ for deploying and verifying direct Data API/Storage/Realtime enforcement.
 - Seven core policy/action cases; eleven auth ordering/storage cases, including
   actual installed-SDK MFA/sign-in, sign-out/sign-in and queued cross-account MFA.
 - Sixteen real-renderer lock/lifecycle cases, including MFA sharing one Modal.
-  Twenty native test files pass; existing native auth integration passes.
+  Twenty-one native test files pass; existing native auth integration passes.
 - Nine server/proxy cases cover bearer/cookie MFA, SSR redirect, pending signup,
   invalid proof, public webhooks and owner role preservation.
 - Isolated PostgreSQL engine tests pass row ownership, read/write denial, Storage,
@@ -72,3 +72,5 @@ account changes, five-minute background lock, MFA background recovery and QR/cod
 entry. None of these physical checks is claimed to have passed. Issue #699 remains
 open until device evidence confirms the freeze repair. StoreKit and protected
 30-day account deletion are separate unfinished launch gates.
+
+Foreground revalidation retains only an unexpired, previously server-verified in-memory identity while checking again. This avoids opening a new native Modal during return from Face ID or the App Store sheet. Auth events invalidate proof immediately; expiry, identity changes, a required challenge or a failed read still conceal content. Four provider regressions cover these transitions and prove offline mode cannot restore proof after a failed revalidation. AppLock’s independent five-minute privacy timer remains in force.
