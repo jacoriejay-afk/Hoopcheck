@@ -18,16 +18,19 @@ INSERT INTO public.profiles VALUES
  ('22222222-2222-4222-8222-222222222222','player','secret country','public'),
  ('33333333-3333-4333-8333-333333333333','player','Other Country','public'),
  ('44444444-4444-4444-8444-444444444444','fan',null,'public'),
- ('55555555-5555-4555-8555-555555555555','player',null,'public');
+ ('55555555-5555-4555-8555-555555555555','player',null,'public'),
+ ('66666666-6666-4666-8666-666666666666','coach',null,'public');
 INSERT INTO public.subscriptions VALUES
  ('11111111-1111-4111-8111-111111111111','pro','active','active',now()+interval '30 days'),
  ('44444444-4444-4444-8444-444444444444','premium','active','active',now()+interval '30 days'),
- ('55555555-5555-4555-8555-555555555555','pro','active','active',now()-interval '1 day');
+ ('55555555-5555-4555-8555-555555555555','pro','active','active',now()-interval '1 day'),
+ ('66666666-6666-4666-8666-666666666666','pro','active','active',now()+interval '30 days');
 INSERT INTO public.follow_relationships VALUES
  ('11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222','player'),
  ('11111111-1111-4111-8111-111111111111','33333333-3333-4333-8333-333333333333','player'),
  ('44444444-4444-4444-8444-444444444444','22222222-2222-4222-8222-222222222222','player'),
- ('55555555-5555-4555-8555-555555555555','22222222-2222-4222-8222-222222222222','player');
+ ('55555555-5555-4555-8555-555555555555','22222222-2222-4222-8222-222222222222','player'),
+ ('66666666-6666-4666-8666-666666666666','22222222-2222-4222-8222-222222222222','player');
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY profile_read ON public.profiles FOR SELECT TO authenticated USING(profile_visibility='public' OR id=auth.uid());
 ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
@@ -91,6 +94,11 @@ SELECT set_config('request.jwt.claim.sub','55555555-5555-4555-8555-555555555555'
 DO $$ BEGIN
  IF public.can_view_player_feed_post('22222222-2222-4222-8222-222222222222') THEN RAISE EXCEPTION 'expired subscription allowed'; END IF;
 END $$;
+SELECT set_config('request.jwt.claim.sub','66666666-6666-4666-8666-666666666666',true);
+DO $ BEGIN
+ IF NOT public.can_view_player_feed_post('22222222-2222-4222-8222-222222222222') THEN RAISE EXCEPTION 'coach premium follower unexpectedly denied'; END IF;
+ IF public.can_view_player_feed_post('33333333-3333-4333-8333-333333333333') THEN RAISE EXCEPTION 'coach without follow allowed'; END IF;
+END $;
 RESET ROLE;
 ROLLBACK;
 SELECT 'PASS: synthetic full feed predicate preserved key country/follow/subscription gates' AS result;
