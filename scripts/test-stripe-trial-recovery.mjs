@@ -6,7 +6,7 @@ const source = readFileSync(new URL("../lib/stripe-trial-recovery.ts", import.me
 const js = ts.transpileModule(source, {
   compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 }
 }).outputText;
-const { canReleaseExpiredTrialSession: allowed, reconcileExpiredTrialReservation: reconcile } =
+const { canReleaseExpiredTrialSession: allowed, reconcileExpiredTrialReservation: reconcile, canReuseOpenTrialSession: reusable } =
   await import("data:text/javascript;base64," + Buffer.from(js).toString("base64"));
 
 const user = "11111111-1111-4111-8111-111111111111";
@@ -47,3 +47,20 @@ await assert.rejects(reconcile(user,id,async () => { throw new Error("stripe una
 await assert.rejects(reconcile(user,id,retrieve,async () => { throw new Error("database unavailable"); }));
 assert.equal(await reconcile(user,"invalid",retrieve,release),"retained");
 console.log("Stripe trial reconciliation: 7 additional cases passed");
+
+const openSession = { ...base, id, status: "open", url: "https://checkout.stripe.com/c/pay/cs_test_expired" };
+assert.equal(reusable(openSession,user,id),true,"same open session can be reused");
+for (const [name, change] of [
+  ["expired", {status:"expired"}],
+  ["completed", {status:"complete"}],
+  ["missing url", {url:null}],
+  ["foreign url", {url:"https://example.com/checkout"}],
+  ["wrong owner", {client_reference_id:"other"}],
+  ["existing subscription", {subscription:"sub_test"}],
+  ["wrong mode", {mode:"payment"}],
+  ["no trial marker", {metadata:{user_id:user}}],
+  ["different session", {id:"cs_test_other"}]
+]) {
+ assert.equal(reusable({...openSession,...change},user,id),false,name);
+}
+console.log("Stripe trial same-session retry: 10 cases passed");
