@@ -6,7 +6,7 @@ const source = readFileSync(new URL("../lib/stripe-trial-recovery.ts", import.me
 const js = ts.transpileModule(source, {
   compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 }
 }).outputText;
-const { canReleaseExpiredTrialSession: allowed, reconcileExpiredTrialReservation: reconcile, canReuseOpenTrialSession: reusable } =
+const { canReleaseExpiredTrialSession: allowed, reconcileExpiredTrialReservation: reconcile, canReuseOpenTrialSession: reusable, isTrustedStripeCheckoutUrl: trustedUrl } =
   await import("data:text/javascript;base64," + Buffer.from(js).toString("base64"));
 
 const user = "11111111-1111-4111-8111-111111111111";
@@ -77,3 +77,17 @@ for (const [name, url] of [
   assert.equal(reusable({...openSession,url},user,id),false,name);
 }
 console.log("Stripe trial same-session retry: 17 cases passed");
+
+// Newly created Checkout Sessions must satisfy the same URL trust policy as retries.
+for (const [url, expected] of [
+  ["https://checkout.stripe.com/c/pay/cs_test_valid", true],
+  ["http://checkout.stripe.com/c/pay/cs_test_valid", false],
+  ["https://checkout.stripe.com.evil.example/c/pay/cs_test_valid", false],
+  ["https://evil.example@checkout.stripe.com/c/pay/cs_test_valid", false],
+  ["https://checkout.stripe.com/account", false],
+  ["javascript:alert(1)", false],
+  ["not-a-url", false],
+]) {
+  assert.equal(trustedUrl(url), expected, `new-session checkout URL: ${url}`);
+}
+console.log("Stripe new-session URL trust policy: 7 cases passed");
