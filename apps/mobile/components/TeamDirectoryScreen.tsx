@@ -1,4 +1,5 @@
-import { DirectoryCrest, CountryChip } from "../components/DirectoryIdentity";
+import { EntityArtwork } from "./EntityArtwork";
+import { CountryChip } from "../components/DirectoryIdentity";
 import { Input, Button } from "../src/primitives";
 import { Sheet } from "../components/Sheet";
 import { useCachedRead, useNetwork } from "../src/native/network";
@@ -14,7 +15,7 @@ import { useRouter } from "expo-router";
 import { teamDirectoryQuery, cleanTeamSearch, TEAM_PAGE_SIZE } from "../src/native/teamDirectory";
 import { supabase } from "../src/lib/supabase";
 
-type Team = { id: string; name: string; country: string | null; city: string | null; league_name: string | null; website?: string | null };
+type Team = { logo_url?: string | null; logo_bg?: string | null; id: string; name: string; country: string | null; city: string | null; league_name: string | null; website?: string | null };
 const PAGE_SIZE = TEAM_PAGE_SIZE;
 
 export function TeamDirectoryScreen({ women = false }: { women?: boolean }) {
@@ -103,7 +104,7 @@ export function TeamDirectoryScreen({ women = false }: { women?: boolean }) {
           renderItem={({ item, index }) => (
             <Reveal key={`${appliedTerm}:${item.id}`} index={index}>
             <Pressable accessibilityHint="Hold to preview this team" onLongPress={() => setPreview(item)} onPress={() => router.push({ pathname: women ? "/womens/[id]" : "/teams/[id]", params: { id: item.id } })} style={styles.card}>
-              <DirectoryCrest name={item.name} kind={women ? "women" : "teams"} />
+              <EntityArtwork name={item.name} kind={women ? "women" : "teams"} size={48} logoUrl={item.logo_url} logoBg={item.logo_bg} />
               <View style={styles.cardBody}>
                 <Text style={styles.teamName}>{item.name}</Text>
                 <CountryChip country={item.country} />

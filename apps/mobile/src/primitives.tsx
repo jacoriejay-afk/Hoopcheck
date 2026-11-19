@@ -5,7 +5,7 @@ import { useEntryTheme } from "./theme";
 
 export function GlassCard({ style, children, ...props }: ViewProps) {
   const t = useEntryTheme();
-  const frame = [{ borderRadius: t.radius.hero, borderWidth: 1, borderColor: t.border, overflow: "hidden" as const, padding: t.spacing.xl, backgroundColor: t.surface }, t.shadow, style];
+  const frame = [{ borderRadius: t.radius.card, borderCurve: "continuous" as const, borderWidth: 1, borderColor: t.border, overflow: "hidden" as const, padding: t.spacing.lg, backgroundColor: t.surface }, style];
   return <View {...props} style={frame}>
     {Platform.OS === "ios" && <BlurView pointerEvents="none" intensity={12} tint={t.dark ? "dark" : "light"} style={{ position: "absolute", inset: 0, backgroundColor: t.glassFill }} />}
     {children}
@@ -27,7 +27,7 @@ export function Button({ children, secondary = false, style, ...props }: Pressab
 }
 export function Input({ style, ...props }: TextInputProps) {
   const t = useEntryTheme();
-  return <TextInput placeholderTextColor={t.muted} selectionColor={t.accent} {...props} style={[{ minHeight: 50, paddingHorizontal: t.spacing.md, borderWidth: 1, borderColor: t.border, borderRadius: t.radius.control, color: t.foreground, backgroundColor: t.input, ...t.type.body }, style]} />;
+  return <TextInput keyboardAppearance={t.dark ? "dark" : "light"} placeholderTextColor={t.muted} selectionColor={t.accent} {...props} style={[{ minHeight: 50, paddingHorizontal: t.spacing.md, borderWidth: 1, borderColor: t.border, borderRadius: t.radius.control, color: t.foreground, backgroundColor: t.input, ...t.type.body }, style]} />;
 }
 export function Chip({ children }: { children: string }) {
   const t = useEntryTheme();

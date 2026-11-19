@@ -68,7 +68,6 @@ export default function Notifications() {
   const items = offline ? [] : rows;
   return <View style={{ flex: 1, backgroundColor: theme.background }}>
     <View style={{ padding: 20, gap: 12 }}>
-      <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 30, fontWeight: "900" }}>Alerts</Text>
       <Text style={{ color: theme.muted }}>Follow teams, coaches, and leagues to choose the updates you receive.</Text>
       <Button secondary disabled={busy || failed || offline || !items.some(item => !item.read_at)} onPress={() => void markAll()}>{busy ? "Updating…" : "Mark all as read"}</Button>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{["all", "unread", "games", "clubs", "reviews"].map(value => <Pressable key={value} accessibilityRole="button" aria-pressed={filter === value} accessibilityState={{ selected: filter === value }} onPress={() => setFilter(value)} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 12, borderRadius: theme.radius.control, backgroundColor: filter === value ? theme.accentSurface : theme.chip }}><Text style={{ color: theme.foreground, textTransform: "capitalize" }}>{value}</Text></Pressable>)}</View>

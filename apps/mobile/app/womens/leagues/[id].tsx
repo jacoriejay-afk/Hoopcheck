@@ -2,8 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { FlatList, Pressable, RefreshControl, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { DirectoryCrest, CountryChip } from "../../../components/DirectoryIdentity";
-import { ShareSheet } from "../../../components/ShareSheet";
+import { EntityHero } from "../../../components/EntityHero";
 import { Skeleton } from "../../../components/Motion";
 import { OfflineBanner } from "../../../components/OfflineBanner";
 import { Button, GlassCard } from "../../../src/primitives";
@@ -67,19 +66,13 @@ export default function WomensLeagueScreen() {
   const visible = league?.id === id ? league : null;
   return <SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: theme.background }}>
     <OfflineBanner savedAt={savedAt} />
-    <FlatList data={visible ? teams : []} keyExtractor={item => item.id} contentContainerStyle={{ padding: 20, gap: 12 }}
+    <FlatList data={visible ? teams : []} keyExtractor={item => item.id} contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.md }}
       refreshControl={<RefreshControl refreshing={loading && refresh > 0} onRefresh={() => setRefresh(value => value + 1)} />}
       ListHeaderComponent={<View style={{ gap: 16, marginBottom: 16 }}>
         <Pressable accessibilityRole="link" onPress={() => router.push("/womens")} style={{ minHeight: 48, justifyContent: "center" }}><Text style={{ color: theme.accent }}>‹ Women’s teams</Text></Pressable>
         {visible ? <>
-          <View style={{ backgroundColor: theme.entityHero.background, padding: 24, borderRadius: theme.radius.hero, gap: 12 }}>
-            <DirectoryCrest name={visible.name} kind="leagues" size={88} />
-            <CountryChip country={visible.country} />
-            <Text style={{ color: theme.entityHero.muted }}>WOMEN’S LEAGUE PROFILE</Text>
-            <Text accessibilityRole="header" style={{ color: theme.entityHero.ink, fontSize: 30, fontWeight: "900" }}>{visible.name}</Text>
-            <ShareSheet onHero title={visible.name} path={`/womens/leagues/${visible.id}`} />
-          </View>
-          <GlassCard><Text style={{ color: theme.muted }}>COMPETITION LEVEL</Text><Text style={{ color: theme.foreground }}>{visible.level || "Not listed"}</Text></GlassCard>
+          <EntityHero name={visible.name} country={visible.country} kind="leagues" label="WOMEN’S LEAGUE PROFILE" path={`/womens/leagues/${visible.id}`} />
+          <GlassCard><Text style={{ color: theme.muted, fontSize: 11, fontWeight: "800", letterSpacing: 1 }}>COMPETITION LEVEL</Text><Text style={{ color: theme.foreground, fontSize: 16, fontWeight: "700", marginTop: 7 }}>{visible.level || "Not listed"}</Text></GlassCard>
           <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 22, fontWeight: "800" }}>Teams</Text>
         </> : loading ? <Skeleton profile /> : <Text style={{ color: theme.foreground }}>League unavailable.</Text>}
       </View>}

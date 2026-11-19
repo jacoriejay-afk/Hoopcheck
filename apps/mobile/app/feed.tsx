@@ -1,5 +1,6 @@
+import { BrandLogo } from "../components/BrandLogo";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { FlatList, Image, Pressable, RefreshControl, Share, Text, TextInput, View, type ViewToken } from "react-native";
+import { FlatList, Pressable, RefreshControl, Share, Text, TextInput, View, type ViewToken } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Button } from "../src/primitives";
@@ -13,8 +14,6 @@ import { useEntryTheme } from "../src/theme";
 import { useNativeAccount } from "../src/native/useNativeAccount";
 import { useNetwork, requireOnline } from "../src/native/network";
 import { feedAction, isFeedId, moderateFeedText, publishFeedPoll, readFeedChecks, readFeedComments, readFeedPage, readFeedSaved, readSharedFeedPost, toggleFeedCheck, validatedPollOptions, type FeedComment, type FeedCursor, type FeedPost } from "../src/native/feedClient";
-// eslint-disable-next-line @typescript-eslint/no-require-imports -- Metro bundles the official local artwork.
-const brandMark = require("../assets/hoopcheck-mark.png");
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
 type CommentPage = { rows: FeedComment[]; more: boolean; offset: number; loading: boolean; error: string };
 export function FeedScreen({ initialReels = false }: { initialReels?: boolean }) {
@@ -149,8 +148,8 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
   </View>;
   return <SafeAreaView edges={["top", "left", "right", "bottom"]} style={{ flex: 1, backgroundColor: theme.background }}>
     <View style={{ paddingHorizontal: 16, paddingVertical: 8, flexDirection: "row", alignItems: "center", gap: 10 }}>
-      <Image alt="HoopCheck" source={brandMark} accessibilityLabel="HoopCheck" style={{ width: 36, height: 36 }} resizeMode="contain" />
-      <View accessibilityRole="tablist" style={{ flex: 1, flexDirection: "row", gap: 6 }}>{[false, true].map(value => <Pressable key={String(value)} accessibilityRole="tab" accessibilityState={{ selected: reels === value }} aria-selected={reels === value} onPress={() => setReels(value)} style={[touch, { backgroundColor: reels === value ? theme.surface : theme.background, borderColor: reels === value ? theme.accent : theme.border }]}><Text style={{ ...textStyle, fontSize: 14, fontWeight: "700" }}>{value ? "Reels" : "HoopFeed"}</Text></Pressable>)}</View>
+      <BrandLogo compact />
+      <View accessibilityRole="tablist" style={{ flex: 1, flexDirection: "row", gap: 6 }}>{[false, true].map(value => <Pressable key={String(value)} accessibilityRole="tab" accessibilityState={{ selected: reels === value }} aria-selected={reels === value} onPress={() => setReels(value)} style={[touch, { backgroundColor: reels === value ? theme.surface : theme.background, borderColor: reels === value ? theme.accent : theme.border }]}><Text style={{ ...textStyle, fontSize: 18, fontFamily: "HoopCheckDisplay", fontWeight: "400" }}>{value ? "Reels" : "HoopFeed"}</Text></Pressable>)}</View>
       {message || loadError ? <Text accessibilityLiveRegion="polite" style={{ color: theme.muted }}>{loadError || message}</Text> : null}
     </View>
     <FlatList style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 16, gap: reels ? 0 : 14 }} keyboardShouldPersistTaps="handled" initialNumToRender={4} maxToRenderPerBatch={4} windowSize={5} pagingEnabled={reels} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}

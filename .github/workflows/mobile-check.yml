@@ -85,6 +85,7 @@ jobs:
           node scripts/verify-feed-browser.cjs
           node scripts/verify-discovery-browser.cjs
           node scripts/verify-theme-preference-browser.cjs
+          node scripts/verify-design-browser.cjs
 
       - name: Upload native browser screenshots
         if: always()
