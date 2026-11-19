@@ -16,9 +16,9 @@ const deferred=()=>{let resolve,reject;const promise=new Promise((yes,no)=>{reso
 function fixture(options={}) {
  let user=owner,available=true,synced=0;
  const calls=[];const native={identity:async()=>({id:'9001',environment:'Sandbox',signedJWS:signed}),products:async()=>products,purchase:async(...args)=>{calls.push(['purchase',...args]);return options.purchase?options.purchase(...args):{state:'purchased',transaction:transaction()};},transactions:async()=>options.transactions??[transaction()],restore:async()=>{calls.push(['restore']);return options.transactions??[transaction()];},finish:async id=>{calls.push(['finish',id]);if(options.finish)await options.finish(id);},manage:async()=>{calls.push(['manage']);}};
- const client=createStoreKitClient({native:options.unsupported?null:native,available:()=>available,session:async()=>({id:user,token:'captured-'+user}),onSynced:()=>synced++,request:async(path,token,body)=>{
+ const client=createStoreKitClient({native:options.unsupported?null:native,purchasesAvailable:options.purchasesAvailable,available:()=>available,session:async()=>({id:user,token:'captured-'+user}),onSynced:()=>synced++,request:async(path,token,body)=>{
   calls.push(['request',path,token,body]);if(options.request)return options.request(path,token,body);
-  if(path.endsWith('/config'))return{owner:user,environment:'Sandbox',canPurchase:options.canPurchase??true,reason:'fixture denied'};
+  if(path.endsWith('/config'))return{owner:user,environment:'Sandbox',canPurchase:options.canPurchase??true,products:options.allowedProducts??catalog.APPLE_PRODUCTS,reason:'fixture denied'};
   if(path.endsWith('/intent'))return{owner:user,productId:body.productId,environment:'Sandbox',appTransactionID:'9001',allowIntroductoryOffer:options.intro??true,introductorySignature:signed,trialEligibility:options.eligibility??'eligible'};
   if(path.endsWith('/sync'))return{owner,acknowledged:true,transactionId:'10001'};
   if(path==='/api/membership')return{owner:user,subscription:options.membership??null};
@@ -87,4 +87,16 @@ test('billing controls serialize native presentations and stale quotes require r
 });
 test('membership HTTP requests capture the JWT, refuse redirects and never cache receipts',async()=>{
  let call;const request=storeRequest('https://isolated.test',async(...args)=>{call=args;return Response.json({owner});});await request('/api/mobile/purchases/sync','captured-token',{signedTransaction:signed});assert.equal(call[0],'https://isolated.test/api/mobile/purchases/sync');assert.equal(call[1].headers.Authorization,'Bearer captured-token');assert.equal(call[1].cache,'no-store');assert.equal(call[1].redirect,'error');assert.deepEqual(JSON.parse(call[1].body),{signedTransaction:signed});await assert.rejects(request('/external','token'));
+});
+
+
+test('native offers follow server product permissions while restoration remains independent',async()=>{
+ const allowed=catalog.APPLE_PRODUCTS.filter(value=>value.plan==='premium');
+ const f=fixture({allowedProducts:allowed});const listed=await f.client.catalog();assert.equal(listed.products.length,3);assert.ok(listed.products.every(value=>value.id.startsWith('hoopcheck.premium.')));
+ const denied=fixture({canPurchase:false});assert.equal((await denied.client.catalog()).products.length,0);assert.equal((await denied.client.restore()).restored,1);
+});
+
+
+test('iOS 15 keeps restoration without offering a purchase that needs iOS 16 app identity',async()=>{
+ const f=fixture({purchasesAvailable:false});const result=await f.client.catalog();assert.equal(result.canPurchase,false);assert.match(result.reason,/iOS 16/);assert.equal(result.products.length,0);await assert.rejects(f.client.prepare(products[0]),/iOS 16/);assert.equal(f.calls.some(c=>c[0]==='request'),false);assert.equal((await f.client.restore()).restored,1);
 });

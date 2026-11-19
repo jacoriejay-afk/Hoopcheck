@@ -284,6 +284,7 @@ try {
         localStorage.setItem("sb-ci-auth-token", JSON.stringify(authSession));
       }, { themePreference: theme, authSession: session, language: testLanguage });
 
+      await page.route("**/api/membership", route => route.fulfill({ status:200, contentType:"application/json", body:JSON.stringify({ owner:userId, subscription:{...subscription,billing_interval:"month",provider:"stripe"} }) }));
       await page.route("https://ci.invalid/**", async (route) => {
         const request = route.request();
         const url = new URL(request.url());
@@ -534,6 +535,7 @@ try {
       document.documentElement.style.setProperty("--hc-safe-area-bottom", "34px");
       localStorage.setItem("sb-ci-auth-token", JSON.stringify(authSession));
     }, { themePreference: theme, authSession: session, language: testLanguage });
+    await page.route("**/api/membership", route => route.fulfill({ status:200, contentType:"application/json", body:JSON.stringify({ owner:userId, subscription:{...subscription,billing_interval:"month",provider:"stripe"} }) }));
     await page.route("https://ci.invalid/**", async (route) => {
       const request = route.request();
       const url = new URL(request.url());

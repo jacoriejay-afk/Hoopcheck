@@ -1,4 +1,6 @@
 "use client";
+import { getEffectiveMembership } from "../../lib/billing/client-membership";
+
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -248,10 +250,11 @@ export default function Feed(){
   useEffect(()=>{setNow(Date.now());const timer=window.setInterval(()=>setNow(Date.now()),60000);return()=>window.clearInterval(timer);},[]);
 
   useEffect(()=>{setLinkedPostId(window.location.hash.match(SHARED_POST_HASH)?.[1]?.toLowerCase());(async()=>{const {data:{session}}=await supabase.auth.getSession();const u=session?.user;setUser(u);if(!u){setLoading(false);return;}
-    const [{data:p},{data:s}]=await Promise.all([
+    const [{data:p},{data:s,error:membershipError}]=await Promise.all([
       supabase.from("profiles").select("account_type,display_name,avatar_url,selected_team_id,selected_womens_team_id,basketball_type").eq("id",u.id).maybeSingle(),
-      supabase.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id",u.id).maybeSingle()
+      getEffectiveMembership(u.id)
     ]);
+    if (membershipError) throw membershipError;
     setProfile(p);setSubscription(s);
     const {data:roleData}=await supabase.rpc("get_current_user_admin_role");
     const resolvedAdminRole=roleData==="admin"||roleData==="moderator"?roleData:null;

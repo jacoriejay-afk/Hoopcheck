@@ -55,8 +55,12 @@ async function getOwnerMetrics() {
     metric("Registered profiles", db?.from("profiles").select("*", options)),
     metric("Profiles created in the last 30 days", db?.from("profiles").select("*", options)
       .gte("created_at", since)),
-    metric("Active/trialing subscription records", db?.from("subscriptions").select("*", options)
+    metric("Active/trialing Stripe/manual subscription records", db?.from("subscriptions").select("*", options)
       .in("status", ["active", "trialing"])),
+    metric("Active/trialing Apple membership sources", db?.from("membership_sources").select("*", options)
+      .eq("provider", "apple").in("status", ["active", "trialing"])),
+    metric("Accounts with active paid access", db?.from("membership_entitlements").select("*", options)
+      .in("plan", ["pro", "premium"]).in("status", ["active", "trialing"]).or(`current_period_end.is.null,current_period_end.gt.${new Date().toISOString()}`)),
     getReferralClickTotal(db),
     metric("Attributed signups", db?.from("ambassador_attributions").select("*", options)),
     metric("Qualified paying referrals", db?.from("ambassador_attributions").select("*", options)

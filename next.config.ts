@@ -12,6 +12,7 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   outputFileTracingIncludes: {
+    "/api/stripe/webhook/create-checkout": ["./lib/server/apple/certs/*.cer"],
     "/api/mobile/purchases/**/*": ["./lib/server/apple/certs/*.cer"],
     "/api/apple/**/*": ["./lib/server/apple/certs/*.cer"],
     "/api/membership": ["./lib/server/apple/certs/*.cer"],

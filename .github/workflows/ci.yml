@@ -98,6 +98,8 @@ jobs:
           createdb -h 127.0.0.1 -U postgres hoopcheck_storekit_test
           psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_storekit_test -f supabase/tests/storekit_membership_isolated.sql
           node --test scripts/test-storekit-server.mjs
+          node --test scripts/test-membership-reader.mjs
+          node --test scripts/test-checkout-membership-policy.mjs
 
       - name: Verify Ambassador HQ database security and commission lifecycle
         env:
@@ -189,6 +191,9 @@ jobs:
 
       - name: Verify player profile completion
         run: node scripts/check-player-completion-browser.mjs
+
+      - name: Verify membership providers, role offers and billing recovery
+        run: node scripts/check-membership-provider-browser.cjs
 
       - name: Verify canonical sitemap and robots host
         run: node scripts/domain-url-check.mjs

@@ -111,3 +111,43 @@ Verified Sandbox dates never extend access to the advertised seven days. Exact
 seven-day introductory metadata is checked by the native product policy in both
 environments. See https://developer.apple.com/help/app-store-connect/test-in-app-purchases/manage-sandbox-apple-account-settings/
 and Apple's official SignedDataVerifier environment-specific identifier checks.
+
+## Website and provider integration candidate
+
+Twenty website feature readers now use the authenticated, non-cacheable effective
+membership API. Concurrent component reads share one in-flight owner/token request;
+Auth changes invalidate pending proofs and stale account transitions cannot restore
+old access. Feature API readers use the same leased entitlement view. Stripe billing,
+invoice/commission handling and first-payer history continue to use raw Stripe data.
+
+The membership page separately displays current access and original-provider billing.
+Apple sources have Apple management/restoration instructions, including inactive
+sources. Existing Stripe billing remains manageable when a higher Apple source wins
+access; cancelling Stripe never changes the Apple period or renewal display. Manual
+memberships retain their support flow. A fresh Apple status check precedes a new
+Stripe checkout when Apple history exists; unavailable verification fails closed.
+Coach and manager purchases remain Premium-only on both providers. Paid fan products
+are unavailable on web/native; existing fan entitlements and billing controls remain.
+Confirmed email, moderation and pending-deletion checks precede new Stripe checkout.
+Existing Stripe promotional codes retain their current separately validated rules.
+
+Apple's API can lag a new transaction/refund. Such a receipt is left unfinished until
+the independently fetched state catches up. iOS 15 retains restoration, while new
+purchases require iOS 16 app identity and are not offered on earlier systems. Protected
+membership/settings/directory deep links now survive sign-in without retaining token,
+code or other unrelated URL fields. Owner HQ reports Apple sources independently
+from raw Stripe/manual records and counts effective paid accounts separately.
+
+Additional local evidence: 170 native cases and 14 auth cases; 20 StoreKit-client
+cases, 17 Apple-server cases, seven website-reader cases, four actual Stripe-checkout
+policy cases and ten plan-display contracts. The website's 20 functional billing
+scenarios (ten cases, light/dark) and existing profile/review/completion flows pass.
+Full production build and certificate tracing cover six Apple-dependent routes.
+Full ESLint exits successfully with 125 pre-existing warnings. English/Spanish theme
+scripts complete, but their diagnostic inventories found contrast and localization
+checks that require a separate focused repair before release verification is complete.
+This document does not claim those findings resolved or a physical test passed.
+
+Website billing also checks owner-readable Apple purchase history independently of
+the winning entitlement. Both providers remain manageable when Stripe Premium wins
+access over Apple Pro, as well as when Apple Premium wins over Stripe Pro.

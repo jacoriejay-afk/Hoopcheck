@@ -243,7 +243,7 @@ export async function POST(request: Request) {
       const scoresValid = (scoreFor === null && scoreAgainst === null) || (Number.isInteger(scoreFor) && Number.isInteger(scoreAgainst) && scoreFor! >= 0 && scoreFor! <= 300 && scoreAgainst! >= 0 && scoreAgainst! <= 300);
       if (!gameDayTeam || !gameDayOpponent || gameDayTeam.toLocaleLowerCase() === gameDayOpponent.toLocaleLowerCase() || !scoresValid) return NextResponse.json({ allowed: false, message: "Add two different teams and enter both final scores, or leave both scores blank until after the game." }, { status: 400 });
     }
-    const { data: sub } = await db.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id", user.id).maybeSingle();
+    const { data: sub } = await db.from("membership_entitlements").select("plan,status,access_status,current_period_end").eq("user_id", user.id).maybeSingle();
     const { data: adminRoleRows } = await db.from("admin_roles").select("role").eq("user_id", user.id);
     const isAdmin = (adminRoleRows || []).some((r: any) => String(r?.role || "").trim().toLowerCase() === "admin");
     const entitlements = getHoopCheckEntitlements({ accountType: profile?.account_type, subscription: sub, isAdmin });
