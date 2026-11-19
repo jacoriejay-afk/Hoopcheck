@@ -318,7 +318,12 @@ export async function POST(
     // Never enable in production merely because this branch is deployed.
     // Hard stop: do not allow a flag alone to bypass the missing atomic reservation.
     // Replace this only after the reservation RPC and webhook lifecycle are verified.
-    const trialRolloutEnabled = false;
+    const trialRolloutEnabled =
+      process.env.VERCEL_ENV === "production" &&
+      process.env.HOOPCHECK_SEVEN_DAY_TRIAL_ENABLED === "true" &&
+      configuredMode === "live" &&
+      stripeConfigMatches &&
+      checkoutEnabled;
     let trialEligible = trialRolloutEnabled && checkoutProfile.account_type === "player" && interval === "month" && !promoCodeId && !existingSubscription?.stripe_subscription_id && Boolean(user.email_confirmed_at);
     if (trialEligible) {
       // Check every customer under this email, even when a customer is already
