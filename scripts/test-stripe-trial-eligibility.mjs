@@ -9,6 +9,7 @@ const { isEligibleForSevenDayTrial: eligible } = await import("data:text/javascr
 const baseline = {
   rolloutEnabled: true,
   interval: "month",
+  accountType: "player",
   hasPromoCode: false,
   hasExistingSubscription: false,
   hasVerifiedEmail: true,
@@ -18,6 +19,8 @@ const baseline = {
 assert.equal(eligible(baseline), true, "eligible first-time monthly user");
 for (const [name, override] of [
   ["rollout disabled", { rolloutEnabled: false }],
+  ["fan excluded", { accountType: "fan" }],
+  ["coach excluded", { accountType: "coach" }],
   ["six month", { interval: "6_month" }],
   ["annual", { interval: "year" }],
   ["promotion code", { hasPromoCode: true }],
@@ -28,4 +31,4 @@ for (const [name, override] of [
 ]) {
   assert.equal(eligible({ ...baseline, ...override }), false, name);
 }
-console.log("Stripe seven-day trial eligibility policy: 9 cases passed");
+console.log("Stripe seven-day trial eligibility policy: 11 cases passed");
