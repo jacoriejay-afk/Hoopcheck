@@ -398,8 +398,7 @@ export async function POST(
             if (
               canReuseOpenTrialSession(existingSession, user.id, claim.checkout_session_id) &&
               existingSession.metadata?.plan === plan &&
-              existingSession.metadata?.billing_interval === interval &&
-              existingSession.line_items == null
+              existingSession.metadata?.billing_interval === interval
             ) {
               return NextResponse.json({ url: existingSession.url });
             }
