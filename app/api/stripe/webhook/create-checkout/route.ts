@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import { stripeMatchesDeployment } from "../../../../../lib/stripe-key-mode";
 import { createClient } from "@supabase/supabase-js";
 import { getActiveMembershipTier } from "../../../../../lib/membership-tier";
+import { isEligibleForSevenDayTrial } from "../../../../../lib/stripe-trial-eligibility";
 
 function getAdminSupabase() {
   const supabaseUrl =
@@ -312,7 +313,7 @@ export async function POST(
     // The seven-day offer is for first-time monthly members only. Check both
     // the HoopCheck subscription record and Stripe's complete customer history;
     // a canceled subscription must never reset eligibility.
-    // Explicitly disabled until isolated trial tests and atomic eligibility reservation pass.\n    // Never enable in production merely because this branch is deployed.\n    const trialRolloutEnabled = process.env.STRIPE_SEVEN_DAY_TRIAL_ENABLED === "true" &&\n      process.env.VERCEL_ENV !== "production";\n    let trialEligible = trialRolloutEnabled && interval === "month" && !promoCodeId && !existingSubscription?.stripe_subscription_id;
+    // Explicitly disabled until isolated trial tests and atomic eligibility reservation pass.\n    // Never enable in production merely because this branch is deployed.\n    const trialRolloutEnabled = process.env.STRIPE_SEVEN_DAY_TRIAL_ENABLED === "true" &&\n      process.env.VERCEL_ENV !== "production";\n    let trialEligible = trialRolloutEnabled && interval === "month" && !promoCodeId && !existingSubscription?.stripe_subscription_id && Boolean(user.email_confirmed_at);
     if (trialEligible) {
       const customers = customerId
         ? [await stripe.customers.retrieve(customerId)]
@@ -347,6 +348,18 @@ export async function POST(
       console.error("Ambassador checkout lookup failed", attributionError.code);
       return NextResponse.json({ error: "Unable to verify your checkout details. Try again." }, { status: 503 });
     }
+
+    // Recheck the final policy after all history lookups. This remains disabled
+    // in production until atomic one-time reservation is implemented.
+    trialEligible = isEligibleForSevenDayTrial({
+      rolloutEnabled: trialRolloutEnabled,
+      interval,
+      hasPromoCode: Boolean(promoCodeId),
+      hasExistingSubscription: Boolean(existingSubscription?.stripe_subscription_id),
+      hasVerifiedEmail: Boolean(user.email_confirmed_at),
+      customerLookupComplete: trialEligible,
+      hasPriorStripeSubscription: false,
+    });
 
     const session =
       await stripe.checkout.sessions.create(
