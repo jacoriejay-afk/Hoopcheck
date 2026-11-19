@@ -13,17 +13,20 @@ export function searchResultPath(kind: SearchKind, id: string): string | null {
   if (kind === "coaches") return `/web?path=${encodeURIComponent(`/coaches/${id}`)}`;
   return `/${kind}/${id}`;
 }
-export async function searchDirectory(client: SupabaseClient, input: string): Promise<SearchGroup[]> {
+export async function searchDirectory(client: SupabaseClient, input: string, includePlayers = false): Promise<SearchGroup[]> {
   const clean = cleanDirectorySearch(input);
   if (clean.length < 2) return [];
   const requests = SEARCH_KINDS.map(async kind => {
     const table = kind === "women" ? "womens_teams" : kind === "womens-leagues" ? "womens_leagues" : kind === "players" ? "profiles" : kind;
     let query;
     if (kind === "players") {
-      // Same public-player eligibility as the existing native player directory.
+      if (!includePlayers) return { kind, rows: [], failed: false };
+      // Shared server-side visibility, role, location and avatar moderation rules.
       const username = clean.replace(/[^\p{L}\p{N}_]/gu, "").toLowerCase();
       if (username.length < 2) return { kind, rows: [], failed: false };
-      query = client.from(table).select("id,display_name,username,country").eq("account_type", "player").eq("profile_visibility", "public").eq("moderation_status", "normal").in("basketball_type", ["mens", "womens"]).eq("professional_experience", true).ilike("username", `%${username}%`).order("username").order("id").limit(6);
+      const result = await client.rpc("search_public_players_by_username", { p_username: username, p_country: null, p_limit: 6, p_offset: 0 });
+      const rows: SearchRow[] = Array.isArray(result.data) ? result.data.filter((row): row is SearchRow => Boolean(row && typeof row.id === "string")) : [];
+      return { kind, rows: result.error ? [] : rows, failed: Boolean(result.error) || !Array.isArray(result.data) };
     } else {
       query = client.from(table).select("id,name,country").eq("active", true);
       if (kind === "teams" || kind === "leagues") query = query.eq("basketball_type", "mens");

@@ -1,4 +1,6 @@
 "use client";
+import { getEffectiveMembership } from "../lib/billing/client-membership";
+
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -18,7 +20,7 @@ export default function PlayerReviewChecklist({ userId, basketballType, teamId, 
     void (async () => {
       const [profile, subscription, eligibility] = await Promise.all([
         supabase.from("profiles").select("player_verified,selected_womens_team_id").eq("id", userId).maybeSingle(),
-        supabase.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id", userId).maybeSingle(),
+        getEffectiveMembership(userId),
         teamId && basketballType === "mens" ? supabase.rpc("can_user_review_team", { p_user_id: userId, p_team_id: teamId }) : Promise.resolve({ data: false, error: null }),
       ]);
       if (profile.error || subscription.error || eligibility.error) throw profile.error || subscription.error || eligibility.error;

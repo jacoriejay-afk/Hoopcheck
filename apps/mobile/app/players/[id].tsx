@@ -1,10 +1,12 @@
+import { PlayerAccess } from "../../components/PlayerAccess";
+import { ProfileAvatar } from "../../components/ProfileAvatar";
+import { readPlayerProfile, type PlayerProfile, type PlayerViewer } from "../../src/native/playerProfiles";
 import { GlassCard, Button, Chip } from "../../src/primitives";
 import { ShareSheet } from "../../components/ShareSheet";
 import { Sheet } from "../../components/Sheet";
 import { BottomSheetTextInput } from "@gorhom/bottom-sheet";
 import { useHaptics } from "../../src/native/haptics";
-import { useCachedRead, useNetwork, requireOnline } from "../../src/native/network";
-import { OfflineBanner } from "../../components/OfflineBanner";
+import { useNetwork, requireOnline } from "../../src/native/network";
 import { Skeleton } from "../../components/Motion";
 import { useEntryTheme, type EntryTheme } from "../../src/theme";
 import { useEffect, useState } from "react";
@@ -13,20 +15,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { supabase } from "../../src/lib/supabase";
 
-type PlayerProfile = {
-  id: string; display_name: string | null; username: string | null; country: string | null;
-  current_country: string | null; current_team: string | null; position: string | null;
-  years_pro: number | null; free_agent: boolean; bio: string | null; hometown: string | null;
-  nationality: string | null; experience_summary: string | null; basketball_type: "mens" | "womens" | null;
-};
+export default function PlayerDetailScreen() { return <PlayerAccess>{viewer => <PlayerProfileDetails viewer={viewer} />}</PlayerAccess>; }
 
-export default function PlayerDetailScreen() {
+function PlayerProfileDetails({ viewer }: { viewer: PlayerViewer }) {
   const theme = useEntryTheme();
   const styles = createStyles(theme);
+  const { id: viewerId, accountType } = viewer;
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const haptic = useHaptics();
-  const { read, savedAt } = useCachedRead();
   const { revision, offline } = useNetwork();
   const [refreshing, setRefreshing] = useState(false);
   const [refreshId, setRefreshId] = useState(0);
@@ -41,30 +38,22 @@ export default function PlayerDetailScreen() {
   useEffect(() => {
     let active = true;
     async function load() {
-      setLoading(true);
-      setLoading(true); setError("");
-      const { data, error: queryError } = await read(`players:profile:${id}`, () => supabase.from("profiles")
-        .select("id,display_name,username,country,current_country,current_team,position,years_pro,free_agent,bio,hometown,nationality,experience_summary,basketball_type")
-        .eq("id", id)
-        .eq("account_type", "player")
-        .eq("profile_visibility", "public")
-        .eq("moderation_status", "normal")
-        .in("basketball_type", ["mens", "womens"])
-        .eq("professional_experience", true)
-        .maybeSingle());
-      if (!active) return;
-      if (queryError || !data) {
-        setError("This profile is unavailable or is no longer public.");
-        setPlayer(null);
-      } else {
-        setPlayer(data as PlayerProfile);
+      setLoading(true); setError(""); setPlayer(null);
+      try {
+        const result = await readPlayerProfile(supabase, { id: viewerId, accountType }, id);
+        if (!active) return;
+        setPlayer(result);
+        if (!result) setError("This profile is unavailable for your account.");
+      } catch {
+        if (active) { setPlayer(null); setError("This profile could not be verified. Reconnect and try again."); }
       }
+      if (!active) return;
       setLoading(false);
       setRefreshing(false);
     }
     if (id) void load(); else { setError("This profile link is invalid."); setLoading(false); }
     return () => { active = false; };
-  }, [id, revision, refreshId, offline, read]);
+  }, [id, revision, refreshId, offline, viewerId, accountType]);
 
   async function submitReport() {
     const reason = reportReason.trim();
@@ -112,10 +101,9 @@ export default function PlayerDetailScreen() {
     }
   }
 
-  const name = player?.display_name || (player?.username ? `@${player.username}` : "Player profile");
+  const name = player?.display_name || ("Player profile");
   return (
     <SafeAreaView edges={["left", "right", "bottom"]} style={styles.safe}>
-      <OfflineBanner savedAt={savedAt} />
       <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); setRefreshId(value => value + 1); }} />} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back to players</Text></Pressable>
         {loading ? <Skeleton profile /> : error ? (
@@ -123,25 +111,23 @@ export default function PlayerDetailScreen() {
         ) : player ? (
           <>
             <GlassCard style={styles.hero}>
-              <View style={styles.avatar}><Text style={styles.avatarText}>{name.slice(0,1).toUpperCase()}</Text></View>
+              <View style={{ alignSelf: "stretch", height: 64, borderRadius: 12, backgroundColor: "#ff790b", marginBottom: 12 }} /><ProfileAvatar url={player.avatar_url} name={name} size={64} />
               <View style={{ alignSelf: "flex-start" }}><Chip>Player</Chip></View>
-              <Text style={styles.kicker}>PUBLIC {player.basketball_type === "womens" ? "WOMEN'S" : "MEN'S"} PLAYER PROFILE</Text>
+              <Text style={styles.kicker}>PLAYER PROFILE</Text>
               <Text style={styles.heroTitle}>{name}</Text>
               <ShareSheet title={name} path={`/players/${player.id}`} />
-              {player.username && player.display_name ? <Text style={styles.handle}>@{player.username}</Text> : null}
-              {player.free_agent ? <View style={styles.pill}><Text style={styles.pillText}>FREE AGENT</Text></View> : null}
+              {player.player_verified ? <Text style={{ color: theme.success, marginTop: 8 }}>Verified professional player</Text> : null}
             </GlassCard>
             <GlassCard style={styles.card}>
               <Text style={styles.sectionTitle}>Player details</Text>
               <Info label="Current team" value={player.current_team} />
-              <Info label="Current country" value={player.current_country || player.country} />
+              <Info label="Current country" value={player.current_country} />
               <Info label="Position" value={player.position} />
               <Info label="Professional experience" value={player.years_pro === null ? null : `${player.years_pro} ${player.years_pro === 1 ? "year" : "years"}`} />
-              <Info label="Nationality" value={player.nationality} />
-              <Info label="Hometown" value={player.hometown} />
+              <Info label="Country" value={player.country} />
             </GlassCard>
             {player.bio?.trim() ? <GlassCard style={styles.card}><Text style={styles.sectionTitle}>About</Text><Text style={styles.body}>{player.bio.trim()}</Text></GlassCard> : null}
-            {player.experience_summary?.trim() ? <GlassCard style={styles.card}><Text style={styles.sectionTitle}>Experience</Text><Text style={styles.body}>{player.experience_summary.trim()}</Text></GlassCard> : null}
+
             <GlassCard style={styles.reportCard}>
               <Text style={styles.sectionTitle}>Safety and reporting</Text>
               <Text style={styles.body}>If this profile contains impersonation, harassment, or inappropriate personal information, report it to the HoopCheck team.</Text>

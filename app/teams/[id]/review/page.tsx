@@ -1,4 +1,6 @@
 "use client";
+import { getEffectiveMembership } from "../../../../lib/billing/client-membership";
+
 
 import HoopLoading from "../../../../components/HoopLoading";
 import {
@@ -212,11 +214,7 @@ export default function TeamReviewPage() {
         return;
       }
 
-      const { data: subscription } = await supabase
-        .from("subscriptions")
-        .select("plan,status,current_period_end,access_status")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      const { data: subscription } = await getEffectiveMembership(user.id);
 
       const entitlements = getHoopCheckEntitlements({
         accountType: profile?.account_type,

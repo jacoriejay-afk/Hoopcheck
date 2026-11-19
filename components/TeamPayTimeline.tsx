@@ -1,4 +1,6 @@
 "use client";
+import { getEffectiveMembership } from "../lib/billing/client-membership";
+
 
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
@@ -40,7 +42,7 @@ export default function TeamPayTimeline({ teamId }: { teamId: string }) {
       if (!session) return;
       const [{ data: profile }, { data: subscription }] = await Promise.all([
         supabase.from("profiles").select("account_type,player_verified").eq("id", session.user.id).maybeSingle(),
-        supabase.from("subscriptions").select("plan,status,current_period_end,access_status").eq("user_id", session.user.id).maybeSingle(),
+        getEffectiveMembership(session.user.id),
       ]);
       const entitlements = getHoopCheckEntitlements({
         accountType: profile?.account_type,

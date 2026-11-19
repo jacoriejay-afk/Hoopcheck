@@ -20,7 +20,7 @@ export async function POST(request: Request) {
 
   const { data: profile } = await admin.from("profiles").select("account_type").eq("id", user.id).maybeSingle();
   if (!profile) return NextResponse.json({ error: "Account profile unavailable" }, { status: 403 });
-  const { data: subscription } = await admin.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id", user.id).maybeSingle();
+  const { data: subscription } = await admin.from("membership_entitlements").select("plan,status,access_status,current_period_end").eq("user_id", user.id).maybeSingle();
   const { data: adminRoles } = await admin.from("admin_roles").select("role").eq("user_id", user.id);
   const isAdmin = (adminRoles || []).some(row => String(row.role || "").toLowerCase() === "admin");
   const entitlements = getHoopCheckEntitlements({ accountType: profile.account_type, subscription, isAdmin });

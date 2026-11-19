@@ -31,8 +31,10 @@ const rows = {
         const json = body => route.fulfill({ status: 200, contentType: 'application/json', headers: {'access-control-allow-origin':'*'}, body: JSON.stringify(body) });
         if (url.hostname === 'fixture.supabase.co') {
           if (url.pathname === '/auth/v1/user') return json(user);
+          if (url.pathname === '/rest/v1/rpc/search_public_players_by_username') return json(rows.profiles);
           if (url.pathname.startsWith('/rest/v1/')) return json(rows[url.pathname.split('/').pop()] || []);
         }
+        if (url.hostname === 'api.test' && url.pathname === '/api/mobile/bootstrap') return json({user:{id:uid,displayName:'Fixture Member',accountType:'player'},entitlements:{tier:'free',hasPaidMembership:false,canReadHoopFeed:true,canWriteHoopFeed:true,canUseLiveGameHub:false,canUseLiveGameChat:false,canSwitchBasketballSide:false,canUseFanGroups:false}});
         if (url.hostname === 'api.test' && url.pathname === '/api/review-access') return json({canReadFull:false,canWrite:false,reviews:[{id:'secret',body:'MUST NOT RENDER PRIVATE REVIEW',title:'Secret',overall_rating:5,created_at:'2026-11-18'}]});
         return route.abort();
       });
@@ -48,12 +50,15 @@ const rows = {
       await page.getByRole('textbox',{name:'Search basketball directory'}).press('Enter');
       await page.getByText('Search basketball',{exact:true}).waitFor();
       await page.getByText('Olympia Women',{exact:true}).filter({visible:true}).waitFor();
+      await page.screenshot({path:`/tmp/hoopcheck-native-ui/search-${theme}.png`,fullPage:true});
       await page.getByText('Olympia Women',{exact:true}).filter({visible:true}).click();
       await page.getByRole('heading',{name:'Olympia Women',exact:true}).waitFor();
       await page.getByText('Review access follows your HoopCheck membership and account permissions.',{exact:true}).waitFor();
       assert.equal(await page.getByText('MUST NOT RENDER PRIVATE REVIEW').count(),0);
+      await page.screenshot({path:`/tmp/hoopcheck-native-ui/womens-profile-${theme}.png`,fullPage:true});
       await page.getByText('Open league profile',{exact:true}).click();
       await page.getByRole('heading',{name:'Olympia Women League',exact:true}).waitFor();
+      await page.screenshot({path:`/tmp/hoopcheck-native-ui/womens-league-${theme}.png`,fullPage:true});
       await page.getByText('Olympia Women',{exact:true}).filter({visible:true}).click();
       await page.getByRole('heading',{name:'Olympia Women',exact:true}).waitFor();
       await page.getByRole('tab',{name:'Home',exact:true}).click();
