@@ -96,14 +96,14 @@ DO $$ BEGIN
  IF public.can_view_player_feed_post('22222222-2222-4222-8222-222222222222') THEN RAISE EXCEPTION 'expired subscription allowed'; END IF;
 END $$;
 SELECT set_config('request.jwt.claim.sub','66666666-6666-4666-8666-666666666666',true);
-DO $ BEGIN
+DO $$ BEGIN
  IF NOT public.can_view_player_feed_post('22222222-2222-4222-8222-222222222222') THEN RAISE EXCEPTION 'coach premium follower unexpectedly denied'; END IF;
  IF public.can_view_player_feed_post('33333333-3333-4333-8333-333333333333') THEN RAISE EXCEPTION 'coach without follow allowed'; END IF;
-END $;
+END $$;
 SELECT set_config('request.jwt.claim.sub','77777777-7777-4777-8777-777777777777',true);
-DO $ BEGIN
+DO $$ BEGIN
  IF NOT public.can_view_player_feed_post('33333333-3333-4333-8333-333333333333') THEN RAISE EXCEPTION 'synthetic admin override denied'; END IF;
-END $;
+END $$;
 RESET ROLE;
 ROLLBACK;
 SELECT 'PASS: synthetic full feed predicate preserved key country/follow/subscription gates' AS result;
