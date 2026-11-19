@@ -312,7 +312,7 @@ export async function POST(
     // The seven-day offer is for first-time monthly members only. Check both
     // the HoopCheck subscription record and Stripe's complete customer history;
     // a canceled subscription must never reset eligibility.
-    let trialEligible = interval === "month" && !promoCodeId && !existingSubscription?.stripe_subscription_id;
+    // Explicitly disabled until isolated trial tests and atomic eligibility reservation pass.\n    // Never enable in production merely because this branch is deployed.\n    const trialRolloutEnabled = process.env.STRIPE_SEVEN_DAY_TRIAL_ENABLED === "true" &&\n      process.env.VERCEL_ENV !== "production";\n    let trialEligible = trialRolloutEnabled && interval === "month" && !promoCodeId && !existingSubscription?.stripe_subscription_id;
     if (trialEligible) {
       const customers = customerId
         ? [await stripe.customers.retrieve(customerId)]
