@@ -15,3 +15,11 @@ The isolated test's `public.is_my_player_country_match(uuid)` prototype has EXEC
 
 ## Current status
 Design-only blocker. Existing isolated authorization test models the behavior but its equality helper is **not approved for production**. No production migration revoking the country column or replacing feed authorization has been staged.
+
+## Additional dependency: masked directory RPCs and column revocation
+
+The pending `20261118162305_player_profile_country_privacy.sql` migration defines `get_public_player_profile`, the four-argument `search_public_players`, and legacy search overloads as SECURITY INVOKER functions. Their SQL still references `profiles.current_country` to produce masked output or to apply public-only country filters. **A column-level SELECT revoke can therefore break these otherwise masked RPCs**: the caller must still possess permission to read every referenced column.
+
+Do not deploy the column revoke based only on the current synthetic feed test. The coordinated release must either move the masked read logic into carefully audited, owner-controlled SECURITY DEFINER boundaries (preserving public profile visibility, moderation, fan restrictions and result signatures), or choose an equivalent table-level access design that demonstrably prevents raw column reads. Add regression tests for each directory RPC under actual anon/authenticated grants after the revoke.
+
+This is a release-blocking dependency alongside HoopFeed and owner profile editing.
