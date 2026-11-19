@@ -70,7 +70,7 @@ returns boolean
 language plpgsql
 security invoker
 set search_path = ''
-as $$
+as $trialbody$
 declare v_updated integer;
 begin
   update public.stripe_trial_claims
@@ -93,6 +93,6 @@ begin
        and redeemed_at is not null
   );
 end;
-$;
+$trialbody$;
 revoke all on function public.redeem_stripe_trial(uuid,text) from public, anon, authenticated;
 grant execute on function public.redeem_stripe_trial(uuid,text) to service_role;
