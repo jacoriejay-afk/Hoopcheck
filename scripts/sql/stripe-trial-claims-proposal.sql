@@ -101,11 +101,11 @@ grant execute on function public.redeem_stripe_trial(uuid,text) to service_role;
 -- This is deliberately terminal: reissuing a trial requires a separately
 -- verified Stripe-history and webhook-reconciliation design. Deleting the
 -- claim here would permit a delayed completion event to race a new checkout.
-create or replace function public.release_expired_stripe_trial(
+create or replace function public.mark_expired_stripe_trial(
   p_user_id uuid, p_session_id text
 )
 returns boolean language plpgsql security invoker set search_path = ''
-as $releasebody$
+as $expirebody$
 declare v_updated integer;
 begin
   if p_session_id is null or p_session_id !~ '^cs_' then
@@ -119,6 +119,6 @@ begin
   get diagnostics v_updated = row_count;
   return v_updated = 1;
 end;
-$releasebody$;
-revoke all on function public.release_expired_stripe_trial(uuid,text) from public, anon, authenticated;
-grant execute on function public.release_expired_stripe_trial(uuid,text) to service_role;
+$expirebody$;
+revoke all on function public.mark_expired_stripe_trial(uuid,text) from public, anon, authenticated;
+grant execute on function public.mark_expired_stripe_trial(uuid,text) to service_role;
