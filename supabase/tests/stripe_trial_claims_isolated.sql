@@ -4,7 +4,7 @@ create schema if not exists auth;
 create table if not exists auth.users (id uuid primary key);
 create table public.stripe_trial_claims (
   user_id uuid primary key references auth.users(id) on delete cascade,
-  state text not null default 'reserved' check (state in ('reserved','redeemed')),
+  state text not null default 'reserved' check (state in ('reserved','redeemed','expired')),
   checkout_session_id text unique,
   reserved_at timestamptz not null default now(),
   redeemed_at timestamptz,
@@ -75,7 +75,7 @@ returns boolean language plpgsql security invoker set search_path = '' as $trial
 declare n integer;
 begin
  if p_session_id is null or p_session_id !~ '^cs_' then return false; end if;
- delete from public.stripe_trial_claims
+ update public.stripe_trial_claims set state='expired'
  where user_id=p_user_id and checkout_session_id=p_session_id and state='reserved';
  get diagnostics n=row_count;
  return n=1;
@@ -91,6 +91,8 @@ begin
  if not public.bind_stripe_trial_session(uid2,'cs_test_expired') then raise exception 'second bind failed'; end if;
  if public.release_expired_stripe_trial(uid2,'cs_test_wrong') then raise exception 'wrong session released'; end if;
  if not public.release_expired_stripe_trial(uid2,'cs_test_expired') then raise exception 'expired reservation not released'; end if;
- if not public.reserve_stripe_trial(uid2) then raise exception 'reservation unavailable after release'; end if;
+ if public.reserve_stripe_trial(uid2) then raise exception 'expired claim reissued and enabled double trial'; end if;
+ if (select state from public.stripe_trial_claims where user_id=uid2) <> 'expired' then raise exception 'expired claim missing'; end if;
+ if public.redeem_stripe_trial(uid2,'cs_test_expired') then raise exception 'expired claim redeemed'; end if;
 end $trialtest$;
 rollback;
