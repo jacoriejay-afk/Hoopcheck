@@ -32,6 +32,13 @@ CREATE OR REPLACE FUNCTION public.read_own_private_country(p_id uuid)
 $$;
 REVOKE ALL ON FUNCTION public.read_own_private_country(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.read_own_private_country(uuid) TO authenticated;
+-- Match the proposed zero-argument owner RPC in the draft migration.
+CREATE OR REPLACE FUNCTION public.get_my_private_country()
+ RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $
+ SELECT p.current_country FROM public.profiles p WHERE p.id=(SELECT auth.uid()) LIMIT 1
+$;
+REVOKE ALL ON FUNCTION public.get_my_private_country() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_my_private_country() TO authenticated;
 -- Public RPC returns only safe projection, even for a row whose country is private.
 CREATE OR REPLACE FUNCTION public.read_public_country(p_id uuid)
  RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $$
@@ -58,6 +65,9 @@ DO $$ BEGIN
   RAISE EXCEPTION 'anonymous raw country SELECT unexpectedly succeeded';
  EXCEPTION WHEN insufficient_privilege THEN NULL;
  END;
+ IF has_function_privilege('anon','public.get_my_private_country()','EXECUTE') THEN
+  RAISE EXCEPTION 'anonymous can execute zero-argument owner RPC';
+ END IF;
  IF has_function_privilege('anon','public.read_own_private_country(uuid)','EXECUTE') THEN
   RAISE EXCEPTION 'anonymous role can execute owner-only RPC';
  END IF;
@@ -73,11 +83,17 @@ DO $$ BEGIN
   RAISE EXCEPTION 'authenticated raw country SELECT unexpectedly succeeded';
  EXCEPTION WHEN insufficient_privilege THEN NULL;
  END;
+ IF (SELECT public.get_my_private_country()) <> 'SECRET FIXTURE' THEN
+  RAISE EXCEPTION 'zero-argument owner RPC returned incorrect private country';
+ END IF;
  IF (SELECT public.read_own_private_country('11111111-1111-4111-8111-111111111111')) <> 'SECRET FIXTURE' THEN
   RAISE EXCEPTION 'owner cannot read own private country';
  END IF;
  -- Owner edits must use safe RETURNING fields and then refresh the private value through the owner RPC.
  UPDATE public.profiles SET current_country='UPDATED SECRET FIXTURE' WHERE id='11111111-1111-4111-8111-111111111111';
+ IF (SELECT public.get_my_private_country()) <> 'UPDATED SECRET FIXTURE' THEN
+  RAISE EXCEPTION 'zero-argument owner RPC failed after owner edit';
+ END IF;
  IF (SELECT public.read_own_private_country('11111111-1111-4111-8111-111111111111')) <> 'UPDATED SECRET FIXTURE' THEN
   RAISE EXCEPTION 'owner country edit or protected refresh failed';
  END IF;
