@@ -70,7 +70,7 @@ begin
  if public.bind_stripe_trial_session(uid,'cs_test_first') then raise exception 'redeemed session rebound'; end if;
 end $trialtest$;
 -- Expired-session release must never erase redeemed claims.
-create function public.release_expired_stripe_trial(p_user_id uuid,p_session_id text)
+create function public.mark_expired_stripe_trial(p_user_id uuid,p_session_id text)
 returns boolean language plpgsql security invoker set search_path = '' as $trialtest$
 declare n integer;
 begin
@@ -84,14 +84,14 @@ do $trialtest$
 declare uid uuid := '11111111-1111-4111-8111-111111111111';
 declare uid2 uuid := '22222222-2222-4222-8222-222222222222';
 begin
- if public.release_expired_stripe_trial(uid,'cs_test_first') then raise exception 'redeemed claim released'; end if;
- if public.release_expired_stripe_trial(uid,'cs_test_other') then raise exception 'wrong claim released'; end if;
+ if public.mark_expired_stripe_trial(uid,'cs_test_first') then raise exception 'redeemed claim released'; end if;
+ if public.mark_expired_stripe_trial(uid,'cs_test_other') then raise exception 'wrong claim released'; end if;
  insert into auth.users(id) values(uid2);
  if not public.reserve_stripe_trial(uid2) then raise exception 'second reservation failed'; end if;
  if not public.bind_stripe_trial_session(uid2,'cs_test_expired') then raise exception 'second bind failed'; end if;
- if public.release_expired_stripe_trial(uid2,'cs_test_wrong') then raise exception 'wrong session released'; end if;
- if not public.release_expired_stripe_trial(uid2,'cs_test_expired') then raise exception 'expired reservation not released'; end if;
- if public.release_expired_stripe_trial(uid2,'cs_test_expired') then raise exception 'expired claim released twice'; end if;
+ if public.mark_expired_stripe_trial(uid2,'cs_test_wrong') then raise exception 'wrong session released'; end if;
+ if not public.mark_expired_stripe_trial(uid2,'cs_test_expired') then raise exception 'expired reservation not released'; end if;
+ if public.mark_expired_stripe_trial(uid2,'cs_test_expired') then raise exception 'expired claim released twice'; end if;
  if public.bind_stripe_trial_session(uid2,'cs_test_reissued') then raise exception 'expired claim rebound'; end if;
  if public.reserve_stripe_trial(uid2) then raise exception 'expired claim reissued and enabled double trial'; end if;
  if (select state from public.stripe_trial_claims where user_id=uid2) <> 'expired' then raise exception 'expired claim missing'; end if;
