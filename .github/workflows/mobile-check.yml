@@ -71,6 +71,7 @@ jobs:
           NATIVE_TEST_URL: http://127.0.0.1:8092
           CHROMIUM_PATH: /usr/bin/google-chrome
         run: |
+          node scripts/verify-mfa-browser.cjs
           node scripts/verify-player-profiles-browser.cjs
           node scripts/verify-media-browser.cjs
           node scripts/verify-profile-editor-browser.cjs

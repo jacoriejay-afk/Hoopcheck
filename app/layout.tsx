@@ -36,6 +36,8 @@ import "./hoopcheck-smooth-experience.css";
 import OfflineRuntime from "../components/OfflineRuntime";
 import ThemeProvider from "../components/ThemeProvider";
 import AuthProvider from "../components/AuthProvider";
+import MfaSession from "../components/MfaSession";
+import "./hoopcheck-mfa.css";
 import GlobalBackButton from "../components/GlobalBackButton";
 import LanguageProvider from "../components/LanguageProvider";
 import BottomNav from "../components/BottomNav";
@@ -151,12 +153,12 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <OfflineRuntime />
         <ThemeProvider initialTheme={initialTheme}>
           <AuthProvider>
-            <LanguageProvider initialLanguage={initialLanguage}>
+            <MfaSession><LanguageProvider initialLanguage={initialLanguage}>
               <AnalyticsTracker />
               <SiteHeader />
               <BottomNav />
               <PageShell><GlobalBackButton /><PageTransition>{children}</PageTransition></PageShell>
-            </LanguageProvider>
+            </LanguageProvider></MfaSession>
           </AuthProvider>
         </ThemeProvider>
         <footer className="site-footer">

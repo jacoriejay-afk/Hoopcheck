@@ -82,6 +82,15 @@ jobs:
           createdb -h 127.0.0.1 -U postgres hoopcheck_profile_privacy_test
           psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_profile_privacy_test -f supabase/tests/player_profile_privacy.sql
 
+      - name: Verify optional MFA policies and privileged request enforcement
+        env:
+          PGPASSWORD: postgres
+        run: |
+          createdb -h 127.0.0.1 -U postgres hoopcheck_mfa_test
+          psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_mfa_test -f supabase/tests/opted_in_mfa.sql
+          node --test scripts/test-mfa-enforcement.mjs
+          PGHOST=127.0.0.1 PGUSER=postgres node scripts/test-mfa-sql-negative.mjs
+
       - name: Verify Ambassador HQ database security and commission lifecycle
         env:
           PGPASSWORD: postgres

@@ -104,3 +104,16 @@ test('actual Supabase sign-out cannot erase a newer queued password sign-in',asy
  assert.equal((await signIn).data.user.id,second);
  assert.equal((await client.auth.getSession()).data.session.user.id,second);
 });
+
+test('MFA management retains its verified owner when another account sign-in is already pending',async()=>{
+ const {createClient}=await import('@supabase/supabase-js');const owner='11111111-1111-4111-8111-111111111111',next='22222222-2222-4222-8222-222222222222';
+ const jwt=id=>Buffer.from('{"alg":"HS256"}').toString('base64url')+'.'+Buffer.from(JSON.stringify({sub:id,exp:Math.floor(Date.now()/1000)+3600})).toString('base64url')+'.fixture';
+ const user=id=>({id,aud:'authenticated',email:'fixture@example.test'});const pending=deferred(),started=deferred(),intents=createAuthIntents();let enrollRequests=0;
+ const request=guardAuthResponses('https://fixture.supabase.co',intents,async input=>{const path=new URL(String(input)).pathname;if(path==='/auth/v1/user')return Response.json(user(owner));if(path==='/auth/v1/token'){started.resolve();return pending.promise;}if(path==='/auth/v1/factors'){enrollRequests++;throw Error('A stale owner must not enroll a factor for B');}throw Error('Unexpected Auth request '+path);});
+ const client=createClient('https://fixture.supabase.co','fixture-key',{auth:{autoRefreshToken:false,persistSession:false,detectSessionInUrl:false},global:{fetch:request}});bindAuthIntents(client.auth,intents);
+ await client.auth.setSession({access_token:jwt(owner),refresh_token:'fixture-a'});
+ const signingIn=client.auth.signInWithPassword({email:'fixture-b@example.test',password:'fixture'});await started.promise;
+ const enrolling=client.auth[Symbol.for('hoopcheck.owned-mfa')](owner,'enroll',[{factorType:'totp',friendlyName:'A backup'}]);
+ pending.resolve(Response.json({access_token:jwt(next),refresh_token:'fixture-b',expires_in:3600,token_type:'bearer',user:user(next)}));await signingIn;
+ assert.ok((await enrolling).error);assert.equal(enrollRequests,0);assert.equal((await client.auth.getSession()).data.session.user.id,next);
+});

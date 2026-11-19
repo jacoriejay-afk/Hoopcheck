@@ -22,6 +22,8 @@ function load(name, state, overrides = {}) {
     'react-native-safe-area-context': { SafeAreaView: 'SafeAreaView' },
     '../src/native/preferences': { useDevicePreferences: () => state },
     '../src/theme': { useEntryTheme: () => ({}) },
+    '../src/native/mfa': { useMfaSession: () => ({ phase: 'ready', state: null, error: '', verifiedRevision: 0, retry() {} }) },
+    './MfaChallenge': { MfaChallenge: 'MfaChallenge' },
     './Motion': { Reveal: ({ children }) => children },
     '../assets/hoopcheck-mark.png': 1,
     'expo-local-authentication': { authenticateAsync: async () => ({ success: true }) },
@@ -189,7 +191,7 @@ test('startup failure shows an actionable retry while protected content stays co
   let retried = 0;
   const tree = await render(load('AppLock', { ready: true, preferences: { appLock: false } }), { authReady: false, protectedScreen: false, userId: null, startupError: 'Could not restore sign-in', retryStartup: () => retried++ });
   assert.equal(tree.root.findByType('Modal').props.visible, true);
-  await act(async () => tree.root.findByType('Pressable').props.onPress());
+  await act(async () => tree.root.findAllByType('Pressable')[0].props.onPress());
   assert.equal(retried, 1); await act(async () => tree.unmount());
 });
 
@@ -209,5 +211,18 @@ test('foreground after five minutes relocks and background invalidates an in-fli
   await act(async () => { notify('background'); now += 300000; notify('active'); }); assert.equal(tree.root.findByType('Modal').props.visible, true);
   await act(async () => { tree.root.findAllByType('Pressable')[0].props.onPress(); await tick(); notify('background'); pending.resolve({ success: true }); await tick(); notify('active'); });
   assert.equal(tree.root.findByType('Modal').props.visible, true); assert.equal(tree.root.findAllByType('Pressable')[0].props.disabled, false);
+  await act(async () => tree.unmount());
+});
+
+ test('MFA challenge reuses the lock modal and precedes device lock and onboarding', async () => {
+  const security = { owner: 'user-a', phase: 'challenge', state: { owner: 'user-a', required: true, level: 'aal1', factors: [] }, error: '', verifiedRevision: 0, retry() {} };
+  const Component = load('AppLock', { ready: true, preferences: { appLock: true, onboardingDone: false } }, { '../src/native/mfa': { useMfaSession: () => security } });
+  const tree = await render(Component, { authReady: true, protectedScreen: true, userId: 'user-a' });
+  const modal = tree.root.findByType('Modal'); assert.equal(tree.root.findAllByType('Modal').length, 1); assert.equal(tree.root.findAllByType('MfaChallenge').length, 1); assert.equal(tree.root.findAllByType('SafeAreaView').length, 0);
+  security.phase = 'loading'; security.state = null;
+  await act(async () => tree.update(React.createElement(Component, { authReady: true, protectedScreen: true, userId: 'user-a' })));
+  assert.equal(tree.root.findByType('Modal'), modal); assert.equal(tree.root.findAllByType('MfaChallenge').length, 0);
+  security.phase = 'ready'; await act(async () => tree.update(React.createElement(Component, { authReady: true, protectedScreen: true, userId: 'user-a' })));
+  assert.equal(tree.root.findByType('Modal'), modal); assert.equal(tree.root.findAllByType('SafeAreaView').length, 0);
   await act(async () => tree.unmount());
 });

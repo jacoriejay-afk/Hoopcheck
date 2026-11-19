@@ -1,3 +1,5 @@
+import { MfaChallenge } from "./MfaChallenge";
+import { useMfaSession } from "../src/native/mfa";
 import { Onboarding } from "./Onboarding";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AppState, Modal, Pressable, Text, View } from "react-native";
@@ -13,6 +15,7 @@ type Props = { authReady: boolean; protectedScreen: boolean; userId: string | nu
 export function AppLock({ authReady, protectedScreen, userId, startupError, retryStartup }: Props) {
   const { ready, preferences, restoreError, retryRestore } = useDevicePreferences();
   const theme = useEntryTheme();
+  const security = useMfaSession();
   const leftAt = useRef<number | null>(null);
   const [unlockedUser, setUnlockedUser] = useState<string | null>(null);
   const identity = useRef(userId);
@@ -49,6 +52,9 @@ export function AppLock({ authReady, protectedScreen, userId, startupError, retr
     });
     return () => listener.remove();
   }, [protectedScreen, preferences.appLock, userId]);
+  useEffect(() => {
+    if (userId && security.verifiedRevision > 0 && AppState.currentState === "active" && consumeFreshSignIn(userId)) setUnlockedUser(userId);
+  }, [userId, security.verifiedRevision]);
   async function unlock() {
     if (busy || !userId) return;
     const current = ++operation.current;
@@ -66,7 +72,7 @@ export function AppLock({ authReady, protectedScreen, userId, startupError, retr
     }
   }
   async function normalSignIn() {
-    if (busy || !userId) return;
+    if (busy) return;
     const current = ++operation.current;
     setBusy(true); setMessage("");
     try {
@@ -78,16 +84,18 @@ export function AppLock({ authReady, protectedScreen, userId, startupError, retr
       if (current === operation.current && identity.current === userId) setMessage("Couldn’t prepare normal sign-in. Please try again.");
     } finally { if (current === operation.current) setBusy(false); }
   }
-  const bootstrapping = !authReady || !ready;
-  const needsLock = lockScreenRequired(authReady, ready, protectedScreen, preferences.appLock, !userId || unlockedUser !== userId);
+  const securityPending = Boolean(userId && security.phase !== "ready");
+  const bootstrapping = !authReady || !ready || securityPending;
+  const needsLock = lockScreenRequired(authReady, ready, protectedScreen, preferences.appLock, !userId || unlockedUser !== userId) || securityPending;
   const needsOnboarding = ready && !preferences.onboardingDone;
-  const recoveryMessage = startupError || restoreError;
+  const recoveryMessage = startupError || restoreError || (userId && security.phase === "error" ? security.error : "");
   // One native presentation owns hydration, recovery, locking and onboarding.
   if (!needsLock && !needsOnboarding) return null;
-  return <Modal visible={true} animationType="none" onRequestClose={() => {}}>{!needsLock ? <Onboarding /> : <View style={{ flex: 1, justifyContent: "center", backgroundColor: theme.background, padding: 28, gap: 24 }}>
+  return <Modal visible={true} animationType="none" onRequestClose={() => {}}>{authReady && ready && userId && security.phase === "challenge" && security.state?.owner === userId ? <MfaChallenge key={userId} state={security.state} onVerified={security.retry} /> : !needsLock ? <Onboarding /> : <View style={{ flex: 1, justifyContent: "center", backgroundColor: theme.background, padding: 28, gap: 24 }}>
     {bootstrapping ? <>
       <Text accessibilityLiveRegion="polite" style={{ color: theme.foreground }}>{recoveryMessage || "Preparing HoopCheck…"}</Text>
-      {recoveryMessage ? <Pressable accessibilityRole="button" onPress={() => { if (startupError) retryStartup?.(); if (restoreError) void retryRestore(); }} style={{ minHeight: 48, justifyContent: "center" }}><Text style={{ color: theme.accent, fontSize: 18 }}>Try again</Text></Pressable> : null}
+      {recoveryMessage ? <Pressable accessibilityRole="button" onPress={() => { if (startupError) retryStartup?.(); if (restoreError) void retryRestore(); if (security.phase === "error") security.retry(); }} style={{ minHeight: 48, justifyContent: "center" }}><Text style={{ color: theme.accent, fontSize: 18 }}>Try again</Text></Pressable> : null}
+      {recoveryMessage ? <Pressable accessibilityRole="button" disabled={busy} onPress={() => void normalSignIn()} style={{ minHeight: 48, justifyContent: "center" }}><Text style={{ color: theme.accent, fontSize: 18 }}>Use normal sign-in</Text></Pressable> : null}
     </> : <>
     <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 28, fontWeight: "900" }}>Unlock HoopCheck</Text>
     <Text style={{ color: theme.muted }}>Use Face ID, fingerprint, or your device passcode.</Text>

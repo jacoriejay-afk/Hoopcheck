@@ -456,6 +456,7 @@ export default function AccountPage() {
           <SettingsRow icon="user" label={t("editProfile")} value={t("editDetails")} href="#profile-editor" />
           {profile.account_type === "player" && <SettingsRow icon="user" label="Career Passport" value="View your player passport" href="/profile#career-passport" />}
           <SettingsRow icon="mail" label={t("email")} value={email || t("notSelected")} onClick={changeEmail} />
+          <SettingsRow icon="shield" label="Two-factor authentication" value="Authenticator and recovery" href="/account/security" />
           <SettingsRow icon="lock" label={t("changePassword")} value={t("updatePassword")} onClick={() => { setPasswordMessage(""); setPasswordModal(true); }} />
           <SettingsRow icon="crown" label={t("membershipLabel")} value={subscription?.plan === "premium" ? "Premium" : subscription?.plan === "pro" ? t("pro") : t("freePlan")} href="/membership" />
         </SettingsGroup>
