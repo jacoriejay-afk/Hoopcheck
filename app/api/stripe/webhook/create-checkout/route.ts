@@ -509,6 +509,15 @@ export async function POST(
     }
 
     if (!session.url) {
+      // Never leave a newly created trial Checkout Session open without a URL.
+      // Keep its one-time reservation locked for server-side reconciliation.
+      if (trialEligible) {
+        try {
+          await stripe.checkout.sessions.expire(session.id);
+        } catch (expireError) {
+          console.error("Unable to expire trial checkout without URL", expireError);
+        }
+      }
       return NextResponse.json(
         {
           error:
