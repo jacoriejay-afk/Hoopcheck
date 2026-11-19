@@ -11,7 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../../src/lib/supabase";
 
 type ReviewSummary = { id: string; overall_rating: number | null; title: string | null; body: string | null; created_at: string; player_season: string | null; is_anonymous: boolean };
-type Team = { id: string; name: string; country: string | null; city: string | null; league_name: string | null; website: string | null };
+type Team = { logo_url?: string | null; logo_bg?: string | null; id: string; name: string; country: string | null; city: string | null; league_name: string | null; website: string | null };
 function safeWebsite(value: string | null) { if (!value) return null; try { const url = new URL(value.startsWith("http") ? value : `https://${value}`); return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : null; } catch { return null; } }
 
 export default function TeamDetailScreen() {
@@ -57,7 +57,7 @@ export default function TeamDetailScreen() {
     async function load() {
       setLoading(true);
       if (!id) { setError(true); setLoading(false); return; }
-      const { data, error: queryError } = await read(`teams:profile:${id}`, () => supabase.from("teams").select("id,name,country,city,league_name,website").eq("id", id).eq("active", true).eq("basketball_type", "mens").maybeSingle());
+      const { data, error: queryError } = await read(`teams:profile:${id}`, () => supabase.from("teams").select("id,name,country,city,league_name,website,logo_url,logo_bg").eq("id", id).eq("active", true).eq("basketball_type", "mens").maybeSingle());
       if (!alive) return;
       if (queryError || !data) { setError(true); setTeam(null); } else { setError(false); setTeam(data as Team); }
       setLoading(false);
@@ -77,12 +77,12 @@ export default function TeamDetailScreen() {
     <SafeAreaView edges={["left", "right", "bottom"]} style={styles.safe}>
       <OfflineBanner savedAt={savedAt} />
       <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); setRefreshId(value => value + 1); }} />} contentContainerStyle={styles.content}>
-        <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back to teams</Text></Pressable>
+        <Pressable accessibilityRole="link" style={{ minHeight: 44, justifyContent: "center" }} onPress={() => router.back()}><Text style={styles.back}>‹ Back to teams</Text></Pressable>
         {loading ? <Skeleton profile /> : error || !team ? (
           <View style={styles.empty}><Text style={styles.title}>Team unavailable</Text><Text style={styles.body}>This team may have been removed or is not currently listed.</Text></View>
         ) : (
           <>
-            <EntityHero name={team.name} country={team.country} kind="teams" label="TEAM PROFILE" path={`/teams/${team.id}`} location={[team.city, team.country].filter(Boolean).join(", ") || "Location not listed"} />
+            <EntityHero logoUrl={team.logo_url} logoBg={team.logo_bg} name={team.name} country={team.country} kind="teams" label="TEAM PROFILE" path={`/teams/${team.id}`} location={[team.city, team.country].filter(Boolean).join(", ") || "Location not listed"} />
             <GlassCard style={styles.card}>
               <Text style={styles.label}>LEAGUE</Text><Text style={styles.value}>{team.league_name || "Not listed"}</Text>
               <View style={styles.divider} />

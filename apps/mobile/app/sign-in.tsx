@@ -56,7 +56,7 @@ export default function SignInScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}>
+        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, paddingVertical: 16 }}>
         <GlassCard style={styles.container}>
           <Text style={[styles.title, { fontFamily: "HoopCheckDisplay", fontWeight: "400" }]}>Welcome back</Text>
           <Text style={styles.subtitle}>Sign in to continue to HoopCheck.</Text>
@@ -80,7 +80,7 @@ export default function SignInScreen() {
 
 const createStyles = (theme: EntryTheme) => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: theme.background }, flex: { flex: 1 },
-  container: { margin: 24, justifyContent: "center", paddingHorizontal: 24, paddingVertical: 24 },
+  container: { margin: 16, justifyContent: "center", paddingHorizontal: 16, paddingVertical: 16 },
   title: { color: theme.foreground, fontSize: 30, fontWeight: "800" },
   subtitle: { color: theme.muted, fontSize: 15, lineHeight: 22, marginTop: 8, marginBottom: 20 },
   label: { color: theme.foreground, fontSize: 13, fontWeight: "700", marginBottom: 8, marginTop: 14 },

@@ -18,7 +18,7 @@ export function Button({ children, secondary = false, style, ...props }: Pressab
 }
 export function Input({ style, ...props }: TextInputProps) {
   const t = useEntryTheme();
-  return <TextInput placeholderTextColor={t.muted} selectionColor={t.accent} {...props} style={[{ minHeight: 50, paddingHorizontal: t.spacing.md, borderWidth: 1, borderColor: t.border, borderRadius: t.radius.control, color: t.foreground, backgroundColor: t.input, ...t.type.body }, style]} />;
+  return <TextInput keyboardAppearance={t.dark ? "dark" : "light"} placeholderTextColor={t.muted} selectionColor={t.accent} {...props} style={[{ minHeight: 50, paddingHorizontal: t.spacing.md, borderWidth: 1, borderColor: t.border, borderRadius: t.radius.control, color: t.foreground, backgroundColor: t.input, ...t.type.body }, style]} />;
 }
 export function Chip({ children }: { children: string }) {
   const t = useEntryTheme();

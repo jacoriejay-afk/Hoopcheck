@@ -11,7 +11,7 @@ import { useCachedRead, useNetwork } from "../../src/native/network";
 import { readReviewAccess, type ReviewAccess } from "../../src/native/reviewAccess";
 import { useEntryTheme } from "../../src/theme";
 
-type Team = { id: string; name: string; country: string | null; city: string | null; league_id: string | null; league_name: string | null };
+type Team = { logo_url?: string | null; logo_bg?: string | null; id: string; name: string; country: string | null; city: string | null; league_id: string | null; league_name: string | null };
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
 export default function WomensTeamScreen() {
   const theme = useEntryTheme();
@@ -39,7 +39,7 @@ export default function WomensTeamScreen() {
     const load = async () => {
       try {
         if (!id) { if (active) setTeam(null); return; }
-        const result = await read(`womens-teams:profile:${id}`, () => supabase.from("womens_teams").select("id,name,country,city,league_id,league_name").eq("id", id).eq("active", true).maybeSingle());
+        const result = await read(`womens-teams:profile:${id}`, () => supabase.from("womens_teams").select("id,name,country,city,league_id,league_name,logo_url,logo_bg").eq("id", id).eq("active", true).maybeSingle());
         if (active) setTeam(result.error ? null : result.data as Team | null);
       } catch { if (active) setTeam(null); }
       finally { if (active) setLoading(false); }
@@ -76,7 +76,7 @@ export default function WomensTeamScreen() {
     <ScrollView contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.lg }} refreshControl={<RefreshControl refreshing={loading && refresh > 0} onRefresh={() => setRefresh(value => value + 1)} />}>
       <Pressable accessibilityRole="link" onPress={() => router.push("/womens")} style={touch}><Text style={link}>‹ Women’s teams</Text></Pressable>
       {loading ? <Skeleton profile /> : !current ? <Text accessibilityRole="alert" style={text}>Team unavailable. Pull to retry.</Text> : <>
-        <EntityHero name={current.name} country={current.country} kind="women" label="WOMEN’S TEAM PROFILE" path={`/womens/${current.id}`} location={[current.city, current.country].filter(Boolean).join(", ") || "Location not listed"} />
+        <EntityHero logoUrl={current.logo_url} logoBg={current.logo_bg} name={current.name} country={current.country} kind="women" label="WOMEN’S TEAM PROFILE" path={`/womens/${current.id}`} location={[current.city, current.country].filter(Boolean).join(", ") || "Location not listed"} />
         <GlassCard><Text style={{ color: theme.muted }}>LEAGUE</Text><Text style={text}>{current.league_name || "Not listed"}</Text>
           {current.league_id ? <Pressable accessibilityRole="link" onPress={() => router.push({ pathname: "/womens/leagues/[id]", params: { id: current.league_id! } })} style={touch}><Text style={link}>Open league profile</Text></Pressable> : null}
         </GlassCard>

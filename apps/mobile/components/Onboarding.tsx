@@ -1,13 +1,11 @@
+import { BrandLogo } from "./BrandLogo";
 import { useState } from "react";
-import { Image, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDevicePreferences, type Role } from "../src/native/preferences";
 import { useEntryTheme } from "../src/theme";
 import { Reveal } from "./Motion";
 
-// Metro requires a static require for bundled artwork.
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const brandMark = require("../assets/hoopcheck-mark.png");
 const panels = [
   ["Reviews", "Know who you're signing with", "Learn from players’ experiences before your next move."],
   ["Community", "Find your basketball community", "Connect through HoopFeed and HoopGroups. Access follows your membership."],
@@ -34,10 +32,10 @@ export function Onboarding() {
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background, padding: 24 }}>
       <Pressable accessibilityRole="button" onPress={() => void finish()} disabled={busy} style={{ alignSelf: "flex-end", minHeight: 48, justifyContent: "center" }}><Text style={{ color: theme.accent, fontSize: 17 }}>Skip</Text></Pressable>
       <View style={{ flex: 1, justifyContent: "center", gap: 24 }}>
-        <Image alt="HoopCheck" source={brandMark} style={{ width: 80, height: 80 }} accessibilityLabel="HoopCheck" />
+        <BrandLogo />
         <Reveal key={step}>
           <Text style={{ color: theme.accent, fontSize: 18 }}>{panel?.[0] ?? "Your role"}</Text>
-          <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 34, fontWeight: "900", marginVertical: 16 }}>{panel?.[1] ?? "How do you join the game?"}</Text>
+          <Text accessibilityRole="header" style={{ color: theme.foreground, fontFamily: "HoopCheckDisplay", fontSize: 30, lineHeight: 34, marginVertical: 16 }}>{panel?.[1] ?? "How do you join the game?"}</Text>
           <Text style={{ color: theme.muted, fontSize: 17, lineHeight: 25 }}>{panel?.[2] ?? "Your choice prefills signup. It does not change account access."}</Text>
         </Reveal>
         {panel ? <Pressable accessibilityRole="button" onPress={() => setStep(step + 1)} style={{ padding: 18, backgroundColor: theme.button, borderRadius: 16 }}><Text style={{ color: theme.onButton, fontWeight: "800" }}>Continue · {step + 1} of 3</Text></Pressable> : roles.map(([role, label]) => <Pressable key={role} disabled={busy} accessibilityRole="button" onPress={() => void finish(role)} style={{ minHeight: 48, justifyContent: "center", borderBottomWidth: 1, borderColor: theme.border }}><Text style={{ color: theme.foreground, fontSize: 18 }}>{label}</Text></Pressable>)}

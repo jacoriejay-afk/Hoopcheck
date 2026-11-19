@@ -22,6 +22,7 @@ function load(name, state, overrides = {}) {
     'react-native-safe-area-context': { SafeAreaView: 'SafeAreaView' },
     '../src/native/preferences': { useDevicePreferences: () => state },
     '../src/theme': { useEntryTheme: () => ({}) },
+    './BrandLogo': { BrandLogo: () => null },
     './Motion': { Reveal: ({ children }) => children },
     '../assets/hoopcheck-mark.png': 1,
     'expo-local-authentication': { authenticateAsync: async () => ({ success: true }) },

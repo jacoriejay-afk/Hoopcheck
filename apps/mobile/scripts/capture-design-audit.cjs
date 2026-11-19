@@ -21,7 +21,7 @@ const rows = {
 (async () => {
  const browser = await chromium.launch({executablePath: process.env.CHROMIUM_PATH || '/usr/bin/chromium', args:['--no-sandbox']});
  const output = process.env.DESIGN_SCREENSHOTS || '/tmp/hoopcheck-native-ui'; fs.mkdirSync(output,{recursive:true});
- const routes=['/','/sign-in','/sign-up','/forgot-password','/dashboard','/teams','/leagues','/players','/coaches','/search','/settings','/notifications','/account','/account/edit','/players/'+uid,'/teams/'+rows.teams[0].id,'/leagues/'+rows.leagues[0].id,'/womens/'+teamId,'/womens/leagues/'+leagueId,'/team-hub/groups'];
+ const routes=['/','/sign-in','/sign-up','/forgot-password','/about','/dashboard','/teams','/leagues','/players','/coaches','/search','/settings','/notifications','/account','/connections','/account/edit','/players/'+uid,'/teams/'+rows.teams[0].id,'/leagues/'+rows.leagues[0].id,'/womens/'+teamId,'/womens/leagues/'+leagueId,'/team-hub/groups'];
  try { for(const theme of ['light','dark']) {
   const context=await browser.newContext({viewport:{width:390,height:844},colorScheme:theme});
   await context.route('**/*',async route=>{
@@ -33,17 +33,21 @@ const rows = {
    }
    return route.abort();
   });
-  const page=await context.newPage();
   for(const path of routes){
+   const page=await context.newPage();
    const anonymous=['/','/sign-in','/sign-up','/forgot-password'].includes(path);
-   await context.addInitScript(({token,user,anonymous})=>{
+   await page.addInitScript(({token,user,anonymous})=>{
     localStorage.clear();if(!anonymous)localStorage.setItem('sb-fixture-auth-token',JSON.stringify({access_token:token,refresh_token:'fixture',token_type:'bearer',expires_at:Math.floor(Date.now()/1000)+3600,user}));
     localStorage.setItem('hoopcheck:device-preferences:v1',JSON.stringify({haptics:false,appLock:false,onboardingDone:true}));
    },{token,user,anonymous});
-   await page.goto(baseUrl+path);await page.waitForTimeout(700);
+   await page.goto(baseUrl+path);
+   await page.evaluate(() => document.fonts.ready);
+   if (!anonymous && path !== '/about') await page.getByRole('tab', {name:'Home',exact:true}).waitFor();
+   await page.waitForTimeout(500);
    const slug=path==='/'?'welcome':path.slice(1).replaceAll('/','-');
    await page.screenshot({path:`${output}/audit-${slug}-${theme}.png`,fullPage:true});
    console.log(theme,path,'=>',new URL(page.url()).pathname);
+   await page.close();
   }await context.close();
  }}finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

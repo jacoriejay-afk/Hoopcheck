@@ -1,121 +1,199 @@
-# Native design final workstream — readiness report
+# PR #729 — native design continuation
 
-2026-11-19. **Draft; full visual parity and iPhone readiness are not established.**
+Updated 2026-11-19. Branch `codex/native-design-final`, still based on #721
+(`d0b87b1e`). **Not ready for final Build 8 integration or iPhone sign-off.**
+The design changes are locally reviewable; authenticated live reference access,
+Build 8 reconciliation and physical-device gates remain open.
 
-Branch: `codex/native-design-final`. Base: #721, `d0b87b1ed92cd2130001b224b6e39493a5faa447`.
-This is a presentation-only follow-up stacked on the existing Build 8 candidate;
-review its diff against `fix/native-startup-recovery`, not main. No other branch was
-modified. No merge, EAS build, OTA, production deployment, billing/auth policy,
-moderation rule, database schema or production record change was performed.
+[Visual gallery](comparisons.html) · [Original audit](baseline-report.md)
 
-## Existing PR inspection
+## Completed in this continuation
 
-| PR | Existing work preserved | Decision |
+- Exact official HoopCheck SVG wordmark/mark from `components/Logo.tsx`, used in
+  the welcome screen, dashboard header, feed and onboarding. The feed's labels
+  use the existing display font. No dependency or font-loading change.
+- Public welcome structure: branded header, search, dark gradient hero, website
+  copy, primary signup/secondary sign-in actions, Live Games and pre-sign entry
+  points, compact directory rows and About. Existing protected destinations
+  still require sign-in. Pre-sign remains an explicit website handoff.
+- Compact shared directory presentation, role colors and 16pt dashboard gutters;
+  32pt hero text instead of the oversized 48pt default. No search/auth behavior
+  replacement. Public search protection is exercised in the browser.
+- Public native About screen with website editorial copy, reachable from welcome,
+  dashboard and Account. Company information remains a labeled website handoff.
+- Native Connections: own Following/Followers lists through the **existing**
+  `get_public_follow_list` RPC used by `app/connections/page.tsx`. Same fan
+  filtering/profile-link rules, public data only, bounded reads, identity checks,
+  focus cleanup, stale-result scope, retry and empty states. Team/player rows
+  navigate to existing native profiles; fan profiles use the existing website
+  handoff. No follow/unfollow, private-data cache or database write was added.
+- Real team artwork on men's/women's profile and directory screens. Only existing
+  `logo_url`/`logo_bg` fields were added to existing selects; tables, filters,
+  ordering, pagination, RPCs and policies remain unchanged. HTTPS artwork uses
+  `contain`, explicit loading state and authored-crest fallback on failure.
+- Removed duplicate Live Games title, compacted game titles, added an initial
+  games-loading skeleton, widened detail back-link hit areas, reduced sign-in
+  and profile-editor spacing, and gave shared inputs theme-aware iOS keyboards.
+- Retained the first pass's compact cards, unified entity headers, floating tab
+  bar and Alerts/Settings title cleanup. These were not recreated.
+
+## Reference access: what was and was not compared
+
+The live website Account page was opened in the shared browser and redirected
+to `https://hoopcheck.online/login?returnTo=%2Faccount`. Secure browser sign-in
+returned `unavailable`; no credentials were requested in chat, fabricated,
+extracted or used. **Live authenticated website-to-native comparison is still
+blocked by reference access, not by a physical iPhone.**
+
+Source comparisons use the actual website's `components/Logo.tsx`,
+`app/HomeClient.tsx`, `app/about/page.tsx`, `app/connections/page.tsx`,
+`components/HoopFeedShared.tsx`, `components/TeamProfileHero.tsx` and existing
+canonical theme CSS. These source comparisons and synthetic authenticated
+native-web flows are not represented as live signed-in parity proof.
+
+## Screen-by-screen status
+
+| Area | Completed / verified here | Remaining |
 | --- | --- | --- |
-| #696 | Floating rounded tab geometry | Port that presentation onto the five current routes; retain newer navigation and accessibility. Do not merge the outdated branch wholesale. |
-| #710 | Feed/Reels/alerts/account clients and website tabs | Preserve clients and access checks. |
-| #711 | Compact feed, image aspect ratios, loading/retry | Preserve existing media/composer implementation; do not duplicate it. |
-| #715 | Live Games, chat, groups and touch reconciliation | Preserve all behavior. |
-| #720 | Full feature reconciliation | Inherited through #721. |
-| #721 | Startup recovery and identity-bound app lock | Branch base; unchanged. No freeze repair claim. |
+| Welcome | Website structure/copy/branding, search and protected destination routing; light/dark captures | Public live visual sign-off; no native pre-sign checklist or reviews overview (explicit web handoffs) |
+| Dashboard | Official header, compact hero and colored directory rows; 320px overflow assertion | Live role-specific dashboard comparison |
+| HoopFeed / fan feed | Official mark/display labels; existing compact composer/media preserved; moderation/draft/reply/check/save/poll tests pass | Media-creation UI belongs to #722; live authenticated comparison |
+| Reels | Existing playback preserved; light/dark video tests/captures pass | AVPlayer formats/audio/expiry on iPhone |
+| Comments / posts | Existing comment/reply/failure-recovery behavior preserved and tested | Long-thread keyboard/VoiceOver on device; separate live website comparison |
+| Live Games | One title, compact game cards, initial loading skeleton; role/side/prediction tests | Native keyboard/safe areas and authenticated website comparison |
+| Game chat | Send failure/draft/recovery/report/mute/block browser tests retained | Physical keyboard/touch/lifecycle |
+| HoopGroups | Existing directory/detail/membership/moderation flows pass | Native overlays/keyboard; live website comparison |
+| Player directory / profile | Existing functionality preserved; shared card presentation retained | #723 owns player access/avatar parity; integrate that work rather than recreating it |
+| Profile edit | Compact spacing; current save/failure/draft/cover tests pass | #722 owns photo editor; keyboard/media picking on iPhone |
+| Men's and women's teams | Shared compact hero plus real logo loading/contain/fallback; back hit areas | Live logos/data and physical image rendering; website's richer profile tabs/cover/follow UI remain feature gaps |
+| Men's and women's leagues | Shared compact identity treatment retained; women's directory entry stays native | Their content models differ at baseline; full website tabs/season/team composition remains a feature gap |
+| Directories / search | Compact shared rows, native women's route, protected search and drill-down tests | Live search/data comparison; device keyboard |
+| Notifications | Single title retained; unread/mark-all tests pass | Push delivery and live reference |
+| Connections | New native public Following/Followers, scoped fan list, retry/empty state and profile routing | Real account/RPC verification; fan profile itself remains a website handoff; native avatars/contact controls not added |
+| Membership / subscriptions | Existing authoritative Account status preserved and tested | #728–#730 own StoreKit/backend; native purchase/restore controls still forthcoming there. No duplicate purchase screen in this PR |
+| Login / signup / password recovery | Compact sign-in/shared inputs; existing auth integration tests pass | #724–#727 own auth operation/MFA work; actual OAuth/recovery/device keyboard |
+| Onboarding / username | Official brand and display type, lifecycle regressions pass | On-device modal/lock/large-text verification |
+| Settings | Earlier single title/compact layout retained; appearance persistence/failure tests pass | Face ID, alternate icons and system keyboard theme on iPhone |
+| About | New native public copy and branded presentation; both-theme screenshots/test | Device readability; company/founder/partnership content remains on website |
+| Account security | No duplicate screen introduced | Existing native security screen is in #727, not this branch; reconcile and test its UI with that owner |
+| Owner HQ / Ambassador HQ | Audited as absent from this baseline | No native role-authorized data contract/screens; cannot implement truthful role dashboards as a styling-only change. Requires feature owner and authorized reference sessions, not merely an iPhone |
+| Website handoffs | Existing URL-validation/browser handoff retained | Actual browser session and return behavior on device |
 
-## Reference and method
+This closes the source-supported presentation issues implemented above, not every
+website feature gap. Missing tabs/cover/contact/purchase/HQ functionality is
+explicitly distinct from physical-device verification.
 
-Live public mobile homepage: https://hoopcheck.online, captured at 390×844 in
-`website-home-light.png`. Website source inspected: `components/BottomNav.tsx`,
-`components/TeamProfileHero.tsx`, `app/hoopcheck-lm2f-bottom-nav.css`,
-`app/hoopcheck-brand-navigation.css`; native theme already cites canonical website
-CSS. The website has competing navigation overrides; rounded navigation follows
-#696's explicit design direction and requires owner visual review against the
-signed-in live site. A live signed-in website session was unavailable. Thus the
-remaining authenticated comparisons are source/fixture audits, not verified live
-website matches. No production authentication or synthetic production writes.
+## Coordination with Build 8
 
-Before: unchanged #721 web export. After: presentation changes in this branch.
-Chromium, 390×844, light/dark. All native fixture remote traffic is intercepted.
-Generic `audit-*` captures include available content, loading, empty or error
-states; they do not prove successful backend integration. The account fixture in
-the generic capture cannot verify entitlements; `account-light/dark.png` from the
-community suite captures verified synthetic account content separately.
+Read current open PRs and compared affected paths. Other branches were not
+modified or merged. #696's updated head `12531b6f` preserves its rounded nav work;
+#729 already carries that design direction on the newer routes.
 
-Open [comparison gallery](comparisons.html) for paired screenshots. Each pair
-uses the same route/fixture/theme. `feed-*.png` is the community suite's final
-Home screen; `feed-posts-*.png` is the actual feed. Images are viewport captures,
-not complete scroll-content inventories. Role editor snapshots cover player,
-fan and coach. No physical iPhone screenshots were produced.
-
-## Screen-by-screen audit
-
-| Screen | Finding / work in this PR | Evidence and remaining work |
+| PRs | Feature owner | Integration requirement |
 | --- | --- | --- |
-| Welcome `/` | Centered oversized card differed from public hero. Top-align, 16pt gutter, compact display heading, dark hero, website copy and create-account-first actions. Preserve official bundled mark. | Paired audit captures. Still lacks public website search, directory sections and full official wordmark/header; not full homepage parity. |
-| Dashboard | Existing directory/search actions retained. Floating nav now reserves layout space. | Paired audit/Home captures and directory navigation suite. Website dashboard role-specific comparison pending. |
-| HoopFeed / fan feed | #711 already implements compact composer/cards and media. Retain it. Shared card defaults now lighter where used. | Feed suite: loading/retry, decoded media, posting failure/draft retention, comments/replies, checks, save, poll and route navigation in both themes. Official full wordmark parity still needs signed-in reference review. |
-| Reels | Preserve #710 video implementation. | Both-theme video playback screenshots/tests. Native AVPlayer and signed URL expiry still require iPhone. |
-| Post/comments | Preserve compact nested comments and interaction behavior. | Feed suite exercises replies and failure/recovery; comments not separately inventoried as a full-page capture. Keyboard/long threads need iPhone. |
-| Live Games | Shared cards lose heavy shadows; existing compact listing retained. | Live chat screenshots, role gates, game/side/prediction tests. Listing still has native stack plus inner Live Games title; dedicated header redesign pending. |
-| Game chat | Shared controls use 48pt minimum with disabled accessibility state. | Both-theme send failure/draft/send/report/mute/block tests. Keyboard and bottom composer on device pending. |
-| HoopGroups index/detail | Existing implementation preserved; shared cards become compact. | Group detail screenshots and membership/moderation/draft/error/leave tests. Generic index empty/error capture. Signed-in website reference pending. |
-| Player directory | Existing compact rows retained. | Both-theme route captures and discovery navigation. Long names/large text on iPhone pending. |
-| Player profile | Shared cards lose excess padding and shadows. | Both-theme synthetic profile capture. Website cover/avatar/full social profile remains incomplete; no invented native features. |
-| Edit profile | Existing editor preserved; shared cards/buttons compacted. | Player/fan/coach light/dark screenshots and save/failure/draft/cover tests. Native keyboard/cover fidelity pending. |
-| Men's team profile | 22pt gutters/26pt gaps and standalone identity stack differed from women. Shared `EntityHero`, 16pt gutters and compact card gaps. | Paired audit captures; real crest/media and website tabs remain a gap. |
-| Women's team profile | 24pt hero padding, system bold title and large vertical stack differed from men. Shared hero with compact crest/title row and display font. | Paired profile captures; review permission guards preserved. Real logo/cover parity pending. |
-| Men's league profile | Unify identity typography/spacing with team profiles. | Paired audit captures. Men's/women's league content models still differ; data behavior intentionally unchanged. |
-| Women's league profile | Same shared hero and gutters as men's league and both teams. | Paired league captures and team navigation suite. Website full league tabs/hero review pending. |
-| Teams / women's directory | Existing compact crest rows preserved. | Directory screenshots and search/navigation permission tests. |
-| League / coach directories | Existing compact rows retained. | Paired audit captures; detailed website comparisons pending. |
-| Search | Existing search/filter navigation retained. | Paired captures and search→team→league interactions. Keyboard first-tap behavior already present. |
-| Notifications | Remove duplicate content title; native stack owns Alerts heading. | Paired alerts captures, unread/mark-all tests. System push delivery is outside browser proof. |
-| Connections | No dedicated native route found. | Native parity unavailable; no new functionality added. |
-| Membership / subscription | Native account status exists; no dedicated native purchase screen at this baseline. Presentation compacted only. | Synthetic account capture/tests. Store purchase/lifecycle untouched and unverified. |
-| Login / signup | Shared card/button density improved; existing keyboard tap handling retained. | Both-theme route captures; auth integration 14 cases. Actual credentials, OAuth return and keyboard require device. |
-| Forgot/reset password | Shared presentation improved. | Forgot-password captures; reset requires a recovery session, not fabricated. |
-| Username / onboarding | Existing native components retained. | Source audit only. Welcome/onboarding lifecycle, long text and app-lock interaction require iPhone. |
-| Settings | Remove duplicated Settings title; use 16pt layout rhythm. | Paired captures; appearance persistence/system/failed-save tests. Face ID and alternate icons require iPhone. |
-| About / account security | No dedicated native About or security-management route. Device app lock is in Settings. | Website handoff and security workflows not verified. No auth/security changes. |
-| Owner HQ / Ambassador HQ | No dedicated native routes at this baseline. | Cannot claim native visual parity. Approved role sessions and future native screens needed. |
-| Web handoff | Existing external handoff retained. | Not a native implementation of missing screens; session/return behavior requires device. |
+| #722 | Media creation, profile photo editor | Preserve its composer/photo handling when combining `feed.tsx` and `account/edit.tsx` styling. |
+| #723 | Player access, country/avatar visibility | Preserve its access/client/avatar implementation. Do not substitute this baseline's player screen. |
+| #724–#726 | Auth identity races, ordering, verified links | Keep their session/deep-link protections authoritative. New About/Connections route registration must be added to their newer layout without replacing it. |
+| #727 | MFA and native security | Retain its security screen/providers and Account entry. |
+| #728–#730 | StoreKit / verified memberships | Retain their authoritative status/purchase/restore behavior. This PR does not configure, enable, apply or test billing infrastructure. |
+
+No production data, auth policy, membership rule, moderation rule or schema was
+changed. The Supabase guidance was consulted for existing projection/RPC reads;
+verification uses intercepted fixtures, not production queries. Current-head
+remote checks are recorded on the PR. See integration status below for the
+read-only merge simulation.
+
+## Evidence and reproduction
+
+`before/` retains the original #721 screenshots. `baseline-pr729/` preserves all
+66 original PR #729 after-images at `fd9b5447`. `after/` contains refreshed
+captures plus new About, Connections, artwork/fallback and 320px evidence.
+The gallery shows all available stages and identifies screens newly added here. There are 82 current captures, including 16 new evidence views.
+
+All captures are Chromium at 390×844, light/dark, except explicitly named 320px
+captures at 320×740. Synthetic authenticated native-web fixtures intercept every
+external request. Generic `audit-*` captures can show loading/error/empty states
+and are not backend-integration assertions. Successful Connections, artwork and
+Account content has separately named test captures. Role editor captures cover
+player/fan/coach. Viewport screenshots do not inventory every scroll position.
+
+After a local web export with the existing CI fixture environment:
+
+```sh
+python3 scripts/serve-native-fixture.py /tmp/native-design-729-web-final 8096
+# In another shell, from apps/mobile:
+export NATIVE_TEST_URL=http://127.0.0.1:8096
+node scripts/verify-discovery-browser.cjs
+node scripts/verify-feed-browser.cjs
+node scripts/verify-live-games-browser.cjs
+node scripts/verify-club-groups-browser.cjs
+node scripts/verify-profile-editor-browser.cjs
+node scripts/verify-theme-preference-browser.cjs
+DESIGN_SCREENSHOTS=docs/native-design-final/after node scripts/verify-design-browser.cjs
+DESIGN_SCREENSHOTS=docs/native-design-final/after node scripts/capture-design-audit.cjs
+```
+
+The capture harness now creates a fresh page/init script per route and waits for
+fonts/authenticated tabs rather than accumulating initialization scripts. The
+new design browser suite is included in Mobile CI.
 
 ## Validation
 
-- Mobile TypeScript passes.
-- Changed-file ESLint passes (no errors or warnings after cleanup).
-- All 15 native test files pass; all 14 auth integration cases and URL validation pass.
-  Auth harness theme stub was updated for the welcome hero; destination assertions
-  now select actions by accessible label rather than visual order.
-- Six isolated browser suites pass: discovery, feed, live games, club groups,
-  profile editor, appearance. Both themes where supported; permission denials and
-  failure recovery included. Final welcome/settings changes recaptured and
-  appearance suite rerun.
-- Local web and iOS Hermes exports pass. These are JavaScript exports, not native
-  compilation or physical-device verification.
-- CI and Vercel must be checked on the PR head. No merge approval is requested
-  while physical and authenticated visual gates remain open.
+- Mobile TypeScript and changed-file ESLint pass without warnings.
+- All 16 native test files pass, including public connection projection/destination
+  guards. All 14 auth integration cases and URL validation pass.
+- Seven isolated browser suites pass in both themes where applicable: discovery,
+  feed, Live Games, groups, profile editing, appearance and design. New checks
+  cover public About, protected welcome search, Connections failure→retry,
+  fan/player filtering, Following/Followers/empty state, team routing, decoded
+  artwork/failure fallback, and a 320px overflow assertion.
+- Local web export and iOS Hermes export pass. They are not Xcode compilation,
+  StoreKit validation, a simulator run or physical iPhone verification.
+- CI/Vercel status is verified separately on the pushed head; no merge approval
+  is requested on the basis of synthetic evidence.
 
-## Physical iPhone verification required
+## Physical iPhone-only gates
 
-1. Reproduce the frozen TestFlight screen on the reported device/build; cold/warm
-   launch, slow font/storage/session recovery, background/foreground and account
-   changes. This PR does **not** prove the freeze fixed.
-2. Inspect every native route in both themes on a notched iPhone and a small
-   device; landscape, home indicator and safe areas. Confirm no content is covered
-   by floating tabs; check sheets, back/swipe gestures and nested scroll views.
-3. Keyboard: sign-in/signup, profile editing, feed composer/replies, search,
-   game/group chat; submit buttons, focus, dismissal, draft recovery and modal
-   overlays with keyboard open.
-4. VoiceOver reading/focus order, selected tabs, disabled buttons, Dynamic Type
-   through accessibility sizes, Reduce Motion and long/localized names.
-5. Photos, portrait/landscape ratios, missing media, native video formats,
-   playback/audio, expired signed links and native share sheet.
-6. Device app lock / Face ID, onboarding, external account/security handoffs,
-   OAuth and recovery links. Membership display must remain authoritative;
-   purchasing/entitlements validation belongs to the Build 8 workstream.
+1. Reproduce the reported frozen TestFlight screen; cold/warm launch, background
+   return, slow storage/session/font recovery and identity transitions. **The
+   freeze is not claimed fixed.**
+2. Touch responsiveness, swipe-back/scroll gestures, notch/home-indicator safe
+   areas, landscape/small devices, floating nav and nested modal/sheet layout.
+3. Real keyboard focus/dismissal/composer position for auth/search/editing/feed/
+   groups/game chat; action reachability, draft recovery and system keyboard theme.
+4. VoiceOver focus/selected/disabled announcements, Dynamic Type through large
+   accessibility sizes, long/localized content and Reduce Motion.
+5. Real photo formats/aspect ratios, native picker (owned by #722), AVPlayer,
+   audio, signed-media expiry and native share sheet.
+6. App-lock/Face ID, onboarding lifecycle, alternate icons, OAuth/recovery/deep
+   links and browser handoff return. StoreKit physical/sandbox gates remain with
+   the billing workstream.
 
-## Readiness decision
+## Integration status
 
-Reviewable design improvement, **not final design sign-off**. Full live
-screen-by-screen visual matching remains blocked by missing authenticated
-reference sessions and absent native screens. Additional identified visual gaps
-above remain open. Keep the PR draft, integrate only after owner review and
-physical verification. Do not merge or start a build from this report.
+A read-only `git merge-tree --write-tree HEAD origin/feat/storekit-membership-sync`
+simulation against #730 head `9645897d24da31ce66ab28ba90f07d17b82fae4b` found
+**three textual conflicts**: `apps/mobile/app/_layout.tsx`,
+`apps/mobile/app/account.tsx`, and `apps/mobile/scripts/modal-regressions.test.mjs`.
+No merge was applied and neither branch was changed by the simulation.
+
+Reconciliation requirements:
+
+- Layout: start with Build 8's newer auth/MFA/providers/link protections; add
+  About as a public route, Connections to protected destinations, both stack
+  registrations, and the dashboard's `BrandLogo` header. Retain Build 8's native
+  security screen and all existing protected-route/identity logic.
+- Account: preserve the newer security/membership/StoreKit-owned entries and
+  authoritative account behavior; retain this PR's Connections/About links and
+  compact spacing. Do not overwrite it with this older baseline file.
+- Modal regression harness: retain the newer Build 8 security/lifecycle stubs and
+  cases; add the harmless `./BrandLogo` visual stub used by onboarding.
+- Although text auto-merged, review `feed.tsx` and `account/edit.tsx` to preserve
+  #722's media/photo handling, and review the combined CI workflow and test-auth
+  stubs. Textual success is not behavior proof.
+
+Keep draft. The combined candidate must run all newer media/player/MFA tests as
+well as this PR's design tests. Successful isolated checks do not establish
+integrated behavior. Remaining non-device blockers include live authenticated
+reference access, the feature gaps listed above, and reconciliation/verification
+with the newer Build 8 stack. No merge, EAS, OTA or production change performed.

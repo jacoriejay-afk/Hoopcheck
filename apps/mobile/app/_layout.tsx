@@ -1,3 +1,4 @@
+import { BrandLogo } from "../components/BrandLogo";
 import "react-native-gesture-handler";
 import { NativeDraftProvider } from "../src/native/drafts";
 import { NativeAccountProvider } from "../src/native/useNativeAccount";
@@ -65,8 +66,8 @@ function RootLayout() {
   useEffect(() => {
     if (!sessionReady) return;
     const currentRoute = segments[0] ?? "";
-    const inAppArea = ["dashboard", "team-hub", "fan-live", "notifications", "feed", "fan-feed", "reels", "account", "search", "teams", "womens", "leagues", "players", "coaches", "choose-username", "settings"].includes(currentRoute);
-    if (["web", "sign-in", "sign-up"].includes(currentRoute)) return;
+    const inAppArea = ["dashboard", "connections", "team-hub", "fan-live", "notifications", "feed", "fan-feed", "reels", "account", "search", "teams", "womens", "leagues", "players", "coaches", "choose-username", "settings"].includes(currentRoute);
+    if (["web", "sign-in", "sign-up", "about"].includes(currentRoute)) return;
     const onPasswordRecovery = currentRoute === "reset-password";
     // Let the OAuth callback exchange its PKCE code and choose the destination.
     const onAuthCallback = currentRoute === "auth";
@@ -107,6 +108,8 @@ function RootLayout() {
         <Stack.Screen name="reels" options={{ headerShown: false }} />
         <Stack.Screen name="account" options={{ title: "Account" }} />
         <Stack.Screen name="account/edit" options={{ title: "Edit profile" }} />
+        <Stack.Screen name="connections" options={{ title: "Connections" }} />
+        <Stack.Screen name="about" options={{ title: "About HoopCheck" }} />
         <Stack.Screen name="settings" options={{ title: "Settings" }} />
         <Stack.Screen name="web" options={{ title: "HoopCheck" }} />
         <Stack.Screen name="index" options={{ title: "HoopCheck™", headerShown: false }} />
@@ -118,6 +121,7 @@ function RootLayout() {
         <Stack.Screen name="reset-password" options={{ title: "Choose new password" }} />
         <Stack.Screen name="dashboard" options={{
           title: "HoopCheck™",
+          headerTitle: () => <BrandLogo />,
           headerStyle: { backgroundColor: theme.background },
           headerTitleStyle: { fontWeight: "800", color: theme.foreground },
           headerTintColor: theme.accent,
