@@ -15,7 +15,8 @@ CREATE TABLE public.profiles(
  moderation_status text,avatar_moderation_status text,avatar_url text,
  display_name text,country text,bio text,position text,years_pro integer,
  current_country text,current_country_public boolean,current_team text,
- player_verified boolean,player_verified_at timestamptz
+ player_verified boolean,player_verified_at timestamptz,
+ username text,free_agent boolean,basketball_type text
 );
 INSERT INTO public.profiles(id,account_type,profile_visibility,moderation_status,display_name,current_country,current_country_public)
 VALUES
@@ -27,20 +28,9 @@ VALUES
  ('00000000-0000-0000-0000-000000000006','player','public','active','Viewer','VIEWER',false);
 GRANT USAGE ON SCHEMA public,auth TO anon,authenticated;
 GRANT SELECT(id,account_type,profile_visibility,moderation_status,display_name,current_country_public) ON public.profiles TO anon,authenticated;
-CREATE FUNCTION public.get_public_player_profile(p_user_id uuid)
-RETURNS TABLE(id uuid,display_name text,current_country text)
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path=''
-AS $reader$
- SELECT p.id,p.display_name,
- CASE WHEN p.id=auth.uid() OR p.current_country_public IS TRUE THEN p.current_country ELSE NULL END
- FROM public.profiles p WHERE p.id=p_user_id AND p.account_type='player'
- AND (p.profile_visibility='public' OR
- (p.profile_visibility='players_only' AND EXISTS
- (SELECT 1 FROM public.profiles viewer WHERE viewer.id=auth.uid() AND viewer.account_type='player')))
- AND (p.moderation_status IS NULL OR p.moderation_status<>'suspended')
-$reader$;
-REVOKE ALL ON FUNCTION public.get_public_player_profile(uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.get_public_player_profile(uuid) TO anon,authenticated;
+-- Execute the real candidate function bodies, followed by the actual definer migration.
+\i supabase/migrations/20261118162305_player_profile_country_privacy.sql
+\i supabase/migrations/20261119170000_protected_player_directory_country.sql
 SET LOCAL ROLE anon;
 DO $anon$ BEGIN
  IF (SELECT current_country FROM public.get_public_player_profile('00000000-0000-0000-0000-000000000001')) IS NOT NULL THEN RAISE EXCEPTION 'anon saw hidden country'; END IF;
@@ -60,4 +50,4 @@ DO $player$ BEGIN
  IF (SELECT current_country FROM public.get_public_player_profile('00000000-0000-0000-0000-000000000003')) IS NOT NULL THEN RAISE EXCEPTION 'player saw another private country'; END IF;
 END $player$;
 ROLLBACK;
-SELECT 'PASS: protected profile visibility and country masking contract' AS result;
+SELECT 'PASS: actual candidate profile function and protected directory visibility' AS result;
