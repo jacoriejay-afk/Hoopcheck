@@ -70,14 +70,19 @@ export default function ProfilePage() {
       const result = await Promise.race([
         supabase
           .from("profiles")
-          .select("id,display_name,username,first_name,last_name,account_type,bio,position,years_pro,current_country,current_team,height,player_verified,coach_verified,avatar_url,avatar_moderation_status,basketball_type,free_agent,hometown,nationality,interests,favorite_leagues,profile_visibility")
+          .select("id,display_name,username,first_name,last_name,account_type,bio,position,years_pro,current_team,height,player_verified,coach_verified,avatar_url,avatar_moderation_status,basketball_type,free_agent,hometown,nationality,interests,favorite_leagues,profile_visibility")
           .eq("id", user.id)
           .maybeSingle(),
         new Promise<any>((resolve) => setTimeout(() => resolve({ data: null, error: new Error("Profile request timed out") }), 8000)),
       ]);
       if (!active) return;
       if (result.error) { setLoadError(true); setLoading(false); return; }
-      setP(result.data);
+      // The raw country column will be revoked from client SELECT in the privacy rollout.
+      // Keep this branch unmerged until the owner-only RPC migration is deployed.
+      const { data: ownCountry, error: ownCountryError } = await supabase.rpc("get_my_private_country");
+      if (!active) return;
+      if (ownCountryError) { setLoadError(true); setLoading(false); return; }
+      setP(result.data ? { ...result.data, current_country: ownCountry ?? null } : null);
       if (result.data) {
         const { data: activity } = await supabase.from("feed_posting_activity").select("activity_date").eq("user_id", user.id).order("activity_date", { ascending: false }).limit(370);
         if (!active) return;
