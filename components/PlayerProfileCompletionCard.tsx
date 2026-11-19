@@ -14,9 +14,11 @@ export default function PlayerProfileCompletionCard({ profile, onPublished }: { 
   const refreshProfile = useCallback(async () => {
     if (!profile.id) return;
     const { data, error: readError } = await supabase.from("profiles")
-      .select("id,account_type,avatar_url,position,current_team,free_agent,current_country,favorite_leagues,height,bio,hometown,profile_visibility")
+      .select("id,account_type,avatar_url,position,current_team,free_agent,favorite_leagues,height,bio,hometown,profile_visibility")
       .eq("id", profile.id).maybeSingle();
-    if (!readError && data) setCurrentProfile(current => ({ ...current, ...data }));
+    if (readError || !data) return;
+    const { data: ownCountry, error: ownCountryError } = await supabase.rpc("get_my_private_country");
+    if (!ownCountryError) setCurrentProfile(current => ({ ...current, ...data, current_country: ownCountry ?? null }));
   }, [profile.id]);
 
   useEffect(() => {
@@ -46,7 +48,7 @@ export default function PlayerProfileCompletionCard({ profile, onPublished }: { 
       const { data, error: updateError } = await supabase.from("profiles")
         .update({ profile_visibility: "public" })
         .eq("id", currentProfile.id)
-        .select("id,account_type,avatar_url,position,current_team,free_agent,current_country,favorite_leagues,height,bio,hometown,profile_visibility")
+        .select("id,account_type,avatar_url,position,current_team,free_agent,favorite_leagues,height,bio,hometown,profile_visibility")
         .maybeSingle();
       if (updateError || !data) throw updateError || new Error("Your profile could not be made public. Please try again.");
       setCurrentProfile(current => ({ ...current, ...data }));
