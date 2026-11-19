@@ -35,17 +35,17 @@ console.log("Stripe trial recovery policy: 11 cases passed");
 
 const calls = [];
 const retrieve = async (sessionId) => { calls.push(["retrieve",sessionId]); return { ...base, id }; };
-const release = async (uid, sessionId) => { calls.push(["release",uid,sessionId]); return true; };
-assert.equal(await reconcile(user,id,retrieve,release),"released");
-assert.deepEqual(calls,[["retrieve",id],["release",user,id]]);
+const markExpired = async (uid, sessionId) => { calls.push(["markExpired",uid,sessionId]); return true; };
+assert.equal(await reconcile(user,id,retrieve,markExpired),"expired");
+assert.deepEqual(calls,[["retrieve",id],["markExpired",user,id]]);
 calls.length=0;
-assert.equal(await reconcile(user,id,async () => ({...base,id,status:"complete"}),release),"retained");
+assert.equal(await reconcile(user,id,async () => ({...base,id,status:"complete"}),markExpired),"retained");
 assert.deepEqual(calls,[],"completed checkout must never call release");
-assert.equal(await reconcile(user,id,async () => ({...base,id,subscription:"sub_test"}),release),"retained");
+assert.equal(await reconcile(user,id,async () => ({...base,id,subscription:"sub_test"}),markExpired),"retained");
 assert.equal(await reconcile(user,id,async () => ({...base,id}),async () => false),"retained");
-await assert.rejects(reconcile(user,id,async () => { throw new Error("stripe unavailable"); },release));
+await assert.rejects(reconcile(user,id,async () => { throw new Error("stripe unavailable"); },markExpired));
 await assert.rejects(reconcile(user,id,retrieve,async () => { throw new Error("database unavailable"); }));
-assert.equal(await reconcile(user,"invalid",retrieve,release),"retained");
+assert.equal(await reconcile(user,"invalid",retrieve,markExpired),"retained");
 console.log("Stripe trial reconciliation: 7 additional cases passed");
 
 const openSession = { ...base, id, status: "open", url: "https://checkout.stripe.com/c/pay/cs_test_expired" };
