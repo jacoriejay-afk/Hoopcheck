@@ -28,7 +28,7 @@ export default function MembershipScreen() {
   const load = useCallback(async () => {
     const current = ++generation.current;
     if (!owner) { setLoading(false); return; }
-    setLoading(true); setError(""); setProducts([]); setPrepared(null); setMembership(null);
+    setLoading(true); setError(""); setMessage(""); setProducts([]); setPrepared(null); setMembership(null);
     const [status, catalog] = await Promise.allSettled([store.membership(), store.catalog()]);
     if (!mounted.current || current !== generation.current) return;
     if (status.status === "fulfilled") setMembership(status.value);

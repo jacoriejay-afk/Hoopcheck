@@ -118,3 +118,12 @@ test('an undeployed membership route reports service availability and can recove
   await assert.rejects(storeRequest('https://api.test',async()=>new Response('',{status:404}))(path,'owner-token'),/not available on this server/);
  }
 });
+
+test('verified disabled catalog accepts a null environment without reading StoreKit products',async()=>{
+ const f=fixture({request:async()=>({owner,environment:null,products:[],canPurchase:false,reason:'Not available yet.'})});
+ f.native.products=async()=>{throw Error('must not read products');};
+ assert.deepEqual(await f.client.catalog(),{products:[],canPurchase:false,reason:'Not available yet.'});
+ for(const payload of [{owner,environment:null,canPurchase:true,products:catalog.APPLE_PRODUCTS},{owner:other,environment:null,canPurchase:false},{owner,environment:'invalid',canPurchase:false}]){
+  await assert.rejects(fixture({request:async()=>payload}).client.catalog(),/could not be verified/);
+ }
+});

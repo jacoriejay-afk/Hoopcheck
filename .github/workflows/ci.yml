@@ -110,6 +110,23 @@ jobs:
           node --test scripts/test-membership-reader.mjs
           node --test scripts/test-checkout-membership-policy.mjs
 
+      - name: Rehearse committed synthetic purchase containment over a local socket
+        run: |
+          python3 scripts/rehearse-build9-compensation.py /tmp/build9-compensation.sql --synthetic --sql-root /repo
+          docker exec ${{ job.services.postgres.id }} mkdir -p /repo
+          docker cp supabase ${{ job.services.postgres.id }}:/repo/supabase
+          docker cp scripts ${{ job.services.postgres.id }}:/repo/scripts
+          docker cp /tmp/build9-compensation.sql ${{ job.services.postgres.id }}:/tmp/build9-compensation.sql
+          docker exec ${{ job.services.postgres.id }} createdb -U postgres hoop_prod_rehearsal
+          docker exec ${{ job.services.postgres.id }} psql -U postgres -d hoop_prod_rehearsal -v ON_ERROR_STOP=1 -f /tmp/build9-compensation.sql
+          docker exec ${{ job.services.postgres.id }} createdb -U postgres wrong_compensation_target
+          if docker exec ${{ job.services.postgres.id }} psql -U postgres -d wrong_compensation_target -v ON_ERROR_STOP=1 -f /tmp/build9-compensation.sql > /tmp/build9-wrong-target.log 2>&1; then
+            echo "Wrong-target compensation guard failed"
+            exit 1
+          fi
+          rg -q 'Only the isolated socket rehearsal database is permitted' /tmp/build9-wrong-target.log
+          test "$(docker exec ${{ job.services.postgres.id }} psql -U postgres -d wrong_compensation_target -Atc "select count(*) from pg_tables where schemaname='public'")" = 0
+
       - name: Verify Ambassador HQ database security and commission lifecycle
         env:
           PGPASSWORD: postgres

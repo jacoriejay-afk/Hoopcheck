@@ -2,7 +2,8 @@
   "git": {
     "deploymentEnabled": {
       "reconcile/build8-mobile-705-700-710-711": false,
-      "reconcile/build9-phase1-20261120": false
+      "reconcile/build9-phase1-20261120": false,
+      "completion/build9-20261120": false
     }
   }
 }

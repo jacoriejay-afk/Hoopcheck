@@ -125,3 +125,17 @@ test('a new purchase or refund cannot be acknowledged against an older live Appl
  const refunded=fixture({observed:{...paid,revocationDate:now},current:paid});
  await assert.rejects(service.synchronizeApple(refunded.db,owner,'fixture-proof',refunded.provider),error=>error.code==='apple_status_pending');
 });
+
+test('disabled catalog is a verified empty response without initializing Apple signing or touching membership rows',async()=>{
+ const f=fixture({tables:{apple_billing_config:{enabled:false,environment:null}}});
+ const result=await service.readAppleCatalog(f.db,f.db,owner,()=>{throw Error('must not initialize signing');});
+ assert.deepEqual(result,{owner,environment:null,products:[],canPurchase:false,reason:'New Apple purchases are not available yet. Existing memberships are unchanged.'});
+ assert.deepEqual(f.calls,[]);
+});
+test('missing config and enabled billing without signing remain unavailable',async()=>{
+ const missing=fixture({tables:{apple_billing_config:null}});
+ await assert.rejects(service.readAppleCatalog(missing.db,missing.db,owner,()=>{throw Error('unexpected signing');}),/could not be verified/);
+ const enabled=fixture();let calls=0;
+ await assert.rejects(service.readAppleCatalog(enabled.db,enabled.db,owner,()=>{calls++;throw Error('signing missing');}),/signing missing/);
+ assert.equal(calls,1);assert.deepEqual(enabled.calls,[]);
+});
