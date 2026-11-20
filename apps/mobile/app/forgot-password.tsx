@@ -28,12 +28,12 @@ export default function ForgotPasswordScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}>
+        <ScrollView keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, paddingVertical: 16 }}>
         <GlassCard style={styles.container}>
           <Text style={[styles.title, { fontFamily: "HoopCheckDisplay", fontWeight: "400" }]}>Reset password</Text>
           <Text style={styles.subtitle}>Enter your account email to request a recovery message.</Text>
           <Text style={styles.label}>Email</Text>
-          <Input placeholderTextColor={theme.muted} value={email} onChangeText={setEmail} autoCapitalize="none" autoComplete="email" keyboardType="email-address" style={styles.input} placeholder="you@example.com" />
+          <Input accessibilityLabel="Email" placeholderTextColor={theme.muted} value={email} onChangeText={setEmail} autoCapitalize="none" autoComplete="email" keyboardType="email-address" style={styles.input} placeholder="you@example.com" />
           <Button onPress={sendReset} disabled={busy} style={[styles.button, busy && styles.dim]}><Text style={styles.buttonText}>{busy ? "Sending…" : "Send recovery email"}</Text></Button>
           <Link href="/sign-in" style={styles.link}>Back to sign in</Link>
         </GlassCard>
@@ -44,7 +44,7 @@ export default function ForgotPasswordScreen() {
 }
 const createStyles = (theme: EntryTheme) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.background }, flex: { flex: 1 },
-  container: { margin: 24, justifyContent: "center", padding: 24 },
+  container: { margin: 16, justifyContent: "center", padding: 16 },
   title: { fontSize: 29, fontWeight: "800", color: theme.foreground },
   subtitle: { color: theme.muted, fontSize: 15, lineHeight: 22, marginTop: 8, marginBottom: 20 },
   label: { color: theme.foreground, fontWeight: "700", marginBottom: 8 },

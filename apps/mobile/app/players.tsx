@@ -1,3 +1,6 @@
+import { ProfileAvatar } from "../components/ProfileAvatar";
+import { readPlayerDirectory, type PlayerCard } from "../src/native/playerDirectory";
+import { PlayerAccess } from "../components/PlayerAccess";
 import { Input, Button } from "../src/primitives";
 import { useCachedRead, useNetwork } from "../src/native/network";
 import { OfflineBanner } from "../components/OfflineBanner";
@@ -11,17 +14,19 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { supabase } from "../src/lib/supabase";
 
-type Player = { id: string; display_name: string | null; username: string | null; country: string | null; current_country: string | null; current_team: string | null; position: string | null; years_pro: number | null; free_agent: boolean };
+
 const PAGE_SIZE = 30;
 
-export default function PlayersScreen() {
+export default function PlayersScreen() { return <PlayerAccess>{() => <PlayerDirectory />}</PlayerAccess>; }
+
+function PlayerDirectory() {
   const theme = useEntryTheme();
   const styles = createStyles(theme);
   const router = useRouter();
   const { read, savedAt } = useCachedRead();
   const { revision } = useNetwork();
   const { recents, remember } = useRecentSearches("players");
-  const [items, setItems] = useState<Player[]>([]);
+  const [items, setItems] = useState<PlayerCard[]>([]);
   const [term, setTerm] = useState("");
   const [appliedTerm, setAppliedTerm] = useState("");
   const [loading, setLoading] = useState(false);
@@ -44,24 +49,14 @@ export default function PlayersScreen() {
       setRefreshing(false);
       return;
     }
-    const query = supabase.from("profiles")
-      .select("id,display_name,username,country,current_country,current_team,position,years_pro,free_agent")
-      .eq("account_type", "player")
-      .eq("profile_visibility", "public")
-      .eq("moderation_status", "normal")
-      .in("basketball_type", ["mens", "womens"])
-      .eq("professional_experience", true)
-      .ilike("username", "%" + clean + "%")
-      .order("username", { ascending: true })
-      .range(start, start + PAGE_SIZE);
-    const { data, error: queryError } = await read(`players:${clean}:${start}`, () => query);
+    const { data, error: queryError } = await read(`players:privacy-v2:${clean}:${start}`, () => readPlayerDirectory(supabase, clean, start, PAGE_SIZE));
     if (currentRequest !== requestId.current) return;
     if (queryError) {
       setError("We couldn’t load player profiles. Check your connection and try again.");
       if (!append) setItems([]);
       setLoading(false); setRefreshing(false); return;
     }
-    const rows = (data ?? []) as Player[];
+    const rows = (data ?? []) as PlayerCard[];
     setHasMore(rows.length > PAGE_SIZE);
     const page = rows.slice(0, PAGE_SIZE);
     setItems(append ? current => [...current, ...page] : page);
@@ -125,7 +120,7 @@ export default function PlayersScreen() {
           renderItem={({ item, index }) => (
             <Reveal key={`${appliedTerm}:${item.id}`} index={index}>
             <Pressable onPress={() => router.push(`/players/${item.id}`)} style={styles.card}>
-              <View style={styles.avatar}><Text style={styles.avatarText}>{(item.display_name || item.username || "P").slice(0,1).toUpperCase()}</Text></View>
+              <ProfileAvatar url={item.avatar_url} name={item.display_name || item.username || "Player"} size={44} />
               <View style={styles.cardBody}>
                 <Text style={styles.playerName}>{item.display_name || (item.username ? `@${item.username}` : "Player profile")}</Text>
                 {item.display_name && item.username ? <Text style={styles.handle}>@{item.username}</Text> : null}

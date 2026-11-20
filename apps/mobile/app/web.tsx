@@ -9,6 +9,7 @@ export default function WebHandoff() {
   const { path } = useLocalSearchParams<{ path?: string }>();
   const url = canonicalWebUrl(typeof path === "string" ? path : "/");
   const isReferral = typeof path === "string" && path.startsWith("/referral/");
+  const isWorkspace = path === "/owner-hq" || path === "/ambassador-hq";
   const theme = useEntryTheme();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -21,7 +22,7 @@ export default function WebHandoff() {
   }
   return <View style={{ flex: 1, padding: 24, gap: 20, justifyContent: "center", backgroundColor: theme.background }}>
     <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 28, fontWeight: "900" }}>Continue on HoopCheck</Text>
-    <Text style={{ color: theme.muted }}>{isReferral ? "Complete signup in the browser to keep your referral attached." : "Open this page on the HoopCheck website."}</Text>
+    <Text style={{ color: theme.muted }}>{isReferral ? "Complete signup in the browser to keep your referral attached." : isWorkspace ? "This workspace is available on the authenticated website. Sign in there if requested; the website verifies your role before granting access." : "Open this page on the HoopCheck website."}</Text>
     <Pressable accessibilityRole="link" disabled={!url || busy} onPress={() => void open()} style={{ minHeight: 48 }}><Text style={{ color: theme.accent, fontSize: 18 }}>Open page</Text></Pressable>
     {error ? <Text accessibilityRole="alert" style={{ color: theme.foreground }}>{error}</Text> : null}
   </View>;
