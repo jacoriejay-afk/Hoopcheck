@@ -2,8 +2,9 @@ name: VERIFY-1 entitlement matrix
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, "fix/build9-iphone-repairs"]
     paths:
+      - "apps/mobile/**"
       - "lib/membership-tier.ts"
       - "app/**"
       - "components/**"

@@ -27,13 +27,6 @@
     "decoder",
     "url"
   ],
-  "overrides": {
-    "eslint": "8.39.0"
-  },
-  "tsd": {
-    "compilerOptions": {
-      "module": "node16"
-    }
-  },
-  "main": "index.js"
+  "main": "index.js",
+  "private": true
 }

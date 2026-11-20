@@ -33,6 +33,11 @@ jobs:
           node-version: 22
       - name: Install mobile dependencies
         run: npm ci
+      - name: Verify vendored dependency provenance and current audit
+        run: |
+          node scripts/verify-dependency-provenance.mjs --upstream
+          npm audit --json > /tmp/mobile-audit.json || test "$?" = 1
+          node -e 'const a = require("/tmp/mobile-audit.json"); for (const n of ["decode-uri-component", "image-size", "query-string"]) if (a.vulnerabilities[n]) throw new Error(n + " advisory regression");'
       - name: Native link and telemetry privacy contracts
         run: npm run test:native
       - name: TypeScript typecheck
@@ -58,6 +63,14 @@ jobs:
           EXPO_PUBLIC_HOOPCHECK_API_URL: https://api.test
           EXPO_NO_TELEMETRY: "1"
         run: npx --no-install expo export --platform ios --max-workers 2 --output-dir /tmp/hoopcheck-mobile-ios
+
+      - name: Export Android Hermes bundle locally
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: https://fixture.supabase.co
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: fixture-publishable-key
+          EXPO_PUBLIC_HOOPCHECK_API_URL: https://api.test
+          EXPO_NO_TELEMETRY: "1"
+        run: npx --no-install expo export --platform android --max-workers 2 --output-dir /tmp/hoopcheck-mobile-android
 
       - name: Export isolated native browser fixture
         env:

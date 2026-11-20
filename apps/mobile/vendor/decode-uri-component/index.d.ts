@@ -12,4 +12,5 @@ decodeUriComponent('st%C3%A5le')
 //=> 'ståle'
 ```
 */
-export default function decodeUriComponent(encodedURI: string): string;
+declare function decodeUriComponent(encodedURI: string): string;
+export = decodeUriComponent;
