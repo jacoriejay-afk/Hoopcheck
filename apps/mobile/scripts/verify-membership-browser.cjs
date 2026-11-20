@@ -2,7 +2,7 @@
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');const assert=require('node:assert/strict');const fs=require('node:fs');
 const base=process.env.NATIVE_TEST_URL||'http://127.0.0.1:8106';if(!['127.0.0.1','localhost'].includes(new URL(base).hostname))throw Error('Local fixture only');
 async function verify(browser,theme,role){
- const context=await browser.newContext({viewport:{width:390,height:844},colorScheme:theme});const uid='11111111-1111-4111-8111-111111111111',exp=Math.floor(Date.now()/1000)+3600;
+ const context=await browser.newContext({viewport: require("./compact-layout.cjs").viewport,colorScheme:theme});const uid='11111111-1111-4111-8111-111111111111',exp=Math.floor(Date.now()/1000)+3600;
  const user={id:uid,aud:'authenticated',role:'authenticated',email:'fixture@example.test',factors:[]};const token=Buffer.from('{"alg":"HS256"}').toString('base64url')+'.'+Buffer.from(JSON.stringify({sub:uid,exp,role:'authenticated',aal:'aal1'})).toString('base64url')+'.fixture';
  const calls=[],errors=[];await context.routeWebSocket('**/*',socket=>socket.close());
  await context.route('**/*',async route=>{
@@ -26,7 +26,7 @@ async function verify(browser,theme,role){
   const expected=theme==='dark'?'rgb(0, 0, 0)':'rgb(244, 244, 241)';
   const fill=await page.getByText('HoopCheck Membership',{exact:true}).evaluate(el=>{while(el){const value=getComputedStyle(el).backgroundColor;if(value!=='rgba(0, 0, 0, 0)'&&value!=='transparent')return value;el=el.parentElement;}return null;});assert.equal(fill,expected);
   assert.equal(calls.some(path=>path.startsWith('/api/mobile/purchases/')||path.startsWith('/api/stripe/')),false,'web/old native module absence must not begin billing');assert.deepEqual(errors,[]);
-  await page.screenshot({path:`/tmp/hoopcheck-native-ui/${theme}-membership-${role}.png`,fullPage:true});
+  await require("./compact-layout.cjs").capture(page, {path:`/tmp/hoopcheck-native-ui/${theme}-membership-${role}.png`,fullPage:true});
  }finally{await context.close();}
 }
 (async()=>{fs.mkdirSync('/tmp/hoopcheck-native-ui',{recursive:true});const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',args:['--no-sandbox']});try{for(const theme of ['light','dark'])for(const role of ['player','fan']){await verify(browser,theme,role);console.log('PASS: native membership unsupported-module/restore safeguards, '+role+' '+theme);}}finally{await browser.close();}})().catch(error=>{console.error(error);process.exit(1);});

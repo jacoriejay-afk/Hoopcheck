@@ -22,7 +22,7 @@ const rows = {
   fs.mkdirSync('/tmp/hoopcheck-native-ui', { recursive: true });
   try {
     for (const theme of ['light','dark']) {
-      const context = await browser.newContext({ viewport: { width: 390, height: 844 }, colorScheme: theme });
+      const context = await browser.newContext({ viewport: require("./compact-layout.cjs").viewport, colorScheme: theme });
       const requests = [];
       await context.route('**/*', async route => {
         const url = new URL(route.request().url());
@@ -45,20 +45,20 @@ const rows = {
       const page = await context.newPage();
       page.on('pageerror', error => console.log('PAGEERROR',error.message));
       await page.goto(baseUrl);
-      await page.getByText('Explore basketball',{exact:true}).waitFor({timeout:15000}).catch(async e=>{console.log('URL',page.url());console.log('BODY',await page.locator('body').innerText()); console.log('REQUESTS',requests); await page.screenshot({path:'/tmp/hoopcheck-native-ui/failure.png'}); throw e;});
+      await page.getByText('Explore basketball',{exact:true}).waitFor({timeout:15000}).catch(async e=>{console.log('URL',page.url());console.log('BODY',await page.locator('body').innerText()); console.log('REQUESTS',requests); await require("./compact-layout.cjs").capture(page, {path:'/tmp/hoopcheck-native-ui/failure.png'}); throw e;});
       await page.getByRole('textbox',{name:'Search basketball directory'}).fill('Olympia');
       await page.getByRole('textbox',{name:'Search basketball directory'}).press('Enter');
       await page.getByText('Search basketball',{exact:true}).waitFor();
       await page.getByText('Olympia Women',{exact:true}).filter({visible:true}).waitFor();
-      await page.screenshot({path:`/tmp/hoopcheck-native-ui/search-${theme}.png`,fullPage:true});
+      await require("./compact-layout.cjs").capture(page, {path:`/tmp/hoopcheck-native-ui/search-${theme}.png`,fullPage:true});
       await page.getByText('Olympia Women',{exact:true}).filter({visible:true}).click();
       await page.getByRole('heading',{name:'Olympia Women',exact:true}).waitFor();
       await page.getByText('Review access follows your HoopCheck membership and account permissions.',{exact:true}).waitFor();
       assert.equal(await page.getByText('MUST NOT RENDER PRIVATE REVIEW').count(),0);
-      await page.screenshot({path:`/tmp/hoopcheck-native-ui/womens-profile-${theme}.png`,fullPage:true});
+      await require("./compact-layout.cjs").capture(page, {path:`/tmp/hoopcheck-native-ui/womens-profile-${theme}.png`,fullPage:true});
       await page.getByText('Open league profile',{exact:true}).click();
       await page.getByRole('heading',{name:'Olympia Women League',exact:true}).waitFor();
-      await page.screenshot({path:`/tmp/hoopcheck-native-ui/womens-league-${theme}.png`,fullPage:true});
+      await require("./compact-layout.cjs").capture(page, {path:`/tmp/hoopcheck-native-ui/womens-league-${theme}.png`,fullPage:true});
       await page.getByText('Olympia Women',{exact:true}).filter({visible:true}).click();
       await page.getByRole('heading',{name:'Olympia Women',exact:true}).waitFor();
       await page.getByRole('tab',{name:'Home',exact:true}).click();
@@ -67,7 +67,7 @@ const rows = {
       await page.getByText('Browse women’s teams',{exact:true}).click();
       await page.getByText('Explore women’s professional basketball teams before you sign.',{exact:true}).filter({visible:true}).waitFor();
       await page.getByText('Olympia Women',{exact:true}).filter({visible:true}).waitFor();
-      await page.screenshot({path:`/tmp/hoopcheck-native-ui/womens-${theme}.png`,fullPage:true});
+      await require("./compact-layout.cjs").capture(page, {path:`/tmp/hoopcheck-native-ui/womens-${theme}.png`,fullPage:true});
       assert.ok(requests.every(x=>x.startsWith('fixture.supabase.co/')||x.startsWith('api.test/')), 'Unexpected outbound request attempted');
       console.log(`PASS ${theme}: homepage/search/team/league/tab/directory/permission guard`);
       await context.close();

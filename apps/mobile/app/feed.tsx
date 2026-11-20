@@ -1,3 +1,4 @@
+import { ScreenIntro } from "../components/ScreenIntro";
 import { BrandLogo } from "../components/BrandLogo";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { FlatList, Pressable, RefreshControl, Share, Text, TextInput, View, type ViewToken } from "react-native";
@@ -147,13 +148,13 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
     <Button secondary onPress={retry}>Verify access again</Button><Button secondary onPress={() => router.push("/account")}>Your account</Button>
   </View>;
   return <SafeAreaView edges={["top", "left", "right", "bottom"]} style={{ flex: 1, backgroundColor: theme.background }}>
-    <View style={{ paddingHorizontal: 16, paddingVertical: 8, flexDirection: "row", alignItems: "center", gap: 10 }}>
+    <View style={{ paddingHorizontal: 16, paddingVertical: 8, flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
       <BrandLogo compact />
       <View accessibilityRole="tablist" style={{ flex: 1, flexDirection: "row", gap: 6 }}>{[false, true].map(value => <Pressable key={String(value)} accessibilityRole="tab" accessibilityState={{ selected: reels === value }} aria-selected={reels === value} onPress={() => setReels(value)} style={[touch, { backgroundColor: reels === value ? theme.surface : theme.background, borderColor: reels === value ? theme.accent : theme.border }]}><Text style={{ ...textStyle, fontSize: 18, fontFamily: "HoopCheckDisplay", fontWeight: "400" }}>{value ? "Reels" : "HoopFeed"}</Text></Pressable>)}</View>
-      {message || loadError ? <Text accessibilityLiveRegion="polite" style={{ color: theme.muted }}>{loadError || message}</Text> : null}
+      {message || loadError ? <Text accessibilityLiveRegion="polite" style={{ color: theme.muted, width: "100%" }}>{loadError || message}</Text> : null}
     </View>
     <FlatList keyboardDismissMode="on-drag" style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 16, gap: reels ? 0 : 14 }} keyboardShouldPersistTaps="handled" initialNumToRender={4} maxToRenderPerBatch={4} windowSize={5} pagingEnabled={reels} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
-      ListHeaderComponent={!reels ? <View style={{ marginBottom: theme.spacing.md, gap: theme.spacing.md }}><Text accessibilityRole="header" style={{ ...theme.type.title, color: theme.foreground }}>Your basketball community</Text>
+      ListHeaderComponent={!reels ? <View style={{ marginBottom: theme.spacing.md, gap: theme.spacing.md }}><ScreenIntro eyebrow="HOOPFEED" title="Your basketball community">Stories, perspectives and conversations from around the game.</ScreenIntro>
         {!composerExpanded ? <Pressable accessibilityRole="button" accessibilityLabel="Create HoopFeed post" disabled={!canWrite} onPress={() => setComposerExpanded(true)} style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 18, backgroundColor: theme.surface }}>
           <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: theme.accentSurface, alignItems: "center", justifyContent: "center" }}><Text style={{ color: theme.accent, fontWeight: "900", fontSize: 12 }}>HC</Text></View><Text style={{ color: theme.muted, fontSize: 14 }}>Share something…</Text>
         </Pressable> : <View style={{ gap: 12, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 18, backgroundColor: theme.surface }}>

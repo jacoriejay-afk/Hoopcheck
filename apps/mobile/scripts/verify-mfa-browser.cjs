@@ -2,7 +2,7 @@
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');const assert=require('node:assert/strict');const fs=require('node:fs');
 const base=process.env.NATIVE_TEST_URL||'http://127.0.0.1:8104';if(!['127.0.0.1','localhost'].includes(new URL(base).hostname))throw Error('Local fixture only');
 async function verify(browser,theme){
- const context=await browser.newContext({viewport:{width:390,height:844},colorScheme:theme});const uid='11111111-1111-4111-8111-111111111111',primary='22222222-2222-4222-8222-222222222222',backup='33333333-3333-4333-8333-333333333333',extra='44444444-4444-4444-8444-444444444444';
+ const context=await browser.newContext({viewport: require("./compact-layout.cjs").viewport,colorScheme:theme});const uid='11111111-1111-4111-8111-111111111111',primary='22222222-2222-4222-8222-222222222222',backup='33333333-3333-4333-8333-333333333333',extra='44444444-4444-4444-8444-444444444444';
  let factors=[{id:primary,factor_type:'totp',status:'verified',friendly_name:'Primary'},{id:backup,factor_type:'totp',status:'verified',friendly_name:'Backup'}],level='aal1',bootstrap=0;const verifications=[];
  const exp=Math.floor(Date.now()/1000)+3600,jwt=()=>Buffer.from('{"alg":"HS256"}').toString('base64url')+'.'+Buffer.from(JSON.stringify({sub:uid,exp,aal:level,role:'authenticated'})).toString('base64url')+'.fixture';const user=()=>({id:uid,aud:'authenticated',email:'fixture@example.test',factors});
  const session=()=>({access_token:jwt(),refresh_token:'fixture',expires_in:3600,expires_at:exp,token_type:'bearer',user:user()});const initial=session(),errors=[];
@@ -39,7 +39,7 @@ async function verify(browser,theme){
   await page.evaluate(()=>{Object.defineProperty(document,'visibilityState',{configurable:true,value:'visible'});Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'));});
   await page.getByText('The setup key was cleared when the app left the foreground. Cancel this incomplete setup and start again.',{exact:true}).waitFor();assert.equal(await page.getByText('JBSWY3DPEHPK3PXP',{exact:true}).count(),0);
   await page.getByRole('button',{name:'Cancel incomplete setup',exact:true}).click();await page.getByText('Incomplete setup cancelled.',{exact:true}).waitFor();assert.equal(factors.length,0);
-  await page.screenshot({path:`/tmp/hoopcheck-native-ui/mfa-${theme}.png`,fullPage:true});assert.deepEqual(errors,[]);console.log(`PASS ${theme}: cold MFA gate/wrong code/backup recovery/enrollment/fresh-code removal/last-factor confirmation/background secret clearing/cancellation`);
+  await require("./compact-layout.cjs").capture(page, {path:`/tmp/hoopcheck-native-ui/mfa-${theme}.png`,fullPage:true});assert.deepEqual(errors,[]);console.log(`PASS ${theme}: cold MFA gate/wrong code/backup recovery/enrollment/fresh-code removal/last-factor confirmation/background secret clearing/cancellation`);
  }catch(error){console.log(await page.locator('body').innerText());console.log(errors);throw error;}finally{await context.close();}
 }
 (async()=>{fs.mkdirSync('/tmp/hoopcheck-native-ui',{recursive:true});const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});try{for(const theme of ['light','dark'])await verify(browser,theme);}finally{await browser.close();}})().catch(error=>{console.error(error);process.exitCode=1;});

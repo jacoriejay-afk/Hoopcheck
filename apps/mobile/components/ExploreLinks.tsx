@@ -1,4 +1,3 @@
-import Svg, { Path } from "react-native-svg";
 import { Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -17,8 +16,8 @@ const links = [
 export function ExploreLinks({ publicOnly = false }: { publicOnly?: boolean }) {
   const theme = useEntryTheme(); const router = useRouter();
   return <View style={{ gap: theme.spacing.sm }}>{links.filter((_, index) => !publicOnly || index < 5).map(item => <Pressable key={item.href} accessibilityRole="link" testID={`directory-${item.title.toLowerCase()}`} onPress={() => router.push(item.href)} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", minHeight: 70, padding: theme.spacing.md, gap: theme.spacing.md, borderRadius: theme.radius.control, borderCurve: "continuous", borderWidth: 1, borderColor: theme.border, backgroundColor: pressed ? theme.accentSurface : theme.surface })}>
-    <View style={{ width: 42, height: 44, borderRadius: 10, alignItems: "center", justifyContent: "center", backgroundColor: "transparent" }}><Svg pointerEvents="none" width={42} height={44} viewBox="0 0 100 100" style={{ position: "absolute" }}><Path d="M25 3H75L99 50 75 97H25L1 50Z" fill={item.color === "button" ? theme.button : theme.roles[item.color]} /></Svg><Ionicons name={item.icon} size={22} color={theme.onButton} /></View>
-    <View style={{ flex: 1, minWidth: 0, gap: 4 }}><Text style={{ color: theme.foreground, fontFamily: "HoopCheckDisplay", fontSize: 17 }}>{item.title}</Text><Text style={{ color: theme.muted, fontSize: 12, lineHeight: 17 }}>{item.detail}</Text></View>
-    <Ionicons name="arrow-forward" size={17} color={theme.foreground} />
+    <View style={{ width: 44, height: 44, borderRadius: theme.radius.control, borderCurve: "continuous", alignItems: "center", justifyContent: "center", backgroundColor: theme.accentSurface }}><Ionicons name={item.icon} size={22} color={theme.accent} /></View>
+    <View style={{ flex: 1, minWidth: 0, gap: 4 }}><Text style={{ color: theme.foreground, ...theme.type.section }}>{item.title}</Text><Text style={{ color: theme.muted, fontSize: 12, lineHeight: 17 }}>{item.detail}</Text></View>
+    <Ionicons name="chevron-forward" size={17} color={theme.foreground} />
   </Pressable>)}</View>;
 }

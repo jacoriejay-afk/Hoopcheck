@@ -6,7 +6,7 @@ const base=process.env.NATIVE_TEST_URL||'http://127.0.0.1:8093';
 if(!['localhost','127.0.0.1'].includes(new URL(base).hostname))throw new Error('Local fixture only');
 const id=n=>`11111111-1111-4111-8111-${String(n).padStart(12,'0')}`;
 async function verify(browser,theme,role='fan',paid=true){
- const context=await browser.newContext({viewport:{width:390,height:844},colorScheme:theme});
+ const context=await browser.newContext({viewport: require("./compact-layout.cjs").viewport,colorScheme:theme});
  const uid=id(30),other=id(31),errors=[],calls=[];
  const canUseGames=paid&&['fan','player'].includes(role);
  const user={id:uid,aud:'authenticated',email:'fixture@example.test',user_metadata:{}};
@@ -77,6 +77,7 @@ async function verify(browser,theme,role='fan',paid=true){
    await page.getByRole('tab',{name:'Women',exact:true}).click();await page.getByText('Home team vs Away Women',{exact:true}).waitFor();assert.equal(await page.getByText('Home Men vs Away Men',{exact:true}).count(),0);
    await page.getByRole('tab',{name:'Men',exact:true}).click();await page.getByText('Home Men vs Away Men',{exact:true}).waitFor();
   }else assert.equal(await page.getByRole('tab',{name:'Women',exact:true}).count(),0);
+  await require('./compact-layout.cjs').capture(page,{path:`/tmp/hoopcheck-native-ui/live-directory-${theme}.png`,fullPage:true});
   await page.getByText('Home Men vs Away Men',{exact:true}).click();
   if(!paid){
    await page.getByRole('heading',{name:'Pick the winner',exact:true}).waitFor();
@@ -92,7 +93,7 @@ async function verify(browser,theme,role='fan',paid=true){
    await page.getByRole('button',{name:'mute Other member',exact:true}).click();await page.getByRole('button',{name:'Manage hidden members',exact:true}).waitFor();assert.equal(await page.getByText('Fixture room message',{exact:true}).count(),0);
    await page.getByRole('button',{name:'Manage hidden members',exact:true}).click();await page.getByRole('button',{name:'Restore messages',exact:true}).click();await page.getByText('Fixture room message',{exact:true}).waitFor();
    await page.getByRole('button',{name:'block Other member',exact:true}).click();await page.getByRole('button',{name:'Manage hidden members',exact:true}).waitFor();assert.equal(await page.getByText('Fixture room message',{exact:true}).count(),0);
-   await page.screenshot({path:`/tmp/hoopcheck-native-ui/live-chat-${theme}.png`,fullPage:true});
+   await require("./compact-layout.cjs").capture(page, {path:`/tmp/hoopcheck-native-ui/live-chat-${theme}.png`,fullPage:true});
    await page.getByRole('tab',{name:'Predictions',exact:true}).click();
   }
   const home=page.getByRole('button',{name:'Home Men',exact:true});await home.waitFor();await home.click();await page.getByRole('button',{name:'Home Men ✓ Your pick',exact:true}).waitFor();

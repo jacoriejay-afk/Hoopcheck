@@ -11,7 +11,7 @@ const uid='11111111-1111-4111-8111-111111111111', team='22222222-2222-4222-8222-
  const png=await require('sharp')({create:{width:180,height:80,channels:3,background:'#FF5A1F'}}).png().toBuffer();
  const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH || '/usr/bin/chromium',args:['--no-sandbox']});
  try {for(const theme of ['light','dark']) {
-  const context=await browser.newContext({viewport:{width:390,height:844},colorScheme:theme});const errors=[];let fail=true;let rpcCalls=0;
+  const context=await browser.newContext({viewport: require("./compact-layout.cjs").viewport,colorScheme:theme});const errors=[];let fail=true;let rpcCalls=0;
   const user={id:uid,aud:'authenticated',role:'authenticated',email:'fixture@example.test',user_metadata:{account_type:'fan'}};
   await context.route('**/*',async route=>{
    const url=new URL(route.request().url());if(url.origin===new URL(base).origin)return route.continue();
@@ -39,7 +39,7 @@ const uid='11111111-1111-4111-8111-111111111111', team='22222222-2222-4222-8222-
   await page.getByRole('button',{name:'Create an account',exact:true}).waitFor();
   await page.getByRole('img',{name:'HoopCheck™',exact:true}).waitFor();
   await page.getByRole('link',{name:'About HoopCheck™ →',exact:true}).click();await page.getByText('Our mission',{exact:true}).waitFor();
-  await page.screenshot({path:`${output}/about-${theme}.png`,fullPage:true});
+  await require("./compact-layout.cjs").capture(page, {path:`${output}/about-${theme}.png`,fullPage:true});
   await page.goto(base);await page.getByRole('textbox',{name:'Search basketball directory'}).fill('Olympia');await page.getByRole('button',{name:'Search',exact:true}).click();
   await page.getByRole('textbox',{name:'Email',exact:true}).waitFor();assert.equal(new URL(page.url()).pathname,'/sign-in');
   const token=Buffer.from('{"alg":"HS256"}').toString('base64url')+'.'+Buffer.from(JSON.stringify({sub:uid,aud:'authenticated',exp:Math.floor(Date.now()/1000)+3600,role:'authenticated'})).toString('base64url')+'.fixture';
@@ -65,17 +65,17 @@ const uid='11111111-1111-4111-8111-111111111111', team='22222222-2222-4222-8222-
   await page.getByText('Connections could not be loaded. Please try again.',{exact:true}).waitFor();
   await page.getByRole('button',{name:'Try again',exact:true}).click();await page.getByText('Design Club',{exact:true}).waitFor();
   assert.equal(await page.getByText('MUST NOT SHOW PLAYER',{exact:true}).count(),0);
-  await page.screenshot({path:`${output}/connections-${theme}.png`,fullPage:true});
+  await require("./compact-layout.cjs").capture(page, {path:`${output}/connections-${theme}.png`,fullPage:true});
   await page.getByRole('tab',{name:'Followers',exact:true}).click();await page.getByText('No public connections yet',{exact:true}).waitFor();
-  await page.screenshot({path:`${output}/connections-empty-${theme}.png`,fullPage:true});
+  await require("./compact-layout.cjs").capture(page, {path:`${output}/connections-empty-${theme}.png`,fullPage:true});
   await page.getByRole('tab',{name:'Following',exact:true}).click();await page.getByRole('link',{name:/Design Club/}).click();
   const image=page.getByRole('img',{name:'Design Club logo',exact:true});await image.waitFor();await image.evaluate(async el=>{const img=el.tagName==='IMG'?el:el.querySelector('img');if(img)await img.decode();});
-  await page.screenshot({path:`${output}/team-artwork-${theme}.png`,fullPage:true});
+  await require("./compact-layout.cjs").capture(page, {path:`${output}/team-artwork-${theme}.png`,fullPage:true});
   await page.goto(base+'/womens/'+team);await page.getByRole('img',{name:'Design Women crest',exact:true}).waitFor();
-  await page.screenshot({path:`${output}/team-artwork-fallback-${theme}.png`,fullPage:true});
+  await require("./compact-layout.cjs").capture(page, {path:`${output}/team-artwork-fallback-${theme}.png`,fullPage:true});
   await page.setViewportSize({width:320,height:740});await page.goto(base+'/dashboard');await page.getByRole('heading',{name:'Explore basketball',exact:true}).filter({visible:true}).waitFor();
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));
-  await page.screenshot({path:`${output}/dashboard-320-${theme}.png`,fullPage:true});
+  await require("./compact-layout.cjs").capture(page, {path:`${output}/dashboard-320-${theme}.png`,fullPage:true});
   assert.ok(rpcCalls>=3);assert.deepEqual(errors,[]);console.log(`PASS ${theme}: public About/search gate, native connections retry/fan scope/tabs/empty/navigation, decoded logo/failure fallback, 320px layout`);
   await context.close();
  }}finally{await browser.close();}

@@ -11,7 +11,7 @@ const token=Buffer.from('{"alg":"HS256"}').toString('base64url')+'.'+Buffer.from
 const videoPath=process.env.FIXTURE_VIDEO || require('node:path').join(__dirname,'fixtures/orange.webm');
 let png;
 async function fixture(browser,theme,allowed=true){
-  const context=await browser.newContext({viewport:{width:390,height:844},colorScheme:theme});
+  const context=await browser.newContext({viewport: require("./compact-layout.cjs").viewport,colorScheme:theme});
   const calls=[],errors=[];let mediaFailed=false;let denied=false,checked=false,saved=false,vote=null,read=false,pollDeclined=false;
   const posts=[
     {id:id(1),body:'Fixture community discussion',image_url:'protected/photo.png',post_kind:'discussion'},
@@ -89,7 +89,7 @@ async function fixture(browser,theme,allowed=true){
     await page.waitForFunction(()=>{const image=document.querySelector('img[alt="HoopFeed photo"]');return image&&image.complete&&image.naturalWidth===640;});
     const photoBox=await page.getByRole('img',{name:'HoopFeed photo',exact:true}).boundingBox();assert.ok(photoBox.width>250&&photoBox.height>120,'Photo has visible dimensions');
     assert.equal(await page.getByRole('heading',{name:'HoopFeed',exact:true}).count(),0,'No duplicate headings');
-    await page.screenshot({path:`/tmp/hoopcheck-native-ui/feed-posts-${theme}.png`,fullPage:true});
+    await require("./compact-layout.cjs").capture(page, {path:`/tmp/hoopcheck-native-ui/feed-posts-${theme}.png`,fullPage:true});
     await page.getByRole('button',{name:'Create HoopFeed post',exact:true}).click();
     const composer=page.getByRole('textbox',{name:'Write a HoopFeed post'});
     await composer.fill('Fixture draft stays');await page.getByRole('button',{name:'Post',exact:true}).click();
@@ -114,16 +114,16 @@ async function fixture(browser,theme,allowed=true){
     const video=page.locator('video');await video.waitFor();
     await video.evaluate(async element=>{element.muted=true;await element.play();});
     await page.waitForFunction(()=>{const v=document.querySelector('video');return v&&!v.paused&&v.currentTime>0;});
-    await page.screenshot({path:`/tmp/hoopcheck-native-ui/reels-${theme}.png`,fullPage:true});
+    await require("./compact-layout.cjs").capture(page, {path:`/tmp/hoopcheck-native-ui/reels-${theme}.png`,fullPage:true});
     assert.ok(calls.some(c=>c.path==='/api/hoopfeed/media'&&c.body.includes('protected/video.webm')));
     await page.getByRole('tab',{name:'Alerts',exact:true}).click();await page.getByText('Fixture team review',{exact:true}).waitFor();
-    await page.screenshot({path:`/tmp/hoopcheck-native-ui/alerts-${theme}.png`,fullPage:true});
+    await require("./compact-layout.cjs").capture(page, {path:`/tmp/hoopcheck-native-ui/alerts-${theme}.png`,fullPage:true});
     await page.getByRole('button',{name:'Mark all as read',exact:true}).click();await page.getByRole('button',{name:'unread',exact:true}).click();await page.getByText('Nothing in this category.',{exact:true}).waitFor();
     await page.getByRole('tab',{name:'Account',exact:true}).click();await page.getByText('Active access verified by HoopCheck',{exact:true}).waitFor();
-    await page.screenshot({path:`/tmp/hoopcheck-native-ui/account-${theme}.png`,fullPage:true});
+    await require("./compact-layout.cjs").capture(page, {path:`/tmp/hoopcheck-native-ui/account-${theme}.png`,fullPage:true});
     await page.getByRole('tab',{name:'Search',exact:true}).click();await page.getByText('Search basketball',{exact:true}).waitFor();
     await page.getByRole('tab',{name:'Home',exact:true}).click();await page.getByText('Explore basketball',{exact:true}).waitFor();
-    assert.deepEqual(errors,[]);await page.screenshot({path:`/tmp/hoopcheck-native-ui/feed-${theme}.png`,fullPage:true});
+    assert.deepEqual(errors,[]);await require("./compact-layout.cjs").capture(page, {path:`/tmp/hoopcheck-native-ui/feed-${theme}.png`,fullPage:true});
     console.log(`PASS ${theme}: native feed moderation/draft/reply/check/save/poll/Reels playback/alerts/account/search/home`);
   }catch(error){console.log('Fixture failure URL:',page.url());console.log(await page.locator('body').innerText());throw error;}finally{await context.close();}
 }

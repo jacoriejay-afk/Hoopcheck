@@ -6,7 +6,7 @@ const base=process.env.NATIVE_TEST_URL||'http://127.0.0.1:8094';
 if(!['localhost','127.0.0.1'].includes(new URL(base).hostname))throw new Error('Local fixture only');
 const id=n=>`11111111-1111-4111-8111-${String(n).padStart(12,'0')}`;
 async function verify(browser,theme,role='fan',moderator=false){
- const context=await browser.newContext({viewport:{width:390,height:844},colorScheme:theme});
+ const context=await browser.newContext({viewport: require("./compact-layout.cjs").viewport,colorScheme:theme});
  const uid=id(30),team=id(1),post=id(100),calls=[],errors=[];
  const user={id:uid,aud:'authenticated',email:'fixture@example.test',user_metadata:{}};
  const exp=Math.floor(Date.now()/1000)+3600;
@@ -60,6 +60,7 @@ async function verify(browser,theme,role='fan',moderator=false){
  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
  try{
   await page.goto(`${base}/team-hub/groups`);await page.getByText('Fixture Club Group',{exact:true}).waitFor();
+  await require('./compact-layout.cjs').capture(page,{path:`/tmp/hoopcheck-native-ui/groups-directory-${theme}.png`,fullPage:true});
   await page.getByRole('textbox',{name:'Search club groups',exact:true}).fill('Fixture');await page.getByText('Fixture Club Group',{exact:true}).click();
   await page.getByRole('heading',{name:'Fixture Club Group',exact:true}).waitFor();
   if(role!=='fan'&&!moderator){await page.getByText('Club group conversations are available to fan accounts and appointed moderators.',{exact:true}).waitFor();assert.ok(!calls.some(c=>c.path.endsWith('/team_fan_group_posts')));assert.equal(await page.getByRole('button',{name:'Join club group',exact:true}).count(),0);console.log('PASS non-fan group permission gate');return;}
@@ -80,7 +81,7 @@ async function verify(browser,theme,role='fan',moderator=false){
   await page.getByRole('button',{name:'Comments',exact:true}).first().click();await page.getByText('Fixture group comment',{exact:true}).waitFor();
   const comment=page.getByRole('textbox',{name:'Club group comment',exact:true});await comment.fill('Fixture fan reply');await page.getByRole('button',{name:'Comments',exact:true}).first().click();await page.getByRole('button',{name:'Comments',exact:true}).first().click();await comment.waitFor();assert.equal(await comment.inputValue(),'Fixture fan reply');await page.getByRole('button',{name:'Send comment',exact:true}).click();await page.getByText('Fixture fan reply',{exact:true}).waitFor();
   await page.getByRole('button',{name:'Report post',exact:true}).first().click();await page.getByRole('textbox',{name:'Group post report reason',exact:true}).fill('Fixture report context');await page.getByRole('button',{name:'Send group report',exact:true}).click();await page.getByText('Report sent to HoopCheck moderators.',{exact:true}).waitFor();
-  await page.screenshot({path:`/tmp/hoopcheck-native-ui/club-group-${theme}.png`,fullPage:true});
+  await require("./compact-layout.cjs").capture(page, {path:`/tmp/hoopcheck-native-ui/club-group-${theme}.png`,fullPage:true});
   await page.getByRole('button',{name:'Leave club group',exact:true}).click();await page.getByRole('button',{name:'Join club group',exact:true}).waitFor();assert.equal(await page.getByText('Fixture private club conversation',{exact:true}).count(),0);assert.equal(await page.getByText('Fixture fan reply',{exact:true}).count(),0);
   assert.deepEqual(errors,[]);console.log(`PASS ${theme} free fan: directory/search/verified join/moderated post/draft/comment/report/leave/privacy`);
  }catch(error){console.log('Fixture failure',page.url());console.log(await page.locator('body').innerText());console.log(errors);throw error;}finally{await context.close();}

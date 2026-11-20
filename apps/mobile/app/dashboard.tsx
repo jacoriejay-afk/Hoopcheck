@@ -1,3 +1,4 @@
+import { ScreenIntro } from "../components/ScreenIntro";
 import { ExploreLinks } from "../components/ExploreLinks";
 import { Input, Button, Chip, SectionHeader } from "../src/primitives";
 import { useEffect, useState } from "react";
@@ -63,11 +64,11 @@ export default function DashboardScreen() {
     <SafeAreaView edges={["left", "right", "bottom"]} style={[styles.safe, { backgroundColor: theme.background }]}>
       <ScrollView keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled" testID="dashboard-scroll" contentContainerStyle={styles.scroll}>
         <View style={styles.content}>
-          <Text style={{ color: theme.accent, fontSize: 12, fontWeight: "800", letterSpacing: 1.5 }}>THE GLOBAL BASKETBALL INTELLIGENCE HUB</Text>
-          <Text accessibilityRole="header" style={[theme.type.display, { color: theme.foreground, marginVertical: 12, ...theme.type.title }]}>Know who you’re signing with.</Text>
-          <Text style={{ color: theme.muted, fontSize: 16, lineHeight: 24, marginBottom: 20 }}>Explore teams, coaches, leagues, and real basketball experiences.</Text>
+          <ScreenIntro eyebrow="YOUR COURTSIDE CONNECTION" title="Know who you’re signing with.">Explore teams, coaches, leagues, and real basketball experiences.</ScreenIntro>
+          <View style={{ marginTop: theme.spacing.md, marginBottom: theme.spacing.xl, padding: theme.spacing.lg, backgroundColor: theme.surface, borderRadius: theme.radius.hero, borderCurve: "continuous", gap: theme.spacing.sm }}>
           <Input accessibilityLabel="Search basketball directory" placeholder="Search teams, leagues, coaches or players" value={search} maxLength={100} onChangeText={setSearch} returnKeyType="search" onSubmitEditing={() => router.push({ pathname: "/search", params: { q: search } })} />
-          <Button style={{ marginTop: 8, marginBottom: 24 }} onPress={() => router.push({ pathname: "/search", params: { q: search } })}>Search</Button>
+          <Button style={{ marginTop: 8 }} onPress={() => router.push({ pathname: "/search", params: { q: search } })}>Search</Button>
+          </View>
           <SectionHeader>Explore basketball</SectionHeader>
           <View style={styles.directories}><ExploreLinks /></View>
 

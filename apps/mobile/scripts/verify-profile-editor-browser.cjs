@@ -3,7 +3,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const assert=require('node:assert/strict');const fs=require('node:fs');
 const base=process.env.NATIVE_TEST_URL||'http://127.0.0.1:8096';if(!['127.0.0.1','localhost'].includes(new URL(base).hostname))throw Error('Local fixture only');
 async function verify(browser,theme,role='player'){
- const context=await browser.newContext({viewport:{width:390,height:844},colorScheme:theme});
+ const context=await browser.newContext({viewport: require("./compact-layout.cjs").viewport,colorScheme:theme});
  const uid='11111111-1111-4111-8111-111111111111',exp=Math.floor(Date.now()/1000)+3600;
  let user={id:uid,aud:'authenticated',email:'fixture@example.test',user_metadata:{hoopcheck_profile_cover:'court'}};
  const token=Buffer.from('{"alg":"HS256"}').toString('base64url')+'.'+Buffer.from(JSON.stringify({sub:uid,exp,role:'authenticated'})).toString('base64url')+'.fixture';
@@ -48,7 +48,7 @@ async function verify(browser,theme,role='player'){
   await page.getByRole('button',{name:'Rose cover',exact:true}).click();await page.getByRole('button',{name:'Save profile cover',exact:true}).click();await page.getByText('Profile cover saved.',{exact:true}).waitFor();assert.equal(user.user_metadata.hoopcheck_profile_cover,'rose');
   await bio.fill('Fixture draft after navigation');await page.getByRole('tab',{name:'Account',exact:true}).click();await page.getByRole('button',{name:'Edit profile',exact:true}).click();await bio.waitFor();assert.equal(await bio.inputValue(),'Fixture draft after navigation');
   await page.getByRole('button',{name:'Discard draft and reload',exact:true}).click();await page.waitForFunction(()=>document.querySelector('textarea[aria-label="Bio"]')?.value==='Fixture retained biography');
-  await page.screenshot({path:`/tmp/hoopcheck-native-ui/profile-editor-${role}-${theme}.png`,fullPage:true});assert.deepEqual(errors,[]);console.log(`PASS ${theme} ${role}: own profile/locked identity/role fields/failure draft/save/cover/navigation/reload`);
+  await require("./compact-layout.cjs").capture(page, {path:`/tmp/hoopcheck-native-ui/profile-editor-${role}-${theme}.png`,fullPage:true});assert.deepEqual(errors,[]);console.log(`PASS ${theme} ${role}: own profile/locked identity/role fields/failure draft/save/cover/navigation/reload`);
  }catch(error){console.log(await page.locator('body').innerText());console.log(errors);throw error;}finally{await context.close();}
 }
 (async()=>{fs.mkdirSync('/tmp/hoopcheck-native-ui',{recursive:true});const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});try{for(const theme of ['light','dark'])await verify(browser,theme);await verify(browser,'light','fan');await verify(browser,'dark','coach');}finally{await browser.close();}})().catch(error=>{console.error(error);process.exitCode=1;});
