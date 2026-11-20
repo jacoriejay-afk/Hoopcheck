@@ -52,3 +52,26 @@ No connector deployment deletion action exists. Dashboard inspection redirects
 to login, so removal remains blocked and is not claimed. No project settings or
 production deployments were modified. Any automatic previews on push must also
 be inspected. Keep draft/unmerged. No EAS, migrations, signing or Apple purchases.
+
+## Final local evidence and CI checkout
+
+All eleven light/dark browser fixture suites passed on the final combined tree:
+membership, MFA, player profiles, media, profile editor, club groups, live games,
+feed, discovery, theme preference and design (including decoded assets).
+Final Hermes SHA-256:
+- iOS: 4e184bd552ff13853749eebd65c35b45db6a61b50548bc5c1632136755182148
+- Android: 00d6ffdcbb5d1d93a74296ed7132ec2dfd1ce3b2016c2d27ec1d9258446fdc31
+
+First continuation CI head e8bafa4d exposed two lint errors in the archived
+CommonJS probe (Launch Test run 44735580788). Converted that archive to ESM;
+no lint suppression. All six workflows now explicitly check out the PR head SHA
+rather than the synthetic merge SHA. Final outcomes belong to the exact head
+recorded on PR #745, not earlier continuation runs.
+
+Push-triggered preview records for e8bafa4d: hoopcheck
+(dpl_AhaCjWARGLMJ1MurGtQEFNRQvd5Z) cancellation succeeded after individual
+project/commit/non-production verification. app and hoopcheckk were cancelled
+by their existing integration rules. next.js (dpl_HBpP7wErXJZftPAEfzJuyzzyVvmE)
+and hoopcheck-stripe-sandbox (dpl_C4cqN7q7ZWDfmfmDcBD79tLiFH9Z) completed
+before cancellation (API 400 deployment_not_canceled); dashboard deletion remains
+sign-in blocked. These are disclosed unintended previews, not production changes.

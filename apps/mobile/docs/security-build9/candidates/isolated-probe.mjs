@@ -1,5 +1,5 @@
-const assert = require('node:assert/strict');
-const {createRequire} = require('node:module');
+import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
 const r = createRequire(process.cwd()+'/package.json');
 (async()=>{
 const sharp=r('sharp');
