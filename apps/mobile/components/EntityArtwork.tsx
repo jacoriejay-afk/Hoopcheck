@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ActivityIndicator, Image, View } from "react-native";
 import { DirectoryCrest } from "./DirectoryIdentity";
 import { useEntryTheme } from "../src/theme";
@@ -11,6 +11,13 @@ export function EntityArtwork(props: Props) {
 }
 function RemoteArtwork({ name, kind, size = 72, logoBg, url }: Props & { url: string }) {
   const theme = useEntryTheme(); const [failed, setFailed] = useState(false); const [loaded, setLoaded] = useState(false);
+  // Native image requests can stall without firing onError. Keep the authored
+  // identity available and release the loading indicator after a bounded wait.
+  useEffect(() => {
+    if (loaded || failed) return;
+    const timer = setTimeout(() => setFailed(true), 12000);
+    return () => clearTimeout(timer);
+  }, [loaded, failed]);
   if (failed) return <DirectoryCrest name={name} kind={kind} size={size} />;
   return <View style={{ width: size + 14, height: size + 14, borderRadius: 14, borderCurve: "continuous", borderWidth: 1, borderColor: theme.border, padding: 6, backgroundColor: logoBg === "light" ? "#FFFFFF" : logoBg === "dark" ? theme.crest.panel : theme.surface }}>
     {!loaded ? <ActivityIndicator accessibilityLabel="Loading logo" color={theme.accent} style={{ position: "absolute", inset: 0 }} /> : null}
