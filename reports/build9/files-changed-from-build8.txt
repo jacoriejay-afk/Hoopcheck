@@ -1,0 +1,17 @@
+apps/mobile/app/account/edit.tsx
+apps/mobile/app/dashboard.tsx
+apps/mobile/app/fan-live.tsx
+apps/mobile/app/feed.tsx
+apps/mobile/app/players/[id].tsx
+apps/mobile/app/team-hub/groups/index.tsx
+apps/mobile/components/Motion.tsx
+apps/mobile/components/TabBar.tsx
+apps/mobile/scripts/button-content.test.mjs
+apps/mobile/scripts/directory-search.test.mjs
+apps/mobile/scripts/profile-editor.test.mjs
+apps/mobile/scripts/storekit-client.test.mjs
+apps/mobile/src/native/directorySearch.ts
+apps/mobile/src/native/profileEditor.ts
+apps/mobile/src/native/sessionBootstrap.ts
+apps/mobile/src/native/storekitClient.ts
+apps/mobile/src/primitives.tsx
