@@ -143,6 +143,15 @@ $$;
 REVOKE ALL ON FUNCTION public.is_player_country_public(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.is_player_country_public(uuid) TO anon,authenticated;
 
+-- Account-type lookup runs with a narrowly scoped privileged helper so anonymous
+-- directory searches do not need broad SELECT on public.profiles.
+CREATE OR REPLACE FUNCTION hoopcheck_security.viewer_is_fan()
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
+ SELECT EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND account_type = 'fan');
+$$;
+REVOKE ALL ON FUNCTION hoopcheck_security.viewer_is_fan() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION hoopcheck_security.viewer_is_fan() TO anon, authenticated;
+
 create or replace function public.search_public_players_by_username(
   p_username text, p_country text default null, p_limit integer default 30, p_offset integer default 0
 )
@@ -161,7 +170,7 @@ as $$
     and coalesce(p.moderation_status, 'normal') <> 'suspended'
     and char_length(ltrim(btrim(p_username), '@')) between 2 and 100
     and strpos(lower(p.username), lower(ltrim(btrim(p_username), '@'))) > 0
-    and not exists (select 1 from public.profiles viewer where viewer.id = auth.uid() and viewer.account_type = 'fan')
+    and not hoopcheck_security.viewer_is_fan()
     and (p_country is null or char_length(btrim(p_country)) <= 120)
     and (nullif(btrim(p_country), '') is null or
       (p.current_country_public is true and strpos(lower(p.current_country), lower(btrim(p_country))) > 0))
