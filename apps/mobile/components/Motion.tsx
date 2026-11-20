@@ -35,8 +35,8 @@ export function Skeleton({ profile = false, review = false }: { profile?: boolea
     else { cancelAnimation(progress); progress.set(0); }
     return () => cancelAnimation(progress);
   }, [visible, reduced, progress]);
-  return <View accessibilityLabel="Loading content" accessibilityRole="progressbar" style={{ padding: profile ? 0 : 16 }}>
-    <View style={{ opacity: visible ? 1 : 0 }}><Shimmer.Provider value={progress}>
+  return <View accessibilityLabel="Loading content" accessibilityRole="progressbar" accessibilityState={{ busy: true }} accessible accessibilityLiveRegion="polite" style={{ padding: profile ? 0 : 16 }}>
+    <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ opacity: visible ? 1 : 0 }}><Shimmer.Provider value={progress}>
       {profile && <View style={{ gap: 12, marginBottom: 26 }}><Bone style={{ width: 66, height: 66 }} /><Bone style={{ width: "70%", height: 32 }} /><Bone style={{ width: "45%", height: 18 }} /></View>}
       {Array.from({ length: review ? 1 : profile ? 2 : 5 }, (_, index) => <View key={index} style={{ flexDirection: "row", gap: 12, padding: 14, marginBottom: 10, minHeight: review ? 120 : 100, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, borderRadius: 12 }}>
         {!profile && !review && <Bone style={{ width: 44, height: 44 }} />}

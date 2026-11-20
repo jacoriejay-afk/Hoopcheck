@@ -104,7 +104,7 @@ function PlayerProfileDetails({ viewer }: { viewer: PlayerViewer }) {
   const name = player?.display_name || ("Player profile");
   return (
     <SafeAreaView edges={["left", "right", "bottom"]} style={styles.safe}>
-      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); setRefreshId(value => value + 1); }} />} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView keyboardDismissMode="on-drag" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); setRefreshId(value => value + 1); }} />} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back to players</Text></Pressable>
         {loading ? <Skeleton profile /> : error ? (
           <View style={styles.empty}><Text style={styles.emptyTitle}>Profile unavailable</Text><Text style={styles.body}>{error}</Text><Button style={styles.button} onPress={() => router.replace("/players")}><Text style={styles.buttonText}>Return to player search</Text></Button></View>

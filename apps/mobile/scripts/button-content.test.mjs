@@ -11,3 +11,8 @@ test('the actual shared button wraps interpolated string/number labels in native
 test('mixed icon/text and render-function button labels retain native-safe text wrappers',async()=>{
  for(const children of [[React.createElement('Icon',{key:'icon'}),'Share'],()=>['Restore ',1,' purchase']]){const tree=await render(children);const host=tree.root.findByType('Pressable');assert.ok(host.children.every(child=>typeof child!=='string'));assert.equal(host.findAllByType('Text').length,1);await act(async()=>tree.unmount());}
 });
+test('shared buttons expose disabled state to assistive technology in either theme',async()=>{
+ let tree;await act(async()=>{tree=create(React.createElement(exports.Button,{disabled:true},'Save'));});
+ assert.equal(tree.root.findByType('Pressable').props.accessibilityState.disabled,true);
+ await act(async()=>tree.unmount());
+});

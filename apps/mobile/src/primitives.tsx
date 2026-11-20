@@ -21,7 +21,7 @@ export function Button({ children, secondary = false, style, ...props }: Pressab
     if (parts.every(part => typeof part === "string" || typeof part === "number")) return <Text style={labelStyle}>{value}</Text>;
     return parts.map((part, index) => typeof part === "string" || typeof part === "number" ? <Text key={index} style={labelStyle}>{part}</Text> : part);
   };
-  return <Pressable accessibilityRole="button" {...props} style={state => [{ minHeight: 52, padding: t.spacing.md, borderRadius: t.radius.control, borderWidth: 1, borderColor: secondary ? t.border : t.button, backgroundColor: secondary ? t.surface : t.button, alignItems: "center", justifyContent: "center", opacity: props.disabled ? .65 : state.pressed ? .75 : 1 }, typeof style === "function" ? style(state) : style]}>
+  return <Pressable accessibilityRole="button" accessibilityState={{ disabled: Boolean(props.disabled) }} {...props} style={state => [{ minHeight: 52, padding: t.spacing.md, borderRadius: t.radius.control, borderWidth: 1, borderColor: secondary ? t.border : t.button, backgroundColor: secondary ? t.surface : t.button, alignItems: "center", justifyContent: "center", opacity: props.disabled ? .65 : state.pressed ? .75 : 1 }, typeof style === "function" ? style(state) : style]}>
     {state => content(typeof children === "function" ? children(state) : children)}
   </Pressable>;
 }
@@ -36,4 +36,12 @@ export function Chip({ children }: { children: string }) {
 export function SectionHeader({ children }: { children: string }) {
   const t = useEntryTheme();
   return <Text accessibilityRole="header" style={{ ...t.type.section, color: t.foreground }}>{children}</Text>;
+}
+
+/** A full-row target with the same tactile feedback in every discovery list. */
+export function PressableCard({ children, style, ...props }: PressableProps) {
+  const t = useEntryTheme();
+  return <Pressable accessibilityRole="button" {...props} style={state => [{ minHeight: 44, opacity: state.pressed ? .72 : 1 }, typeof style === "function" ? style(state) : style]}>
+    {state => <GlassCard style={{ padding: t.spacing.lg, gap: t.spacing.sm }}>{typeof children === "function" ? children(state) : children}</GlassCard>}
+  </Pressable>;
 }

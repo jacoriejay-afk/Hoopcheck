@@ -62,7 +62,7 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView edges={["left", "right", "bottom"]} style={[styles.safe, { backgroundColor: theme.background }]}>
-      <ScrollView keyboardShouldPersistTaps="handled" testID="dashboard-scroll" contentContainerStyle={styles.scroll}>
+      <ScrollView keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled" testID="dashboard-scroll" contentContainerStyle={styles.scroll}>
         <View style={styles.content}>
           <Text style={{ color: theme.accent, fontSize: 12, fontWeight: "800", letterSpacing: 1.5 }}>THE GLOBAL BASKETBALL INTELLIGENCE HUB</Text>
           <Text accessibilityRole="header" style={[theme.type.display, { color: theme.foreground, marginVertical: 12, fontSize: 32, lineHeight: 34 }]}>Know who you’re signing with.</Text>

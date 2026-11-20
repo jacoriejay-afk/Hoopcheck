@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, ScrollView, Switch, Text, TextInput, View } from "react-native";
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Switch, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ProfilePhotoEditor } from "../../components/ProfilePhotoEditor";
 import { Button, GlassCard } from "../../src/primitives";
@@ -11,7 +11,7 @@ import { useActiveScreen } from "../../src/native/useActiveScreen";
 import { parseProfileDraft, privateProfileRole, profileCovers, readOwnCover, readOwnProfile, saveOwnCover, saveOwnProfile, type EditableProfile, type OwnProfile, type ProfileCover } from "../../src/native/profileEditor";
 
 export default function ProfileEditorScreen() {
-  const theme = useEntryTheme(); const { account, loading: accountLoading } = useNativeAccount(); const active = useActiveScreen();
+  const theme = useEntryTheme(); const { account, loading: accountLoading, retry: retryAccount } = useNativeAccount(); const active = useActiveScreen();
   const uid = account?.user.id; const [draft, setDraft] = useNativeDraft(`profile:edit:${uid}`, uid);
   const values = useMemo(() => { try { return parseProfileDraft(JSON.parse(draft)); } catch { return null; } }, [draft]);
   const [profile, setProfile] = useState<OwnProfile | null>(null); const [revision, setRevision] = useState(0);
@@ -45,9 +45,9 @@ export default function ProfileEditorScreen() {
   const field = (key: keyof typeof fieldNames, max: number, multiline = false) => <View key={key} style={{ gap: 6 }}><Text style={{ color: theme.muted }}>{fieldNames[key]}</Text><TextInput accessibilityLabel={fieldNames[key]} value={values?.[key] || ""} onChangeText={text => change(key, text)} maxLength={max} multiline={multiline} editable={!pending} style={{ minHeight: multiline ? 100 : 48, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 12, color: theme.foreground, backgroundColor: theme.surface, textAlignVertical: "top" }} /></View>;
   const toggle = (key: "free_agent" | "current_country_public", label: string) => <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}><Text style={{ color: theme.foreground, flex: 1 }}>{label}</Text><Switch accessibilityLabel={label} value={values?.[key] === true} disabled={pending} onValueChange={value => change(key, value)} trackColor={{ true: theme.accent }} /></View>;
   const canShow = uid && profile?.id === uid && values && !accountLoading && !loading;
-  return <SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: theme.background }}><ScrollView keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.lg }}>
+  return <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={96} style={{ flex: 1 }}><SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: theme.background }}><ScrollView keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.lg }}>
     <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 28, fontWeight: "900" }}>Edit your profile</Text>
-    {!canShow ? <><Text style={{ color: theme.muted }}>{accountLoading || loading ? "Loading your profile…" : "Your profile is unavailable. Reconnect and verify your account."}</Text><Button secondary onPress={() => setRevision(value => value + 1)}>Retry profile</Button></> : <>
+    {!canShow ? <><Text accessibilityRole="progressbar" accessibilityState={{ busy: accountLoading || loading }} accessibilityLiveRegion="polite" style={{ color: theme.muted }}>{accountLoading || loading ? "Loading your profile…" : "Your profile is unavailable. Reconnect and verify your account."}</Text><Button secondary onPress={() => { if (!uid) retryAccount(); setRevision(value => value + 1); }}>Retry profile</Button></> : <>
       <GlassCard><Text style={{ color: theme.foreground }}>{[profile.first_name, profile.last_name].filter(Boolean).join(" ") || "Name managed by HoopCheck"}</Text><Text style={{ color: theme.muted }}>{profile.username ? `@${profile.username} · ` : ""}{profile.account_type.replaceAll("_", " ")}</Text><Text style={{ color: theme.muted }}>Identity, role and verification details are managed through verification.</Text></GlassCard>
       <ProfilePhotoEditor key={uid} userId={uid} enabled={!pending && !accountLoading} />
       {cover?.owner === uid ? <><View accessibilityLabel="Profile cover preview" style={{ height: 84, borderRadius: 16, backgroundColor: profileCovers.find(item => item.id === cover.value)?.color }} /><Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 18, fontWeight: "700" }}>Profile cover</Text><View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{profileCovers.map(item => <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={`${item.label} cover`} accessibilityState={{ selected: cover.value === item.id }} disabled={pending} onPress={() => setCover({ owner: uid, value: item.id })} style={{ minHeight: 48, padding: 12, borderWidth: 2, borderColor: cover.value === item.id ? theme.accent : theme.border, borderRadius: 12 }}><Text style={{ color: theme.foreground }}>{item.label}</Text></Pressable>)}</View><Button secondary disabled={pending} onPress={() => void save("cover")}>Save profile cover</Button></> : null}
@@ -62,6 +62,6 @@ export default function ProfileEditorScreen() {
       <Text style={{ color: theme.muted }}>Unsent profile edits stay on this device during this session and clear when you sign out.</Text>
     </>}
     {message && uid ? <Text accessibilityRole="alert" style={{ color: theme.foreground }}>{message}</Text> : null}
-  </ScrollView></SafeAreaView>;
+  </ScrollView></SafeAreaView></KeyboardAvoidingView>;
 }
 const fieldNames = { display_name: "Display name", bio: "Bio", hometown: "Hometown", nationality: "Nationality", favorite_teams: "Favorite teams", favorite_leagues: "Favorite leagues", interests: "Interests and specialties", experience_summary: "Coaching experience", position: "Position", height: "Height", current_country: "Current country", current_team: "Current team" } as const;
