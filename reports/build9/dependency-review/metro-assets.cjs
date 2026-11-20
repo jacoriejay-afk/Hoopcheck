@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- Node.js CommonJS compatibility reproducers intentionally exercise require() behavior. */
 // Candidate-only: run from the isolated repository root after installing image-size 2.0.3.
 // Exercises the installed Metro, not a mocked import.
 const assert = require('node:assert/strict');
