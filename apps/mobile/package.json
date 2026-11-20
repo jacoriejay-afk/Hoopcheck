@@ -50,14 +50,23 @@
   },
   "overrides": {
     "expo-font": "14.0.12",
-    "postcss": "8.5.33"
+    "postcss": "8.5.33",
+    "metro": {
+      "image-size": "file:../../vendor/image-size"
+    },
+    "query-string": {
+      "decode-uri-component": "file:../../vendor/decode-uri-component"
+    },
+    "glob@^13.0.0": "14.0.2",
+    "minimatch@^9.0.0": "11.0.1",
+    "minimatch@^10.2.2": "11.0.1"
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
     "playwright": "1.62.1",
-    "sharp": "0.34.5",
-    "typescript": "~5.9.2",
-    "react-test-renderer": "19.1.0"
+    "react-test-renderer": "19.1.0",
+    "sharp": "0.35.5",
+    "typescript": "~5.9.2"
   },
   "expo": {
     "autolinking": {

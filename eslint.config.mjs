@@ -14,6 +14,8 @@ export default defineConfig([
   },
   globalIgnores([
     ".next/**",
+    // Audited upstream sources; checked by the mobile provenance verifier.
+    "apps/mobile/vendor/**",
     "node_modules/**",
     "out/**",
     "build/**",

@@ -1,0 +1,34 @@
+PASS: native membership unsupported-module/restore safeguards, player light
+PASS: native membership unsupported-module/restore safeguards, fan light
+PASS: native membership unsupported-module/restore safeguards, player dark
+PASS: native membership unsupported-module/restore safeguards, fan dark
+PASS light: cold MFA gate/wrong code/backup recovery/enrollment/fresh-code removal/last-factor confirmation/background secret clearing/cancellation
+PASS dark: cold MFA gate/wrong code/backup recovery/enrollment/fresh-code removal/last-factor confirmation/background secret clearing/cancellation
+PASS light player: verified role/canonical RPC/current-country opt-in/approved avatar/private-profile denial
+PASS dark player: verified role/canonical RPC/current-country opt-in/approved avatar/private-profile denial
+PASS light fan: verified role/canonical RPC/current-country opt-in/approved avatar/private-profile denial
+PASS light: photo selection/rotation/rejection-retained draft/publish/private video/owned avatar upload/moderation unchanged
+PASS dark: photo selection/rotation/rejection-retained draft/publish/private video/owned avatar upload/moderation unchanged
+PASS light player: own profile/locked identity/role fields/failure draft/save/cover/navigation/reload
+PASS dark player: own profile/locked identity/role fields/failure draft/save/cover/navigation/reload
+PASS light fan: own profile/locked identity/role fields/failure draft/save/cover/navigation/reload
+PASS dark coach: own profile/locked identity/role fields/failure draft/save/cover/navigation/reload
+PASS light free fan: directory/search/verified join/moderated post/draft/comment/report/leave/privacy
+PASS dark free fan: directory/search/verified join/moderated post/draft/comment/report/leave/privacy
+PASS non-fan group permission gate
+PASS appointed moderator: read/pin/confirmed remove with no fan posting grant
+PASS light fan pro: game listing, role gates, side preference, predictions, chat draft/error/send/report/mute/restore/block
+PASS dark fan pro: game listing, role gates, side preference, predictions, chat draft/error/send/report/mute/restore/block
+PASS light player free: game listing, role gates, side preference, predictions
+PASS fan free: game/chat permission gate
+PASS coach paid: game/chat permission gate
+PASS light: native feed moderation/draft/reply/check/save/poll/Reels playback/alerts/account/search/home
+PASS dark: native feed moderation/draft/reply/check/save/poll/Reels playback/alerts/account/search/home
+PASS denied membership: protected feed queries never started
+PASS light: homepage/search/team/league/tab/directory/permission guard
+PASS dark: homepage/search/team/league/tab/directory/permission guard
+PASS: theme overrides, persistence/reload, system changes, failed-save isolation
+PASS light: fresh/restored-auth onboarding dismissal, dashboard scroll and directory/tab input
+PASS light: public About/search gate, native connections retry/fan scope/tabs/empty/navigation, decoded logo/failure fallback, 320px layout
+PASS dark: fresh/restored-auth onboarding dismissal, dashboard scroll and directory/tab input
+PASS dark: public About/search gate, native connections retry/fan scope/tabs/empty/navigation, decoded logo/failure fallback, 320px layout

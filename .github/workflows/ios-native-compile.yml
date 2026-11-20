@@ -24,6 +24,8 @@ jobs:
       SENTRY_DISABLE_AUTO_UPLOAD: "true"
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -33,6 +35,8 @@ jobs:
         run: xcodebuild -version
       - name: Install mobile dependencies
         run: npm ci --no-audit
+      - name: Verify macOS image binaries and Expo tooling consumers
+        run: node --test scripts/tooling-compatibility.test.mjs
       - name: Compile the real StoreKit core and exercise product policies
         run: swift test --package-path modules/hoopcheck-storekit
       - name: Generate the native simulator project locally

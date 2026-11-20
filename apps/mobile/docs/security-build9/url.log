@@ -1,0 +1,10 @@
+✔ accepts a Supabase project root with or without a trailing slash (0.773032ms)
+✔ rejects missing configuration and URLs that would produce invalid auth endpoints (0.190737ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5.862739
