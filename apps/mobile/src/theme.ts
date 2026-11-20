@@ -15,6 +15,7 @@ export const tokens = {
   roles: { women: "#E84393", coaches: "#2456C8", leagues: "#1E9E50", players: "#6C3FD4", alerts: "#F5B800" },
   type: {
     display: { fontFamily: "HoopCheckDisplay", fontSize: 48, fontWeight: "400" as const, letterSpacing: -1.68, lineHeight: 49 },
+    title: { fontFamily: "HoopCheckDisplay", fontSize: 32, lineHeight: 36 },
     section: { fontSize: 17, fontWeight: "700" as const, lineHeight: 22 },
     body: { fontSize: 16, lineHeight: 24 },
     caption: { fontSize: 12, lineHeight: 17 },

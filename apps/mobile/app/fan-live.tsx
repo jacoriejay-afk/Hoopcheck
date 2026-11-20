@@ -60,7 +60,7 @@ export default function LiveGames() {
   const data = allowed && snapshot?.scope === scope ? snapshot.data : null;
   const game = typeof gameId === "string" ? data?.games.find(item => item.id === gameId) : undefined;
   const textStyle = { color: theme.foreground };
-  if (accountLoading) return <View style={{ flex: 1, backgroundColor: theme.background, padding: 24 }}><Text style={textStyle}>Verifying game access…</Text></View>;
+  if (accountLoading) return <View style={{ flex: 1, backgroundColor: theme.background, padding: 24 }}><Skeleton /></View>;
   if (!allowed || !account) return <View style={{ flex: 1, backgroundColor: theme.background, padding: 24, gap: 16, justifyContent: "center" }}><Text style={{ color: theme.muted, fontSize: 13 }}>Live and upcoming games</Text><Text style={textStyle}>{offline ? "Reconnect to verify game access." : account ? "Live Games chat is available to eligible Pro and Premium members. Free players retain game predictions." : accountError}</Text><Button secondary onPress={retry}>Verify access again</Button><Button secondary onPress={() => router.push("/account")}>Your account</Button></View>;
   async function chooseSide(value: "mens" | "womens") {
     if (!account?.features.canSwitchBasketballSide || !uid || sideChoice?.owner !== uid || savingSide) return;
@@ -77,7 +77,7 @@ export default function LiveGames() {
   const chatEnabled = active && account.features.canUseLiveGameChat && !offline;
   return <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={100} style={{ flex: 1, backgroundColor: theme.background }}>
     <View style={{ padding: 16, gap: 10 }}>
-      {!game ? <><Text style={{ color: theme.muted, fontSize: 13 }}>Live and upcoming games</Text>
+      {!game ? <><Text accessibilityRole="header" style={{ ...theme.type.title, color: theme.foreground }}>Live Games</Text><Text style={{ color: theme.muted, fontSize: 13 }}>Live and upcoming games</Text>
       {account.features.canSwitchBasketballSide ? <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 16 }}>{(["mens", "womens"] as const).map(value => <Pressable key={value} accessibilityRole="tab" aria-selected={side === value} accessibilityState={{ selected: side === value }} disabled={savingSide || sideChoice?.owner !== uid} onPress={() => void chooseSide(value)} style={{ minHeight: 44, justifyContent: "center", borderBottomWidth: side === value ? 3 : 0, borderColor: theme.accent }}><Text style={{ color: theme.foreground, fontWeight: "800" }}>{value === "mens" ? "Men" : "Women"}</Text></Pressable>)}</View> : <Text style={{ color: theme.muted }}>{side === "mens" ? "Men’s basketball" : "Women’s basketball"}</Text>}</> : null}
       {error ? <View style={{ gap: 8 }}><Text accessibilityRole="alert" style={{ color: theme.muted }}>{error}</Text><Button secondary onPress={retry}>Verify access again</Button></View> : null}
       {gameId ? <Button secondary onPress={() => router.replace("/fan-live")}>All games</Button> : null}

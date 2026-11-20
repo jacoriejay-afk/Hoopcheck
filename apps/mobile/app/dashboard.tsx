@@ -10,7 +10,6 @@ import { useEntryTheme } from "../src/theme";
 
 const accountLinks = [
   { path: "/about", label: "About HoopCheck" },
-  { path: "/feed", label: "HoopFeed on the web" },
   { path: "/account", label: "Account settings" },
   { path: "/support", label: "Support" },
   { path: "/terms", label: "Terms of Service" },
@@ -65,7 +64,7 @@ export default function DashboardScreen() {
       <ScrollView keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled" testID="dashboard-scroll" contentContainerStyle={styles.scroll}>
         <View style={styles.content}>
           <Text style={{ color: theme.accent, fontSize: 12, fontWeight: "800", letterSpacing: 1.5 }}>THE GLOBAL BASKETBALL INTELLIGENCE HUB</Text>
-          <Text accessibilityRole="header" style={[theme.type.display, { color: theme.foreground, marginVertical: 12, fontSize: 32, lineHeight: 34 }]}>Know who you’re signing with.</Text>
+          <Text accessibilityRole="header" style={[theme.type.display, { color: theme.foreground, marginVertical: 12, ...theme.type.title }]}>Know who you’re signing with.</Text>
           <Text style={{ color: theme.muted, fontSize: 16, lineHeight: 24, marginBottom: 20 }}>Explore teams, coaches, leagues, and real basketball experiences.</Text>
           <Input accessibilityLabel="Search basketball directory" placeholder="Search teams, leagues, coaches or players" value={search} maxLength={100} onChangeText={setSearch} returnKeyType="search" onSubmitEditing={() => router.push({ pathname: "/search", params: { q: search } })} />
           <Button style={{ marginTop: 8, marginBottom: 24 }} onPress={() => router.push({ pathname: "/search", params: { q: search } })}>Search</Button>

@@ -105,13 +105,13 @@ function PlayerProfileDetails({ viewer }: { viewer: PlayerViewer }) {
   return (
     <SafeAreaView edges={["left", "right", "bottom"]} style={styles.safe}>
       <ScrollView keyboardDismissMode="on-drag" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); setRefreshId(value => value + 1); }} />} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back to players</Text></Pressable>
+        <Pressable accessibilityRole="button" onPress={() => router.back()} style={({ pressed }) => ({ minHeight: 44, justifyContent: "center", opacity: pressed ? 0.65 : 1 })}><Text style={styles.back}>‹ Back to players</Text></Pressable>
         {loading ? <Skeleton profile /> : error ? (
           <View style={styles.empty}><Text style={styles.emptyTitle}>Profile unavailable</Text><Text style={styles.body}>{error}</Text><Button style={styles.button} onPress={() => router.replace("/players")}><Text style={styles.buttonText}>Return to player search</Text></Button></View>
         ) : player ? (
           <>
             <GlassCard style={styles.hero}>
-              <View style={{ alignSelf: "stretch", height: 64, borderRadius: 12, backgroundColor: "#ff790b", marginBottom: 12 }} /><ProfileAvatar url={player.avatar_url} name={name} size={64} />
+              <ProfileAvatar url={player.avatar_url} name={name} size={80} />
               <View style={{ alignSelf: "flex-start" }}><Chip>Player</Chip></View>
               <Text style={styles.kicker}>PLAYER PROFILE</Text>
               <Text style={styles.heroTitle}>{name}</Text>
