@@ -56,7 +56,8 @@
     },
     "query-string": {
       "decode-uri-component": "file:../../vendor/decode-uri-component"
-    }
+    },
+    "glob@^13.0.0": "14.0.2"
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
