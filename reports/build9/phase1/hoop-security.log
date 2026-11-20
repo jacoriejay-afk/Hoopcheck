@@ -1,0 +1,14 @@
+✔ scripts/test-ambassador-stripe.mjs (2239.601072ms)
+✔ scripts/test-checkout-membership-policy.mjs (3112.351559ms)
+✔ scripts/test-membership-reader.mjs (1013.632379ms)
+✔ scripts/test-mfa-enforcement.mjs (1642.657877ms)
+✔ scripts/test-mobile-bootstrap.mjs (1505.62479ms)
+✔ scripts/test-storekit-server.mjs (1777.703698ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 11392.0055

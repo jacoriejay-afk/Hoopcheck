@@ -54,11 +54,8 @@ jobs:
       - name: Audit production dependencies (blocking)
         run: npm audit --omit=dev --audit-level=high
 
-      - name: Full dependency audit (informational)
-        run: |
-          if ! npm audit --audit-level=high; then
-            echo "::warning::Full audit reports unresolved advisories. Review the audit output; the production-only audit above remains blocking."
-          fi
+      - name: Audit all dependencies (blocking high severity)
+        run: npm audit --audit-level=high
 
       - name: Audit hardcoded white surfaces (blocking)
         run: npm run audit:surfaces
