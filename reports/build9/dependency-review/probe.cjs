@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- Node.js CommonJS compatibility reproducers intentionally exercise require() behavior. */
 // Run from repository root after mobile npm ci and an isolated candidate install:
 // npm install --prefix /tmp/hoopcheck-dependency-probe --ignore-scripts --no-audit decode-uri-component@0.5.1 image-size@2.0.3
 const assert = require('node:assert/strict');
