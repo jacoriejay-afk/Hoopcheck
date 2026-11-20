@@ -189,6 +189,7 @@ export function storeRequest(origin: string, request: typeof fetch = fetch): Sto
     const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 30000);
     try {
       const response = await request(new URL(path, base).toString(), { method: body ? "POST" : "GET", headers: { Authorization: `Bearer ${token}`, ...(body ? { "Content-Type": "application/json" } : {}) }, body: body ? JSON.stringify(body) : undefined, signal: controller.signal, cache: "no-store", redirect: "error" });
+      if (response.status === 404) throw Error("Membership service is not available on this server. Please try again later.");
       // Proxies, expired deployments and empty upstream responses are not JSON.
       // Never surface response bodies (which may contain credentials) to the UI.
       let value: unknown;

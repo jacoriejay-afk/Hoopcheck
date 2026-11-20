@@ -106,3 +106,15 @@ test('membership transport rejects HTML, empty and primitive JSON without exposi
  }
  assert.deepEqual(await storeRequest('https://api.test',async()=>Response.json({owner,subscription:null}))('/api/membership','owner-token'),{owner,subscription:null});
 });
+test('an undeployed membership route reports service availability and can recover after deployment', async()=>{
+ let calls=0;
+ const request=storeRequest('https://api.test',async()=>++calls===1
+  ? new Response('<html>private proxy diagnostic</html>',{status:404})
+  : Response.json({owner,subscription:null}));
+ await assert.rejects(request('/api/membership','owner-token'),error=>
+  error.message==='Membership service is not available on this server. Please try again later.');
+ assert.deepEqual(await request('/api/membership','owner-token'),{owner,subscription:null});
+ for(const path of ['/api/mobile/purchases/config','/api/mobile/purchases/intent','/api/mobile/purchases/sync']) {
+  await assert.rejects(storeRequest('https://api.test',async()=>new Response('',{status:404}))(path,'owner-token'),/not available on this server/);
+ }
+});

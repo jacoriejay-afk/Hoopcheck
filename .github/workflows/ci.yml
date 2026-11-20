@@ -87,6 +87,7 @@ jobs:
         run: |
           createdb -h 127.0.0.1 -U postgres hoopcheck_private_fields_test
           psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_private_fields_test -f supabase/tests/profile_private_fields.sql
+          psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_private_fields_test -f supabase/tests/build9_legacy_projection_design.sql
           PGHOST=127.0.0.1 PGUSER=postgres node scripts/test-profile-private-sql-negative.mjs
           PGHOST=127.0.0.1 PGUSER=postgres node scripts/test-profile-compatibility-sql-negative.mjs
 
