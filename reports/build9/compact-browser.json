@@ -1,0 +1,48 @@
+[
+  {
+    "check": "membership",
+    "exitCode": 0,
+    "note": "Passed targeted retry after local SPA fallback correction"
+  },
+  {
+    "check": "mfa",
+    "exitCode": 0,
+    "note": "Passed targeted retry after local SPA fallback correction"
+  },
+  {
+    "check": "player-profiles",
+    "exitCode": 0
+  },
+  {
+    "check": "media",
+    "exitCode": 0
+  },
+  {
+    "check": "profile-editor",
+    "exitCode": 0
+  },
+  {
+    "check": "club-groups",
+    "exitCode": 0
+  },
+  {
+    "check": "live-games",
+    "exitCode": 0
+  },
+  {
+    "check": "feed",
+    "exitCode": 0
+  },
+  {
+    "check": "discovery",
+    "exitCode": 0
+  },
+  {
+    "check": "theme-preference",
+    "exitCode": 0
+  },
+  {
+    "check": "design",
+    "exitCode": 0
+  }
+]

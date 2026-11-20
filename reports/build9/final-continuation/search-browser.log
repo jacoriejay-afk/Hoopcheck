@@ -1,0 +1,2 @@
+PASS light: homepage/search/team/league/tab/directory/permission guard
+PASS dark: homepage/search/team/league/tab/directory/permission guard

@@ -31,8 +31,8 @@ test("coach and manager comparison offers Premium, not Pro", () => {
   assert.match(html, /coaches and team managers/i);
 });
 
-test("other audiences keep both paid choices and current prices", () => {
-  for (const audience of ["player", "fan"]) {
+test("priced professional audiences keep both paid choices and current prices", () => {
+  for (const audience of ["player"]) {
     const html = render({ audience, billingTerm: "year" });
     assert.match(html, /Choose Pro/);
     assert.match(html, /Choose Premium/);
@@ -83,8 +83,10 @@ test("current Pro and Premium plans are labeled and cannot be repurchased in com
 test("active non-Stripe memberships use the shared tier and do not render checkout cards", () => {
   const page = read("app/membership/page.tsx");
   assert.match(page, /getActiveMembershipTier\(subscription\)/);
-  assert.match(page, /\{isActive && subscription && \(/);
-  assert.match(page, /\{subscription\.stripe_subscription_id && <button/);
+  assert.match(page, /isActive && subscription &&/);
+  assert.match(page, /subscription\.provider === "apple"/);
+  assert.match(page, /Manage Apple subscription/);
+  assert.match(page, /billing\?\.stripe_customer_id \|\| billing\?\.stripe_subscription_id/);
 });
 
 
@@ -100,4 +102,12 @@ test("checkout rejects the current active plan even without a Stripe subscriptio
   assert.match(checkout, /stripe_subscription_id, status, plan, current_period_end/);
   assert.match(checkout, /const currentTier = getActiveMembershipTier\(existingSubscription\)/);
   assert.match(checkout, /if \(hasStripeSubscription \|\| currentTier === plan\)/);
+});
+
+
+test("unpriced fan comparisons preserve legacy features without prices or purchase controls", () => {
+ const html=render({audience:"fan",currentTier:"pro"});
+ assert.match(html,/CURRENT/);assert.match(html,/Existing entitlement/);
+ assert.doesNotMatch(html,/Choose Pro|Choose Premium|\$4\.99|\$9\.99/);
+ assert.match(read("app/api/stripe/webhook/create-checkout/route.ts"),/checkoutProfile.account_type === "fan"/);
 });

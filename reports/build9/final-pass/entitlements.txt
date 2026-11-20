@@ -1,0 +1,5 @@
+
+> hoopcheck@1.0.0 test:entitlements
+> node scripts/test-membership-tier.mjs
+
+VERIFY-1 entitlement matrix: 10 role/tier cells and edge cases passed (22 entitlements).

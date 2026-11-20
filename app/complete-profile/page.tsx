@@ -1,5 +1,7 @@
 "use client";
 
+import { getOwnProfile } from "../../lib/auth/own-profile";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -56,9 +58,7 @@ export default function CompleteProfilePage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { router.replace("/login?returnTo=/complete-profile"); setLoading(false); return; }
     setUserId(user.id);
-    const { data, error: loadError } = await supabase.from("profiles")
-      .select("id,account_type,basketball_type,display_name,username,avatar_url,position,current_team,free_agent,current_country,favorite_leagues,height,bio,hometown,profile_visibility")
-      .eq("id", user.id).maybeSingle();
+    const { data, error: loadError } = await getOwnProfile(supabase, user.id);
     if (loadError) { setError("Unable to load your profile: " + loadError.message); setLoading(false); return; }
     if (!data || data.account_type !== "player") { setError("The player profile checklist is available to player accounts."); setLoading(false); return; }
     setProfile(data as PlayerRecord);
@@ -111,12 +111,14 @@ export default function CompleteProfilePage() {
       else if (activeField === "bio") updates = { bio: value.trim().slice(0, 500) || null };
       else if (activeField === "location") updates = { hometown: value.trim() || null };
 
-      const { data, error: saveError } = await supabase.from("profiles").update(updates)
+      const { data: ack, error: saveError } = await supabase.from("profiles").update(updates)
         .eq("id", userId)
-        .select("id,account_type,basketball_type,display_name,username,avatar_url,position,current_team,free_agent,current_country,favorite_leagues,height,bio,hometown,profile_visibility")
+        .select("id")
         .maybeSingle();
       if (saveError) throw saveError;
-      if (!data) throw new Error("No profile row was updated. Refresh and sign in again, then retry.");
+      if (ack?.id !== userId) throw new Error("No profile row was updated. Refresh and sign in again, then retry.");
+      const { data, error: readError } = await getOwnProfile(supabase, userId);
+      if (readError || !data) throw new Error("The update was accepted, but your updated profile could not be confirmed. Refresh before retrying.");
       setProfile(data as PlayerRecord);
       setActiveField(null);
       setPhoto(null);
@@ -133,10 +135,12 @@ export default function CompleteProfilePage() {
     setSaving(true);
     setError("");
     try {
-      const { data, error: updateError } = await supabase.from("profiles").update({ profile_visibility: "public" })
-        .eq("id", userId).select("id,account_type,basketball_type,display_name,username,avatar_url,position,current_team,free_agent,current_country,favorite_leagues,height,bio,hometown,profile_visibility").maybeSingle();
+      const { data: ack, error: updateError } = await supabase.from("profiles").update({ profile_visibility: "public" })
+        .eq("id", userId).select("id").maybeSingle();
       if (updateError) throw updateError;
-      if (!data) throw new Error("Your profile could not be made public. Please try again.");
+      if (ack?.id !== userId) throw new Error("Your profile could not be made public. Please try again.");
+      const { data, error: readError } = await getOwnProfile(supabase, userId);
+      if (readError || !data) throw new Error("The update was accepted, but your updated profile could not be confirmed. Refresh before retrying.");
       setProfile(data as PlayerRecord);
       router.push("/players/" + encodeURIComponent(userId));
     } catch (cause) {

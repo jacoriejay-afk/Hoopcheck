@@ -33,7 +33,7 @@ export async function POST(req:Request){
 
  // The database RPC serializes claims per user, preventing concurrent requests
  // from bypassing the rolling 24-hour limit.
- const { data: subscription, error: subscriptionError } = await s.from("subscriptions").select("plan,status,current_period_end,access_status").eq("user_id", user.id).maybeSingle();
+ const { data: subscription, error: subscriptionError } = await s.from("membership_entitlements").select("plan,status,current_period_end,access_status").eq("user_id", user.id).maybeSingle();
  if (subscriptionError) {
    console.error("Review subscription lookup failed:", subscriptionError);
    return NextResponse.json({error:"Unable to verify your membership right now."},{status:500});

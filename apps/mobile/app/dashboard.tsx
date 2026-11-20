@@ -1,3 +1,5 @@
+import { ScreenIntro } from "../components/ScreenIntro";
+import { ExploreLinks } from "../components/ExploreLinks";
 import { Input, Button, Chip, SectionHeader } from "../src/primitives";
 import { useEffect, useState } from "react";
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -7,17 +9,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../src/lib/supabase";
 import { useEntryTheme } from "../src/theme";
 
-const directories = [
-  { href: "/feed", icon: "basketball-outline", title: "HoopFeed", detail: "Community, comments and Reels" },
-  { href: "/womens", icon: "basketball-outline", title: "Women’s teams", detail: "Explore women’s basketball" },
-  { href: "/teams", icon: "basketball-outline", title: "Teams", detail: "Research professional clubs" },
-  { href: "/leagues", icon: "earth-outline", title: "Leagues", detail: "Explore competitions" },
-  { href: "/players", icon: "people-outline", title: "Players", detail: "Find public player profiles" },
-  { href: "/coaches", icon: "school-outline", title: "Coaches", detail: "Find professional coaches" },
-] as const;
-
 const accountLinks = [
-  { path: "/feed", label: "HoopFeed on the web" },
+  { path: "/about", label: "About HoopCheck" },
   { path: "/account", label: "Account settings" },
   { path: "/support", label: "Support" },
   { path: "/terms", label: "Terms of Service" },
@@ -46,7 +39,7 @@ export default function DashboardScreen() {
   }, []);
 
   async function openAccountLink(path: string) {
-    if (path === "/account") { router.push("/account"); return; }
+    if (path === "/account" || path === "/about") { router.push(path); return; }
     try {
       await Linking.openURL(`https://hoopcheck.online${path}`);
     } catch {
@@ -69,30 +62,15 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView edges={["left", "right", "bottom"]} style={[styles.safe, { backgroundColor: theme.background }]}>
-      <ScrollView testID="dashboard-scroll" contentContainerStyle={styles.scroll}>
+      <ScrollView keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled" testID="dashboard-scroll" contentContainerStyle={styles.scroll}>
         <View style={styles.content}>
-          <Text style={{ color: theme.accent, fontSize: 12, fontWeight: "800", letterSpacing: 1.5 }}>THE GLOBAL BASKETBALL INTELLIGENCE HUB</Text>
-          <Text accessibilityRole="header" style={[theme.type.display, { color: theme.foreground, marginVertical: 16 }]}>Know who you’re signing with.</Text>
-          <Text style={{ color: theme.muted, fontSize: 16, lineHeight: 24, marginBottom: 20 }}>Explore teams, coaches, leagues, and real basketball experiences.</Text>
+          <ScreenIntro eyebrow="YOUR COURTSIDE CONNECTION" title="Know who you’re signing with.">Explore teams, coaches, leagues, and real basketball experiences.</ScreenIntro>
+          <View style={{ marginTop: theme.spacing.md, marginBottom: theme.spacing.xl, padding: theme.spacing.lg, backgroundColor: theme.surface, borderRadius: theme.radius.hero, borderCurve: "continuous", gap: theme.spacing.sm }}>
           <Input accessibilityLabel="Search basketball directory" placeholder="Search teams, leagues, coaches or players" value={search} maxLength={100} onChangeText={setSearch} returnKeyType="search" onSubmitEditing={() => router.push({ pathname: "/search", params: { q: search } })} />
-          <Button style={{ marginTop: 8, marginBottom: 24 }} onPress={() => router.push({ pathname: "/search", params: { q: search } })}>Search</Button>
-          <SectionHeader>Explore basketball</SectionHeader>
-          <View style={styles.directories}>
-            {directories.map(({ href, icon, title, detail }) => (
-              <Pressable key={href} testID={`directory-${title.toLowerCase()}`} onPress={() => router.push(href)} accessibilityRole="link" style={({ pressed }) => [
-                  styles.directory, panel, pressed && { backgroundColor: theme.accentSurface },
-                ]}>
-                  <View style={[styles.icon, { backgroundColor: theme.accentSurface }]}>
-                    <Ionicons name={icon} size={22} color={theme.accent} />
-                  </View>
-                  <View style={styles.directoryCopy}>
-                    <Text style={[styles.rowLabel, { color: theme.foreground }]}>{title}</Text>
-                    <Text style={[styles.detail, { color: theme.muted }]}>{detail}</Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={18} color={theme.accent} />
-                </Pressable>
-            ))}
+          <Button style={{ marginTop: 8 }} onPress={() => router.push({ pathname: "/search", params: { q: search } })}>Search</Button>
           </View>
+          <SectionHeader>Explore basketball</SectionHeader>
+          <View style={styles.directories}><ExploreLinks /></View>
 
           <View style={styles.sectionTitle}><SectionHeader>Account &amp; support</SectionHeader></View>
           <View style={[styles.account, panel]}>
@@ -126,7 +104,7 @@ export default function DashboardScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  scroll: { flexGrow: 1, padding: 20 },
+  scroll: { flexGrow: 1, padding: 16 },
   content: { width: "100%", maxWidth: 640, alignSelf: "center" },
   title: { fontSize: 32, fontWeight: "900", letterSpacing: -0.7, marginBottom: 16 },
   directories: { gap: 8, marginTop: 12 },
