@@ -56,3 +56,11 @@ Keep PR #744 draft and unmerged. Full premium native design acceptance, physical
 review, dependency clearance, exact-head CI/unsigned compile, and separate inherited
 backend rollout/client compatibility approvals remain gates. No EAS build, OTA,
 production mutation, migration, billing change or StoreKit activation performed.
+
+Screenshot review follow-up: unavailable scores now use body typography, while
+reported numeric scores retain tabular display styling; status is a separate
+caption. Mobile TypeScript, targeted lint, Live Games browser regressions and
+web/iOS exports pass after this correction. The local fixture server was restarted
+after export replaced its working directory. Prior-head unsigned iOS run
+44685657936 completed successfully, including simulator compilation; that success
+does not validate this continuation's new head.
