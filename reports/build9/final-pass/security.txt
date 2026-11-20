@@ -1,0 +1,15 @@
+✔ apps/mobile/src/lib/native2/media.test.mjs (2481.599035ms)
+✔ apps/mobile/src/lib/native2/policies.test.mjs (2709.585781ms)
+✔ lib/native2/highlight-route-behavior.test.mjs (3851.789097ms)
+✔ lib/native2/highlight-route-contract.test.mjs (450.435555ms)
+✔ lib/native2/server-media-policy.test.mjs (2910.058383ms)
+✔ lib/native2/verification-video-route-behavior.test.mjs (3944.057169ms)
+✔ lib/native2/verification-video-route-contract.test.mjs (446.312631ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 16895.024821
