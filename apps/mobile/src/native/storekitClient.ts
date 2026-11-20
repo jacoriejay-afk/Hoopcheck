@@ -189,8 +189,13 @@ export function storeRequest(origin: string, request: typeof fetch = fetch): Sto
     const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 30000);
     try {
       const response = await request(new URL(path, base).toString(), { method: body ? "POST" : "GET", headers: { Authorization: `Bearer ${token}`, ...(body ? { "Content-Type": "application/json" } : {}) }, body: body ? JSON.stringify(body) : undefined, signal: controller.signal, cache: "no-store", redirect: "error" });
-      const value = await response.json();
-      if (!response.ok) throw Error(typeof value?.error === "string" ? value.error.slice(0, 500) : "Membership could not be verified. Please try again.");
+      // Proxies, expired deployments and empty upstream responses are not JSON.
+      // Never surface response bodies (which may contain credentials) to the UI.
+      let value: unknown;
+      try { value = await response.json(); }
+      catch { throw Error("Membership service returned an invalid response. Please try again."); }
+      if (!value || typeof value !== "object" || Array.isArray(value)) throw Error("Membership service returned an invalid response. Please try again.");
+      if (!response.ok) throw Error("error" in value && typeof value.error === "string" ? value.error.slice(0, 500) : "Membership could not be verified. Please try again.");
       return value;
     } finally { clearTimeout(timer); }
   };

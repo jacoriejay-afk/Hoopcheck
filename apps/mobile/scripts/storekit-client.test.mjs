@@ -100,3 +100,9 @@ test('native offers follow server product permissions while restoration remains 
 test('iOS 15 keeps restoration without offering a purchase that needs iOS 16 app identity',async()=>{
  const f=fixture({purchasesAvailable:false});const result=await f.client.catalog();assert.equal(result.canPurchase,false);assert.match(result.reason,/iOS 16/);assert.equal(result.products.length,0);await assert.rejects(f.client.prepare(products[0]),/iOS 16/);assert.equal(f.calls.some(c=>c[0]==='request'),false);assert.equal((await f.client.restore()).restored,1);
 });
+test('membership transport rejects HTML, empty and primitive JSON without exposing parser errors', async()=>{
+ for(const response of [new Response('<html>proxy failure</html>',{status:502}),new Response('',{status:200}),Response.json(null),Response.json([]),Response.json('unexpected')]) {
+  await assert.rejects(storeRequest('https://api.test',async()=>response)('/api/membership','owner-token'),/Membership service returned an invalid response/);
+ }
+ assert.deepEqual(await storeRequest('https://api.test',async()=>Response.json({owner,subscription:null}))('/api/membership','owner-token'),{owner,subscription:null});
+});

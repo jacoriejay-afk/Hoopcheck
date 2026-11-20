@@ -38,3 +38,10 @@ test('appearance updates freeze the verified JWT and only send the cover metadat
  let writes=0;client.auth.getSession=async()=>({data:{session:{access_token:'new-token',user:{id:other}}},error:null});
  await assert.rejects(saveOwnCover(client,uid,'rose','https://fixture.supabase.co','public-key',async()=>{writes++;return Response.json({});}));assert.equal(writes,0);
 });
+test('profile save pins the owner token and aborts when the account changes after read',async()=>{
+ let reads=0,writes=0;
+ const client=db(async(_,options)=>{if(options.method==='PATCH'){writes++;assert.equal(options.headers.get('Authorization'),'Bearer fixture-owner-token');return Response.json({id:uid});}return Response.json(row);});
+ await saveOwnProfile(client,uid,row);assert.equal(writes,1);
+ client.auth.getSession=async()=>({data:{session:{user:{id:++reads>2?other:uid},access_token:'fixture-owner-token'}},error:null});
+ await assert.rejects(saveOwnProfile(client,uid,row),/account changed|could not be verified/);assert.equal(writes,1);
+});

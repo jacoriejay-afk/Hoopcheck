@@ -61,3 +61,8 @@ test('player search fails closed until a verified non-fan viewer allows it', asy
   await searchDirectory(fixture(async input => { requests.push(new URL(String(input)).pathname); return Response.json([]); }), 'player');
   assert.equal(requests.length, 5); assert.ok(requests.every(path => !path.endsWith('/profiles')));
 });
+test('username search preserves underscores and strips the display @ prefix',async()=>{
+ let body;
+ await searchDirectory(fixture(async(input,options)=>{if(String(input).includes('/rpc/'))body=JSON.parse(options.body);return Response.json([]);}), '@Hooper_23',true);
+ assert.equal(body.p_username,'hooper_23');
+});

@@ -22,6 +22,7 @@ export function createSessionBootstrap(
     publish({ ready: true, userId, error: null });
   });
   async function retry() {
+    if (!alive) return;
     const current = ++attempt;
     const authRevision = revision;
     publish({ ready: false, userId, error: null });

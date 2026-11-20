@@ -49,7 +49,10 @@ export async function saveOwnProfile(client: SupabaseClient, userId: string, dra
     ...(profile.account_type === "player" ? { position: clean("position"), height: clean("height"), current_country: clean("current_country"), current_team: valid.free_agent ? null : clean("current_team"), free_agent: valid.free_agent, current_country_public: valid.current_country_public } : {}),
     ...(!privateProfileRole(profile.account_type) ? { profile_visibility: valid.profile_visibility } : {}),
   };
-  const { data, error } = await deadline(signal => client.from("profiles").update(values).eq("id", userId).select("id").abortSignal(signal).maybeSingle());
+  const session = await deadline(() => client.auth.getSession());
+  if (session.error || session.data.session?.user.id !== userId) throw new Error("Your account changed. Verify it before saving.");
+  const token = session.data.session.access_token;
+  const { data, error } = await deadline(signal => client.from("profiles").update(values).eq("id", userId).select("id").setHeader("Authorization", `Bearer ${token}`).abortSignal(signal).maybeSingle());
   if (error || data?.id !== userId) throw new Error("Profile save could not be confirmed. Your draft is unchanged.");
 }
 export async function readOwnCover(client: SupabaseClient, userId: string) {
