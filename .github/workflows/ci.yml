@@ -124,7 +124,7 @@ jobs:
             echo "Wrong-target compensation guard failed"
             exit 1
           fi
-          rg -q 'Only the isolated socket rehearsal database is permitted' /tmp/build9-wrong-target.log
+          grep -Fq 'Only the isolated socket rehearsal database is permitted' /tmp/build9-wrong-target.log
           test "$(docker exec ${{ job.services.postgres.id }} psql -U postgres -d wrong_compensation_target -Atc "select count(*) from pg_tables where schemaname='public'")" = 0
 
       - name: Verify Ambassador HQ database security and commission lifecycle

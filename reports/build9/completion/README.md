@@ -129,3 +129,13 @@ design or device sign-off.
 No merge, deployment, hosted schema/data mutation, purchase enablement, EAS build,
 update, submission, or production modification was performed. Root/mobile Vercel
 configs disable automatic deployment for this completion branch.
+
+
+## Exact-head CI continuation
+
+Initial head ecfc2d76 passed entitlement, NATIVE-2 and Launch Test checks. Its root
+CI successfully executed the committed compensation assertions, then failed at
+the negative-control log check because the Ubuntu runner has no rg executable.
+The follow-up uses standard grep -Fq for that fixed-string check. This is a runner
+portability fix; no application or migration behavior changes. Remote workflows
+must verify the follow-up head; initial-head results are not final clearance.
