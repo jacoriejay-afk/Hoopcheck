@@ -50,7 +50,13 @@
   },
   "overrides": {
     "expo-font": "14.0.12",
-    "postcss": "8.5.33"
+    "postcss": "8.5.33",
+    "metro": {
+      "image-size": "file:../../vendor/image-size"
+    },
+    "query-string": {
+      "decode-uri-component": "file:../../vendor/decode-uri-component"
+    }
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
