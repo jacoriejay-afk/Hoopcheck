@@ -51,6 +51,13 @@ try {
       const directoryLinks = directoryNav.getByRole('link');
       assert.equal(await directoryLinks.count(), 4, 'Guest directory switcher has four accessible routes');
       assert.equal(await directoryNav.locator('[aria-current="page"]').getAttribute('href'), '/coaches');
+      // Route hydration can replace the directory grid after the locator resolves.
+      // Wait for a connected, styled element before sampling layout metrics.
+      await page.waitForFunction(() => {
+        const grid = document.querySelector('.hc-shared-directory-tile-grid');
+        return Boolean(grid?.isConnected && grid.parentElement?.isConnected &&
+          getComputedStyle(grid.parentElement).backgroundColor);
+      });
       const layout = await directoryNav.evaluate(grid => ({
         backdrop: getComputedStyle(grid.parentElement).backgroundColor,
         width: grid.clientWidth,
