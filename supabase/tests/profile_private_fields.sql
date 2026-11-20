@@ -146,6 +146,18 @@ DO $$ DECLARE own jsonb; BEGIN
  IF EXISTS(SELECT FROM public.profiles WHERE display_name='FORGED') THEN RAISE EXCEPTION 'cross-owner write permitted'; END IF;
 END $$;
 RESET ROLE;
+-- Regression for 13281b12: role checks must not require raw profiles SELECT.
+SET LOCAL ROLE authenticated;
+DO $$ BEGIN
+ IF (SELECT count(*) FROM public.search_public_players_by_username('player')) <> 2 THEN RAISE EXCEPTION 'player username directory failed'; END IF;
+END $$;
+SELECT set_config('request.jwt.claim.sub','55555555-5555-4555-8555-555555555555',true);
+DO $$ BEGIN
+ IF NOT hoopcheck_security.viewer_is_fan() THEN RAISE EXCEPTION 'fan identity helper failed'; END IF;
+ IF EXISTS(SELECT FROM public.search_public_players_by_username('player')) THEN RAISE EXCEPTION 'fan username directory gate bypassed'; END IF;
+END $$;
+SELECT set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',true);
+RESET ROLE;
 -- The real MFA migration helper inspects verified factors, not editable metadata.
 INSERT INTO auth.mfa_factors VALUES('11111111-1111-4111-8111-111111111111','verified');
 SET LOCAL ROLE authenticated;

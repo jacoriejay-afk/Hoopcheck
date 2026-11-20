@@ -12,3 +12,14 @@ test('a same-owner token transition invalidates a response even before an Auth l
 test('invalid proof shapes, a foreign response owner and service errors never grant access',async()=>{for(const payload of [{owner:other,subscription},{owner,subscription:{...subscription,provider:'admin'}},{owner,subscription:{...subscription,current_period_end:'bad'}},{owner}]){const f=fixture({request:async()=>Response.json(payload)});const result=await f.reader.read(owner);assert.equal(result.data,null);assert.ok(result.error);}for(const status of[401,403,503])assert.ok((await fixture({request:async()=>Response.json({}, {status})}).reader.read(owner)).error);});
 test('a hung credential read recovers without a network call or abandoning any credential write',async t=>{t.mock.timers.enable({apis:['setTimeout']});try{const f=fixture({session:()=>new Promise(()=>{})});const work=f.reader.read(owner);await Promise.resolve();t.mock.timers.tick(10001);const result=await work;assert.equal(result.data,null);assert.ok(result.error);assert.equal(f.calls(),0);}finally{t.mock.timers.reset();}});
 test('unpaid membership is a verified null result; malformed and cross-account requests never reach the API',async()=>{const f=fixture({request:async()=>Response.json({owner,subscription:null})});assert.deepEqual(await f.reader.read(owner),{data:null,error:null});const denied=fixture();for(const id of['invalid',other])assert.ok((await denied.reader.read(id)).error);assert.equal(denied.calls(),0);});
+test('HTML, empty and truncated JSON responses fail closed and allow a fresh retry',async()=>{
+ for(const body of ['<html>Gateway unavailable</html>','', '{"owner":']){
+  let broken=true;
+  const f=fixture({request:async()=>broken?new Response(body,{status:200,headers:{'content-type':'text/html'}}):Response.json({owner,subscription})});
+  const failed=await f.reader.read(owner);
+  assert.equal(failed.data,null);assert.ok(failed.error);
+  broken=false;
+  const recovered=await f.reader.read(owner);
+  assert.equal(recovered.error,null);assert.equal(recovered.data.provider,'apple');
+ }
+});
