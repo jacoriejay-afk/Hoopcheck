@@ -48,7 +48,7 @@ export async function GET(request: Request) {
         const db = createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
         const [{ data: profile }, { data: subscriptionData }] = await Promise.all([
           db.from("profiles").select("account_type").eq("id", authData.user.id).maybeSingle(),
-          db.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id", authData.user.id).maybeSingle(),
+          db.from("membership_entitlements").select("plan,status,access_status,current_period_end").eq("user_id", authData.user.id).maybeSingle(),
         ]);
         accountType = profile?.account_type || "";
         subscription = subscriptionData;

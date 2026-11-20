@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { stripeMatchesDeployment } from "../../../../../lib/stripe-key-mode";
 import { createClient } from "@supabase/supabase-js";
+import { applePreventsStripeCheckout } from "../../../../../lib/server/apple/service";
+import { AppleBillingError } from "../../../../../lib/server/apple/proofs";
 import { getActiveMembershipTier } from "../../../../../lib/membership-tier";
 import { isEligibleForSevenDayTrial } from "../../../../../lib/stripe-trial-eligibility";
 import { canReuseOpenTrialSession, isTrustedStripeCheckoutUrl } from "../../../../../lib/stripe-trial-recovery";
@@ -124,6 +126,8 @@ export async function POST(
       );
     }
 
+    if (!user.email_confirmed_at) return NextResponse.json({ error: "Confirm your email before purchasing membership." }, { status: 403 });
+
     const declaredLength = Number(request.headers.get("content-length") ?? "0");
     if (Number.isFinite(declaredLength) && declaredLength > 8_192) {
       return NextResponse.json({ error: "Request body is too large." }, { status: 413 });
@@ -164,14 +168,27 @@ export async function POST(
     // Enforce the coach/manager Premium-only rule on the server, not only in the UI.
     const { data: checkoutProfile, error: checkoutProfileError } = await supabase
       .from("profiles")
-      .select("account_type")
+      .select("account_type,moderation_status")
       .eq("id", user.id)
       .maybeSingle();
     if (checkoutProfileError || !checkoutProfile) {
       return NextResponse.json({ error: "Unable to verify your HoopCheck account type." }, { status: 403 });
     }
+    if (["suspended", "banned", "removed"].includes(checkoutProfile.moderation_status || "")) return NextResponse.json({ error: "Purchasing is unavailable for this account. Existing billing can still be managed." }, { status: 403 });
     if (["coach", "manager"].includes(checkoutProfile.account_type) && plan !== "premium") {
       return NextResponse.json({ error: "Coach and Team Manager accounts require HoopCheck Premium." }, { status: 403 });
+    }
+
+    if (checkoutProfile.account_type === "fan") {
+      return NextResponse.json({ error: "Paid fan products have not been priced and are unavailable for purchase. Existing billing can still be managed." }, { status: 403 });
+    }
+    const deletion = await supabase.from("account_deletion_requests").select("status").eq("user_id", user.id).in("status", ["pending", "processing", "failed"]).limit(1).maybeSingle();
+    if (deletion.error) return NextResponse.json({ error: "Your account status could not be verified. No checkout was started." }, { status: 503 });
+    if (deletion.data) return NextResponse.json({ error: "Cancel your pending account deletion before purchasing membership." }, { status: 409 });
+    try {
+      if (await applePreventsStripeCheckout(supabase, user.id)) return NextResponse.json({ error: "Manage your existing Apple subscription before starting Stripe billing." }, { status: 409 });
+    } catch (error) {
+      return NextResponse.json({ error: error instanceof AppleBillingError ? error.message : "Existing Apple billing could not be verified. No checkout was started." }, { status: 503 });
     }
 
     const submittedPromoCode =

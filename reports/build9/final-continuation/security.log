@@ -1,0 +1,15 @@
+✔ scripts/test-apple-app-site-association.mjs (347.536716ms)
+✔ scripts/test-checkout-membership-policy.mjs (807.215905ms)
+✔ scripts/test-membership-reader.mjs (372.902431ms)
+✔ scripts/test-mfa-enforcement.mjs (938.824784ms)
+✔ scripts/test-mobile-bootstrap.mjs (465.089429ms)
+✔ scripts/test-storekit-server.mjs (684.707738ms)
+✔ scripts/test-theme-color-math.mjs (47.998142ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3675.21149

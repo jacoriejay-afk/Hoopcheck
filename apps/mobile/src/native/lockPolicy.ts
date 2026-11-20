@@ -8,10 +8,11 @@ export function backgroundRequiresLock(leftAt: number | null, now: number) {
 }
 
 let freshSignInUntil = 0;
+let freshSignInUser: string | null = null;
 // Called only after an actual password/signup response succeeds, never on token refresh.
-export function recordFreshSignIn(now = Date.now()) { freshSignInUntil = now + 30000; }
-export function consumeFreshSignIn(now = Date.now()) {
-  const fresh = freshSignInUntil > now;
-  freshSignInUntil = 0;
+export function recordFreshSignIn(userId: string, now = Date.now()) { freshSignInUser = userId; freshSignInUntil = now + 30000; }
+export function consumeFreshSignIn(userId: string, now = Date.now()) {
+  const fresh = freshSignInUntil > now && freshSignInUser === userId;
+  freshSignInUntil = 0; freshSignInUser = null;
   return fresh;
 }
