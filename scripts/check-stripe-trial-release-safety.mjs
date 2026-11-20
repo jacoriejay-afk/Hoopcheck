@@ -6,8 +6,16 @@ const webhook = readFileSync("app/api/stripe/webhook/route.ts", "utf8");
 const trialPolicy = readFileSync("lib/stripe-trial-eligibility.ts", "utf8");
 const migration = readFileSync("scripts/sql/stripe-trial-claims-proposal.sql", "utf8");
 
-assert.match(checkout, /const trialRolloutEnabled = false;/,
-  "Trial issuance must remain hard-disabled until reservation and webhook integration are verified");
+assert.match(checkout, /process\.env\.HOOPCHECK_SEVEN_DAY_TRIAL_ENABLED === "true"/,
+  "Trial issuance must require an explicit opt-in feature flag");
+assert.match(checkout, /process\.env\.VERCEL_ENV === "production"/,
+  "Trial issuance must be restricted to the production deployment");
+assert.match(checkout, /configuredMode === "live"/,
+  "Trial issuance must require live Stripe mode");
+assert.match(checkout, /stripeConfigMatches &&/,
+  "Trial issuance must require a matching Stripe key");
+assert.match(checkout, /checkoutEnabled;/,
+  "Trial issuance must require enabled checkout");
 assert.match(checkout, /\.\.\.\(trialEligible \? \{ trial_period_days: 7 \} : \{\}\)/,
   "Stripe trial must only be issued through eligibility gate");
 assert.match(trialPolicy, /input\.accountType === "player"/,
