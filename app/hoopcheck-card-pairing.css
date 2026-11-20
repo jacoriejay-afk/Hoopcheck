@@ -239,6 +239,8 @@ html.theme-light body main.hc-entity-profile-page .hc-team-profile-hero :where(h
   border-radius: var(--hc-radius-card);
   background: var(--hc-page-bg);
   color: var(--hc-foreground);
+  --surface: var(--hc-surface-raised);
+  --on-surface: var(--hc-foreground);
 }
 .hc-card-audit-preview[data-theme-preview="light"] {
   --hc-page-bg:#F4F4F1; --hc-surface:#FFFFFF; --hc-surface-raised:#FFFFFF;
@@ -312,9 +314,19 @@ html body main.hc-card-audit-page .hc-card-audit-preview :is(.dashboard-card,.hc
 html body main.hc-card-audit-page .hc-card-audit-preview :is(.dashboard-card,.hc-live-hub-hero) .eyebrow {
   color: var(--hc-accent-text) !important;
 }
+/* Brand labels use the specimen's accessible accent, including the specimen
+   opposite the document theme. Fixed orange is too pale on light surfaces. */
+html body .hc-global-page-shell main.hc-card-audit-page .hc-card-audit-preview :is(.eyebrow,.hc-profile-eyebrow) {
+  color: var(--hc-accent-text) !important;
+}
 html body .hc-global-page-shell main.hc-card-audit-page .hc-card-audit-preview .hc-player-dossier .hc-dossier-tag-orange {
   color: #151515 !important;
 }
 html body main.hc-card-audit-page .hc-card-audit-preview .hc-player-dossier td {
   color: var(--hc-foreground) !important;
+}
+
+/* Verified labels keep dark ink on orange on real profiles as well as previews. */
+html body .hc-global-page-shell .hc-player-dossier .hc-dossier-tag-orange {
+  color: #151515 !important;
 }

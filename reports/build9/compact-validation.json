@@ -1,0 +1,34 @@
+[
+  {
+    "check": "root-types",
+    "exitCode": 0
+  },
+  {
+    "check": "mobile-types",
+    "exitCode": 0
+  },
+  {
+    "check": "lint",
+    "exitCode": 0
+  },
+  {
+    "check": "native-tests",
+    "exitCode": 0
+  },
+  {
+    "check": "security-tests",
+    "exitCode": 0
+  },
+  {
+    "check": "entitlements",
+    "exitCode": 0
+  },
+  {
+    "check": "theme-surfaces",
+    "exitCode": 0
+  },
+  {
+    "check": "website-build",
+    "exitCode": 0
+  }
+]

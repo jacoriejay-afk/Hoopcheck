@@ -1,4 +1,6 @@
 "use client";
+import { getEffectiveMembership } from "../../../../lib/billing/client-membership";
+
 
 import HoopLoading from "../../../../components/HoopLoading";
 import {
@@ -185,16 +187,7 @@ export default function LeagueReviewPage() {
         subscriptionResult,
         adminResult,
       ] = await Promise.all([
-        supabase
-          .from("subscriptions")
-          .select(
-            "status, current_period_end"
-          )
-          .eq(
-            "user_id",
-            user.id
-          )
-          .maybeSingle(),
+        getEffectiveMembership(user.id),
 
         supabase.rpc(
           "is_current_user_admin_or_moderator"

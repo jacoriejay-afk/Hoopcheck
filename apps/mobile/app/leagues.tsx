@@ -76,10 +76,10 @@ export default function LeaguesScreen() {
         <Text style={styles.subtitle}>Explore men’s professional basketball leagues and competition levels.</Text>
         <Pressable
           accessibilityRole="link"
-          onPress={() => router.push({ pathname: "/web", params: { path: "/womens" } })}
+          onPress={() => router.push("/womens")}
           style={styles.womensLink}
         >
-          <Text style={styles.openProfile}>Browse women’s teams and leagues on HoopCheck ↗</Text>
+          <Text style={styles.openProfile}>Browse women’s teams and leagues →</Text>
         </Pressable>
         <View style={styles.searchRow}>
           <Input onBlur={() => remember(term)} onSubmitEditing={() => remember(term)} value={term} onChangeText={value => { requestId.current++; setTerm(value); setLoading(true); setItems([]); setHasMore(false); }} returnKeyType="search" placeholder="League, country or level" placeholderTextColor={theme.muted} style={styles.input} />

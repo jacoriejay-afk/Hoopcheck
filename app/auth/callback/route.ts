@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GOOGLE_SIGNUP_COOKIE, GOOGLE_SIGNUP_PATH, GOOGLE_SIGNUP_ROLE } from "../../../lib/google-auth";
 import { ambassadorDb, getActiveReferral, referralCookie } from "../../../lib/ambassador/server";
+import { requestMfaState } from "../../../lib/server/mfa-enforcement";
 import { createAuthClient } from "../../../lib/server/supabase-auth";
 
 export async function GET(request: NextRequest) {
@@ -43,6 +44,15 @@ export async function GET(request: NextRequest) {
       }
     }
     return response;
+  }
+
+  try {
+    const state = await requestMfaState(supabase, data.session.access_token);
+    if (state.required) return NextResponse.redirect(new URL("/auth/verify?returnTo=%2Fdashboard", request.url));
+  } catch {
+    await supabase.auth.signOut({ scope: "local" });
+    login.searchParams.set("google_error", "verification");
+    return NextResponse.redirect(login);
   }
 
   const { data: profile } = await supabase.from("profiles")
