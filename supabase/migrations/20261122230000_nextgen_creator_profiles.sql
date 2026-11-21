@@ -53,6 +53,11 @@ create table if not exists public.agent_showcases (
     website_url ~* '^https://[a-z0-9][a-z0-9.-]*([:/?#]|$)' and website_url !~ '[[:space:]]')
   ),
   is_published boolean not null default false,
+  review_status text not null default 'unreviewed'
+    check (review_status in ('unreviewed','approved','rejected')),
+  reviewed_at timestamptz,
+  reviewed_by uuid references public.profiles(id) on delete set null,
+  review_note text check (review_note is null or char_length(review_note) <= 1000),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint agent_published_requires_name check (
