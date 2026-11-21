@@ -41,6 +41,20 @@ async function prepare() {
   secure.getItemAsync = async key => values.get(key) ?? null;
   secure.setItemAsync = async (key, value) => { values.set(key, value); };
   secure.deleteItemAsync = async key => { values.delete(key); };
+  // The macOS screenshot simulator uses synthetic, loopback-only data.
+  // NetInfo can report offline because the fixture host has no DNS. This
+  // override is confined to this unshipped entry; production connectivity
+  // checks and MFA fail-closed behavior remain unchanged.
+  const netInfo = require('@react-native-community/netinfo').default;
+  const fixtureConnection = {
+    type: 'wifi', isConnected: true, isInternetReachable: true,
+    details: { isConnectionExpensive: false },
+  };
+  netInfo.fetch = async () => fixtureConnection;
+  netInfo.addEventListener = listener => {
+    listener(fixtureConnection);
+    return () => {};
+  };
   require('react-native').LogBox.ignoreAllLogs(true);
   const storage = require('@react-native-async-storage/async-storage').default;
   await storage.setItem('hoopcheck:device-preferences:v1', JSON.stringify({ onboardingDone: true, appLock: false, haptics: false, theme: 'system' }));
