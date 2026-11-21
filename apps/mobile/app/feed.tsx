@@ -156,7 +156,8 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
       <BrandLogo compact />
       <View accessibilityRole="tablist" style={{ flex: 1, flexDirection: "row", gap: 6 }}>
         {[false, true].map(value => <Pressable key={String(value)}
-          accessibilityRole="tab" accessibilityState={{ selected: reels === value }}
+          accessibilityRole="tab" accessibilityLabel={value ? "Reels" : "HoopFeed"}
+          accessibilityState={{ selected: reels === value }}
           aria-selected={reels === value} onPress={() => setReels(value)}
           style={({ pressed }) => ({
             flex: 1, minHeight: 44, justifyContent: "center", alignItems: "center",
