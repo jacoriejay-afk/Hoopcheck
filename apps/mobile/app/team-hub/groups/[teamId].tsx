@@ -1,3 +1,4 @@
+import { EntityArtwork } from "../../../components/EntityArtwork";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { FlatList, KeyboardAvoidingView, Platform, Pressable, RefreshControl, Text, TextInput, View, type ViewToken } from "react-native";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
@@ -99,7 +100,7 @@ export default function ClubGroup() {
     <FlatList data={current?.posts ?? []} keyExtractor={post => post.id} keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 16, gap: 14 }} viewabilityConfig={viewability} onViewableItemsChanged={onViewable} initialNumToRender={4} windowSize={5} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void load()} />}
       ListHeaderComponent={<View style={{ gap: 14 }}>
         <Button secondary onPress={() => router.push("/team-hub/groups")}>All club groups</Button>
-        <Text accessibilityRole="header" style={{ ...copy, fontSize: 28, fontWeight: "900" }}>{access?.name || "HoopGroups"}</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.md, padding: theme.spacing.lg, backgroundColor: theme.surface, borderRadius: theme.radius.hero }}><EntityArtwork name={access?.name || "HoopGroups"} kind="teams" size={56} /><View style={{ flex: 1, gap: theme.spacing.xs }}><Text style={{ color: theme.accent, ...theme.type.caption }}>CLUB COMMUNITY</Text><Text accessibilityRole="header" style={{ ...copy, ...theme.type.section }}>{access?.name || "HoopGroups"}</Text></View></View>
         {access ? <><Text style={{ color: theme.muted }}>{access.teamName} supporters · {access.memberCount === null ? "Member count unavailable" : `${access.memberCount} members`}</Text><Button secondary onPress={() => router.push(access.teamPath as "/teams")}>Club profile</Button>
           {!canJoin && !access.moderator ? <Text style={copy}>Club group conversations are available to fan accounts and appointed moderators.</Text> : null}
           {canJoin ? <Button secondary disabled={busy} onPress={() => { if (access.member && access.moderator) setConfirmLeave(true); else void act(access.member ? "leave" : "join"); }}>{access.member ? "Leave club group" : "Join club group"}</Button> : null}
@@ -112,7 +113,7 @@ export default function ClubGroup() {
         {notice ? <Text accessibilityLiveRegion="polite" style={{ color: theme.muted }}>{notice}</Text> : null}
         {participates ? <View style={{ gap: 10 }}><TextInput accessibilityLabel="Club group post" multiline maxLength={2000} value={text} onChangeText={setDraft} placeholder="Share something with the club group" placeholderTextColor={theme.muted} style={{ ...copy, minHeight: 70, maxHeight: 160, padding: 12, borderWidth: 1, borderColor: theme.border, backgroundColor: theme.input, borderRadius: theme.radius.control }} /><Button disabled={busy || !text.trim()} onPress={() => void act("create_post", { text }).then(ok => { if (ok) setDraft(previous => previous === text ? "" : previous); })}>{busy ? "Checking safety…" : "Post to club group"}</Button></View> : null}
       </View>}
-      renderItem={({ item: post }) => <GlassCard style={{ padding: 14, gap: 12 }}>
+      renderItem={({ item: post }) => <GlassCard style={{ padding: theme.spacing.lg, gap: theme.spacing.md, borderRadius: theme.courtside.card.radius }}>
         <Text style={{ ...copy, fontSize: 17, fontWeight: "800" }}>{post.profiles?.display_name || "HoopCheck member"}</Text><Text style={{ color: theme.muted }}>{post.is_pinned ? "Pinned · " : ""}{new Date(post.created_at).toLocaleString()}</Text><Text style={{ ...copy, lineHeight: 23 }}>{post.body}</Text>
         {post.image_url ? <GroupImage key={`${uid}:${post.id}`} userId={uid!} teamId={teamId} reference={post.image_url} enabled={active && visible.has(post.id)} /> : null}
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}><Pressable accessibilityRole="button" onPress={() => setOpenComments(previous => ({ ...previous, [post.id]: !previous[post.id] }))} style={touch}><Text style={{ color: theme.accent }}>Comments</Text></Pressable>

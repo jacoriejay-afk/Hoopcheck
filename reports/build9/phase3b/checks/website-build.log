@@ -1,0 +1,196 @@
+
+> hoopcheck@1.0.0 build
+> next build && npm run audit:bundle && npm run check:hub-theme-pairing && node scripts/check-apple-certificate-tracing.mjs
+
+▲ Next.js 16.4.5 (Turbopack)
+✓ Running next.config.ts took 134ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 7.6s
+  Running TypeScript ...
+  Finished TypeScript in 5.9s ...
+  Collecting page data using 2 workers ...
+  Generating static pages using 2 workers (0/116) ...
+  Generating static pages using 2 workers (29/116) 
+  Generating static pages using 2 workers (58/116) 
+  Generating static pages using 2 workers (87/116) 
+✓ Generating static pages using 2 workers (116/116) in 2.6s
+  Finalizing page optimization ...
+
+Route (app)                                   Revalidate  Expire
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /.well-known/apple-app-site-association
+├ ƒ /about
+├ ƒ /account
+├ ƒ /account/security
+├ ƒ /admin/ambassadors
+├ ƒ /admin/ambassadors/export
+├ ƒ /admin/analytics
+├ ƒ /admin/business-inquiries
+├ ƒ /admin/claims
+├ ƒ /admin/comments
+├ ƒ /admin/directory
+├ ƒ /admin/directory/coach-requests
+├ ƒ /admin/directory/coaches
+├ ƒ /admin/directory/import
+├ ƒ /admin/directory/manage
+├ ƒ /admin/directory/providers
+├ ƒ /admin/directory/relationships
+├ ƒ /admin/directory/requests
+├ ƒ /admin/privacy-requests
+├ ƒ /admin/profile-reports
+├ ƒ /admin/reports
+├ ƒ /admin/reviews
+├ ƒ /admin/rights
+├ ƒ /admin/support
+├ ƒ /admin/team-fanfeed
+├ ƒ /admin/team-logos
+├ ƒ /admin/users
+├ ƒ /admin/verification
+├ ƒ /agents-hq
+├ ƒ /ambassador-hq
+├ ƒ /api/account/deactivate
+├ ƒ /api/account/delete
+├ ƒ /api/account/workspaces
+├ ƒ /api/admin/directory/sync
+├ ƒ /api/admin/directory/sync/approve
+├ ƒ /api/admin/directory/sync/preview
+├ ƒ /api/admin/review-reports/[reportId]
+├ ƒ /api/admin/reviews/[reviewId]
+├ ƒ /api/admin/rights/transition
+├ ƒ /api/admin/team-fanfeed
+├ ƒ /api/admin/team-logo-candidate
+├ ƒ /api/app-version
+├ ƒ /api/apple/notifications
+├ ƒ /api/business-inquiries
+├ ƒ /api/copyright/report
+├ ƒ /api/cron/balldontlie-validation
+├ ƒ /api/cron/live-basketball
+├ ƒ /api/fan-feed/media
+├ ƒ /api/fan-feed/moderate
+├ ƒ /api/fan-groups
+├ ƒ /api/game-predictions
+├ ƒ /api/hoopfeed/media
+├ ƒ /api/hoopfeed/moderate
+├ ƒ /api/hoopfeed/share
+├ ƒ /api/hoopfeed/video-cleanup
+├ ƒ /api/hoopfeed/video-upload
+├ ƒ /api/membership
+├ ƒ /api/mobile/bootstrap
+├ ƒ /api/mobile/purchases/config
+├ ƒ /api/mobile/purchases/intent
+├ ƒ /api/mobile/purchases/sync
+├ ƒ /api/native2/highlight-download
+├ ƒ /api/native2/verification-video-download
+├ ƒ /api/profile-reports
+├ ƒ /api/review-access
+├ ƒ /api/review-reports
+├ ƒ /api/reviews
+├ ƒ /api/reviews/report
+├ ƒ /api/stripe/cancel-subscription
+├ ƒ /api/stripe/create-portal
+├ ƒ /api/stripe/webhook
+├ ƒ /api/stripe/webhook/create-checkout
+├ ƒ /api/team-fanfeed
+├ ƒ /api/team-fanfeed/media
+├ ƒ /api/team-pay-checkins
+├ ƒ /api/trust-score
+├ ƒ /api/verification/identity
+├ ƒ /api/womens-reviews
+├ ƒ /auth/callback
+├ ƒ /auth/confirm
+├ ƒ /auth/confirm/verify
+├ ƒ /auth/verify
+├ ƒ /business-opportunities
+├ ƒ /choose-username
+├ ƒ /coach-placement
+├ ƒ /coaches
+├ ƒ /coaches/[id]
+├ ƒ /coaches/[id]/review
+├ ƒ /community-guidelines
+├ ƒ /company
+├ ƒ /complete-profile
+├ ƒ /connections
+├ ƒ /copyright
+├ ƒ /dashboard
+├ ƒ /directory
+├ ƒ /fan-feed
+├ ƒ /fan-live
+├ ƒ /fans
+├ ƒ /fans/[id]
+├ ƒ /feed
+├ ƒ /founder
+├ ƒ /leagues
+├ ƒ /leagues/[id]
+├ ƒ /leagues/[id]/review
+├ ƒ /live-games
+├ ƒ /login
+├ ○ /manifest.webmanifest
+├ ƒ /membership
+├ ƒ /notifications
+├ ƒ /offline
+├ ƒ /onboarding
+├ ƒ /onboarding/teams
+├ ƒ /owner-hq
+├ ƒ /partners
+├ ƒ /players
+├ ƒ /players/[id]
+├ ƒ /pre-sign
+├ ƒ /privacy
+├ ƒ /privacy-center
+├ ƒ /profile
+├ ƒ /referral/[code]
+├ ƒ /reset-password
+├ ƒ /reviews
+├ ○ /robots.txt
+├ ƒ /search
+├ ƒ /settings
+├ ƒ /signup
+├ ƒ /signup/complete
+├ ƒ /signup/google
+├ ○ /sitemap.xml                                      1h      1y
+├ ƒ /support
+├ ƒ /team-dashboard
+├ ƒ /team-hub
+├ ƒ /team-hub/groups
+├ ƒ /team-hub/groups/[teamId]
+├ ƒ /teams
+├ ƒ /teams/[id]
+├ ƒ /teams/[id]/review
+├ ƒ /terms
+├ ƒ /theme-card-audit
+├ ƒ /verification
+├ ƒ /womens
+├ ƒ /womens/[id]
+├ ƒ /womens/[id]/review
+└ ƒ /womens/leagues/[id]
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+
+> hoopcheck@1.0.0 audit:bundle
+> node scripts/audit-bundle.mjs
+
+\nHoopCheck production client JavaScript (gzip)
+- Total emitted client chunks: 854.9 KB across 109 files
+- Route manifest checks:
+  - Homepage: present (app/page.js)
+  - Club profile: present (app/teams/[id]/page.js)
+  - HoopFeed: present (app/feed/page.js)
+\nFive largest emitted JavaScript chunks (not package attribution):
+- 71.3 KB gzip  static/chunks/00vh43f6_i_oy.js
+- 52.9 KB gzip  static/chunks/090h3tf4zroxu.js
+- 45.4 KB gzip  static/chunks/45b_tgj-ls54a.js
+- 43.0 KB gzip  static/chunks/00vifqz1698ur.js
+- 38.7 KB gzip  static/chunks/0cz1d0mv5g_q7.js
+
+> hoopcheck@1.0.0 check:hub-theme-pairing
+> node scripts/check-hub-theme-pairing.mjs
+
+HUB_THEME_PAIRING_CHECK=PASS
+PASS: all three pinned public Apple trust roots traced into 6 server routes
