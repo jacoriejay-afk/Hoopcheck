@@ -3,12 +3,11 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { supabase } from "../../../lib/supabase";
 import "../network.css";
 
 type Agent = { id:string; account_type:string; display_name:string|null; username:string|null;
  avatar_url:string|null; avatar_moderation_status:string|null; country:string|null;
- bio:string|null; experience_summary:string|null; identity_verification_status:string|null; };
+ bio:string|null; experience_summary:string|null; identity_checked:boolean; };
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default function AgentProfilePage(){
@@ -20,14 +19,12 @@ export default function AgentProfilePage(){
     let active=true;
     if(!uuid.test(id||"")){setError("This professional profile could not be found.");setLoading(false);return;}
     void (async()=>{
-      const {data,error:loadError}=await supabase.from("profiles")
-       .select("id,account_type,display_name,username,avatar_url,avatar_moderation_status,country,bio,experience_summary,identity_verification_status")
-       .eq("id",id).in("account_type",["agent","scout"])
-       .eq("profile_visibility","public").eq("moderation_status","normal").maybeSingle();
+      const response=await fetch("/api/network/agents?id="+encodeURIComponent(id),{cache:"no-store"});
+      const payload=await response.json();
       if(!active)return;
-      if(loadError)setError("Could not load the professional profile.");
-      else if(!data)setError("This professional profile is unavailable or private.");
-      else setPerson(data as Agent);
+      if(!response.ok)setError(payload.error||"This professional profile is unavailable.");
+      else if(!payload.person)setError("This professional profile is unavailable or private.");
+      else setPerson(payload.person as Agent);
       setLoading(false);
     })().catch(()=>{if(active){setError("Could not load the professional profile.");setLoading(false);}});
     return ()=>{active=false;};
@@ -44,7 +41,7 @@ export default function AgentProfilePage(){
           : <span className="hc-network-avatar hc-network-profile-avatar hc-network-fallback">{name.slice(0,2).toUpperCase()}</span>}
         <div><p className="hc-network-eyebrow">{person.account_type==="scout"?"SCOUT PROFILE":"AGENT PROFILE"}</p>
           <h1>{name}</h1><p>{person.username?"@"+person.username+" · ":""}{person.country||"Country not listed"}</p>
-          <span className="hc-network-verification">{person.identity_verification_status==="verified"?"Identity checked":"Identity not verified"}</span>
+          <span className="hc-network-verification">{person.identity_checked?"Identity checked":"Identity not verified"}</span>
         </div>
       </div>
     </header>
