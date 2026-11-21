@@ -116,7 +116,7 @@ export function createStoreKitClient(deps: {
       const captured = await scope(), native = bridge();
       if (deps.purchasesAvailable === false) return { products: [] as StoreProduct[], canPurchase: false, reason: "New Apple purchases require iOS 16 or later. Existing membership and purchase restoration remain available." };
       const result = record(await deps.request("/api/mobile/purchases/config", captured.token)); current(captured);
-      if (result.owner !== captured.owner || !["Production", "Sandbox"].includes(String(result.environment)) || typeof result.canPurchase !== "boolean") throw Error("Membership options could not be verified.");
+      if (result.owner !== captured.owner || !(result.canPurchase === false && result.environment === null || ["Production", "Sandbox"].includes(String(result.environment))) || typeof result.canPurchase !== "boolean") throw Error("Membership options could not be verified.");
       if (!result.canPurchase) return { products: [] as StoreProduct[], canPurchase: false, reason: typeof result.reason === "string" ? result.reason.slice(0, 500) : "New purchases are unavailable for this account." };
       if (!Array.isArray(result.products) || ![3, 6].includes(result.products.length)) throw Error("Membership product permissions could not be verified.");
       const allowed = result.products.map(value => { const row = record(value); if (!appleProduct(row.id)) throw Error("Membership product permissions could not be verified."); return row.id; });

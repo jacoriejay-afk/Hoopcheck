@@ -11,8 +11,9 @@ root = Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('output', type=Path)
 parser.add_argument('--sql-root', type=Path, default=root, help='Repository path inside the SQL execution container')
+parser.add_argument('--synthetic', action='store_true', help='Use synthetic StoreKit fixture; never claims catalog compatibility')
 args = parser.parse_args()
-source = (root / 'supabase/tests/build8_production_catalog_rehearsal.sql').read_text()
+source = (root / ('supabase/tests/storekit_membership_isolated.sql' if args.synthetic else 'supabase/tests/build8_production_catalog_rehearsal.sql')).read_text()
 if source.count('ROLLBACK;') != 1:
     raise SystemExit('Review changed catalog fixture transaction boundaries first')
 fixture = source.split('ROLLBACK;')[0]
@@ -35,6 +36,10 @@ CREATE TEMP TABLE compensation_entitlements AS SELECT * FROM public.membership_e
 CREATE TEMP TABLE compensation_functions AS SELECT oid,pg_get_functiondef(oid) definition FROM pg_proc WHERE pronamespace IN ('public'::regnamespace,'hoopcheck_security'::regnamespace);
 COMMIT;
 -- Compensation is a separate committed transaction, not transaction rollback.
+BEGIN;
+\ir ../../scripts/sql/build9-pause-new-apple-intents-local.sql
+COMMIT;
+-- Repeating containment is idempotent.
 BEGIN;
 \ir ../../scripts/sql/build9-pause-new-apple-intents-local.sql
 COMMIT;
@@ -63,8 +68,19 @@ END $$;
 ROLLBACK;
 SELECT 'PASS: committed purchase-intent pause preserves every application/billing row, entitlements, RPC definitions, privacy and sync privileges' result;
 """
+if args.synthetic:
+    checks = checks.replace('b8000000-0000-4000-8000-000000000001', '11111111-1111-4111-8111-111111111111')
+    checks = '\n'.join(line for line in checks.splitlines() if "has_column_privilege('anon'" not in line)
+    checks = checks.replace('PASS: committed', 'PASS: SYNTHETIC ONLY committed').replace('RPC definitions, privacy and sync privileges', 'RPC definitions and sync privileges')
 output = args.output
 sql = (fixture + checks).replace(r'\ir ../migrations/', f'\\ir {args.sql_root}/supabase/migrations/').replace(r'\ir ../../scripts/', f'\\ir {args.sql_root}/scripts/')
-output.write_text(sql)
+preflight = """\\set ON_ERROR_STOP on
+DO $$ BEGIN
+ IF current_database() <> 'hoop_prod_rehearsal' OR inet_server_addr() IS NOT NULL THEN
+  RAISE EXCEPTION 'Only the isolated socket rehearsal database is permitted';
+ END IF;
+END $$;
+"""
+output.write_text(preflight + sql)
 output.chmod(0o600)
 print('Generated local committed compensation rehearsal:', output)

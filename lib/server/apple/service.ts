@@ -25,6 +25,14 @@ export async function configuredApple(db:SupabaseClient,services:AppleServices) 
   const {data,error}=await db.from("apple_billing_config").select("enabled,environment").eq("singleton",true).maybeSingle();
   if(error || data?.enabled!==true || data.environment!==services.environment) throw new AppleBillingError("apple_configuration",503,"Apple membership is not available yet. Existing memberships are unchanged.");
 }
+// A verified disabled switch is a normal catalog state, not a signing failure.
+// Missing schema/config remains unavailable; never infer disabled from a DB error.
+export async function readAppleCatalog(scoped:SupabaseClient,db:SupabaseClient,user:string,servicesFactory:()=>AppleServices=appleServices) {
+  const {data,error}=await db.from("apple_billing_config").select("enabled,environment").eq("singleton",true).maybeSingle();
+  if(error || !data || typeof data.enabled!=="boolean") throw new AppleBillingError("apple_configuration",503,"Apple membership configuration could not be verified. Existing memberships are unchanged.");
+  if(!data.enabled) return {owner:user,environment:null,products:[],canPurchase:false,reason:"New Apple purchases are not available yet. Existing memberships are unchanged."};
+  return appleCatalog(scoped,db,user,servicesFactory());
+}
 export async function appleCatalog(scoped:SupabaseClient,db:SupabaseClient,user:string,services:AppleServices) {
   await configuredApple(db,services);
   const [profile,deletion,stripe,apple]=await Promise.all([

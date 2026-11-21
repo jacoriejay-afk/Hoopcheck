@@ -1,0 +1,24 @@
+# Keep dependency, generated project and secret files out of future EAS uploads.
+# This file takes precedence over .gitignore; keep these patterns in sync.
+node_modules/
+.expo/
+.vercel/
+.next/
+/ios/
+/android/
+dist/
+coverage/
+.env
+.env.*
+*.pem
+*.p8
+*.p12
+*.pfx
+*.key
+*.mobileprovision
+*service-account*.json
+*service_account*.json
+*.bundle
+*.log
+*.tsbuildinfo
+.DS_Store
