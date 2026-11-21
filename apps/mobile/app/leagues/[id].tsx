@@ -1,3 +1,4 @@
+import { LeagueClubs } from "../../components/EntityCompetition";
 import { EntityHero } from "../../components/EntityHero";
 import { GlassCard, Button } from "../../src/primitives";
 import { useCachedRead, useNetwork } from "../../src/native/network";
@@ -91,6 +92,7 @@ export default function LeagueDetailScreen() {
               <Text style={styles.label}>COUNTRY</Text><Text style={styles.value}>{league.country || "Not listed"}</Text>
             </GlassCard>
             {safeWebsite(league.website) ? <Button onPress={openWebsite} style={styles.button}><Text style={styles.buttonText}>Open league website ↗</Text></Button> : null}
+            <LeagueClubs key={league.id} id={league.id} />
             <View style={styles.reviewsSection}>
               <Text style={styles.reviewsTitle}>Latest reviews</Text>
               <Text style={styles.reviewsSubtitle}>{offline ? "Reconnect to revalidate review access. Reviews are not saved offline." : "Approved reviews only · access follows your HoopCheck account permissions"}</Text>

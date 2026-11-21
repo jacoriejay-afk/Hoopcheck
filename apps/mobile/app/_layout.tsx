@@ -98,7 +98,8 @@ function RootLayout() {
           animation: "none",
           headerStyle: { backgroundColor: theme.surface },
           headerTintColor: theme.accent,
-          headerTitleStyle: { fontWeight: "900", fontSize: 19, color: theme.foreground },
+          headerShadowVisible: false,
+          headerTitleStyle: { fontWeight: "600", fontSize: 17, color: theme.foreground },
           contentStyle: { backgroundColor: theme.background },
         }}
       >

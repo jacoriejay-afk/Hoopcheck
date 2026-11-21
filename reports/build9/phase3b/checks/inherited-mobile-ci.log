@@ -1,0 +1,29 @@
+mobile-typecheck	Verify native community, permissions and navigation in both themes	﻿2026-11-21T06:12:51.5826227Z ##[group]Run node scripts/verify-membership-browser.cjs
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T06:12:51.5826709Z [36;1mnode scripts/verify-membership-browser.cjs[0m
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T06:12:51.5827130Z [36;1mnode scripts/verify-mfa-browser.cjs[0m
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T06:12:51.5827525Z [36;1mnode scripts/verify-player-profiles-browser.cjs[0m
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T06:12:51.5828162Z [36;1mnode scripts/verify-media-browser.cjs[0m
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T06:12:51.5828553Z [36;1mnode scripts/verify-profile-editor-browser.cjs[0m
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T06:12:51.5828957Z [36;1mnode scripts/verify-club-groups-browser.cjs[0m
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T06:12:51.5829335Z [36;1mnode scripts/verify-live-games-browser.cjs[0m
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T06:12:51.5829696Z [36;1mnode scripts/verify-feed-browser.cjs[0m
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T06:12:51.5830055Z [36;1mnode scripts/verify-discovery-browser.cjs[0m
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T06:12:51.5830458Z [36;1mnode scripts/verify-theme-preference-browser.cjs[0m
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T06:12:51.5830852Z [36;1mnode scripts/verify-design-browser.cjs[0m
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T06:12:51.5859672Z shell: /usr/bin/bash -e {0}
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T06:12:51.5859975Z env:
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T06:12:51.5860201Z   NATIVE_TEST_URL: http://127.0.0.1:8092
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T06:12:51.5860524Z   CHROMIUM_PATH: /usr/bin/google-chrome
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T06:12:51.5860807Z ##[endgroup]
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T06:13:29.2488399Z locator.waitFor: Timeout 30000ms exceeded.
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T06:13:29.2489116Z Call log:
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T06:13:29.2491986Z   - waiting for getByRole('button', { name: 'Membership and restore purchases', exact: true }) to be visible
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T06:13:29.2493007Z 
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T06:13:29.2493847Z     at verify (/home/runner/work/Hoopcheck/Hoopcheck/apps/mobile/scripts/verify-membership-browser.cjs:20:120)
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T06:13:29.2495365Z     at async /home/runner/work/Hoopcheck/Hoopcheck/apps/mobile/scripts/verify-membership-browser.cjs:32:283 {
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T06:13:29.2496262Z   log: [
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T06:13:29.2497131Z     "  - waiting for getByRole('button', { name: 'Membership and restore purchases', exact: true }) to be visible"
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T06:13:29.2497970Z   ],
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T06:13:29.2498287Z   name: 'TimeoutError'
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T06:13:29.2510785Z }
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T06:13:29.2612801Z ##[error]Process completed with exit code 1.

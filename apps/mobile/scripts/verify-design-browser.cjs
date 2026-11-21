@@ -61,6 +61,7 @@ const uid='11111111-1111-4111-8111-111111111111', team='22222222-2222-4222-8222-
     assert.equal(new URL(page.url()).searchParams.get('path'),path);
     await page.goto(base+'/account');
   }
+  fail=true; // Home now reads the same follow contract; inject this failure at the intended screen.
   await page.getByRole('button',{name:'Connections',exact:true}).click();
   await page.getByText('Connections could not be loaded. Please try again.',{exact:true}).waitFor();
   await page.getByRole('button',{name:'Try again',exact:true}).click();await page.getByText('Design Club',{exact:true}).waitFor();

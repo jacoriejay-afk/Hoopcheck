@@ -1,3 +1,4 @@
+import { useHaptics } from "../src/native/haptics";
 import { Skeleton } from "../components/Motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FlatList, Pressable, RefreshControl, Text, View } from "react-native";
@@ -12,6 +13,7 @@ import { markNotificationsRead, noticeMatches, notificationPath, readNotificatio
 export default function Notifications() {
   const theme = useEntryTheme();
   const router = useRouter();
+  const haptic = useHaptics();
   const { offline } = useNetwork();
   const generation = useRef(0);
   const focused = useRef(false);
@@ -66,16 +68,34 @@ export default function Notifications() {
     } catch (failure) { if (current === generation.current) setError(failure instanceof Error ? failure.message : "Alerts could not be marked as read."); }
     finally { marking.current = false; setBusy(false); }
   }
+  async function openNotice(item: Notice) {
+    const path = notificationPath(item);
+    if (!path || marking.current || !owner.current || offline) return;
+    const current = generation.current; const userId = owner.current;
+    marking.current = true; setBusy(true); setError("");
+    try {
+      await requireOnline();
+      const session = await supabase.auth.getSession();
+      if (session.error || session.data.session?.user.id !== userId || current !== generation.current) throw Error("Verify your session again.");
+      if (!item.read_at) {
+        const result = await markNotificationsRead(supabase, userId, new Date(), item.id);
+        if (current !== generation.current || owner.current !== userId) return;
+        setRows(previous => previous.map(row => result.ids.includes(row.id) ? { ...row, read_at: result.readAt } : row));
+      }
+      if (current === generation.current && owner.current === userId) { haptic("tab"); router.push(nativeDestination(path) as "/dashboard"); }
+    } catch (failure) { if (current === generation.current) setError(failure instanceof Error ? failure.message : "Activity could not be opened."); }
+    finally { marking.current = false; setBusy(false); }
+  }
   const items = offline ? [] : rows;
   return <View style={{ flex: 1, backgroundColor: theme.background }}>
     <FlatList ListHeaderComponent={<View style={{ gap: theme.spacing.md }}>
-      <Text style={{ color: theme.muted }}>Follow teams, coaches, and leagues to choose the updates you receive.</Text>
+      <View style={{ gap: theme.spacing.sm }}><Text style={{ color: theme.foreground, ...theme.type.section }}>Your basketball updates</Text><Text style={{ color: theme.muted }}>{loading ? "Loading activity…" : `${items.filter(item => !item.read_at).length} unread in your latest ${items.length} updates`}</Text></View>
       <Button secondary disabled={busy || failed || offline || !items.some(item => !item.read_at)} onPress={() => void markAll()}>{busy ? "Updating…" : "Mark all as read"}</Button>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{["all", "unread", "games", "clubs", "reviews"].map(value => <Pressable key={value} accessibilityRole="button" aria-pressed={filter === value} accessibilityState={{ selected: filter === value }} onPress={() => setFilter(value)} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 12, borderRadius: theme.radius.control, backgroundColor: filter === value ? theme.accentSurface : theme.chip }}><Text style={{ color: theme.foreground, textTransform: "capitalize" }}>{value}</Text></Pressable>)}</View>
       {error ? <Text accessibilityRole="alert" style={{ color: theme.muted }}>{error}</Text> : null}
     </View>} data={items.filter(item => noticeMatches(item, filter))} keyExtractor={item => item.id} contentContainerStyle={{ padding: 16, gap: 12 }} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void load()} />} renderItem={({ item }) => {
       const path = notificationPath(item);
-      return <GlassCard style={{ padding: 16, gap: 8 }}><Pressable accessibilityRole="button" disabled={!path} onPress={() => path && router.push(nativeDestination(path) as "/dashboard")} style={{ minHeight: 60, gap: 8 }}>
+      return <GlassCard style={{ padding: theme.spacing.lg, gap: theme.spacing.sm, borderLeftWidth: item.read_at ? 1 : 3, borderLeftColor: item.read_at ? theme.border : theme.accent }}><Pressable accessibilityRole="button" disabled={!path || busy} accessibilityState={{ disabled: !path || busy }} onPress={() => void openNotice(item)} style={({ pressed }) => ({ minHeight: 60, gap: theme.spacing.sm, opacity: pressed ? .7 : 1 })}>
         <Text style={{ color: theme.accent, fontWeight: "700" }}>{item.read_at ? "" : "● "}{item.notification_type.replaceAll("_", " ").toUpperCase()}</Text>
         <Text style={{ color: theme.foreground, fontSize: 18, fontWeight: "800" }}>{item.title}</Text>
         <Text style={{ color: theme.foreground }}>{item.body}</Text>

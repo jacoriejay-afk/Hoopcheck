@@ -7,10 +7,13 @@ export async function readNotifications(client: SupabaseClient, userId: string) 
   if (result.error) throw new Error("Alerts could not load. Try again.");
   return (result.data ?? []) as Notice[];
 }
-export async function markNotificationsRead(client: SupabaseClient, userId: string, now = new Date()) {
+export async function markNotificationsRead(client: SupabaseClient, userId: string, now = new Date(), notificationId?: string) {
   if (!uuid.test(userId)) throw new Error("Invalid notification request");
+  if (notificationId && !uuid.test(notificationId)) throw new Error("Invalid notification request");
   const readAt = now.toISOString();
-  const result = await client.from("notifications").update({ read_at: readAt }).eq("user_id", userId).is("read_at", null).select("id");
+  let query = client.from("notifications").update({ read_at: readAt }).eq("user_id", userId).is("read_at", null);
+  if (notificationId) query = query.eq("id", notificationId);
+  const result = await query.select("id");
   if (result.error) throw new Error("Alerts could not be marked as read. Try again.");
   return { ids: (result.data ?? []).map(row => row.id as string), readAt };
 }
