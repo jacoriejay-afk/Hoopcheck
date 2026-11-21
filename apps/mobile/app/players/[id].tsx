@@ -113,12 +113,9 @@ function PlayerProfileDetails({ viewer }: { viewer: PlayerViewer }) {
         ) : player ? (
           <>
             <GlassCard style={styles.hero}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.lg, width: "100%" }}>
-                <ProfileAvatar url={player.avatar_url} name={name} size={96} />
-                <View style={{ flex: 1, minWidth: 0, gap: theme.spacing.sm }}>
-                  <Text style={styles.kicker}>PLAYER PROFILE</Text>
-                  <Text accessibilityRole="header" style={styles.heroTitle}>{name}</Text>
-                </View>
+              <View style={{ width: "100%", backgroundColor: theme.courtside.court.background, padding: theme.spacing.lg, borderRadius: theme.radius.card, gap: theme.spacing.lg }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.lg }}><ProfileAvatar url={player.avatar_url} name={name} size={96} /><View style={{ flex: 1, gap: theme.spacing.sm }}><Text style={[styles.kicker, { color: theme.courtside.court.orange }]}>PLAYER PROFILE</Text><Text style={{ ...theme.type.caption, color: theme.courtside.court.muted }}>HOOPCHECK ATHLETES</Text></View></View>
+                <Text accessibilityRole="header" style={[styles.heroTitle, { color: theme.courtside.court.ink }]}>{name}</Text>
               </View>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm, marginVertical: theme.spacing.md }}>
                 <Chip>Player</Chip>
