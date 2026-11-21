@@ -12,11 +12,11 @@ const videoPath=process.env.FIXTURE_VIDEO || require('node:path').join(__dirname
 let png;
 async function fixture(browser,theme,allowed=true){
   const context=await browser.newContext({viewport:{width:390,height:844},colorScheme:theme});
-  const calls=[],errors=[];let mediaFailed=false;let denied=false,checked=false,saved=false,vote=null,read=false;
+  const calls=[],errors=[];let mediaFailed=false;let denied=false,checked=false,saved=false,vote=null,read=false;const blocked=new Set();
   const posts=[
     {id:id(1),body:'Fixture community discussion',image_url:'protected/photo.png',post_kind:'discussion'},
     {id:id(2),body:'Fixture poll',post_kind:'poll',poll_options:['Home team','Away team']},
-    {id:id(3),body:'Fixture reel',post_kind:'discussion',video_url:'protected/video.webm'},
+    {id:id(3),author_id:id(5),body:'Fixture reel',post_kind:'discussion',video_url:'protected/video.webm'},
   ].map((p,i)=>({author_id:uid,created_at:`2026-11-18T10:00:0${i}Z`,expires_at:null,profiles:{display_name:'Fixture Member',account_type:'player'},...p}));
   const comments=[{id:id(8),post_id:id(1),author_id:uid,body:'Original fixture comment',parent_id:null,created_at:'2026-11-18T11:00:00Z',profiles:{display_name:'Fixture Member'}}];
   await context.route('**/*',async route=>{
@@ -53,6 +53,12 @@ async function fixture(browser,theme,allowed=true){
         return json(url.searchParams.has('video_url')?posts.filter(p=>p.video_url):posts);
       }
       if(table==='feed_post_archives')return json([]);
+      if(table==='user_blocks'){
+        assert.ok(allowed,'Denied viewer cannot access account blocks');
+        if(method==='POST'){const record=JSON.parse(body);assert.equal(record.blocker_id,uid);assert.equal(record.blocked_id,id(5));blocked.add(record.blocked_id);return json({},201);}
+        assert.equal(url.searchParams.get('blocker_id'),`eq.${uid}`,'Only owner block list can be read');
+        return json([...blocked].map(blocked_id=>({blocked_id})));
+      }
       if(table==='feed_post_bookmarks')return json(saved?[{post_id:id(1)}]:[]);
       if(table==='get_hoopfeed_check_totals')return json(JSON.parse(body).post_ids.map(post_id=>({post_id,checks_count:checked?1:0,checked_by_me:checked})));
       if(table==='feed_post_checks'){checked=method==='POST';return route.fulfill({status:204});}
@@ -75,7 +81,7 @@ async function fixture(browser,theme,allowed=true){
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   try{
     await page.goto(`${base}/feed`);
-    if(!allowed){await page.getByText('An active HoopCheck membership is required to use HoopFeed.',{exact:true}).waitFor();assert.ok(!calls.some(c=>c.path.endsWith('/feed_posts')));return;}
+    if(!allowed){await page.getByText('An active HoopCheck membership is required to use HoopFeed.',{exact:true}).waitFor();assert.ok(!calls.some(c=>c.path.endsWith('/feed_posts')||c.path.endsWith('/user_blocks')));return;}
     await page.getByText('Fixture community discussion',{exact:true}).waitFor();
     await page.getByRole('button',{name:'Media unavailable. Tap to retry.',exact:true}).click();
     await page.getByRole('img',{name:'HoopFeed photo',exact:true}).waitFor();
@@ -103,6 +109,10 @@ async function fixture(browser,theme,allowed=true){
     await page.waitForFunction(()=>{const v=document.querySelector('video');return v&&!v.paused&&v.currentTime>0;});
     await page.screenshot({path:`/tmp/hoopcheck-native-ui/reels-${theme}.png`,fullPage:true});
     assert.ok(calls.some(c=>c.path==='/api/hoopfeed/media'&&c.body.includes('protected/video.webm')));
+    await page.getByRole('button',{name:'Block this HoopCheck account'}).click();
+    await page.getByText('Creator added to your HoopCheck blocked accounts.',{exact:true}).waitFor();
+    assert.ok(blocked.has(id(5)),'Native block saves to shared account block table');
+    await page.getByText('No video posts are available in this page.',{exact:true}).waitFor();
     await page.getByRole('tab',{name:'Alerts',exact:true}).click();await page.getByText('Fixture team review',{exact:true}).waitFor();
     await page.getByRole('button',{name:'Mark all as read',exact:true}).click();await page.getByRole('button',{name:'unread',exact:true}).click();await page.getByText('Nothing in this category.',{exact:true}).waitFor();
     await page.getByRole('tab',{name:'Account',exact:true}).click();await page.getByText('Active access verified by HoopCheck',{exact:true}).waitFor();
