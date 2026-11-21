@@ -1,6 +1,7 @@
 "use client";
 
 import HoopLoading from "../../components/HoopLoading";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 
@@ -149,6 +150,7 @@ export default function SupportPage() {
               Tickets create a trackable record for account, billing, verification,
               review, privacy, security, technical and team-directory issues.
             </p>
+            <p><Link href="/scam-alerts">Recognize and privately report suspicious basketball offers</Link></p>
           </div>
         </section>
 
