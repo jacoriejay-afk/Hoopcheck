@@ -31,7 +31,7 @@ final class PassportUITests: XCTestCase {
     sheet.name = "native-share-sheet"
     sheet.lifetime = .keepAlways
     add(sheet)
-    let close = app.buttons["Close"].firstMatch
+    let close = app.buttons.matching(identifier: "Close").firstMatch
     XCTAssertTrue(close.waitForExistence(timeout: 10), "Dismiss without sharing to an external recipient")
     close.tap()
     XCTAssertTrue(app.staticTexts["CLEANED"].waitForExistence(timeout: 20), "Native dismissal must resolve and delete the generated PDF")
