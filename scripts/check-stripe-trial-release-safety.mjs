@@ -7,8 +7,9 @@ const trialPolicy = readFileSync("lib/stripe-trial-eligibility.ts", "utf8");
 const membership = readFileSync("app/membership/page.tsx", "utf8");
 const migration = readFileSync("scripts/sql/stripe-trial-claims-proposal.sql", "utf8");
 
-assert.match(membership, /a seven-day free trial[\s\S]*not currently available at checkout/i,
-  "Public membership copy must disclose that the trial is not active yet");
+assert.ok(membership.includes("one-time seven-day free trial") &&
+  membership.includes("not currently available at public checkout"),
+  "Public membership copy must disclose that the all-user trial is not yet live");
 // The public trial stays disabled. Only the pinned, branch-scoped isolated
 // test environment can issue a trial for authenticated sandbox acceptance.
 for (const required of [
@@ -26,15 +27,15 @@ assert.ok(checkout.includes('const trialRolloutEnabled ='), "Sandbox trial gate 
 assert.doesNotMatch(checkout, /const trialRolloutEnabled = true;/, "Trial must never enable unconditionally");
 assert.match(checkout, /\.\.\.\(trialEligible \? \{ trial_period_days: 7 \} : \{\}\)/,
   "Stripe trial must only be issued through eligibility gate");
-assert.match(trialPolicy, /input\\.accountType\\.trim\\(\\)\\.length > 0/,
+assert.ok(trialPolicy.includes("input.accountType.trim().length > 0"),
   "Every authenticated account type may qualify after profile validation");
-assert.doesNotMatch(trialPolicy, /input\\.accountType === "player"/,
+assert.ok(!trialPolicy.includes('input.accountType === "player"'),
   "Trial eligibility must not be Player-only");
-assert.doesNotMatch(checkout, /trialRolloutEnabled && checkoutProfile\\.account_type === "player"/,
+assert.ok(!checkout.includes('trialRolloutEnabled && checkoutProfile.account_type === "player"'),
   "Initial trial gate must include all valid account types");
-assert.match(checkout, /rolloutEnabled: trialRolloutEnabled,/,
+assert.ok(checkout.includes("rolloutEnabled: trialRolloutEnabled,"),
   "Final eligibility gate must not restrict trials by account type");
-assert.match(membership, /all HoopCheck account types/,
+assert.ok(membership.includes("all HoopCheck account types"),
   "Public trial notice must describe all account types");
 assert.match(migration, /user_id uuid primary key/,
   "Claims must be unique per user");
