@@ -14,9 +14,11 @@ export const tokens = {
   // Opt-in tokens; existing screens retain their current styles until reviewed.
   courtside: {
     navigation: { height: 64, radius: 28, iconSize: 22, touchTarget: 44 },
-    card: { radius: 18, compactPadding: 12, featuredPadding: 16 },
+    card: { radius: 22, compactPadding: 12, featuredPadding: 20 },
     hero: { radius: 22, minHeight: 156 },
-    sectionGap: 20,
+    sectionGap: 24,
+    court: { background: "#141B20", end: "#28352E", ink: "#FFFFFF", muted: "#CBD5CC", line: "rgba(255,255,255,0.12)", orange: "#FF8A50" },
+    typography: { score: 36, hero: 38, eyebrow: 11 },
   },
   // QR codes require a fixed light optical background in either theme.
   qrSurface: "#FFFFFF",
