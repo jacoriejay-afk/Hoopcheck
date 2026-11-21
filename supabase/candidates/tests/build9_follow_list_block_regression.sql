@@ -122,4 +122,60 @@ BEGIN
   RAISE EXCEPTION 'public list security boundary changed';
  END IF;
 END $boundary$;
+
+-- Team IDs are not user identities. Deliberately reuse B's user UUID as a
+-- synthetic team UUID to catch accidental fr.target_id-to-user comparisons.
+-- A follows this synthetic team. C blocks B, which MUST NOT hide A's team
+-- follow from C: B is not a user participant in the follow edge.
+SELECT set_config('request.jwt.claim.sub',current_setting('test.a'),true);
+SET LOCAL ROLE authenticated;
+INSERT INTO public.follow_relationships(follower_id,target_type,target_id)
+VALUES(current_setting('test.a')::uuid,'team',current_setting('test.b')::uuid);
+RESET ROLE;
+SELECT set_config('request.jwt.claim.sub',current_setting('test.c'),true);
+SET LOCAL ROLE authenticated;
+INSERT INTO public.user_blocks(blocker_id,blocked_id)
+VALUES(current_setting('test.c')::uuid,current_setting('test.b')::uuid);
+DO $team_uuid_collision$
+BEGIN
+ IF (SELECT count(*) FROM public.get_public_follow_list('followers','team',current_setting('test.b')::uuid,NULL)) <> 1 THEN
+   RAISE EXCEPTION 'team UUID collision was incorrectly treated as a user block';
+ END IF;
+END $team_uuid_collision$;
+RESET ROLE;
+
+-- Preserve privacy for a player whose profile is temporarily changed to
+-- private through the existing owner-claim and database trigger; rollback
+-- ensures this never persists. No auth.users record is fabricated.
+SELECT set_config('request.jwt.claim.sub',current_setting('test.player'),true);
+UPDATE public.profiles SET profile_visibility='private'
+ WHERE id=current_setting('test.player')::uuid;
+SELECT set_config('request.jwt.claim.sub','',true);
+SET LOCAL ROLE anon;
+DO $private_anon$
+BEGIN
+ IF EXISTS (SELECT 1 FROM public.get_public_follow_list('followers','player',current_setting('test.player')::uuid,NULL)) THEN
+  RAISE EXCEPTION 'anonymous private player followers leaked';
+ END IF;
+END $private_anon$;
+RESET ROLE;
+SELECT set_config('request.jwt.claim.sub',current_setting('test.c'),true);
+SET LOCAL ROLE authenticated;
+DO $private_other$
+BEGIN
+ IF EXISTS (SELECT 1 FROM public.get_public_follow_list('followers','player',current_setting('test.player')::uuid,NULL)) THEN
+  RAISE EXCEPTION 'authenticated non-owner sees private player followers';
+ END IF;
+END $private_other$;
+RESET ROLE;
+SELECT set_config('request.jwt.claim.sub',current_setting('test.player'),true);
+SET LOCAL ROLE authenticated;
+DO $private_owner$
+BEGIN
+ IF (SELECT count(*) FROM public.get_public_follow_list('followers','player',current_setting('test.player')::uuid,NULL)) <> 1 THEN
+  RAISE EXCEPTION 'simulated private owner unable to see followers';
+ END IF;
+END $private_owner$;
+RESET ROLE;
+
 ROLLBACK;
