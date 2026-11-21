@@ -49,8 +49,16 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
   const [autoOpened, setAutoOpened] = useState<string | undefined>(undefined);
   const [openComments, setOpenComments] = useState<Record<string, boolean>>({});
   const [visible, setVisible] = useState(new Set<string>());
-  const viewability = useMemo(() => ({ itemVisiblePercentThreshold: 30 }), []);
-  const viewChanged = useCallback(({ viewableItems }: { viewableItems: ViewToken<FeedPost>[] }) => setVisible(new Set(viewableItems.filter(item => item.isViewable).map(item => item.item.id))), []);
+  // A Reel must own most of the screen before it can play; never play two at once.
+  const viewability = useMemo(() => ({ itemVisiblePercentThreshold: reels ? 75 : 30 }), [reels]);
+  const viewChanged = useCallback(({ viewableItems }: { viewableItems: ViewToken<FeedPost>[] }) => {
+    const candidates = viewableItems.filter(item => item.isViewable).map(item => item.item.id);
+    setVisible(previous => {
+      const nextIds = reels ? candidates.slice(0, 1) : candidates;
+      if (previous.size === nextIds.length && nextIds.every(id => previous.has(id))) return previous;
+      return new Set(nextIds);
+    });
+  }, [reels]);
   const [height, setHeight] = useState(600);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 30000); return () => clearInterval(timer); }, []);
@@ -143,7 +151,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
       <View accessibilityRole="tablist" style={{ flex: 1, flexDirection: "row", gap: 6 }}>{[false, true].map(value => <Pressable key={String(value)} accessibilityRole="tab" accessibilityState={{ selected: reels === value }} aria-selected={reels === value} onPress={() => setReels(value)} style={[touch, { backgroundColor: reels === value ? theme.surface : theme.background, borderColor: reels === value ? theme.accent : theme.border }]}><Text style={{ ...textStyle, fontSize: 14, fontWeight: "700" }}>{value ? "Reels" : "HoopFeed"}</Text></Pressable>)}</View>
       {message || loadError ? <Text accessibilityLiveRegion="polite" style={{ color: theme.muted }}>{loadError || message}</Text> : null}
     </View>
-    <FlatList style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 16, gap: reels ? 0 : 14 }} keyboardShouldPersistTaps="handled" initialNumToRender={4} maxToRenderPerBatch={4} windowSize={5} pagingEnabled={reels} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
+    <FlatList key={reels ? "reels" : "posts"} style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 16, gap: reels ? 0 : 14 }} keyboardShouldPersistTaps="handled" initialNumToRender={reels ? 2 : 4} maxToRenderPerBatch={reels ? 2 : 4} windowSize={reels ? 3 : 5} pagingEnabled={reels} decelerationRate={reels ? "fast" : "normal"} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
       ListHeaderComponent={!reels ? <View style={{ marginBottom: 12 }}>
         {!composerExpanded ? <Pressable accessibilityRole="button" accessibilityLabel="Create HoopFeed post" disabled={!canWrite} onPress={() => setComposerExpanded(true)} style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 18, backgroundColor: theme.surface }}>
           <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: "#171717", alignItems: "center", justifyContent: "center" }}><Text style={{ color: "#FF8A5C", fontWeight: "900", fontSize: 12 }}>HC</Text></View><Text style={{ color: theme.muted, fontSize: 14 }}>Share something…</Text>
