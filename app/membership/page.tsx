@@ -31,7 +31,6 @@ function MembershipContent() {
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [billingInterval, setBillingInterval] = useState<BillingInterval>("month");
   const [accountType, setAccountType] = useState<string | null>(null);
-  const [promoCode, setPromoCode] = useState("");
   const [portalLoading, setPortalLoading] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
 
@@ -431,29 +430,6 @@ function MembershipContent() {
               </div>
             </div>
 
-            {accountType === "player" && (
-              <div className="dashboard-card" style={{ marginBottom: 24, padding: 20 }}>
-                <div className="eyebrow">PLAYER LAUNCH OFFER</div>
-                <h3 style={{ margin: "8px 0" }}>Have a first-month code?</h3>
-                <p className="muted" style={{ marginBottom: 14 }}>Eligible Player accounts can redeem a limited promo code for one month of HoopCheck Pro at no charge. The regular monthly price applies after the free month unless you cancel before renewal.</p>
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  <input
-                    aria-label="First month free promo code"
-                    autoComplete="off"
-                    maxLength={64}
-                    placeholder="Enter promo code"
-                    value={promoCode}
-                    onChange={(event) => setPromoCode(event.target.value)}
-                    style={{ flex: "1 1 220px", minHeight: 48, padding: "12px 14px", border: "1px solid #d1d1ca", borderRadius: 4, background: "var(--hc-paper-strong, #fff)", color: "var(--hc-text, #171715)" }}
-                  />
-                  <button className="btn" onClick={() => startCheckout("pro", "month", promoCode)} disabled={!promoCode.trim() || checkoutLoading !== null || loading}>
-                    {checkoutLoading === "pro-month" ? "Validating code..." : "Redeem & Start Free Month"}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            <p className="hc-promo-hint">Have a promo code? Enter it on the secure Stripe Checkout page before you pay.</p>
             <div className="subscription-legal">
               <p>
                 By purchasing a HoopCheck membership, you agree to our{" "}
