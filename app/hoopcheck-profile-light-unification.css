@@ -23,3 +23,8 @@ html.theme-light :is(.hc-member-profile-page,.player-profile-page,.hc-team-entit
 html.theme-light :is(.hc-member-profile-page,.player-profile-page,.hc-team-entity-profile,.hc-womens-profile-page,.hc-league-entity-profile) :is(.hc-social-profile-actions,.hc-member-profile-actions,.entity-actions,.actions){flex-wrap:wrap;min-width:0}
 html.theme-light .hc-account-page .hc-settings-group{border-radius:18px;overflow:hidden}
 @media(max-width:600px){html.theme-light :is(.hc-member-profile-page,.player-profile-page,.hc-team-entity-profile,.hc-womens-profile-page,.hc-league-entity-profile) :is(.hero,.hero-card,.hc-social-profile-header,.player-profile-hero){max-width:100%;min-width:0;box-sizing:border-box}}
+
+/* Settings is a navigation hub without duplicating the profile editor. */
+.hc-settings-shortcuts{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 20px}
+.hc-settings-shortcuts a{display:inline-flex;align-items:center;min-height:44px;padding:10px 14px;border-radius:14px;border:1px solid var(--hc-card-border,var(--border));background:var(--hc-card-surface,var(--surface));color:var(--hc-on-card,var(--hc-foreground));font-size:13px;font-weight:750;text-decoration:none}
+.hc-settings-shortcuts a:hover,.hc-settings-shortcuts a:focus-visible{border-color:var(--orange)}
