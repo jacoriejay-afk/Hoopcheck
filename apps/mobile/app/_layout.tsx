@@ -120,6 +120,10 @@ function RootLayout() {
           headerShadowVisible: false,
           contentStyle: { backgroundColor: theme.background },
         }} />
+        <Stack.Screen name="account" options={{ title: "Account" }} />
+        <Stack.Screen name="feed" options={{ title: "HoopFeed™" }} />
+        <Stack.Screen name="notifications" options={{ title: "Alerts" }} />
+        <Stack.Screen name="search" options={{ title: "Search" }} />
         <Stack.Screen name="players" options={{ title: "Find players" }} />
         <Stack.Screen name="players/[id]" options={{ title: "Player profile" }} />
         <Stack.Screen name="coaches" options={{ title: "Find a coach" }} />

@@ -63,6 +63,11 @@ async function fixture(browser,theme,allowed=true){
         if(method==='PATCH'){assert.equal(url.searchParams.get('read_at'),'is.null');read=true;return json([{id:id(7)}]);}
         return json([{id:id(7),target_type:'team',target_id:id(6),notification_type:'review',title:'Fixture team review',body:'A team you follow has a new review.',read_at:read?'2026-11-18T12:00:00Z':null,created_at:'2026-11-18T11:00:00Z'}]);
       }
+      if(table==='follow_relationships'){
+        assert.equal(url.searchParams.get('follower_id'),`eq.${uid}`);
+        assert.equal(url.searchParams.get('target_type'),'eq.team');
+        return json([]);
+      }
       if(table==='profiles')return json([{id:uid,username:'fixture',display_name:'Fixture Member'}]);
     }
     throw new Error(`Unexpected external request: ${url.origin}${url.pathname}`);

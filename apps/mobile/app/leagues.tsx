@@ -25,6 +25,7 @@ export default function LeaguesScreen() {
   const requestId = useRef(0);
   const [items, setItems] = useState<League[]>([]);
   const [term, setTerm] = useState("");
+  const [side, setSide] = useState<"mens" | "womens">("mens");
   const [appliedTerm, setAppliedTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -37,22 +38,22 @@ export default function LeaguesScreen() {
     if (start === 0) setLoading(true);
     setError("");
     const clean = search.trim().replace(/[^\p{L}\p{N} '\-]/gu, " ").replace(/\s+/g, " ").trim();
-    let query = supabase.from("leagues").select("id,name,country,level,season,website").eq("active", true).eq("basketball_type", "mens").order("name", { ascending: true }).range(start, start + PAGE_SIZE);
+    let query = (side === "womens" ? supabase.from("womens_leagues").select("id,name,country,level").eq("active", true) : supabase.from("leagues").select("id,name,country,level,season,website").eq("active", true).eq("basketball_type", "mens")).order("name", { ascending: true }).range(start, start + PAGE_SIZE);
     if (clean) query = query.or(`name.ilike.%${clean}%,country.ilike.%${clean}%,level.ilike.%${clean}%`);
-    const { data, error: queryError } = await read(`leagues:${clean}:${start}`, () => query);
+    const { data, error: queryError } = await read(`leagues:${side}:${clean}:${start}`, () => query);
     if (currentRequest !== requestId.current) return;
     if (queryError) {
       setError("We couldn’t load leagues. Check your connection and try again.");
       if (!append) setItems([]);
       setLoading(false); setRefreshing(false); return;
     }
-    const rows = (data ?? []) as League[];
+    const rows = (data ?? []).map(row => ({ ...row, season: "season" in row ? row.season : null, website: "website" in row ? row.website : null })) as League[];
     setHasMore(rows.length > PAGE_SIZE);
     const page = rows.slice(0, PAGE_SIZE);
     setItems(append ? current => [...current, ...page] : page);
     setOffset(start);
     setLoading(false); setRefreshing(false);
-  }, [read]);
+  }, [read, side]);
 
 
   useEffect(() => {
@@ -73,7 +74,10 @@ export default function LeaguesScreen() {
         <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back</Text></Pressable>
         <Text style={styles.kicker}>DIRECTORY</Text>
         <Text style={styles.title}>Find a league</Text>
-        <Text style={styles.subtitle}>Explore men’s professional basketball leagues and competition levels.</Text>
+        <Text style={styles.subtitle}>Explore men’s and women’s professional basketball leagues and competition levels.</Text>
+        <View style={{ flexDirection: "row", gap: 8, marginTop: 14 }}>
+          {(["mens", "womens"] as const).map(value => <Pressable key={value} accessibilityRole="button" accessibilityState={{ selected: side === value }} onPress={() => { requestId.current++; setItems([]); setHasMore(false); setLoading(true); setSide(value); }} style={{ paddingHorizontal: 18, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: theme.border, backgroundColor: side === value ? theme.accentSurface : theme.surface }}><Text style={{ color: theme.foreground, fontWeight: "800" }}>{value === "mens" ? "Men’s" : "Women’s"}</Text></Pressable>)}
+        </View>
         <Pressable
           accessibilityRole="link"
           onPress={() => router.push({ pathname: "/web", params: { path: "/womens" } })}
@@ -97,7 +101,7 @@ export default function LeaguesScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.accent} colors={[theme.accent]} progressBackgroundColor={theme.surface} />}
           renderItem={({ item, index }) => (
             <Reveal key={`${appliedTerm}:${item.id}`} index={index}>
-            <Pressable onPress={() => router.push({ pathname: "/leagues/[id]", params: { id: item.id } })} style={styles.card}>
+            <Pressable onPress={() => router.push({ pathname: "/leagues/[id]", params: { id: item.id, side } })} style={styles.card}>
               <DirectoryCrest name={item.name} kind="leagues" />
               <View style={styles.cardBody}>
                 <Text style={styles.leagueName}>{item.name}</Text>
