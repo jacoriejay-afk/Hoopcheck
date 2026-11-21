@@ -4,8 +4,11 @@ import { readFileSync } from "node:fs";
 const checkout = readFileSync("app/api/stripe/webhook/create-checkout/route.ts", "utf8");
 const webhook = readFileSync("app/api/stripe/webhook/route.ts", "utf8");
 const trialPolicy = readFileSync("lib/stripe-trial-eligibility.ts", "utf8");
+const membership = readFileSync("app/membership/page.tsx", "utf8");
 const migration = readFileSync("scripts/sql/stripe-trial-claims-proposal.sql", "utf8");
 
+assert.match(membership, /a seven-day free trial[\s\S]*not currently available at checkout/i,
+  "Public membership copy must disclose that the trial is not active yet");
 assert.match(checkout, /const trialRolloutEnabled = false;/,
   "Trial issuance must remain hard-disabled until reservation and webhook integration are verified");
 assert.match(checkout, /\.\.\.\(trialEligible \? \{ trial_period_days: 7 \} : \{\}\)/,
