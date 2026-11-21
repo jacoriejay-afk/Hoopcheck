@@ -34,18 +34,20 @@ export default function AdminTeamLogosPage() {
     async function allRows(table: "teams" | "womens_teams") {
       const rows: Team[] = [];
       for (let offset = 0; offset < 10000; offset += 500) {
-        let request = supabase.from(table)
-          .select(table === "teams" ? "id,name,country,logo_url,logo_bg,basketball_type,source" : "id,name,country,logo_url,logo_bg")
-          .order("id")
-          .range(offset, offset + 499);
-        // Women's mirror rows are presented via womens_teams. Keep standalone
-        // women's entries in teams, and retain rows with a NULL source.
-        if (table === "teams") request = request.or("source.is.null,source.neq.womens_teams_mirror");
-        const { data, error } = await request;
-        if (error) throw error;
-        const batch = ((data || []) as Array<Omit<Team, "tableName">>).map((team) => ({
+        // Literal select strings preserve Supabase's typed PostgREST parser.
+        // Women's mirror rows are presented via womens_teams, not twice.
+        const response = table === "teams"
+          ? await supabase.from("teams")
+              .select("id,name,country,logo_url,logo_bg,basketball_type,source")
+              .or("source.is.null,source.neq.womens_teams_mirror")
+              .order("id").range(offset, offset + 499)
+          : await supabase.from("womens_teams")
+              .select("id,name,country,logo_url,logo_bg")
+              .order("id").range(offset, offset + 499);
+        if (response.error) throw response.error;
+        const batch = (response.data || []).map((team) => ({
           ...team, tableName: table,
-        }));
+        })) as Team[];
         rows.push(...batch);
         if (batch.length < 500) break;
       }
