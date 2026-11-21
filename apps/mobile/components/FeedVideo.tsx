@@ -10,7 +10,7 @@ import { VideoView, useVideoPlayer } from "expo-video";
 export function FeedVideo({ uri, enabled, loop, onFailure, height }: { height: number; uri: string | null; enabled: boolean; loop: boolean; onFailure: () => void }) {
   const player = useVideoPlayer(null, value => { value.loop = loop; value.muted = loop; });
   const playback = useRef({ enabled, loop, uri });
-  playback.current = { enabled, loop, uri };
+  useEffect(() => { playback.current = { enabled, loop, uri }; }, [enabled, loop, uri]);
 
   useEffect(() => {
     let alive = true;
@@ -24,10 +24,8 @@ export function FeedVideo({ uri, enabled, loop, onFailure, height }: { height: n
 
   useEffect(() => {
     // expo-video's player is an imperative native object.
-    // eslint-disable-next-line react-hooks/immutability
     player.loop = loop;
     // Reels always autoplay silently. Ordinary HoopFeed posts keep native controls.
-    // eslint-disable-next-line react-hooks/immutability
     player.muted = loop;
     const synchronize = () => {
       if (enabled && loop && uri && AppState.currentState === "active") player.play();
