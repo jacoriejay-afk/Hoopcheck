@@ -67,6 +67,12 @@ export default function SupportPage() {
       setPriority("high");
       setDescription(`Reel: https://hoopcheck.online/feed#post-${reelId}\nReason: `);
     }
+    if (new URLSearchParams(window.location.search).get("membershipCancellation") === "1") {
+      setSubject("Cancel or review my HoopCheck membership");
+      setCategory("billing");
+      setPriority("normal");
+      setDescription("Please review my membership and help cancel or remove access. My membership page does not show a linked Stripe subscription. Please confirm whether there is recurring billing and what action is required.\n");
+    }
     if (new URLSearchParams(window.location.search).get("scamAlert") === "1") {
       setSubject("Report a suspicious basketball offer");
       setCategory("security");

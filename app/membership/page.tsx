@@ -58,9 +58,11 @@ function MembershipContent() {
     return () => controller.abort();
   }, []);
 
-  async function loadSubscription() {
-    setLoading(true);
-    setError("");
+  async function loadSubscription(silent = false) {
+    if (!silent) {
+      setLoading(true);
+      setError("");
+    }
 
     const {
       data: { user },
@@ -69,7 +71,7 @@ function MembershipContent() {
     if (!user) {
       setSubscription(null);
       setAccountType(null);
-      setLoading(false);
+      if (!silent) setLoading(false);
       return;
     }
 
@@ -93,7 +95,7 @@ function MembershipContent() {
       setSubscription(data as Subscription | null);
     }
 
-    setLoading(false);
+    if (!silent) setLoading(false);
   }
 
   useEffect(() => {
@@ -110,7 +112,7 @@ function MembershipContent() {
       let attempts = 0;
       const refresh = window.setInterval(async () => {
         attempts += 1;
-        await loadSubscription();
+        await loadSubscription(true);
 
         if (attempts >= 6) {
           window.clearInterval(refresh);
@@ -179,7 +181,7 @@ function MembershipContent() {
   }
 
   async function cancelMembership() {
-    if (!window.confirm("Cancel your HoopCheck membership at the end of your current billing period? You will keep full paid access until then.")) return;
+    if (!window.confirm("Cancel your HoopCheck subscription at the end of the current trial or billing period? You will keep access through that date.")) return;
     setCancelLoading(true); setError(""); setMessage("");
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -191,8 +193,11 @@ function MembershipContent() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data?.error || "Unable to cancel membership.");
-      setSubscription((current) => current ? { ...current, cancel_at_period_end: true, current_period_end: data.current_period_end } : current);
-      setMessage(`Membership canceled. Your paid access remains active until ${new Date(data.current_period_end).toLocaleDateString()}.`);
+      if (data?.cancel_at_period_end !== true) throw new Error("Stripe did not confirm the cancellation request.");
+      setSubscription((current) => current ? { ...current, cancel_at_period_end: true, current_period_end: data.current_period_end ?? current.current_period_end } : current);
+      setMessage(data.current_period_end
+        ? `Automatic renewal is off. Your access continues through ${new Date(data.current_period_end).toLocaleDateString()}.`
+        : "Automatic renewal is off. Your access continues until the end of the current trial or billing period.");
     } catch (e) { setError(e instanceof Error ? e.message : "Unable to cancel membership."); }
     finally { setCancelLoading(false); }
   }
@@ -263,6 +268,10 @@ function MembershipContent() {
 
   const currentTier = getActiveMembershipTier(subscription);
   const isActive = currentTier !== "free";
+  // Don't hide cancellation for paid/trialing accounts when local access is stale.
+  const hasManageableSubscription = Boolean(subscription?.stripe_subscription_id &&
+    ["active", "trialing", "past_due", "unpaid"].includes(subscription.status));
+  const showMembershipManagement = isActive || hasManageableSubscription;
   const premiumOnlyAccount = accountType === "coach" || accountType === "manager";
 
   return (
@@ -286,26 +295,17 @@ function MembershipContent() {
         </div>
       </section>
 
-      {message && <div className="status success">{message}</div>}
-      {error && <div className="status error">{error}</div>}
+      {message && <div className="status success" role="status" aria-live="polite">{message}</div>}
+      {error && <div className="status error" role="alert">{error}</div>}
 
       <section className="membership-section">
-        {isActive && subscription && !subscription.stripe_subscription_id && (
-          <div className="dashboard-card" style={{ marginBottom: 16 }}>
-            <strong>Your HoopCheck membership is active.</strong>
-            <span className="muted"> Your current access is based on your account membership. You can review available plans below.</span>
+        {loading ? (
+          <div className="hc-membership-loading" role="status" aria-live="polite">
+            <HoopLoading variant="inline" label="Loading membership..." />
           </div>
-        )}
-        {isActive && subscription && (
-          <MembershipComparison
-            audience={accountType === "fan" ? "fan" : "player"}
-            currentTier={currentTier}
-            billingTerm={billingInterval}
-            premiumOnly={premiumOnlyAccount}
-          />
-        )}
-        {isActive && subscription ? (
-          <div className="active-card" id="manage-subscription">
+        ) : showMembershipManagement && subscription ? (
+          <>
+          <div className="active-card" id="manage-subscription" aria-label="Manage your HoopCheck membership">
             <div className="eyebrow">CURRENT MEMBERSHIP</div>
             <h2>
               HoopCheck {accountType === "fan" ? (subscription.plan === "premium" ? "Fan Premium" : "Fan Pro") : (subscription.plan === "premium" ? "Premium" : "Pro")}
@@ -319,31 +319,48 @@ function MembershipContent() {
               </p>
             )}
             {subscription.cancel_at_period_end && (
-              <p className="cancel-warning">
+              <p className="cancel-warning" role="status">
                 Your membership is scheduled to cancel at the end of the current
                 billing period.
               </p>
             )}
-            <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-              {subscription.stripe_subscription_id && <button className="btn" onClick={openCustomerPortal} disabled={portalLoading || cancelLoading}>
-                {portalLoading ? "Opening billing..." : "Manage / Upgrade Plan"}
-              </button>}
-              {subscription.stripe_subscription_id && (subscription.cancel_at_period_end ? (
-                <button className="btn dark" onClick={resumeMembership} disabled={cancelLoading}>
-                  {cancelLoading ? "Updating..." : "Keep Membership"}
-                </button>
+            <div className="hc-membership-actions" role="group" aria-label="Subscription actions">
+              {subscription.stripe_subscription_id ? (
+                <>
+                  <button type="button" className="btn" onClick={openCustomerPortal} disabled={portalLoading || cancelLoading}>
+                    {portalLoading ? "Opening billing..." : "Manage Billing"}
+                  </button>
+                  {subscription.cancel_at_period_end ? (
+                    <button type="button" className="btn dark" onClick={resumeMembership} disabled={portalLoading || cancelLoading}>
+                      {cancelLoading ? "Updating..." : "Keep Subscription"}
+                    </button>
+                  ) : (
+                    <button type="button" className="btn dark hc-cancel-subscription" onClick={cancelMembership} disabled={portalLoading || cancelLoading}>
+                      {cancelLoading ? "Canceling..." : "Cancel Subscription"}
+                    </button>
+                  )}
+                </>
               ) : (
-                <button className="btn dark" onClick={cancelMembership} disabled={cancelLoading}>
-                  {cancelLoading ? "Canceling..." : "Cancel Membership"}
-                </button>
-              ))}
+                <Link href="/support?membershipCancellation=1" className="btn dark hc-cancel-subscription">
+                  Request Membership Cancellation
+                </Link>
+              )}
             </div>
             <div className="legal-note">
               {subscription.stripe_subscription_id
-                ? "Billing is managed securely through Stripe. You can manage eligible subscription settings through the billing portal."
-                : "Your existing membership is active. Contact support to change a membership that is not managed through Stripe."}
+                ? "Cancel here to stop the next Stripe renewal. Your access continues through the current paid period or trial end; you can also manage billing securely in Stripe."
+                : "This membership has no linked Stripe subscription, so there is no Stripe recurring charge to cancel here. Request a support review to remove access or address billing managed elsewhere."}
             </div>
           </div>
+          {isActive && (
+            <MembershipComparison
+              audience={accountType === "fan" ? "fan" : "player"}
+              currentTier={currentTier}
+              billingTerm={billingInterval}
+              premiumOnly={premiumOnlyAccount}
+            />
+          )}
+          </>
         ) : (
           <>
             <div className="section-heading">
