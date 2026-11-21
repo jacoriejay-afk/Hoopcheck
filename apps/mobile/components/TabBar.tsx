@@ -1,4 +1,5 @@
 import { BlurView } from "expo-blur";
+import { GlassView, isGlassEffectAPIAvailable, isLiquidGlassAvailable } from "expo-glass-effect";
 import { LinearGradient } from "expo-linear-gradient";
 import { useMotionSetting } from "../src/motion/Provider";
 import { useEffect, useRef, useState } from "react";
@@ -59,6 +60,7 @@ export function TabBar() {
   if (keyboardVisible) return null;
   if (["/", "/sign-in", "/sign-up", "/forgot-password", "/reset-password", "/auth/callback", "/choose-username"].includes(path)) return null;
   const translucent = Platform.OS === "ios" && !reduceTransparency;
+  const nativeGlass = translucent && isGlassEffectAPIAvailable() && isLiquidGlassAvailable();
   const activeWidth = width > 0 ? width / tabs.length : 0;
   return <View onLayout={event => setWidth(event.nativeEvent.layout.width)} style={{
       marginHorizontal: 12 + Math.max(insets.left, insets.right),
@@ -69,8 +71,10 @@ export function TabBar() {
       shadowColor: "#000", shadowOffset: { width: 0, height: 12 },
       shadowOpacity: theme.dark ? .38 : .17, shadowRadius: 28, elevation: 12,
     }}>
-    {translucent ? <BlurView pointerEvents="none" accessible={false} intensity={65}
-      tint={theme.dark ? "dark" : "light"} style={StyleSheet.absoluteFill} /> : null}
+    {nativeGlass ? <GlassView pointerEvents="none" accessible={false} glassEffectStyle="regular"
+      tintColor={theme.dark ? "#20334A" : "#EAF1FB"} style={[StyleSheet.absoluteFill, { borderRadius: 32 }]} /> :
+      translucent ? <BlurView pointerEvents="none" accessible={false} intensity={65}
+        tint={theme.dark ? "dark" : "light"} style={StyleSheet.absoluteFill} /> : null}
     <LinearGradient pointerEvents="none" accessible={false} style={StyleSheet.absoluteFill}
       colors={theme.dark ? ["rgba(255,255,255,.13)", "rgba(255,255,255,.02)"] : ["rgba(255,255,255,.8)", "rgba(255,255,255,.15)"]}
       start={{ x: 0, y: 0 }} end={{ x: .2, y: 1 }} />
