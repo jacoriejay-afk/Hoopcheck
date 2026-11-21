@@ -44,6 +44,13 @@ for theme in light dark; do
     if [[ -d "$artifact_root/$theme.xcresult" ]]; then xcrun xcresulttool export attachments --path "$artifact_root/$theme.xcresult" --output-path "$artifact_root/$theme-screenshots" || true; fi
     exit 1
   fi
+  tail -n 18 "$artifact_root/$theme-test.log"
+  python3 - "$artifact_root/$theme-test.log" <<'CHECK'
+import re,sys
+from pathlib import Path
+if not re.search(r'Executed 1 test, with 0 failures', Path(sys.argv[1]).read_text()):
+ raise RuntimeError('Expected one executed, passing native UI test; zero tests cannot establish acceptance')
+CHECK
   xcrun xcresulttool export attachments --path "$artifact_root/$theme.xcresult" --output-path "$artifact_root/$theme-screenshots"
 done
 python3 - <<'PY'

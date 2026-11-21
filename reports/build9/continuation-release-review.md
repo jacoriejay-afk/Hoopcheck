@@ -148,3 +148,11 @@ See [Phase 3D](phase3d/README.md) for the read-only hosted audit and current evi
   evidence. Simulator evidence cannot clear these gates.
 
 Release remains blocked. No merge/deploy/EAS, production or Stripe mutation occurred.
+
+
+Phase 3D evidence update: c98b99a0 website/mobile CI PASS (including Doctor
+18/18 on the runner; local 16/18 network errors remain documented). Native app
+compiles and real light-mode PDF/UIKit presentation is observed, but the one
+XCTest FAILS because action cells were queried as buttons. Dismissal/cleanup and
+dark mode remain unverified for that attempt. The corrected test and subsequent
+exact-head results are tracked in #754. No physical iPhone/Build 7 freeze claim.

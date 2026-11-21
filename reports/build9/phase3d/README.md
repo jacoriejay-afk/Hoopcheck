@@ -71,3 +71,40 @@ was ignored or marked passed. Final draft-head CI and corrected simulator attemp
 are live on #754; this evidence commit does not assert their outcome in advance.
 The PR description records the subsequently observed exact-head results and links
 to native artifacts. All physical-device gates remain unchecked.
+
+
+## Actual simulator attempt 2 and exact-head CI
+
+At c98b99a0, exact-head website/mobile jobs 44893595366/44893595241 PASS,
+including isolated SQL/RLS/privacy/StoreKit/Stripe policies, 223 native tests,
+all 13 browser suites, iOS/Android/web exports and Expo Doctor **18/18**. Local
+Doctor remains 16/18 with the two recorded network failures; the runner clears
+the configuration/dependency diagnostic gate without rewriting that local history.
+
+Native run 44893595247 compiled the app and executed one light-mode XCTest.
+Real Expo Print produced a one-page, **13,529-byte valid PDF**. The actual UIKit
+UIActivityViewController appeared, including PDF Document, Copy, Markup, Print,
+Save to Files and header.closeButton in the captured accessibility hierarchy.
+The assertion incorrectly searched Buttons, while the observed actions are Cells.
+The run therefore FAILS; dismissal/cleanup and dark mode were not reached and are
+not claimed. The follow-up matches the actual native ActivityListView/action Cells,
+uses the observed close identifier, uniquely queries the CLEANED status, and retains
+failure screenshots/debug hierarchy via explicit guard returns. Assertions still
+require the native container/actions, successful dismissal/deletion and no alerts.
+The runner also requires one executed, passing test per theme; zero tests cannot
+produce a passing result.json, and successful test summaries now appear in CI logs.
+
+The real PDF-ready screenshot and a frame extracted at **40.5 seconds** from the
+actual CI simulator recording are in screenshots/simulator-attempt2/. The latter is
+explicitly a recording frame, not a direct XCTest screenshot or a generated image.
+They use a synthetic identity and validate neither hosted authentication nor a
+physical iPhone. Full failed-run artifact (87,970,631 bytes) is linked in #754 and
+expires 2026-11-28. Its size exceeds the download helper’s 32 MiB limit; the GitHub
+connector’s authorized file URL was used to retrieve and inspect it. Supplemental
+metadata-only grants in checks/hosted-select-grants.json confirm SELECT is granted
+while the previously captured RLS policies retain the owner/admin boundary.
+
+Corrected native test acceptance and subsequent exact-head CI remain pending until
+observed; the PR description carries final results without creating a new source
+head solely to record its own CI status. Build 7 physical freeze evidence remains
+incomplete. No production mutation, merge, deploy or EAS operation occurred.

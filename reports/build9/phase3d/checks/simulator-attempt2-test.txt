@@ -1,0 +1,130 @@
+    t =    22.31s         Capturing element debug description
+    t =    23.23s     Checking `Expect predicate `existsNoRetry == 1` for object "passport-smoke-prepare" Button`
+    t =    23.24s         Checking existence of `"passport-smoke-prepare" Button`
+    t =    23.25s         Capturing element debug description
+    t =    24.30s     Checking `Expect predicate `existsNoRetry == 1` for object "passport-smoke-prepare" Button`
+    t =    24.30s         Checking existence of `"passport-smoke-prepare" Button`
+    t =    24.32s         Capturing element debug description
+    t =    25.24s     Checking `Expect predicate `existsNoRetry == 1` for object "passport-smoke-prepare" Button`
+    t =    25.24s         Checking existence of `"passport-smoke-prepare" Button`
+    t =    25.25s         Capturing element debug description
+    t =    26.28s     Checking `Expect predicate `existsNoRetry == 1` for object "passport-smoke-prepare" Button`
+    t =    26.28s         Checking existence of `"passport-smoke-prepare" Button`
+    t =    26.29s         Capturing element debug description
+    t =    27.24s     Checking `Expect predicate `existsNoRetry == 1` for object "passport-smoke-prepare" Button`
+    t =    27.24s         Checking existence of `"passport-smoke-prepare" Button`
+    t =    27.26s         Capturing element debug description
+    t =    28.28s     Checking `Expect predicate `existsNoRetry == 1` for object "passport-smoke-prepare" Button`
+    t =    28.28s         Checking existence of `"passport-smoke-prepare" Button`
+    t =    28.29s         Capturing element debug description
+    t =    29.30s     Checking `Expect predicate `existsNoRetry == 1` for object "passport-smoke-prepare" Button`
+    t =    29.30s         Checking existence of `"passport-smoke-prepare" Button`
+    t =    29.58s         Capturing element debug description
+    t =    30.29s     Checking `Expect predicate `existsNoRetry == 1` for object "passport-smoke-prepare" Button`
+    t =    30.30s         Checking existence of `"passport-smoke-prepare" Button`
+    t =    30.81s         Capturing element debug description
+    t =    31.24s     Checking `Expect predicate `existsNoRetry == 1` for object "passport-smoke-prepare" Button`
+    t =    31.24s         Checking existence of `"passport-smoke-prepare" Button`
+    t =    31.37s Tap "passport-smoke-prepare" Button
+    t =    31.37s     Wait for online.hoopcheck.app to idle
+    t =    31.38s     Find the "passport-smoke-prepare" Button
+    t =    31.42s     Check for interrupting elements affecting "passport-smoke-prepare" Button
+    t =    31.50s     Synthesize event
+    t =    31.95s     Wait for online.hoopcheck.app to idle
+    t =    32.27s Waiting 40.0s for "passport-smoke-share" Button to exist
+    t =    33.28s     Checking `Expect predicate `existsNoRetry == 1` for object "passport-smoke-share" Button`
+    t =    33.28s         Checking existence of `"passport-smoke-share" Button`
+    t =    33.34s         Capturing element debug description
+    t =    34.28s     Checking `Expect predicate `existsNoRetry == 1` for object "passport-smoke-share" Button`
+    t =    34.28s         Checking existence of `"passport-smoke-share" Button`
+    t =    34.37s         Capturing element debug description
+    t =    35.35s     Checking `Expect predicate `existsNoRetry == 1` for object "passport-smoke-share" Button`
+    t =    35.35s         Checking existence of `"passport-smoke-share" Button`
+    t =    35.37s Find the Target Application 'online.hoopcheck.app'
+    t =    35.54s Added attachment named 'native-pdf-ready'
+    t =    35.54s Tap "passport-smoke-share" Button
+    t =    35.54s     Wait for online.hoopcheck.app to idle
+    t =    35.54s     Find the "passport-smoke-share" Button
+    t =    35.69s     Check for interrupting elements affecting "passport-smoke-share" Button
+    t =    35.80s     Synthesize event
+    t =    36.14s     Wait for online.hoopcheck.app to idle
+    t =    36.69s Waiting 20.0s for Button (First Match) to exist
+    t =    37.75s     Checking `Expect predicate `existsNoRetry == 1` for object Button (First Match)`
+    t =    37.75s         Checking existence of `Button (First Match)`
+    t =    37.93s         Capturing element debug description
+    t =    38.72s     Checking `Expect predicate `existsNoRetry == 1` for object Button (First Match)`
+    t =    38.73s         Checking existence of `Button (First Match)`
+    t =    39.85s         Capturing element debug description
+    t =    40.78s     Checking `Expect predicate `existsNoRetry == 1` for object Button (First Match)`
+    t =    40.78s         Checking existence of `Button (First Match)`
+    t =    41.15s         Capturing element debug description
+    t =    41.74s     Checking `Expect predicate `existsNoRetry == 1` for object Button (First Match)`
+    t =    41.75s         Checking existence of `Button (First Match)`
+    t =    41.80s         Capturing element debug description
+    t =    42.70s     Checking `Expect predicate `existsNoRetry == 1` for object Button (First Match)`
+    t =    42.70s         Checking existence of `Button (First Match)`
+    t =    42.76s         Capturing element debug description
+    t =    43.69s     Checking `Expect predicate `existsNoRetry == 1` for object Button (First Match)`
+    t =    43.70s         Checking existence of `Button (First Match)`
+    t =    43.76s         Capturing element debug description
+    t =    44.70s     Checking `Expect predicate `existsNoRetry == 1` for object Button (First Match)`
+    t =    44.70s         Checking existence of `Button (First Match)`
+    t =    44.78s         Capturing element debug description
+    t =    45.74s     Checking `Expect predicate `existsNoRetry == 1` for object Button (First Match)`
+    t =    45.74s         Checking existence of `Button (First Match)`
+    t =    45.84s         Capturing element debug description
+    t =    46.74s     Checking `Expect predicate `existsNoRetry == 1` for object Button (First Match)`
+    t =    46.74s         Checking existence of `Button (First Match)`
+    t =    46.82s         Capturing element debug description
+    t =    47.75s     Checking `Expect predicate `existsNoRetry == 1` for object Button (First Match)`
+    t =    47.75s         Checking existence of `Button (First Match)`
+    t =    47.87s         Capturing element debug description
+    t =    48.69s     Checking `Expect predicate `existsNoRetry == 1` for object Button (First Match)`
+    t =    48.70s         Checking existence of `Button (First Match)`
+    t =    48.82s         Capturing element debug description
+    t =    49.74s     Checking `Expect predicate `existsNoRetry == 1` for object Button (First Match)`
+    t =    49.74s         Checking existence of `Button (First Match)`
+    t =    49.82s         Capturing element debug description
+    t =    50.76s     Checking `Expect predicate `existsNoRetry == 1` for object Button (First Match)`
+    t =    50.76s         Checking existence of `Button (First Match)`
+    t =    50.85s         Capturing element debug description
+    t =    51.77s     Checking `Expect predicate `existsNoRetry == 1` for object Button (First Match)`
+    t =    51.77s         Checking existence of `Button (First Match)`
+    t =    52.36s         Capturing element debug description
+    t =    52.75s     Checking `Expect predicate `existsNoRetry == 1` for object Button (First Match)`
+    t =    52.75s         Checking existence of `Button (First Match)`
+    t =    54.13s         Capturing element debug description
+    t =    54.74s     Checking `Expect predicate `existsNoRetry == 1` for object Button (First Match)`
+    t =    54.75s         Checking existence of `Button (First Match)`
+    t =    54.89s         Capturing element debug description
+    t =    55.70s     Checking `Expect predicate `existsNoRetry == 1` for object Button (First Match)`
+    t =    55.70s         Checking existence of `Button (First Match)`
+    t =    55.77s         Capturing element debug description
+    t =    56.69s     Checking `Expect predicate `existsNoRetry == 1` for object Button (First Match)`
+    t =    56.69s         Checking existence of `Button (First Match)`
+    t =    56.79s         Capturing element debug description
+    t =    56.79s     Checking existence of `Button (First Match)`
+    t =    56.86s Collecting debug information to assist test failure triage
+    t =    56.86s     Requesting snapshot of accessibility hierarchy for app with pid 63328
+/Users/runner/work/Hoopcheck/Hoopcheck/apps/mobile/scripts/ios-passport-smoke/PassportUITests.swift:29: error: -[PassportSmokeUITests.PassportUITests testNativePassportRenderShareAndCleanup] : XCTAssertTrue failed - Real UIKit activity choices must appear
+    t =    57.47s Tear Down
+Test Case '-[PassportSmokeUITests.PassportUITests testNativePassportRenderShareAndCleanup]' failed (57.780 seconds).
+Test Suite 'PassportUITests' failed at 2026-11-21 10:45:22.211.
+	 Executed 1 test, with 1 failure (0 unexpected) in 57.780 (57.783) seconds
+Test Suite 'PassportSmokeUITests.xctest' failed at 2026-11-21 10:45:22.213.
+	 Executed 1 test, with 1 failure (0 unexpected) in 57.780 (57.785) seconds
+Test Suite 'All tests' failed at 2026-11-21 10:45:22.214.
+	 Executed 1 test, with 1 failure (0 unexpected) in 57.780 (57.787) seconds
+2026-11-21 10:46:06.732 xcodebuild[40971:110669] [MT] IDETestOperationsObserverDebug: 142.896 elapsed -- Testing started completed.
+2026-11-21 10:46:06.735 xcodebuild[40971:110669] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-21 10:46:06.735 xcodebuild[40971:110669] [MT] IDETestOperationsObserverDebug: 142.896 sec, +142.896 sec -- end
+
+Test session results, code coverage, and logs:
+	/tmp/hoopcheck-passport-simulator/light.xcresult
+
+Failing tests:
+	PassportUITests.testNativePassportRenderShareAndCleanup()
+
+** TEST FAILED **
+
+Testing started
