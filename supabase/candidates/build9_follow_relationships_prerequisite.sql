@@ -44,6 +44,9 @@ CREATE INDEX idx_follow_relationships_target
 
 -- Explicitly prevent accidental PUBLIC or anonymous access during rehearsal.
 REVOKE ALL ON TABLE public.follow_relationships FROM PUBLIC, anon;
+-- Authenticated users need table privileges in addition to owner-only RLS.
+-- No UPDATE/DELETE/INSERT/SELECT privilege is given to anonymous users.
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.follow_relationships TO authenticated;
 
 DO $postcheck$
 BEGIN
@@ -60,6 +63,12 @@ BEGIN
      AND policyname='followers manage own'
  ) THEN
    RAISE EXCEPTION 'Owner-only follow policy missing';
+ END IF;
+ IF NOT has_table_privilege('authenticated','public.follow_relationships','SELECT')
+    OR NOT has_table_privilege('authenticated','public.follow_relationships','INSERT')
+    OR NOT has_table_privilege('authenticated','public.follow_relationships','UPDATE')
+    OR NOT has_table_privilege('authenticated','public.follow_relationships','DELETE') THEN
+   RAISE EXCEPTION 'Authenticated follow table grants missing';
  END IF;
  IF has_table_privilege('anon','public.follow_relationships','SELECT')
     OR has_table_privilege('anon','public.follow_relationships','INSERT')
