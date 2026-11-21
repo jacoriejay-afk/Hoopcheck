@@ -77,7 +77,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
     if (!uid || !canRead) { setBlockedCreators({ owner: "", ids: [], ready: false, failed: false }); return; }
     let alive = true;
     setBlockedCreators({ owner: uid, ids: [], ready: false, failed: false });
-    void supabase.from("user_blocks").select("blocked_id").eq("blocker_id", uid).limit(500)
+    void Promise.resolve(supabase.from("user_blocks").select("blocked_id").eq("blocker_id", uid).limit(500))
       .then(({ data, error }) => {
         if (alive) setBlockedCreators({ owner: uid, ids: error ? [] : (data || []).map(row => row.blocked_id), ready: true, failed: Boolean(error) });
       }).catch(() => { if (alive) setBlockedCreators({ owner: uid, ids: [], ready: true, failed: true }); });
