@@ -60,6 +60,16 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
     }).catch(() => { if (alive) setHiddenReels({ owner: uid, ids: [] }); });
     return () => { alive = false; };
   }, [uid]);
+  const [mutedCreators, setMutedCreators] = useState<{ owner: string; ids: string[] }>({ owner: "", ids: [] });
+  useEffect(() => {
+    if (!uid) return;
+    let alive = true;
+    void AsyncStorage.getItem(`hoopcheck:reels:muted-creators:${uid}`).then(raw => {
+      const parsed: unknown = raw ? JSON.parse(raw) : [];
+      if (alive) setMutedCreators({ owner: uid, ids: Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string" && isFeedId(id)).slice(-500) : [] });
+    }).catch(() => { if (alive) setMutedCreators({ owner: uid, ids: [] }); });
+    return () => { alive = false; };
+  }, [uid]);
   // A Reel must own most of the screen before it can play; never play two at once.
   const viewability = useMemo(() => ({ itemVisiblePercentThreshold: reels ? 75 : 30 }), [reels]);
   const viewChanged = useCallback(({ viewableItems }: { viewableItems: ViewToken<FeedPost>[] }) => {
@@ -148,8 +158,19 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
   }, [params.comments, linkedId, reels, autoOpened, rows, scope, loadComments]);
   const posts = canRead && rows.scope === scope ? rows.posts.filter(post =>
     (!post.expires_at || Date.parse(post.expires_at) > now) &&
-    (!reels || hiddenReels.owner !== uid || !hiddenReels.ids.includes(post.id)),
+    (!reels || (
+      (hiddenReels.owner !== uid || !hiddenReels.ids.includes(post.id)) &&
+      (mutedCreators.owner !== uid || !mutedCreators.ids.includes(post.author_id))
+    )),
   ) : [];
+  async function hideCreator(authorId: string) {
+    if (!uid || !reels || authorId === uid) return;
+    const existing = mutedCreators.owner === uid ? mutedCreators.ids : [];
+    const ids = [...new Set([...existing, authorId])].slice(-500);
+    setMutedCreators({ owner: uid, ids });
+    try { await AsyncStorage.setItem(`hoopcheck:reels:muted-creators:${uid}`, JSON.stringify(ids)); }
+    catch { setMessage("This creator is hidden for this session. It could not be saved on this device."); }
+  }
   async function hideReel(postId: string) {
     if (!uid || !reels) return;
     const existing = hiddenReels.owner === uid ? hiddenReels.ids : [];
@@ -217,6 +238,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
             <Pressable accessibilityRole="button" onPress={() => void action(`share:${post.id}`, async () => { await Share.share({ title: "HoopFeed", message: `https://hoopcheck.online/feed#post-${post.id}` }); })} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Share</Text></Pressable>
             {reels && <Pressable accessibilityRole="button" accessibilityLabel="Report this Reel" onPress={() => void action(`report:${post.id}`, async () => { await Linking.openURL(`https://hoopcheck.online/support?reportReel=${post.id}`); })} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Report</Text></Pressable>}
             {reels && <Pressable accessibilityRole="button" accessibilityLabel="Hide this Reel from your device" onPress={() => void hideReel(post.id)} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Hide</Text></Pressable>}
+            {reels && post.author_id !== uid && <Pressable accessibilityRole="button" accessibilityLabel="Hide this creator's Reels on this device" onPress={() => void hideCreator(post.author_id)} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Hide creator</Text></Pressable>}
             <Pressable accessibilityRole="button" disabled={!canWrite || saved[post.id] === undefined || Boolean(pending[`save:${post.id}`])} onPress={() => void action(`save:${post.id}`, async () => { const value = !saved[post.id]; await feedAction(origin, await token(), "bookmark", post.id, value); if (viewer.current.uid === uid) setSaved(previous => ({ ...previous, [post.id]: value })); })} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>{saved[post.id] === undefined ? "Saved status unavailable" : saved[post.id] ? "Saved" : "Save"}</Text></Pressable>
           </View>
           {openComments[post.id] && !reels ? <View style={{ gap: 12 }}>
