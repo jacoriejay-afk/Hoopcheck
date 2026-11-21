@@ -87,7 +87,7 @@ return (
     <select id="league-sort" value={sortMode} onChange={event => { setSortMode(event.target.value as typeof sortMode); setShowAll(false); }}>
       <option value="country">Country → league</option><option value="name">League name</option><option value="logo">Logo coverage</option>
     </select>
-    <p aria-live="polite">{loading ? "Loading leagues…" : `${filteredLeagues.length.toLocaleString()} leagues · ${logoCount} of ${leagues.length} have logo URLs`}</p>
+    <p aria-live="polite">{loading ? "Loading leagues…" : `${filteredLeagues.length.toLocaleString()} leagues · ${logoCount} of ${leagues.length} have logo URLs on record`}</p>
     {(query || country) && <button type="button" className="hc-directory-reset" onClick={() => { setQuery(""); setCountry(""); }}>Clear filters</button>}
   </section>
   {!loading && leagues.length > 0 && <nav className="hc-league-country-index" aria-label="Browse countries with the most listed leagues">
@@ -133,7 +133,7 @@ return (
             </div>
           </div>
           <h2>{league.name}</h2>
-          <small className="hc-league-logo-state">{league.logo_url ? "League crest available" : "League badge placeholder · official logo pending"}</small>
+          <small className="hc-league-logo-state">{league.logo_url ? "League logo URL on record · verification pending" : "League badge placeholder · official logo pending"}</small>
           {league.country ? <span className="hc-dir-flagchip">{countryFlag(league.country) ? <span className="hc-dir-flag" aria-hidden="true">{countryFlag(league.country)}</span> : null}<span>{league.country}</span></span> : <p>Country not listed</p>}
           <p style={{ color: "var(--orange)", fontWeight: 900 }}>Season: {league.season || "Not listed"}</p>
           {league.level && (
