@@ -51,8 +51,9 @@ export default function TeamDirectoryRow({
         <TeamLogo name={name} logoUrl={logoUrl} logoBg={logoBg} size={44} />
         <span className="hc-directory-compact-copy">
           <strong title={name}>{name}</strong>
+          <small className="hc-directory-type-label">{kind === "womens" ? "Women's basketball" : "Men's basketball"}</small>
           {(city || country) && <small>{flag && <span aria-hidden="true">{flag} </span>}{[city, country].filter(Boolean).join(", ")}</small>}
-          {leagueName && <small>{leagueName}</small>}
+          {leagueName && <small title={leagueName}>{leagueName}</small>
         </span>
         <HoopIcon name="chevron-right" size={16} />
       </Link>
