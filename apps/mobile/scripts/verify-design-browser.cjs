@@ -55,6 +55,8 @@ const uid='11111111-1111-4111-8111-111111111111', team='22222222-2222-4222-8222-
   await page.getByRole('heading',{name:'Explore basketball',exact:true}).filter({visible:true}).waitFor();
   console.log(`PASS ${theme}: fresh/restored-auth onboarding dismissal, dashboard scroll and directory/tab input`);
   await page.goto(base+'/account');
+  await page.getByRole('button',{name:'Membership and restore purchases',exact:true}).waitFor();
+  await require("./compact-layout.cjs").capture(page, {path:`${output}/account-${theme}.png`,fullPage:true});
   for (const [label,path] of [['Owner HQ on website','/owner-hq'],['Ambassador HQ on website','/ambassador-hq']]) {
     await page.getByRole('button',{name:label,exact:true}).click();
     await page.getByText('This workspace is available on the authenticated website. Sign in there if requested; the website verifies your role before granting access.',{exact:true}).waitFor();
@@ -75,6 +77,7 @@ const uid='11111111-1111-4111-8111-111111111111', team='22222222-2222-4222-8222-
   await page.goto(base+'/womens/'+team);await page.getByRole('img',{name:'Design Women crest',exact:true}).waitFor();
   await require("./compact-layout.cjs").capture(page, {path:`${output}/team-artwork-fallback-${theme}.png`,fullPage:true});
   await page.setViewportSize({width:320,height:740});await page.goto(base+'/dashboard');await page.getByRole('heading',{name:'Explore basketball',exact:true}).filter({visible:true}).waitFor();
+  await page.getByRole('heading',{name:'My Teams',exact:true}).filter({visible:true}).waitFor();
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));
   await require("./compact-layout.cjs").capture(page, {path:`${output}/dashboard-320-${theme}.png`,fullPage:true});
   assert.ok(rpcCalls>=3);assert.deepEqual(errors,[]);console.log(`PASS ${theme}: public About/search gate, native connections retry/fan scope/tabs/empty/navigation, decoded logo/failure fallback, 320px layout`);

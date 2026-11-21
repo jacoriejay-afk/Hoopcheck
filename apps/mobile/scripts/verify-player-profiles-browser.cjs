@@ -18,6 +18,7 @@ async function verify(browser,theme,role='player'){
    if(url.pathname.endsWith('/search_public_players_by_username'))return json([card]);
    if(url.pathname.endsWith('/get_public_player_profile')){const body=request.postDataJSON();return json(body.p_user_id===privateId?[]:[{...card,player_position:'PG',current_country:'Hidden exact location',bio:'Public fixture biography'}]);}
    if(url.pathname.endsWith('/is_player_country_public'))return json(countryPublic);
+   if(url.pathname==='/rest/v1/player_contact_requests'){assert.equal(url.searchParams.get('player_id'),'eq.'+target);assert.equal(url.searchParams.get('requester_id'),'eq.'+uid);assert.equal(url.searchParams.get('status'),'eq.accepted');return json(null);}
    throw Error('Raw profile query is forbidden in this fixture: '+url.pathname);
   }
   throw Error(`Unexpected external player fixture request ${url.origin}${url.pathname}`);
@@ -30,8 +31,11 @@ async function verify(browser,theme,role='player'){
    await page.getByText('Player profiles are unavailable for fan accounts.',{exact:true}).waitFor();assert.deepEqual(queries,[]);await page.goto(`${base}/players/${target}`);await page.getByText('Player profiles are unavailable for fan accounts.',{exact:true}).waitFor();assert.deepEqual(queries,[]);
   }else{
    await page.getByPlaceholder('Enter a username (e.g. @player)').fill('player_one');await page.getByText('Fixture Visible Player',{exact:true}).waitFor();assert.equal(await page.getByText('Hidden exact location',{exact:true}).count(),0);await page.getByText('Fixture Visible Player',{exact:true}).click();await page.getByText('Public fixture biography',{exact:true}).waitFor();assert.equal(await page.getByText('Hidden exact location',{exact:true}).count(),0);await page.getByText('Verified professional player',{exact:true}).waitFor();await require("./compact-layout.cjs").capture(page, {path:`/tmp/hoopcheck-native-ui/player-profile-${theme}.png`,fullPage:true});
+   await page.getByText('Connect with this player to view their career history.',{exact:true}).waitFor();
+   assert.ok(!queries.includes('/rest/v1/player_career_stops'),'unconnected peers must not query career history');
    countryPublic=true;await page.reload();await page.getByText('Hidden exact location',{exact:true}).waitFor();
-   await page.goto(`${base}/players/${privateId}`);await page.getByText('This profile is unavailable for your account.',{exact:true}).waitFor();assert.ok(queries.every(path=>path.includes('/rpc/')));
+   const privateStart=queries.length;
+   await page.goto(`${base}/players/${privateId}`);await page.getByText('This profile is unavailable for your account.',{exact:true}).waitFor();assert.ok(queries.slice(privateStart).every(path=>path.includes('/rpc/')));
   }
   assert.deepEqual(errors,[]);await require("./compact-layout.cjs").capture(page, {path:`/tmp/hoopcheck-native-ui/player-privacy-${role}-${theme}.png`,fullPage:true});console.log(`PASS ${theme} ${role}: verified role/canonical RPC/current-country opt-in/approved avatar/private-profile denial`);
  }catch(error){console.log(await page.locator('body').innerText());console.log(errors);throw error;}finally{await context.close();}
