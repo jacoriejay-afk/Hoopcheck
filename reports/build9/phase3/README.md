@@ -21,3 +21,11 @@ Keep the existing src/theme.ts and brand assets as the single source of truth. R
 ## Acceptance status
 
 Phase 3 is NOT complete. Physical iPhone/Build 7 freeze diagnosis and resolution are unverified. Simulator screenshots, before/after native comparisons, Dynamic Type, VoiceOver, live API and hosted authorization behavior require separate evidence. Archived compact-iphone images in the baseline are React Native Web fixtures, not simulator evidence. No EAS, deployment, production mutation or merge is authorized/performed.
+
+## Core and feature slices
+
+Search gains local directory scopes, selected states, 44pt minimum targets and pressed feedback; role checks and the public-username RPC remain intact. Activity Center moves its controls into the list header so filters and mark-read actions remain scrollable at large text sizes; initial loading uses the existing reduced-motion skeleton. Home gains verified-account welcome copy and entry cards to existing Game Center, groups and Reels. Highlight Hub is currently an entry to existing Reels, not a new aggregation backend. No invented counts or rankings.
+
+Deferred/disabled: a public exportable Player Passport image is not exposed. The existing gated player ShareSheet remains unchanged; a public passport requires an approved field allowlist and recipient access/consent contract. No public export endpoint or storage policy has been created. Personalized recommendations beyond verified-account greeting and role copy are not enabled: follow-based ranking requires verified API coverage. No backend feature is advertised as available.
+
+Remaining requested implementation/review: full Game Center layout, feed/composer media polish, group discovery layout, Player Passport visual export, team/league/player profile redesign, onboarding/settings polish, image loading audit and cross-screen modal/touch/performance audit. Existing functionality is retained, but retention is not acceptance of the complete redesign.
