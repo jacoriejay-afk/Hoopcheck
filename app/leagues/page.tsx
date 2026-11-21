@@ -3,6 +3,7 @@
 import {
 useEffect,
 useState,
+Fragment,
 } from "react";
 import Link from "next/link";
 import DirectoryLayout from "../../components/DirectoryLayout";
@@ -29,12 +30,21 @@ const [leagues, setLeagues] = useState<League[]>([]);
 const [loading, setLoading] = useState(true);
 const [country, setCountry] = useState("");
 const [query, setQuery] = useState("");
+const [sortMode, setSortMode] = useState<"country" | "name" | "logo">("country");
+const [showAll, setShowAll] = useState(false);
+const countrySummary = [...new Set(leagues.map(league => league.country || "Other"))].map(name => ({
+  name, count: leagues.filter(league => (league.country || "Other") === name).length,
+})).sort((a,b) => b.count - a.count || a.name.localeCompare(b.name));
 const filteredLeagues = leagues.filter((league) => {
   if (country && league.country !== country) return false;
   const term = query.trim().toLocaleLowerCase();
   if (!term) return true;
   return [league.name, league.country, league.level, league.season].some((value) => value?.toLocaleLowerCase().includes(term));
-});
+}).sort((a,b) => sortMode === "name" ? a.name.localeCompare(b.name) :
+  sortMode === "logo" ? Number(Boolean(b.logo_url)) - Number(Boolean(a.logo_url)) || a.name.localeCompare(b.name) :
+  (a.country || "Other").localeCompare(b.country || "Other") || a.name.localeCompare(b.name));
+const visibleLeagues = showAll ? filteredLeagues : filteredLeagues.slice(0, 36);
+const logoCount = leagues.filter(league => Boolean(league.logo_url)).length;
 
 useEffect(() => {
 let active = true;
@@ -73,9 +83,17 @@ return (
       <option value="">All countries</option>
       {Array.from(new Set(leagues.map((league) => league.country).filter(Boolean) as string[])).sort().map((item) => <option key={item} value={item}>{item}</option>)}
     </select>
-    <p aria-live="polite">{loading ? "Loading leagues…" : `${filteredLeagues.length.toLocaleString()} ${filteredLeagues.length === 1 ? "league" : "leagues"}`}</p>
+    <label htmlFor="league-sort">Organize by</label>
+    <select id="league-sort" value={sortMode} onChange={event => { setSortMode(event.target.value as typeof sortMode); setShowAll(false); }}>
+      <option value="country">Country → league</option><option value="name">League name</option><option value="logo">Logo coverage</option>
+    </select>
+    <p aria-live="polite">{loading ? "Loading leagues…" : `${filteredLeagues.length.toLocaleString()} leagues · ${logoCount} of ${leagues.length} have logo URLs`}</p>
     {(query || country) && <button type="button" className="hc-directory-reset" onClick={() => { setQuery(""); setCountry(""); }}>Clear filters</button>}
   </section>
+  {!loading && leagues.length > 0 && <nav className="hc-league-country-index" aria-label="Browse countries with the most listed leagues">
+    <button type="button" aria-pressed={!country} onClick={() => { setCountry(""); setShowAll(false); }}>All countries</button>
+    {countrySummary.slice(0, 8).map(item => <button type="button" key={item.name} aria-pressed={country === item.name} onClick={() => { setCountry(current => current === item.name ? "" : item.name); setShowAll(false); }}>{item.name} <small>{item.count}</small></button>)}
+  </nav>}
   <section className="hc-league-directory-grid">
     {loading ? (<div className="card"><HoopLoading variant="inline" label="Scanning professional leagues..." /></div>) : leagues.length === 0 ? (
       <div className="card">
@@ -98,10 +116,12 @@ return (
           <p>No league matches the current search and country filter. Try another search or reset the filters.</p>
           <button type="button" className="btn dark" onClick={() => { setCountry(""); setQuery(""); }}>Clear filters</button>
         </div>
-      ) : filteredLeagues.map((league) => (
+      ) : visibleLeagues.map((league, index) => <Fragment key={league.id}>
+        {sortMode === "country" && (index === 0 || visibleLeagues[index - 1]?.country !== league.country) &&
+          <h2 className="hc-league-country-divider">{countryFlag(league.country || "")} {league.country || "Other countries"}</h2>}
+        {(
         <div
           className="card hc-team-row hc-league-compact-card"
-          key={league.id}
         >
           <div className="hc-league-row-head">
             <span className="hc-dir-crest hc-dir-crest--league"><TeamLogo name={league.name} logoUrl={league.logo_url} size={56} /></span>
@@ -112,9 +132,8 @@ return (
               <GeoBadge country={league.country} regional={league.country === "Europe"} />
             </div>
           </div>
-          <h2>
-            {league.name}
-          </h2>
+          <h2>{league.name}</h2>
+          <small className="hc-league-logo-state">{league.logo_url ? "League crest available" : "League badge placeholder · official logo pending"}</small>
           {league.country ? <span className="hc-dir-flagchip">{countryFlag(league.country) ? <span className="hc-dir-flag" aria-hidden="true">{countryFlag(league.country)}</span> : null}<span>{league.country}</span></span> : <p>Country not listed</p>}
           <p style={{ color: "var(--orange)", fontWeight: 900 }}>Season: {league.season || "Not listed"}</p>
           {league.level && (
@@ -132,9 +151,10 @@ return (
             View League
           </Link>
         </div>
-      ))
+      )}</Fragment>)
     )}
   </section>
+  {!loading && filteredLeagues.length > 36 && <div className="hc-league-page-more"><p className="muted" role="status">Showing {visibleLeagues.length} of {filteredLeagues.length} leagues.</p><button type="button" className="btn dark" onClick={() => setShowAll(value => !value)}>{showAll ? "Show compact directory" : "Show all matching leagues"}</button></div>}
   <section className="hero">
     <div className="eyebrow">
       League Insight
