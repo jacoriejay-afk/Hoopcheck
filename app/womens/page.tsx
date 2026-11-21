@@ -88,6 +88,7 @@ export default function Womens() {
           <Link href="/teams">{t("mensTeams")}</Link>
           <Link href="/womens" aria-current="page">{t("womensTeams")}</Link>
           <Link href="/search">{t("search")}</Link>
+        <Link href="/trust-index">Trust Index</Link>
         </nav>
 
         <section className="hc-womens-search-panel" aria-label={t("womensTeamDirectoryView")}>
