@@ -23,6 +23,7 @@ export function TabBar() {
   // Start opaque until the accessibility preference is known.
   const [reduceTransparency, setReduceTransparency] = useState(true);
   useEffect(() => {
+    if (Platform.OS !== "ios") return;
     let active = true;
     void AccessibilityInfo.isReduceTransparencyEnabled().then(value => { if (active) setReduceTransparency(value); }).catch(() => {});
     const subscription = AccessibilityInfo.addEventListener("reduceTransparencyChanged", setReduceTransparency);
