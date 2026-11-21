@@ -88,10 +88,9 @@ with additions(name,country,city,league_name) as (values
   ('São José Basketball','Brazil','São José dos Campos','Novo Basquete Brasil'),
   ('União Corinthians','Brazil','Santa Cruz do Sul','Novo Basquete Brasil'),
   ('Unifacisa','Brazil','Campina Grande','Novo Basquete Brasil'),
-  -- Argentina 2026/27; preserve existing records on matching normalized names
+  -- Argentina 2026/27; Obras Basket already exists in production and is not re-added
   ('Lanús','Argentina','Lanús','Liga Nacional de Básquet'),
   ('Gimnasia de Comodoro Rivadavia','Argentina','Comodoro Rivadavia','Liga Nacional de Básquet'),
-  ('Obras Basket','Argentina','Buenos Aires','Liga Nacional de Básquet'),
   ('Ferro Carril Oeste','Argentina','Buenos Aires','Liga Nacional de Básquet'),
   ('Regatas Corrientes','Argentina','Corrientes','Liga Nacional de Básquet'),
   ('Platense','Argentina','Vicente López','Liga Nacional de Básquet'),
