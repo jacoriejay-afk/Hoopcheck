@@ -146,6 +146,9 @@ jobs:
       - name: Verify seven-day trial eligibility policy
         run: npm run test:stripe-trial
 
+      - name: Verify all Stripe price tier and interval mappings
+        run: node --test scripts/test-stripe-price-mapping.mjs
+
       - name: Verify fail-closed Stripe trial recovery policy
         run: npm run test:stripe-trial-recovery
 

@@ -1,0 +1,391 @@
+
+> @hoopcheck/mobile@0.2.0 test:native
+> node --experimental-strip-types --test scripts/*.test.mjs
+
+(node:1166) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/Hoopcheck/apps/mobile/src/native/accountClient.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/Hoopcheck/apps/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ native account projects only verified contract fields (1.039273ms)
+✔ malformed permissions cannot grant native feature access (0.39923ms)
+✔ native account fetch uses authenticated no-store request and fails closed (33.612202ms)
+✔ invalid API origin never receives a session token (0.436105ms)
+(node:1174) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/Hoopcheck/lib/auth/auth-intents.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/Hoopcheck/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ late password, refresh and MFA responses cannot replace a newer sign-in/out intent (87.254346ms)
+✔ MFA response identity mismatch fails closed while a matching owner response reaches the SDK (5.264214ms)
+✔ a shared intent store blocks an older tab response and never grants authorization (0.851741ms)
+✔ binding preserves auth method receivers/results and begins an intent before each mutation (0.670668ms)
+✔ native credential writes and removals serialize without losing the last committed sign-in (1.435278ms)
+✔ a failed native write releases the next write and reads wait for the pending mutation (0.918551ms)
+✔ actual Supabase MFA verification cannot overwrite a newer password sign-in (77.363548ms)
+✔ queued older sign-out is skipped when a newer account intent wins before invocation (0.397577ms)
+✔ binding twice cannot add nested locks or invoke a method twice (0.230557ms)
+✔ actual Supabase sign-out cannot erase a newer queued password sign-in (3.630719ms)
+✔ MFA management retains its verified owner when another account sign-in is already pending (1.731123ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ the actual shared button wraps interpolated string/number labels in native Text (12.983399ms)
+✔ mixed icon/text and render-function button labels retain native-safe text wrappers (2.791267ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ shared buttons expose disabled state to assistive technology in either theme (1.172703ms)
+(node:1189) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/Hoopcheck/apps/mobile/src/native/clubGroups.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/Hoopcheck/apps/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ club directory preserves canonical groups, bounded sanitized search and stable lookahead pages (27.794105ms)
+✔ summary membership cannot replace caller-owned row and moderator RPC must be a boolean (7.279804ms)
+✔ private posts keep group/status filters, pinned ordering, public authors and permanent history (4.750552ms)
+✔ comments retain exact authorized post and bounded deterministic paging (5.597275ms)
+✔ all group mutations retain server authorization/moderation and fail closed (4.332754ms)
+✔ group images use owned group paths, storage RLS and exact signed URL targets (3.027963ms)
+✔ permission read failures cannot silently reuse group membership (42.339092ms)
+(node:1197) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/Hoopcheck/apps/mobile/src/native/connectionPresentation.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/Hoopcheck/apps/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ connection presentation retains website fan scope and drops malformed/unknown identities (1.720216ms)
+✔ connection destinations never expose player links to fans or private account types (0.17932ms)
+✔ decoder preserves query-string routing and handles hostile runs within a deadline (333.092927ms)
+✔ Metro image API remains callable for real assets and malformed parsers terminate (146.455094ms)
+✔ SDK and native bundler remain pinned (4.954819ms)
+(node:1225) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/Hoopcheck/apps/mobile/src/native/directorySearch.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/Hoopcheck/apps/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ global search preserves directory eligibility and emits only public fields (41.518068ms)
+✔ one unavailable directory does not hide successful search results (4.892506ms)
+✔ short or punctuation-only searches never query the database (0.674694ms)
+✔ results navigate to canonical native routes and reject path injection (0.468625ms)
+✔ player search fails closed until a verified non-fan viewer allows it (3.162925ms)
+✔ username search preserves underscores and strips the display @ prefix (3.627543ms)
+(node:1233) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/Hoopcheck/apps/mobile/src/native/draftStore.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/Hoopcheck/apps/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ same-user token refresh retains memory drafts while identity changes and sign-out clear them (1.049448ms)
+✔ drafts have a bounded memory/key contract and subscribers clean up (0.23969ms)
+✔ profile drafts have room for the bounded form and cannot target another identity (0.218168ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ stalled artwork falls back, a new URL retries, and loaded artwork keeps its image (12.93765ms)
+(node:1247) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/Hoopcheck/apps/mobile/src/native/feedClient.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/Hoopcheck/apps/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ native polls use only moderated canonical fields and require acknowledged publication (23.88597ms)
+✔ feed uses approved unexpired rows, deterministic keyset pages and viewer-only archives (33.698582ms)
+✔ invalid cursors and identities fail before querying; unavailable archives fail closed (3.111868ms)
+✔ shared posts and comments preserve exact targets, expiry, own archive and bounded paging (2.925669ms)
+✔ posts and replies use existing moderation, strict success and allowlisted published comment (1.254046ms)
+✔ media accepts only authorized signed URLs from the configured project (1.095266ms)
+✔ checks and bookmarks remain scoped to caller, and counts come from actual RPC (4.20364ms)
+✔ votes and bookmarks use server permission checks and reject invalid inputs before request (0.909708ms)
+(node:1255) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/Hoopcheck/apps/mobile/src/native/liveGames.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/Hoopcheck/apps/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ game discovery preserves side identity including away women and excludes stale scheduled fixtures (20.885639ms)
+✔ free player listing uses existing bearer prediction API and never bypasses game-table RLS (1.691583ms)
+✔ chat trusts authoritative boolean room state, owns controls, and excludes hidden authors (3.637999ms)
+✔ sending checks room, retains server slow-mode and owns exact game/user body (2.855232ms)
+✔ block/mute and reporting preserve owned identity and reject invalid/self targets before writes (3.204447ms)
+✔ predictions use verified server state and never fabricate lock, counts or results (2.590334ms)
+✔ basketball preference reads and explicit saves target only the caller and confirm durable result (1.72972ms)
+✔ unresponsive game requests abort after the native deadline instead of leaving an infinite loader (1.347476ms)
+(node:1263) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/Hoopcheck/apps/mobile/src/native/mediaClient.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/Hoopcheck/apps/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ photos use the existing moderated multipart endpoint without leaking auth in URLs or granting roles (24.868137ms)
+✔ invalid counts, sizes and mixed media fail before uploads or HTTP requests (1.075146ms)
+✔ private video upload accepts only the captured owner and trusted storage origin (25.608149ms)
+✔ failed uploads and definitive moderation rejections clean up only the owned private path (2.441661ms)
+✔ uncertain publication retains the uploaded video and reports review before retry (1.667888ms)
+✔ avatar upload and profile update use a captured JWT, exact own filter and no moderation/identity fields (1.884549ms)
+✔ avatar ownership failure makes no writes and an uncertain profile response never deletes its upload (4.205362ms)
+(node:1271) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/Hoopcheck/apps/mobile/src/native/readDeadline.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/Hoopcheck/apps/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ avatar preparation crops centrally, resizes to 720 and emits JPEG without EXIF/base64 (93.428389ms)
+✔ oversized or remote images fail before decoding and rotations resize the resulting orientation (31.804935ms)
+✔ failed compression is bounded and releases native references (16.742595ms)
+✔ library denial never opens a video picker; limited access and cancellation are supported (21.208434ms)
+✔ photo upload uses an existing local URI descriptor and refuses changed files (53.414252ms)
+✔ native video upload is file-backed binary, foreground-only, abortable and does not read base64/bytes (21.008945ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ membership preview reflects only verified rights, clears on identity loss, and has no purchase controls (90.897785ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ real membership screen renders localized prices, review controls and both themes without another modal (271.043458ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ unverified eligibility is an explicit full-price confirmation with no free-trial button (27.12512ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ backgrounding clears a prepared quote and returning to the screen requires review again (45.946155ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ restore errors remain actionable and controls recover without granting access (31.080086ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ fan accounts retain restore/manage controls without priced offers (20.758488ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ an old account preparation cannot display a payment confirmation for the next account (47.319589ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ membership refresh clears a stale disabled notice in both themes (86.121955ms)
+(node:1292) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/Hoopcheck/lib/auth/mfa-core.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/Hoopcheck/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ only verified factors and verified-token assurance determine challenge; metadata cannot bypass it (5.575142ms)
+✔ state reads verify the captured token and reject changed identity (5.657746ms)
+✔ invalid or foreign codes/factors never verify, and failed verification stays at aal1 (2.191635ms)
+✔ existing factor must be verified before adding a backup; incomplete setup may be cancelled (0.978861ms)
+✔ last-factor removal requires explicit disable confirmation and a fresh accepted code (0.761835ms)
+✔ a verified backup can remove a lost primary without disabling protection (0.411608ms)
+✔ removing the last supported TOTP cannot strand an unsupported remaining factor (0.241893ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ foreground retains an unexpired verified identity without opening a new lock presentation (84.465734ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ auth changes conceal immediately and a stale foreground read cannot restore old proof (25.524884ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ failed revalidation clears proof so going offline cannot recover a rejected session (41.011176ms)
+✔ expired proof and account changes require fresh verification before revealing content (15.269236ms)
+(node:1306) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/Hoopcheck/apps/mobile/src/native/lockPolicy.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/Hoopcheck/apps/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ inactive onboarding has no mounted modal (156.143734ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ completing onboarding removes its content (32.372708ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ app lock conceals content throughout hydration (128.630982ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ inactive app lock has no mounted modal (73.862063ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ restored session stays locked until device authentication succeeds (23.445197ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ device authentication cancelled does not dismiss app lock (34.152665ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ device authentication unavailable does not dismiss app lock (45.268937ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ hydration and onboarding share one native presentation (39.588366ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ onboarding cannot cover an active app lock (49.372536ms)
+✔ combined root owns startup presentation only through AppLock (4.184521ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ switching accounts conceals content and ignores Face ID completion for the old account (18.061543ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a previously unlocked identity does not authorize the next identity (18.25225ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a hung Face ID prompt recovers controls and a late success cannot unlock (32.277075ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ startup failure shows an actionable retry while protected content stays concealed (43.624665ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ foreground after five minutes relocks and background invalidates an in-flight unlock (20.848463ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ MFA challenge reuses the lock modal and precedes device lock and onboarding (16.459766ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ startup recovery reports a failed normal sign-in without dismissing concealment (73.803084ms)
+(node:1331) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/Hoopcheck/apps/mobile/src/native/deepLinks.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/Hoopcheck/apps/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ session and preference hydration conceal content before app-lock state is known (1.364531ms)
+✔ app lock waits five minutes and fails closed for invalid restoration state (0.224237ms)
+✔ normal sign-in bypasses restored app lock once, without authorizing later opens (0.293231ms)
+✔ native directory/profile links retain their exact entity, including custom scheme (0.719212ms)
+✔ unimplemented group pages keep canonical web paths (0.255514ms)
+✔ both Lykes referral route spellings preserve the server attribution entry (0.367983ms)
+✔ malformed links and external redirects cannot become trusted web destinations (7.88215ms)
+✔ Sentry drops private content even when integrations nest it in unknown fields (1.555198ms)
+✔ Sentry retains allowlisted flow timing and bundled symbolication locations (0.380863ms)
+✔ women's canonical team routes open natively and retain identity (0.405279ms)
+✔ native feed share URLs preserve exact posts and legacy fan feed resolves to HoopFeed (0.351318ms)
+✔ native PKCE callbacks preserve the code instead of opening the website (0.353071ms)
+✔ auth errors and malformed escapes are safely re-encoded and oversized links fail closed (0.362575ms)
+✔ Live Games links preserve the canonical game and reject malformed IDs (0.153411ms)
+✔ club group canonical links retain group identity and malformed alternatives use the website (0.160541ms)
+✔ search links bound and safely re-encode terms for native routing (0.326521ms)
+✔ own profile customization uses a canonical native account route (0.099079ms)
+✔ canonical homepage and empty app links reach native entry without a web handoff (0.138248ms)
+✔ fresh password authentication cannot unlock a different account (0.087752ms)
+(node:1338) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/Hoopcheck/apps/mobile/src/native/notifications.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/Hoopcheck/apps/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ alerts read and mark actual read_at fields only for authenticated viewer (28.669161ms)
+✔ alert targets cannot inject routes and filters match mobile website (0.31932ms)
+✔ denied alert reads and writes report failures without pretending success (1.657281ms)
+(node:1346) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/Hoopcheck/lib/auth/own-profile.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/Hoopcheck/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ private profile RPC uses the captured JWT and no client-selected target ID (21.036356ms)
+✔ signed-out, switched and malformed owners cannot initiate a private read (1.172112ms)
+✔ account switch while the response is in flight cannot display the old private row (1.206214ms)
+✔ cross-owner, missing, array and malformed RPC responses fail closed (3.239601ms)
+✔ permission, unavailable schema and transport errors never fall back to the raw table (2.855954ms)
+✔ same-owner replacement credentials invalidate an in-flight private response (0.91802ms)
+✔ a hung session read has bounded recovery without requesting private data (0.987013ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ navigating away closes the real Passport sheet and invalidates an in-flight export (129.795357ms)
+(node:1370) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/Hoopcheck/apps/mobile/src/native/passportSharing.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/Hoopcheck/apps/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ native Passport shares a locally rendered PDF and removes it after dismissal, without permission requests (1.89556ms)
+✔ web, missing share capability and wrong roles fail before printing (0.503377ms)
+✔ an account switch while rendering prevents share and removes the PDF (0.498769ms)
+✔ background, navigation or unmount during preparation prevents the share sheet (0.358288ms)
+✔ a failed share still removes the file and does not expose native error details (0.276255ms)
+✔ non-local printer results are never shared or passed to file deletion (0.244347ms)
+✔ cleanup errors are surfaced rather than silently leaving a sensitive file (0.227332ms)
+✔ a timed-out render releases the caller and removes a PDF that finishes late (6.990349ms)
+✔ missing native modules show a recoverable message without exposing binding details (0.371518ms)
+(node:1377) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/Hoopcheck/apps/mobile/src/native/pendingDestination.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/Hoopcheck/apps/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ protected membership, settings and directory links survive sign-in once without retaining credentials (0.977549ms)
+✔ post, game and bounded search context survive while unrelated fields and external routes are discarded (0.404659ms)
+(node:1384) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/Hoopcheck/apps/mobile/src/native/playerPassport.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/Hoopcheck/apps/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ passport refuses another player and exports only the explicit field allowlist (1.544462ms)
+✔ only the server-projected verification flag produces a verification label (0.141353ms)
+(node:1391) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/Hoopcheck/apps/mobile/src/native/playerProfiles.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/Hoopcheck/apps/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1391) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/Hoopcheck/lib/auth/own-profile.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/Hoopcheck/package.json.
+✔ fans and unknown roles fail closed before any profile or directory read (16.443731ms)
+✔ canonical profile RPC and country opt-in mask private current location (6.539692ms)
+✔ missing canonical profile never falls back to another user raw row (0.79809ms)
+✔ country consent errors and non-boolean responses fail closed without raw profile fallback (2.620409ms)
+✔ owners can view their own private profile but cannot reveal an unapproved avatar (1.060354ms)
+✔ directory calls only shared RPC with literal username and bounded pagination (1.224571ms)
+✔ avatar display rejects non-HTTPS or credential URLs (0.151528ms)
+✔ directory rejects malformed RPC results and normalizes unsupported display fields (1.276609ms)
+✔ verification dates require the canonical verified flag and a valid timestamp (1.58315ms)
+(node:1399) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/Hoopcheck/apps/mobile/src/native/preferenceStore.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/Hoopcheck/apps/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ failed lock-setting write cannot be persisted by a later unrelated change (0.949828ms)
+✔ queued writes merge against committed state and retain onboarding completion (0.736627ms)
+✔ queued failed security changes do not poison subsequent writes (0.203376ms)
+✔ fresh and legacy preferences retain defaults; malformed security settings fail closed (0.250366ms)
+(node:1406) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/Hoopcheck/apps/mobile/src/native/profileEditor.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/Hoopcheck/apps/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1406) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/Hoopcheck/lib/auth/own-profile.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/Hoopcheck/package.json.
+✔ own profile reads exact ID and excludes membership, billing and permission columns (21.590118ms)
+✔ player updates are bounded, own-scoped and cannot modify verified identity or membership (3.255304ms)
+✔ current server role controls the field allowlist and private profile roles cannot publish (3.616057ms)
+✔ read/write failures and missing mutation acknowledgment do not claim a saved profile (1.927107ms)
+✔ appearance updates freeze the verified JWT and only send the cover metadata key (1.316108ms)
+✔ profile save pins the owner token and aborts when the account changes after read (0.99778ms)
+(node:1414) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/Hoopcheck/apps/mobile/src/native/reviewAccess.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/Hoopcheck/apps/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ review request retains exact target and uses bearer auth with no cache (25.237752ms)
+✔ lack of full-read permission drops review content even if sent by the service (0.431859ms)
+✔ unverified, failed and malformed responses fail closed (1.772204ms)
+✔ invalid request cannot send a session token (1.40364ms)
+✔ malformed ratings and review bodies never reach the native view (0.535905ms)
+(node:1422) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/Hoopcheck/apps/mobile/src/native/readDeadline.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/Hoopcheck/apps/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a hanging initial session exposes retry without declaring the user signed out (2.261009ms)
+✔ auth transitions win over a stale initial read and a stale failure (0.635325ms)
+✔ synchronous initial auth notification is not overwritten by another bootstrap (0.224988ms)
+✔ disposing startup unsubscribes and ignores late native reads and auth callbacks (0.315144ms)
+✔ failed and timed-out settings reads preserve stored security settings and recover on retry (35.282353ms)
+✔ six owner-confirmed products use localized prices and one group; fan/changed terms are rejected (1.497271ms)
+✔ purchase passes signed intent, immutable owner and quoted price; only server acknowledgement finishes it (1.912265ms)
+✔ unknown or ineligible first-payer history never advertises a trial (2.332046ms)
+✔ pending approval and cancellation never synchronize, finish or optimistically grant access (0.584729ms)
+✔ an uncertain server write remains unfinished for a later restore (0.667373ms)
+✔ malformed or wrong-owner acknowledgements cannot finish a purchase (0.396847ms)
+✔ switching accounts while a server acknowledgement is pending cannot finish or refresh the next account (3.869537ms)
+✔ switching away and back invalidates a prepared purchase before the native payment sheet (0.300913ms)
+✔ a purchase completing after sign-out remains unfinished and cannot activate another account (0.649857ms)
+✔ foreign-owned receipts are never transmitted, finished or reassigned (0.384408ms)
+✔ duplicate observer and restore callbacks share one acknowledgement and finish (0.639822ms)
+✔ native finish failure is retried without claiming membership synchronization succeeded (0.320552ms)
+✔ background/security gates defer automatic scans and callbacks until foreground recovery (0.196225ms)
+✔ restoration is user-initiated; automatic scans never invoke AppStore.sync (0.162044ms)
+✔ unsupported native billing and invalid optional API configuration do not prevent client initialization (0.381333ms)
+✔ membership reads validate provider/expiry and cannot consume another account response (0.305279ms)
+✔ billing controls serialize native presentations and stale quotes require review again (1.132983ms)
+✔ membership HTTP requests capture the JWT, refuse redirects and never cache receipts (16.192844ms)
+✔ native offers follow server product permissions while restoration remains independent (0.435435ms)
+✔ iOS 15 keeps restoration without offering a purchase that needs iOS 16 app identity (0.310798ms)
+✔ membership transport rejects HTML, empty and primitive JSON without exposing parser errors (1.352684ms)
+✔ an undeployed membership route reports service availability and can recover after deployment (0.720613ms)
+✔ verified disabled catalog accepts a null environment without reading StoreKit products (0.399951ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ tab accessible names match visible labels for fans, other accounts and loading state (180.696141ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ fan feed tab retains selected semantics on feed and fan-feed routes (29.2943ms)
+✔ web navigation does not call iOS-only transparency APIs (15.823248ms)
+(node:1444) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/Hoopcheck/apps/mobile/src/native/teamDirectory.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/Hoopcheck/apps/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ native directory uses each canonical table, active filters and stable pages (21.40458ms)
+✔ search preserves international names and bounds filter input (0.418409ms)
+(node:1452) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/Hoopcheck/apps/mobile/src/native/teamRoster.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/Hoopcheck/apps/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1452) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/Hoopcheck/lib/auth/own-profile.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/Hoopcheck/package.json.
+✔ roster refuses fans and malformed identities before any database request (18.895086ms)
+✔ roster uses opt-in history and canonical player projections; private players and expired spots stay absent (9.849387ms)
+✔ career summaries count distinct returned records without inferring seasons or performance averages (0.262635ms)
+(node:1460) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/Hoopcheck/apps/mobile/src/native/themePreference.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/Hoopcheck/apps/mobile/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ explicit appearance overrides the device and system appearance follows it (0.740464ms)
+✔ all theme subscribers update together and cleanup removes the listener (0.663127ms)
+✔ legacy and malformed saved appearance default to system (0.187152ms)
+✔ failed theme save cannot change a later unrelated persisted setting (0.487713ms)
+✔ sharp fixtures preserve PNG/JPEG dimensions through decode (51.458612ms)
+✔ Expo glob consumers retain sync, async, brace and dotfile traversal (26.576915ms)
+✔ real fingerprint minimatch consumer preserves ignore and negation behavior (10.299504ms)
+ℹ tests 215
+ℹ suites 0
+ℹ pass 215
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 13182.924828
