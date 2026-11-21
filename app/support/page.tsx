@@ -39,7 +39,7 @@ export default function SupportPage() {
 
     const user = session?.user;
     if (!user) {
-      window.location.href = "/login";
+      window.location.href = `/login?${new URLSearchParams({ returnTo: window.location.pathname + window.location.search })}`;
       return;
     }
 
@@ -102,7 +102,7 @@ export default function SupportPage() {
 
       const user = session?.user;
       if (!user) {
-        window.location.href = "/login";
+        window.location.href = `/login?${new URLSearchParams({ returnTo: window.location.pathname + window.location.search })}`;
         return;
       }
 
