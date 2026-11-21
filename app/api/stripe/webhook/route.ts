@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getStripeKeyMode, stripeMatchesDeployment } from "../../../../lib/stripe-key-mode";
 import { canReleaseExpiredTrialSession } from "../../../../lib/stripe-trial-recovery";
+import { isSupportedSubscriptionAccountType } from "../../../../lib/stripe-trial-eligibility";
 import { reconcileAmbassadorEvent, recordAmbassadorInvoice, updateAmbassadorSubscriptionStatus } from "../../../../lib/ambassador/stripe";
 import { createClient } from "@supabase/supabase-js";
 
@@ -170,7 +171,7 @@ async function saveSubscription(
   if (ownerProfileError || !ownerProfile?.account_type) {
     throw new Error("Cannot synchronize a subscription without its account owner.");
   }
-  if (!["player", "fan", "coach", "agent", "scout", "club_admin", "manager"].includes(ownerProfile.account_type)) {
+  if (!isSupportedSubscriptionAccountType(ownerProfile.account_type)) {
     throw new Error("Subscription owner has an unsupported account role.");
   }
 

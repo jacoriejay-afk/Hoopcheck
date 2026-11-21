@@ -7,8 +7,9 @@ const trialPolicy = readFileSync("lib/stripe-trial-eligibility.ts", "utf8");
 const membership = readFileSync("app/membership/page.tsx", "utf8");
 const migration = readFileSync("scripts/sql/stripe-trial-claims-proposal.sql", "utf8");
 
-assert.match(membership, /a seven-day free trial[\s\S]*not currently available at checkout/i,
-  "Public membership copy must disclose that the trial is not active yet");
+assert.ok(membership.includes("one-time seven-day free trial") &&
+  membership.includes("not currently available at public checkout"),
+  "Public membership copy must disclose that the all-user trial is not yet live");
 // The public trial stays disabled. Only the pinned, branch-scoped isolated
 // test environment can issue a trial for authenticated sandbox acceptance.
 for (const required of [
@@ -26,8 +27,20 @@ assert.ok(checkout.includes('const trialRolloutEnabled ='), "Sandbox trial gate 
 assert.doesNotMatch(checkout, /const trialRolloutEnabled = true;/, "Trial must never enable unconditionally");
 assert.match(checkout, /\.\.\.\(trialEligible \? \{ trial_period_days: 7 \} : \{\}\)/,
   "Stripe trial must only be issued through eligibility gate");
-assert.match(trialPolicy, /input\.accountType === "player"/,
-  "Only Player accounts may receive the trial");
+assert.ok(trialPolicy.includes("isSupportedSubscriptionAccountType(input.accountType)"),
+  "All currently supported billing roles may receive one trial");
+assert.ok(checkout.includes("if (!isSupportedSubscriptionAccountType(checkoutProfile.account_type))"),
+  "Checkout must reject roles the webhook cannot activate");
+assert.ok(webhook.includes("if (!isSupportedSubscriptionAccountType(ownerProfile.account_type))"),
+  "Webhook and Checkout must share the same account-type eligibility");
+assert.ok(!trialPolicy.includes('input.accountType === "player"'),
+  "Trial eligibility must not be Player-only");
+assert.ok(!checkout.includes('trialRolloutEnabled && checkoutProfile.account_type === "player"'),
+  "Initial trial gate must include all valid account types");
+assert.ok(checkout.includes("rolloutEnabled: trialRolloutEnabled,"),
+  "Final eligibility gate must not restrict trials by account type");
+assert.ok(membership.includes("all supported HoopCheck account types"),
+  "Public trial notice must describe all supported account types");
 assert.match(migration, /user_id uuid primary key/,
   "Claims must be unique per user");
 assert.match(migration, /revoke all on function public\.reserve_stripe_trial\(uuid\) from public, anon, authenticated/,
