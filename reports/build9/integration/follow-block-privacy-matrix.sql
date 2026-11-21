@@ -356,6 +356,29 @@ DO $t$ BEGIN
  IF (SELECT count(*) FROM public.get_public_follow_list('followers','player',current_setting('b9.player')::uuid,NULL)) <> 0
  THEN RAISE EXCEPTION 'Reverse block follower leak'; END IF;
 END $t$;
+-- Canonical unblock: nonowners cannot delete a reverse block; owners can
+-- remove their own blocks, restoring the public follow visibility.
+RESET ROLE;
+SELECT set_config('request.jwt.claim.sub',current_setting('b9.b'),true);
+SET LOCAL ROLE authenticated;
+DO $t$ DECLARE n integer; BEGIN
+ DELETE FROM public.user_blocks WHERE blocker_id=current_setting('b9.a')::uuid;
+ GET DIAGNOSTICS n=ROW_COUNT;
+ IF n<>0 THEN RAISE EXCEPTION 'Nonowner deleted reverse block'; END IF;
+END $t$;
+DELETE FROM public.user_blocks WHERE blocker_id=current_setting('b9.b')::uuid;
+RESET ROLE;
+SELECT set_config('request.jwt.claim.sub',current_setting('b9.a'),true);
+SET LOCAL ROLE authenticated;
+DELETE FROM public.user_blocks WHERE blocker_id=current_setting('b9.a')::uuid;
+RESET ROLE;
+SELECT set_config('request.jwt.claim.sub',current_setting('b9.b'),true);
+SET LOCAL ROLE authenticated;
+DO $t$ BEGIN
+ IF (SELECT count(*) FROM public.get_public_follow_list('followers','player',current_setting('b9.player')::uuid,NULL))<>1
+ THEN RAISE EXCEPTION 'Unblocking did not restore public follow'; END IF;
+END $t$;
+
 -- Anonymous public discovery is intentional in historical contract; no block rows.
 RESET ROLE;
 SELECT set_config('request.jwt.claim.sub','',true);
@@ -395,6 +418,34 @@ DO $t$ BEGIN
  IF (SELECT count(*) FROM public.get_public_follow_list('following',NULL,NULL,current_setting('b9.a')::uuid)) <> 1
  THEN RAISE EXCEPTION 'Private fan cannot access own following'; END IF;
 END $t$;
+-- Existing player visibility contract: a private player does not expose
+-- their follower list to anon/nonowner; simulated owner may access it.
+RESET ROLE;
+SELECT set_config('request.jwt.claim.sub',current_setting('b9.a'),true);
+UPDATE public.profiles SET profile_visibility='public' WHERE id=current_setting('b9.a')::uuid;
+SELECT set_config('request.jwt.claim.sub',current_setting('b9.player'),true);
+UPDATE public.profiles SET profile_visibility='private' WHERE id=current_setting('b9.player')::uuid;
+SELECT set_config('request.jwt.claim.sub','',true);
+SET LOCAL ROLE anon;
+DO $t$ BEGIN
+ IF (SELECT count(*) FROM public.get_public_follow_list('followers','player',current_setting('b9.player')::uuid,NULL))<>0
+ THEN RAISE EXCEPTION 'Private player follower list disclosed to anon'; END IF;
+END $t$;
+RESET ROLE;
+SELECT set_config('request.jwt.claim.sub',current_setting('b9.b'),true);
+SET LOCAL ROLE authenticated;
+DO $t$ BEGIN
+ IF (SELECT count(*) FROM public.get_public_follow_list('followers','player',current_setting('b9.player')::uuid,NULL))<>0
+ THEN RAISE EXCEPTION 'Private player follower list disclosed to unrelated viewer'; END IF;
+END $t$;
+RESET ROLE;
+SELECT set_config('request.jwt.claim.sub',current_setting('b9.player'),true);
+SET LOCAL ROLE authenticated;
+DO $t$ BEGIN
+ IF (SELECT count(*) FROM public.get_public_follow_list('followers','player',current_setting('b9.player')::uuid,NULL))<>1
+ THEN RAISE EXCEPTION 'Simulated private player owner cannot see public follower'; END IF;
+END $t$;
+
 RESET ROLE;
 DO $t$ BEGIN
  BEGIN
