@@ -26,8 +26,16 @@ assert.ok(checkout.includes('const trialRolloutEnabled ='), "Sandbox trial gate 
 assert.doesNotMatch(checkout, /const trialRolloutEnabled = true;/, "Trial must never enable unconditionally");
 assert.match(checkout, /\.\.\.\(trialEligible \? \{ trial_period_days: 7 \} : \{\}\)/,
   "Stripe trial must only be issued through eligibility gate");
-assert.match(trialPolicy, /input\.accountType === "player"/,
-  "Only Player accounts may receive the trial");
+assert.match(trialPolicy, /input\\.accountType\\.trim\\(\\)\\.length > 0/,
+  "Every authenticated account type may qualify after profile validation");
+assert.doesNotMatch(trialPolicy, /input\\.accountType === "player"/,
+  "Trial eligibility must not be Player-only");
+assert.doesNotMatch(checkout, /trialRolloutEnabled && checkoutProfile\\.account_type === "player"/,
+  "Initial trial gate must include all valid account types");
+assert.match(checkout, /rolloutEnabled: trialRolloutEnabled,/,
+  "Final eligibility gate must not restrict trials by account type");
+assert.match(membership, /all HoopCheck account types/,
+  "Public trial notice must describe all account types");
 assert.match(migration, /user_id uuid primary key/,
   "Claims must be unique per user");
 assert.match(migration, /revoke all on function public\.reserve_stripe_trial\(uuid\) from public, anon, authenticated/,
