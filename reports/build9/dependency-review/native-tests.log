@@ -1,0 +1,39 @@
+
+> @hoopcheck/mobile@0.2.0 test:native
+> node --experimental-strip-types --test scripts/*.test.mjs
+
+✔ scripts/account-client.test.mjs (145.183457ms)
+✔ scripts/auth-intents.test.mjs (205.647367ms)
+✔ scripts/button-content.test.mjs (398.586103ms)
+✔ scripts/club-groups.test.mjs (199.693894ms)
+✔ scripts/connection-presentation.test.mjs (88.547128ms)
+✔ scripts/directory-search.test.mjs (214.365282ms)
+✔ scripts/draft-store.test.mjs (86.268228ms)
+✔ scripts/feed-client.test.mjs (170.155957ms)
+✔ scripts/live-games.test.mjs (175.464078ms)
+✔ scripts/media-client.test.mjs (468.248777ms)
+✔ scripts/media-selection.test.mjs (517.965944ms)
+✔ scripts/membership-screen.test.mjs (722.530715ms)
+✔ scripts/mfa-core.test.mjs (106.944264ms)
+✔ scripts/mfa-session.test.mjs (485.090431ms)
+✔ scripts/modal-regressions.test.mjs (1060.120601ms)
+✔ scripts/native-contracts.test.mjs (127.570592ms)
+✔ scripts/notifications.test.mjs (220.613154ms)
+✔ scripts/own-profile.test.mjs (243.982249ms)
+✔ scripts/pending-destination.test.mjs (162.599683ms)
+✔ scripts/player-profiles.test.mjs (296.492329ms)
+✔ scripts/preference-store.test.mjs (114.993284ms)
+✔ scripts/profile-editor.test.mjs (187.156782ms)
+✔ scripts/review-access.test.mjs (132.217152ms)
+✔ scripts/startup-recovery.test.mjs (477.351538ms)
+✔ scripts/storekit-client.test.mjs (420.719884ms)
+✔ scripts/team-directory.test.mjs (154.555104ms)
+✔ scripts/theme-preference.test.mjs (90.839021ms)
+ℹ tests 27
+ℹ suites 0
+ℹ pass 27
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7693.026157

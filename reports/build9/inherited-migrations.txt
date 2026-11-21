@@ -1,0 +1,5 @@
+supabase/migrations/20261118162305_player_profile_country_privacy.sql
+supabase/migrations/20261118162456_opted_in_mfa_enforcement.sql
+supabase/migrations/20261119043244_storekit_membership_sources.sql
+supabase/migrations/20261119074537_profile_private_field_boundary.sql
+supabase/migrations/20261119075626_restrict_private_profile_columns.sql

@@ -1,4 +1,6 @@
 "use client";
+import { getEffectiveMembership } from "../lib/billing/client-membership";
+
 
 import { useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -70,7 +72,7 @@ export default function FanBasketballSideSwitch({ lockedHint = false }: { locked
       if (!user) { if (alive) setReady(true); return; }
       const [{ data: profile }, { data: subscription }] = await Promise.all([
         supabase.from("profiles").select("account_type,preferred_basketball_side").eq("id", user.id).maybeSingle(),
-        supabase.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id", user.id).maybeSingle(),
+        getEffectiveMembership(user.id),
       ]);
       if (!alive) return;
       const fan = profile?.account_type === "fan";

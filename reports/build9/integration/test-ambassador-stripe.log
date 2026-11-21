@@ -1,0 +1,17 @@
+✔ Stripe actual receipt, tax and fee are passed separately; discounts are already reflected (2.796119ms)
+✔ zero cash, wrong customer and missing attribution do not invoke the ledger (0.957565ms)
+✔ missing processor fee fails the event for retry (0.627247ms)
+✔ signed refund and dispute events reconcile current charge using cumulative deductions (4.840915ms)
+✔ multiple refunds are audited individually; replay and out-of-order events preserve identities (0.779709ms)
+✔ Stripe charge.refund.updated event reconciles the associated charge (0.300642ms)
+✔ refund pagination and mismatched charge fail reconciliation for safe retry (0.689207ms)
+✔ checkout and cancellation update referral status without generating earnings (0.587804ms)
+✔ test Stripe credentials require the separate Supabase project (14.128738ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 32.844054

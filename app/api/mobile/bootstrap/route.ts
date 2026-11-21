@@ -17,7 +17,7 @@ export async function GET(request: Request) {
     if (authError || !auth.user) return reply({ error: "Session expired. Sign in again." }, 401);
     const [profile, subscription, role] = await Promise.all([
       scoped.from("profiles").select("account_type,display_name,player_verified").eq("id", auth.user.id).maybeSingle(),
-      scoped.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id", auth.user.id).maybeSingle(),
+      scoped.from("membership_entitlements").select("plan,status,access_status,current_period_end").eq("user_id", auth.user.id).maybeSingle(),
       scoped.rpc("get_current_user_admin_role"),
     ]);
     if (profile.error || subscription.error || role.error) return reply({ error: "Account access could not be verified." }, 503);

@@ -1,0 +1,4 @@
+PASS light free fan: directory/search/verified join/moderated post/draft/comment/report/leave/privacy
+PASS dark free fan: directory/search/verified join/moderated post/draft/comment/report/leave/privacy
+PASS non-fan group permission gate
+PASS appointed moderator: read/pin/confirmed remove with no fan posting grant

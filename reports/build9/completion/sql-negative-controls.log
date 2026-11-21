@@ -1,0 +1,17 @@
+PASS negative MFA SQL: baseline
+PASS negative MFA SQL: hook_conflict
+✔ scripts/test-mfa-sql-negative.mjs (7457.929152ms)
+PASS: suite rejects username regression
+PASS: suite rejects directory regression
+PASS: suite rejects consent regression
+✔ scripts/test-profile-compatibility-sql-negative.mjs (6522.847256ms)
+PASS: regressions reject the known raw country exposure when only the ACL repair is omitted
+✔ scripts/test-profile-private-sql-negative.mjs (1024.442979ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 15103.641483

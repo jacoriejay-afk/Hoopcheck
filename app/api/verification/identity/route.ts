@@ -44,7 +44,7 @@ export async function POST(req:Request){
   if(!profile || !["player","coach"].includes(profile.account_type || ""))
     return NextResponse.json({error:"Only player and coach accounts can start identity verification."},{status:403});
   if(profile.account_type==="coach"){
-    const {data:sub}=await supabase.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id",user.id).maybeSingle();
+    const {data:sub}=await supabase.from("membership_entitlements").select("plan,status,access_status,current_period_end").eq("user_id",user.id).maybeSingle();
     const entitlements = getHoopCheckEntitlements({ accountType: profile.account_type, subscription: sub });
     if(!entitlements.canStartCoachIdentityVerification) return NextResponse.json({error:"Coach identity verification is available to active Pro and Premium coaches."},{status:403});
   }

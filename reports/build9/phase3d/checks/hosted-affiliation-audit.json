@@ -1,0 +1,266 @@
+{
+  "tables": [
+    {
+      "rls": true,
+      "name": "player_team_affiliations",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid"
+        },
+        {
+          "name": "user_id",
+          "type": "uuid"
+        },
+        {
+          "name": "team_id",
+          "type": "uuid"
+        },
+        {
+          "name": "relationship",
+          "type": "text"
+        },
+        {
+          "name": "start_date",
+          "type": "date"
+        },
+        {
+          "name": "end_date",
+          "type": "date"
+        },
+        {
+          "name": "verified",
+          "type": "boolean"
+        },
+        {
+          "name": "evidence_url",
+          "type": "text"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "name": "player_verification_requests",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid"
+        },
+        {
+          "name": "user_id",
+          "type": "uuid"
+        },
+        {
+          "name": "current_team",
+          "type": "text"
+        },
+        {
+          "name": "current_country",
+          "type": "text"
+        },
+        {
+          "name": "league",
+          "type": "text"
+        },
+        {
+          "name": "note",
+          "type": "text"
+        },
+        {
+          "name": "status",
+          "type": "text"
+        },
+        {
+          "name": "reviewer_id",
+          "type": "uuid"
+        },
+        {
+          "name": "reviewer_note",
+          "type": "text"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone"
+        },
+        {
+          "name": "reviewed_at",
+          "type": "timestamp with time zone"
+        },
+        {
+          "name": "evidence_url",
+          "type": "text"
+        },
+        {
+          "name": "document_type",
+          "type": "text"
+        },
+        {
+          "name": "document_path",
+          "type": "text"
+        },
+        {
+          "name": "document_uploaded_at",
+          "type": "timestamp with time zone"
+        },
+        {
+          "name": "team_id",
+          "type": "uuid"
+        },
+        {
+          "name": "womens_team_id",
+          "type": "uuid"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "name": "profile_claim_requests",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid"
+        },
+        {
+          "name": "entity_type",
+          "type": "text"
+        },
+        {
+          "name": "entity_id",
+          "type": "uuid"
+        },
+        {
+          "name": "requester_id",
+          "type": "uuid"
+        },
+        {
+          "name": "organization_email",
+          "type": "text"
+        },
+        {
+          "name": "verification_method",
+          "type": "text"
+        },
+        {
+          "name": "proof_document_path",
+          "type": "text"
+        },
+        {
+          "name": "status",
+          "type": "text"
+        },
+        {
+          "name": "admin_note",
+          "type": "text"
+        },
+        {
+          "name": "reviewed_by",
+          "type": "uuid"
+        },
+        {
+          "name": "reviewed_at",
+          "type": "timestamp with time zone"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone"
+        }
+      ]
+    }
+  ],
+  "policies": [
+    {
+      "name": "Admins delete team affiliations",
+      "check": null,
+      "roles": [
+        "authenticated"
+      ],
+      "table": "player_team_affiliations",
+      "using": "is_current_user_admin_or_moderator()",
+      "command": "DELETE"
+    },
+    {
+      "name": "Admins insert team affiliations",
+      "check": "is_current_user_admin_or_moderator()",
+      "roles": [
+        "authenticated"
+      ],
+      "table": "player_team_affiliations",
+      "using": null,
+      "command": "INSERT"
+    },
+    {
+      "name": "Admins update team affiliations",
+      "check": "is_current_user_admin_or_moderator()",
+      "roles": [
+        "authenticated"
+      ],
+      "table": "player_team_affiliations",
+      "using": "is_current_user_admin_or_moderator()",
+      "command": "UPDATE"
+    },
+    {
+      "name": "Team affiliations owner or admin read",
+      "check": null,
+      "roles": [
+        "authenticated"
+      ],
+      "table": "player_team_affiliations",
+      "using": "((user_id = ( SELECT auth.uid() AS uid)) OR is_current_user_admin_or_moderator())",
+      "command": "SELECT"
+    },
+    {
+      "name": "Players can submit own verification requests",
+      "check": "((user_id = ( SELECT auth.uid() AS uid)) AND (status = 'pending'::text) AND (EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.id = ( SELECT auth.uid() AS uid)) AND (p.account_type = 'player'::text)))))",
+      "roles": [
+        "authenticated"
+      ],
+      "table": "player_verification_requests",
+      "using": null,
+      "command": "INSERT"
+    },
+    {
+      "name": "Verification requests owner or admin read",
+      "check": null,
+      "roles": [
+        "authenticated"
+      ],
+      "table": "player_verification_requests",
+      "using": "((user_id = ( SELECT auth.uid() AS uid)) OR (EXISTS ( SELECT 1\n   FROM admin_roles ar\n  WHERE ((ar.user_id = ( SELECT auth.uid() AS uid)) AND (TRIM(BOTH FROM lower(ar.role)) = ANY (ARRAY['admin'::text, 'moderator'::text]))))))",
+      "command": "SELECT"
+    },
+    {
+      "name": "approved owners manage profile claim queue",
+      "check": "is_approved_claim_owner()",
+      "roles": [
+        "authenticated"
+      ],
+      "table": "profile_claim_requests",
+      "using": "is_approved_claim_owner()",
+      "command": "UPDATE"
+    },
+    {
+      "name": "claim request owners can read own",
+      "check": null,
+      "roles": [
+        "authenticated"
+      ],
+      "table": "profile_claim_requests",
+      "using": "((requester_id = ( SELECT auth.uid() AS uid)) OR is_current_user_admin_or_moderator())",
+      "command": "SELECT"
+    },
+    {
+      "name": "coaches and managers can submit profile claims",
+      "check": "((requester_id = ( SELECT auth.uid() AS uid)) AND (status = 'pending'::text) AND (EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.id = ( SELECT auth.uid() AS uid)) AND (p.account_type = ANY (ARRAY['coach'::text, 'manager'::text]))))))",
+      "roles": [
+        "authenticated"
+      ],
+      "table": "profile_claim_requests",
+      "using": null,
+      "command": "INSERT"
+    }
+  ]
+}

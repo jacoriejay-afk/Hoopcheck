@@ -80,22 +80,12 @@ export default function PlayersPage() {
       void (async () => {
         setLoading(true);
         setSearchError("");
-        const escapedUsername = username.replace(/[\\%_]/g, "\\$&");
-        let request = supabase
-          .from("profiles")
-          .select("id,display_name,username,first_name,last_name,country,current_country,current_team,position,years_pro,player_verified,avatar_url,basketball_type,free_agent")
-          .eq("account_type", "player")
-          .eq("profile_visibility", "public")
-          .neq("moderation_status", "suspended")
-          .not("username", "is", null)
-          .ilike("username", `%${escapedUsername}%`)
-          .order("username", { ascending: true });
-
-        const escapedCountry = country.trim().replace(/[\\%_]/g, "\\$&");
-        if (escapedCountry) request = request.ilike("current_country", `%${escapedCountry}%`);
+        const request = supabase.rpc("search_public_players_by_username", {
+          p_username: username, p_country: country.trim() || null, p_limit: size, p_offset: page * size,
+        });
 
         const { data, error } = await withTimeout<any>(
-          request.range(page * size, page * size + size - 1),
+          request,
           5000,
           { data: [], error: new Error("Search timed out") },
         );

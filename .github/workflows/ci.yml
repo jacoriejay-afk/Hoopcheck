@@ -39,6 +39,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -52,11 +54,8 @@ jobs:
       - name: Audit production dependencies (blocking)
         run: npm audit --omit=dev --audit-level=high
 
-      - name: Full dependency audit (informational)
-        run: |
-          if ! npm audit --audit-level=high; then
-            echo "::warning::Full audit reports unresolved advisories. Review the audit output; the production-only audit above remains blocking."
-          fi
+      - name: Audit all dependencies (blocking high severity)
+        run: npm audit --audit-level=high
 
       - name: Audit hardcoded white surfaces (blocking)
         run: npm run audit:surfaces
@@ -74,6 +73,60 @@ jobs:
         run: |
           createdb -h 127.0.0.1 -U postgres hoopcheck_organization_test
           psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_organization_test -f supabase/tests/hoopfeed_organization_isolated.sql
+
+      - name: Verify player profile privacy with isolated synthetic roles
+        env:
+          PGPASSWORD: postgres
+        run: |
+          createdb -h 127.0.0.1 -U postgres hoopcheck_profile_privacy_test
+          psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_profile_privacy_test -f supabase/tests/player_profile_privacy.sql
+
+      - name: Verify private profile columns and masked legacy discovery APIs
+        env:
+          PGPASSWORD: postgres
+        run: |
+          createdb -h 127.0.0.1 -U postgres hoopcheck_private_fields_test
+          psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_private_fields_test -f supabase/tests/profile_private_fields.sql
+          psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_private_fields_test -f supabase/tests/build9_legacy_projection_design.sql
+          PGHOST=127.0.0.1 PGUSER=postgres node scripts/test-profile-private-sql-negative.mjs
+          PGHOST=127.0.0.1 PGUSER=postgres node scripts/test-profile-compatibility-sql-negative.mjs
+          psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_private_fields_test -f supabase/tests/build9_scoped_player_profile.sql
+
+      - name: Verify optional MFA policies and privileged request enforcement
+        env:
+          PGPASSWORD: postgres
+        run: |
+          createdb -h 127.0.0.1 -U postgres hoopcheck_mfa_test
+          psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_mfa_test -f supabase/tests/opted_in_mfa.sql
+          node --test scripts/test-mfa-enforcement.mjs
+          PGHOST=127.0.0.1 PGUSER=postgres node scripts/test-mfa-sql-negative.mjs
+
+      - name: Verify StoreKit ownership, membership sources, trials and refund isolation
+        env:
+          PGPASSWORD: postgres
+        run: |
+          createdb -h 127.0.0.1 -U postgres hoopcheck_storekit_test
+          psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_storekit_test -f supabase/tests/storekit_membership_isolated.sql
+          node --test scripts/test-storekit-server.mjs
+          node --test scripts/test-membership-reader.mjs
+          node --test scripts/test-checkout-membership-policy.mjs
+
+      - name: Rehearse committed synthetic purchase containment over a local socket
+        run: |
+          python3 scripts/rehearse-build9-compensation.py /tmp/build9-compensation.sql --synthetic --sql-root /repo
+          docker exec ${{ job.services.postgres.id }} mkdir -p /repo
+          docker cp supabase ${{ job.services.postgres.id }}:/repo/supabase
+          docker cp scripts ${{ job.services.postgres.id }}:/repo/scripts
+          docker cp /tmp/build9-compensation.sql ${{ job.services.postgres.id }}:/tmp/build9-compensation.sql
+          docker exec ${{ job.services.postgres.id }} createdb -U postgres hoop_prod_rehearsal
+          docker exec ${{ job.services.postgres.id }} psql -U postgres -d hoop_prod_rehearsal -v ON_ERROR_STOP=1 -f /tmp/build9-compensation.sql
+          docker exec ${{ job.services.postgres.id }} createdb -U postgres wrong_compensation_target
+          if docker exec ${{ job.services.postgres.id }} psql -U postgres -d wrong_compensation_target -v ON_ERROR_STOP=1 -f /tmp/build9-compensation.sql > /tmp/build9-wrong-target.log 2>&1; then
+            echo "Wrong-target compensation guard failed"
+            exit 1
+          fi
+          grep -Fq 'Only the isolated socket rehearsal database is permitted' /tmp/build9-wrong-target.log
+          test "$(docker exec ${{ job.services.postgres.id }} psql -U postgres -d wrong_compensation_target -Atc "select count(*) from pg_tables where schemaname='public'")" = 0
 
       - name: Verify Ambassador HQ database security and commission lifecycle
         env:
@@ -93,11 +146,22 @@ jobs:
       - name: Verify seven-day trial eligibility policy
         run: npm run test:stripe-trial
 
+      - name: Verify all Stripe price tier and interval mappings
+        run: |
+          node --test scripts/test-stripe-price-mapping.mjs
+          node --test scripts/test-checkout-membership-policy.mjs
+
       - name: Verify fail-closed Stripe trial recovery policy
         run: npm run test:stripe-trial-recovery
 
       - name: Verify Ambassador HQ Stripe invoice and adjustment handling
         run: node --test scripts/test-ambassador-stripe.mjs
+
+      - name: Verify computed theme color arithmetic
+        run: node --test scripts/test-theme-color-math.mjs
+
+      - name: Verify Apple universal-link association contracts
+        run: node --test scripts/test-apple-app-site-association.mjs
 
       - name: Verify native bootstrap authorization
         run: node --test scripts/test-mobile-bootstrap.mjs
@@ -162,6 +226,9 @@ jobs:
 
       - name: Verify player profile completion
         run: node scripts/check-player-completion-browser.mjs
+
+      - name: Verify membership providers, role offers and billing recovery
+        run: node scripts/check-membership-provider-browser.cjs
 
       - name: Verify canonical sitemap and robots host
         run: node scripts/domain-url-check.mjs

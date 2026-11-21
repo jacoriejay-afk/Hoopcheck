@@ -1,4 +1,6 @@
 "use client";
+import { getEffectiveMembership } from "../../lib/billing/client-membership";
+
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -30,7 +32,7 @@ export default function VerificationPage() {
   useEffect(()=>{(async()=>{
     const {data:{user}}=await supabase.auth.getUser();
     if(!user){window.location.href="/login";return;}
-    const {data:profile}=await supabase.from("profiles").select("account_type,basketball_type,identity_verification_status,coach_verified,player_verified").eq("id",user.id).maybeSingle(); if(!["player","coach"].includes(profile?.account_type || "")){window.location.href="/account";return;} setAccountType(profile?.account_type as "player"|"coach"); if(profile?.account_type==="coach"){const {data:sub}=await supabase.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id",user.id).maybeSingle();setCoachMembershipEligible(getHoopCheckEntitlements({accountType:profile.account_type,subscription:sub}).canStartCoachIdentityVerification);} setBasketballType(profile?.basketball_type||"mens"); setIdentityStatus(profile?.identity_verification_status || "not_started");
+    const {data:profile}=await supabase.from("profiles").select("account_type,basketball_type,identity_verification_status,coach_verified,player_verified").eq("id",user.id).maybeSingle(); if(!["player","coach"].includes(profile?.account_type || "")){window.location.href="/account";return;} setAccountType(profile?.account_type as "player"|"coach"); if(profile?.account_type==="coach"){const {data:sub}=await getEffectiveMembership(user.id);setCoachMembershipEligible(getHoopCheckEntitlements({accountType:profile.account_type,subscription:sub}).canStartCoachIdentityVerification);} setBasketballType(profile?.basketball_type||"mens"); setIdentityStatus(profile?.identity_verification_status || "not_started");
     const {data:{session}}=await supabase.auth.getSession();
     if(session?.access_token){
       const identityRes=await fetch("/api/verification/identity",{headers:{Authorization:"Bearer "+session.access_token}});

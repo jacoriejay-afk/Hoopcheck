@@ -24,7 +24,7 @@ export default function AuthCallback() {
         const { data, error } = await supabase.auth.exchangeCodeForSession(code);
         if (error) throw error;
         if (!data.user) throw new Error("Google sign-in did not return a user.");
-        recordFreshSignIn();
+        recordFreshSignIn(data.user.id);
         const profile = await supabase.from("profiles").select("username").eq("id", data.user.id).maybeSingle();
         if (active) router.replace((profile.data && !profile.data.username?.trim() ? "/choose-username" : takeDestination() ?? "/dashboard") as "/dashboard");
       } catch {

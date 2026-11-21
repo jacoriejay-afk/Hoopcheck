@@ -1,0 +1,2 @@
+PASS light: photo selection/rotation/rejection-retained draft/publish/private video/owned avatar upload/moderation unchanged
+PASS dark: photo selection/rotation/rejection-retained draft/publish/private video/owned avatar upload/moderation unchanged

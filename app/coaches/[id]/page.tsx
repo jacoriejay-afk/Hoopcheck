@@ -1,4 +1,6 @@
 "use client";
+import { getEffectiveMembership } from "../../../lib/billing/client-membership";
+
 
 import {
   useEffect,
@@ -257,16 +259,7 @@ export default function CoachDetailPage() {
 
       const {
         data: subscription,
-      } = await supabase
-        .from("subscriptions")
-        .select(
-          "plan, status, access_status, current_period_end"
-        )
-        .eq(
-          "user_id",
-          user.id
-        )
-        .maybeSingle();
+      } = await getEffectiveMembership(user.id);
 
       const {
         data: adminResult,

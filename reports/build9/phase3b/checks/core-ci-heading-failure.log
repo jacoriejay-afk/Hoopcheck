@@ -1,0 +1,74 @@
+mobile-typecheck	Verify native community, permissions and navigation in both themes	﻿2026-11-21T08:43:49.1874848Z ##[group]Run node scripts/verify-membership-browser.cjs
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:43:49.1875686Z [36;1mnode scripts/verify-membership-browser.cjs[0m
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:43:49.1876109Z [36;1mnode scripts/verify-mfa-browser.cjs[0m
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:43:49.1876537Z [36;1mnode scripts/verify-player-profiles-browser.cjs[0m
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:43:49.1877032Z [36;1mnode scripts/verify-media-browser.cjs[0m
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:43:49.1877520Z [36;1mnode scripts/verify-profile-editor-browser.cjs[0m
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:43:49.1878191Z [36;1mnode scripts/verify-club-groups-browser.cjs[0m
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:43:49.1878644Z [36;1mnode scripts/verify-live-games-browser.cjs[0m
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:43:49.1879063Z [36;1mnode scripts/verify-feed-browser.cjs[0m
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:43:49.1879477Z [36;1mnode scripts/verify-discovery-browser.cjs[0m
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:43:49.1879939Z [36;1mnode scripts/verify-theme-preference-browser.cjs[0m
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:43:49.1880395Z [36;1mnode scripts/verify-design-browser.cjs[0m
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:43:49.1917276Z shell: /usr/bin/bash -e {0}
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:43:49.1917639Z env:
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:43:49.1917924Z   NATIVE_TEST_URL: http://127.0.0.1:8092
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:43:49.1918299Z   CHROMIUM_PATH: /usr/bin/google-chrome
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:43:49.1918639Z ##[endgroup]
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:43:59.0731663Z PASS: native membership unsupported-module/restore safeguards, player light
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:44:00.0225870Z PASS: native membership unsupported-module/restore safeguards, fan light
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:44:00.9399227Z PASS: native membership unsupported-module/restore safeguards, player dark
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:44:01.8735754Z PASS: native membership unsupported-module/restore safeguards, fan dark
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:44:04.4344361Z PASS light: cold MFA gate/wrong code/backup recovery/enrollment/fresh-code removal/last-factor confirmation/background secret clearing/cancellation
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:44:06.2332375Z PASS dark: cold MFA gate/wrong code/backup recovery/enrollment/fresh-code removal/last-factor confirmation/background secret clearing/cancellation
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:44:08.8824024Z PASS light player: verified role/canonical RPC/current-country opt-in/approved avatar/private-profile denial
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:44:10.9321587Z PASS dark player: verified role/canonical RPC/current-country opt-in/approved avatar/private-profile denial
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:44:11.8299911Z PASS light fan: verified role/canonical RPC/current-country opt-in/approved avatar/private-profile denial
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:44:14.6173013Z PASS light: photo selection/rotation/rejection-retained draft/publish/private video/owned avatar upload/moderation unchanged
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:44:16.5161321Z PASS dark: photo selection/rotation/rejection-retained draft/publish/private video/owned avatar upload/moderation unchanged
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:44:18.2854828Z PASS light player: own profile/locked identity/role fields/failure draft/save/cover/navigation/reload
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:44:19.5341971Z PASS dark player: own profile/locked identity/role fields/failure draft/save/cover/navigation/reload
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:44:20.7341740Z PASS light fan: own profile/locked identity/role fields/failure draft/save/cover/navigation/reload
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:44:21.9342099Z PASS dark coach: own profile/locked identity/role fields/failure draft/save/cover/navigation/reload
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:44:24.2265583Z PASS light free fan: directory/search/verified join/moderated post/draft/comment/report/leave/privacy
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:44:25.9246572Z PASS dark free fan: directory/search/verified join/moderated post/draft/comment/report/leave/privacy
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:44:26.9773488Z PASS non-fan group permission gate
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:44:28.2257281Z PASS appointed moderator: read/pin/confirmed remove with no fan posting grant
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:44:30.4541919Z PASS light fan pro: game listing, role gates, side preference, predictions, chat draft/error/send/report/mute/restore/block
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:44:32.0856607Z PASS dark fan pro: game listing, role gates, side preference, predictions, chat draft/error/send/report/mute/restore/block
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:44:32.9537582Z PASS light player free: game listing, role gates, side preference, predictions
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:44:33.5565548Z PASS fan free: game/chat permission gate
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:44:34.1673490Z PASS coach paid: game/chat permission gate
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:45:07.3135020Z Fixture failure URL: http://127.0.0.1:8092/search
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:45:07.3157927Z Search
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:45:07.3158318Z Find your next basketball connection.
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:45:07.3158662Z All
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:45:07.3161467Z Men’s teams
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:45:07.3161765Z Women’s teams
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:45:07.3162403Z Men’s leagues
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:45:07.3162598Z Women’s leagues
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:45:07.3162773Z Players
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:45:07.3162939Z Coaches
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:45:07.3163241Z Enter at least two characters. Player search uses public usernames.
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:45:07.3163556Z 
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:45:07.3163710Z Home
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:45:07.3163878Z 
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:45:07.3164027Z HoopFeed
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:45:07.3164205Z 
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:45:07.3164348Z Search
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:45:07.3164508Z 
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:45:07.3164651Z Alerts
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:45:07.3164810Z 
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:45:07.3164949Z Account
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:45:07.3893411Z locator.waitFor: Timeout 30000ms exceeded.
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:45:07.3893796Z Call log:
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:45:07.3894164Z   - waiting for getByText('Search basketball', { exact: true }) to be visible
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:45:07.3894413Z 
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:45:07.3894729Z     at fixture (/home/runner/work/Hoopcheck/Hoopcheck/apps/mobile/scripts/verify-feed-browser.cjs:124:123)
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:45:07.3895480Z     at async /home/runner/work/Hoopcheck/Hoopcheck/apps/mobile/scripts/verify-feed-browser.cjs:130:356 {
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:45:07.3895916Z   log: [
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:45:07.3896246Z     "  - waiting for getByText('Search basketball', { exact: true }) to be visible"
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:45:07.3896552Z   ],
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:45:07.3896718Z   name: 'TimeoutError'
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:45:07.3896902Z }
+mobile-typecheck	Verify native community, permissions and navigation in both themes	2026-11-21T08:45:07.7489263Z ##[error]Process completed with exit code 1.

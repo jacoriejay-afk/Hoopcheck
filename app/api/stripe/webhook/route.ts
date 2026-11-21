@@ -30,24 +30,11 @@ function getAdminSupabase() {
 }
 
 function getPlanFromPrice(priceId: string | undefined, metadata?: Record<string,string>): "pro" | "premium" | null {
-  const proPriceId =
-    process.env.STRIPE_PRO_PRICE_ID;
-
-  const premiumPriceId =
-    process.env.STRIPE_PREMIUM_PRICE_ID;
-
-  if (
-    premiumPriceId &&
-    priceId === premiumPriceId
-  ) {
-    return "premium";
-  }
-
-  if (
-    proPriceId &&
-    priceId === proPriceId
-  ) {
-    return "pro";
+  for (const tier of ["premium", "pro"] as const) {
+    const prefix = `STRIPE_${tier.toUpperCase()}`;
+    const configuredIds = ["_PRICE_ID", "_6_MONTH_PRICE_ID", "_YEAR_PRICE_ID"]
+      .map((suffix) => process.env[`${prefix}${suffix}`]);
+    if (priceId && configuredIds.includes(priceId)) return tier;
   }
 
   const metadataPlan = metadata?.plan;
@@ -59,15 +46,15 @@ function getBillingInterval(
   subscriptionMetadata?: Record<string, string>
 ): "month" | "6_month" | "year" {
   if (
-    priceId === process.env.STRIPE_PRO_YEAR_PRICE_ID ||
-    priceId === process.env.STRIPE_PREMIUM_YEAR_PRICE_ID
+    priceId && (priceId === process.env.STRIPE_PRO_YEAR_PRICE_ID ||
+    priceId === process.env.STRIPE_PREMIUM_YEAR_PRICE_ID)
   ) {
     return "year";
   }
 
   if (
-    priceId === process.env.STRIPE_PRO_6_MONTH_PRICE_ID ||
-    priceId === process.env.STRIPE_PREMIUM_6_MONTH_PRICE_ID
+    priceId && (priceId === process.env.STRIPE_PRO_6_MONTH_PRICE_ID ||
+    priceId === process.env.STRIPE_PREMIUM_6_MONTH_PRICE_ID)
   ) {
     return "6_month";
   }

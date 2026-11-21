@@ -1,0 +1,6 @@
+
+> hoopcheck@1.0.0 audit:surfaces
+> node scripts/audit-hardcoded-surfaces.mjs
+
+HARDCODED_SURFACE_AUDIT=PASS
+TOTAL_MATCHES=0

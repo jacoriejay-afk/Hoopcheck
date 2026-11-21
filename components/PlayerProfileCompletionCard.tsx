@@ -1,5 +1,7 @@
 "use client";
 
+import { getOwnProfile } from "../lib/auth/own-profile";
+
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { getPlayerProfileCompletion, type PlayerProfileCompletionRecord } from "../lib/player-profile-completion";
@@ -13,9 +15,7 @@ export default function PlayerProfileCompletionCard({ profile, onPublished }: { 
 
   const refreshProfile = useCallback(async () => {
     if (!profile.id) return;
-    const { data, error: readError } = await supabase.from("profiles")
-      .select("id,account_type,avatar_url,position,current_team,free_agent,current_country,favorite_leagues,height,bio,hometown,profile_visibility")
-      .eq("id", profile.id).maybeSingle();
+    const { data, error: readError } = await getOwnProfile(supabase, profile.id);
     if (!readError && data) setCurrentProfile(current => ({ ...current, ...data }));
   }, [profile.id]);
 
@@ -43,12 +43,14 @@ export default function PlayerProfileCompletionCard({ profile, onPublished }: { 
     setPublishing(true);
     setError("");
     try {
-      const { data, error: updateError } = await supabase.from("profiles")
+      const { data: ack, error: updateError } = await supabase.from("profiles")
         .update({ profile_visibility: "public" })
         .eq("id", currentProfile.id)
-        .select("id,account_type,avatar_url,position,current_team,free_agent,current_country,favorite_leagues,height,bio,hometown,profile_visibility")
+        .select("id")
         .maybeSingle();
-      if (updateError || !data) throw updateError || new Error("Your profile could not be made public. Please try again.");
+      if (updateError || ack?.id !== currentProfile.id) throw updateError || new Error("Your profile could not be made public. Please try again.");
+      const { data, error: readError } = await getOwnProfile(supabase, currentProfile.id);
+      if (readError || !data) throw new Error("Publication was accepted, but the updated profile could not be confirmed. Refresh before retrying.");
       setCurrentProfile(current => ({ ...current, ...data }));
       onPublished?.();
     } catch (cause) {

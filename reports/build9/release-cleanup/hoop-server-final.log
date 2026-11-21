@@ -1,0 +1,207 @@
+
+RUN scripts/test-ambassador-stripe.mjs
+✔ Stripe actual receipt, tax and fee are passed separately; discounts are already reflected (3.614943ms)
+✔ zero cash, wrong customer and missing attribution do not invoke the ledger (0.961565ms)
+✔ missing processor fee fails the event for retry (0.601464ms)
+✔ signed refund and dispute events reconcile current charge using cumulative deductions (9.140041ms)
+✔ multiple refunds are audited individually; replay and out-of-order events preserve identities (0.989407ms)
+✔ Stripe charge.refund.updated event reconciles the associated charge (0.32591ms)
+✔ refund pagination and mismatched charge fail reconciliation for safe retry (0.614734ms)
+✔ checkout and cancellation update referral status without generating earnings (0.421814ms)
+✔ test Stripe credentials require the separate Supabase project (11.729337ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 37.995223
+
+RUN scripts/test-apple-app-site-association.mjs
+✔ association uses the owner-confirmed signing prefix and rejects mismatched overrides and uses the exact bundle ID (1.49042ms)
+✔ association allows implemented native paths while browser auth/referral and nested fallback paths remain excluded (1.774366ms)
+✔ actual route serves the confirmed identity by default and never caches mismatched configuration (21.38031ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 32.590927
+
+RUN scripts/test-balldontlie-validation.mjs
+✔ missing configuration or invalid authorization rejects before contacting the provider (47.076746ms)
+✔ an authorized call without a provider key fails closed without an outbound request (0.681213ms)
+✔ one bounded read-only request returns only aggregate statuses and bypasses caching (5.121327ms)
+✔ an empty game day succeeds without invented fixtures (0.954665ms)
+✔ malformed provider responses fail rather than reporting successful validation (4.323267ms)
+✔ provider errors, connection failures and timeouts never expose payloads or credentials (1.236538ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 67.900779
+
+RUN scripts/test-checkout-membership-policy.mjs
+Stripe checkout price configuration mismatch {
+  lookupKey: 'hoopcheck_pro_6_month_2695_2026',
+  priceId: 'price_fixture'
+}
+Stripe checkout price configuration mismatch { lookupKey: 'hoopcheck_pro_year_5090_2026', priceId: 'price_fixture' }
+Stripe checkout price configuration mismatch {
+  lookupKey: 'hoopcheck_premium_6_month_5395_2026',
+  priceId: 'price_fixture'
+}
+Stripe checkout price configuration mismatch {
+  lookupKey: 'hoopcheck_premium_year_10190_2026',
+  priceId: 'price_fixture'
+}
+✔ unpriced fans, unconfirmed/suspended accounts and pending deletions cannot start Stripe billing (323.267035ms)
+✔ active or unverifiable Apple billing blocks Stripe before price or checkout calls (70.387737ms)
+✔ coach/manager Premium-only purchase rules retain eligible paid checkout and verified owner attribution (145.519112ms)
+✔ an active raw Stripe/manual membership is not silently repurchased (58.795395ms)
+✔ approved six-term checkout catalog is enforced and stale amounts cannot start billing (247.990037ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 869.11295
+
+RUN scripts/test-membership-reader.mjs
+✔ website access uses the verified effective provider and authenticated private uncached request (21.901002ms)
+✔ concurrent components deduplicate an in-flight owner/token read without retaining a stale result cache (5.093033ms)
+✔ an old account result cannot survive switching away and back (1.255807ms)
+✔ a same-owner token transition invalidates a response even before an Auth listener is notified (0.742536ms)
+✔ invalid proof shapes, a foreign response owner and service errors never grant access (2.197783ms)
+✔ a hung credential read recovers without a network call or abandoning any credential write (0.828374ms)
+✔ unpaid membership is a verified null result; malformed and cross-account requests never reach the API (0.534273ms)
+✔ HTML, empty and truncated JSON responses fail closed and allow a fresh retry (2.048869ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 40.024557
+
+RUN scripts/test-membership-tier.mjs
+VERIFY-1 entitlement matrix: 10 role/tier cells and edge cases passed (22 entitlements).
+
+RUN scripts/test-mfa-enforcement.mjs
+✔ opted-in AAL1 API calls are denied before privileged handlers (36.533664ms)
+✔ AAL2 and non-enrolled AAL1 continue without changing existing route permissions (36.835002ms)
+✔ unverified credentials cannot assert their own AAL2 assurance (24.302948ms)
+✔ public webhooks do not acquire user sessions and keep their own signature checks (14.570413ms)
+✔ SSR cookie API sessions require the same challenge (16.417379ms)
+✔ protected SSR pages redirect to challenge before private profile reads (21.361912ms)
+✔ second-factor verification never bypasses existing pending-signup restrictions (19.068775ms)
+✔ Owner HQ enforces MFA again before any privileged workspace/owner query (65.069444ms)
+✔ AAL2 does not grant the owner role (18.059693ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 402.297341
+
+RUN scripts/test-mobile-bootstrap.mjs
+✔ anonymous and malformed auth cannot start database reads (78.563259ms)
+✔ invalid bearer is verified by Auth and cannot query membership (7.129047ms)
+✔ scoped reads use verified identity and never service credentials or metadata roles (8.54826ms)
+✔ canonical expiry and independently verified admin rules govern entitlements (26.049959ms)
+✔ database and role failures deny access without leaking errors (19.97693ms)
+✔ missing membership entitlement relation fails closed without leaking database details (6.651279ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 158.450357
+
+RUN scripts/test-storekit-server.mjs
+✔ Apple configuration fails closed and Sandbox cannot target production data (6.412532ms)
+✔ actual Apple verifier rejects a fabricated proof despite plausible decoded claims (7.117252ms)
+✔ verified transaction policy rejects cross-account/bundle/environment/fan/family and invalid trial terms (0.744488ms)
+✔ purchase synchronization persists the independently verified live Apple status and acknowledges only after DB success (2.192543ms)
+✔ unverified proofs, disabled billing and foreign ownership never reach a membership write (0.463116ms)
+✔ trial authorization uses the server account, Apple identity and persistent eligibility decision (2.006093ms)
+✔ unpriced fans, pending deletion, existing Stripe billing, invalid app proof and rate limits prevent new purchases (0.761524ms)
+✔ first-time-payer checks use paid invoice history and deny trials when history is unknown (0.361573ms)
+✔ notifications never reassign purchases or silently create unknown-owner entitlements (0.828765ms)
+✔ bounded JSON parsing rejects oversized chunked input and private replies cannot be cached (9.035012ms)
+✔ a prior Stripe trial consumes cross-provider eligibility even without a paid invoice (0.336225ms)
+✔ a live trial cannot be acknowledged when first-payer history is unknown (0.321353ms)
+✔ unknown history cannot produce an eligible signature even if a stale RPC reports true (0.437027ms)
+✔ accelerated Sandbox trials remain isolated from seven-day production receipt rules (0.25964ms)
+✔ coach and manager purchases retain Premium-only rules while other role entitlements remain unchanged (0.688595ms)
+✔ existing Apple billing blocks another native purchase and is freshly checked before a Stripe transition (1.078881ms)
+✔ a new purchase or refund cannot be acknowledged against an older live Apple API state (0.26013ms)
+✔ disabled catalog is a verified empty response without initializing Apple signing or touching membership rows (0.191317ms)
+✔ missing config and enabled billing without signing remain unavailable (0.278048ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 19
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 43.940615
+
+RUN scripts/test-stripe-price-mapping.mjs
+✔ all six configured prices resolve their tier and term without subscription metadata (1.480073ms)
+✔ absent IDs cannot match absent environment variables; metadata fallback is preserved (0.290576ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8.203052
+
+RUN scripts/test-stripe-trial-eligibility.mjs
+Stripe seven-day trial eligibility policy: 11 cases passed
+
+RUN scripts/test-stripe-trial-recovery.mjs
+Stripe trial recovery policy: 11 cases passed
+Trial expiration reconciliation failed Error: stripe unavailable
+    at file:///workspace/Hoopcheck/scripts/test-stripe-trial-recovery.mjs:46:58
+    at reconcileExpiredTrialReservation (data:text/javascript;base64,LyoqCiAqIE9ubHkgYSB2ZXJpZmllZCwgZXhwaXJlZCBzdWJzY3JpcHRpb24gQ2hlY2tvdXQgU2Vzc2lvbiB3aXRoIG5vIHN1YnNjcmlwdGlvbgogKiBhdHRhY2hlZCBjYW4gYmUgY29uc2lkZXJlZCBmb3IgbWFya2luZyBhbiB1bnJlZGVlbWVkIHJlc2VydmF0aW9uIHBlcm1hbmVudGx5IGV4cGlyZWQuCiAqIFRoaXMgcG9saWN5IGlzIGludGVudGlvbmFsbHkgY29uc2VydmF0aXZlOiB1bmtub3duIHN0YXRlcyBzdGF5IGxvY2tlZC4KICogQ2FsbGVyIG11c3QgcmV0cmlldmUgdGhlIHNlc3Npb24gZGlyZWN0bHkgZnJvbSBTdHJpcGUgdXNpbmcgc2VydmVyIGNyZWRlbnRpYWxzCiAqIGFuZCB2ZXJpZnkgdGhlIHNlc3Npb24ncyBhY2NvdW50L3VzZXIgYmluZGluZyBpbmRlcGVuZGVudGx5LgogKi8KZXhwb3J0IGZ1bmN0aW9uIGNhblJlbGVhc2VFeHBpcmVkVHJpYWxTZXNzaW9uKHNlc3Npb24sIHVzZXJJZCwgZXhwZWN0ZWRTZXNzaW9uSWQsIGFjdHVhbFNlc3Npb25JZCkgewogICAgcmV0dXJuIEJvb2xlYW4odXNlcklkKSAmJgogICAgICAgIGV4cGVjdGVkU2Vzc2lvbklkID09PSBhY3R1YWxTZXNzaW9uSWQgJiYKICAgICAgICBhY3R1YWxTZXNzaW9uSWQuc3RhcnRzV2l0aCgiY3NfIikgJiYKICAgICAgICBzZXNzaW9uLm1vZGUgPT09ICJzdWJzY3JpcHRpb24iICYmCiAgICAgICAgc2Vzc2lvbi5zdGF0dXMgPT09ICJleHBpcmVkIiAmJgogICAgICAgIHNlc3Npb24uc3Vic2NyaXB0aW9uID09IG51bGwgJiYKICAgICAgICBzZXNzaW9uLnBheW1lbnRfc3RhdHVzID09PSAidW5wYWlkIiAmJgogICAgICAgIHNlc3Npb24uY2xpZW50X3JlZmVyZW5jZV9pZCA9PT0gdXNlcklkICYmCiAgICAgICAgc2Vzc2lvbi5tZXRhZGF0YT8udXNlcl9pZCA9PT0gdXNlcklkICYmCiAgICAgICAgc2Vzc2lvbi5tZXRhZGF0YT8uc3RyaXBlX3RyaWFsX3Jlc2VydmVkID09PSAidHJ1ZSI7Cn0KLyoqCiAqIFNlcnZlci1vbmx5IHJlY29uY2lsaWF0aW9uIHByaW1pdGl2ZS4gQ2FsbGVycyBtdXN0IG9idGFpbiB0aGUgcmVzZXJ2YXRpb24KICogb3duZXIgYW5kIGJvdW5kIHNlc3Npb24gZnJvbSB0aGUgc2VydmljZS1yb2xlIGRhdGFiYXNlLCBuZXZlciB1c2VyIGlucHV0LgogKiBUaGlzIGZ1bmN0aW9uIGRvZXMgbm90IHJ1biBhdXRvbWF0aWNhbGx5IGFuZCBtdXN0IG5vdCBiZSBleHBvc2VkIHB1YmxpY2x5LgogKiBGYWlsIGNsb3NlZCBvbiBTdHJpcGUgZXJyb3JzLCB1bmV4cGVjdGVkIHN0YXRlLCBvciBkYXRhYmFzZSBSUEMgZXJyb3JzLgogKi8KZXhwb3J0IGFzeW5jIGZ1bmN0aW9uIHJlY29uY2lsZUV4cGlyZWRUcmlhbFJlc2VydmF0aW9uKHVzZXJJZCwgYm91bmRTZXNzaW9uSWQsIHJldHJpZXZlU2Vzc2lvbiwgbWFya0V4cGlyZWRDbGFpbSkgewogICAgaWYgKCF1c2VySWQgfHwgIWJvdW5kU2Vzc2lvbklkLnN0YXJ0c1dpdGgoImNzXyIpKQogICAgICAgIHJldHVybiAicmV0YWluZWQiOwogICAgLy8gU3RyaXBlIG9yIGRhdGFiYXNlIG91dGFnZXMgbXVzdCBub3QgYWx0ZXIgdGhlIG9uZS10aW1lIGNsYWltLgogICAgLy8gQSBsYXRlciByZWNvbmNpbGlhdGlvbiBhdHRlbXB0IGNhbiBpbnNwZWN0IHRoZSBzYW1lIGJvdW5kIHNlc3Npb24uCiAgICB0cnkgewogICAgICAgIGNvbnN0IHNlc3Npb24gPSBhd2FpdCByZXRyaWV2ZVNlc3Npb24oYm91bmRTZXNzaW9uSWQpOwogICAgICAgIGlmICghY2FuUmVsZWFzZUV4cGlyZWRUcmlhbFNlc3Npb24oc2Vzc2lvbiwgdXNlcklkLCBib3VuZFNlc3Npb25JZCwgc2Vzc2lvbi5pZCkpIHsKICAgICAgICAgICAgcmV0dXJuICJyZXRhaW5lZCI7CiAgICAgICAgfQogICAgICAgIGNvbnN0IGV4cGlyZWQgPSBhd2FpdCBtYXJrRXhwaXJlZENsYWltKHVzZXJJZCwgYm91bmRTZXNzaW9uSWQpOwogICAgICAgIHJldHVybiBleHBpcmVkID8gImV4cGlyZWQiIDogInJldGFpbmVkIjsKICAgIH0KICAgIGNhdGNoIChlcnJvcikgewogICAgICAgIGNvbnNvbGUuZXJyb3IoIlRyaWFsIGV4cGlyYXRpb24gcmVjb25jaWxpYXRpb24gZmFpbGVkIiwgZXJyb3IpOwogICAgICAgIHJldHVybiAicmV0YWluZWQiOwogICAgfQp9Ci8qKgogKiBBIHJldHJ5IG1heSByZXR1cm4gdGhlIGV4YWN0IHNhbWUgc3RpbGwtb3BlbiBTdHJpcGUgQ2hlY2tvdXQgU2Vzc2lvbi4KICogTmV2ZXIgY3JlYXRlIGEgc2Vjb25kIHRyaWFsIHNlc3Npb24gZm9yIGFuIGV4aXN0aW5nIGNsYWltLgogKiBTZXNzaW9uIG11c3QgYmUgZmV0Y2hlZCBzZXJ2ZXItc2lkZSBieSB0aGUgY2xhaW0ncyBzdG9yZWQgc2Vzc2lvbiBJRC4KICovCmV4cG9ydCBmdW5jdGlvbiBjYW5SZXVzZU9wZW5UcmlhbFNlc3Npb24oc2Vzc2lvbiwgdXNlcklkLCBib3VuZFNlc3Npb25JZCkgewogICAgcmV0dXJuIEJvb2xlYW4odXNlcklkKSAmJgogICAgICAgIHNlc3Npb24uaWQgPT09IGJvdW5kU2Vzc2lvbklkICYmCiAgICAgICAgYm91bmRTZXNzaW9uSWQuc3RhcnRzV2l0aCgiY3NfIikgJiYKICAgICAgICBzZXNzaW9uLnN0YXR1cyA9PT0gIm9wZW4iICYmCiAgICAgICAgc2Vzc2lvbi5tb2RlID09PSAic3Vic2NyaXB0aW9uIiAmJgogICAgICAgIHNlc3Npb24uc3Vic2NyaXB0aW9uID09IG51bGwgJiYKICAgICAgICBzZXNzaW9uLmNsaWVudF9yZWZlcmVuY2VfaWQgPT09IHVzZXJJZCAmJgogICAgICAgIHNlc3Npb24ubWV0YWRhdGE/LnVzZXJfaWQgPT09IHVzZXJJZCAmJgogICAgICAgIHNlc3Npb24ubWV0YWRhdGE/LnN0cmlwZV90cmlhbF9yZXNlcnZlZCA9PT0gInRydWUiICYmCiAgICAgICAgdHlwZW9mIHNlc3Npb24udXJsID09PSAic3RyaW5nIiAmJgogICAgICAgIGlzVHJ1c3RlZFN0cmlwZUNoZWNrb3V0VXJsKHNlc3Npb24udXJsKTsKfQovKiogQWNjZXB0IG9ubHkgU3RyaXBlLWhvc3RlZCBIVFRQUyBDaGVja291dCBVUkxzLCBuZXZlciByZWRpcmVjdHMgb3IgbG9va2FsaWtlIGhvc3RzLiAqLwpleHBvcnQgZnVuY3Rpb24gaXNUcnVzdGVkU3RyaXBlQ2hlY2tvdXRVcmwodmFsdWUpIHsKICAgIHRyeSB7CiAgICAgICAgY29uc3QgdXJsID0gbmV3IFVSTCh2YWx1ZSk7CiAgICAgICAgcmV0dXJuIHVybC5wcm90b2NvbCA9PT0gImh0dHBzOiIgJiYKICAgICAgICAgICAgdXJsLmhvc3RuYW1lID09PSAiY2hlY2tvdXQuc3RyaXBlLmNvbSIgJiYKICAgICAgICAgICAgdXJsLnVzZXJuYW1lID09PSAiIiAmJgogICAgICAgICAgICB1cmwucGFzc3dvcmQgPT09ICIiICYmCiAgICAgICAgICAgIHVybC5wYXRobmFtZS5zdGFydHNXaXRoKCIvYy8iKTsKICAgIH0KICAgIGNhdGNoIHsKICAgICAgICByZXR1cm4gZmFsc2U7CiAgICB9Cn0K:32:31)
+    at file:///workspace/Hoopcheck/scripts/test-stripe-trial-recovery.mjs:46:20
+Trial expiration reconciliation failed Error: database unavailable
+    at file:///workspace/Hoopcheck/scripts/test-stripe-trial-recovery.mjs:47:67
+    at reconcileExpiredTrialReservation (data:text/javascript;base64,LyoqCiAqIE9ubHkgYSB2ZXJpZmllZCwgZXhwaXJlZCBzdWJzY3JpcHRpb24gQ2hlY2tvdXQgU2Vzc2lvbiB3aXRoIG5vIHN1YnNjcmlwdGlvbgogKiBhdHRhY2hlZCBjYW4gYmUgY29uc2lkZXJlZCBmb3IgbWFya2luZyBhbiB1bnJlZGVlbWVkIHJlc2VydmF0aW9uIHBlcm1hbmVudGx5IGV4cGlyZWQuCiAqIFRoaXMgcG9saWN5IGlzIGludGVudGlvbmFsbHkgY29uc2VydmF0aXZlOiB1bmtub3duIHN0YXRlcyBzdGF5IGxvY2tlZC4KICogQ2FsbGVyIG11c3QgcmV0cmlldmUgdGhlIHNlc3Npb24gZGlyZWN0bHkgZnJvbSBTdHJpcGUgdXNpbmcgc2VydmVyIGNyZWRlbnRpYWxzCiAqIGFuZCB2ZXJpZnkgdGhlIHNlc3Npb24ncyBhY2NvdW50L3VzZXIgYmluZGluZyBpbmRlcGVuZGVudGx5LgogKi8KZXhwb3J0IGZ1bmN0aW9uIGNhblJlbGVhc2VFeHBpcmVkVHJpYWxTZXNzaW9uKHNlc3Npb24sIHVzZXJJZCwgZXhwZWN0ZWRTZXNzaW9uSWQsIGFjdHVhbFNlc3Npb25JZCkgewogICAgcmV0dXJuIEJvb2xlYW4odXNlcklkKSAmJgogICAgICAgIGV4cGVjdGVkU2Vzc2lvbklkID09PSBhY3R1YWxTZXNzaW9uSWQgJiYKICAgICAgICBhY3R1YWxTZXNzaW9uSWQuc3RhcnRzV2l0aCgiY3NfIikgJiYKICAgICAgICBzZXNzaW9uLm1vZGUgPT09ICJzdWJzY3JpcHRpb24iICYmCiAgICAgICAgc2Vzc2lvbi5zdGF0dXMgPT09ICJleHBpcmVkIiAmJgogICAgICAgIHNlc3Npb24uc3Vic2NyaXB0aW9uID09IG51bGwgJiYKICAgICAgICBzZXNzaW9uLnBheW1lbnRfc3RhdHVzID09PSAidW5wYWlkIiAmJgogICAgICAgIHNlc3Npb24uY2xpZW50X3JlZmVyZW5jZV9pZCA9PT0gdXNlcklkICYmCiAgICAgICAgc2Vzc2lvbi5tZXRhZGF0YT8udXNlcl9pZCA9PT0gdXNlcklkICYmCiAgICAgICAgc2Vzc2lvbi5tZXRhZGF0YT8uc3RyaXBlX3RyaWFsX3Jlc2VydmVkID09PSAidHJ1ZSI7Cn0KLyoqCiAqIFNlcnZlci1vbmx5IHJlY29uY2lsaWF0aW9uIHByaW1pdGl2ZS4gQ2FsbGVycyBtdXN0IG9idGFpbiB0aGUgcmVzZXJ2YXRpb24KICogb3duZXIgYW5kIGJvdW5kIHNlc3Npb24gZnJvbSB0aGUgc2VydmljZS1yb2xlIGRhdGFiYXNlLCBuZXZlciB1c2VyIGlucHV0LgogKiBUaGlzIGZ1bmN0aW9uIGRvZXMgbm90IHJ1biBhdXRvbWF0aWNhbGx5IGFuZCBtdXN0IG5vdCBiZSBleHBvc2VkIHB1YmxpY2x5LgogKiBGYWlsIGNsb3NlZCBvbiBTdHJpcGUgZXJyb3JzLCB1bmV4cGVjdGVkIHN0YXRlLCBvciBkYXRhYmFzZSBSUEMgZXJyb3JzLgogKi8KZXhwb3J0IGFzeW5jIGZ1bmN0aW9uIHJlY29uY2lsZUV4cGlyZWRUcmlhbFJlc2VydmF0aW9uKHVzZXJJZCwgYm91bmRTZXNzaW9uSWQsIHJldHJpZXZlU2Vzc2lvbiwgbWFya0V4cGlyZWRDbGFpbSkgewogICAgaWYgKCF1c2VySWQgfHwgIWJvdW5kU2Vzc2lvbklkLnN0YXJ0c1dpdGgoImNzXyIpKQogICAgICAgIHJldHVybiAicmV0YWluZWQiOwogICAgLy8gU3RyaXBlIG9yIGRhdGFiYXNlIG91dGFnZXMgbXVzdCBub3QgYWx0ZXIgdGhlIG9uZS10aW1lIGNsYWltLgogICAgLy8gQSBsYXRlciByZWNvbmNpbGlhdGlvbiBhdHRlbXB0IGNhbiBpbnNwZWN0IHRoZSBzYW1lIGJvdW5kIHNlc3Npb24uCiAgICB0cnkgewogICAgICAgIGNvbnN0IHNlc3Npb24gPSBhd2FpdCByZXRyaWV2ZVNlc3Npb24oYm91bmRTZXNzaW9uSWQpOwogICAgICAgIGlmICghY2FuUmVsZWFzZUV4cGlyZWRUcmlhbFNlc3Npb24oc2Vzc2lvbiwgdXNlcklkLCBib3VuZFNlc3Npb25JZCwgc2Vzc2lvbi5pZCkpIHsKICAgICAgICAgICAgcmV0dXJuICJyZXRhaW5lZCI7CiAgICAgICAgfQogICAgICAgIGNvbnN0IGV4cGlyZWQgPSBhd2FpdCBtYXJrRXhwaXJlZENsYWltKHVzZXJJZCwgYm91bmRTZXNzaW9uSWQpOwogICAgICAgIHJldHVybiBleHBpcmVkID8gImV4cGlyZWQiIDogInJldGFpbmVkIjsKICAgIH0KICAgIGNhdGNoIChlcnJvcikgewogICAgICAgIGNvbnNvbGUuZXJyb3IoIlRyaWFsIGV4cGlyYXRpb24gcmVjb25jaWxpYXRpb24gZmFpbGVkIiwgZXJyb3IpOwogICAgICAgIHJldHVybiAicmV0YWluZWQiOwogICAgfQp9Ci8qKgogKiBBIHJldHJ5IG1heSByZXR1cm4gdGhlIGV4YWN0IHNhbWUgc3RpbGwtb3BlbiBTdHJpcGUgQ2hlY2tvdXQgU2Vzc2lvbi4KICogTmV2ZXIgY3JlYXRlIGEgc2Vjb25kIHRyaWFsIHNlc3Npb24gZm9yIGFuIGV4aXN0aW5nIGNsYWltLgogKiBTZXNzaW9uIG11c3QgYmUgZmV0Y2hlZCBzZXJ2ZXItc2lkZSBieSB0aGUgY2xhaW0ncyBzdG9yZWQgc2Vzc2lvbiBJRC4KICovCmV4cG9ydCBmdW5jdGlvbiBjYW5SZXVzZU9wZW5UcmlhbFNlc3Npb24oc2Vzc2lvbiwgdXNlcklkLCBib3VuZFNlc3Npb25JZCkgewogICAgcmV0dXJuIEJvb2xlYW4odXNlcklkKSAmJgogICAgICAgIHNlc3Npb24uaWQgPT09IGJvdW5kU2Vzc2lvbklkICYmCiAgICAgICAgYm91bmRTZXNzaW9uSWQuc3RhcnRzV2l0aCgiY3NfIikgJiYKICAgICAgICBzZXNzaW9uLnN0YXR1cyA9PT0gIm9wZW4iICYmCiAgICAgICAgc2Vzc2lvbi5tb2RlID09PSAic3Vic2NyaXB0aW9uIiAmJgogICAgICAgIHNlc3Npb24uc3Vic2NyaXB0aW9uID09IG51bGwgJiYKICAgICAgICBzZXNzaW9uLmNsaWVudF9yZWZlcmVuY2VfaWQgPT09IHVzZXJJZCAmJgogICAgICAgIHNlc3Npb24ubWV0YWRhdGE/LnVzZXJfaWQgPT09IHVzZXJJZCAmJgogICAgICAgIHNlc3Npb24ubWV0YWRhdGE/LnN0cmlwZV90cmlhbF9yZXNlcnZlZCA9PT0gInRydWUiICYmCiAgICAgICAgdHlwZW9mIHNlc3Npb24udXJsID09PSAic3RyaW5nIiAmJgogICAgICAgIGlzVHJ1c3RlZFN0cmlwZUNoZWNrb3V0VXJsKHNlc3Npb24udXJsKTsKfQovKiogQWNjZXB0IG9ubHkgU3RyaXBlLWhvc3RlZCBIVFRQUyBDaGVja291dCBVUkxzLCBuZXZlciByZWRpcmVjdHMgb3IgbG9va2FsaWtlIGhvc3RzLiAqLwpleHBvcnQgZnVuY3Rpb24gaXNUcnVzdGVkU3RyaXBlQ2hlY2tvdXRVcmwodmFsdWUpIHsKICAgIHRyeSB7CiAgICAgICAgY29uc3QgdXJsID0gbmV3IFVSTCh2YWx1ZSk7CiAgICAgICAgcmV0dXJuIHVybC5wcm90b2NvbCA9PT0gImh0dHBzOiIgJiYKICAgICAgICAgICAgdXJsLmhvc3RuYW1lID09PSAiY2hlY2tvdXQuc3RyaXBlLmNvbSIgJiYKICAgICAgICAgICAgdXJsLnVzZXJuYW1lID09PSAiIiAmJgogICAgICAgICAgICB1cmwucGFzc3dvcmQgPT09ICIiICYmCiAgICAgICAgICAgIHVybC5wYXRobmFtZS5zdGFydHNXaXRoKCIvYy8iKTsKICAgIH0KICAgIGNhdGNoIHsKICAgICAgICByZXR1cm4gZmFsc2U7CiAgICB9Cn0K:36:31)
+    at async file:///workspace/Hoopcheck/scripts/test-stripe-trial-recovery.mjs:47:14
+Stripe trial reconciliation: 7 additional cases passed
+Stripe trial same-session retry: 17 cases passed
+Stripe new-session URL trust policy: 7 cases passed
+
+RUN scripts/test-theme-color-math.mjs
+✔ computed legacy and CSS Color 4 sRGB colors resolve to equivalent channels (2.38998ms)
+✔ translucent glass is composited before measuring text contrast (0.515043ms)
+✔ the audit rejects pale text on orange but accepts the corrected dark badge ink (0.1531ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 11.018912
+
+RUN scripts/test-unified-hoopfeed-rls.mjs
+Unified HoopFeed RLS static safeguards passed (not database integration tests).
+HoopFeed comment migration and API static safeguards passed (not live posting tests).

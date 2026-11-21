@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { uuidPattern } from "./identifiers";
+import { assuranceForVerifiedUser } from "../auth/mfa-core";
 import { createAuthClient } from "../server/supabase-auth";
 
 export const referralCookie = "hoopcheck-ambassador-referral";
@@ -27,10 +28,16 @@ export async function getActiveReferral() {
 
 export async function requireAmbassadorSession(route: string, ownerOnly = false) {
   const auth = await createAuthClient();
-  const { data: { user } } = await auth.auth.getUser();
+  const { data: session } = await auth.auth.getSession();
+  if (!session.session?.access_token) redirect(`/login?returnTo=${encodeURIComponent(route)}`);
+  const token = session.session.access_token;
+  const { data: { user } } = await auth.auth.getUser(token);
   if (!user) redirect(`/login?returnTo=${encodeURIComponent(route)}`);
-  const { data } = await auth.auth.getClaims();
+  const { data } = await auth.auth.getClaims(token);
   if (data?.claims.role !== "authenticated" || !user.email_confirmed_at) notFound();
+
+  const security = assuranceForVerifiedUser(token, user);
+  if (security.required) redirect(`/auth/verify?returnTo=${encodeURIComponent(route)}`);
 
   if (ownerOnly) {
     const { data: owner, error } = await auth.rpc("is_approved_claim_owner");
