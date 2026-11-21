@@ -21,7 +21,7 @@ const uid='11111111-1111-4111-8111-111111111111', team='22222222-2222-4222-8222-
     if(url.pathname==='/auth/v1/user')return json(user);
     if(url.pathname==='/rest/v1/rpc/get_public_follow_list'){
      rpcCalls++; const body=JSON.parse(route.request().postData()||'{}');assert.equal(body.p_mode==='following'?body.p_user_id:body.p_target_id,uid);assert.equal(body.p_target_type,body.p_mode==='followers'?'fan':null);
-     if(fail){fail=false;return json({},503);}
+     if(fail){return json({},503);}
      if(body.p_mode==='followers')return json([]);
      return json([{target_type:'team',target_id:team,display_name:'Design Club'},{target_type:'fan',target_id:uid,id:uid,display_name:'Design Fan'},{target_type:'player',target_id:uid,id:uid,account_type:'player',display_name:'MUST NOT SHOW PLAYER'}]);
     }
@@ -55,14 +55,18 @@ const uid='11111111-1111-4111-8111-111111111111', team='22222222-2222-4222-8222-
   await page.getByRole('heading',{name:'Explore basketball',exact:true}).filter({visible:true}).waitFor();
   console.log(`PASS ${theme}: fresh/restored-auth onboarding dismissal, dashboard scroll and directory/tab input`);
   await page.goto(base+'/account');
+  await page.getByRole('button',{name:'Membership and restore purchases',exact:true}).waitFor();
+  await require("./compact-layout.cjs").capture(page, {path:`${output}/account-${theme}.png`,fullPage:true});
   for (const [label,path] of [['Owner HQ on website','/owner-hq'],['Ambassador HQ on website','/ambassador-hq']]) {
     await page.getByRole('button',{name:label,exact:true}).click();
     await page.getByText('This workspace is available on the authenticated website. Sign in there if requested; the website verifies your role before granting access.',{exact:true}).waitFor();
     assert.equal(new URL(page.url()).searchParams.get('path'),path);
     await page.goto(base+'/account');
   }
+  fail=true; // Home now reads the same follow contract; inject this failure at the intended screen.
   await page.getByRole('button',{name:'Connections',exact:true}).click();
   await page.getByText('Connections could not be loaded. Please try again.',{exact:true}).waitFor();
+  fail=false; // Retain failure through focus/auth revalidation until the explicit retry.
   await page.getByRole('button',{name:'Try again',exact:true}).click();await page.getByText('Design Club',{exact:true}).waitFor();
   assert.equal(await page.getByText('MUST NOT SHOW PLAYER',{exact:true}).count(),0);
   await require("./compact-layout.cjs").capture(page, {path:`${output}/connections-${theme}.png`,fullPage:true});
@@ -74,6 +78,7 @@ const uid='11111111-1111-4111-8111-111111111111', team='22222222-2222-4222-8222-
   await page.goto(base+'/womens/'+team);await page.getByRole('img',{name:'Design Women crest',exact:true}).waitFor();
   await require("./compact-layout.cjs").capture(page, {path:`${output}/team-artwork-fallback-${theme}.png`,fullPage:true});
   await page.setViewportSize({width:320,height:740});await page.goto(base+'/dashboard');await page.getByRole('heading',{name:'Explore basketball',exact:true}).filter({visible:true}).waitFor();
+  await page.getByRole('heading',{name:'My Teams',exact:true}).filter({visible:true}).waitFor();
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));
   await require("./compact-layout.cjs").capture(page, {path:`${output}/dashboard-320-${theme}.png`,fullPage:true});
   assert.ok(rpcCalls>=3);assert.deepEqual(errors,[]);console.log(`PASS ${theme}: public About/search gate, native connections retry/fan scope/tabs/empty/navigation, decoded logo/failure fallback, 320px layout`);

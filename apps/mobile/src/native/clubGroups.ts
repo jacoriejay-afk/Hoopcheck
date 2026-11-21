@@ -108,3 +108,22 @@ export async function signedGroupImage(client: SupabaseClient, projectOrigin: st
     return url.toString();
   } finally { clearTimeout(timer); }
 }
+
+/** Read only the viewer's memberships; never infer another member's identity. */
+export async function readJoinedClubGroups(client: SupabaseClient, userId: string, search: string, page = 0) {
+  validId(userId);
+  if (!Number.isSafeInteger(page) || page < 0 || page > 10000) throw Error("Invalid group page");
+  const timer = deadline();
+  try {
+    const membership = await client.from("team_fan_group_members").select("team_id").eq("user_id", userId).order("team_id").range(page * pageSize, page * pageSize + pageSize).abortSignal(timer.signal);
+    if (membership.error) throw Error("Joined groups could not load.");
+    const ids = (membership.data || []).map(row => row.team_id).filter(id => typeof id === "string" && uuid.test(id));
+    if (!ids.length) return { groups: [] as ClubGroup[], more: false };
+    let query = client.from("team_fan_groups").select("team_id,group_name").in("team_id", ids.slice(0, pageSize)).order("group_name").order("team_id");
+    const term = search.slice(0, 120).replace(/[%_*\\(),.]/g, " ").trim();
+    if (term) query = query.ilike("group_name", `%${term}%`);
+    const result = await query.abortSignal(timer.signal);
+    if (result.error) throw Error("Joined groups could not load.");
+    return { groups: (result.data || []) as ClubGroup[], more: ids.length > pageSize };
+  } finally { timer.clear(); }
+}

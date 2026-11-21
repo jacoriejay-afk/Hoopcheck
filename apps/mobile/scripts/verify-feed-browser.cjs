@@ -55,6 +55,8 @@ async function fixture(browser,theme,allowed=true){
       if(url.pathname==='/auth/v1/user')return json(user);
       if(url.pathname.startsWith('/storage/v1/object/sign/'))return route.fulfill({status:200,contentType:url.pathname.endsWith('.webm')?'video/webm':'image/png',headers:{'access-control-allow-origin':'*'},body:url.pathname.endsWith('.webm')?fs.readFileSync(videoPath):png});
       const table=url.pathname.split('/').pop();
+      if(table==='get_public_follow_list'){const payload=JSON.parse(body);assert.equal(payload.p_user_id,uid);assert.equal(payload.p_mode,'following');return json([]);}
+      if(table==='fan_live_games'){assert.ok(allowed);return json([]);}
       if(table==='feed_posts'){
         assert.ok(allowed,'Denied viewer must never query protected posts');
         return json(url.searchParams.has('video_url')?posts.filter(p=>p.video_url):posts);
@@ -121,7 +123,7 @@ async function fixture(browser,theme,allowed=true){
     await page.getByRole('button',{name:'Mark all as read',exact:true}).click();await page.getByRole('button',{name:'unread',exact:true}).click();await page.getByText('Nothing in this category.',{exact:true}).waitFor();
     await page.getByRole('tab',{name:'Account',exact:true}).click();await page.getByText('Active access verified by HoopCheck',{exact:true}).waitFor();
     await require("./compact-layout.cjs").capture(page, {path:`/tmp/hoopcheck-native-ui/account-${theme}.png`,fullPage:true});
-    await page.getByRole('tab',{name:'Search',exact:true}).click();await page.getByText('Search basketball',{exact:true}).waitFor();
+    await page.getByRole('tab',{name:'Search',exact:true}).click();await page.waitForURL(url => url.pathname === '/search');await page.getByRole('textbox',{name:'Search basketball directory',exact:true}).waitFor();
     await page.getByRole('tab',{name:'Home',exact:true}).click();await page.getByText('Explore basketball',{exact:true}).waitFor();
     assert.deepEqual(errors,[]);await require("./compact-layout.cjs").capture(page, {path:`/tmp/hoopcheck-native-ui/feed-${theme}.png`,fullPage:true});
     console.log(`PASS ${theme}: native feed moderation/draft/reply/check/save/poll/Reels playback/alerts/account/search/home`);

@@ -1,7 +1,6 @@
 import { HomeCourtside } from "../components/HomeCourtside";
-import { ScreenIntro } from "../components/ScreenIntro";
 import { ExploreLinks } from "../components/ExploreLinks";
-import { Input, Button, Chip, SectionHeader } from "../src/primitives";
+import { Input, Chip, SectionHeader } from "../src/primitives";
 import { useEffect, useState } from "react";
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
@@ -65,10 +64,10 @@ export default function DashboardScreen() {
     <SafeAreaView edges={["left", "right", "bottom"]} style={[styles.safe, { backgroundColor: theme.background }]}>
       <ScrollView keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled" testID="dashboard-scroll" contentContainerStyle={styles.scroll}>
         <View style={styles.content}>
-          <ScreenIntro eyebrow="YOUR COURTSIDE CONNECTION" title="Your courtside.">The people, games, and communities that move basketball.</ScreenIntro>
-          <View style={{ marginTop: theme.spacing.md, marginBottom: theme.spacing.xl, padding: theme.spacing.lg, backgroundColor: theme.surface, borderRadius: theme.radius.hero, borderCurve: "continuous", gap: theme.spacing.sm }}>
-          <Input accessibilityLabel="Search basketball directory" placeholder="Search teams, leagues, coaches or players" value={search} maxLength={100} onChangeText={setSearch} returnKeyType="search" onSubmitEditing={() => router.push({ pathname: "/search", params: { q: search } })} />
-          <Button style={{ marginTop: 8 }} onPress={() => router.push({ pathname: "/search", params: { q: search } })}>Search</Button>
+          <View style={{ gap: theme.spacing.xs, paddingVertical: theme.spacing.sm }}><Text style={{ ...theme.type.caption, color: theme.accent, fontWeight: "700" }}>COURTSIDE</Text><Text accessibilityRole="header" style={{ ...theme.type.title, color: theme.foreground }}>Your courtside.</Text></View>
+          <View style={{ marginTop: theme.spacing.sm, marginBottom: theme.spacing.lg, padding: theme.spacing.xs, backgroundColor: theme.surface, borderRadius: theme.radius.control, borderWidth: 1, borderColor: theme.border, flexDirection: "row", alignItems: "center" }}>
+            <Input style={{ flex: 1, minWidth: 0, borderWidth: 0 }} accessibilityLabel="Search basketball directory" placeholder="Search basketball" value={search} maxLength={100} onChangeText={setSearch} returnKeyType="search" onSubmitEditing={() => router.push({ pathname: "/search", params: { q: search } })} />
+            <Pressable accessibilityRole="button" accessibilityLabel="Search" onPress={() => router.push({ pathname: "/search", params: { q: search } })} style={({ pressed }) => ({ minHeight: 48, minWidth: 48, justifyContent: "center", alignItems: "center", opacity: pressed ? .7 : 1 })}><Ionicons name="search" size={22} color={theme.accent} /></Pressable>
           </View>
           <HomeCourtside />
           <SectionHeader>Explore basketball</SectionHeader>

@@ -1,7 +1,7 @@
-import { ScreenIntro } from "../components/ScreenIntro";
+import { Scoreboard } from "../components/Scoreboard";
 import { Skeleton } from "../components/Motion";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { FlatList, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
+import { SectionList, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Button, PressableCard } from "../src/primitives";
 import { GameChat } from "../components/GameChat";
@@ -75,21 +75,26 @@ export default function LiveGames() {
     } catch { if (viewer.current.scope === scope) setError("Basketball preference could not be saved. Try again."); }
     finally { setSavingSide(false); }
   }
+  const leagueGroups = new Map<string, Games["games"]>();
+  for (const item of data?.games ?? []) {
+    const key = [item.league_name || "Around the court", item.country].filter(Boolean).join(" · ");
+    const rows = leagueGroups.get(key) || []; rows.push(item); leagueGroups.set(key, rows);
+  }
+  const sections = [...leagueGroups].map(([title, rows]) => ({ title, data: rows }));
   const chatEnabled = active && account.features.canUseLiveGameChat && !offline;
   return <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={100} style={{ flex: 1, backgroundColor: theme.background }}>
     <View style={{ padding: 16, gap: 10 }}>
-      {!game ? <><ScreenIntro eyebrow="AROUND THE COURT" title="Live Games">Live and upcoming games</ScreenIntro>
+      {!game ? <><Text style={{ ...theme.type.body, color: theme.muted }}>Scores, conversations and predictions.</Text>
       {account.features.canSwitchBasketballSide ? <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 16 }}>{(["mens", "womens"] as const).map(value => <Pressable key={value} accessibilityRole="tab" aria-selected={side === value} accessibilityState={{ selected: side === value }} disabled={savingSide || sideChoice?.owner !== uid} onPress={() => void chooseSide(value)} style={{ minHeight: 44, justifyContent: "center", borderBottomWidth: side === value ? 3 : 0, borderColor: theme.accent }}><Text style={{ color: theme.foreground, fontWeight: "800" }}>{value === "mens" ? "Men" : "Women"}</Text></Pressable>)}</View> : <Text style={{ color: theme.muted }}>{side === "mens" ? "Men’s basketball" : "Women’s basketball"}</Text>}</> : null}
       {error ? <View style={{ gap: 8 }}><Text accessibilityRole="alert" style={{ color: theme.muted }}>{error}</Text><Button secondary onPress={retry}>Verify access again</Button></View> : null}
       {gameId ? <Button secondary onPress={() => router.replace("/fan-live")}>All games</Button> : null}
     </View>
     {game ? <View style={{ flex: 1, paddingHorizontal: 16, paddingBottom: 12, gap: 10 }}>
-      <Text accessibilityRole="header" style={{ ...textStyle, fontSize: 17, fontWeight: "800" }}>{data?.teams[game.team_id]?.name || "Home team"} vs {data?.teams[game.opponent_team_id || ""]?.name || game.opponent_name}</Text>
-      <Text style={{ color: theme.muted }}>{game.home_score == null || game.away_score == null ? "Score not reported" : `${game.home_score} – ${game.away_score}`} · {game.status}{game.period_label ? ` · ${game.period_label}` : ""}</Text>
+      <View style={{ padding: theme.spacing.lg, backgroundColor: theme.surface, borderRadius: theme.radius.card }}><Scoreboard game={game} teams={data?.teams || {}} /></View>
       <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 20 }}>{(["chat", "predictions"] as const).map(value => <Pressable key={value} accessibilityRole="tab" aria-selected={panel === value} accessibilityState={{ selected: panel === value }} onPress={() => setPanel(value)} style={{ minHeight: 44, justifyContent: "center" }}><Text style={{ color: panel === value ? theme.accent : theme.foreground, fontWeight: "800" }}>{value === "chat" ? "Chat" : "Predictions"}</Text></Pressable>)}</View>
       {panel === "chat" ? <GameChat key={`${uid}:${game.id}`} gameId={game.id} userId={uid!} enabled={chatEnabled} /> : <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 24 }}><GamePrediction key={`${uid}:${game.id}`} game={game} userId={uid!} homeName={data?.teams[game.team_id]?.name || "Home team"} awayName={data?.teams[game.opponent_team_id || ""]?.name || game.opponent_name} active={active} /></ScrollView>}
-    </View> : <FlatList data={data?.games ?? []} keyExtractor={item => item.id} contentContainerStyle={{ padding: 16, gap: 12 }} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => setRevision(value => value + 1)} />} renderItem={({ item }) => <PressableCard accessibilityRole="button" onPress={() => router.push({ pathname: "/fan-live", params: { gameId: item.id } })}>
-      <Text style={{ ...textStyle, fontSize: 17, fontWeight: "800" }}>{data?.teams[item.team_id]?.name || "Home team"} vs {data?.teams[item.opponent_team_id || ""]?.name || item.opponent_name}</Text><Text selectable style={{ ...(item.home_score == null || item.away_score == null ? theme.type.body : theme.type.title), color: theme.foreground, fontVariant: ["tabular-nums"], marginVertical: theme.spacing.sm }}>{item.home_score == null || item.away_score == null ? "Score not reported" : `${item.home_score} – ${item.away_score}`}</Text><Text style={{ ...theme.type.caption, color: theme.accent, fontWeight: "700" }}>{item.status}</Text><Text style={{ color: theme.muted }}>{[item.league_name, item.country].filter(Boolean).join(" · ")}</Text><Text style={{ color: theme.muted }}>{item.scheduled_at && Number.isFinite(Date.parse(item.scheduled_at)) ? new Date(item.scheduled_at).toLocaleString() : "Tip-off time not confirmed"}</Text><Text style={{ color: theme.accent }}>Open game</Text>
+    </View> : <SectionList sections={sections} stickySectionHeadersEnabled={false} renderSectionHeader={({ section }) => <Text accessibilityRole="header" style={{ ...theme.type.section, color: theme.foreground, paddingVertical: theme.spacing.md }}>{section.title}</Text>} keyExtractor={item => item.id} contentContainerStyle={{ padding: 16, gap: 12 }} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => setRevision(value => value + 1)} />} renderItem={({ item }) => <PressableCard accessibilityRole="button" onPress={() => router.push({ pathname: "/fan-live", params: { gameId: item.id } })}>
+      <Scoreboard game={item} teams={data?.teams || {}} />
     </PressableCard>} ListHeaderComponent={gameId && !loading ? <Text style={{ color: theme.muted, paddingBottom: 12 }}>The requested game is unavailable in this basketball side. Choose a game or switch sides.</Text> : null} ListEmptyComponent={loading ? <Skeleton /> : <View style={{ gap: 12 }}><Text style={textStyle}>{error || "No current games are available."}</Text><Button secondary onPress={() => setRevision(value => value + 1)}>Refresh games</Button></View>} />}
   </KeyboardAvoidingView>;
 }

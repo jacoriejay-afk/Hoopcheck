@@ -65,7 +65,7 @@ jobs:
           EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: fixture-publishable-key
           EXPO_PUBLIC_HOOPCHECK_API_URL: https://api.test
           EXPO_NO_TELEMETRY: "1"
-        run: npx --no-install expo export --platform ios --max-workers 2 --output-dir /tmp/hoopcheck-mobile-ios
+        run: npx --no-install expo export --platform ios --clear --max-workers 2 --output-dir /tmp/hoopcheck-mobile-ios
 
       - name: Export Android Hermes bundle locally
         env:
@@ -73,7 +73,7 @@ jobs:
           EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: fixture-publishable-key
           EXPO_PUBLIC_HOOPCHECK_API_URL: https://api.test
           EXPO_NO_TELEMETRY: "1"
-        run: npx --no-install expo export --platform android --max-workers 2 --output-dir /tmp/hoopcheck-mobile-android
+        run: npx --no-install expo export --platform android --clear --max-workers 2 --output-dir /tmp/hoopcheck-mobile-android
 
       - name: Export isolated native browser fixture
         env:
@@ -81,7 +81,7 @@ jobs:
           EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: fixture-publishable-key
           EXPO_PUBLIC_HOOPCHECK_API_URL: https://api.test
           EXPO_NO_TELEMETRY: "1"
-        run: npx --no-install expo export --platform web --max-workers 2 --output-dir /tmp/hoopcheck-mobile-web
+        run: npx --no-install expo export --platform web --clear --max-workers 2 --output-dir /tmp/hoopcheck-mobile-web
 
       - name: Start localhost fixture server
         run: python3 scripts/serve-native-fixture.py /tmp/hoopcheck-mobile-web 8092 > /tmp/hoopcheck-native-browser.log 2>&1 &

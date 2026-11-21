@@ -1,0 +1,3 @@
+PASS light: native feed moderation/draft/reply/check/save/poll/Reels playback/alerts/account/search/home
+PASS dark: native feed moderation/draft/reply/check/save/poll/Reels playback/alerts/account/search/home
+PASS denied membership: protected feed queries never started
