@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { supabase } from "../../lib/supabase";
 import "../agents/network.css";
 
 type PublicProfile = {id:string;display_name:string|null;username:string|null;
@@ -22,13 +21,11 @@ export default function CreatorsPage(){
     let active=true;
     setLoading(true);setError("");
     void (async()=>{
-      const {data,error:loadError}=await supabase.from("creator_profiles")
-        .select("profile_id,category,headline,description,website_url,profiles!inner(id,display_name,username,avatar_url,avatar_moderation_status,country,profile_visibility,moderation_status)")
-        .eq("is_published",true).eq("profiles.profile_visibility","public").eq("profiles.moderation_status","normal")
-        .order("created_at",{ascending:false}).limit(200);
+      const response=await fetch("/api/network/creators",{cache:"no-store"});
+      const payload=await response.json();
       if(!active)return;
-      if(loadError)setError("The creator network is unavailable. Please try again.");
-      else setCreators((data||[]) as unknown as Creator[]);
+      if(!response.ok)setError(payload.error||"Creator network is unavailable.");
+      else setCreators((payload.creators||[]) as Creator[]);
       setLoading(false);
     })().catch(()=>{if(active){setError("The creator network is unavailable.");setLoading(false);}});
     return ()=>{active=false;};
