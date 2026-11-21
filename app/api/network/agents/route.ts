@@ -16,7 +16,7 @@ export async function GET(request:Request){
   try{
     const db=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
     let query=db.from("agent_showcases").select(
-      "profile_id,public_name,agency_name,headline,description,country,website_url,is_published,profiles!inner(id,account_type,moderation_status,identity_verification_status)"
+      "profile_id,public_name,agency_name,headline,description,country,website_url,is_published,review_status,reviewed_at,profiles!inner(id,account_type,moderation_status,identity_verification_status)"
     ).eq("is_published",true).in("profiles.account_type",["agent","scout"])
      .eq("profiles.moderation_status","normal");
     if(id)query=query.eq("profile_id",id);
@@ -29,7 +29,8 @@ export async function GET(request:Request){
         id:row.profile_id,display_name:row.public_name,username:null,avatar_url:null,
         country:row.country,bio:row.description,experience_summary:row.headline,
         agency_name:row.agency_name,website_url:row.website_url,account_type:p.account_type,
-        identity_checked:p.identity_verification_status==="verified"
+        identity_checked:p.identity_verification_status==="verified",
+        professionally_reviewed:row.review_status==="approved"&&Boolean(row.reviewed_at)
       }];
     });
     return NextResponse.json(id?(people.length?{person:people[0]}:{error:"Showcase unavailable."}):{people},{
