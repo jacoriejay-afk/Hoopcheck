@@ -4295,6 +4295,15 @@ html.theme-dark .hc-team-profile-hero .hc-team-social-stats :where(strong,small)
   min-width: 0;
   max-width: 100%;
 }
+.hc-membership-page .hc-membership-loading {
+  width: min(100%, 760px);
+  margin: 0 auto 26px;
+  padding: 24px;
+  min-width: 0;
+  border: 1px solid var(--hc-card-border, #deded8);
+  border-radius: var(--hc-radius-card);
+  background: var(--hc-surface-raised);
+}
 .hc-membership-page .hc-membership-actions {
   display: flex;
   flex-wrap: wrap;
