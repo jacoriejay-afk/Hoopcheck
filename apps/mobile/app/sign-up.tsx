@@ -97,7 +97,7 @@ export default function SignUpScreen() {
       });
       if (error) throw error;
       if (data.session) {
-        recordFreshSignIn();
+        recordFreshSignIn(data.session.user.id);
         router.replace("/dashboard");
       } else {
         Alert.alert("Check your email", "HoopCheck may require email verification before you can sign in.", [

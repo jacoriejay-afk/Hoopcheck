@@ -1,0 +1,46 @@
+[
+  {
+    "script": "verify-club-groups-browser.cjs",
+    "exitCode": 0
+  },
+  {
+    "script": "verify-design-browser.cjs",
+    "exitCode": 0
+  },
+  {
+    "script": "verify-membership-browser.cjs",
+    "exitCode": 0
+  },
+  {
+    "script": "verify-mfa-browser.cjs",
+    "exitCode": 0
+  },
+  {
+    "script": "verify-player-profiles-browser.cjs",
+    "exitCode": 0
+  },
+  {
+    "script": "verify-media-browser.cjs",
+    "exitCode": 0
+  },
+  {
+    "script": "verify-profile-editor-browser.cjs",
+    "exitCode": 0
+  },
+  {
+    "script": "verify-live-games-browser.cjs",
+    "exitCode": 0
+  },
+  {
+    "script": "verify-feed-browser.cjs",
+    "exitCode": 0
+  },
+  {
+    "script": "verify-discovery-browser.cjs",
+    "exitCode": 0
+  },
+  {
+    "script": "verify-theme-preference-browser.cjs",
+    "exitCode": 0
+  }
+]

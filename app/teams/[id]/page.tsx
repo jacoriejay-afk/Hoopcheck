@@ -1,4 +1,6 @@
 "use client";
+import { getEffectiveMembership } from "../../../lib/billing/client-membership";
+
 
 import HoopFeedFromEntity from "../../../components/HoopFeedFromEntity";
 import { useEffect, useState } from "react";
@@ -342,16 +344,7 @@ export default function TeamDetailPage() {
           .eq("id", user.id)
           .maybeSingle(),
 
-        supabase
-          .from("subscriptions")
-          .select(
-            "plan, status, access_status, current_period_end"
-          )
-          .eq(
-            "user_id",
-            user.id
-          )
-          .maybeSingle(),
+        getEffectiveMembership(user.id),
 
         supabase.rpc(
           "is_current_user_admin_or_moderator"

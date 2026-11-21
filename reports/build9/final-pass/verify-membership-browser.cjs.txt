@@ -1,0 +1,4 @@
+PASS: native membership unsupported-module/restore safeguards, player light
+PASS: native membership unsupported-module/restore safeguards, fan light
+PASS: native membership unsupported-module/restore safeguards, player dark
+PASS: native membership unsupported-module/restore safeguards, fan dark

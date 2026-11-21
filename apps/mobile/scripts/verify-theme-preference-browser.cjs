@@ -7,7 +7,7 @@ const uid='11111111-1111-4111-8111-111111111111';
 (async()=>{
  const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH || '/usr/bin/chromium',headless:true,args:['--no-sandbox']});
  try{
- const context=await browser.newContext({viewport:{width:390,height:844},colorScheme:'dark'});
+ const context=await browser.newContext({viewport: require("./compact-layout.cjs").viewport,colorScheme:'dark'});
  await context.route('**/*',async route=>{
   const url=new URL(route.request().url());
   if(url.origin===new URL(base).origin)return route.continue();
@@ -43,7 +43,7 @@ const uid='11111111-1111-4111-8111-111111111111';
  await page.getByRole('switch',{name:'Haptics',exact:true}).click();
  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('hoopcheck:device-preferences:v1')).haptics===true);
  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('hoopcheck:device-preferences:v1')).theme),'system');
- await page.screenshot({path:'/tmp/hoopcheck-theme-ui.png',fullPage:true});
+ await require("./compact-layout.cjs").capture(page, {path:'/tmp/hoopcheck-theme-ui.png',fullPage:true});
  console.log('PASS: theme overrides, persistence/reload, system changes, failed-save isolation');
  await context.close();
  }finally{await browser.close();}

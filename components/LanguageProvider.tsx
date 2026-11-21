@@ -1,5 +1,7 @@
 "use client";
 
+import { getOwnProfile } from "../lib/auth/own-profile";
+
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 
@@ -148,11 +150,7 @@ export default function LanguageProvider({ children, initialLanguage = "en" }: {
     const onLanguageChange = (event: Event) => apply((event as CustomEvent<Language>).detail);
     window.addEventListener("hoopcheck-language-change", onLanguageChange);
     const loadProfileLanguage = async (userId: string) => {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("preferred_language")
-        .eq("id", userId)
-        .maybeSingle();
+      const { data: profile } = await getOwnProfile(supabase, userId);
       if (mounted) {
         // The account setting is authoritative across devices. Local storage is only
         // a fallback for accounts that have not selected a language yet.

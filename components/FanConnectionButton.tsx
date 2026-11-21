@@ -1,4 +1,6 @@
 "use client";
+import { getEffectiveMembership } from "../lib/billing/client-membership";
+
 
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
@@ -37,7 +39,7 @@ export default function FanConnectionButton({fanId}:{fanId:string}){
     setUserId(user.id);
     const [{data:p},{data:s},{data:r}]=await Promise.all([
       supabase.from("profiles").select("account_type").eq("id",user.id).maybeSingle(),
-      supabase.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id",user.id).maybeSingle(),
+      getEffectiveMembership(user.id),
       supabase.from("fan_connection_requests").select("id,requester_id,fan_id,message,status,created_at").or(`requester_id.eq.${user.id},fan_id.eq.${user.id}`).eq("fan_id",fanId).maybeSingle()
     ]);
     setAccountType(p?.account_type || "");
