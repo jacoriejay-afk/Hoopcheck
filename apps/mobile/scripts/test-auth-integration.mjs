@@ -39,6 +39,7 @@ function screen(path, { state = [], params = {}, segments = [], pathname = "/", 
     if (name === "@gorhom/bottom-sheet") return { BottomSheetModalProvider: "BottomSheetModalProvider" };
     if (name === "expo-splash-screen") return { preventAutoHideAsync: async () => {}, setOptions: () => {}, hideAsync: async () => {} };
     if (name.endsWith("/native/preferences")) return { DevicePreferences: "DevicePreferences" };
+    if (name.endsWith("/native/drafts")) return { NativeDraftProvider: "NativeDraftProvider" };
     if (name.endsWith("/native/useNativeAccount")) return { NativeAccountProvider: "NativeAccountProvider" };
     if (name.endsWith("/native/network")) return { NetworkProvider: "NetworkProvider" };
     if (name.endsWith("/motion/Provider")) return { MotionProvider: "MotionProvider" };
@@ -185,6 +186,7 @@ test("protected native links preserve bounded post/search destinations without r
   for (const [segments, pathname, params, expected] of [
     [["feed"], "/feed", { post: id, code: "secret" }, `/feed?post=${id}`],
     [["feed"], "/feed", { post: "bad" }, "/feed"],
+    [["fan-live"], "/fan-live", { gameId: id, code: "secret" }, `/fan-live?gameId=${id}`],
     [["search"], "/search", { q: "x".repeat(200), token: "secret" }, "/search?q=" + "x".repeat(100)],
   ]) {
     const f = screen("app/_layout.tsx", { state: [true, false], segments, pathname, params });
@@ -192,4 +194,10 @@ test("protected native links preserve bounded post/search destinations without r
     assert.deepEqual(f.calls.remembered, [expected]);
     assert.deepEqual(f.calls.replace, ["/sign-in"]);
   }
+});
+
+
+test("protected search retains a bounded query across sign-in without extra URL fields", () => {
+  const f = screen("app/_layout.tsx", { state: [true, false], segments: ["search"], pathname: "/search", params: { q: "x".repeat(200), token: "discard" } });
+  f.effects[2](); assert.deepEqual(f.calls.remembered, ["/search?q=" + "x".repeat(100)]);
 });

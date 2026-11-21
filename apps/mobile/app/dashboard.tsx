@@ -8,6 +8,8 @@ import { supabase } from "../src/lib/supabase";
 import { useEntryTheme } from "../src/theme";
 
 const directories = [
+  { href: "/team-hub/groups", icon: "people-outline", title: "HoopGroups", detail: "Find your club’s fan community" },
+  { href: "/fan-live", icon: "radio-outline", title: "Live Games", detail: "Games, chat and predictions" },
   { href: "/feed", icon: "basketball-outline", title: "HoopFeed", detail: "Community, comments and Reels" },
   { href: "/womens", icon: "basketball-outline", title: "Women’s teams", detail: "Explore women’s basketball" },
   { href: "/teams", icon: "basketball-outline", title: "Teams", detail: "Research professional clubs" },
