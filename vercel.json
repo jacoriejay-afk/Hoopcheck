@@ -9,7 +9,8 @@
       "feature/build9-phase3-courtside": false,
       "feature/build9-phase3b-screens": false,
       "feature/build9-phase3c-profile": false,
-      "integration/build9-backend-completion-20261121": false
+      "integration/build9-backend-completion-20261121": false,
+      "feature/build9-phase3d-contracts": false
     }
   }
 }

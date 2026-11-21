@@ -112,3 +112,47 @@ all passed. The missing Build 9 master remains unrecovered; this is not a replac
 
 Release remains blocked. No merge, deploy, EAS, production, Stripe or Supabase
 mutation was performed. Apple activation remains unchanged.
+
+
+## Phase 3D checklist update — 2026-11-21
+
+Exact starting head is #752 `201792d7`; its build, mobile and unsigned simulator
+compile checks passed. No missing Build 9 master was recovered or substituted.
+See [Phase 3D](phase3d/README.md) for the read-only hosted audit and current evidence.
+
+- [x] Audited deployed table/column/policy/function metadata without reading user
+  rows, changing policies/grants, invoking provider ingestion or mutating production.
+- [x] Corrected Phase 3C source-only assumptions: deployed player_career_stops and
+  team_roster_spots are absent. Their UI queries are now disabled by default.
+  Prior Phase 3C positive fixtures do not establish hosted contract availability.
+- [x] Exact season-filtered league-club queries never mix historical membership
+  rows with current direct links. Loading/error/retry/empty/capped states are explicit.
+- [x] Private verified current player-team affiliations use existing owner/admin
+  RLS, owner-session rechecks and date bounds; proof documents are never selected.
+  This does not establish a public roster or add private evidence to Passport.
+- [x] Existing owner-only Passport, Free/Pro/Premium bootstrap entitlements,
+  authentication and subscriptions remain unchanged.
+- [x] Local root/mobile TypeScript, 223 native tests, 47 auth/billing tests, 14 native
+  sign-in tests, entitlement matrix, 13 browser suites, website build, theme/surface
+  audits and iOS/web exports pass; 125 inherited lint warnings remain. Actual default
+  RN Web captures are in Phase 3D, explicitly distinguished from native screenshots.
+- [ ] Exact final-head CI and corrected native PDF/share-sheet simulator acceptance:
+  first attempt compiled the app but failed test-target setup before execution.
+  The PR description records the later observed result and links runtime artifacts.
+- [ ] Approved public current-roster projection, provider-player mapping and
+  season-aware player-box-score/verified-award contracts with provenance/permissions.
+- [ ] Hosted private-country/moderation grants and missing owner/username/consent
+  bridge require an approved compatibility rollout; do not use raw-profile fallback.
+- [ ] Expo Doctor network checks and live hosted role/purchase acceptance.
+- [ ] Physical iPhone touch, keyboard, VoiceOver, performance and Build 7 freeze
+  evidence. Simulator evidence cannot clear these gates.
+
+Release remains blocked. No merge/deploy/EAS, production or Stripe mutation occurred.
+
+
+Phase 3D evidence update: c98b99a0 website/mobile CI PASS (including Doctor
+18/18 on the runner; local 16/18 network errors remain documented). Native app
+compiles and real light-mode PDF/UIKit presentation is observed, but the one
+XCTest FAILS because action cells were queried as buttons. Dismissal/cleanup and
+dark mode remain unverified for that attempt. The corrected test and subsequent
+exact-head results are tracked in #754. No physical iPhone/Build 7 freeze claim.

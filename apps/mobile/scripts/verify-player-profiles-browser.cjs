@@ -19,6 +19,7 @@ async function verify(browser,theme,role='player'){
    if(url.pathname.endsWith('/get_public_player_profile')){const body=request.postDataJSON();return json(body.p_user_id===privateId?[]:[{...card,id:body.p_user_id,player_position:'PG',current_country:'Hidden exact location',bio:'Public fixture biography'}]);}
    if(url.pathname.endsWith('/is_player_country_public'))return json(countryPublic);
    if(url.pathname==='/rest/v1/player_career_stops'){assert.equal(url.searchParams.get('player_id'),'eq.'+uid);return json([{id:'career-1',team_name:'Fixture Club',country:'Spain',seasons:'2025–26',position:'PG',is_public:true},{id:'career-2',team_name:'Fixture Club',country:'Spain',seasons:'2026–27',position:'PG',is_public:false}]);}
+   if(url.pathname==='/rest/v1/player_team_affiliations'){assert.equal(url.searchParams.get('user_id'),'eq.'+uid);assert.equal(url.searchParams.get('verified'),'eq.true');return json([]);}
    if(url.pathname==='/rest/v1/player_contact_requests'){assert.equal(url.searchParams.get('player_id'),'eq.'+target);assert.equal(url.searchParams.get('requester_id'),'eq.'+uid);assert.equal(url.searchParams.get('status'),'eq.accepted');return json(null);}
    throw Error('Raw profile query is forbidden in this fixture: '+url.pathname);
   }

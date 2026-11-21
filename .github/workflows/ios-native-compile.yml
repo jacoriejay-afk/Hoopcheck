@@ -51,6 +51,16 @@ jobs:
             tail -n 160 /tmp/hoopcheck-ios-compile.log
             exit 1
           fi
+      - name: Run real Passport PDF and share-sheet simulator tests (no EAS)
+        run: bash scripts/ios-passport-smoke/run.sh
+      - name: Upload simulator runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: passport-ios-simulator-evidence
+          path: /tmp/hoopcheck-passport-simulator
+          if-no-files-found: warn
+          retention-days: 7
       - name: Upload compile diagnostics
         if: always()
         uses: actions/upload-artifact@v4

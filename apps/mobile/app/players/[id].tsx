@@ -1,3 +1,4 @@
+import { OwnAffiliations } from "../../components/OwnAffiliations";
 import { PlayerCareer } from "../../components/PlayerCareer";
 import { PlayerPassport } from "../../components/PlayerPassport";
 import { PlayerAccess } from "../../components/PlayerAccess";
@@ -143,6 +144,7 @@ function PlayerProfileDetails({ viewer }: { viewer: PlayerViewer }) {
               {player.player_verified_at ? <Text style={styles.body}>Verified {new Date(player.player_verified_at).toLocaleDateString()}</Text> : null}
               <Text style={styles.body}>Verification reflects your HoopCheck profile. Playing awards and performance records are not supplied by this profile.</Text>
             </GlassCard>
+            <OwnAffiliations key={`${viewerId}:${player.id}`} profileId={player.id} />
             <PlayerCareer key={`${viewerId}:${player.id}`} playerId={player.id} viewer={viewer} />
             <GlassCard style={styles.reportCard}>
               <Text style={styles.sectionTitle}>Safety and reporting</Text>
@@ -180,7 +182,7 @@ function PlayerProfileDetails({ viewer }: { viewer: PlayerViewer }) {
               </Sheet>
               {reportMessage ? <Text accessibilityRole="alert" style={styles.reportMessage}>{reportMessage}</Text> : null}
             </GlassCard>
-            <Text style={styles.footer}>Only fields intended for public profile display are shown. Profile availability follows the player’s privacy and moderation settings. Verify roster and free-agent status independently.</Text>
+            <Text style={styles.footer}>Public profile fields follow the player’s privacy and moderation settings. Verified team links are visible only to their owner here. Verify roster and free-agent status independently.</Text>
           </>
         ) : null}
       </ScrollView>
