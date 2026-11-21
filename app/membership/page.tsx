@@ -329,38 +329,21 @@ function MembershipContent() {
             <div className="section-heading">
               <div className="eyebrow">CHOOSE YOUR ACCESS</div>
               <h2>
-                {accountType === "fan" ? <>Built for fans who follow the game.</> : accountType === "player" ? <>Built for players<br />making serious decisions.</> : <>Built for basketball professionals.</>}
+                {accountType === "fan" ? <>Built for fans who follow the game.</> : accountType === "player" ? <>Built for players making serious decisions.</> : <>Built for basketball professionals.</>}
               </h2>
               <p>{accountType === "fan" ? "Choose the fan access that fits how you follow basketball." : "Start with the level of research access that fits you."}</p>
             </div>
-
-            {accountType === "player" && (
-              <div className="dashboard-card" style={{ marginBottom: 24, padding: 20 }}>
-                <div className="eyebrow">PLAYER LAUNCH OFFER</div>
-                <h3 style={{ margin: "8px 0" }}>Have a first-month code?</h3>
-                <p className="muted" style={{ marginBottom: 14 }}>Eligible Player accounts can redeem a limited promo code for one month of HoopCheck Pro at no charge. The regular monthly price applies after the free month unless you cancel before renewal.</p>
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  <input
-                    aria-label="First month free promo code"
-                    autoComplete="off"
-                    maxLength={64}
-                    placeholder="Enter promo code"
-                    value={promoCode}
-                    onChange={(event) => setPromoCode(event.target.value)}
-                    style={{ flex: "1 1 220px", minHeight: 48, padding: "12px 14px", border: "1px solid #d1d1ca", borderRadius: 4, background: "var(--hc-paper-strong, #fff)", color: "var(--hc-text, #171715)" }}
-                  />
-                  <button className="btn" onClick={() => startCheckout("pro", "month", promoCode)} disabled={!promoCode.trim() || checkoutLoading !== null || loading}>
-                    {checkoutLoading === "pro-month" ? "Validating code..." : "Redeem & Start Free Month"}
-                  </button>
-                </div>
-              </div>
-            )}
 
             <div className="hc-billing-options" role="group" aria-label="Choose billing term">
               <button type="button" aria-pressed={billingInterval==="month"} className="hc-billing-option" onClick={()=>setBillingInterval("month")}><span>Monthly</span><small>Flexible billing</small></button>
               <button type="button" aria-pressed={billingInterval==="6_month"} className="hc-billing-option" onClick={()=>setBillingInterval("6_month")}><span>6 months</span><small>Save 10%</small></button>
               <button type="button" aria-pressed={billingInterval==="year"} className="hc-billing-option" onClick={()=>setBillingInterval("year")}><span>Annual</span><small>Save 15%</small></button>
             </div>
+            {accountType === "player" && billingInterval === "month" && (
+              <p className="hc-trial-note" role="note">
+                <strong>7-day trial update:</strong> A seven-day free trial for first-time monthly Player Pro and Premium memberships is being prepared, but it is not currently available at checkout. Your selected monthly price and any applicable taxes or discounts are shown before payment.
+              </p>
+            )}
             <div className="hc-membership-value"><span className="hc-membership-value__mark">★</span><div><strong>Best flexibility, better value.</strong><p>Choose monthly, 6-month, or annual billing. The total shown is the amount charged for the selected term.</p></div></div><div className="plans">
               <div className="plan-card">
                 <div className="plan-top">
@@ -448,7 +431,30 @@ function MembershipContent() {
               </div>
             </div>
 
-            <p className="hc-promo-hint">Have a promo code? Enter it on the secure Stripe Checkout page before you pay.</p>\n            <div className="subscription-legal">
+            {accountType === "player" && (
+              <div className="dashboard-card" style={{ marginBottom: 24, padding: 20 }}>
+                <div className="eyebrow">PLAYER LAUNCH OFFER</div>
+                <h3 style={{ margin: "8px 0" }}>Have a first-month code?</h3>
+                <p className="muted" style={{ marginBottom: 14 }}>Eligible Player accounts can redeem a limited promo code for one month of HoopCheck Pro at no charge. The regular monthly price applies after the free month unless you cancel before renewal.</p>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <input
+                    aria-label="First month free promo code"
+                    autoComplete="off"
+                    maxLength={64}
+                    placeholder="Enter promo code"
+                    value={promoCode}
+                    onChange={(event) => setPromoCode(event.target.value)}
+                    style={{ flex: "1 1 220px", minHeight: 48, padding: "12px 14px", border: "1px solid #d1d1ca", borderRadius: 4, background: "var(--hc-paper-strong, #fff)", color: "var(--hc-text, #171715)" }}
+                  />
+                  <button className="btn" onClick={() => startCheckout("pro", "month", promoCode)} disabled={!promoCode.trim() || checkoutLoading !== null || loading}>
+                    {checkoutLoading === "pro-month" ? "Validating code..." : "Redeem & Start Free Month"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <p className="hc-promo-hint">Have a promo code? Enter it on the secure Stripe Checkout page before you pay.</p>
+            <div className="subscription-legal">
               <p>
                 By purchasing a HoopCheck membership, you agree to our{" "}
                 <Link href="/terms">Terms of Service</Link> and acknowledge our{" "}
