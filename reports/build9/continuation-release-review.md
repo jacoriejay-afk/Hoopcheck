@@ -112,3 +112,34 @@ all passed. The missing Build 9 master remains unrecovered; this is not a replac
 
 Release remains blocked. No merge, deploy, EAS, production, Stripe or Supabase
 mutation was performed. Apple activation remains unchanged.
+
+
+## Phase 3D checklist update — 2026-11-21
+
+Exact starting head is #752 `201792d7`; its build, mobile and unsigned simulator
+compile checks passed. No missing Build 9 master was recovered or substituted.
+See [Phase 3D](phase3d/README.md) for the read-only hosted audit and current evidence.
+
+- [x] Audited deployed table/column/policy/function metadata without reading user
+  rows, changing policies/grants, invoking provider ingestion or mutating production.
+- [x] Corrected Phase 3C source-only assumptions: deployed player_career_stops and
+  team_roster_spots are absent. Their UI queries are now disabled by default.
+  Prior Phase 3C positive fixtures do not establish hosted contract availability.
+- [x] Exact season-filtered league-club queries never mix historical membership
+  rows with current direct links. Loading/error/retry/empty/capped states are explicit.
+- [x] Private verified current player-team affiliations use existing owner/admin
+  RLS, owner-session rechecks and date bounds; proof documents are never selected.
+  This does not establish a public roster or add private evidence to Passport.
+- [x] Existing owner-only Passport, Free/Pro/Premium bootstrap entitlements,
+  authentication and subscriptions remain unchanged.
+- [ ] Final implementation and evidence-head CI results, native PDF/share-sheet
+  simulator acceptance and actual screenshots: see Phase 3D results as recorded.
+- [ ] Approved public current-roster projection, provider-player mapping and
+  season-aware player-box-score/verified-award contracts with provenance/permissions.
+- [ ] Hosted private-country/moderation grants and missing owner/username/consent
+  bridge require an approved compatibility rollout; do not use raw-profile fallback.
+- [ ] Expo Doctor network checks and live hosted role/purchase acceptance.
+- [ ] Physical iPhone touch, keyboard, VoiceOver, performance and Build 7 freeze
+  evidence. Simulator evidence cannot clear these gates.
+
+Release remains blocked. No merge/deploy/EAS, production or Stripe mutation occurred.

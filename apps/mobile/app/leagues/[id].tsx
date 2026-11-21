@@ -77,7 +77,7 @@ export default function LeagueDetailScreen() {
   return (
     <SafeAreaView edges={["left", "right", "bottom"]} style={styles.safe}>
       <OfflineBanner savedAt={savedAt} />
-      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); setRefreshId(value => value + 1); }} />} contentContainerStyle={styles.content}>
+      <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); setRefreshId(value => value + 1); }} />} contentContainerStyle={styles.content}>
         <Pressable accessibilityRole="link" style={{ minHeight: 44, justifyContent: "center" }} onPress={() => router.back()}><Text style={styles.back}>‹ Back to leagues</Text></Pressable>
         {loading ? <Skeleton profile /> : error || !league ? (
           <View style={styles.empty}><Text style={styles.title}>League unavailable</Text><Text style={styles.body}>This league may have been removed or is not currently listed.</Text></View>
