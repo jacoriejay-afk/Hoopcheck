@@ -29,7 +29,7 @@ Record test-mode Checkout Session IDs, event IDs, test customer/subscription IDs
 
 ## Release decision
 
-HOLD until the isolated test-mode lifecycle and atomic reservation tests are evidenced, and the owner separately approves a reviewed production rollout. Current UI says eligible customers *may* receive a trial; it must not advertise a guaranteed active offer.
+HOLD until the isolated test-mode lifecycle and atomic reservation tests are evidenced, and the owner separately approves a reviewed production rollout. Current UI explicitly states the seven-day trial is not currently available at checkout; the server-side rollout flag remains hard-disabled.
 
 ## Read-only Stripe test-mode inspection — 2026-11-21
 
@@ -67,3 +67,14 @@ Read-only `pg_get_functiondef` inspection of the isolated test project found all
 The installed functions use empty search paths and SECURITY INVOKER (as confirmed by `prosecdef=false`); RPC execution remains restricted to `service_role`. Formatting and dollar-quote labels differ, not the reviewed logic. This is a **source/installed definition review**, not a behavioral or concurrency test.
 
 Next required: confirm sandbox webhook routing and signing-secret configuration without exposing secret values; run actual isolated claim and signed-event tests only after endpoint/backend binding is confirmed.
+
+## Final-head automated verification — 2026-11-21
+
+PR #758 code head `c98351f8950156f9a113f0a1a518cb46b8b24503`:
+
+- HoopCheck CI **SUCCESS** — run [44938256454](https://github.com/jacoriejay-afk/Hoopcheck/actions/runs/44938256454). Includes isolated trial reservation, trial release-safety, eligibility, fail-closed recovery, membership selection, web build, and browser theme regressions.
+- VERIFY-1 entitlement matrix **SUCCESS** — run [44938256529](https://github.com/jacoriejay-afk/Hoopcheck/actions/runs/44938256529).
+- Launch Test Final Gate **SUCCESS** — run [44938256495](https://github.com/jacoriejay-afk/Hoopcheck/actions/runs/44938256495).
+- Five Vercel commit statuses **SUCCESS**, including the sandbox preview; branch remains draft/unmerged.
+
+Stripe has no enabled test webhook destination pointing to this PR's current preview. Do not reuse older ephemeral endpoint secrets or expose deployment-protection bypass tokens. A verified, signed, authenticated end-to-end checkout remains untested. **Release decision remains HOLD.**
