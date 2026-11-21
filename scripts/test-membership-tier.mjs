@@ -7,9 +7,35 @@ const compiled = ts.transpileModule(source, {
   compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 },
 }).outputText;
 const moduleUrl = "data:text/javascript;base64," + Buffer.from(compiled).toString("base64");
-const { getHoopCheckEntitlements } = await import(moduleUrl);
+const { getHoopCheckEntitlements, getActiveMembershipTier, canStartNewMembershipCheckout } = await import(moduleUrl);
 
 const active = (plan) => ({ plan, status: "active", access_status: "active" });
+// Direct checkout must never sell an equal or lower tier while paid access is active.
+// A non-Stripe Premium grant is still Premium and cannot buy Pro again.
+const checkoutEligibilityCases = [
+  ["free", "pro", true],
+  ["free", "premium", true],
+  ["pro", "pro", false],
+  ["pro", "premium", true],
+  ["premium", "pro", false],
+  ["premium", "premium", false],
+];
+for (const [current, requested, expected] of checkoutEligibilityCases) {
+  assert.equal(canStartNewMembershipCheckout(current, requested), expected,
+    `checkout ${current} -> ${requested} must ${expected ? "allow" : "deny"}`);
+}
+assert.equal(canStartNewMembershipCheckout(getActiveMembershipTier({plan:"premium",status:"active"}),"pro"), false,
+  "non-Stripe active Premium cannot downgrade through checkout");
+assert.equal(canStartNewMembershipCheckout(getActiveMembershipTier({plan:"premium",status:"canceled"}),"pro"), true,
+  "canceled Premium without active entitlement may purchase again");
+assert.equal(canStartNewMembershipCheckout(getActiveMembershipTier({plan:"premium",status:"active",current_period_end:"2000-01-01T00:00:00Z"}),"pro"), true,
+  "expired Premium may restart paid membership");
+const checkoutSource = readFileSync(new URL("../app/api/stripe/webhook/create-checkout/route.ts", import.meta.url), "utf8");
+assert.ok(checkoutSource.includes("!canStartNewMembershipCheckout(currentTier, plan)"),
+  "server-side checkout route must enforce no downgrade");
+assert.ok(checkoutSource.includes("hasStripeSubscription || !canStartNewMembershipCheckout(currentTier, plan)"),
+  "existing Stripe-backed subscriptions must remain separately guarded");
+
 const keys = [
   "canReadHoopFeed", "canWriteHoopFeed", "canReadFanFeed", "canWriteFanFeed",
   "canReadFullReviews", "canViewTrustScore", "canWriteReviews",

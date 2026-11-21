@@ -69,6 +69,19 @@ export function getActiveMembershipTier(
   return "free";
 }
 
+/**
+ * A new checkout must only move a user to a strictly higher active tier.
+ * Existing paid access (including non-Stripe grants) must not be repurchased
+ * or downgraded through a direct checkout API call. Existing Stripe-backed
+ * subscriptions are separately handled by the billing portal guard.
+ */
+export function canStartNewMembershipCheckout(
+  currentTier: MembershipTier,
+  requestedTier: "pro" | "premium",
+): boolean {
+  return !isAtLeastTier(currentTier, requestedTier);
+}
+
 export function getHoopCheckEntitlements(args: {
   accountType: HoopCheckAccountType | null | undefined;
   subscription?: ActiveMembership | null;
