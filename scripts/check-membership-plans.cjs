@@ -118,9 +118,12 @@ test("public trial display is read from the same fail-closed server activation b
     "Live trial offer is displayed only when the server says it is available");
   assert.ok(page.includes("not currently available at public checkout"),
     "Fallback must not promise the trial until activation is verified");
-  assert.match(statusEndpoint, /canEnableProductionSevenDayTrial\\(\\{/);
-  assert.match(statusEndpoint, /Cache-Control.*no-store/);
-  assert.match(statusEndpoint, /stripeMatchesDeployment\\(process\\.env\\.STRIPE_SECRET_KEY\\)/);
+  assert.ok(statusEndpoint.includes("canEnableProductionSevenDayTrial({"),
+    "Offer status must use the canonical production gate");
+  assert.ok(statusEndpoint.includes("Cache-Control") && statusEndpoint.includes("no-store"),
+    "Offer status cannot be cached through activation changes");
+  assert.ok(statusEndpoint.includes("stripeMatchesDeployment(process.env.STRIPE_SECRET_KEY)"),
+    "Offer status must recheck Stripe key mode");
 });
 
 test("checkout rejects equal and lower active tiers even without a Stripe subscription ID", () => {
