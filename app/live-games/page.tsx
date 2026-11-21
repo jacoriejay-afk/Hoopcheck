@@ -150,13 +150,18 @@ export default function LiveGamesPage() {
     const presenceChannel = supabase.channel("live-games-presence-counts")
       .on("postgres_changes", { event: "*", schema: "public", table: "fan_live_chat_presence" }, () => { void load(); })
       .subscribe();
+    // Listen for provider-backed score changes when fan_live_games is published to
+    // Realtime. The regular 60-second refresh remains the fallback if it is not.
+    const gameChangesChannel = supabase.channel("live-games-score-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "fan_live_games" }, () => { void load(); })
+      .subscribe();
     const refresh = window.setInterval(() => {
       setClock(new Date());
       void load();
     }, 60_000);
     const onVisible = () => { if (document.visibilityState === "visible") { setClock(new Date()); void load(); } };
     document.addEventListener("visibilitychange", onVisible);
-    return () => { window.clearInterval(refresh); document.removeEventListener("visibilitychange", onVisible); void supabase.removeChannel(presenceChannel); };
+    return () => { window.clearInterval(refresh); document.removeEventListener("visibilitychange", onVisible); void supabase.removeChannel(presenceChannel); void supabase.removeChannel(gameChangesChannel); };
   }, [load]);
 
   const prepared = useMemo(() => games.map(game => ({
