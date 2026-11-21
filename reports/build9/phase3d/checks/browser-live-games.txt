@@ -1,0 +1,5 @@
+PASS light fan pro: game listing, role gates, side preference, predictions, chat draft/error/send/report/mute/restore/block
+PASS dark fan pro: game listing, role gates, side preference, predictions, chat draft/error/send/report/mute/restore/block
+PASS light player free: game listing, role gates, side preference, predictions
+PASS fan free: game/chat permission gate
+PASS coach paid: game/chat permission gate

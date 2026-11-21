@@ -132,8 +132,13 @@ See [Phase 3D](phase3d/README.md) for the read-only hosted audit and current evi
   This does not establish a public roster or add private evidence to Passport.
 - [x] Existing owner-only Passport, Free/Pro/Premium bootstrap entitlements,
   authentication and subscriptions remain unchanged.
-- [ ] Final implementation and evidence-head CI results, native PDF/share-sheet
-  simulator acceptance and actual screenshots: see Phase 3D results as recorded.
+- [x] Local root/mobile TypeScript, 223 native tests, 47 auth/billing tests, 14 native
+  sign-in tests, entitlement matrix, 13 browser suites, website build, theme/surface
+  audits and iOS/web exports pass; 125 inherited lint warnings remain. Actual default
+  RN Web captures are in Phase 3D, explicitly distinguished from native screenshots.
+- [ ] Exact final-head CI and corrected native PDF/share-sheet simulator acceptance:
+  first attempt compiled the app but failed test-target setup before execution.
+  The PR description records the later observed result and links runtime artifacts.
 - [ ] Approved public current-roster projection, provider-player mapping and
   season-aware player-box-score/verified-award contracts with provenance/permissions.
 - [ ] Hosted private-country/moderation grants and missing owner/username/consent

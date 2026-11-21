@@ -1,0 +1,3 @@
+e81f2d68 fix(ci): name Passport UI test product and expose simulator diagnostics [skip vercel]
+4d401456 feat(mobile): show owner-only verified affiliations with deployed contract tests [skip vercel]
+5dabe0b7 feat(mobile): gate undeployed contracts add league seasons and native simulator smoke [skip vercel]

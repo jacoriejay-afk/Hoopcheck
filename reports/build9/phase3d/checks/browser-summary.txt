@@ -1,0 +1,50 @@
+[
+  {
+    "suite": "profile-research",
+    "exit": 0
+  },
+  {
+    "suite": "player-profiles",
+    "exit": 0
+  },
+  {
+    "suite": "membership",
+    "exit": 0
+  },
+  {
+    "suite": "mfa",
+    "exit": 0
+  },
+  {
+    "suite": "profile-editor",
+    "exit": 0
+  },
+  {
+    "suite": "club-groups",
+    "exit": 0
+  },
+  {
+    "suite": "live-games",
+    "exit": 0
+  },
+  {
+    "suite": "feed",
+    "exit": 0
+  },
+  {
+    "suite": "discovery",
+    "exit": 0
+  },
+  {
+    "suite": "media",
+    "exit": 0
+  },
+  {
+    "suite": "theme-preference",
+    "exit": 0
+  },
+  {
+    "suite": "design",
+    "exit": 0
+  }
+]

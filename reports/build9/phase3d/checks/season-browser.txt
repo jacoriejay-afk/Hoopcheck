@@ -1,0 +1,2 @@
+PASS light: exact historical/current season, no mixed clubs, empty/error/retry, default-off undeployed data, owner Passport preserved
+PASS dark: exact historical/current season, no mixed clubs, empty/error/retry, default-off undeployed data, owner Passport preserved

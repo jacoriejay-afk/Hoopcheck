@@ -46,3 +46,28 @@ PASS or native screenshot is claimed for that attempt. The follow-up sets explic
 product/module names and test-host association, and prints test failure diagnostics.
 The original artifact is retained by GitHub Actions; local artifact download through
 the shell was proxy-denied, while the GitHub connector retrieved the same artifact.
+
+
+## Local implementation verification
+
+At implementation e81f2d68 (UI/data code 4d401456), root/mobile TypeScript pass;
+223 native behavioral tests pass; 47 auth/billing/permission tests and 14 native
+sign-in/callback tests pass. The entitlement matrix passes 10 role/tier cells and
+22 entitlements. Full lint has zero errors and 125 inherited warnings. All 12
+candidate-fixture browser suites plus the new default-off season/affiliation suite
+pass (13 total), in light/dark themes. Native subprocess/browser checks required
+execution outside the restricted command sandbox; the completed behavioral suite
+was rerun there rather than treating file-level sandbox failures as product results.
+Website build/bundle/certificate checks, zero-hardcoded-surface audit and 38 theme
+tokens/21 authored pairs pass; website application code is unchanged by this phase.
+Candidate/default web exports and default iOS Hermes export pass. Local iOS prebuild
+and generated-permission assertions pass. No new protected permission is requested.
+Raw logs, baseline CI and screenshot hashes are in checks/; actual default-build
+browser screenshots and interpretation are in screenshots/README.md.
+
+Expo Doctor was rechecked: **16/18**, config schema fetch ECONNREFUSED and React
+Native Directory unexpected server response remain failed network gates. Nothing
+was ignored or marked passed. Final draft-head CI and corrected simulator attempt
+are live on #754; this evidence commit does not assert their outcome in advance.
+The PR description records the subsequently observed exact-head results and links
+to native artifacts. All physical-device gates remain unchecked.
