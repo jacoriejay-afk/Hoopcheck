@@ -344,6 +344,7 @@ function MembershipContent() {
               {subscription.stripe_subscription_id
                 ? "Cancel here to stop the next Stripe renewal. Your access continues through the current paid period or trial end; you can also manage billing securely in Stripe."
                 : "This membership has no linked Stripe subscription, so there is no Stripe recurring charge to cancel here. Request a support review to remove access or address billing managed elsewhere."}
+            </div>
           </div>
           {isActive && (
             <MembershipComparison
