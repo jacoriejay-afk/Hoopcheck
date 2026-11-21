@@ -23,6 +23,7 @@ export default function TrustIndexPage() {
   const [locked, setLocked] = useState(false);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [hasMore, setHasMore] = useState(false);
+  const [refresh, setRefresh] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -70,7 +71,7 @@ export default function TrustIndexPage() {
       })();
     }, 260);
     return () => { active = false; window.clearTimeout(timer); };
-  }, [kind, query]);
+  }, [kind, query, refresh]);
 
   const ordered = useMemo(() => {
     const rows = [...teams];
@@ -107,7 +108,7 @@ export default function TrustIndexPage() {
     </section>
     <p className="hc-index-note">Results are limited to the first {PAGE_SIZE} matching clubs; sorting applies only to those results, not a worldwide ranking. Club score availability depends on your membership and sufficient approved reviews.</p>
     {status === "loading" && <p role="status" className="hc-index-status">Checking club review data…</p>}
-    {status === "error" && <div className="hc-index-status" role="alert">Trust data is unavailable. <button type="button" onClick={() => setQuery(current => current + " ")}>Try again</button></div>}
+    {status === "error" && <div className="hc-index-status" role="alert">Trust data is unavailable. <button type="button" onClick={() => setRefresh(value => value + 1)}>Try again</button></div>}
     {status === "ready" && <>
       {locked && <div className="hc-index-gate"><strong>Unlock verified Trust Scores</strong><p>Your membership does not currently include this evidence. Club names remain browseable.</p><Link href="/membership">See membership access</Link></div>}
       <section aria-label="Team trust comparisons" className="hc-index-grid">
