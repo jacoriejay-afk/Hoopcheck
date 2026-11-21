@@ -7,6 +7,14 @@
 - No existing `public.teams.website` values, and only 81 source-linked external IDs. Automated team-name matching alone would be unsafe.
 - The admin Logo Studio previously read only 2,000 primary `teams` rows; pagination now covers the complete admin queue, excluding mirrored duplicates in that view.
 
+## Curated live pilot (postflight verified)
+
+- A guarded, atomic production data update assigned **16 exact team records** to seven corresponding Wikimedia Commons crest sources: Boca Juniors, Flamengo, Ferro Carril Oeste, Instituto, Obras Basket, San Lorenzo and Baskonia.
+- Updated **12 primary men's rows** and **4 women's source rows**. The existing women's-team mirror trigger populated the corresponding four `teams` records. Read-only postflight reported **12/1,872 men's and 4/635 women's** with image URLs in `teams`; `womens_teams` separately reports **4/214** (these four are mirrors, not additional unique team records).
+- Source URLs and identity mappings are recorded in `scripts/team-logo-commons-pilot-20261122.json`. These are external Wikimedia URLs for a limited source-reviewed pilot, **not yet copied into HoopCheck Storage**, and therefore require live image checks before broad rollout.
+- Commons file descriptions label the images `PD-textlogo`. Club trademarks may be protected separately, and no endorsement or blanket app-store rights have been established. If a club requests takedown, revert only its exact recorded team IDs. Owner-uploaded official logos always take precedence.
+- No provider artwork from FIBA, API-Sports, or TheSportsDB was imported.
+
 ## Safe logo publishing policy
 
 1. Team identity must match **exact UUID, table, name and country**, not a normalized fuzzy match.
