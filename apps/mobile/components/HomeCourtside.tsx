@@ -68,7 +68,7 @@ export function HomeCourtside() {
       ] as const).map(item => <Pressable key={item.route} accessibilityRole="link"
         accessibilityLabel={item.label} onPress={() => router.push(item.route as "/feed")}
         style={({ pressed }) => ({ flex: 1, minWidth: 0, opacity: pressed ? .72 : 1 })}>
-        <GlassSurface style={{
+        <GlassSurface native={false} style={{
           minHeight: 116, borderRadius: 22, padding: 12, gap: 12,
           justifyContent: "space-between",
         }} intensity={35}>
