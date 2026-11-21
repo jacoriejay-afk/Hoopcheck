@@ -500,7 +500,7 @@ export default function Feed(){
         {(["Top", "Latest"] as const).map(item => <button key={item} type="button" aria-pressed={sort === item} onClick={() => chooseSort(item)}>{item}</button>)}
       </div>
     </div>
-    <div className="hf5-type-row hc-liquid-glass-filter" role="group" aria-label="Filter HoopFeed by post type">{TYPE_FILTERS.map(t=><button type="button" key={t} className={"hf5-type-chip"+(typeFilter===t?" is-active":"")} aria-pressed={typeFilter===t} onClick={()=>{setTypeFilter(t);setVisibleLimit(30);}}>{t}</button>)}</div>
+    <div className="hf5-type-row hc-liquid-glass-filter" role="group" aria-label="Filter HoopFeed by post type">{TYPE_FILTERS.map(t=><button type="button" key={t} className={"hf5-type-chip"+(typeFilter===t?" is-active":"")} aria-pressed={typeFilter===t} onClick={()=>{setTypeFilter(t);setVisibleLimit(30);}}>{t}</button>)}<Link href="/reels" className="hf5-type-chip hc-feed-reels-tab" aria-label="Watch HoopFeed Reels">▶ Reels</Link></div>
 
     {!composerExpanded && <button type="button" className="hc-feed-slim-composer" onClick={() => setComposerExpanded(true)} aria-controls="hc-feed-composer-fields">
       <span className="hc-feed-composer__avatar" aria-hidden="true">{profile?.avatar_url ? <img src={profile.avatar_url} alt="" /> : "HC"}</span>
