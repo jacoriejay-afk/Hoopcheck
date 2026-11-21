@@ -25,7 +25,7 @@ export function CourtsideBanner({ eyebrow, title, children }: { eyebrow: string;
     <LinearGradient colors={["#101E35", "#182A3E", "#352123"]}
       locations={[0, .55, 1]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
       style={StyleSheet.absoluteFill} />
-    <Image pointerEvents="none" accessible={false} source={arena}
+    <Image pointerEvents="none" accessible={false} alt="" source={arena}
       resizeMode="cover" style={[StyleSheet.absoluteFill, { opacity: .24 }]} />
     <LinearGradient pointerEvents="none"
       colors={["rgba(255,139,66,.23)", "rgba(255,124,53,.03)", "rgba(8,18,30,.40)"]}
