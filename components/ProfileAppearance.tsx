@@ -25,15 +25,16 @@ function validSocialUrl(value: string, host?: string) {
 export default function ProfileAppearance({ current, onSave }: { current: Cover; onSave: (cover: Cover) => void }) {
   const [choice, setChoice] = useState(current);
   const [saving, setSaving] = useState(false);
-  const [layout, setLayout] = useState<"standard" | "compact">("standard");
-  const [savedLayout, setSavedLayout] = useState<"standard" | "compact">("standard");
+  const [layout, setLayout] = useState<"standard" | "compact" | "showcase">("standard");
+  const [savedLayout, setSavedLayout] = useState<"standard" | "compact" | "showcase">("standard");
   const [links, setLinks] = useState<Record<SocialKey, string>>({ instagram: "", tiktok: "", youtube: "", website: "" });
   const [savedLinks, setSavedLinks] = useState<Record<SocialKey, string>>({ instagram: "", tiktok: "", youtube: "", website: "" });
   useEffect(() => {
     let active = true;
     void supabase.auth.getUser().then(({ data: { user } }) => {
       if (!active) return;
-      const selected = user?.user_metadata?.hoopcheck_profile_layout === "compact" ? "compact" : "standard";
+      const storedLayout = user?.user_metadata?.hoopcheck_profile_layout;
+      const selected = storedLayout === "compact" || storedLayout === "showcase" ? storedLayout : "standard";
       setLayout(selected); setSavedLayout(selected);
       const metadata = user?.user_metadata?.hoopcheck_social_links;
       const next = { instagram: "", tiktok: "", youtube: "", website: "" };
@@ -66,10 +67,10 @@ export default function ProfileAppearance({ current, onSave }: { current: Cover;
       onSave(choice);
       setSavedLayout(layout);
       setSavedLinks({ ...links });
-      setMessage("Profile cover saved.");
+      setMessage("Profile style and links saved.");
     } catch {
       setFailed(true);
-      setMessage("Could not save your profile cover. Try again.");
+      setMessage("Could not save your profile style. Try again.");
     } finally {
       setSaving(false);
     }
@@ -78,7 +79,7 @@ export default function ProfileAppearance({ current, onSave }: { current: Cover;
   return (
     <section className="dashboard-card hc-profile-appearance" id="profile-appearance">
       <h2>Profile appearance</h2>
-      <p className="muted">Choose a cover for your profile and account screens.</p>
+      <p className="muted">Make your member profile your own. Choose a cover, layout and links. These options do not change your account visibility.</p>
       <div className="hc-social-cover hc-social-cover-preview" data-profile-cover={choice} aria-hidden="true" />
       <fieldset>
         <legend>Cover color</legend>
@@ -95,10 +96,10 @@ export default function ProfileAppearance({ current, onSave }: { current: Cover;
       <fieldset>
         <legend>Profile layout</legend>
         <div className="hc-cover-options">
-          {(["standard", "compact"] as const).map(option => <label key={option}>
+          {(["standard", "compact", "showcase"] as const).map(option => <label key={option}>
             <input type="radio" name="profile-layout" value={option} checked={layout === option} disabled={saving}
               onChange={() => { setLayout(option); setMessage(""); }} />
-            {option === "standard" ? "Standard · spacious" : "Compact · more on screen"}
+            {option === "standard" ? "Standard · balanced" : option === "compact" ? "Compact · more on screen" : "Showcase · bold player identity"}
           </label>)}
         </div>
       </fieldset>
@@ -115,7 +116,7 @@ export default function ProfileAppearance({ current, onSave }: { current: Cover;
         </div>
       </fieldset>
       <button type="button" className="btn" disabled={saving || (choice === current && layout === savedLayout && JSON.stringify(links) === JSON.stringify(savedLinks))} onClick={() => void save()}>
-        {saving ? "Saving…" : "Save cover"}
+        {saving ? "Saving…" : "Save profile style"}
       </button>
       {message && <p role={failed ? "alert" : "status"}>{message}</p>}
     </section>
