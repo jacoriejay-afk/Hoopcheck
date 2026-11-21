@@ -35,3 +35,14 @@ This Linux workspace has no xcrun. The existing macOS-15 GitHub runner provides 
 - [ ] Hosted privacy bridge/catalog rehearsal and installed Build 7/old-client compatibility approval.
 - [ ] Expo Doctor network gates; real hosted runtime authorization and purchase acceptance.
 - [ ] Physical-iPhone touch/keyboard/VoiceOver/performance/freeze verification and independent release approval.
+
+
+## Simulator attempt history
+
+Run 44890859250 at implementation 5dabe0b7 compiled the unsigned app but failed
+before test execution: the generated UI-test bundle resolved an empty PRODUCT_NAME,
+producing duplicate -Runner.app/PlugIns/.xctest outputs. No native runtime/share-sheet
+PASS or native screenshot is claimed for that attempt. The follow-up sets explicit
+product/module names and test-host association, and prints test failure diagnostics.
+The original artifact is retained by GitHub Actions; local artifact download through
+the shell was proxy-denied, while the GitHub connector retrieved the same artifact.

@@ -39,7 +39,11 @@ if [[ "$state" != "Booted" ]]; then xcrun simctl boot "$simulator_id"; fi
 xcrun simctl bootstatus "$simulator_id" -b
 for theme in light dark; do
   xcrun simctl ui "$simulator_id" appearance "$theme"
-  xcodebuild test -workspace ios/HoopCheck.xcworkspace -scheme HoopCheck -configuration Debug -sdk iphonesimulator -destination "id=$simulator_id" -derivedDataPath /tmp/hoopcheck-ios-derived -resultBundlePath "$artifact_root/$theme.xcresult" -only-testing:PassportSmokeUITests CODE_SIGNING_ALLOWED=NO > "$artifact_root/$theme-test.log" 2>&1
+  if ! xcodebuild test -workspace ios/HoopCheck.xcworkspace -scheme HoopCheck -configuration Debug -sdk iphonesimulator -destination "id=$simulator_id" -derivedDataPath /tmp/hoopcheck-ios-derived -resultBundlePath "$artifact_root/$theme.xcresult" -only-testing:PassportSmokeUITests CODE_SIGNING_ALLOWED=NO > "$artifact_root/$theme-test.log" 2>&1; then
+    tail -n 140 "$artifact_root/$theme-test.log"
+    if [[ -d "$artifact_root/$theme.xcresult" ]]; then xcrun xcresulttool export attachments --path "$artifact_root/$theme.xcresult" --output-path "$artifact_root/$theme-screenshots" || true; fi
+    exit 1
+  fi
   xcrun xcresulttool export attachments --path "$artifact_root/$theme.xcresult" --output-path "$artifact_root/$theme-screenshots"
 done
 python3 - <<'PY'
