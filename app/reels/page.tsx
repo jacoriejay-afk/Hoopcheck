@@ -54,7 +54,12 @@ export default function ReelsPage() {
         : { data: [], error: null };
       if (hiddenResult.error) throw hiddenResult.error;
       if (!mounted.current) return;
-      const excluded = new Set((hiddenResult.data ?? []).map(row => row.post_id));
+      // Existing archives can only be written by the post author. Keep viewer
+      // hides local; never attempt to bypass the existing RLS policy.
+      let locallyHidden: string[] = [];
+      try { locallyHidden = JSON.parse(window.localStorage.getItem(`hoopcheck-reels-hidden:${id}`) || "[]"); }
+      catch { /* Storage is optional on private browsing devices. */ }
+      const excluded = new Set([...(hiddenResult.data ?? []).map(row => row.post_id), ...locallyHidden]);
       const incoming = page.filter(row => !excluded.has(row.id) && Boolean(row.video_url)).map(row => ({
         ...row,
         video_url: row.video_url as string,
@@ -132,13 +137,14 @@ export default function ReelsPage() {
     return () => observer.disconnect();
   }, [reels, status]);
 
-  async function hidePost(postId: string) {
+  function hidePost(postId: string) {
     if (!viewerId) return;
-    const { error } = await supabase.from("feed_post_archives").upsert(
-      { post_id: postId, user_id: viewerId },
-      { onConflict: "user_id,post_id" },
-    );
-    if (error) { setMessage("Couldn't hide this video. Please try again."); return; }
+    try {
+      const key = `hoopcheck-reels-hidden:${viewerId}`;
+      const previous = JSON.parse(window.localStorage.getItem(key) || "[]");
+      const ids: string[] = Array.isArray(previous) ? previous.filter(id => typeof id === "string") : [];
+      window.localStorage.setItem(key, JSON.stringify([...new Set([...ids, postId])].slice(-500)));
+    } catch { /* Hiding still works for this open session if local storage is blocked. */ }
     setReels(current => current.filter(post => post.id !== postId));
   }
 
@@ -178,7 +184,7 @@ export default function ReelsPage() {
             <nav aria-label="Reel actions">
               <Link href={`/feed#post-${post.id}`}>Check & comment</Link>
               <button type="button" onClick={() => void sharePost(post.id)}>Share</button>
-              <button type="button" onClick={() => void hidePost(post.id)}>Hide</button>
+              <button type="button" onClick={() => hidePost(post.id)}>Hide</button>
             </nav>
           </div>
         </article>)}
