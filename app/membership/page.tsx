@@ -340,7 +340,7 @@ function MembershipContent() {
             </div>
             {billingInterval === "month" && (
               <p className="hc-trial-note" role="note">
-                <strong>7-day trial update:</strong> A one-time seven-day free trial for eligible first-time monthly Pro and Premium memberships across all HoopCheck account types is being prepared, but it is not currently available at public checkout. Account-specific plan rules still apply. Your selected monthly price and any applicable taxes or discounts are shown before payment.
+                <strong>7-day trial update:</strong> A one-time seven-day free trial for eligible first-time monthly Pro and Premium memberships across all supported HoopCheck account types is being prepared, but it is not currently available at public checkout. Account-specific plan rules still apply. Your selected monthly price and any applicable taxes or discounts are shown before payment.
               </p>
             )}
             <div className="hc-membership-value"><span className="hc-membership-value__mark">★</span><div><strong>Best flexibility, better value.</strong><p>Choose monthly, 6-month, or annual billing. The total shown is the amount charged for the selected term.</p></div></div><div className="plans">
