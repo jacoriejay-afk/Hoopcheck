@@ -3,7 +3,7 @@ export const FEED_PAGE_SIZE = 20;
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const isFeedId = (value: string) => uuid.test(value);
 export type FeedCursor = { id: string; created_at: string };
-export type FeedPost = FeedCursor & { author_id: string; body: string | null; image_url: string | null; image_urls: string[] | null; video_url: string | null; post_kind: string; poll_options: string[] | null; expires_at: string | null; profiles: { display_name: string | null; account_type: string | null } | null };
+export type FeedPost = FeedCursor & { author_id: string; body: string | null; image_url: string | null; image_urls: string[] | null; video_url: string | null; post_kind: string; poll_options: string[] | null; expires_at: string | null; profiles: { display_name: string | null; account_type: string | null; avatar_url?: string | null; avatar_moderation_status?: string | null } | null };
 export type FeedComment = FeedCursor & { author_id: string; body: string; parent_id: string | null; profiles: { display_name: string | null } | null };
 function apiUrl(origin: string, path: string) {
   const url = new URL(origin);
@@ -15,7 +15,7 @@ function validCursor(cursor: FeedCursor) {
   return uuid.test(cursor.id) && /^\d{4}-\d{2}-\d{2}T[\d:.]+(?:Z|[+-]\d\d:\d\d)$/.test(cursor.created_at) && Number.isFinite(Date.parse(cursor.created_at));
 }
 function readablePosts(client: SupabaseClient, now: Date) {
-  return client.from("feed_posts").select("id,author_id,body,image_url,image_urls,video_url,post_kind,poll_options,created_at,expires_at,profiles:profiles!feed_posts_author_id_fkey(display_name,account_type)").eq("status", "approved").or(`expires_at.is.null,expires_at.gt.${now.toISOString()}`);
+  return client.from("feed_posts").select("id,author_id,body,image_url,image_urls,video_url,post_kind,poll_options,created_at,expires_at,profiles:profiles!feed_posts_author_id_fkey(display_name,account_type,avatar_url,avatar_moderation_status)").eq("status", "approved").or(`expires_at.is.null,expires_at.gt.${now.toISOString()}`);
 }
 export async function readSharedFeedPost(client: SupabaseClient, userId: string, postId: string, now = new Date()): Promise<FeedPost | null> {
   if (!uuid.test(userId) || !uuid.test(postId)) throw new Error("Invalid shared post");
@@ -69,6 +69,26 @@ export async function moderateFeedText(origin: string, token: string, kind: "pos
     id: comment.id as string, author_id: comment.author_id as string, body: comment.body as string, created_at: comment.created_at as string,
     parent_id: typeof comment.parent_id === "string" && uuid.test(comment.parent_id) ? comment.parent_id : null, profiles: null,
   } as FeedComment;
+}
+export function validatedPollOptions(input: unknown): string[] {
+  if (!Array.isArray(input) || input.length < 2 || input.length > 4 || input.some(value => typeof value !== "string" || !value.trim() || value.trim().length > 60)) throw new Error("Polls need 2 to 4 answers, each up to 60 characters.");
+  const options = (input as string[]).map(value => value.trim());
+  if (new Set(options.map(value => value.toLowerCase())).size !== options.length) throw new Error("Poll answers must be different.");
+  return options;
+}
+export async function publishFeedPoll(origin: string, token: string, question: string, input: readonly string[], request: typeof fetch = fetch) {
+  const target = apiUrl(origin, "/api/hoopfeed/moderate"); const text = question.trim();
+  const options = validatedPollOptions(input);
+  if (!token || !text || text.length > 2000) throw new Error("Add a poll question of up to 2,000 characters.");
+  const form = new FormData(); form.append("kind", "post"); form.append("text", text); form.append("post_kind", "poll"); form.append("poll_options", JSON.stringify(options)); form.append("audience", "community");
+  const controller = new AbortController(); const deadline = setTimeout(() => controller.abort(), 15000);
+  try {
+    const response = await request(target, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form, cache: "no-store", redirect: "error", signal: controller.signal });
+    const result = await response.json().catch(() => null);
+    if (!response.ok || result?.allowed !== true) throw new Error(typeof result?.message === "string" ? result.message.slice(0, 300) : "Publication could not be confirmed. Refresh before retrying; your draft is kept.");
+    // The current post endpoint acknowledges publication with { allowed: true };
+    // unlike comments and reshares, ordinary posts do not return a post ID.
+  } finally { clearTimeout(deadline); }
 }
 export async function authorizedFeedMedia(origin: string, projectOrigin: string, token: string, postId: string, reference: string, signal?: AbortSignal, request: typeof fetch = fetch) {
   const target = apiUrl(origin, "/api/hoopfeed/media");
