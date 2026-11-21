@@ -57,10 +57,16 @@ export default function ReelsPage() {
       // Existing archives can only be written by the post author. Keep viewer
       // hides local; never attempt to bypass the existing RLS policy.
       let locallyHidden: string[] = [];
-      try { locallyHidden = JSON.parse(window.localStorage.getItem(`hoopcheck-reels-hidden:${id}`) || "[]"); }
-      catch { /* Storage is optional on private browsing devices. */ }
+      let mutedCreators: string[] = [];
+      try {
+        const savedPosts: unknown = JSON.parse(window.localStorage.getItem(`hoopcheck-reels-hidden:${id}`) || "[]");
+        const savedAuthors: unknown = JSON.parse(window.localStorage.getItem(`hoopcheck-reels-muted-creators:${id}`) || "[]");
+        if (Array.isArray(savedPosts)) locallyHidden = savedPosts.filter(value => typeof value === "string").slice(-500);
+        if (Array.isArray(savedAuthors)) mutedCreators = savedAuthors.filter(value => typeof value === "string").slice(-500);
+      } catch { /* Storage is optional on private browsing devices. */ }
       const excluded = new Set([...(hiddenResult.data ?? []).map(row => row.post_id), ...locallyHidden]);
-      const incoming = page.filter(row => !excluded.has(row.id) && Boolean(row.video_url)).map(row => ({
+      const muted = new Set(mutedCreators);
+      const incoming = page.filter(row => !excluded.has(row.id) && !muted.has(row.author_id) && Boolean(row.video_url)).map(row => ({
         ...row,
         video_url: row.video_url as string,
         profiles: Array.isArray(row.profiles) ? row.profiles[0] ?? null : row.profiles,
@@ -148,6 +154,18 @@ export default function ReelsPage() {
     setReels(current => current.filter(post => post.id !== postId));
   }
 
+  function hideCreator(authorId: string) {
+    if (!viewerId) return;
+    try {
+      const key = `hoopcheck-reels-muted-creators:${viewerId}`;
+      const previous: unknown = JSON.parse(window.localStorage.getItem(key) || "[]");
+      const authors = Array.isArray(previous) ? previous.filter(value => typeof value === "string") : [];
+      window.localStorage.setItem(key, JSON.stringify([...new Set([...authors, authorId])].slice(-500)));
+    } catch { /* The current session is still filtered if storage is unavailable. */ }
+    setReels(current => current.filter(post => post.author_id !== authorId));
+    setMessage("This creator's Reels are hidden in this browser. This does not block their account elsewhere.");
+  }
+
   async function sharePost(postId: string) {
     const url = `${window.location.origin}/feed#post-${postId}`;
     if (navigator.share) {
@@ -186,6 +204,7 @@ export default function ReelsPage() {
               <button type="button" onClick={() => void sharePost(post.id)}>Share</button>
               <Link href={`/support?reportReel=${post.id}`} aria-label="Report this Reel to HoopCheck support">Report</Link>
               <button type="button" onClick={() => hidePost(post.id)}>Hide</button>
+              {post.author_id !== viewerId && <button type="button" onClick={() => hideCreator(post.author_id)}>Hide creator</button>}
             </nav>
           </div>
         </article>)}
