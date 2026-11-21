@@ -5,6 +5,7 @@ const checkout = readFileSync("app/api/stripe/webhook/create-checkout/route.ts",
 const webhook = readFileSync("app/api/stripe/webhook/route.ts", "utf8");
 const trialPolicy = readFileSync("lib/stripe-trial-eligibility.ts", "utf8");
 const membership = readFileSync("app/membership/page.tsx", "utf8");
+const productionGate = readFileSync("lib/stripe-trial-production-rollout.ts", "utf8");
 const migration = readFileSync("scripts/sql/stripe-trial-claims-proposal.sql", "utf8");
 
 assert.ok(membership.includes("one-time seven-day free trial") &&
@@ -23,7 +24,21 @@ for (const required of [
 ]) {
   assert.ok(checkout.includes(required), `Trial test rollout missing required isolation guard: ${required}`);
 }
-assert.ok(checkout.includes('const trialRolloutEnabled ='), "Sandbox trial gate must be explicit");
+assert.ok(checkout.includes('const sandboxTrialRolloutEnabled ='), "Sandbox gate must remain explicit");
+assert.ok(checkout.includes('const productionTrialRolloutEnabled = canEnableProductionSevenDayTrial({'), "Public trial must use the isolated production gate");
+assert.ok(checkout.includes('const trialRolloutEnabled = sandboxTrialRolloutEnabled || productionTrialRolloutEnabled;'), "Rollout must require one of the separate guarded environments");
+for (const value of [
+  'input.vercelEnvironment === "production"',
+  'input.featureEnabled === "true"',
+  'input.siteUrl === "https://hoopcheck.online"',
+  'input.supabaseUrl === "https://ucbdceaieyenljcwlhnj.supabase.co"',
+  'input.stripeCheckoutMode === "live"',
+  'input.checkoutEnabled === true',
+  'input.stripeKeyMatches === true',
+]) {
+  assert.ok(productionGate.includes(value), `Production trial gate missing: ${value}`);
+}
+assert.ok(!checkout.includes("const trialRolloutEnabled = true;"), "No unconditional trial activation");
 assert.doesNotMatch(checkout, /const trialRolloutEnabled = true;/, "Trial must never enable unconditionally");
 assert.match(checkout, /\.\.\.\(trialEligible \? \{ trial_period_days: 7 \} : \{\}\)/,
   "Stripe trial must only be issued through eligibility gate");
