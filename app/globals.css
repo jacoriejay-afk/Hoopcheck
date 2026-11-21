@@ -4223,3 +4223,21 @@ html.theme-dark .hc-team-profile-hero .hc-team-social-stats :where(strong,small)
     animation-iteration-count: 1 !important;
   }
 }
+
+/* Membership: keep small-screen headings and checkout controls clear of mobile chrome. */
+@media (max-width: 700px) {
+  .hc-membership-page .section-heading h2 {
+    font-size: clamp(25px, 7vw, 34px);
+    line-height: 1.16;
+    overflow-wrap: break-word;
+    text-wrap: balance;
+  }
+  .hc-membership-page .membership-section {
+    min-width: 0;
+    padding-bottom: calc(104px + env(safe-area-inset-bottom));
+  }
+  .hc-membership-page .plan-button {
+    min-height: 48px;
+    white-space: normal;
+  }
+}
