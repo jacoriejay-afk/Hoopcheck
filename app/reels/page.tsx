@@ -184,6 +184,7 @@ export default function ReelsPage() {
             <nav aria-label="Reel actions">
               <Link href={`/feed#post-${post.id}`}>Check & comment</Link>
               <button type="button" onClick={() => void sharePost(post.id)}>Share</button>
+              <Link href={`/support?reportReel=${post.id}`} aria-label="Report this Reel to HoopCheck support">Report</Link>
               <button type="button" onClick={() => hidePost(post.id)}>Hide</button>
             </nav>
           </div>
