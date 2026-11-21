@@ -69,7 +69,7 @@ export default function AgentStudioPage(){
       });
       const data=await response.json();
       if(!response.ok){setError(data.error||"Unable to save professional showcase.");return;}
-      setReviewStatus("unreviewed");
+      setReviewStatus(data.review_status||"unreviewed");
       setNotice(published?"Your professional showcase is published. If your name, agency or website changed, any previous professional review must be repeated.":"Your professional showcase was saved as a private draft.");
     }catch{setError("Could not save changes. Check your connection and try again.");}
     finally{setSaving(false);}
