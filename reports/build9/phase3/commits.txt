@@ -1,0 +1,4 @@
+ca5edeb1376b3842fb46a51a5c4158516c286ee1 feat(mobile): add verified courtside home and highlight entry points [skip vercel]
+5b29d61d9786693f2d7a2fcf96df104bbccac0fb design(mobile): refine search scopes and scrollable activity states [skip vercel]
+cce5fd0a47a161ec8de95c8817f787010744fd38 test(mobile): retain tab semantics with opaque accessibility preference [skip vercel]
+5265217e3d6e5ba9af5ee543510703bbd9617106 design(mobile): reserve glass for accessible courtside navigation [skip vercel]

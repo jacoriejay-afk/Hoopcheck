@@ -1,3 +1,4 @@
+import { HomeCourtside } from "../components/HomeCourtside";
 import { ScreenIntro } from "../components/ScreenIntro";
 import { ExploreLinks } from "../components/ExploreLinks";
 import { Input, Button, Chip, SectionHeader } from "../src/primitives";
@@ -69,6 +70,7 @@ export default function DashboardScreen() {
           <Input accessibilityLabel="Search basketball directory" placeholder="Search teams, leagues, coaches or players" value={search} maxLength={100} onChangeText={setSearch} returnKeyType="search" onSubmitEditing={() => router.push({ pathname: "/search", params: { q: search } })} />
           <Button style={{ marginTop: 8 }} onPress={() => router.push({ pathname: "/search", params: { q: search } })}>Search</Button>
           </View>
+          <HomeCourtside />
           <SectionHeader>Explore basketball</SectionHeader>
           <View style={styles.directories}><ExploreLinks /></View>
 
