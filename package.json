@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && npm run audit:bundle && npm run check:hub-theme-pairing",
+    "build": "next build && npm run audit:bundle && npm run check:hub-theme-pairing && npm run check:nextgen-phase1",
     "start": "next start",
     "lint": "eslint .",
     "audit:surfaces": "node scripts/audit-hardcoded-surfaces.mjs",
@@ -17,7 +17,8 @@
     "check:rounded-corners": "node scripts/check-rounded-corners.mjs",
     "test:hoopfeed-rls": "node scripts/test-unified-hoopfeed-rls.mjs",
     "test:stripe-trial": "node scripts/test-stripe-trial-eligibility.mjs",
-    "test:stripe-trial-recovery": "node scripts/test-stripe-trial-recovery.mjs"
+    "test:stripe-trial-recovery": "node scripts/test-stripe-trial-recovery.mjs",
+    "check:nextgen-phase1": "node scripts/check-nextgen-phase1.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "0.7.0",
