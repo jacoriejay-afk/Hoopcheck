@@ -73,6 +73,12 @@ export default function SupportPage() {
       setPriority("high");
       setDescription("Type of offer (agent, tryout, team or other):\nWhat happened (include dates and any non-sensitive evidence links):\nWhat action, if any, have you taken?\n");
     }
+    if (new URLSearchParams(window.location.search).get("agentVerification") === "1") {
+      setSubject("Request professional agent or scout review");
+      setCategory("verification");
+      setPriority("normal");
+      setDescription("My published professional showcase: https://hoopcheck.online/agents/\nAgency or organization (self-reported):\nIndependently checkable official website or contact channel:\nDescription of my affiliation and representation authority:\nPlease do not attach private identity records or banking details here.\n");
+    }
     void load();
   }, []);
 
