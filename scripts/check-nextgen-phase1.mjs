@@ -49,4 +49,20 @@ for(const path of ["app/directory/page.tsx","components/SiteHeader.tsx"]){
   assert.match(read(path),/\/agents/);
   assert.match(read(path),/\/creators/);
 }
+
+const agentReview=read("app/api/network/agent-reviews/route.ts");
+assert.match(agentReview,/auth\.auth\.getUser\(token\)/);
+assert.match(agentReview,/scoped\.rpc\("get_current_user_admin_role"\)/);
+assert.match(agentReview,/user\.id===profile_id/);
+assert.match(agentReview,/review_note\.trim\(\)\.length<30/);
+assert.match(agentReview,/\.eq\("updated_at",expected_updated_at\)/);
+assert.match(agentReview,/reviewed_by:user\.id/);
+const agentEditor=read("app/api/network/agent-studio/route.ts");
+assert.match(agentEditor,/publicIdentityChanged/);
+assert.match(agentEditor,/review_status:"unreviewed"/);
+assert.match(read("app/support/page.tsx"),/agentVerification/);
+assert.match(read("app/admin/directory/page.tsx"),/admin\/agent-reviews/);
+assert.match(read("app/agent-studio/page.tsx"),/Request a confidential professional review/);
+assert.match(read("app/api/network/agents/route.ts"),/professionally_reviewed:row\.review_status==="approved"&&Boolean\(row\.reviewed_at\)/);
+
 console.log("NEXTGEN Phase 1: privacy, roles, opt-in and routing invariants passed.");
