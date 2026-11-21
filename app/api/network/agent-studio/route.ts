@@ -70,7 +70,7 @@ export async function PUT(request:Request){
     if(is_published&&profile.moderation_status!=="normal")
       return NextResponse.json({error:"Publishing is unavailable during a moderation restriction."},{status:403,headers:noStore});
     const {data:previous,error:previousError}=await db.from("agent_showcases")
-      .select("public_name,agency_name,website_url").eq("profile_id",user.id).maybeSingle();
+      .select("public_name,agency_name,website_url,review_status").eq("profile_id",user.id).maybeSingle();
     if(previousError)throw previousError;
     const publicIdentityChanged=Boolean(previous && (
       previous.public_name!==(public_name as string).trim() ||
@@ -85,6 +85,6 @@ export async function PUT(request:Request){
       ...(publicIdentityChanged?{review_status:"unreviewed",review_note:null,reviewed_at:null,reviewed_by:null}:{})
     },{onConflict:"profile_id"});
     if(error)throw error;
-    return NextResponse.json({ok:true,publicly_visible:is_published},{headers:noStore});
+    return NextResponse.json({ok:true,publicly_visible:is_published,review_status:publicIdentityChanged?"unreviewed":(previous?.review_status||"unreviewed")},{headers:noStore});
   }catch(error){console.error("Professional Studio write failed",error);return unavailable();}
 }
