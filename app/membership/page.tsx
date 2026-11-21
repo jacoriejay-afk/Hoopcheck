@@ -341,7 +341,7 @@ function MembershipContent() {
             </div>
             {accountType === "player" && billingInterval === "month" && (
               <p className="hc-trial-note" role="note">
-                <strong>New to HoopCheck?</strong> Eligible first-time Player Pro and Premium monthly subscribers may receive a 7-day free trial. Eligibility is verified securely at checkout; previous subscribers and promo-code redemptions do not qualify. After the trial, the selected monthly price renews unless canceled. Taxes may apply.
+                <strong>7-day trial update:</strong> A seven-day free trial for first-time monthly Player Pro and Premium memberships is being prepared, but it is not currently available at checkout. Your selected monthly price and any applicable taxes or discounts are shown before payment.
               </p>
             )}
             <div className="hc-membership-value"><span className="hc-membership-value__mark">★</span><div><strong>Best flexibility, better value.</strong><p>Choose monthly, 6-month, or annual billing. The total shown is the amount charged for the selected term.</p></div></div><div className="plans">
