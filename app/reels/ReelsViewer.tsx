@@ -53,6 +53,9 @@ export default function ReelsViewer() {
         ? await supabase.from("feed_post_archives").select("post_id").eq("user_id", id).in("post_id", page.map(post => post.id))
         : { data: [], error: null };
       if (hiddenResult.error) throw hiddenResult.error;
+      // Reuse the account-wide block list; never render blocked creators on Reels.
+      const blockResult = await supabase.from("user_blocks").select("blocked_id").eq("blocker_id", id).limit(500);
+      if (blockResult.error) throw blockResult.error;
       if (!mounted.current) return;
       // Existing archives can only be written by the post author. Keep viewer
       // hides local; never attempt to bypass the existing RLS policy.
@@ -65,7 +68,7 @@ export default function ReelsViewer() {
         if (Array.isArray(savedAuthors)) mutedCreators = savedAuthors.filter(value => typeof value === "string").slice(-500);
       } catch { /* Storage is optional on private browsing devices. */ }
       const excluded = new Set([...(hiddenResult.data ?? []).map(row => row.post_id), ...locallyHidden]);
-      const muted = new Set(mutedCreators);
+      const muted = new Set([...mutedCreators, ...(blockResult.data ?? []).map(row => row.blocked_id)]);
       const incoming = page.filter(row => !excluded.has(row.id) && !muted.has(row.author_id) && Boolean(row.video_url)).map(row => ({
         ...row,
         video_url: row.video_url as string,
@@ -166,6 +169,17 @@ export default function ReelsViewer() {
     setMessage("This creator's Reels are hidden in this browser. This does not block their account elsewhere.");
   }
 
+  async function blockCreator(authorId: string) {
+    if (!viewerId || authorId === viewerId) return;
+    const { error } = await supabase.from("user_blocks").upsert(
+      { blocker_id: viewerId, blocked_id: authorId },
+      { onConflict: "blocker_id,blocked_id" },
+    );
+    if (error) { setMessage("Could not block this account. Try again."); return; }
+    setReels(current => current.filter(post => post.author_id !== authorId));
+    setMessage("Creator added to your HoopCheck blocked accounts.");
+  }
+
   async function sharePost(postId: string) {
     const url = `${window.location.origin}/feed#post-${postId}`;
     if (navigator.share) {
@@ -205,6 +219,7 @@ export default function ReelsViewer() {
               <Link href={`/support?reportReel=${post.id}`} aria-label="Report this Reel to HoopCheck support">Report</Link>
               <button type="button" onClick={() => hidePost(post.id)}>Hide</button>
               {post.author_id !== viewerId && <button type="button" onClick={() => hideCreator(post.author_id)}>Hide creator</button>}
+              {post.author_id !== viewerId && <button type="button" onClick={() => void blockCreator(post.author_id)}>Block account</button>}
             </nav>
           </div>
         </article>)}
