@@ -11,11 +11,12 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 const require = createRequire(import.meta.url);
 const source = readFileSync(new URL('../components/TabBar.tsx', import.meta.url), 'utf8');
 
-async function render(accountType, path) {
+async function render(accountType, path, platform = "ios") {
   const navigations = [];
   const exports = {};
   const stubs = {
-    'react-native': { Keyboard: { addListener: () => ({ remove() {} }) }, Pressable: 'Pressable', Text: 'Text', View: 'View' },
+    'expo-blur': { BlurView: 'BlurView' },
+    'react-native': { Platform: { OS: platform }, StyleSheet: { absoluteFill: {} }, AccessibilityInfo: { isReduceTransparencyEnabled: platform === "ios" ? async () => true : undefined, addEventListener: () => ({ remove() {} }) }, Keyboard: { addListener: () => ({ remove() {} }) }, Pressable: 'Pressable', Text: 'Text', View: 'View' },
     'expo-router': { usePathname: () => path, useRouter: () => ({ navigate: route => navigations.push(route) }) },
     '@expo/vector-icons': { Ionicons: 'Ionicons' },
     'react-native-safe-area-context': { useSafeAreaInsets: () => ({ left: 0, right: 0, bottom: 0 }) },
@@ -67,4 +68,10 @@ test('fan feed tab retains selected semantics on feed and fan-feed routes', asyn
       assert.equal(tree.root.findAllByType('Pressable').filter(tab => tab.props.accessibilityState.selected).length, 1);
     } finally { await act(async () => tree.unmount()); }
   }
+});
+
+test('web navigation does not call iOS-only transparency APIs', async () => {
+  const { tree } = await render('player', '/dashboard', 'web');
+  try { assert.equal(tree.root.findAllByType('Pressable').length, 5); }
+  finally { await act(async () => tree.unmount()); }
 });
