@@ -95,6 +95,14 @@ test("team directory list and map send session bearer token for trust scores", (
   assert.match(page, /headers: session\?\.access_token \? \{ Authorization: `Bearer \$\{session\.access_token\}` \} : \{\}, cache: "no-store"/);
 });
 
+test("trial notice covers all account types and monthly terms only", () => {
+  const page = read("app/membership/page.tsx");
+  assert.match(page, /\\{billingInterval === "month" && \\(\\s*<p className="hc-trial-note"/);
+  assert.doesNotMatch(page, /accountType === "player" && billingInterval === "month"/);
+  assert.match(page, /not currently available at public checkout/);
+  assert.match(page, /all HoopCheck account types/);
+});
+
 test("checkout rejects equal and lower active tiers even without a Stripe subscription ID", () => {
   const checkout = fs.readFileSync("app/api/stripe/webhook/create-checkout/route.ts", "utf8");
   const tiers = fs.readFileSync("lib/membership-tier.ts", "utf8");
