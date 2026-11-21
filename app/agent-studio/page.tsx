@@ -9,6 +9,7 @@ export default function AgentStudioPage(){
   const [userId,setUserId]=useState("");
   const [role,setRole]=useState("");
   const [identityChecked,setIdentityChecked]=useState(false);
+  const [reviewStatus,setReviewStatus]=useState("unreviewed");
   const [publicName,setPublicName]=useState("");
   const [agency,setAgency]=useState("");
   const [headline,setHeadline]=useState("");
@@ -40,6 +41,7 @@ export default function AgentStudioPage(){
         setHeadline(payload.showcase.headline||"");setDescription(payload.showcase.description||"");
         setCountry(payload.showcase.country||"");setWebsite(payload.showcase.website_url||"");
         setPublished(Boolean(payload.showcase.is_published));
+        setReviewStatus(payload.showcase.review_status||"unreviewed");
       }
       setLoading(false);
     })().catch(()=>{if(active){setError("Could not open Professional Studio.");setLoading(false);}});
@@ -67,7 +69,8 @@ export default function AgentStudioPage(){
       });
       const data=await response.json();
       if(!response.ok){setError(data.error||"Unable to save professional showcase.");return;}
-      setNotice(published?"Your professional showcase is published.":"Your professional showcase was saved as a private draft.");
+      setReviewStatus("unreviewed");
+      setNotice(published?"Your professional showcase is published. If your name, agency or website changed, any previous professional review must be repeated.":"Your professional showcase was saved as a private draft.");
     }catch{setError("Could not save changes. Check your connection and try again.");}
     finally{setSaving(false);}
   }
@@ -83,7 +86,7 @@ export default function AgentStudioPage(){
       :!role?<section className="hc-network-state" role="alert"><h2>Professional Studio unavailable</h2><p>{error}</p><Link href="/account">Account settings</Link></section>
       :<form className="hc-creator-editor" onSubmit={e=>void save(e)}>
         <section className="hc-network-panel"><h2>Public professional details</h2>
-          <p className="hc-network-handle">Account role: {role==="agent"?"Agent":"Scout"} · {identityChecked?"Identity checked":"Identity not checked"}</p>
+          <p className="hc-network-handle">Account role: {role==="agent"?"Agent":"Scout"} · {identityChecked?"Identity checked":"Identity not checked"} · {reviewStatus==="approved"?"Professionally reviewed":reviewStatus==="rejected"?"Review not approved":"Not professionally reviewed"}</p>
           <label htmlFor="hc-agent-name">Public name · {publicName.length}/80</label>
           <input id="hc-agent-name" maxLength={80} value={publicName} onChange={e=>setPublicName(e.target.value)} placeholder="Name to display in the professional directory"/>
           <label htmlFor="hc-agent-agency">Agency or organization (self-reported) · {agency.length}/120</label>
@@ -101,7 +104,8 @@ export default function AgentStudioPage(){
           <div className="hc-creator-publish"><input id="hc-agent-publish" type="checkbox" checked={published} onChange={e=>setPublished(e.target.checked)}/>
             <label htmlFor="hc-agent-publish">I choose to show these specific fields publicly in the Agents &amp; Scouts directory, including an identity-check indicator if my account has one.</label>
           </div>
-          <p>Agency details are self-declared. An identity check does not verify licensing, placement history, professional authority, or a team's endorsement. Your underlying account remains private.</p>
+          <p>Agency details are self-declared until independently reviewed by authorized HoopCheck moderators. An identity check alone does not verify licensing, placement history, professional authority, or a team's endorsement. Your underlying account remains private.</p>
+          {published && <p><Link href="/support?agentVerification=1">Request a confidential professional review</Link> after publishing your showcase. Provide only non-sensitive, independently verifiable official contact information.</p>}
           <div className="hc-creator-actions"><button type="submit" disabled={saving}>{saving?"Saving…":"Save professional showcase"}</button></div>
           {error&&<p role="alert">{error}</p>}{notice&&<p role="status">{notice}</p>}
         </section>
