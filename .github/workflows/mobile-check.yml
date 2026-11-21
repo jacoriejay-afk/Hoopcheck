@@ -94,6 +94,7 @@ jobs:
           node scripts/verify-membership-browser.cjs
           node scripts/verify-mfa-browser.cjs
           node scripts/verify-player-profiles-browser.cjs
+          node scripts/verify-profile-research-browser.cjs
           node scripts/verify-media-browser.cjs
           node scripts/verify-profile-editor-browser.cjs
           node scripts/verify-club-groups-browser.cjs

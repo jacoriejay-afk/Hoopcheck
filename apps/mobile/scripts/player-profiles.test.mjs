@@ -64,3 +64,10 @@ test('directory rejects malformed RPC results and normalizes unsupported display
  const broken=await readPlayerDirectory(client(async()=>Response.json({id:target})),'player');assert.equal(broken.data,null);assert.ok(broken.error);
  const result=await readPlayerDirectory(client(async()=>Response.json([{id:target,display_name:{unexpected:true},country:false,years_pro:-1}])),'player');assert.equal(result.error,null);assert.equal(result.data[0].display_name,null);assert.equal(result.data[0].country,null);assert.equal(result.data[0].years_pro,null);
 });
+
+test('verification dates require the canonical verified flag and a valid timestamp',async()=>{
+ for(const [verified,date,expected] of [[false,'2025-01-01T00:00:00Z',null],[true,'invalid',null],[true,'2025-01-01T00:00:00Z','2025-01-01T00:00:00Z']]){
+  const result=await readPlayerProfile(client(async input=>new URL(String(input)).pathname.endsWith('/get_public_player_profile')?Response.json([{...profile,player_verified:verified,player_verified_at:date}]):Response.json(false)),viewer,target);
+  assert.equal(result.player_verified_at,expected);
+ }
+});

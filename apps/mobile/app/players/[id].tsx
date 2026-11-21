@@ -138,6 +138,11 @@ function PlayerProfileDetails({ viewer }: { viewer: PlayerViewer }) {
             </GlassCard>
             {player.bio?.trim() ? <GlassCard style={styles.card}><Text style={styles.sectionTitle}>About</Text><Text style={styles.body}>{player.bio.trim()}</Text></GlassCard> : null}
 
+            <GlassCard style={styles.card}><Text style={styles.sectionTitle}>Achievements &amp; verification</Text>
+              <Text style={{ ...theme.type.section, color: player.player_verified ? theme.success : theme.foreground }}>{player.player_verified ? "Professional player verified" : "Professional verification not recorded"}</Text>
+              {player.player_verified_at ? <Text style={styles.body}>Verified {new Date(player.player_verified_at).toLocaleDateString()}</Text> : null}
+              <Text style={styles.body}>Verification reflects your HoopCheck profile. Playing awards and performance records are not supplied by this profile.</Text>
+            </GlassCard>
             <PlayerCareer key={`${viewerId}:${player.id}`} playerId={player.id} viewer={viewer} />
             <GlassCard style={styles.reportCard}>
               <Text style={styles.sectionTitle}>Safety and reporting</Text>

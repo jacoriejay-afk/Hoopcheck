@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const canBrowsePlayers = (role: string | undefined) => ["player", "coach", "agent", "scout", "manager", "club_admin"].includes(role ?? "");
 export type PlayerViewer = { id: string; accountType: string };
-export type PlayerProfile = { id: string; display_name: string | null; avatar_url: string | null; country: string | null; bio: string | null; position: string | null; years_pro: number | null; current_country: string | null; current_team: string | null; player_verified: boolean };
+export type PlayerProfile = { id: string; display_name: string | null; avatar_url: string | null; country: string | null; bio: string | null; position: string | null; years_pro: number | null; current_country: string | null; current_team: string | null; player_verified: boolean; player_verified_at?: string | null };
 const text = (value: unknown, maximum = 500) => typeof value === "string" ? value.slice(0, maximum) : null;
 export function safeAvatar(value: unknown): string | null {
   if (typeof value !== "string" || value.length > 2048) return null;
@@ -32,6 +32,6 @@ export async function readPlayerProfile(client: SupabaseClient, viewer: PlayerVi
     const visibility = await client.rpc("is_player_country_public", { p_user_id: id }).abortSignal(controller.signal);
     countryVisible = !visibility.error && visibility.data === true;
   }
-  return { id, display_name: text(profile.display_name, 100), avatar_url: safeAvatar(profile.avatar_url), country: text(profile.country, 120), bio: text(profile.bio), position: text(profile.player_position, 30), years_pro: Number.isSafeInteger(profile.years_pro) && Number(profile.years_pro) >= 0 ? Number(profile.years_pro) : null, current_country: countryVisible ? text(profile.current_country, 120) : null, current_team: text(profile.current_team, 160), player_verified: profile.player_verified === true };
+  return { id, display_name: text(profile.display_name, 100), avatar_url: safeAvatar(profile.avatar_url), country: text(profile.country, 120), bio: text(profile.bio), position: text(profile.player_position, 30), years_pro: Number.isSafeInteger(profile.years_pro) && Number(profile.years_pro) >= 0 ? Number(profile.years_pro) : null, current_country: countryVisible ? text(profile.current_country, 120) : null, current_team: text(profile.current_team, 160), player_verified: profile.player_verified === true, player_verified_at: profile.player_verified === true && typeof profile.player_verified_at === "string" && Number.isFinite(Date.parse(profile.player_verified_at)) ? profile.player_verified_at : null };
   } finally { clearTimeout(deadline); }
 }
