@@ -91,7 +91,19 @@ async function fixture(browser,theme,allowed=true){
     // Scroll before asserting load: FeedMedia deliberately defers offscreen media.
     await page.getByRole('img',{name:'HoopFeed photo',exact:true}).waitFor();
     await page.getByRole('img',{name:'HoopFeed photo',exact:true}).scrollIntoViewIfNeeded();
-    await page.waitForFunction(()=>{const image=document.querySelector('img[alt="HoopFeed photo"]');return image&&image.complete&&image.naturalWidth===640;});
+    try {
+      await page.waitForFunction(()=>{const image=document.querySelector('img[alt="HoopFeed photo"]');return image&&image.complete&&image.naturalWidth===640;},{timeout:15000});
+    } catch (error) {
+      console.error('Feed image diagnostic', JSON.stringify(await page.evaluate(() => {
+        const image=document.querySelector('img[alt="HoopFeed photo"]');
+        const parent=image?.parentElement?.parentElement;
+        return {src:image?.getAttribute('src'),srcSet:image?.getAttribute('srcset'),complete:image?.complete,naturalWidth:image?.naturalWidth,
+          naturalHeight:image?.naturalHeight,imageRect:image?.getBoundingClientRect().toJSON(),mediaText:parent?.innerText?.slice(0,250)};
+      })));
+      console.error('Feed media requests', JSON.stringify(calls.filter(call=>call.path.includes('/media')||call.path.includes('/storage/v1/')).slice(-20)));
+      console.error('Page errors', JSON.stringify(errors));
+      throw error;
+    }
     await page.waitForFunction(()=>{const image=document.querySelector('img[alt="HoopFeed photo"]');const box=image?.getBoundingClientRect();return Boolean(box&&box.width>250&&box.height>120);});
     const photoBox=await page.getByRole('img',{name:'HoopFeed photo',exact:true}).boundingBox();assert.ok(photoBox&&photoBox.width>250&&photoBox.height>120,'Photo has visible dimensions');
     assert.equal(await page.getByRole('heading',{name:'HoopFeed',exact:true}).count(),0,'No duplicate headings');
