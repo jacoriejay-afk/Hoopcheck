@@ -1,0 +1,11 @@
+✔ computed legacy and CSS Color 4 sRGB colors resolve to equivalent channels (1.965279ms)
+✔ translucent glass is composited before measuring text contrast (0.55137ms)
+✔ the audit rejects pale text on orange but accepts the corrected dark badge ink (0.220858ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 11.455544

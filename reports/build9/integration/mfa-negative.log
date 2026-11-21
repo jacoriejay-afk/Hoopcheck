@@ -1,0 +1,2 @@
+PASS negative MFA SQL: baseline
+PASS negative MFA SQL: hook_conflict

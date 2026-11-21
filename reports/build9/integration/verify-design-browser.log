@@ -1,0 +1,3 @@
+PASS light: fresh/restored-auth onboarding dismissal, dashboard scroll and directory/tab input
+PASS light: public About/search gate, native connections retry/fan scope/tabs/empty/navigation, decoded logo/failure fallback, 320px layout
+PASS dark: fresh/restored-auth onboarding dismissal, dashboard scroll and directory/tab input

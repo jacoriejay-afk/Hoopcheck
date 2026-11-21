@@ -1,0 +1,2 @@
+PASS light: cold MFA gate/wrong code/backup recovery/enrollment/fresh-code removal/last-factor confirmation/background secret clearing/cancellation
+PASS dark: cold MFA gate/wrong code/backup recovery/enrollment/fresh-code removal/last-factor confirmation/background secret clearing/cancellation

@@ -1,0 +1,16 @@
+✔ website access uses the verified effective provider and authenticated private uncached request (30.892578ms)
+✔ concurrent components deduplicate an in-flight owner/token read without retaining a stale result cache (7.823024ms)
+✔ an old account result cannot survive switching away and back (2.131801ms)
+✔ a same-owner token transition invalidates a response even before an Auth listener is notified (1.219802ms)
+✔ invalid proof shapes, a foreign response owner and service errors never grant access (4.265291ms)
+✔ a hung credential read recovers without a network call or abandoning any credential write (1.202786ms)
+✔ unpaid membership is a verified null result; malformed and cross-account requests never reach the API (1.335924ms)
+✔ HTML, empty and truncated JSON responses fail closed and allow a fresh retry (4.633447ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 61.464273

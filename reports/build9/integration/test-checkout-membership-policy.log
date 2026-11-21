@@ -1,0 +1,12 @@
+✔ unpriced fans, unconfirmed/suspended accounts and pending deletions cannot start Stripe billing (288.370306ms)
+✔ active or unverifiable Apple billing blocks Stripe before price or checkout calls (91.596324ms)
+✔ coach/manager Premium-only purchase rules retain eligible paid checkout and verified owner attribution (226.807912ms)
+✔ an active raw Stripe/manual membership is not silently repurchased (132.859523ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 793.984944

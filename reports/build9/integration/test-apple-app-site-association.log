@@ -1,0 +1,11 @@
+✔ association uses the owner-confirmed signing prefix and rejects mismatched overrides and uses the exact bundle ID (1.549856ms)
+✔ association allows implemented native paths while browser auth/referral and nested fallback paths remain excluded (1.863371ms)
+✔ actual route serves the confirmed identity by default and never caches mismatched configuration (29.214593ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 42.115832
