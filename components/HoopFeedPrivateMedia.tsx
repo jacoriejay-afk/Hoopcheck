@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
-
 import { isProtectedFeedMedia } from "../lib/feed-media-reference";
 
 type Props = {
@@ -12,14 +11,26 @@ type Props = {
   alt?: string;
   className?: string;
   ariaLabel?: string;
+  /** In Reels, authorize only the video that actually owns the viewport. */
+  active?: boolean;
+  autoplay?: boolean;
+  loop?: boolean;
 };
 
-export default function HoopFeedPrivateMedia({ postId, reference, kind, alt, className, ariaLabel }: Props) {
+export default function HoopFeedPrivateMedia({
+  postId, reference, kind, alt, className, ariaLabel,
+  active = true, autoplay = false, loop = false,
+}: Props) {
   const isPrivate = isProtectedFeedMedia(reference);
   const [url, setUrl] = useState(isPrivate ? "" : reference);
   const [error, setError] = useState(false);
+  const player = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
+    if (!active) {
+      if (isPrivate) setUrl("");
+      return;
+    }
     if (!isPrivate) { setUrl(reference); setError(false); return; }
     let cancelled = false;
     let refresh: ReturnType<typeof setTimeout> | undefined;
@@ -40,21 +51,35 @@ export default function HoopFeedPrivateMedia({ postId, reference, kind, alt, cla
         if (cancelled) return;
         setUrl(data.url);
         setError(false);
-        // Refresh before the short-lived signed link expires. Playback may need a new URL.
-        const delay = Math.max(10000, (Number(data.expires_in) || 60) * 1000 - 15000);
-        // Replacing a playing video URL resets playback. Refresh images only;
-        // videos retain their signed URL for the active playback session.
-        if (kind === "image") refresh = setTimeout(() => { void resolve(); }, delay);
+        // Renew image links. Resetting video URLs mid-play causes freezing and stalls;
+        // a video reauthorizes when its card returns to the active viewport.
+        if (kind === "image") {
+          const delay = Math.max(10000, (Number(data.expires_in) || 60) * 1000 - 15000);
+          refresh = setTimeout(() => { void resolve(); }, delay);
+        }
       } catch {
         if (!cancelled) { setUrl(""); setError(true); }
       }
     }
     void resolve();
     return () => { cancelled = true; if (refresh) clearTimeout(refresh); };
-  }, [postId, reference, isPrivate, kind]);
+  }, [postId, reference, isPrivate, kind, active]);
 
+  useEffect(() => {
+    if (kind !== "video") return;
+    const video = player.current;
+    if (!video) return;
+    if (!active || !autoplay || !url) { video.pause(); return; }
+    // Muted and inline autoplay is allowed on browsers that support it.
+    void video.play().catch(() => { /* User can still start playback with controls. */ });
+    return () => video.pause();
+  }, [kind, active, autoplay, url]);
+
+  if (!active) return <span role="status" className="muted">Scroll to view video</span>;
   if (error) return <span role="status" className="muted">Media unavailable</span>;
   if (!url) return <span role="status" className="muted">Loading media…</span>;
-  if (kind === "video") return <video src={url} controls playsInline preload="metadata" className={className} aria-label={ariaLabel || "HoopFeed video"} />;
+  if (kind === "video") return <video ref={player} src={url} controls playsInline
+    preload="metadata" muted={autoplay} autoPlay={autoplay} loop={loop}
+    className={className} aria-label={ariaLabel || "HoopFeed video"} />;
   return <img src={url} alt={alt || "HoopFeed post"} className={className} />;
 }
