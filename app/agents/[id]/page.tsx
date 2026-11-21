@@ -7,7 +7,7 @@ import "../network.css";
 
 type Agent = { id:string; account_type:string; display_name:string|null; username:string|null;
  avatar_url:string|null; avatar_moderation_status:string|null; country:string|null;
- bio:string|null; experience_summary:string|null; identity_checked:boolean; };
+ bio:string|null; experience_summary:string|null; agency_name:string|null; website_url:string|null; identity_checked:boolean; };
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default function AgentProfilePage(){
@@ -47,7 +47,7 @@ export default function AgentProfilePage(){
     </header>
     <div className="hc-network-detail-grid">
       <section className="hc-network-panel"><h2>About</h2><p>{person.bio||"This member has not added a public biography."}</p></section>
-      <section className="hc-network-panel"><h2>Professional experience</h2><p>{person.experience_summary||"Experience details have not been added."}</p></section>
+      <section className="hc-network-panel"><h2>Professional focus</h2><p>{person.experience_summary||"Professional focus not listed."}</p><p>{person.agency_name?"Agency (self-reported): "+person.agency_name:"Agency not listed."}</p></section>
     </div>
     <div className="hc-network-detail-actions"><Link href="/connections" className="hc-network-action">Explore connections</Link><Link href="/scam-alerts" className="hc-network-ghost">Report a suspicious offer</Link></div>
     <p className="hc-network-disclaimer">HoopCheck does not certify a person's agency, licensing, representation authority or placement history. An identity-checked label means identity verification only. Never pay placement fees or share confidential records without independent verification.</p>
