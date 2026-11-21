@@ -107,7 +107,7 @@ function RootLayout() {
         <Stack.Screen name="team-hub/groups/index" options={{ title: "HoopGroups" }} />
         <Stack.Screen name="team-hub/groups/[teamId]" options={{ title: "Club group" }} />
         <Stack.Screen name="fan-live" options={{ title: "Live Games" }} />
-        <Stack.Screen name="notifications" options={{ title: "Alerts" }} />
+        <Stack.Screen name="notifications" options={{ title: "Activity Center" }} />
         <Stack.Screen name="feed" options={{ headerShown: false }} />
         <Stack.Screen name="fan-feed" options={{ headerShown: false }} />
         <Stack.Screen name="reels" options={{ headerShown: false }} />
@@ -139,7 +139,7 @@ function RootLayout() {
         <Stack.Screen name="womens/index" options={{ title: "Women’s teams" }} />
         <Stack.Screen name="womens/leagues/[id]" options={{ title: "League profile" }} />
         <Stack.Screen name="womens/[id]" options={{ title: "Team profile" }} />
-        <Stack.Screen name="search" options={{ title: "Search" }} />
+        <Stack.Screen name="search" options={{ title: "Search basketball" }} />
         <Stack.Screen name="teams" options={{ title: "Teams" }} />
         <Stack.Screen name="teams/[id]" options={{ title: "Team profile" }} />
         <Stack.Screen name="teams/[id]/review" options={{ title: "Write a review" }} />
