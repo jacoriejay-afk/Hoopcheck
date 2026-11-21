@@ -7,3 +7,13 @@ html body .hc-global-page-shell main.hc-leagues-directory-page .hc-league-direct
 html body .hc-global-page-shell main.hc-leagues-directory-page .hc-league-directory-grid .card.hc-league-compact-card p { margin:0!important; line-height:1.45; }
 html body .hc-global-page-shell main.hc-leagues-directory-page .hc-league-directory-grid .card.hc-league-compact-card .btn { margin-top:auto; align-self:flex-start; min-height:44px!important; display:inline-flex; align-items:center; justify-content:center; border-radius:999px; }
 @media(max-width:700px) { .hc-league-directory-grid { grid-template-columns:minmax(0,1fr); gap:12px; padding-inline:12px; } html body .hc-global-page-shell main.hc-leagues-directory-page .hc-league-directory-grid .card.hc-league-compact-card { padding:16px!important; } }
+
+/* Country-first league discovery: real logo coverage, no fabricated crests. */
+.hc-league-country-index{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px auto 16px;max-width:1280px}
+.hc-league-country-index button{font:inherit;font-size:13px;font-weight:750;padding:9px 12px;border-radius:99px;min-height:39px;border:1px solid var(--hc-card-border,var(--border));background:var(--hc-card-surface,var(--surface));color:var(--hc-on-card,var(--hc-foreground));cursor:pointer}
+.hc-league-country-index button[aria-pressed=true]{border-color:var(--orange);background:color-mix(in srgb,var(--orange) 15%,var(--hc-card-surface,var(--surface)))}
+.hc-league-country-index button small{margin-inline-start:5px;color:var(--hc-on-card-muted,var(--hc-foreground-muted))}
+.hc-league-directory-grid .hc-league-country-divider{grid-column:1/-1;width:100%;border-bottom:1px solid var(--hc-card-border,var(--border));padding:12px 4px 8px;font-size:18px;color:var(--hc-foreground);margin:10px 0 2px}
+.hc-league-logo-state{display:block;margin:7px 0 10px;color:var(--hc-on-card-muted,var(--hc-foreground-muted));font-size:11px;line-height:1.4}
+.hc-league-page-more{text-align:center;margin:20px auto;display:grid;justify-items:center;gap:12px}
+.hc-league-page-more button{min-height:44px}
