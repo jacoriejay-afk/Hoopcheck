@@ -37,7 +37,7 @@ BEGIN
      OR p.proconfig IS DISTINCT FROM ARRAY[v.expected_search_path]::text[]
      OR NOT has_function_privilege('anon',p.oid,'EXECUTE')
      OR NOT has_function_privilege('authenticated',p.oid,'EXECUTE')
-     OR has_function_privilege('public',p.oid,'EXECUTE');
+     OR EXISTS (SELECT 1 FROM aclexplode(p.proacl) a WHERE a.grantee=0 AND a.privilege_type='EXECUTE');
 
   IF changed IS NOT NULL THEN
     RAISE EXCEPTION 'Production function drift detected; stop and re-review: %', changed;
