@@ -284,7 +284,7 @@ export default function LiveGamesPage() {
             <button type="button" className="hc-remind-button" aria-controls={`game-prediction-${game.id}`}
               aria-expanded={expandedPredictions.includes(game.id)}
               onClick={() => setExpandedPredictions(open => open.includes(game.id) ? open.filter(id => id !== game.id) : [...open, game.id])}>
-              <HoopIcon name="chart-no-axes-column" size={16} /> {expandedPredictions.includes(game.id) ? "HIDE FAN PICKS" : "FAN PICKS"}
+              <HoopIcon name="trophy" size={16} /> {expandedPredictions.includes(game.id) ? "HIDE FAN PICKS" : "FAN PICKS"}
             </button>}
           <Link href={(basketballSide === "womens" ? "/womens/" : "/teams/") + game.team_id} className="hc-live-card__muted">Team profile</Link>
         </div>
