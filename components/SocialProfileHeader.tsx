@@ -10,6 +10,10 @@ export const profileCovers = [
   { id: "gold", label: "Gold", color: "#e5b84c" },
   { id: "midnight", label: "Midnight", color: "#5266b5" },
   { id: "coral", label: "Coral", color: "#ef745c" },
+  { id: "ice", label: "Ice", color: "#8bd8f2" },
+  { id: "sunset", label: "Sunset", color: "#ff9b4a" },
+  { id: "graphite", label: "Graphite", color: "#687080" },
+  { id: "neon", label: "Neon", color: "#b6e953" },
 ] as const;
 
 export function profileCover(value: unknown) {
