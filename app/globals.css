@@ -4349,7 +4349,7 @@ html.theme-dark .hc-team-profile-hero .hc-team-social-stats :where(strong,small)
 
 /* Membership theme parity: use the same surface and typography tokens in both
    themes. Avoid black-on-dark cards or white labels drawn outside pale panels. */
-.hc-membership-page :where(.active-card, .plan-card, .hc-trial-note, .hc-membership-value, .hc-membership-loading) {
+.hc-membership-page :is(.active-card, .plan-card, .hc-trial-note, .hc-membership-value, .hc-membership-loading) {
   background: var(--hc-surface, #fff);
   color: var(--hc-text, #171717);
   border-color: var(--hc-divider, #deded8);
@@ -4358,15 +4358,15 @@ html.theme-dark .hc-team-profile-hero .hc-team-social-stats :where(strong,small)
 .hc-membership-page .hc-membership-plan.is-current {
   border-color: var(--hc-orange, #ff5a1f);
 }
-.hc-membership-page :where(.plan-card h3, .plan-card .price strong, .active-card h2, .hc-membership-value strong) {
+.hc-membership-page :is(.plan-card h3, .plan-card .price strong, .active-card h2, .hc-membership-value strong) {
   color: var(--hc-text, #171717);
 }
-.hc-membership-page :where(.plan-description, .plan-card ul, .price span, .active-card p, .active-card .legal-note, .hc-membership-value p, .subscription-legal) {
+.hc-membership-page :is(.plan-description, .plan-card ul, .price span, .active-card p, .active-card .legal-note, .hc-membership-value p, .subscription-legal) {
   color: var(--hc-text-muted, #666);
 }
 .hc-membership-page .active-card p strong {
   color: var(--hc-text, #171717);
 }
-.hc-membership-page :where(.active-card .eyebrow, .plan-card .eyebrow) {
+.hc-membership-page :is(.active-card .eyebrow, .plan-card .eyebrow) {
   color: var(--hc-orange, #ff5a1f);
 }
