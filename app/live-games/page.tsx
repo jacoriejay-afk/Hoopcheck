@@ -56,6 +56,7 @@ export default function LiveGamesPage() {
   const [joinedGameIds, setJoinedGameIds] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<Filter>("live");
   const [collapsedLeagues, setCollapsedLeagues] = useState<string[]>([]);
+  const [expandedGameGroups, setExpandedGameGroups] = useState<string[]>([]);
   const [query, setQuery] = useState("");
   const [countryFocus, setCountryFocus] = useState("");
   const [leagueFocus, setLeagueFocus] = useState("");
@@ -395,8 +396,10 @@ export default function LiveGamesPage() {
           <button type="button" aria-expanded={!collapsedLeagues.includes(key)} className="hc-live-section-heading" onClick={() => setCollapsedLeagues(current => current.includes(key) ? current.filter(value => value !== key) : [...current,key])}>
             <strong>{key}</strong><span>{entries.length} games {collapsedLeagues.includes(key) ? "＋" : "−"}</span>
           </button>
-          {!collapsedLeagues.includes(key) && <div className="hc-live-hub-grid">{entries.map(entry =>
-            <GameCard key={entry.game.id} entry={entry} variant={live.some(item => item.game.id === entry.game.id) ? "live" : ["final","finished"].includes(entry.game.status.toLowerCase()) ? "recent" : entry.availability.phase === "post-game" ? "postgame" : "upcoming"} />)}</div>}
+          {!collapsedLeagues.includes(key) && <div className="hc-live-hub-grid">{(expandedGameGroups.includes(key) ? entries : entries.slice(0, 3)).map(entry =>
+            <GameCard key={entry.game.id} entry={entry} variant={live.some(item => item.game.id === entry.game.id) ? "live" : ["final","finished"].includes(entry.game.status.toLowerCase()) ? "recent" : entry.availability.phase === "post-game" ? "postgame" : "upcoming"} />)}
+            {entries.length > 3 && <button className="hc-live-view-all" type="button" onClick={() => setExpandedGameGroups(current => current.includes(key) ? current.filter(item => item !== key) : [...current, key])}>{expandedGameGroups.includes(key) ? "Show top 3 games" : `See all ${entries.length} games in this group`}</button>}
+          </div>}
         </section>)}
         {groupRows.length > 4 && <button type="button" className="hc-live-view-all" onClick={() => setShowAllGroups(value => !value)}>{showAllGroups ? "Show compact overview" : `Show all ${groupRows.length} league / country groups`}</button>}
       </section>;
