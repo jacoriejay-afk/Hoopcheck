@@ -77,11 +77,21 @@ jobs:
 
       - name: Export isolated native browser fixture
         env:
+          EXPO_PUBLIC_ROSTER_RESEARCH_CANDIDATE: "1"
           EXPO_PUBLIC_SUPABASE_URL: https://fixture.supabase.co
           EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: fixture-publishable-key
           EXPO_PUBLIC_HOOPCHECK_API_URL: https://api.test
           EXPO_NO_TELEMETRY: "1"
         run: npx --no-install expo export --platform web --clear --max-workers 2 --output-dir /tmp/hoopcheck-mobile-web
+
+      - name: Export default-off contract fixture
+        env:
+          EXPO_PUBLIC_ROSTER_RESEARCH_CANDIDATE: "0"
+          EXPO_PUBLIC_SUPABASE_URL: https://fixture.supabase.co
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: fixture-publishable-key
+          EXPO_PUBLIC_HOOPCHECK_API_URL: https://api.test
+          EXPO_NO_TELEMETRY: "1"
+        run: npx --no-install expo export --platform web --clear --max-workers 2 --output-dir /tmp/hoopcheck-default-web
 
       - name: Start localhost fixture server
         run: python3 scripts/serve-native-fixture.py /tmp/hoopcheck-mobile-web 8092 > /tmp/hoopcheck-native-browser.log 2>&1 &
@@ -110,4 +120,20 @@ jobs:
         with:
           name: native-browser-regressions
           path: /tmp/hoopcheck-native-ui/*.png
+          if-no-files-found: warn
+
+      - name: Verify deployed season contracts and disabled candidates in both themes
+        env:
+          NATIVE_TEST_URL: http://127.0.0.1:8098
+          CHROMIUM_PATH: /usr/bin/google-chrome
+        run: |
+          python3 scripts/serve-native-fixture.py /tmp/hoopcheck-default-web 8098 > /tmp/hoopcheck-default-browser.log 2>&1 &
+          node scripts/verify-season-contracts-browser.cjs
+
+      - name: Upload deployed-contract browser screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: default-contract-browser-evidence
+          path: /tmp/phase3d-season-screens
           if-no-files-found: warn

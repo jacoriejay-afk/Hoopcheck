@@ -1,0 +1,14 @@
+simulator-compile	Run real Passport PDF and share-sheet simulator tests (no EAS)	﻿2026-11-21T10:03:56.8954620Z ##[group]Run bash scripts/ios-passport-smoke/run.sh
+simulator-compile	Run real Passport PDF and share-sheet simulator tests (no EAS)	2026-11-21T10:03:56.8958850Z [36;1mbash scripts/ios-passport-smoke/run.sh[0m
+simulator-compile	Run real Passport PDF and share-sheet simulator tests (no EAS)	2026-11-21T10:03:57.3110240Z shell: /bin/bash -e {0}
+simulator-compile	Run real Passport PDF and share-sheet simulator tests (no EAS)	2026-11-21T10:03:57.3110790Z env:
+simulator-compile	Run real Passport PDF and share-sheet simulator tests (no EAS)	2026-11-21T10:03:57.3111090Z   EXPO_NO_TELEMETRY: 1
+simulator-compile	Run real Passport PDF and share-sheet simulator tests (no EAS)	2026-11-21T10:03:57.3111660Z   EXPO_PUBLIC_SUPABASE_URL: https://fixture.supabase.co
+simulator-compile	Run real Passport PDF and share-sheet simulator tests (no EAS)	2026-11-21T10:03:57.3112130Z   EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: fixture-publishable-key
+simulator-compile	Run real Passport PDF and share-sheet simulator tests (no EAS)	2026-11-21T10:03:57.3143750Z   EXPO_PUBLIC_HOOPCHECK_API_URL: https://api.test
+simulator-compile	Run real Passport PDF and share-sheet simulator tests (no EAS)	2026-11-21T10:03:57.3144830Z   SENTRY_DISABLE_AUTO_UPLOAD: true
+simulator-compile	Run real Passport PDF and share-sheet simulator tests (no EAS)	2026-11-21T10:03:57.3145540Z ##[endgroup]
+simulator-compile	Run real Passport PDF and share-sheet simulator tests (no EAS)	2026-11-21T10:08:35.0588270Z Monitoring boot status for iPhone 16 Pro (DA1C9012-81EC-4C70-B52A-068AEAFBA1DE).
+simulator-compile	Run real Passport PDF and share-sheet simulator tests (no EAS)	2026-11-21T10:08:35.0690650Z Device already booted, nothing to do.
+simulator-compile	Run real Passport PDF and share-sheet simulator tests (no EAS)	2026-11-21T10:08:35.0700240Z
+simulator-compile	Run real Passport PDF and share-sheet simulator tests (no EAS)	2026-11-21T10:10:12.2081370Z ##[error]Process completed with exit code 65.

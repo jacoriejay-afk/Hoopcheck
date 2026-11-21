@@ -1,0 +1,658 @@
+{
+  "scope": "Read-only hosted catalog metadata; no user rows, provider API calls, DDL, DML or production changes",
+  "project": "HoopCheck",
+  "transaction": "BEGIN TRANSACTION READ ONLY; catalog SELECTs; ROLLBACK",
+  "contract_audit": {
+    "rpcs": [
+      {
+        "acl": [
+          "postgres=X/postgres",
+          "anon=X/postgres",
+          "authenticated=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "args": "p_query text DEFAULT ''::text, p_country text DEFAULT ''::text, p_position text DEFAULT ''::text, p_verified_only boolean DEFAULT false, p_limit integer DEFAULT 24",
+        "name": "search_public_players",
+        "result": "TABLE(id uuid, display_name text, avatar_url text, country text, bio text, player_position text, years_pro integer, current_country text, current_team text, player_verified boolean, player_verified_at timestamp with time zone)",
+        "definer": false,
+        "definition": "CREATE OR REPLACE FUNCTION public.search_public_players(p_query text DEFAULT ''::text, p_country text DEFAULT ''::text, p_position text DEFAULT ''::text, p_verified_only boolean DEFAULT false, p_limit integer DEFAULT 24)\n RETURNS TABLE(id uuid, display_name text, avatar_url text, country text, bio text, player_position text, years_pro integer, current_country text, current_team text, player_verified boolean, player_verified_at timestamp with time zone)\n LANGUAGE sql\n STABLE\n SET search_path TO 'public'\nAS $function$\n  select\n    p.id, p.display_name, p.avatar_url, p.country, p.bio,\n    p.position as player_position, p.years_pro, p.current_country,\n    p.current_team, p.player_verified, p.player_verified_at\n  from public.profiles p\n  where p.profile_visibility = 'public'\n    and p.account_type = 'player'\n    and coalesce(p.moderation_status, 'active') <> 'suspended'\n    and (coalesce(p.basketball_type, 'mens') = 'mens')\n    and (\n      nullif(trim(p_query), '') is null\n      or p.display_name ilike '%' || trim(p_query) || '%'\n      or p.username ilike '%' || trim(p_query) || '%'\n      or p.country ilike '%' || trim(p_query) || '%'\n      or p.current_country ilike '%' || trim(p_query) || '%'\n      or p.current_team ilike '%' || trim(p_query) || '%'\n      or p.position ilike '%' || trim(p_query) || '%'\n    )\n    and (nullif(trim(p_country), '') is null or p.country = trim(p_country) or p.current_country = trim(p_country))\n    and (nullif(trim(p_position), '') is null or p.position = trim(p_position))\n    and (coalesce(p_verified_only, false) = false or p.player_verified = true)\n  order by p.player_verified desc, p.display_name asc\n  limit least(greatest(coalesce(p_limit, 24), 1), 50);\n$function$\n"
+      },
+      {
+        "acl": [
+          "postgres=X/postgres",
+          "anon=X/postgres",
+          "authenticated=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "args": "p_user_id uuid",
+        "name": "get_public_player_profile",
+        "result": "TABLE(id uuid, display_name text, avatar_url text, country text, bio text, player_position text, years_pro integer, current_country text, current_team text, player_verified boolean, player_verified_at timestamp with time zone)",
+        "definer": false,
+        "definition": "CREATE OR REPLACE FUNCTION public.get_public_player_profile(p_user_id uuid)\n RETURNS TABLE(id uuid, display_name text, avatar_url text, country text, bio text, player_position text, years_pro integer, current_country text, current_team text, player_verified boolean, player_verified_at timestamp with time zone)\n LANGUAGE sql\n STABLE\n SET search_path TO 'public'\nAS $function$\n  select\n    p.id,\n    p.display_name,\n    case\n      when coalesce(p.avatar_moderation_status, 'approved') = 'approved' then p.avatar_url\n      else null\n    end,\n    p.country,\n    p.bio,\n    p.position,\n    p.years_pro,\n    p.current_country,\n    p.current_team,\n    p.player_verified,\n    p.player_verified_at\n  from public.profiles p\n  where p.id = p_user_id\n    and p.account_type = 'player'\n    and (\n      p.profile_visibility = 'public'\n      or (\n        p.profile_visibility = 'players_only'\n        and exists (\n          select 1 from public.profiles viewer\n          where viewer.id = auth.uid() and viewer.account_type = 'player'\n        )\n      )\n    )\n    and (p.moderation_status is null or p.moderation_status <> 'suspended');\n$function$\n"
+      },
+      {
+        "acl": [
+          "postgres=X/postgres",
+          "authenticated=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "args": "",
+        "name": "current_user_has_live_game_membership",
+        "result": "boolean",
+        "definer": true,
+        "definition": "CREATE OR REPLACE FUNCTION public.current_user_has_live_game_membership()\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\n  select exists (\n    select 1\n    from public.profiles p\n    join public.subscriptions s on s.user_id = p.id\n    where p.id = (select auth.uid())\n      and p.account_type in ('fan', 'player')\n      and case s.plan\n        when 'premium' then 2\n        when 'pro' then 1\n        else 0\n      end >= 1\n      and s.status in ('active', 'trialing')\n      and coalesce(s.access_status, 'active') in ('active', 'trialing', 'pro', 'premium')\n      and (s.current_period_end is null or s.current_period_end > now())\n  );\n$function$\n"
+      },
+      {
+        "acl": [
+          "postgres=X/postgres",
+          "anon=X/postgres",
+          "authenticated=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "args": "p_query text DEFAULT ''::text, p_country text DEFAULT ''::text, p_position text DEFAULT ''::text, p_verified_only boolean DEFAULT false, p_limit integer DEFAULT 24, p_offset integer DEFAULT 0",
+        "name": "search_public_players_page",
+        "result": "TABLE(id uuid, display_name text, avatar_url text, country text, bio text, player_position text, years_pro integer, current_country text, current_team text, player_verified boolean, player_verified_at timestamp with time zone)",
+        "definer": false,
+        "definition": "CREATE OR REPLACE FUNCTION public.search_public_players_page(p_query text DEFAULT ''::text, p_country text DEFAULT ''::text, p_position text DEFAULT ''::text, p_verified_only boolean DEFAULT false, p_limit integer DEFAULT 24, p_offset integer DEFAULT 0)\n RETURNS TABLE(id uuid, display_name text, avatar_url text, country text, bio text, player_position text, years_pro integer, current_country text, current_team text, player_verified boolean, player_verified_at timestamp with time zone)\n LANGUAGE sql\n STABLE\n SET search_path TO 'public'\nAS $function$\n  select\n    p.id, p.display_name, p.avatar_url, p.country, p.bio,\n    p.position as player_position, p.years_pro, p.current_country,\n    p.current_team, p.player_verified, p.player_verified_at\n  from public.profiles p\n  where p.profile_visibility = 'public'\n    and p.account_type = 'player'\n    and coalesce(p.moderation_status, 'active') <> 'suspended'\n    and (coalesce(p.basketball_type, 'mens') = 'mens')\n    and (\n      nullif(trim(p_query), '') is null\n      or p.display_name ilike '%' || trim(p_query) || '%'\n      or p.username ilike '%' || trim(p_query) || '%'\n      or p.country ilike '%' || trim(p_query) || '%'\n      or p.current_country ilike '%' || trim(p_query) || '%'\n      or p.current_team ilike '%' || trim(p_query) || '%'\n      or p.position ilike '%' || trim(p_query) || '%'\n    )\n    and (nullif(trim(p_country), '') is null or p.country = trim(p_country) or p.current_country = trim(p_country))\n    and (nullif(trim(p_position), '') is null or p.position = trim(p_position))\n    and (coalesce(p_verified_only, false) = false or p.player_verified = true)\n  order by p.player_verified desc, p.display_name asc, p.id\n  limit least(greatest(coalesce(p_limit, 24), 1), 50)\n  offset greatest(coalesce(p_offset, 0), 0);\n$function$\n"
+      }
+    ],
+    "tables": [
+      {
+        "rls": true,
+        "table": "fan_live_game_reminders",
+        "columns": [
+          {
+            "name": "id",
+            "type": "uuid"
+          },
+          {
+            "name": "game_id",
+            "type": "uuid"
+          },
+          {
+            "name": "user_id",
+            "type": "uuid"
+          },
+          {
+            "name": "created_at",
+            "type": "timestamp with time zone"
+          },
+          {
+            "name": "notified_at",
+            "type": "timestamp with time zone"
+          }
+        ]
+      },
+      {
+        "rls": true,
+        "table": "profiles",
+        "columns": [
+          {
+            "name": "id",
+            "type": "uuid"
+          },
+          {
+            "name": "display_name",
+            "type": "text"
+          },
+          {
+            "name": "avatar_url",
+            "type": "text"
+          },
+          {
+            "name": "country",
+            "type": "text"
+          },
+          {
+            "name": "bio",
+            "type": "text"
+          },
+          {
+            "name": "created_at",
+            "type": "timestamp with time zone"
+          },
+          {
+            "name": "updated_at",
+            "type": "timestamp with time zone"
+          },
+          {
+            "name": "is_adult",
+            "type": "boolean"
+          },
+          {
+            "name": "agreed_to_terms",
+            "type": "boolean"
+          },
+          {
+            "name": "terms_accepted_at",
+            "type": "timestamp with time zone"
+          },
+          {
+            "name": "terms_version",
+            "type": "text"
+          },
+          {
+            "name": "position",
+            "type": "text"
+          },
+          {
+            "name": "years_pro",
+            "type": "integer"
+          },
+          {
+            "name": "current_country",
+            "type": "text"
+          },
+          {
+            "name": "current_team",
+            "type": "text"
+          },
+          {
+            "name": "profile_visibility",
+            "type": "text"
+          },
+          {
+            "name": "player_verified",
+            "type": "boolean"
+          },
+          {
+            "name": "player_verified_at",
+            "type": "timestamp with time zone"
+          },
+          {
+            "name": "profile_claimed",
+            "type": "boolean"
+          },
+          {
+            "name": "claimed_at",
+            "type": "timestamp with time zone"
+          },
+          {
+            "name": "first_name",
+            "type": "text"
+          },
+          {
+            "name": "last_name",
+            "type": "text"
+          },
+          {
+            "name": "professional_experience",
+            "type": "boolean"
+          },
+          {
+            "name": "account_type",
+            "type": "text"
+          },
+          {
+            "name": "username",
+            "type": "text"
+          },
+          {
+            "name": "moderation_status",
+            "type": "text"
+          },
+          {
+            "name": "moderation_note",
+            "type": "text"
+          },
+          {
+            "name": "moderation_updated_at",
+            "type": "timestamp with time zone"
+          },
+          {
+            "name": "moderation_updated_by",
+            "type": "uuid"
+          },
+          {
+            "name": "interests",
+            "type": "text"
+          },
+          {
+            "name": "favorite_leagues",
+            "type": "text"
+          },
+          {
+            "name": "favorite_teams",
+            "type": "text"
+          },
+          {
+            "name": "experience_summary",
+            "type": "text"
+          },
+          {
+            "name": "avatar_moderation_status",
+            "type": "text"
+          },
+          {
+            "name": "avatar_moderation_note",
+            "type": "text"
+          },
+          {
+            "name": "basketball_type",
+            "type": "text"
+          },
+          {
+            "name": "free_agent",
+            "type": "boolean"
+          },
+          {
+            "name": "hometown",
+            "type": "text"
+          },
+          {
+            "name": "nationality",
+            "type": "text"
+          },
+          {
+            "name": "display_name_changed_at",
+            "type": "timestamp with time zone"
+          },
+          {
+            "name": "selected_team_id",
+            "type": "uuid"
+          },
+          {
+            "name": "selected_team_verified",
+            "type": "boolean"
+          },
+          {
+            "name": "selected_womens_team_id",
+            "type": "uuid"
+          },
+          {
+            "name": "stripe_identity_verification_session_id",
+            "type": "text"
+          },
+          {
+            "name": "identity_verification_status",
+            "type": "text"
+          },
+          {
+            "name": "coach_profile_id",
+            "type": "uuid"
+          },
+          {
+            "name": "coach_verified",
+            "type": "boolean"
+          },
+          {
+            "name": "coach_verified_at",
+            "type": "timestamp with time zone"
+          },
+          {
+            "name": "birthdate",
+            "type": "date"
+          },
+          {
+            "name": "gender",
+            "type": "text"
+          },
+          {
+            "name": "last_seen_at",
+            "type": "timestamp with time zone"
+          },
+          {
+            "name": "experience_goal",
+            "type": "text"
+          },
+          {
+            "name": "research_preferences",
+            "type": "text"
+          },
+          {
+            "name": "theme_preference",
+            "type": "text"
+          },
+          {
+            "name": "preferred_language",
+            "type": "text"
+          },
+          {
+            "name": "notification_preferences",
+            "type": "jsonb"
+          },
+          {
+            "name": "current_country_public",
+            "type": "boolean"
+          },
+          {
+            "name": "preferred_basketball_side",
+            "type": "text"
+          },
+          {
+            "name": "height",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "rls": true,
+        "table": "fan_live_team_provider_map",
+        "columns": [
+          {
+            "name": "team_id",
+            "type": "uuid"
+          },
+          {
+            "name": "provider_team_id",
+            "type": "integer"
+          },
+          {
+            "name": "provider_team_name",
+            "type": "text"
+          },
+          {
+            "name": "active",
+            "type": "boolean"
+          },
+          {
+            "name": "created_at",
+            "type": "timestamp with time zone"
+          }
+        ]
+      },
+      {
+        "rls": true,
+        "table": "fan_live_games",
+        "columns": [
+          {
+            "name": "id",
+            "type": "uuid"
+          },
+          {
+            "name": "team_id",
+            "type": "uuid"
+          },
+          {
+            "name": "opponent_name",
+            "type": "text"
+          },
+          {
+            "name": "status",
+            "type": "text"
+          },
+          {
+            "name": "home_score",
+            "type": "integer"
+          },
+          {
+            "name": "away_score",
+            "type": "integer"
+          },
+          {
+            "name": "started_at",
+            "type": "timestamp with time zone"
+          },
+          {
+            "name": "ends_at",
+            "type": "timestamp with time zone"
+          },
+          {
+            "name": "created_at",
+            "type": "timestamp with time zone"
+          },
+          {
+            "name": "opponent_team_id",
+            "type": "uuid"
+          },
+          {
+            "name": "provider_source",
+            "type": "text"
+          },
+          {
+            "name": "provider_game_id",
+            "type": "text"
+          },
+          {
+            "name": "scheduled_at",
+            "type": "timestamp with time zone"
+          },
+          {
+            "name": "league_id",
+            "type": "uuid"
+          },
+          {
+            "name": "league_name",
+            "type": "text"
+          },
+          {
+            "name": "country",
+            "type": "text"
+          },
+          {
+            "name": "period_label",
+            "type": "text"
+          },
+          {
+            "name": "provider_league_id",
+            "type": "bigint"
+          }
+        ]
+      },
+      {
+        "rls": true,
+        "table": "team_league_memberships",
+        "columns": [
+          {
+            "name": "id",
+            "type": "uuid"
+          },
+          {
+            "name": "team_id",
+            "type": "uuid"
+          },
+          {
+            "name": "league_id",
+            "type": "uuid"
+          },
+          {
+            "name": "season",
+            "type": "text"
+          },
+          {
+            "name": "start_date",
+            "type": "date"
+          },
+          {
+            "name": "end_date",
+            "type": "date"
+          },
+          {
+            "name": "active",
+            "type": "boolean"
+          },
+          {
+            "name": "created_at",
+            "type": "timestamp with time zone"
+          }
+        ]
+      }
+    ],
+    "policies": [
+      {
+        "name": "users manage own game reminders",
+        "check": "(user_id = ( SELECT auth.uid() AS uid))",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "fan_live_game_reminders",
+        "using": "(user_id = ( SELECT auth.uid() AS uid))",
+        "command": "ALL"
+      },
+      {
+        "name": "profiles_authenticated_read",
+        "check": null,
+        "roles": [
+          "authenticated"
+        ],
+        "table": "profiles",
+        "using": "((profile_visibility = 'public'::text) OR (id = ( SELECT auth.uid() AS uid)) OR private.is_admin_or_moderator())",
+        "command": "SELECT"
+      },
+      {
+        "name": "profiles_own_update",
+        "check": "(( SELECT auth.uid() AS uid) = id)",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "profiles",
+        "using": "(( SELECT auth.uid() AS uid) = id)",
+        "command": "UPDATE"
+      },
+      {
+        "name": "profiles_public_read",
+        "check": null,
+        "roles": [
+          "anon"
+        ],
+        "table": "profiles",
+        "using": "(profile_visibility = 'public'::text)",
+        "command": "SELECT"
+      },
+      {
+        "name": "eligible members view live games",
+        "check": null,
+        "roles": [
+          "authenticated"
+        ],
+        "table": "fan_live_games",
+        "using": "(is_current_user_admin_or_moderator() OR current_user_has_live_game_membership())",
+        "command": "SELECT"
+      }
+    ]
+  },
+  "discovery": {
+    "public_table_count": 97,
+    "public_function_count": 93,
+    "feature_table_matches": [],
+    "feature_rpc_matches": [],
+    "league_policies": [
+      {
+        "roles": [
+          "authenticated"
+        ],
+        "table": "leagues",
+        "using": "is_current_user_admin_or_moderator()",
+        "command": "DELETE"
+      },
+      {
+        "roles": [
+          "authenticated"
+        ],
+        "table": "leagues",
+        "using": null,
+        "command": "INSERT"
+      },
+      {
+        "roles": [
+          "authenticated"
+        ],
+        "table": "leagues",
+        "using": "is_current_user_admin_or_moderator()",
+        "command": "UPDATE"
+      },
+      {
+        "roles": [
+          "anon",
+          "authenticated"
+        ],
+        "table": "leagues",
+        "using": "true",
+        "command": "SELECT"
+      },
+      {
+        "roles": [
+          "authenticated"
+        ],
+        "table": "team_league_memberships",
+        "using": "is_current_user_admin_or_moderator()",
+        "command": "DELETE"
+      },
+      {
+        "roles": [
+          "authenticated"
+        ],
+        "table": "team_league_memberships",
+        "using": null,
+        "command": "INSERT"
+      },
+      {
+        "roles": [
+          "authenticated"
+        ],
+        "table": "team_league_memberships",
+        "using": "is_current_user_admin_or_moderator()",
+        "command": "UPDATE"
+      },
+      {
+        "roles": [
+          "anon",
+          "authenticated"
+        ],
+        "table": "team_league_memberships",
+        "using": "true",
+        "command": "SELECT"
+      },
+      {
+        "roles": [
+          "authenticated"
+        ],
+        "table": "teams",
+        "using": "is_current_user_admin_or_moderator()",
+        "command": "DELETE"
+      },
+      {
+        "roles": [
+          "authenticated"
+        ],
+        "table": "teams",
+        "using": null,
+        "command": "INSERT"
+      },
+      {
+        "roles": [
+          "authenticated"
+        ],
+        "table": "teams",
+        "using": "is_current_user_admin_or_moderator()",
+        "command": "UPDATE"
+      },
+      {
+        "roles": [
+          "anon",
+          "authenticated"
+        ],
+        "table": "teams",
+        "using": "true",
+        "command": "SELECT"
+      }
+    ],
+    "profile_column_access": [
+      {
+        "column": "avatar_moderation_status",
+        "anon_read": true,
+        "authenticated_read": true
+      },
+      {
+        "column": "current_country",
+        "anon_read": true,
+        "authenticated_read": true
+      },
+      {
+        "column": "moderation_note",
+        "anon_read": true,
+        "authenticated_read": true
+      },
+      {
+        "column": "selected_team_id",
+        "anon_read": true,
+        "authenticated_read": true
+      },
+      {
+        "column": "selected_womens_team_id",
+        "anon_read": true,
+        "authenticated_read": true
+      }
+    ]
+  }
+}
