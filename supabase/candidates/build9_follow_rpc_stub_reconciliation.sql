@@ -79,6 +79,30 @@ AS $function$
     );
 $function$;
 
+-- Verify public wrappers were not converted into elevated SECURITY DEFINER
+-- entrypoints or exposed to anonymous callers.
+DO $postcheck$
+DECLARE
+  v_name text;
+BEGIN
+  FOREACH v_name IN ARRAY ARRAY[
+    'public.can_user_follow_target(uuid,text,uuid)',
+    'public.get_follow_count(text,uuid)'
+  ] LOOP
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_proc p
+      WHERE p.oid=to_regprocedure(v_name)
+        AND NOT p.prosecdef
+        AND p.proconfig @> ARRAY['search_path=""']::text[]
+        AND NOT has_function_privilege('anon',p.oid,'EXECUTE')
+    ) THEN
+      RAISE EXCEPTION 'Public wrapper security boundary changed: %', v_name
+        USING ERRCODE='42501';
+    END IF;
+  END LOOP;
+END
+$postcheck$;
+
 -- This is a candidate, not authorization to COMMIT on hosted systems.
 -- Run inside a rollback-only isolated rehearsal; validate real signed-in
 -- non-owner, owner, anonymous, blocked, and privacy scenarios first.
