@@ -35,7 +35,7 @@ export async function GET(request:Request){
     if(error||!profile)return unavailable();
     if(!["agent","scout"].includes(profile.account_type))return denied();
     const {data:showcase,error:showcaseError}=await db.from("agent_showcases")
-      .select("public_name,agency_name,headline,description,country,website_url,is_published")
+      .select("public_name,agency_name,headline,description,country,website_url,is_published,review_status")
       .eq("profile_id",user.id).maybeSingle();
     if(showcaseError)return unavailable();
     return NextResponse.json({profile:{
@@ -69,11 +69,20 @@ export async function PUT(request:Request){
     if(website===false)return NextResponse.json({error:"Use a valid HTTPS website URL."},{status:400,headers:noStore});
     if(is_published&&profile.moderation_status!=="normal")
       return NextResponse.json({error:"Publishing is unavailable during a moderation restriction."},{status:403,headers:noStore});
+    const {data:previous,error:previousError}=await db.from("agent_showcases")
+      .select("public_name,agency_name,website_url").eq("profile_id",user.id).maybeSingle();
+    if(previousError)throw previousError;
+    const publicIdentityChanged=Boolean(previous && (
+      previous.public_name!==(public_name as string).trim() ||
+      previous.agency_name!==(agency_name as string).trim() ||
+      (previous.website_url||null)!==website
+    ));
     const {error}=await db.from("agent_showcases").upsert({
       profile_id:user.id,public_name:(public_name as string).trim(),agency_name:(agency_name as string).trim(),
       headline:(headline as string).trim(),description:(description as string).trim(),
       country:(country as string).trim(),website_url:website,is_published,
-      updated_at:new Date().toISOString()
+      updated_at:new Date().toISOString(),
+      ...(publicIdentityChanged?{review_status:"unreviewed",review_note:null,reviewed_at:null,reviewed_by:null}:{})
     },{onConflict:"profile_id"});
     if(error)throw error;
     return NextResponse.json({ok:true,publicly_visible:is_published},{headers:noStore});
