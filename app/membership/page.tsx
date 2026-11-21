@@ -58,9 +58,11 @@ function MembershipContent() {
     return () => controller.abort();
   }, []);
 
-  async function loadSubscription() {
-    setLoading(true);
-    setError("");
+  async function loadSubscription(silent = false) {
+    if (!silent) {
+      setLoading(true);
+      setError("");
+    }
 
     const {
       data: { user },
@@ -69,7 +71,7 @@ function MembershipContent() {
     if (!user) {
       setSubscription(null);
       setAccountType(null);
-      setLoading(false);
+      if (!silent) setLoading(false);
       return;
     }
 
@@ -93,7 +95,7 @@ function MembershipContent() {
       setSubscription(data as Subscription | null);
     }
 
-    setLoading(false);
+    if (!silent) setLoading(false);
   }
 
   useEffect(() => {
@@ -110,7 +112,7 @@ function MembershipContent() {
       let attempts = 0;
       const refresh = window.setInterval(async () => {
         attempts += 1;
-        await loadSubscription();
+        await loadSubscription(true);
 
         if (attempts >= 6) {
           window.clearInterval(refresh);
@@ -293,11 +295,15 @@ function MembershipContent() {
         </div>
       </section>
 
-      {message && <div className="status success">{message}</div>}
-      {error && <div className="status error">{error}</div>}
+      {message && <div className="status success" role="status" aria-live="polite">{message}</div>}
+      {error && <div className="status error" role="alert">{error}</div>}
 
       <section className="membership-section">
-        {showMembershipManagement && subscription ? (
+        {loading ? (
+          <div className="hc-membership-loading" role="status" aria-live="polite">
+            <HoopLoading variant="inline" label="Loading membership..." />
+          </div>
+        ) : showMembershipManagement && subscription ? (
           <>
           <div className="active-card" id="manage-subscription" aria-label="Manage your HoopCheck membership">
             <div className="eyebrow">CURRENT MEMBERSHIP</div>
