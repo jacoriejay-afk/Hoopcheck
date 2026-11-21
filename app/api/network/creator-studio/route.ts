@@ -12,7 +12,7 @@ function clients(){
   return {auth:createClient(url,anon,{auth:{persistSession:false,autoRefreshToken:false}}),
     db:createClient(url,service,{auth:{persistSession:false,autoRefreshToken:false}})};
 }
-async function owner(request:Request,auth:ReturnType<typeof createClient>){
+async function owner(request:Request,auth: {auth: {getUser: (token: string) => Promise<{data: {user: {id: string} | null}; error: unknown}>}}){
   const token=request.headers.get("authorization")?.match(/^Bearer (.+)$/i)?.[1];
   if(!token)return null;
   const {data,error}=await auth.auth.getUser(token);
