@@ -1,4 +1,5 @@
 import { CourtsideBanner } from "../components/CourtsideBanner";
+import { GlassSurface } from "../components/GlassSurface";
 import { BrandLogo } from "../components/BrandLogo";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { FlatList, Pressable, RefreshControl, Share, Text, TextInput, View, type ViewToken } from "react-native";
@@ -140,7 +141,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
   const posts = canRead && rows.scope === scope ? rows.posts.filter(post => !post.expires_at || Date.parse(post.expires_at) > now) : [];
   const textStyle = { color: theme.foreground };
   const linkStyle = { color: theme.accent };
-  const touch = { minHeight: 44, paddingHorizontal: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 999, backgroundColor: theme.elevatedSurface, justifyContent: "center" as const };
+  const touch = { minHeight: 44, paddingHorizontal: 12, borderWidth: 1, borderColor: theme.glassBorder, borderRadius: 999, backgroundColor: theme.chip, justifyContent: "center" as const };
   if (accountLoading) return <View style={{ flex: 1, padding: 24, backgroundColor: theme.background }}><Skeleton /></View>;
   if (!account || !canRead) return <View style={{ flex: 1, padding: 24, gap: 20, justifyContent: "center", backgroundColor: theme.background }}>
     <Text accessibilityRole="header" style={{ ...textStyle, fontSize: 28, fontWeight: "900" }}>HoopFeed</Text>
@@ -148,14 +149,33 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
     <Button secondary onPress={retry}>Verify access again</Button><Button secondary onPress={() => router.push("/account")}>Your account</Button>
   </View>;
   return <SafeAreaView edges={["top", "left", "right", "bottom"]} style={{ flex: 1, backgroundColor: theme.background }}>
-    <View style={{ paddingHorizontal: 16, paddingVertical: 8, flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+    <GlassSurface style={{
+      marginHorizontal: 16, marginTop: 8, marginBottom: 7, padding: 8,
+      borderRadius: 23, flexDirection: "row", alignItems: "center", gap: 9,
+    }}>
       <BrandLogo compact />
-      <View accessibilityRole="tablist" style={{ flex: 1, flexDirection: "row", gap: 6 }}>{[false, true].map(value => <Pressable key={String(value)} accessibilityRole="tab" accessibilityState={{ selected: reels === value }} aria-selected={reels === value} onPress={() => setReels(value)} style={[touch, { backgroundColor: reels === value ? theme.surface : theme.background, borderColor: reels === value ? theme.accent : theme.border }]}><Text style={{ ...textStyle, fontSize: 18, fontFamily: "HoopCheckDisplay", fontWeight: "400" }}>{value ? "Reels" : "HoopFeed"}</Text></Pressable>)}</View>
-      {message || loadError ? <Text accessibilityLiveRegion="polite" style={{ color: theme.muted, width: "100%" }}>{loadError || message}</Text> : null}
-    </View>
+      <View accessibilityRole="tablist" style={{ flex: 1, flexDirection: "row", gap: 6 }}>
+        {[false, true].map(value => <Pressable key={String(value)}
+          accessibilityRole="tab" accessibilityState={{ selected: reels === value }}
+          aria-selected={reels === value} onPress={() => setReels(value)}
+          style={({ pressed }) => ({
+            flex: 1, minHeight: 44, justifyContent: "center", alignItems: "center",
+            borderRadius: 15, borderWidth: 1, opacity: pressed ? .65 : 1,
+            backgroundColor: reels === value ? theme.accentSurface : "transparent",
+            borderColor: reels === value ? theme.accent : "transparent",
+          })}>
+          <Text style={{ color: reels === value ? theme.accent : theme.foreground,
+            fontSize: 18, fontFamily: "HoopCheckDisplay" }}>
+            {value ? "REELS" : "HOOPFEED"}
+          </Text>
+        </Pressable>)}
+      </View>
+    </GlassSurface>
+    {message || loadError ? <Text accessibilityLiveRegion="polite"
+      style={{ color: theme.muted, paddingHorizontal: 18 }}>{loadError || message}</Text> : null}
     <FlatList keyboardDismissMode="on-drag" style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 16, gap: reels ? 0 : theme.spacing.xl }} keyboardShouldPersistTaps="handled" initialNumToRender={4} maxToRenderPerBatch={4} windowSize={5} pagingEnabled={reels} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
       ListHeaderComponent={!reels ? <View style={{ marginBottom: theme.spacing.md, gap: theme.spacing.md }}><CourtsideBanner eyebrow="HOOPFEED" title="Your basketball community">Stories, perspectives and conversations from around the game.</CourtsideBanner>
-        {!composerExpanded ? <Pressable accessibilityRole="button" accessibilityLabel="Create HoopFeed post" disabled={!canWrite} onPress={() => setComposerExpanded(true)} style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 18, backgroundColor: theme.surface }}>
+        {!composerExpanded ? <Pressable accessibilityRole="button" accessibilityLabel="Create HoopFeed post" disabled={!canWrite} onPress={() => setComposerExpanded(true)} style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 22, backgroundColor: theme.elevatedSurface }}>
           <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: theme.accentSurface, alignItems: "center", justifyContent: "center" }}><Text style={{ color: theme.accent, fontWeight: "900", fontSize: 12 }}>HC</Text></View><Text style={{ color: theme.muted, fontSize: 14 }}>Share something…</Text>
         </Pressable> : <View style={{ gap: 12, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 18, backgroundColor: theme.surface }}>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}><Text style={{ ...textStyle, fontSize: 22, fontWeight: "700" }}>Create a post</Text><Pressable accessibilityRole="button" onPress={() => setComposerExpanded(false)} style={touch}><Text style={textStyle}>Close</Text></Pressable></View>
@@ -175,7 +195,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
         const commentDraft = drafts.owner === uid ? drafts.values[post.id] ?? "" : "";
         const photos = (Array.isArray(post.image_urls) && post.image_urls.length ? post.image_urls : post.image_url ? [post.image_url] : []).filter((value): value is string => typeof value === "string").slice(0, 4);
         const options = Array.isArray(post.poll_options) ? post.poll_options.filter((value): value is string => typeof value === "string").slice(0, 6).map(value => value.slice(0, 120)) : [];
-        return <View style={reels ? { height, padding: 12 } : undefined}><View testID={`feed-post-${post.id}`} style={{ padding: theme.courtside.card.featuredPadding, gap: theme.spacing.md, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, borderRadius: theme.courtside.card.radius, borderCurve: "continuous", ...(reels ? { flex: 1 } : {}) }}>
+        return <View style={reels ? { height, padding: 12 } : undefined}><View testID={`feed-post-${post.id}`} style={{ padding: theme.courtside.card.featuredPadding, gap: theme.spacing.md, backgroundColor: theme.elevatedSurface, borderWidth: 1, borderColor: theme.glassBorder, borderRadius: theme.courtside.card.radius, borderCurve: "continuous", ...(reels ? { flex: 1 } : {}) }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 11 }}>
             <ProfileAvatar url={post.profiles?.avatar_moderation_status === "approved" ? post.profiles.avatar_url : null} name={post.profiles?.display_name || "HoopCheck member"} size={44} />
             <View style={{ flex: 1, gap: 3 }}><Text style={{ ...textStyle, fontWeight: "700", fontSize: 16 }}>{post.profiles?.display_name || "HoopCheck member"}</Text><Text style={{ color: theme.muted, ...theme.type.caption }}>{new Date(post.created_at).toLocaleString()}</Text></View>
