@@ -274,6 +274,42 @@ DO $t$ BEGIN
 END $t$;
 INSERT INTO public.follow_relationships(follower_id,target_type,target_id)
  VALUES(current_setting('b9.a')::uuid,'player',current_setting('b9.player')::uuid);
+-- Canonical follow table: anon has no direct access; authenticated owner sees
+-- only their rows, while unrelated authenticated users cannot mutate those rows.
+SET LOCAL ROLE anon;
+DO $t$ BEGIN
+ BEGIN
+  PERFORM 1 FROM public.follow_relationships;
+  RAISE EXCEPTION 'Anonymous follow-table SELECT unexpectedly allowed';
+ EXCEPTION WHEN insufficient_privilege THEN NULL;
+ END;
+END $t$;
+RESET ROLE;
+SELECT set_config('request.jwt.claim.sub',current_setting('b9.b'),true);
+SET LOCAL ROLE authenticated;
+DO $t$ DECLARE v_count integer; BEGIN
+ IF EXISTS(SELECT 1 FROM public.follow_relationships) THEN
+  RAISE EXCEPTION 'Nonowner can read another fan follow row';
+ END IF;
+ UPDATE public.follow_relationships SET notify_updates=false
+ WHERE follower_id=current_setting('b9.a')::uuid;
+ GET DIAGNOSTICS v_count=ROW_COUNT;
+ IF v_count <> 0 THEN RAISE EXCEPTION 'Nonowner could UPDATE follow'; END IF;
+ DELETE FROM public.follow_relationships
+ WHERE follower_id=current_setting('b9.a')::uuid;
+ GET DIAGNOSTICS v_count=ROW_COUNT;
+ IF v_count <> 0 THEN RAISE EXCEPTION 'Nonowner could DELETE follow'; END IF;
+END $t$;
+RESET ROLE;
+SELECT set_config('request.jwt.claim.sub',current_setting('b9.a'),true);
+SET LOCAL ROLE authenticated;
+DO $t$ BEGIN
+ IF (SELECT count(*) FROM public.follow_relationships
+     WHERE follower_id=current_setting('b9.a')::uuid) <> 1 THEN
+  RAISE EXCEPTION 'Owner cannot read own follow row';
+ END IF;
+END $t$;
+RESET ROLE;
 -- Public baseline, both list directions.
 SELECT set_config('request.jwt.claim.sub',current_setting('b9.b'),true);
 SET LOCAL ROLE authenticated;
