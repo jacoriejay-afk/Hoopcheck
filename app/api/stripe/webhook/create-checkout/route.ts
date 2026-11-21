@@ -5,6 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import { getActiveMembershipTier, canStartNewMembershipCheckout } from "../../../../../lib/membership-tier";
 import { isEligibleForSevenDayTrial, isSupportedSubscriptionAccountType } from "../../../../../lib/stripe-trial-eligibility";
 import { canReuseOpenTrialSession, isTrustedStripeCheckoutUrl } from "../../../../../lib/stripe-trial-recovery";
+import { canEnableProductionSevenDayTrial } from "../../../../../lib/stripe-trial-production-rollout";
 
 function getAdminSupabase() {
   const supabaseUrl =
@@ -318,10 +319,9 @@ export async function POST(
     // regardless of account type, when the isolated rollout is authorized. Check both
     // the HoopCheck subscription record and Stripe's complete customer history;
     // a canceled subscription must never reset eligibility.
-    // TEST-ONLY: never issue a public/prod trial. Every condition must match the
-    // explicitly approved, isolated Stripe/Supabase PR #758 preview.
-    // No general feature flag or cross-environment trial activation is permitted.
-    const trialRolloutEnabled =
+    // Sandbox only: preserve the exact branch, test Supabase project and Stripe
+    // test credentials. No production feature setting can enable a preview.
+    const sandboxTrialRolloutEnabled =
       process.env.VERCEL_ENV === "preview" &&
       process.env.VERCEL_GIT_COMMIT_REF === "fix/website-membership-layout-20261121" &&
       process.env.HOOPCHECK_STRIPE_SANDBOX_TRIAL_ENABLED === "true" &&
@@ -329,6 +329,19 @@ export async function POST(
       process.env.HOOPCHECK_STRIPE_TEST_SUPABASE_URL === process.env.NEXT_PUBLIC_SUPABASE_URL &&
       siteUrl === "https://hoopcheck-stripe-sandbox-git-fix-website-membe-b926cc-hoopcheck.vercel.app" &&
       stripeConfigMatches && configuredMode === "test";
+
+    // Public trials remain OFF until a separate production flag is deliberately
+    // configured after sandbox lifecycle, payment/tax and rollback acceptance.
+    const productionTrialRolloutEnabled = canEnableProductionSevenDayTrial({
+      vercelEnvironment: process.env.VERCEL_ENV,
+      featureEnabled: process.env.HOOPCHECK_SEVEN_DAY_TRIAL_ENABLED,
+      siteUrl,
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      stripeCheckoutMode: configuredMode,
+      checkoutEnabled,
+      stripeKeyMatches: stripeConfigMatches,
+    });
+    const trialRolloutEnabled = sandboxTrialRolloutEnabled || productionTrialRolloutEnabled;
     let trialEligible = trialRolloutEnabled && isSupportedSubscriptionAccountType(checkoutProfile.account_type) && interval === "month" && !promoCodeId && !existingSubscription?.stripe_subscription_id && Boolean(user.email_confirmed_at);
     if (trialEligible) {
       // Check every customer under this email, even when a customer is already
