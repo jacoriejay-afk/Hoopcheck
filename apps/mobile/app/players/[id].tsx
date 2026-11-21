@@ -15,7 +15,7 @@ import { useNetwork, requireOnline } from "../../src/native/network";
 import { Skeleton } from "../../components/Motion";
 import { useEntryTheme, type EntryTheme } from "../../src/theme";
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, RefreshControl, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { supabase } from "../../src/lib/supabase";
@@ -25,6 +25,7 @@ export default function PlayerDetailScreen() { return <PlayerAccess>{viewer => <
 function PlayerProfileDetails({ viewer }: { viewer: PlayerViewer }) {
   const theme = useEntryTheme();
   const styles = createStyles(theme);
+  const compactHero = useWindowDimensions().width < 390;
   const { id: viewerId, accountType } = viewer;
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -139,16 +140,17 @@ function PlayerProfileDetails({ viewer }: { viewer: PlayerViewer }) {
                     <Text style={{ color: "#C4FBE1", fontSize: 10, fontWeight: "900" }}>VERIFIED</Text>
                   </View> : null}
                 </View>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
+                <View style={{ flexDirection: compactHero ? "column" : "row",
+                  alignItems: compactHero ? "flex-start" : "center", gap: 16 }}>
                   <View style={{ borderRadius: 28, padding: 3, borderWidth: 2, borderColor: "rgba(255,164,95,.73)",
                     backgroundColor: "rgba(255,255,255,.08)" }}>
-                    <ProfileAvatar url={player.avatar_url} name={name} size={102} />
+                    <ProfileAvatar url={player.avatar_url} name={name} size={compactHero ? 78 : 102} />
                   </View>
-                  <View style={{ flex: 1, gap: 8 }}>
+                  <View style={{ flex: compactHero ? undefined : 1, alignSelf: compactHero ? "stretch" : undefined, minWidth: 0, gap: 8 }}>
                     <Text style={{ color: "#E9EFF5", fontSize: 11, fontWeight: "900",
                       letterSpacing: 1.5 }}>PLAYER PROFILE</Text>
                     <Text accessibilityRole="header" style={{ fontFamily: "HoopCheckDisplay",
-                      fontSize: 36, lineHeight: 39, color: "#FFFFFF" }}>{name}</Text>
+                      fontSize: compactHero ? 30 : 36, lineHeight: compactHero ? 34 : 39, color: "#FFFFFF" }}>{name}</Text>
                     <View style={{ height: 3, width: 48, backgroundColor: "#FF8F56", borderRadius: 3 }} />
                   </View>
                 </View>
