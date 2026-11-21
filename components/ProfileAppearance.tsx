@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { profileCover, profileCovers } from "./SocialProfileHeader";
 
@@ -29,13 +29,15 @@ export default function ProfileAppearance({ current, onSave }: { current: Cover;
   const [savedLayout, setSavedLayout] = useState<"standard" | "compact" | "showcase">("standard");
   const [links, setLinks] = useState<Record<SocialKey, string>>({ instagram: "", tiktok: "", youtube: "", website: "" });
   const [savedLinks, setSavedLinks] = useState<Record<SocialKey, string>>({ instagram: "", tiktok: "", youtube: "", website: "" });
+  const layoutEdited = useRef(false), linksEdited = useRef(false);
   useEffect(() => {
     let active = true;
     void supabase.auth.getUser().then(({ data: { user } }) => {
       if (!active) return;
       const storedLayout = user?.user_metadata?.hoopcheck_profile_layout;
       const selected = storedLayout === "compact" || storedLayout === "showcase" ? storedLayout : "standard";
-      setLayout(selected); setSavedLayout(selected);
+      setSavedLayout(selected);
+      if (!layoutEdited.current) setLayout(selected);
       const metadata = user?.user_metadata?.hoopcheck_social_links;
       const next = { instagram: "", tiktok: "", youtube: "", website: "" };
       if (metadata && typeof metadata === "object") {
@@ -44,7 +46,8 @@ export default function ProfileAppearance({ current, onSave }: { current: Cover;
           if (typeof value === "string" && validSocialUrl(value, field.host)) next[field.key] = value;
         }
       }
-      setLinks(next); setSavedLinks(next);
+      setSavedLinks(next);
+      if (!linksEdited.current) setLinks(next);
     });
     return () => { active = false; };
   }, []);
@@ -67,6 +70,8 @@ export default function ProfileAppearance({ current, onSave }: { current: Cover;
       onSave(choice);
       setSavedLayout(layout);
       setSavedLinks({ ...links });
+      layoutEdited.current = false;
+      linksEdited.current = false;
       setMessage("Profile style and links saved.");
     } catch {
       setFailed(true);
@@ -98,7 +103,7 @@ export default function ProfileAppearance({ current, onSave }: { current: Cover;
         <div className="hc-cover-options">
           {(["standard", "compact", "showcase"] as const).map(option => <label key={option}>
             <input type="radio" name="profile-layout" value={option} checked={layout === option} disabled={saving}
-              onChange={() => { setLayout(option); setMessage(""); }} />
+              onChange={() => { layoutEdited.current = true; setLayout(option); setMessage(""); }} />
             {option === "standard" ? "Standard · balanced" : option === "compact" ? "Compact · more on screen" : "Showcase · bold player identity"}
           </label>)}
         </div>
@@ -111,7 +116,7 @@ export default function ProfileAppearance({ current, onSave }: { current: Cover;
             <span>{field.label}</span>
             <input type="url" inputMode="url" maxLength={250} value={links[field.key]} disabled={saving}
               placeholder={field.host ? `https://${field.host}/yourprofile` : "https://yourwebsite.com"}
-              onChange={event => setLinks(current => ({ ...current, [field.key]: event.target.value }))} />
+              onChange={event => { linksEdited.current = true; setLinks(current => ({ ...current, [field.key]: event.target.value })); }} />
           </label>)}
         </div>
       </fieldset>
