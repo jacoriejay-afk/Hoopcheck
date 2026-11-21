@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getStripeKeyMode, stripeMatchesDeployment } from "../../../../lib/stripe-key-mode";
+import { canReleaseExpiredTrialSession } from "../../../../lib/stripe-trial-recovery";
+import { isSupportedSubscriptionAccountType } from "../../../../lib/stripe-trial-eligibility";
 import { reconcileAmbassadorEvent, recordAmbassadorInvoice, updateAmbassadorSubscriptionStatus } from "../../../../lib/ambassador/stripe";
 import { createClient } from "@supabase/supabase-js";
 
@@ -169,7 +171,7 @@ async function saveSubscription(
   if (ownerProfileError || !ownerProfile?.account_type) {
     throw new Error("Cannot synchronize a subscription without its account owner.");
   }
-  if (!["player", "fan", "coach", "agent", "scout", "club_admin", "manager"].includes(ownerProfile.account_type)) {
+  if (!isSupportedSubscriptionAccountType(ownerProfile.account_type)) {
     throw new Error("Subscription owner has an unsupported account role.");
   }
 
@@ -514,6 +516,45 @@ export async function POST(
           .neq("status", "verified");
         if (sessionError) {
           throw new Error(`Unable to update verification session: ${sessionError.message}`);
+        }
+      }
+    }
+
+    // Only a signed Stripe expiration may permanently close a reserved trial.
+    // Re-fetch Stripe's current session and compare the exact database-bound ID;
+    // never trust a checkout owner ID or an expired event snapshot on its own.
+    if (event.type === "checkout.session.expired") {
+      const expiredSession = event.data.object as Stripe.Checkout.Session;
+      if (expiredSession.metadata?.stripe_trial_reserved === "true") {
+        const userId = expiredSession.client_reference_id;
+        if (!userId || expiredSession.metadata?.user_id !== userId) {
+          throw new Error("Expired trial session owner metadata mismatch.");
+        }
+        const supabase = getAdminSupabase();
+        const { data: claim, error: claimError } = await supabase
+          .from("stripe_trial_claims")
+          .select("state, checkout_session_id")
+          .eq("user_id", userId)
+          .maybeSingle();
+        if (claimError) {
+          throw new Error("Unable to verify expired trial reservation.");
+        }
+        if (claim?.state === "reserved" && claim.checkout_session_id === expiredSession.id) {
+          const currentSession = await stripe.checkout.sessions.retrieve(expiredSession.id);
+          if (!canReleaseExpiredTrialSession(
+            currentSession, userId, claim.checkout_session_id, expiredSession.id
+          )) {
+            throw new Error("Stripe has not confirmed this trial Checkout Session expired safely.");
+          }
+          const { data: expired, error: expireError } = await supabase.rpc(
+            "mark_expired_stripe_trial", {
+              p_user_id: userId,
+              p_session_id: expiredSession.id,
+            }
+          );
+          if (expireError || expired !== true) {
+            throw new Error("Unable to close the expired trial reservation.");
+          }
         }
       }
     }

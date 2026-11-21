@@ -31,11 +31,32 @@ function MembershipContent() {
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [billingInterval, setBillingInterval] = useState<BillingInterval>("month");
   const [accountType, setAccountType] = useState<string | null>(null);
+  const [trialPubliclyAvailable, setTrialPubliclyAvailable] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
+  // The server, not the browser, decides whether public trial activation is
+  // actually enabled. A failed status check keeps the launch notice OFF.
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetch("/api/membership/trial-status", {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then((response) => response.ok ? response.json() : null)
+      .then((payload: { available?: boolean } | null) => {
+        if (!controller.signal.aborted) {
+          setTrialPubliclyAvailable(payload?.available === true);
+        }
+      })
+      .catch(() => {
+        // A network failure never advertises a trial that cannot be purchased.
+      });
+    return () => controller.abort();
+  }, []);
 
   async function loadSubscription() {
     setLoading(true);
@@ -338,9 +359,17 @@ function MembershipContent() {
               <button type="button" aria-pressed={billingInterval==="6_month"} className="hc-billing-option" onClick={()=>setBillingInterval("6_month")}><span>6 months</span><small>Save 10%</small></button>
               <button type="button" aria-pressed={billingInterval==="year"} className="hc-billing-option" onClick={()=>setBillingInterval("year")}><span>Annual</span><small>Save 15%</small></button>
             </div>
-            {accountType === "player" && billingInterval === "month" && (
+            {billingInterval === "month" && (
               <p className="hc-trial-note" role="note">
-                <strong>7-day trial update:</strong> A seven-day free trial for first-time monthly Player Pro and Premium memberships is being prepared, but it is not currently available at checkout. Your selected monthly price and any applicable taxes or discounts are shown before payment.
+                {trialPubliclyAvailable ? (
+                  <>
+                    <strong>7-day free trial:</strong> Eligible first-time members across all supported HoopCheck account types can start one seven-day trial with a monthly Pro or Premium membership. Coach and Team Manager accounts require Premium. Stripe Checkout will confirm the recurring price, any applicable taxes and the first payment date before you start.
+                  </>
+                ) : (
+                  <>
+                    <strong>7-day trial update:</strong> A one-time seven-day free trial for eligible first-time monthly Pro and Premium memberships across all supported HoopCheck account types is being prepared, but it is not currently available at public checkout. Account-specific plan rules still apply. Your selected monthly price and any applicable taxes or discounts are shown before payment.
+                  </>
+                )}
               </p>
             )}
             <div className="hc-membership-value"><span className="hc-membership-value__mark">★</span><div><strong>Best flexibility, better value.</strong><p>Choose monthly, 6-month, or annual billing. The total shown is the amount charged for the selected term.</p></div></div><div className="plans">
