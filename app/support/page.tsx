@@ -57,6 +57,14 @@ export default function SupportPage() {
   }
 
   useEffect(() => {
+    // The scam-alert intake is private: it submits to the existing support
+    // queue, not a publicly visible accusation feed.
+    if (new URLSearchParams(window.location.search).get("scamAlert") === "1") {
+      setSubject("Report a suspicious basketball offer");
+      setCategory("security");
+      setPriority("high");
+      setDescription("Type of offer (agent, tryout, team or other):\nWhat happened (include dates and any non-sensitive evidence links):\nWhat action, if any, have you taken?\n");
+    }
     void load();
   }, []);
 
