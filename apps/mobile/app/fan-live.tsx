@@ -1,3 +1,4 @@
+import { CourtsideBanner } from "../components/CourtsideBanner";
 import { Scoreboard } from "../components/Scoreboard";
 import { Skeleton } from "../components/Motion";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -84,7 +85,7 @@ export default function LiveGames() {
   const chatEnabled = active && account.features.canUseLiveGameChat && !offline;
   return <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={100} style={{ flex: 1, backgroundColor: theme.background }}>
     <View style={{ padding: 16, gap: 10 }}>
-      {!game ? <><Text style={{ ...theme.type.body, color: theme.muted }}>Scores, conversations and predictions.</Text>
+      {!game ? <><CourtsideBanner eyebrow="GAME CENTER" title="The game lives here">Scores, conversations and predictions.</CourtsideBanner>
       {account.features.canSwitchBasketballSide ? <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 16 }}>{(["mens", "womens"] as const).map(value => <Pressable key={value} accessibilityRole="tab" aria-selected={side === value} accessibilityState={{ selected: side === value }} disabled={savingSide || sideChoice?.owner !== uid} onPress={() => void chooseSide(value)} style={{ minHeight: 44, justifyContent: "center", borderBottomWidth: side === value ? 3 : 0, borderColor: theme.accent }}><Text style={{ color: theme.foreground, fontWeight: "800" }}>{value === "mens" ? "Men" : "Women"}</Text></Pressable>)}</View> : <Text style={{ color: theme.muted }}>{side === "mens" ? "Men’s basketball" : "Women’s basketball"}</Text>}</> : null}
       {error ? <View style={{ gap: 8 }}><Text accessibilityRole="alert" style={{ color: theme.muted }}>{error}</Text><Button secondary onPress={retry}>Verify access again</Button></View> : null}
       {gameId ? <Button secondary onPress={() => router.replace("/fan-live")}>All games</Button> : null}

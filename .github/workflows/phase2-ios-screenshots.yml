@@ -1,0 +1,61 @@
+name: Phase 2 iOS screenshots
+on:
+  pull_request:
+    paths:
+      - 'apps/mobile/**'
+      - '.github/workflows/phase2-ios-screenshots.yml'
+permissions:
+  contents: read
+concurrency:
+  group: phase2-screenshots-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  screenshots:
+    runs-on: macos-15
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: apps/mobile
+    env:
+      EXPO_NO_TELEMETRY: '1'
+      EXPO_PUBLIC_SUPABASE_URL: https://fixture.supabase.co
+      EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: fixture-publishable-key
+      EXPO_PUBLIC_HOOPCHECK_API_URL: https://api.test
+      SENTRY_DISABLE_AUTO_UPLOAD: 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+      - run: npm ci --no-audit
+      - name: Select isolated screenshot entry in disposable checkout
+        run: node -e 'const fs=require("fs");const p=require("./package.json");p.main="scripts/ios-design-entry.js";fs.writeFileSync("package.json",JSON.stringify(p,null,2));'
+      - run: npx --no-install expo prebuild --platform ios --no-install
+      - run: pod install --project-directory=ios
+      - name: Boot iPhone and start local Metro
+        run: |
+          DEVICE=$(xcrun simctl list devices available -j | python3 -c 'import json,sys;print(next(d["udid"] for rows in json.load(sys.stdin)["devices"].values() for d in rows if "iPhone 16 Pro" == d["name"]))')
+          echo "DEVICE=$DEVICE" >> "$GITHUB_ENV"
+          xcrun simctl boot "$DEVICE"
+          xcrun simctl bootstatus "$DEVICE" -b
+          echo '{"route":"/dashboard"}' > /tmp/phase2-route.json
+          python3 scripts/ios-design-server.py > /tmp/phase2-control.log 2>&1 &
+          CI=1 npx --no-install expo start --localhost --port 8081 > /tmp/phase2-metro.log 2>&1 &
+      - name: Compile actual native app locally without signing or EAS
+        run: xcodebuild -workspace ios/HoopCheck.xcworkspace -scheme HoopCheck -configuration Debug -sdk iphonesimulator -destination "id=$DEVICE" -derivedDataPath /tmp/phase2-derived CODE_SIGNING_ALLOWED=NO > /tmp/phase2-compile.log 2>&1
+      - name: Install and capture all five routes in both appearances
+        run: python3 scripts/ios-design-capture.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: phase2-native-ios-screenshots
+          path: |
+            /tmp/phase2-ios/*.png
+            /tmp/phase2-metro.log
+            /tmp/phase2-compile.log
+            /tmp/phase2-control.log
+          if-no-files-found: warn
