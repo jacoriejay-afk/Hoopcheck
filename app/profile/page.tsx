@@ -32,7 +32,7 @@ export default function ProfilePage() {
   const { t } = useLanguage();
   const [p, setP] = useState<any>(null);
   const [cover, setCover] = useState(profileCover(null));
-  const [profileLayout, setProfileLayout] = useState<"standard" | "compact">("standard");
+  const [profileLayout, setProfileLayout] = useState<"standard" | "compact" | "showcase">("standard");
   const [socialLinks, setSocialLinks] = useState<{ label: string; url: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [postingStreak, setPostingStreak] = useState(0);
@@ -53,7 +53,8 @@ export default function ProfilePage() {
 
       if (!active) return;
       setCover(profileCover(user.user_metadata?.hoopcheck_profile_cover));
-      setProfileLayout(user.user_metadata?.hoopcheck_profile_layout === "compact" ? "compact" : "standard");
+      const savedLayout = user.user_metadata?.hoopcheck_profile_layout;
+      setProfileLayout(savedLayout === "compact" || savedLayout === "showcase" ? savedLayout : "standard");
       const storedLinks = user.user_metadata?.hoopcheck_social_links;
       const safeLinks: { label: string; url: string }[] = [];
       for (const [key, label, domain] of [["instagram", "Instagram", "instagram.com"], ["tiktok", "TikTok", "tiktok.com"], ["youtube", "YouTube", "youtube.com"], ["website", "Website", ""]] as const) {

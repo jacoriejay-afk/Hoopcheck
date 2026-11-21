@@ -1,0 +1,32 @@
+.hc-index-page { width: min(1140px, 100%); margin: auto; padding: 18px 16px 100px; color: var(--hc-foreground); }
+.hc-index-intro { padding: 20px 0; }
+.hc-index-kicker { color: var(--hc-orange, #ff682b); font-weight: 850; font-size: .76rem; letter-spacing: .16em; }
+.hc-index-intro h1 { font-size: clamp(2rem, 5vw, 3.5rem); line-height: 1.07; letter-spacing: -.055em; margin: 4px 0 10px; }
+.hc-index-intro h1 span { color: var(--hc-orange, #ff682b); }
+.hc-index-intro > p:last-child { max-width: 70ch; color: var(--hc-foreground-muted); line-height: 1.55; }
+.hc-index-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; padding: 14px; border-radius: 18px; border: 1px solid var(--hc-card-border); background: var(--hc-card-surface); }
+.hc-index-controls label { display: grid; gap: 6px; flex: 1 1 220px; font-size: .8rem; font-weight: 700; }
+.hc-index-controls :is(input, select) { width: 100%; min-height: 44px; padding: 9px 12px; border: 1px solid var(--hc-card-border); color: var(--hc-foreground); background: var(--hc-surface-soft); border-radius: 12px; font-size: 1rem; }
+.hc-index-pills { display: flex; gap: 4px; flex: 1 1 100%; }
+.hc-index-pills button { flex: 1; padding: 10px 14px; min-height: 44px; border: 1px solid var(--hc-card-border); border-radius: 999px; font: inherit; font-weight: 800; color: var(--hc-foreground); background: transparent; cursor: pointer; }
+.hc-index-pills button[aria-pressed="true"] { background: var(--hc-orange, #ff682b); color: #111; border-color: transparent; }
+.hc-index-note { padding: 10px 4px; font-size: .83rem; color: var(--hc-foreground-muted); line-height: 1.55; }
+.hc-index-status, .hc-index-gate { padding: 20px; background: var(--hc-card-surface); border: 1px solid var(--hc-card-border); border-radius: 16px; }
+.hc-index-gate { margin-bottom: 14px; }
+.hc-index-gate p { margin: 6px 0; color: var(--hc-foreground-muted); }
+.hc-index-gate a { color: var(--hc-orange, #ff682b); }
+.hc-index-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 12px; }
+.hc-index-team { padding: 18px; border: 1px solid var(--hc-card-border); border-radius: 18px; color: var(--hc-foreground); background: var(--hc-card-surface); min-width: 0; }
+.hc-index-team-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.hc-index-team h2 { font-size: 1rem; line-height: 1.3; margin: 0 0 7px; overflow-wrap: anywhere; }
+.hc-index-team h2 a { color: var(--hc-foreground); text-decoration: none; }
+.hc-index-team h2 a:hover { text-decoration: underline; }
+.hc-index-team p { margin: 3px 0; color: var(--hc-foreground-muted); font-size: .84rem; }
+.hc-index-team small { color: var(--hc-foreground-muted); font-size: .75rem; }
+.hc-index-team .hc-trust-score { flex: 0 0 auto; }
+.hc-index-locked { border: 1px solid var(--hc-card-border); border-radius: 999px; padding: 5px 8px; font-size: .72rem; flex-shrink: 0; }
+.hc-index-team .hc-index-context { margin-top: 14px; border-top: 1px solid var(--hc-card-border); padding-top: 10px; }
+.hc-index-links { display: flex; gap: 16px; flex-wrap: wrap; margin: 28px 0; }
+.hc-index-links a { color: var(--hc-foreground); text-decoration: underline; text-underline-offset: .2em; }
+.hc-index-controls :is(button, input, select):focus-visible, .hc-index-links a:focus-visible, .hc-index-team a:focus-visible { outline: 3px solid var(--hc-orange, #ff682b); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .hc-index-page * { scroll-behavior: auto; } }
