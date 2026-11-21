@@ -1,0 +1,57 @@
+BEGIN
+DO
+DO
+CREATE SCHEMA
+REVOKE
+GRANT
+CREATE TABLE
+CREATE TABLE
+ALTER TABLE
+REVOKE
+INSERT 0 4
+CREATE FUNCTION
+REVOKE
+GRANT
+CREATE VIEW
+GRANT
+SET
+   set_config
+-----------------
+ {"role":"anon"}
+(1 row)
+
+DO
+SET
+                                     set_config
+------------------------------------------------------------------------------------
+ {"role":"authenticated","sub":"11111111-1111-4111-8111-111111111111","aal":"aal1"}
+(1 row)
+
+DO
+                                        set_config
+-------------------------------------------------------------------------------------------
+ {"role":"authenticated","sub":"11111111-1111-4111-8111-111111111111","is_anonymous":true}
+(1 row)
+
+DO
+RESET
+INSERT 0 1
+SET
+                                     set_config
+------------------------------------------------------------------------------------
+ {"role":"authenticated","sub":"11111111-1111-4111-8111-111111111111","aal":"aal1"}
+(1 row)
+
+DO
+                                     set_config
+------------------------------------------------------------------------------------
+ {"role":"authenticated","sub":"11111111-1111-4111-8111-111111111111","aal":"aal2"}
+(1 row)
+
+DO
+RESET
+ROLLBACK
+                                               result
+----------------------------------------------------------------------------------------------------
+ PASS: synthetic legacy-shaped masked reads; production name/write/FK compatibility NOT established
+(1 row)

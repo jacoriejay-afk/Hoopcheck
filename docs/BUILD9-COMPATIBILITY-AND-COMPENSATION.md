@@ -126,3 +126,38 @@ MFA, profile load/edit, membership failure/retry and username search; light/dark
 keyboard/safe areas, VoiceOver/large text and universal links. Capture redacted
 Console/hang logs and screen recording if frozen. No device results supplied:
 #699 and the physical P0 acceptance gates remain open.
+
+
+## Completion continuation from acbd66b5 (2026-11-20)
+
+`completion/build9-20261120` preserves #746's exact source and five unchanged
+migration candidates. See `reports/build9/completion/README.md` for fresh evidence.
+The lost local baseline is no longer a prerequisite for this authorized continuation.
+
+Fresh unauthenticated probes confirm both production API paths return HTML 404.
+Vercel still identifies production as main 9e11cb7, deployment
+`dpl_Hc62CWyFuX4jqNiDWsMwEXhWoN2j`. No deployment was performed. A verified
+DB-disabled Apple catalog now returns private JSON with `canPurchase:false`, an
+empty product list and null environment, without constructing Apple signing
+services. Missing config/schema still fails closed; enabled catalogs and all
+purchase/sync authorization retain their prior checks. New native readers accept
+null environment only when purchases are explicitly disabled. The membership
+screen clears stale notices on refresh in either theme.
+
+A repeatable `--synthetic` option now runs the limited committed purchase-intent
+containment against synthetic StoreKit fixtures; CI exercises it over a container
+Unix socket. The generated SQL rejects an incorrect database or TCP connection
+before any fixture DDL. It commits forward fixtures, commits the intent privilege
+pause twice, compares every public/billing row, effective entitlements and function
+definition, and retains sync/notification privileges. Synthetic mode omits the
+catalog-specific current_country ACL assertion because that fixture has no such
+column; independent profile/MFA suites cover privacy. This is not production
+schema or full five-migration compensation clearance. Default catalog mode keeps
+its privacy assertion and still requires approved exports.
+
+Future EAS upload exclusions now include local secret/key files while retaining
+native sources under modules/*/ios and modules/*/android. Expo diagnostics pass.
+No signing credential is changed. Remote version query is blocked by unauthenticated
+EAS CLI; the next build number must be privately verified by the Expo owner rather
+than set from historical Build 8. No build, update, submission or purchase enablement
+is authorized by these preparation results.
