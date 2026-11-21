@@ -54,6 +54,9 @@ jobs:
       - name: Verify Build 9 signed HTTP guard offline (no network or tokens)
         run: node scripts/build9-signed-http-acceptance.mjs --self-test
 
+      - name: Verify production catalog guard offline (no database access)
+        run: node scripts/check-build9-production-catalog-guard.mjs
+
       - name: Audit production dependencies (blocking)
         run: npm audit --omit=dev --audit-level=high
 
