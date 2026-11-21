@@ -9,11 +9,18 @@ BEGIN
   IF NOT has_column_privilege('authenticated','public.profiles','id','SELECT') THEN
     RAISE EXCEPTION 'Editor UPDATE RETURNING id requires id SELECT';
   END IF;
-  IF NOT has_column_privilege('authenticated','public.profiles','display_name','UPDATE') THEN
-    RAISE EXCEPTION 'Missing authenticated display_name UPDATE grant';
-  END IF;
-  IF NOT has_column_privilege('authenticated','public.profiles','current_country','UPDATE') THEN
-    RAISE EXCEPTION 'Missing authenticated current_country UPDATE grant';
+  -- Exact fields used by apps/mobile/src/native/profileEditor.ts saveOwnProfile().
+  -- Column UPDATE privileges alone do not establish JWT ownership or MFA.
+  IF EXISTS (
+    SELECT 1 FROM unnest(ARRAY[
+      'display_name','bio','hometown','nationality','favorite_teams',
+      'favorite_leagues','interests','experience_summary','position','height',
+      'current_country','current_team','free_agent','current_country_public',
+      'profile_visibility'
+    ]::text[]) AS field(name)
+    WHERE NOT has_column_privilege('authenticated','public.profiles',field.name,'UPDATE')
+  ) THEN
+    RAISE EXCEPTION 'Missing one or more native profile editor column UPDATE grants';
   END IF;
   IF has_column_privilege('authenticated','public.profiles','moderation_note','UPDATE') THEN
     RAISE EXCEPTION 'Unsafe authenticated moderation_note UPDATE grant';
