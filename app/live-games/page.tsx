@@ -10,6 +10,8 @@ import CourtLines from "../../components/CourtLines";
 import { getGameAvailability, formatViewerLocalTime } from "../../lib/game-availability";
 import { HoopIcon } from "../../components/HoopCheckUI";
 import TeamLogo from "../../components/TeamLogo";
+import GameWinnerPrediction from "../../components/GameWinnerPrediction";
+import "../game-predictions.css";
 import "./live-games-chat.css";
 import { getHoopCheckEntitlements } from "../../lib/membership-tier";
 
@@ -59,6 +61,7 @@ export default function LiveGamesPage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [reminding, setReminding] = useState<string | null>(null);
+  const [expandedPredictionId, setExpandedPredictionId] = useState<string | null>(null);
   const [clock, setClock] = useState(() => new Date());
   const [lastCheckedAt, setLastCheckedAt] = useState<Date | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -229,7 +232,7 @@ export default function LiveGamesPage() {
     setReminding(null);
   }
 
-  function GameCard({ entry, variant }: { entry: typeof prepared[number]; variant: "live" | "upcoming" | "recent" | "postgame" }) {
+  function GameCard({ entry, variant, allowPredictions = true }: { entry: typeof prepared[number]; variant: "live" | "upcoming" | "recent" | "postgame"; allowPredictions?: boolean }) {
     const {game,availability,home,away} = entry;
     const leagueName = game.league_name || teams[game.team_id]?.league_name || "League not listed";
     const country = game.country || teams[game.team_id]?.country || "";
@@ -277,8 +280,18 @@ export default function LiveGamesPage() {
             <HoopIcon name="bell" size={16} /> {reminding === game.id ? "Saving…" : reminders.includes(game.id) ? "REMINDER SET" : "REMIND ME"}
           </button>}
           {isRecent && !canJoin && <span className="hc-live-card__muted">Final score {score || "not available"}</span>}
+          {allowPredictions && game.opponent_team_id && !["cancelled", "canceled", "postponed", "abandoned"].includes(game.status.toLowerCase()) &&
+            <button type="button" className="hc-remind-button"
+              aria-expanded={expandedPredictionId === game.id}
+              onClick={() => setExpandedPredictionId(open => open === game.id ? null : game.id)}>
+              <HoopIcon name="trophy" size={16} /> {expandedPredictionId === game.id ? "HIDE FAN PICKS" : "FAN PICKS"}
+            </button>}
           <Link href={(basketballSide === "womens" ? "/womens/" : "/teams/") + game.team_id} className="hc-live-card__muted">Team profile</Link>
         </div>
+        {allowPredictions && game.opponent_team_id && expandedPredictionId === game.id &&
+          <div className="hc-live-card__prediction">
+            <GameWinnerPrediction game={game} homeName={home?.name || "Home"} awayName={away?.name || game.opponent_name} />
+          </div>}
       </article>
     );
   }
@@ -301,7 +314,7 @@ export default function LiveGamesPage() {
         .slice(0,8).length > 0
         ? <div className="hc-live-hub-grid">{filtered.filter(({game,availability}) => availability.chatOpen && (presenceCounts[game.id] || 0) > 0)
           .sort((a,b) => (presenceCounts[b.game.id] || 0) - (presenceCounts[a.game.id] || 0))
-          .slice(0,8).map(entry => <GameCard key={entry.game.id} entry={entry} variant={live.some(item => item.game.id === entry.game.id) ? "live" : ["final", "finished"].includes(entry.game.status.toLowerCase()) || entry.availability.phase === "post-game" ? "postgame" : "upcoming"} />)}</div>
+          .slice(0,8).map(entry => <GameCard allowPredictions={false} key={entry.game.id} entry={entry} variant={live.some(item => item.game.id === entry.game.id) ? "live" : ["final", "finished"].includes(entry.game.status.toLowerCase()) || entry.availability.phase === "post-game" ? "postgame" : "upcoming"} />)}</div>
         : <p className="muted">Active conversations will appear here when people join a game chat.</p>}
     </section>
     <section className="hc-live-hub-filters" aria-label="Browse game conversations">
