@@ -13,7 +13,7 @@ type Agent = {
 type Scope = "all" | "agent" | "scout" | "verified";
 
 const badgeText = (a: Agent) => a.identity_checked
-  ? "Identity checked" : "Credentials not verified";
+  ? "Identity checked" : "Identity not checked";
 const label = (a: Agent) => a.display_name?.trim() || a.username || "Basketball professional";
 function initials(name: string) { return name.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join("").toUpperCase() || "HC"; }
 
@@ -46,11 +46,11 @@ export default function AgentsPage() {
     <header className="hc-network-hero">
       <div><p className="hc-network-eyebrow">HOOPCHECK™ / PROFESSIONAL NETWORK</p><h1>Agents <span>&amp;</span> Scouts</h1>
         <p>Discover basketball agents and scouts with public profiles. Filter for identity-checked members and research their experience before connecting.</p>
-        <div className="hc-network-hero-actions"><Link href="/connections" className="hc-network-action">My connections</Link><Link href="/scam-alerts" className="hc-network-ghost">Stay safe from impersonation</Link></div>
+        <div className="hc-network-hero-actions"><Link href="/agent-studio" className="hc-network-action">Publish my professional showcase</Link><Link href="/scam-alerts" className="hc-network-ghost">Stay safe from impersonation</Link></div>
       </div>
       <div className="hc-network-score" aria-hidden="true"><span>AGENCY</span><strong>01</strong><small>THE NETWORK</small></div>
     </header>
-    <section className="hc-network-tools" aria-label="Find a basketball professional">
+    <section className="hc-network-tools" aria-label="Find a professional showcase">
       <label htmlFor="hc-agent-search">Find professionals</label>
       <input id="hc-agent-search" value={q} onChange={e=>setQ(e.target.value)} placeholder="Search name, agency experience or country" type="search" autoComplete="off"/>
       <div className="hc-network-filters" aria-label="Professional type">
@@ -74,7 +74,7 @@ export default function AgentsPage() {
           <div className="hc-network-card-bottom"><span>{p.country || "Location not listed"}</span><Link href={"/agents/"+encodeURIComponent(p.id)}>View profile</Link></div>
         </article>)}
       </section>
-      : <section className="hc-network-state"><h2>No matching professionals yet</h2><p>Only public, normally moderated profiles appear here. Identity-checked profiles show only after an independent ID check; no accounts or credentials are invented.</p><button type="button" onClick={()=>{setQ("");setScope("all");}}>Clear filters</button></section>}
-    <p className="hc-network-disclaimer">An identity check confirms a person's identity, not agency authorization, professional licensing, successful placements, or the legitimacy of an offer. Verify credentials and club contacts independently.</p>
+      : <section className="hc-network-state"><h2>No matching professionals yet</h2><p>Only deliberately published professional showcases from eligible, normally moderated accounts appear here. No sample accounts or credentials are invented.</p><button type="button" onClick={()=>{setQ("");setScope("all");}}>Clear filters</button></section>}
+    <p className="hc-network-disclaimer">Members choose the fields they publish; their underlying account stays private. An identity check confirms a person's identity, not agency authorization, professional licensing, successful placements, or the legitimacy of an offer. Verify credentials and club contacts independently.</p>
   </main>;
 }
