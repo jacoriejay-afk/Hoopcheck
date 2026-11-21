@@ -32,3 +32,26 @@ The user-requested membership preview is implemented as verified current members
 See checks/, screenshots/, changed-files.txt and commits.txt for evidence when recorded. Browser images are synthetic localhost React Native Web and are not simulator or production-data evidence.
 
 Baseline CI resolved during work: exact #751 head 19baa225 has SUCCESS for build (44887101721), mobile checks (44887101703), security (44887101731) and unsigned simulator compile (44887101725). Raw rollup is retained in checks/baseline-ci.json. This verifies the designated base; it does not prove Phase 3C CI, runtime sharing, a physical iPhone or recovery of the missing master.
+
+## Final local validation
+
+PASS: root/mobile TypeScript; **214/214 native tests** (zero failed/skipped); **12/12 browser fixture suites** (profile research, player privacy, membership, MFA, profile editing, groups, games/chat, feed/replies/Reels/gating, discovery, media, theme persistence and design/navigation); entitlement matrix (10 role/tier cells and 22 entitlements); full website build; web and iOS Hermes exports; surface/theme audits. Lint is zero errors and the same **125 inherited warnings**, with no new warning suppression. One intermediate ref-cleanup warning was removed by dropping a redundant counter update; unmount is already covered by the mounted guard and owner changes increment the generation at setup.
+
+Local prebuild and generated Info.plist/project checks PASS. Passport sharing requests no new runtime permission; the suite instead verifies unsupported/missing capability, wrong identity/role, session switch, background/unmount, timeout/late cleanup, share failure, local URI validation and deletion failure. Native dependency mocks do not establish that the real iOS share sheet ran. CI unsigned compilation likewise is not runtime or physical-iPhone acceptance.
+
+Expo Doctor is **16/18**, with Expo schema and React Native Directory requests blocked by network failures. See checks/expo-doctor.log. These two gates remain open.
+
+Artifacts are actual RN Web with synthetic intercepted data, never generated mockups or hosted user records. Root/native logs are normalized only for trailing whitespace. Comparison context is the preserved [Phase 3B report](../phase3b/README.md); the new views have after captures, not invented preexisting equivalents.
+
+| Updated surface | Light | Dark |
+|---|---|---|
+| Scoped roster research | [image](screenshots/roster-light.png) | [image](screenshots/roster-dark.png) |
+| Career stats | [image](screenshots/career-stats-light.png) | [image](screenshots/career-stats-dark.png) |
+| Professional verification | [image](screenshots/verification-light.png) | [image](screenshots/verification-dark.png) |
+| Player membership access | [image](screenshots/membership-player-light.png) | [image](screenshots/membership-player-dark.png) |
+| Fan membership access | [image](screenshots/membership-fan-light.png) | [image](screenshots/membership-fan-dark.png) |
+| Owner Passport preview | [image](screenshots/passport-owner-light.png) | [image](screenshots/passport-owner-dark.png) |
+
+The main [Build 9 release review](../continuation-release-review.md) now includes this checklist without rewriting its historical evidence. Native runtime sharing, current-team rosters, box scores/awards, hosted compatibility and physical-device gates remain open. Keep draft and unmerged.
+
+A final navigation review also found that a mounted, blurred profile could otherwise finish PDF preparation after the user left. Passport now closes its sheet and invalidates export on route blur. An actual-component renderer regression test exercises the real focus cleanup and confirms the sheet disappears, the adapter becomes invalid and no success haptic fires for the abandoned export. This is automated lifecycle evidence, not a physical-device freeze claim.

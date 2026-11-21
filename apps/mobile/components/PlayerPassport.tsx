@@ -1,7 +1,8 @@
+import { useFocusEffect } from "expo-router";
 import { readWithDeadline } from "../src/native/readDeadline";
 import { sharePlayerPassport } from "../src/native/passportSharing";
 import { requestNativeAccount } from "../src/native/accountClient";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState, Platform, Text, View } from "react-native";
 import { BrandLogo } from "./BrandLogo";
 import { Sheet } from "./Sheet";
@@ -21,6 +22,11 @@ export function PlayerPassport({ player }: { player: PlayerProfile }) {
   const owner = account?.user.accountType === "player" && account.user.id === player.id ? account.user.id : null;
   const generation = useRef(0);
   const mounted = useRef(true);
+  const focused = useRef(false);
+  useFocusEffect(useCallback(() => {
+    focused.current = true;
+    return () => { focused.current = false; generation.current++; setOpen(false); };
+  }, []));
   useEffect(() => {
     mounted.current = true; generation.current++; setOpen(false); setError("");
     const listener = AppState.addEventListener("change", state => { if (state !== "active") generation.current++; });
@@ -38,7 +44,7 @@ export function PlayerPassport({ player }: { player: PlayerProfile }) {
       const native = () => modules ??= Promise.all([import("expo-print"), import("expo-sharing"), import("expo-file-system")]);
       await sharePlayerPassport(pass, owner, {
         platform: Platform.OS,
-        current: () => mounted.current && generation.current === current && AppState.currentState === "active",
+        current: () => focused.current && mounted.current && generation.current === current && AppState.currentState === "active",
         identity: async () => {
           const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), 15000);
           try {

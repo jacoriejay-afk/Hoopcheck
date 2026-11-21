@@ -20,7 +20,7 @@ test('an account switch while rendering prevents share and removes the PDF',asyn
  let count=0;const {io,calls}=fixture({identity:async()=>({id:++count===1?'owner':'other',accountType:'player'})});
  await assert.rejects(sharePlayerPassport(pass,'owner',io),/Verify/);assert.deepEqual(calls.map(x=>x[0]),['print','remove']);
 });
-test('background or unmount during preparation prevents the share sheet',async()=>{
+test('background, navigation or unmount during preparation prevents the share sheet',async()=>{
  let active=true;const {io,calls}=fixture({current:()=>active,print:async()=>{active=false;return 'file:///cache/passport.pdf';}});
  await assert.rejects(sharePlayerPassport(pass,'owner',io),/cancelled/);assert.deepEqual(calls.map(x=>x[0]),['remove']);
 });
