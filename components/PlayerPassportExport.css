@@ -11,7 +11,7 @@
 .hc-passport-export__toolbar label { display: flex; align-items: center; gap: 9px; font-size: .87rem; font-weight: 650; }
 .hc-passport-export__toolbar input { width: 18px; height: 18px; accent-color: var(--hc-orange, #ff682b); }
 .hc-passport-export__actions button:first-child { background: var(--hc-orange, #ff682b); color: #111; border-color: transparent; }
-.hc-passport-print { background: white; color: #121216; border-radius: 14px; padding: clamp(18px, 4vw, 34px); box-shadow: 0 0 0 1px #ddd; }
+.hc-passport-print { background: var(--hc-passport-paper, #faf9f6); color: #121216; border-radius: 14px; padding: clamp(18px, 4vw, 34px); box-shadow: 0 0 0 1px #ddd; }
 .hc-passport-print header { display: flex; justify-content: space-between; align-items: center; gap: 14px; border-bottom: 2px solid #f16a27; padding-bottom: 18px; }
 .hc-passport-print header p { font-size: .82rem; letter-spacing: .14em; font-weight: 900; margin: 0 0 10px; }
 .hc-passport-print header p span { color: #e95417; }
