@@ -15,7 +15,6 @@ begin;
 
 insert into public.womens_leagues(name,country,level,active)
 select v.name,v.country,'Professional',true from (values
-  ('Brazilian LBF','Brazil'),
   ('Argentina Women’s Basketball League','Argentina'),
   ('Liga Nacional Femenina (Chile)','Chile'),
   ('Liga Femenina de Basketball (Uruguay)','Uruguay')
