@@ -1,6 +1,7 @@
 "use client";
 
 import HoopLoading from "../../components/HoopLoading";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 
@@ -38,7 +39,7 @@ export default function SupportPage() {
 
     const user = session?.user;
     if (!user) {
-      window.location.href = "/login";
+      window.location.href = `/login?${new URLSearchParams({ returnTo: window.location.pathname + window.location.search })}`;
       return;
     }
 
@@ -65,6 +66,12 @@ export default function SupportPage() {
       setCategory("security");
       setPriority("high");
       setDescription(`Reel: https://hoopcheck.online/feed#post-${reelId}\nReason: `);
+    }
+    if (new URLSearchParams(window.location.search).get("scamAlert") === "1") {
+      setSubject("Report a suspicious basketball offer");
+      setCategory("security");
+      setPriority("high");
+      setDescription("Type of offer (agent, tryout, team or other):\nWhat happened (include dates and any non-sensitive evidence links):\nWhat action, if any, have you taken?\n");
     }
     void load();
   }, []);
@@ -102,7 +109,7 @@ export default function SupportPage() {
 
       const user = session?.user;
       if (!user) {
-        window.location.href = "/login";
+        window.location.href = `/login?${new URLSearchParams({ returnTo: window.location.pathname + window.location.search })}`;
         return;
       }
 
@@ -150,6 +157,7 @@ export default function SupportPage() {
               Tickets create a trackable record for account, billing, verification,
               review, privacy, security, technical and team-directory issues.
             </p>
+            <p><Link href="/scam-alerts">Recognize and privately report suspicious basketball offers</Link></p>
           </div>
         </section>
 
