@@ -61,7 +61,7 @@ export default function TeamLogo({
     <span
       className={`hc-team-logo ${showImage ? "hc-team-logo--image" : "hc-team-logo--fallback"} ${className}`.trim()}
       role="img"
-      aria-label={`${name} team logo`}
+      aria-label={showImage ? `${name} team logo` : `${name} initials placeholder; official team logo unavailable`}
       style={{ width: displaySize, height: displaySize, minWidth: displaySize, background: showImage ? tileBackground : fallbackColor, overflow: "hidden" }}
     >
       {showImage ? (

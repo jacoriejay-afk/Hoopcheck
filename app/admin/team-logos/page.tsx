@@ -22,6 +22,8 @@ export default function AdminTeamLogosPage() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
+  // Read the complete directory. The previous 2,000-row limit excluded hundreds
+  // of clubs from the admin logo queue, even though all teams are public.
   async function loadTeams() {
     const { data: access, error: accessError } = await supabase.rpc("is_current_user_admin_or_moderator");
     if (accessError || !access) {
@@ -29,17 +31,37 @@ export default function AdminTeamLogosPage() {
       setLoading(false);
       return;
     }
-    const [{ data: mens, error: mensError }, { data: womens, error: womensError }] = await Promise.all([
-      supabase.from("teams").select("id,name,country,logo_url,logo_bg,basketball_type").or("source.is.null,source.neq.womens_teams_mirror").order("name").limit(2000),
-      supabase.from("womens_teams").select("id,name,country,logo_url,logo_bg").order("name").limit(1000),
-    ]);
-    const error = mensError || womensError;
-    if (error) setMessage(error.message);
-    else setTeams([
-      ...((mens || []).map((team) => ({ ...team, tableName: "teams" as const }))),
-      ...((womens || []).map((team) => ({ ...team, tableName: "womens_teams" as const }))),
-    ] as Team[]);
-    setLoading(false);
+    async function allRows(table: "teams" | "womens_teams") {
+      const rows: Team[] = [];
+      for (let offset = 0; offset < 10000; offset += 500) {
+        // Literal select strings preserve Supabase's typed PostgREST parser.
+        // Women's mirror rows are presented via womens_teams, not twice.
+        const response = table === "teams"
+          ? await supabase.from("teams")
+              .select("id,name,country,logo_url,logo_bg,basketball_type,source")
+              .or("source.is.null,source.neq.womens_teams_mirror")
+              .order("id").range(offset, offset + 499)
+          : await supabase.from("womens_teams")
+              .select("id,name,country,logo_url,logo_bg")
+              .order("id").range(offset, offset + 499);
+        if (response.error) throw response.error;
+        const batch = (response.data || []).map((team) => ({
+          ...team, tableName: table,
+        })) as Team[];
+        rows.push(...batch);
+        if (batch.length < 500) break;
+      }
+      return rows;
+    }
+    try {
+      const [primary, womens] = await Promise.all([allRows("teams"), allRows("womens_teams")]);
+      setTeams([...primary, ...womens]);
+      setMessage("");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not load the complete team directory.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => { void loadTeams(); }, []);
@@ -145,9 +167,16 @@ export default function AdminTeamLogosPage() {
   return <main className="admin-team-logo-studio" style={{ minHeight: "100vh", background: "#0A0A0A", color: "#F7F7F5", padding: "28px 16px 70px" }}>
     <div style={{ maxWidth: 1050, margin: "0 auto" }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
-        <div><p style={{ color: "#FF5A1F", fontWeight: 900, letterSpacing: ".16em", fontSize: 11 }}>HOOPCHECK ADMIN</p><h1 style={{ fontSize: "clamp(2rem,5vw,3rem)", margin: "6px 0" }}>Team Logo Studio</h1><p style={{ color: "#aaa" }}>Upload logos or review source-page candidates. Fetched candidates are never published without approval.</p></div>
+        <div><p style={{ color: "#FF5A1F", fontWeight: 900, letterSpacing: ".16em", fontSize: 11 }}>HOOPCHECK ADMIN</p><h1 style={{ fontSize: "clamp(2rem,5vw,3rem)", margin: "6px 0" }}>Team Logo Studio</h1><p style={{ color: "#aaa" }}>Upload authentic team crests or review source-page candidates. Missing crests remain clearly labeled placeholders. Fetched candidates are never published without approval.</p></div>
         <Link href="/admin/directory" style={{ color: "#F7F7F5", border: "1px solid #555", borderRadius: 9, padding: "10px 14px" }}>← Admin directory</Link>
       </div>
+      {!loading && teams.length > 0 && (
+        <section aria-label="Team logo coverage" style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 18 }}>
+          <span style={{ border: "1px solid #444", borderRadius: 10, padding: "12px 16px" }}><strong>{teams.filter(team => Boolean(team.logo_url?.trim())).length}</strong> of <strong>{teams.length}</strong> clubs with logos</span>
+          <span style={{ border: "1px solid #444", borderRadius: 10, padding: "12px 16px" }}><strong>{teams.filter(team => !team.logo_url?.trim()).length}</strong> still need an approved logo</span>
+          <span style={{ border: "1px solid #444", borderRadius: 10, padding: "12px 16px" }}>Includes men's, standalone women's and mirrored women's club records</span>
+        </section>
+      )}
       {message && <p role="status" style={{ border: "1px solid #444", borderRadius: 9, padding: 12, background: "#151515" }}>{message}</p>}
       {loading ? <p>Checking access and loading teams…</p> : <>
         <section style={{ border: "1px solid #333", background: "#111", borderRadius: 14, padding: 18, marginTop: 22 }}>
