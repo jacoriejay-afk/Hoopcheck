@@ -174,7 +174,7 @@ export default function PlayerProfilePage() {
               </dl>}
               {player.bio && <p>{player.bio}</p>}
             </Surface>}
-            <PlayerJourney playerId={player.id} isOwnProfile={isOwnProfile} canManage={isOwnProfile && canManageJourney} />
+            <PlayerJourney playerId={player.id} playerName={player.display_name || "HoopCheck Player"} verifiedPlayer={player.player_verified === true} isOwnProfile={isOwnProfile} canManage={isOwnProfile && canManageJourney} />
           </>
         )}
         {!isOwnProfile && <footer className="hc-player-profile-footer">

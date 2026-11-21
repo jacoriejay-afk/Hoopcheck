@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { supabase } from "../lib/supabase";
+import PlayerPassportExport from "./PlayerPassportExport";
 
 type CareerStop = {
   id: string;
@@ -29,7 +30,7 @@ const FLAGS: Record<string,string> = {
 };
 const monogram = (name:string) => name.split(/\s+/).filter(Boolean).slice(0,2).map(part=>part[0]).join("").toUpperCase() || "HC";
 
-export default function PlayerJourney({ playerId, isOwnProfile, canManage }: { playerId:string; isOwnProfile:boolean; canManage:boolean }) {
+export default function PlayerJourney({ playerId, isOwnProfile, canManage, playerName, verifiedPlayer }: { playerId:string; isOwnProfile:boolean; canManage:boolean; playerName:string; verifiedPlayer:boolean }) {
   const [stops,setStops] = useState<CareerStop[]>([]);
   const [teams,setTeams] = useState<DirectoryTeam[]>([]);
   const [loading,setLoading] = useState(true);
@@ -126,6 +127,7 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage }: { p
         </div>
       </article>)}
     </div> : <div className="hc-journey-empty"><span>01 / CAREER PASSPORT</span><h3>No career stops added yet</h3><p>Build a timeline of the teams, leagues, countries, seasons, and positions that shaped your career.</p></div>}
+    {isOwnProfile && canManage && !loading && <PlayerPassportExport playerName={playerName} verifiedPlayer={verifiedPlayer} stops={stops} />}
     {isOwnProfile&&!canManage&&<div className="hc-journey-upgrade"><strong>Premium Players · My Journey</strong><p>Add career stops and create your professional basketball passport. Public sharing is always optional.</p><Link href="/membership" className="btn">Unlock My Journey</Link></div>}
     {isOwnProfile&&canManage&&<form className="hc-journey-form hc-liquid-glass-journey-form" onSubmit={addStop}>
       <p className="eyebrow">ADD CAREER STOP</p>
