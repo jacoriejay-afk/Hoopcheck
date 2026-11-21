@@ -10,6 +10,13 @@ const profile = { id: uid, display_name: 'Jordan Courtside', avatar_url: null, p
 const posts = [{ id: id(4), author_id: uid, body: 'The work between game days. What is one thing you are bringing to the court this week?', created_at: now, expires_at: null, post_kind: 'discussion', image_url: null, video_url: null, profiles: { display_name: 'Jordan Courtside', account_type: 'player' } }];
 const game = { id: id(3), team_id: id(1), opponent_team_id: id(2), opponent_name: 'Metro Basketball', home_score: 84, away_score: 79, status: 'live', scheduled_at: now, started_at: now, ends_at: null, league_name: 'Courtside League', country: 'Spain', period_label: 'Q4' };
 const nativeFetch = global.fetch;
+// The isolated snapshot runner has no real backend and must not infer that the
+// simulator's external network is reachable. Keep the synthetic network state
+// local to this unshipped test entry; production NetInfo behavior is untouched.
+const screenshotNetInfo = require('@react-native-community/netinfo').default;
+const screenshotOnline = { type: 'wifi', isConnected: true, isInternetReachable: true, details: null };
+screenshotNetInfo.fetch = async () => screenshotOnline;
+screenshotNetInfo.addEventListener = listener => { listener(screenshotOnline); return () => {}; };
 global.fetch = async (input, init) => {
   const url = new URL(typeof input === 'string' ? input : input.url || String(input));
   if (['localhost', '127.0.0.1'].includes(url.hostname)) return nativeFetch(input, init);
