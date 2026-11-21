@@ -12,7 +12,8 @@
       "feature/build9-phase3d-contracts": false,
       "integration/build9-backend-completion-20261121": false,
       "audit/build9-production-catalog-guard-20261122": false,
-      "feature/build9-courtside-phase2-integration-20261122": false
+      "feature/build9-courtside-phase2-integration-20261122": false,
+      "design/build9-liquid-courtside-v3-20261122": false
     }
   }
 }
