@@ -72,8 +72,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...players.filter(row => row.id).map(row => entry(`/players/${encodeURIComponent(row.id!)}`, 0.7)),
   ];
 
-  // The web app currently has no individual agent-profile route, so agent URLs are
-  // intentionally omitted rather than generating sitemap links that resolve to 404s.
+  // Individual network showcases require explicit owner publication;
+  // dynamic showcase URLs await a reviewed public sitemap projection.
   const allEntries = [...staticPaths, ...profileEntries];
   const uniqueEntries = Array.from(new Map(allEntries.map(item => [item.url, item])).values());
   return uniqueEntries.map(item => ({ ...item, lastModified }));
