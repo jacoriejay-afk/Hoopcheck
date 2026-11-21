@@ -69,25 +69,21 @@ where not exists (
       regexp_replace(lower(a.name),' (women|basketball|basquete)$','','g')
 );
 
-insert into public.leagues(name,country,level,active)
-select v.name,v.country,'Professional',true from (values
-  ('Novo Basquete Brasil','Brazil'),
-  ('Liga Nacional de Básquet','Argentina'),
-  ('Liga Nacional de Básquet Chile','Chile')
-) as v(name,country)
-where not exists (select 1 from public.leagues l where lower(l.name)=lower(v.name) and lower(l.country)=lower(v.country));
+-- Existing men's leagues verified in production: NBB (Brazil), Liga Nacional de Básquet
+-- (Argentina), and Liga Nacional de Básquet Chile. Reuse their canonical identifiers;
+-- do not create alternate league names or split the league directory.
 
 with additions(name,country,city,league_name) as (values
   -- Missing candidates from NBB 2026/27; existing aliases must be reviewed first
-  ('Basquete Cearense','Brazil','Fortaleza','Novo Basquete Brasil'),
-  ('Botafogo Basquete','Brazil','Rio de Janeiro','Novo Basquete Brasil'),
-  ('Caxias do Sul Basquete','Brazil','Caxias do Sul','Novo Basquete Brasil'),
-  ('Cruzeiro Basquete','Brazil','Belo Horizonte','Novo Basquete Brasil'),
-  ('Basket Osasco','Brazil','Osasco','Novo Basquete Brasil'),
-  ('Pato Basquete','Brazil','Pato Branco','Novo Basquete Brasil'),
-  ('São José Basketball','Brazil','São José dos Campos','Novo Basquete Brasil'),
-  ('União Corinthians','Brazil','Santa Cruz do Sul','Novo Basquete Brasil'),
-  ('Unifacisa','Brazil','Campina Grande','Novo Basquete Brasil'),
+  ('Basquete Cearense','Brazil','Fortaleza','NBB'),
+  ('Botafogo Basquete','Brazil','Rio de Janeiro','NBB'),
+  ('Caxias do Sul Basquete','Brazil','Caxias do Sul','NBB'),
+  ('Cruzeiro Basquete','Brazil','Belo Horizonte','NBB'),
+  ('Basket Osasco','Brazil','Osasco','NBB'),
+  ('Pato Basquete','Brazil','Pato Branco','NBB'),
+  ('São José Basketball','Brazil','São José dos Campos','NBB'),
+  ('União Corinthians','Brazil','Santa Cruz do Sul','NBB'),
+  ('Unifacisa','Brazil','Campina Grande','NBB'),
   -- Argentina 2026/27; Obras Basket already exists in production and is not re-added
   ('Lanús','Argentina','Lanús','Liga Nacional de Básquet'),
   ('Gimnasia de Comodoro Rivadavia','Argentina','Comodoro Rivadavia','Liga Nacional de Básquet'),
