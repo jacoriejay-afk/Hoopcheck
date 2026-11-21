@@ -70,3 +70,7 @@ The installed `get_public_player_profile(uuid)` is SECURITY DEFINER, owned by `h
 Read-only Stripe account selection explicitly used `livemode=false`. Six active USD recurring test prices: Pro $4.99/month, $25.45/six months, $53.89/year; Premium $9.99/month, $50.95/six months, $107.89/year. All six API records are test mode. No prices or approved rules changed. Trial periods are null on Price records; seven-day eligibility is applied by checkout policy and must still be accepted end to end. Tax settings are active with default tax behavior `inferred_by_currency` and tax code `txcd_10000000`; per-price behavior is unspecified. No missing-tax-default defect is established. Product-to-environment deployment bindings and actual checkout tax calculations remain unverified.
 
 CI checked for `1755c298`: root CI, Mobile App Checks, NATIVE-2 Security Tests, entitlement matrix and launch gate SUCCESS; unsigned iOS IN_PROGRESS. Subsequent fixture/evidence commit requires its own CI and is not automatically cleared by these results.
+
+## Scoped-owner continuation
+
+See [the scoped profile reconciliation and hosted handoff](scoped-profile-reconciliation.md) for the catalog comparison, rollback evidence and versioned candidate.

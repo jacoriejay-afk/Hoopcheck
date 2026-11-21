@@ -1,20 +1,24 @@
--- Build 9 hosted function ownership preflight (read-only).
--- Run before replaying profile boundary migration; never change owner to bypass this gate.
+-- Read-only gate for replacing the exact public profile signature.
 DO $$
-DECLARE f record; caller_name text := current_user;
+DECLARE
+  installed record;
+  inherits_owner boolean;
+  can_set_owner boolean;
+  can_create boolean := has_schema_privilege(current_user, 'public', 'CREATE');
 BEGIN
- FOR f IN
-  SELECT p.oid::regprocedure::text AS signature,
-         pg_get_userbyid(p.proowner) AS owner_name,
-         pg_has_role(current_user,p.proowner,'USAGE') AS can_act_as_owner
-  FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
-  WHERE n.nspname='public' AND p.proname='get_public_player_profile'
- LOOP
-  RAISE NOTICE 'Installed function %, owner %, current role %, owner-role membership %',
-   f.signature,f.owner_name,caller_name,f.can_act_as_owner;
-  IF NOT f.can_act_as_owner THEN
-   RAISE EXCEPTION 'Profile migration blocked: current role cannot replace % owned by %. Use authorized owner-controlled migration process; preserve installed function and ACL.',f.signature,f.owner_name
-    USING ERRCODE='42501';
+  SELECT p.oid, p.proowner INTO installed
+  FROM pg_proc p WHERE p.oid = to_regprocedure('public.get_public_player_profile(uuid)');
+  IF NOT FOUND THEN
+    RAISE NOTICE 'No existing public.get_public_player_profile(uuid); schema CREATE=%', can_create;
+    RETURN;
   END IF;
- END LOOP;
+
+  inherits_owner := pg_has_role(current_user, installed.proowner, 'USAGE');
+  can_set_owner := pg_has_role(session_user, installed.proowner, 'SET');
+  RAISE NOTICE 'Function %, owner %, current role %, inherits owner %, session can set owner %, schema CREATE %',
+    installed.oid::regprocedure, installed.proowner::regrole, current_user, inherits_owner, can_set_owner, can_create;
+  IF NOT inherits_owner OR NOT can_create THEN
+    RAISE EXCEPTION 'Profile migration blocked: use an existing authorized function-owner migration identity with schema CREATE; preserve the installed function and ACL'
+      USING ERRCODE = '42501';
+  END IF;
 END $$;
