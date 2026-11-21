@@ -25,24 +25,21 @@ export default function CreatorStudioPage(){
   useEffect(()=>{
     let active=true;
     void(async()=>{
-      const {data:{user},error:authError}=await supabase.auth.getUser();
+      const {data:{session}}=await supabase.auth.getSession();
       if(!active)return;
-      if(authError||!user){window.location.replace("/login?returnTo=/creator-studio");return;}
-      setUserId(user.id);
-      const [profile,creator]=await Promise.all([
-        supabase.from("profiles").select("id,profile_visibility,moderation_status").eq("id",user.id).maybeSingle(),
-        supabase.from("creator_profiles").select("category,headline,description,website_url,is_published").eq("profile_id",user.id).maybeSingle()
-      ]);
+      if(!session?.user){window.location.replace("/login?returnTo=/creator-studio");return;}
+      setUserId(session.user.id);
+      const response=await fetch("/api/network/creator-studio",{headers:{Authorization:"Bearer "+session.access_token},cache:"no-store"});
+      const payload=await response.json();
       if(!active)return;
-      if(profile.error||!profile.data){setError("Your account profile could not be loaded.");setLoading(false);return;}
-      setAccountPublic(profile.data.profile_visibility==="public"&&profile.data.moderation_status==="normal");
+      if(!response.ok||!payload.profile){setError(payload.error||"Creator Studio is unavailable.");setLoading(false);return;}
+      setAccountPublic(payload.profile.profile_visibility==="public"&&payload.profile.moderation_status==="normal");
       setProfileReady(true);
-      if(creator.error){setError("Creator Studio is not configured for this environment yet.");setLoading(false);return;}
-      if(creator.data){
-        const value=creator.data.category;
+      if(payload.creator){
+        const value=payload.creator.category;
         if(categoryOptions.some(([key])=>key===value))setCategory(value as Category);
-        setHeadline(creator.data.headline||"");setDescription(creator.data.description||"");
-        setWebsite(creator.data.website_url||"");setPublished(Boolean(creator.data.is_published));
+        setHeadline(payload.creator.headline||"");setDescription(payload.creator.description||"");
+        setWebsite(payload.creator.website_url||"");setPublished(Boolean(payload.creator.is_published));
       }
       setLoading(false);
     })().catch(()=>{if(active){setError("Could not open Creator Studio.");setLoading(false);}});
@@ -57,12 +54,16 @@ export default function CreatorStudioPage(){
     if(headline.trim().length>140||description.trim().length>600){setError("Keep your headline under 140 characters and description under 600.");return;}
     setSaving(true);
     try{
-      const {error:saveError}=await supabase.from("creator_profiles").upsert({
-        profile_id:userId,category,headline:headline.trim(),description:description.trim(),
-        website_url:url||null,is_published:published,updated_at:new Date().toISOString()
-      },{onConflict:"profile_id"});
-      if(saveError)throw saveError;
-      setNotice(published?(accountPublic?"Creator showcase published.":"Saved. Make your main profile public to appear in discovery."):"Creator draft saved privately.");
+      const {data:{session}}=await supabase.auth.getSession();
+      if(!session?.access_token){setError("Please sign in again.");return;}
+      const response=await fetch("/api/network/creator-studio",{
+        method:"PUT",
+        headers:{Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},
+        body:JSON.stringify({category,headline:headline.trim(),description:description.trim(),website_url:url||null,is_published:published})
+      });
+      const payload=await response.json();
+      if(!response.ok)throw new Error(payload.error||"Unable to save creator showcase.");
+      setNotice(published?(payload.publicly_visible?"Creator showcase published.":"Saved. Make your main profile public to appear in discovery."):"Creator draft saved privately.");
     }catch{setError("Could not save your creator profile. Check your connection and try again.");}
     finally{setSaving(false);}
   }
