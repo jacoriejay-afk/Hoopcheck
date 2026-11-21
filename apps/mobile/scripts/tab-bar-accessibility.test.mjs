@@ -15,7 +15,8 @@ async function render(accountType, path) {
   const navigations = [];
   const exports = {};
   const stubs = {
-    'react-native': { Keyboard: { addListener: () => ({ remove() {} }) }, Pressable: 'Pressable', Text: 'Text', View: 'View' },
+    'expo-blur': { BlurView: 'BlurView' },
+    'react-native': { Platform: { OS: 'ios' }, StyleSheet: { absoluteFill: {} }, AccessibilityInfo: { isReduceTransparencyEnabled: async () => true, addEventListener: () => ({ remove() {} }) }, Keyboard: { addListener: () => ({ remove() {} }) }, Pressable: 'Pressable', Text: 'Text', View: 'View' },
     'expo-router': { usePathname: () => path, useRouter: () => ({ navigate: route => navigations.push(route) }) },
     '@expo/vector-icons': { Ionicons: 'Ionicons' },
     'react-native-safe-area-context': { useSafeAreaInsets: () => ({ left: 0, right: 0, bottom: 0 }) },
