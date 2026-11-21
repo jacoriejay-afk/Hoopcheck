@@ -1,0 +1,61 @@
+{
+  "scope": "Read-only catalog grants only; no user data",
+  "rows": [
+    {
+      "schema": "public",
+      "table": "leagues",
+      "role": "anon",
+      "table_select": true,
+      "any_column_select": true
+    },
+    {
+      "schema": "public",
+      "table": "leagues",
+      "role": "authenticated",
+      "table_select": true,
+      "any_column_select": true
+    },
+    {
+      "schema": "public",
+      "table": "player_team_affiliations",
+      "role": "anon",
+      "table_select": true,
+      "any_column_select": true
+    },
+    {
+      "schema": "public",
+      "table": "player_team_affiliations",
+      "role": "authenticated",
+      "table_select": true,
+      "any_column_select": true
+    },
+    {
+      "schema": "public",
+      "table": "team_league_memberships",
+      "role": "anon",
+      "table_select": true,
+      "any_column_select": true
+    },
+    {
+      "schema": "public",
+      "table": "team_league_memberships",
+      "role": "authenticated",
+      "table_select": true,
+      "any_column_select": true
+    },
+    {
+      "schema": "public",
+      "table": "teams",
+      "role": "anon",
+      "table_select": true,
+      "any_column_select": true
+    },
+    {
+      "schema": "public",
+      "table": "teams",
+      "role": "authenticated",
+      "table_select": true,
+      "any_column_select": true
+    }
+  ]
+}

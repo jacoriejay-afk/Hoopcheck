@@ -8,7 +8,8 @@
       "design/build9-phase3-core": false,
       "feature/build9-phase3-courtside": false,
       "feature/build9-phase3b-screens": false,
-      "feature/build9-phase3c-profile": false
+      "feature/build9-phase3c-profile": false,
+      "feature/build9-phase3d-contracts": false
     }
   }
 }

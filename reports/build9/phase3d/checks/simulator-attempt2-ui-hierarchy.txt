@@ -1,0 +1,103 @@
+Application, 0x105057110, pid: 63328, label: 'HoopCheck' <App element pid: 63328>
+  Window (Main), 0x10354c010, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 63328, elementOrHash.elementID: 4344267328.5>
+    Other, 0x10354c3d0, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 63328, elementOrHash.elementID: 4344729712.6>
+      Other, 0x10354c4f0, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 63328, elementOrHash.elementID: 4344730192.8>
+        Other, 0x10354c130, {{-402.0, -874.0}, {1206.0, 2622.0}}, identifier: 'PopoverDismissRegion', label: 'dismiss popup' <AX element pid: 63328, elementOrHash.elementID: 4732937680.46>
+        Other, 0x10354c250, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 63328, elementOrHash.elementID: 4344724192.10>
+          Other, 0x103550d90, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 63328, elementOrHash.elementID: 4346051456.22>
+            Other, 0x103550eb0, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 63328, elementOrHash.elementID: 4732911392.23>
+              Other, 0x103550fd0, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 63328, elementOrHash.elementID: 4724108656.24>
+                Other, 0x1035510f0, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 63328, elementOrHash.elementID: 4734019584.26>
+                  StaticText, 0x103551210, {{24.0, 347.7}, {354.0, 21.7}}, label: 'CI SIMULATOR · SYNTHETIC PASSPORT' <AX element pid: 63328, elementOrHash.elementID: 4734020384.28>
+                    StaticText, 0x103551330, {{24.0, 347.7}, {354.0, 21.7}}, label: 'CI SIMULATOR · SYNTHETIC PASSPORT' <AX element pid: 63328, elementOrHash.elementID: 105553151432560.41>
+                  StaticText, 0x103551450, {{24.0, 385.3}, {354.0, 21.7}}, identifier: 'passport-smoke-status', label: 'SHARE_REQUESTED' <AX element pid: 63328, elementOrHash.elementID: 4734021888.29>
+                    StaticText, 0x103551570, {{24.0, 385.3}, {354.0, 21.7}}, label: 'SHARE_REQUESTED' <AX element pid: 63328, elementOrHash.elementID: 105553151433120.42>
+                  StaticText, 0x103551690, {{24.0, 423.0}, {354.0, 43.0}}, identifier: 'passport-smoke-detail', label: 'Native PDF: 1 page(s), 13529 bytes, valid PDF signature' <AX element pid: 63328, elementOrHash.elementID: 4734022720.30>
+                    StaticText, 0x1035517b0, {{24.0, 423.0}, {354.0, 43.0}}, label: 'Native PDF: 1 page(s), 13529 bytes, valid PDF signature' <AX element pid: 63328, elementOrHash.elementID: 105553151303408.40>
+                  Button, 0x1035518d0, {{24.0, 502.3}, {354.0, 52.0}}, identifier: 'passport-smoke-prepare', label: 'Prepare native Passport PDF', Disabled <AX element pid: 63328, elementOrHash.elementID: 4734024176.31>
+              Other, 0x1035519f0, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 63328, elementOrHash.elementID: 4748968336.25>
+                Other, 0x103551b10, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 63328, elementOrHash.elementID: 4723893088.27>
+                  Other, 0x103551c30, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 63328, elementOrHash.elementID: 4724112464.32>
+    Other, 0x103551d50, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 63328, elementOrHash.elementID: 4725030048.43>
+      Other, 0x103551e70, {{-402.0, -874.0}, {1206.0, 2622.0}}, identifier: 'PopoverDismissRegion', label: 'dismiss popup' <AX element pid: 63328, elementOrHash.elementID: 4344731776.44>
+      Other, 0x103551f90, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 63328, elementOrHash.elementID: 4724963552.45>
+        Other, 0x1035520b0, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 63328, elementOrHash.elementID: 4725003200.47>
+          Other, 0x1035521d0, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 63328, elementOrHash.elementID: 4724991680.48>
+            Other, 0x1035522f0, {{0.0, 0.0}, {402.0, 874.0}}, identifier: 'ActivityListView' <AX element pid: 63328, elementOrHash.elementID: 4724308128.49>
+              Other, 0x103552410, {{0.0, 0.0}, {402.0, 874.0}}, identifier: 'ShareSheet.RemoteContainerView' <AX element pid: 63328, elementOrHash.elementID: 4724310048.50>
+                Other, 0x103552530, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 63328, elementOrHash.elementID: 4734125424.51>
+                  Other, 0x103552650, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 63328, elementOrHash.elementID: 4724950624.52>
+                    Other, 0x103552770, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 63328, elementOrHash.elementID: 8859633730984474541.9999>
+                      Other, 0x103552890, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 64809, elementOrHash.elementID: 4316567696.4>
+                        Other, 0x1035529b0, {{0.0, 410.0}, {402.0, 464.0}} <AX element pid: 64809, elementOrHash.elementID: 4316571024.5>
+                          Image, 0x103552ad0, {{-150.0, 260.0}, {702.0, 764.0}} <AX element pid: 64809, elementOrHash.elementID: 4316588240.6>
+                          Other, 0x103552bf0, {{0.0, 410.0}, {402.0, 464.0}} <AX element pid: 64809, elementOrHash.elementID: 4316110192.7>
+                            Other, 0x103552d10, {{0.0, 410.0}, {402.0, 464.0}} <AX element pid: 64809, elementOrHash.elementID: 4316111072.8>
+                              Other, 0x103552e30, {{0.0, 410.0}, {402.0, 464.0}} <AX element pid: 64809, elementOrHash.elementID: 4316418784.9>
+                                NavigationBar, 0x103552f50, {{0.0, 410.0}, {402.0, 72.0}}, identifier: 'UIActivityContentView' <AX element pid: 64809, elementOrHash.elementID: 4316563536.10>
+                                  Other, 0x103553070, {{54.0, 427.5}, {273.0, 18.0}}, label: '7807BDE6-6CF7-41F6-8895-7853DCFB0F8F' <AX element pid: 64809, elementOrHash.elementID: 4314288064.77>
+                                  Button, 0x103553190, {{351.0, 416.0}, {43.0, 44.0}}, identifier: 'header.closeButton', label: 'Close' <AX element pid: 64809, elementOrHash.elementID: 4317136832.12>
+                                    Image, 0x1035532b0, {{359.0, 423.7}, {30.0, 30.0}}, identifier: 'UICloseButtonBackground' <AX element pid: 64809, elementOrHash.elementID: 4314006976.15>
+                                  Other, 0x1035533d0, {{54.0, 445.5}, {273.0, 18.0}}, label: 'PDF Document · 14 KB' <AX element pid: 64809, elementOrHash.elementID: 4314288560.78>
+                                Other, 0x1035534f0, {{0.0, 410.0}, {402.0, 464.0}} <AX element pid: 64809, elementOrHash.elementID: 4316103136.11>
+                                  Other, 0x103553610, {{0.0, 410.0}, {402.0, 464.0}} <AX element pid: 64809, elementOrHash.elementID: 4316104048.14>
+                                    Other, 0x103553730, {{0.0, 410.0}, {402.0, 464.0}}, identifier: 'shareSheet.activity.contentView' <AX element pid: 64809, elementOrHash.elementID: 4313896272.16>
+                                      Other, 0x103553850, {{0.0, 410.0}, {402.0, 464.0}} <AX element pid: 64809, elementOrHash.elementID: 4313924944.17>
+                                        Other, 0x103553970, {{0.0, 410.0}, {402.0, 464.0}} <AX element pid: 64809, elementOrHash.elementID: 4313914976.19>
+                                      CollectionView, 0x103553a90, {{0.0, 410.0}, {402.0, 464.0}}, identifier: 'activityCollectionView' <AX element pid: 64809, elementOrHash.elementID: 4328659968.18>
+                                        ScrollView, 0x103553bb0, {{6.0, 482.0}, {390.0, 128.0}} <AX element pid: 64809, elementOrHash.elementID: 4329002496.20>
+                                          Cell, 0x103553cd0, {{6.0, 482.0}, {78.0, 128.0}}, identifier: 'shareCell', label: 'More' <AX element pid: 64809, elementOrHash.elementID: 4316642928.28>
+                                            Other, 0x103553df0, {{6.0, 482.0}, {78.0, 128.0}} <AX element pid: 64809, elementOrHash.elementID: 4316233632.38>
+                                              Other, 0x103553f10, {{6.0, 569.0}, {78.0, 13.3}} <AX element pid: 64809, elementOrHash.elementID: 4316643680.60>
+                                                Other, 0x103554030, {{6.0, 569.0}, {78.0, 13.3}} <AX element pid: 64809, elementOrHash.elementID: 4316047536.75>
+                                              StaticText, 0x103554150, {{6.0, 569.0}, {78.0, 13.3}}, identifier: 'cellTitleLabel', label: 'More' <AX element pid: 64809, elementOrHash.elementID: 4316655376.61>
+                                              Image, 0x103554270, {{15.0, 504.0}, {60.0, 60.0}}, identifier: 'activityImageView' <AX element pid: 64809, elementOrHash.elementID: 4316659456.62>
+                                        Cell, 0x103554390, {{16.0, 610.0}, {370.0, 50.3}}, identifier: 'actionGroupCell', label: 'Copy' <AX element pid: 64809, elementOrHash.elementID: 4320290304.21>
+                                          Other, 0x1035544b0, {{16.0, 610.0}, {370.0, 50.3}} <AX element pid: 64809, elementOrHash.elementID: 4314061264.29>
+                                            Other, 0x1035545d0, {{16.0, 610.0}, {370.0, 50.3}} <AX element pid: 64809, elementOrHash.elementID: 4314060848.39>
+                                          Other, 0x1035546f0, {{16.0, 610.0}, {370.0, 50.3}} <AX element pid: 64809, elementOrHash.elementID: 4313932064.30>
+                                            Other, 0x10354db10, {{16.0, 610.0}, {370.0, 50.3}} <AX element pid: 64809, elementOrHash.elementID: 4317087712.40>
+                                              Other, 0x10354dc30, {{16.0, 610.0}, {370.0, 50.3}} <AX element pid: 64809, elementOrHash.elementID: 4314065376.63>
+                                            Other, 0x10354dd50, {{36.0, 625.0}, {291.7, 20.3}}, identifier: 'titleStackView' <AX element pid: 64809, elementOrHash.elementID: 4316673040.41>
+                                              StaticText, 0x10354de70, {{36.0, 625.0}, {291.7, 20.3}}, identifier: 'titleLabel', label: 'Copy' <AX element pid: 64809, elementOrHash.elementID: 4314069088.64>
+                                            Other, 0x10354df90, {{36.0, 625.0}, {291.7, 20.3}} <AX element pid: 64809, elementOrHash.elementID: 4314072384.42>
+                                            Other, 0x10354e0b0, {{343.7, 619.3}, {32.0, 32.0}}, identifier: 'imageStackView' <AX element pid: 64809, elementOrHash.elementID: 4314073280.43>
+                                              Image, 0x10354e1d0, {{343.7, 614.0}, {32.0, 42.7}}, identifier: 'activityImageView', label: 'copy' <AX element pid: 64809, elementOrHash.elementID: 4314071520.65>
+                                        Cell, 0x10354e2f0, {{16.0, 670.3}, {370.0, 50.3}}, identifier: 'actionGroupCell', label: 'Markup' <AX element pid: 64809, elementOrHash.elementID: 4320801280.22>
+                                          Other, 0x10354e410, {{16.0, 670.3}, {370.0, 50.3}} <AX element pid: 64809, elementOrHash.elementID: 4314112752.31>
+                                            Other, 0x10354e530, {{16.0, 670.3}, {370.0, 50.3}} <AX element pid: 64809, elementOrHash.elementID: 4314113216.44>
+                                          Other, 0x10354e650, {{16.0, 670.3}, {370.0, 50.3}} <AX element pid: 64809, elementOrHash.elementID: 4314111872.32>
+                                            Other, 0x10354e770, {{16.0, 670.3}, {370.0, 50.3}} <AX element pid: 64809, elementOrHash.elementID: 4314114112.45>
+                                              Other, 0x10354e890, {{16.0, 670.3}, {370.0, 50.3}} <AX element pid: 64809, elementOrHash.elementID: 4314114624.66>
+                                            Other, 0x10354abf0, {{36.0, 685.3}, {291.7, 20.3}}, identifier: 'titleStackView' <AX element pid: 64809, elementOrHash.elementID: 4314120464.46>
+                                              StaticText, 0x10354ad10, {{36.0, 685.3}, {291.7, 20.3}}, identifier: 'titleLabel', label: 'Markup' <AX element pid: 64809, elementOrHash.elementID: 4314118416.67>
+                                            Other, 0x10354ae30, {{36.0, 685.3}, {291.7, 20.3}} <AX element pid: 64809, elementOrHash.elementID: 4314120080.47>
+                                            Other, 0x10354af50, {{343.7, 679.7}, {32.0, 32.0}}, identifier: 'imageStackView' <AX element pid: 64809, elementOrHash.elementID: 4314120880.48>
+                                              Image, 0x10354b070, {{343.7, 677.0}, {32.0, 37.3}}, identifier: 'activityImageView', label: 'Markup' <AX element pid: 64809, elementOrHash.elementID: 4314119216.68>
+                                        Other, 0x10354b190, {{16.0, 720.3}, {370.0, 0.3}} <AX element pid: 64809, elementOrHash.elementID: 4314201968.23>
+                                        Cell, 0x10354b2b0, {{16.0, 720.7}, {370.0, 50.3}}, identifier: 'actionGroupCell', label: 'Print' <AX element pid: 64809, elementOrHash.elementID: 4320870400.24>
+                                          Other, 0x10354b3d0, {{16.0, 720.7}, {370.0, 50.3}} <AX element pid: 64809, elementOrHash.elementID: 4314139696.33>
+                                            Other, 0x10354b4f0, {{16.0, 720.7}, {370.0, 50.3}} <AX element pid: 64809, elementOrHash.elementID: 4314140160.49>
+                                          Other, 0x10354b610, {{16.0, 720.7}, {370.0, 50.3}} <AX element pid: 64809, elementOrHash.elementID: 4314129872.34>
+                                            Other, 0x10354b730, {{16.0, 720.7}, {370.0, 50.3}} <AX element pid: 64809, elementOrHash.elementID: 4314140544.50>
+                                              Other, 0x10354b850, {{16.0, 720.7}, {370.0, 50.3}} <AX element pid: 64809, elementOrHash.elementID: 4314141056.69>
+                                            Other, 0x10354b970, {{36.0, 735.7}, {291.7, 20.3}}, identifier: 'titleStackView' <AX element pid: 64809, elementOrHash.elementID: 4314146816.51>
+                                              StaticText, 0x10354ba90, {{36.0, 735.7}, {291.7, 20.3}}, identifier: 'titleLabel', label: 'Print' <AX element pid: 64809, elementOrHash.elementID: 4314144464.70>
+                                            Other, 0x10354bbb0, {{36.0, 735.7}, {291.7, 20.3}} <AX element pid: 64809, elementOrHash.elementID: 4314146432.52>
+                                            Other, 0x103554af0, {{343.7, 730.0}, {32.0, 32.0}}, identifier: 'imageStackView' <AX element pid: 64809, elementOrHash.elementID: 4314147232.53>
+                                              Image, 0x103554c10, {{343.7, 727.0}, {32.0, 38.7}}, identifier: 'activityImageView', label: 'print' <AX element pid: 64809, elementOrHash.elementID: 4314145568.71>
+                                        Other, 0x103554d30, {{16.0, 770.7}, {370.0, 0.3}} <AX element pid: 64809, elementOrHash.elementID: 4314203312.25>
+                                        Cell, 0x103554e50, {{16.0, 771.0}, {370.0, 50.3}}, identifier: 'actionGroupCell', label: 'Save to Files' <AX element pid: 64809, elementOrHash.elementID: 4320868864.26>
+                                          Other, 0x103554f70, {{16.0, 771.0}, {370.0, 50.3}} <AX element pid: 64809, elementOrHash.elementID: 4314168304.35>
+                                            Other, 0x103555090, {{16.0, 771.0}, {370.0, 50.3}} <AX element pid: 64809, elementOrHash.elementID: 4314168768.54>
+                                          Other, 0x1035551b0, {{16.0, 771.0}, {370.0, 50.3}} <AX element pid: 64809, elementOrHash.elementID: 4314157568.36>
+                                            Other, 0x1035552d0, {{16.0, 771.0}, {370.0, 50.3}} <AX element pid: 64809, elementOrHash.elementID: 4314169152.55>
+                                              Other, 0x1035553f0, {{16.0, 771.0}, {370.0, 50.3}} <AX element pid: 64809, elementOrHash.elementID: 4314169664.72>
+                                            Other, 0x103555510, {{36.0, 786.0}, {291.7, 20.3}}, identifier: 'titleStackView' <AX element pid: 64809, elementOrHash.elementID: 4314175504.56>
+                                              StaticText, 0x103555630, {{36.0, 786.0}, {291.7, 20.3}}, identifier: 'titleLabel', label: 'Save to Files' <AX element pid: 64809, elementOrHash.elementID: 4314173456.73>
+                                            Other, 0x103555750, {{36.0, 786.0}, {291.7, 20.3}} <AX element pid: 64809, elementOrHash.elementID: 4314175120.57>
+                                            Other, 0x103555870, {{343.7, 780.3}, {32.0, 32.0}}, identifier: 'imageStackView' <AX element pid: 64809, elementOrHash.elementID: 4314175920.58>
+                                              Image, 0x103555990, {{343.7, 780.3}, {32.0, 32.0}}, identifier: 'activityImageView' <AX element pid: 64809, elementOrHash.elementID: 4314174256.74>
+                                        Other, 0x103555ab0, {{16.0, 821.3}, {370.0, 59.0}}, identifier: 'collectionView.footerEditView' <AX element pid: 64809, elementOrHash.elementID: 4314172944.27>
+                                          Button, 0x103555bd0, {{36.0, 831.3}, {330.0, 33.0}}, identifier: 'editButton', label: 'Edit Actions…' <AX element pid: 64809, elementOrHash.elementID: 4314180864.37>
+                                            StaticText, 0x103555cf0, {{36.0, 837.3}, {104.0, 21.0}}, label: 'Edit Actions…' <AX element pid: 64809, elementOrHash.elementID: 4314184064.59>
