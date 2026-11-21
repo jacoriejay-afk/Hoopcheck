@@ -24,8 +24,10 @@ export function FeedVideo({ uri, enabled, loop, onFailure, height }: { height: n
 
   useEffect(() => {
     // expo-video's player is an imperative native object.
+    // eslint-disable-next-line react-hooks/immutability -- expo-video player is an imperative native object.
     player.loop = loop;
     // Reels always autoplay silently. Ordinary HoopFeed posts keep native controls.
+    // eslint-disable-next-line react-hooks/immutability -- expo-video player is an imperative native object.
     player.muted = loop;
     const synchronize = () => {
       if (enabled && loop && uri && AppState.currentState === "active") player.play();
