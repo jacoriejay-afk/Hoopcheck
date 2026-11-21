@@ -134,3 +134,46 @@ test("checkout rejects equal and lower active tiers even without a Stripe subscr
   assert.match(checkout, /if \(hasStripeSubscription \|\| !canStartNewMembershipCheckout\(currentTier, plan\)\)/);
   assert.match(tiers, /return !isAtLeastTier\(currentTier, requestedTier\)/);
 });
+
+
+test("Stripe cancellation is visible for active, trialing and overdue membership states", () => {
+  const page = read("app/membership/page.tsx");
+  const cancelApi = read("app/api/stripe/cancel-subscription/route.ts");
+  assert.match(page, /hasManageableSubscription = Boolean\(subscription\?\.stripe_subscription_id/);
+  assert.match(page, /"active", "trialing", "past_due", "unpaid"/);
+  assert.match(page, /showMembershipManagement && subscription/);
+  assert.ok(page.includes('"Cancel Subscription"'), "A direct cancel button must exist");
+  assert.ok(page.includes("onClick={cancelMembership}"), "Cancel control must submit authenticated cancellation");
+  assert.ok(page.includes('data?.cancel_at_period_end !== true'), "UI must wait for Stripe cancellation confirmation");
+  assert.ok(page.includes("Automatic renewal is off"), "Do not imply immediate loss of access or instant cancellation");
+  assert.ok(cancelApi.includes("stripe.subscriptions.update(subscription.stripe_subscription_id"),
+    "Server must keep using the owner-bound subscription record");
+  assert.ok(cancelApi.includes('cancel_at_period_end: action === "cancel"'),
+    "Server must cancel at period end rather than immediately");
+});
+
+test("non-Stripe memberships have a clearly explained billing support path", () => {
+  const page = read("app/membership/page.tsx");
+  const support = read("app/support/page.tsx");
+  assert.ok(page.includes('/support?membershipCancellation=1'),
+    "Manual-grant subscriptions need a visible cancellation-request path");
+  assert.ok(page.includes("no linked Stripe subscription"),
+    "Manual memberships must not pretend they have a Stripe renewal");
+  assert.ok(support.includes('get("membershipCancellation") === "1"'),
+    "Support page should prefill billing cancellation tickets");
+  assert.ok(support.includes('setCategory("billing")'),
+    "Cancellation requests must enter the billing queue");
+});
+
+test("membership and shared cards use contained borders, equal radii and responsive controls", () => {
+  const css = read("app/globals.css");
+  const comparison = read("components/MembershipComparison.tsx");
+  assert.ok(!comparison.includes('style={{border:currentTier'),
+    "Current plans may not use inline extra-width borders");
+  assert.ok(css.includes(".hc-membership-page .hc-membership-plan.is-current"),
+    "Plan comparison must follow shared border styling");
+  assert.ok(css.includes("outline-offset: -3px"), "Membership keyboard focus stays inside borders");
+  assert.ok(css.includes(".hc-membership-page .hc-membership-actions"), "Actions need the shared responsive layout");
+  assert.ok(css.includes(".dashboard-card::after { content: none; }"), "Decorative overflow must be removed");
+  assert.ok(css.includes(".hc-membership-page .plan-top"), "Mobile price and title must wrap");
+});
