@@ -87,9 +87,11 @@ async function fixture(browser,theme,allowed=true){
     if(!allowed){await page.getByText('An active HoopCheck membership is required to use HoopFeed.',{exact:true}).waitFor();assert.ok(!calls.some(c=>c.path.endsWith('/feed_posts')));return;}
     await page.getByText('Fixture community discussion',{exact:true}).waitFor();
     await page.getByRole('button',{name:'Media unavailable. Tap to retry.',exact:true}).click();
+    // The taller Courtside V3 header can put the first image below the fold.
+    // Scroll before asserting load: FeedMedia deliberately defers offscreen media.
     await page.getByRole('img',{name:'HoopFeed photo',exact:true}).waitFor();
-    await page.waitForFunction(()=>{const image=document.querySelector('img[alt="HoopFeed photo"]');return image&&image.complete&&image.naturalWidth===640;});
     await page.getByRole('img',{name:'HoopFeed photo',exact:true}).scrollIntoViewIfNeeded();
+    await page.waitForFunction(()=>{const image=document.querySelector('img[alt="HoopFeed photo"]');return image&&image.complete&&image.naturalWidth===640;});
     await page.waitForFunction(()=>{const image=document.querySelector('img[alt="HoopFeed photo"]');const box=image?.getBoundingClientRect();return Boolean(box&&box.width>250&&box.height>120);});
     const photoBox=await page.getByRole('img',{name:'HoopFeed photo',exact:true}).boundingBox();assert.ok(photoBox&&photoBox.width>250&&photoBox.height>120,'Photo has visible dimensions');
     assert.equal(await page.getByRole('heading',{name:'HoopFeed',exact:true}).count(),0,'No duplicate headings');
