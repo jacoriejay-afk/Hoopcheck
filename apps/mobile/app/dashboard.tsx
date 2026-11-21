@@ -64,7 +64,7 @@ export default function DashboardScreen() {
     <SafeAreaView edges={["left", "right", "bottom"]} style={[styles.safe, { backgroundColor: theme.background }]}>
       <ScrollView keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled" testID="dashboard-scroll" contentContainerStyle={styles.scroll}>
         <View style={styles.content}>
-          <ScreenIntro eyebrow="YOUR COURTSIDE CONNECTION" title="Know who you’re signing with.">Explore teams, coaches, leagues, and real basketball experiences.</ScreenIntro>
+          <ScreenIntro eyebrow="YOUR COURTSIDE CONNECTION" title="Your courtside.">The people, games, and communities that move basketball.</ScreenIntro>
           <View style={{ marginTop: theme.spacing.md, marginBottom: theme.spacing.xl, padding: theme.spacing.lg, backgroundColor: theme.surface, borderRadius: theme.radius.hero, borderCurve: "continuous", gap: theme.spacing.sm }}>
           <Input accessibilityLabel="Search basketball directory" placeholder="Search teams, leagues, coaches or players" value={search} maxLength={100} onChangeText={setSearch} returnKeyType="search" onSubmitEditing={() => router.push({ pathname: "/search", params: { q: search } })} />
           <Button style={{ marginTop: 8 }} onPress={() => router.push({ pathname: "/search", params: { q: search } })}>Search</Button>

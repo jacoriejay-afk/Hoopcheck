@@ -23,6 +23,7 @@ export default function SearchScreen() {
   const [term, setTerm] = useState(typeof q === "string" ? q : "");
   const [result, setResult] = useState<{ term: string; scope: string; groups: SearchGroup[] } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [kind, setKind] = useState<SearchKind | "all">("all");
   const { offline, revision } = useNetwork();
   const { recents, remember } = useRecentSearches("all-directories");
   useEffect(() => { if (typeof q === "string") setTerm(q); }, [q]);
@@ -40,15 +41,18 @@ export default function SearchScreen() {
   const groups = result?.term === term && result.scope === scope && !offline ? result.groups : [];
   return <SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: theme.background }}>
     <ScrollView keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 20, gap: 16 }}>
-      <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 30, fontWeight: "900" }}>Search basketball</Text>
+      <Text style={{ color: theme.muted, ...theme.type.body }}>Find your next basketball connection.</Text>
       <Input accessibilityLabel="Search basketball directory" placeholder="Team, country, league, coach or @username" value={term} maxLength={100} onChangeText={setTerm} returnKeyType="search" onSubmitEditing={() => remember(term)} onBlur={() => remember(term)} />
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm }}>
+        {(["all", ...Object.keys(labels).filter(value => value !== "players" || includePlayers)] as (SearchKind | "all")[]).map(value => <Pressable key={value} accessibilityRole="button" accessibilityState={{ selected: kind === value }} onPress={() => setKind(value)} style={({ pressed }) => ({ minHeight: theme.courtside.navigation.touchTarget, paddingHorizontal: theme.spacing.md, justifyContent: "center", borderRadius: theme.radius.pill, backgroundColor: kind === value ? theme.accentSurface : theme.chip, opacity: pressed ? .7 : 1 })}><Text style={{ color: kind === value ? theme.accent : theme.onChip, ...theme.type.caption }}>{value === "all" ? "All" : labels[value]}</Text></Pressable>)}
+      </View>
       {!term ? <RecentSearches items={recents} onSelect={setTerm} /> : null}
       {offline ? <Text accessibilityRole="alert" style={{ color: theme.muted }}>Reconnect to search the directories.</Text> : term.trim().length < 2 ? <Text style={{ color: theme.muted }}>Enter at least two characters. Player search uses public usernames.</Text> : loading ? <Skeleton /> : groups.every(group => !group.rows.length && !group.failed) ? <Text style={{ color: theme.muted }}>No matching results.</Text> : null}
-      {groups.filter(group => group.kind !== "players" || includePlayers).map(group => <View key={group.kind} style={{ gap: 8 }}>
+      {groups.filter(group => (group.kind !== "players" || includePlayers) && (kind === "all" || kind === group.kind)).map(group => <View key={group.kind} style={{ gap: 8 }}>
         <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 19, fontWeight: "800" }}>{labels[group.kind]}</Text>
         {group.failed ? <Text accessibilityRole="alert" style={{ color: theme.muted }}>These results could not be loaded. Try searching again.</Text> : !group.rows.length ? <Text style={{ color: theme.muted }}>No matches in this directory.</Text> : group.rows.map(row => {
           const path = searchResultPath(group.kind, row.id);
-          return <Pressable key={row.id} accessibilityRole="link" disabled={!path} onPress={() => { remember(term); if (path) router.push(path as "/teams"); }}><GlassCard style={{ padding: 16 }}>
+          return <Pressable key={row.id} style={({ pressed }) => ({ minHeight: theme.courtside.navigation.touchTarget, opacity: pressed ? .7 : 1 })} accessibilityRole="link" disabled={!path} onPress={() => { remember(term); if (path) router.push(path as "/teams"); }}><GlassCard style={{ padding: 16 }}>
             <Text style={{ color: theme.foreground, fontSize: 17, fontWeight: "700" }}>{row.name || row.display_name || (row.username ? `@${row.username}` : "Player")}</Text>
             {row.country ? <Text style={{ color: theme.muted }}>{row.country}</Text> : null}
           </GlassCard></Pressable>;
