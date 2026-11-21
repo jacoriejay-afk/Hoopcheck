@@ -23,6 +23,17 @@ The production legacy `search_public_players` and `search_public_players_page` d
 ## Exact safe handoff
 
 1. **Export schema only.** An authorized operator should produce a schema-only PostgreSQL dump of the production database to a tightly controlled local environment, without copying any user rows. Preserve owner and grants for review, redact credentials and secrets, and do not publish an unreviewed dump as a PR artifact. A database-connection URI must never be pasted into GitHub, logs, or chat. If the operator cannot obtain an authorized schema-only export, request the supported procedure from Supabase Support.
+**Supabase-supported, schema-only export commands (on an authorized local workstation with Docker and the CLI):**
+
+```sh
+# Supply HOOPCHECK_PROD_DB_URL via the local secret manager; do not paste
+# the connection string into chat, GitHub, shell history or CI logs.
+supabase db dump --db-url "$HOOPCHECK_PROD_DB_URL" -f schema.sql
+supabase db dump --db-url "$HOOPCHECK_PROD_DB_URL" -f roles.sql --role-only
+```
+
+Do **not** run `--data-only` or export `auth.users`, customer records or storage files. Review the schema and roles outputs locally before sharing any sanitized evidence. Supabase's CLI wraps `pg_dump` with Supabase-specific filtering and requires Docker; unlike a raw `pg_dump` it may omit internal schemas and managed roles, so the separate read-only catalog inventory remains necessary. See [Supabase's official restore/export guide](https://supabase.com/docs/guides/self-hosting/restore-from-platform).
+
 2. **Rehearse on disposable PostgreSQL 17 using the production schema**, not the PR17 fixture. Restore relevant owner/ACL/RLS context for the rehearsal without granting elevated capabilities to hosted application roles. Verify the exact migration order, full dependency graph and pre/post catalog signatures. Compare with repository `20261118162305`, `20261118162456`, `20261119074537`, `20261119075626` and the guarded editor candidate `supabase/candidates/build9_native_profile_editor_write.sql`. Do not replay unreviewed historical migrations over the live schema.
 3. **Separate execution paths:** The protected-reader reconciliation candidate `supabase/candidates/20261121103148_reconcile_scoped_public_player_profile.sql` assumes PR17-Test's existing scoped owner and exact source fingerprint. It must **never** be applied to production's differently owned/invoked function. For the PR17 isolated fixture the current `postgres` runner cannot SET or USE the protected owner; obtain an **existing authorized owner-capable executor** through the project operator/official Supabase support. Do not make one by changing ownership or granting elevated roles.
 4. **Stage backwards-compatible public API additions first**, preserving legacy five/six-parameter player search and their defaults, men's directory behavior, username search, and current country consent logic. Test masked outputs **and search predicates**, suspended users, avatar moderation, private players, unrelated authenticated users, anonymous Auth, and real JWT AAL1/AAL2. Then validate installed Build 7 and Build 8 requests on physical devices. Only after this evidence can private column grants be restricted. Maintain membership entitlement, StoreKit/Stripe source separation and 7-day monthly trial eligibility.
