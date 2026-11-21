@@ -2,7 +2,7 @@
 
 import { getOwnProfile } from "../../lib/auth/own-profile";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import { useLanguage, type Language } from "../../components/LanguageProvider";
@@ -20,6 +20,8 @@ export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const [notifications, setNotifications] = useState(true);
   const [language, setLanguage] = useState<Language>("en");
+  // The in-flight account profile must not replace a language just selected here.
+  const languageChangedByUser = useRef(false);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [teams, setTeams] = useState<TeamOption[]>([]);
@@ -59,7 +61,7 @@ export default function SettingsPage() {
       setIsPlayer(profile?.account_type === "player");
       const cookieHasTheme = document.cookie.split(";").some((item) => item.trim().startsWith("hoopcheck-theme="));
       if (profile?.theme_preference && !localTheme && !cookieHasTheme) setTheme(normalizeTheme(profile.theme_preference));
-      if (profile?.preferred_language && ["en", "es", "fr", "de", "tr", "pt", "it", "el", "ar", "ru", "az", "pl", "zh", "ja", "sr", "fi", "he", "lt", "uk"].includes(profile.preferred_language)) {
+      if (!languageChangedByUser.current && profile?.preferred_language && ["en", "es", "fr", "de", "tr", "pt", "it", "el", "ar", "ru", "az", "pl", "zh", "ja", "sr", "fi", "he", "lt", "uk"].includes(profile.preferred_language)) {
         setLanguage(profile.preferred_language as Language);
       }
       if (typeof prefs?.notifications_enabled === "boolean") setNotifications(prefs.notifications_enabled);
@@ -136,7 +138,7 @@ export default function SettingsPage() {
             <span className="card-kicker">{t("language").toUpperCase()}</span>
             <h2>{t("chooseLanguage")}</h2>
             <p className="muted">{t("languageHelp")}</p>
-            <select aria-label={t("chooseLanguage")} className="language-select" value={language} onChange={(e) => { const next = e.target.value as Language; setLanguage(next); void save(theme, notifications, next); }}>
+            <select aria-label={t("chooseLanguage")} className="language-select" value={language} onChange={(e) => { const next = e.target.value as Language; languageChangedByUser.current = true; setLanguage(next); void save(theme, notifications, next); }}>
               <option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="it">Italiano</option><option value="pt">Português</option><option value="tr">Türkçe</option><option value="ru">Русский</option><option value="el">Ελληνικά</option><option value="sr">Српски</option><option value="pl">Polski</option><option value="lt">Lietuvių</option><option value="uk">Українська</option><option value="ar">العربية</option><option value="az">Azərbaycanca</option><option value="zh">中文</option><option value="ja">日本語</option><option value="fi">Suomi</option><option value="he">עברית</option>
             </select>
             <button type="button" className="btn" onClick={() => void save(theme, notifications, language)} disabled={saving} style={{ marginTop: 12 }}>{saving ? t("saving") : t("save")}</button>
