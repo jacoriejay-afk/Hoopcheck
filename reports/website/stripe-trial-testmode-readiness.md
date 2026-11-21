@@ -43,3 +43,14 @@ Account: hoopcheck.online, `livemode=false`. No Stripe objects were created or m
 - Source review confirms `trialRolloutEnabled = false`, a draft trial claim migration, and local eligibility/recovery test scripts. The SQL is a **proposal only** and must not be assumed installed in the isolated database.
 
 **Decision:** Test-mode configuration inspected; trial integration NOT yet executed or accepted. The hard-disabled live gate remains intact.
+
+## Isolated Supabase read-only verification — 2026-11-21
+
+Inspected only `HoopCheck-PR17-Test` (project `vcprqpjkyubzzcjatdpx`), **not** the production project. No SQL writes, migrations or grants.
+
+- `public.stripe_trial_claims` exists; RLS enabled; `anon` and `authenticated` lack SELECT; `service_role` has INSERT.
+- `reserve_stripe_trial(uuid)`, `bind_stripe_trial_session(uuid,text)`, `redeem_stripe_trial(uuid,text)`, and `mark_expired_stripe_trial(uuid,text)` exist.
+- All four functions are SECURITY INVOKER (not SECURITY DEFINER), executable by `service_role`, and not executable by `anon` or `authenticated`.
+- This establishes object presence and privileges only. No trial claim writes, real authenticated checkout, signed webhook delivery, concurrent reservation race, or Test Clock lifecycle has been executed.
+
+**Next gate:** review installed function definitions against the proposed SQL and validate isolated checkout/webhook routing and secret configuration before generating test transactions. Keep live rollout hard-disabled.
