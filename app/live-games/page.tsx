@@ -10,6 +10,8 @@ import CourtLines from "../../components/CourtLines";
 import { getGameAvailability, formatViewerLocalTime } from "../../lib/game-availability";
 import { HoopIcon } from "../../components/HoopCheckUI";
 import TeamLogo from "../../components/TeamLogo";
+import GameWinnerPrediction from "../../components/GameWinnerPrediction";
+import "../game-predictions.css";
 import "./live-games-chat.css";
 import { getHoopCheckEntitlements } from "../../lib/membership-tier";
 
@@ -59,6 +61,7 @@ export default function LiveGamesPage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [reminding, setReminding] = useState<string | null>(null);
+  const [expandedPredictions, setExpandedPredictions] = useState<string[]>([]);
   const [clock, setClock] = useState(() => new Date());
   const [lastCheckedAt, setLastCheckedAt] = useState<Date | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -277,8 +280,18 @@ export default function LiveGamesPage() {
             <HoopIcon name="bell" size={16} /> {reminding === game.id ? "Saving…" : reminders.includes(game.id) ? "REMINDER SET" : "REMIND ME"}
           </button>}
           {isRecent && !canJoin && <span className="hc-live-card__muted">Final score {score || "not available"}</span>}
+          {game.opponent_team_id && !["cancelled", "canceled", "postponed", "abandoned"].includes(game.status.toLowerCase()) &&
+            <button type="button" className="hc-remind-button" aria-controls={`game-prediction-${game.id}`}
+              aria-expanded={expandedPredictions.includes(game.id)}
+              onClick={() => setExpandedPredictions(open => open.includes(game.id) ? open.filter(id => id !== game.id) : [...open, game.id])}>
+              <HoopIcon name="chart-no-axes-column" size={16} /> {expandedPredictions.includes(game.id) ? "HIDE FAN PICKS" : "FAN PICKS"}
+            </button>}
           <Link href={(basketballSide === "womens" ? "/womens/" : "/teams/") + game.team_id} className="hc-live-card__muted">Team profile</Link>
         </div>
+        {game.opponent_team_id && expandedPredictions.includes(game.id) &&
+          <div id={`game-prediction-${game.id}`} className="hc-live-card__prediction">
+            <GameWinnerPrediction game={game} homeName={home?.name || "Home"} awayName={away?.name || game.opponent_name} />
+          </div>}
       </article>
     );
   }
