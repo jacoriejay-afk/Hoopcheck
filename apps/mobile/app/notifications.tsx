@@ -1,3 +1,4 @@
+import { Skeleton } from "../components/Motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FlatList, Pressable, RefreshControl, Text, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -67,13 +68,12 @@ export default function Notifications() {
   }
   const items = offline ? [] : rows;
   return <View style={{ flex: 1, backgroundColor: theme.background }}>
-    <View style={{ padding: 20, gap: 12 }}>
+    <FlatList ListHeaderComponent={<View style={{ gap: theme.spacing.md }}>
       <Text style={{ color: theme.muted }}>Follow teams, coaches, and leagues to choose the updates you receive.</Text>
       <Button secondary disabled={busy || failed || offline || !items.some(item => !item.read_at)} onPress={() => void markAll()}>{busy ? "Updating…" : "Mark all as read"}</Button>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{["all", "unread", "games", "clubs", "reviews"].map(value => <Pressable key={value} accessibilityRole="button" aria-pressed={filter === value} accessibilityState={{ selected: filter === value }} onPress={() => setFilter(value)} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 12, borderRadius: theme.radius.control, backgroundColor: filter === value ? theme.accentSurface : theme.chip }}><Text style={{ color: theme.foreground, textTransform: "capitalize" }}>{value}</Text></Pressable>)}</View>
       {error ? <Text accessibilityRole="alert" style={{ color: theme.muted }}>{error}</Text> : null}
-    </View>
-    <FlatList data={items.filter(item => noticeMatches(item, filter))} keyExtractor={item => item.id} contentContainerStyle={{ padding: 16, gap: 12 }} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void load()} />} renderItem={({ item }) => {
+    </View>} data={items.filter(item => noticeMatches(item, filter))} keyExtractor={item => item.id} contentContainerStyle={{ padding: 16, gap: 12 }} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void load()} />} renderItem={({ item }) => {
       const path = notificationPath(item);
       return <GlassCard style={{ padding: 16, gap: 8 }}><Pressable accessibilityRole="button" disabled={!path} onPress={() => path && router.push(nativeDestination(path) as "/dashboard")} style={{ minHeight: 60, gap: 8 }}>
         <Text style={{ color: theme.accent, fontWeight: "700" }}>{item.read_at ? "" : "● "}{item.notification_type.replaceAll("_", " ").toUpperCase()}</Text>
@@ -81,6 +81,6 @@ export default function Notifications() {
         <Text style={{ color: theme.foreground }}>{item.body}</Text>
         <Text style={{ color: theme.muted }}>{new Date(item.created_at).toLocaleString()}</Text>
       </Pressable></GlassCard>;
-    }} ListEmptyComponent={!loading ? <View style={{ gap: 12, padding: 20 }}><Text style={{ color: theme.foreground }}>{offline ? "Reconnect to view alerts." : failed ? "Alerts are unavailable." : items.length ? "Nothing in this category." : "No notifications yet."}</Text>{failed ? <Button secondary onPress={() => void load()}>Retry loading alerts</Button> : <Button secondary onPress={() => router.push("/teams")}>Find teams</Button>}</View> : null} />
+    }} ListEmptyComponent={loading ? <Skeleton /> : <View style={{ gap: 12, padding: 20 }}><Text style={{ color: theme.foreground }}>{offline ? "Reconnect to view alerts." : failed ? "Alerts are unavailable." : items.length ? "Nothing in this category." : "No notifications yet."}</Text>{failed ? <Button secondary onPress={() => void load()}>Retry loading alerts</Button> : <Button secondary onPress={() => router.push("/teams")}>Find teams</Button>}</View>} />
   </View>;
 }
