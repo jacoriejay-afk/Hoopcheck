@@ -17,10 +17,21 @@ const baseline = {
   hasPriorStripeSubscription: false,
 };
 assert.equal(eligible(baseline), true, "eligible first-time monthly user");
+// Each account gets the same one-time monthly policy; account-specific plan
+// restrictions (including Premium-only Coach/Manager) remain in the API.
+for (const accountType of [
+  "player", "fan", "coach", "manager", "agent", "scout",
+  "club_admin", "admin", "creator", "future_account_type",
+]) {
+  assert.equal(eligible({ ...baseline, accountType }), true,
+    `${accountType} receives the first-time monthly trial policy`);
+}
+for (const accountType of ["", "  ", null, undefined]) {
+  assert.equal(eligible({ ...baseline, accountType }), false,
+    "missing account type cannot claim a trial");
+}
 for (const [name, override] of [
   ["rollout disabled", { rolloutEnabled: false }],
-  ["fan excluded", { accountType: "fan" }],
-  ["coach excluded", { accountType: "coach" }],
   ["six month", { interval: "6_month" }],
   ["annual", { interval: "year" }],
   ["promotion code", { hasPromoCode: true }],
@@ -31,4 +42,4 @@ for (const [name, override] of [
 ]) {
   assert.equal(eligible({ ...baseline, ...override }), false, name);
 }
-console.log("Stripe seven-day trial eligibility policy: 11 cases passed");
+console.log("Stripe seven-day trial eligibility policy: 23 role and safety cases passed");
