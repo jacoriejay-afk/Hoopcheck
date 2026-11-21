@@ -42,25 +42,13 @@ jobs:
           echo "DEVICE=$DEVICE" >> "$GITHUB_ENV"
           xcrun simctl boot "$DEVICE"
           xcrun simctl bootstatus "$DEVICE" -b
+          echo '{"route":"/dashboard"}' > /tmp/phase2-route.json
+          python3 scripts/ios-design-server.py > /tmp/phase2-control.log 2>&1 &
           CI=1 npx --no-install expo start --localhost --port 8081 > /tmp/phase2-metro.log 2>&1 &
       - name: Compile actual native app locally without signing or EAS
         run: xcodebuild -workspace ios/HoopCheck.xcworkspace -scheme HoopCheck -configuration Debug -sdk iphonesimulator -destination "id=$DEVICE" -derivedDataPath /tmp/phase2-derived CODE_SIGNING_ALLOWED=NO > /tmp/phase2-compile.log 2>&1
       - name: Install and capture all five routes in both appearances
-        run: |
-          xcrun simctl install "$DEVICE" /tmp/phase2-derived/Build/Products/Debug-iphonesimulator/HoopCheck.app
-          xcrun simctl launch "$DEVICE" online.hoopcheck.app
-          mkdir -p /tmp/phase2-ios
-          sleep 30
-          for THEME in light dark; do
-            xcrun simctl ui "$DEVICE" appearance "$THEME"
-            for ROUTE in dashboard feed fan-live team-hub/groups players/11111111-1111-4111-8111-111111111111; do
-              xcrun simctl openurl "$DEVICE" "hoopcheck:///$ROUTE"
-              sleep 8
-              NAME=$(echo "$ROUTE" | tr '/' '-')
-              xcrun simctl io "$DEVICE" screenshot "/tmp/phase2-ios/$NAME-$THEME.png"
-            done
-          done
-          xcrun simctl spawn "$DEVICE" log show --last 5m --predicate 'process == "HoopCheck"' > /tmp/phase2-app.log
+        run: python3 scripts/ios-design-capture.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -69,5 +57,5 @@ jobs:
             /tmp/phase2-ios/*.png
             /tmp/phase2-metro.log
             /tmp/phase2-compile.log
-            /tmp/phase2-app.log
+            /tmp/phase2-control.log
           if-no-files-found: warn

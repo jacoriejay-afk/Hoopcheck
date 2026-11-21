@@ -34,6 +34,14 @@ global.fetch = async (input, init) => {
   return new Response(JSON.stringify(value), { status: 200, headers: { 'Content-Type': 'application/json' } });
 };
 async function prepare() {
+  // The unsigned simulator has no Keychain entitlement. Only this unshipped
+  // fixture entry uses volatile storage for its synthetic session.
+  const secure = require('expo-secure-store');
+  const values = new Map();
+  secure.getItemAsync = async key => values.get(key) ?? null;
+  secure.setItemAsync = async (key, value) => { values.set(key, value); };
+  secure.deleteItemAsync = async key => { values.delete(key); };
+  require('react-native').LogBox.ignoreAllLogs(true);
   const storage = require('@react-native-async-storage/async-storage').default;
   await storage.setItem('hoopcheck:device-preferences:v1', JSON.stringify({ onboardingDone: true, appLock: false, haptics: false, theme: 'system' }));
   const { supabase } = require('../src/lib/supabase');
@@ -48,6 +56,22 @@ const { registerRootComponent } = require('expo');
 function ScreenshotApp() {
   const [ready, setReady] = React.useState(false);
   React.useEffect(() => { prepare().then(() => setReady(true)).catch(error => console.error('SCREENSHOT_BOOTSTRAP_FAILED', error)); }, []);
+  React.useEffect(() => {
+    if (!ready) return;
+    let last = '';
+    const timer = setInterval(async () => {
+      try {
+        const response = await nativeFetch('http://localhost:8902/route.json');
+        const { route } = await response.json();
+        if (route !== last) {
+          require('expo-router').router.replace(route);
+          last = route;
+          await nativeFetch('http://localhost:8902/ready', { method: 'POST' });
+        }
+      } catch { /* Retry while the real navigator is mounting. */ }
+    }, 1200);
+    return () => clearInterval(timer);
+  }, [ready]);
   return ready ? React.createElement(ExpoRoot, { context: require.context('../app') }) : null;
 }
 registerRootComponent(ScreenshotApp);
