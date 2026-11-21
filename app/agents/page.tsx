@@ -2,18 +2,17 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { supabase } from "../../lib/supabase";
 import "./network.css";
 
 type Agent = {
   id: string; display_name: string | null; username: string | null;
   avatar_url: string | null; avatar_moderation_status: string | null;
   country: string | null; bio: string | null; experience_summary: string | null;
-  account_type: "agent" | "scout"; identity_verification_status: string | null;
+  account_type: "agent" | "scout"; identity_checked: boolean;
 };
 type Scope = "all" | "agent" | "scout" | "verified";
 
-const badgeText = (a: Agent) => a.identity_verification_status === "verified"
+const badgeText = (a: Agent) => a.identity_checked
   ? "Identity checked" : "Credentials not verified";
 const label = (a: Agent) => a.display_name?.trim() || a.username || "Basketball professional";
 function initials(name: string) { return name.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join("").toUpperCase() || "HC"; }
@@ -29,21 +28,18 @@ export default function AgentsPage() {
     let active = true;
     void (async()=>{
       setLoading(true);setError("");
-      const {data,error:loadError} = await supabase.from("profiles")
-        .select("id,display_name,username,avatar_url,avatar_moderation_status,country,bio,experience_summary,account_type,identity_verification_status")
-        .in("account_type",["agent","scout"])
-        .eq("profile_visibility","public").eq("moderation_status","normal")
-        .order("display_name",{ascending:true}).limit(200);
-      if (!active) return;
-      if (loadError) setError("Professional profiles are unavailable. Try again.");
-      else setPeople((data || []) as Agent[]);
+      const response=await fetch("/api/network/agents",{cache:"no-store"});
+      const payload=await response.json();
+      if(!active)return;
+      if(!response.ok)setError(payload.error||"Professional profiles are unavailable.");
+      else setPeople((payload.people||[]) as Agent[]);
       setLoading(false);
     })().catch(()=>{if(active){setLoading(false);setError("Unable to load the directory.");}});
     return ()=>{active=false;};
   },[retry]);
   const filtered = useMemo(()=>{
     const term=q.trim().toLocaleLowerCase();
-    return people.filter(p=>(scope==="all" || scope==="verified" && p.identity_verification_status==="verified" || p.account_type===scope)
+    return people.filter(p=>(scope==="all" || scope==="verified" && p.identity_checked || p.account_type===scope)
       && (!term || [p.display_name,p.username,p.country,p.bio,p.experience_summary].some(v=>v?.toLocaleLowerCase().includes(term))));
   },[people,q,scope]);
   return <main className="hc-network-page">
