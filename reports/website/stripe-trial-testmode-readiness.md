@@ -30,3 +30,16 @@ Record test-mode Checkout Session IDs, event IDs, test customer/subscription IDs
 ## Release decision
 
 HOLD until the isolated test-mode lifecycle and atomic reservation tests are evidenced, and the owner separately approves a reviewed production rollout. Current UI says eligible customers *may* receive a trial; it must not advertise a guaranteed active offer.
+
+## Read-only Stripe test-mode inspection — 2026-11-21
+
+Account: hoopcheck.online, `livemode=false`. No Stripe objects were created or modified.
+
+- Stripe Tax settings report `active` with default `inferred_by_currency` tax behavior.
+- Test-mode Tax registrations list returned **zero** registrations. Automatic Tax enabled on Checkout is not proof of actual collection. Stripe Tax collects no tax in a jurisdiction until a registration exists there. Do not invent a tax registration based on the business address.
+- Active monthly test prices include Player Pro **USD 4.99** and Player Premium **USD 9.99**; other active test prices exist. Confirm exact server-side price-ID mapping before checkout.
+- Several test webhook endpoints exist, including enabled endpoints covering checkout completion and subscription updates. Their presence does not establish delivery, correct signing secret, or receipt by the intended isolated deployment. Do not reproduce webhook bypass URLs or secrets in reports.
+- Existing test Checkout Sessions include completed and expired sessions, but do not demonstrate a seven-day trial or successful trial claim redemption.
+- Source review confirms `trialRolloutEnabled = false`, a draft trial claim migration, and local eligibility/recovery test scripts. The SQL is a **proposal only** and must not be assumed installed in the isolated database.
+
+**Decision:** Test-mode configuration inspected; trial integration NOT yet executed or accepted. The hard-disabled live gate remains intact.
