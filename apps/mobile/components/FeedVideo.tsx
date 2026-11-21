@@ -1,27 +1,45 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { AppState } from "react-native";
 import { VideoView, useVideoPlayer } from "expo-video";
+
+/**
+ * Keep the current video source stable while the card gains or loses focus.
+ * Replacing it on every viewability change caused a visible black flash and
+ * rewound the stream when scrolling between reels.
+ */
 export function FeedVideo({ uri, enabled, loop, onFailure, height }: { height: number; uri: string | null; enabled: boolean; loop: boolean; onFailure: () => void }) {
-  const player = useVideoPlayer(null, value => { value.loop = loop; });
+  const player = useVideoPlayer(null, value => { value.loop = loop; value.muted = loop; });
+  const playback = useRef({ enabled, loop, uri });
+  playback.current = { enabled, loop, uri };
+
   useEffect(() => {
-    let active = true;
-    const position = player.currentTime;
-    const playing = player.playing;
+    let alive = true;
+    player.pause();
+    if (!uri) return () => { alive = false; };
     void player.replaceAsync(uri).then(() => {
-      if (!active) return;
-      if (Number.isFinite(position) && position > 0) player.currentTime = position;
-      if (playing && enabled && AppState.currentState === "active") player.play();
-    }).catch(() => { if (active) onFailure(); });
-    return () => { active = false; };
-  }, [uri, player, enabled, onFailure]);
+      if (alive && playback.current.enabled && playback.current.loop && AppState.currentState === "active") player.play();
+    }).catch(() => { if (alive) onFailure(); });
+    return () => { alive = false; player.pause(); };
+  }, [uri, player, onFailure]);
+
   useEffect(() => {
-    // Expo exposes a mutable native player; this property is its documented control API.
+    // expo-video's player is an imperative native object.
     // eslint-disable-next-line react-hooks/immutability
     player.loop = loop;
-    if (!enabled) player.pause();
-    const state = AppState.addEventListener("change", next => { if (next !== "active") player.pause(); });
-    const status = player.addListener("statusChange", event => { if (event.status === "error") onFailure(); });
-    return () => { state.remove(); status.remove(); };
-  }, [enabled, player, loop, onFailure]);
-  return <VideoView accessibilityLabel="HoopFeed video" player={player} style={{ width: "100%", height }} contentFit="contain" nativeControls allowsFullscreen allowsPictureInPicture={false} />;
+    // Reels always autoplay silently. Ordinary HoopFeed posts keep native controls.
+    // eslint-disable-next-line react-hooks/immutability
+    player.muted = loop;
+    const synchronize = () => {
+      if (enabled && loop && uri && AppState.currentState === "active") player.play();
+      else player.pause();
+    };
+    synchronize();
+    const appState = AppState.addEventListener("change", synchronize);
+    const status = player.addListener("statusChange", event => {
+      if (event.status === "error") onFailure();
+    });
+    return () => { appState.remove(); status.remove(); player.pause(); };
+  }, [enabled, loop, uri, player, onFailure]);
+
+  return <VideoView accessibilityLabel={loop ? "HoopFeed Reel" : "HoopFeed video"} player={player} style={{ width: "100%", height }} contentFit="contain" nativeControls allowsFullscreen allowsPictureInPicture={false} />;
 }
