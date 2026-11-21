@@ -159,7 +159,7 @@ a {
 }
 .btn:focus-visible {
   outline: 3px solid rgba(255, 106, 0, 0.35);
-  outline-offset: 3px;
+  outline-offset: -2px;
 }
 .btn:disabled {
   opacity: 0.55;
@@ -1079,7 +1079,7 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 
 /* HoopCheck Phase 3 clickable affordances */
 a, button, select, summary { cursor: pointer; }
-a:focus-visible, button:focus-visible, select:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; }
+a:focus-visible, button:focus-visible, select:focus-visible { outline: 2px solid var(--orange); outline-offset: -2px; }
 .btn, .card a, .dashboard-card, .result-card, .quick-card { transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease; }
 .btn:hover, .card a:hover { transform: translateY(-1px); }
 .dashboard-card:hover, .result-card:hover, .quick-card:hover { border-color: rgba(255,106,0,.5); box-shadow: 0 10px 30px rgba(0,0,0,.28); }
@@ -2326,7 +2326,7 @@ h1, .page-title { line-height: .98; letter-spacing: .015em; }
 h2, h3 { line-height: 1.08; }
 :where(a, button, input, select, textarea, [tabindex]):focus-visible {
   outline: 2px solid var(--orange);
-  outline-offset: 3px;
+  outline-offset: -2px;
 }
 :where(.card, .category-card, .team-card, .league-card, .coach-card,
 .player-card, .review-card, .stat-card, .dashboard-card, .feature-card) {
@@ -4206,7 +4206,7 @@ html.theme-dark .hc-team-profile-hero .hc-team-social-stats :where(strong,small)
    Scoped to interactive elements; preserve existing theme and entitlement behavior. */
 :where(a, button, input, select, textarea, summary, [role="button"], [role="tab"]):focus-visible {
   outline: 2px solid var(--hc-orange, #ff6a00);
-  outline-offset: 3px;
+  outline-offset: -2px;
 }
 :where(button, input, select, textarea) {
   max-width: 100%;
@@ -4252,4 +4252,88 @@ html.theme-dark .hc-team-profile-hero .hc-team-social-stats :where(strong,small)
   color: var(--hc-text, #171717);
   font-size: 13px;
   line-height: 1.55;
+}
+
+/* Shared cards: align the actual border edge without extraneous exterior rings.
+   Keep focus visible inside the interactive control, and never clip card popovers. */
+:where(.card, .dashboard-card, .result-card, .quick-card, .player-profile-card, .settings-card, .hero-card) {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  border-radius: var(--hc-radius-card);
+}
+/* The old animated sheen translated beyond a dashboard-card's rounded border. */
+.dashboard-card::after { content: none; }
+
+/* Membership: unify current/featured/standard plans, including mobile and themes. */
+.hc-membership-page :where(.active-card, .plan-card, .hc-trial-note, .hc-membership-value) {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  border-radius: var(--hc-radius-card);
+  background-clip: padding-box;
+}
+.hc-membership-page :where(.active-card, .plan-card) {
+  overflow: hidden;
+  box-shadow: none;
+}
+.hc-membership-page .active-card {
+  border: 1px solid var(--hc-card-border, #deded8);
+  box-shadow: inset 0 3px 0 var(--hc-orange, #ff5a1f);
+}
+.hc-membership-page .plan-card.featured,
+.hc-membership-page .hc-membership-plan.is-current {
+  border: 1px solid var(--hc-orange, #ff5a1f);
+  box-shadow: inset 0 0 0 1px var(--hc-orange, #ff5a1f);
+}
+.hc-membership-page .hc-membership-plan {
+  padding: clamp(18px, 3vw, 28px);
+  min-height: 100%;
+}
+.hc-membership-page .hc-membership-comparison,
+.hc-membership-page .hc-premium-intro {
+  min-width: 0;
+  max-width: 100%;
+}
+.hc-membership-page .hc-membership-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 10px;
+  margin-top: 20px;
+}
+.hc-membership-page .hc-membership-actions .btn {
+  min-width: 0;
+  max-width: 100%;
+  text-align: center;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.hc-membership-page .hc-membership-actions .hc-cancel-subscription {
+  border-color: var(--hc-card-border, #b4aea7);
+  background: transparent;
+  color: #171717;
+  box-shadow: none;
+}
+.hc-membership-page .hc-membership-actions .hc-cancel-subscription:hover {
+  background: rgba(255, 90, 31, .08);
+  color: #171717;
+}
+.hc-membership-page :where(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--hc-orange, #ff5a1f);
+  outline-offset: -3px;
+}
+@media (max-width: 700px) {
+  .hc-membership-page .hc-membership-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hc-membership-page .hc-membership-actions .btn {
+    width: 100%;
+    min-height: 48px;
+    white-space: normal;
+  }
+  .hc-membership-page .plan-top {
+    flex-wrap: wrap;
+  }
 }
