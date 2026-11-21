@@ -10,6 +10,8 @@ const categories = [
   { title: "Professional Teams", description: "Follow your team and explore first-hand feedback.", href: "/teams", icon: "T", color: "#ff5500", group: "Teams" },
   { title: "Women's Basketball", description: "Follow women's teams and explore first-hand feedback.", href: "/womens", icon: "W", color: "#db2777", group: "Teams" },
   { title: "Coaches", description: "Research coaches through first-hand reviews.", href: "/coaches", icon: "C", color: "#2563eb", group: "People" },
+  { title: "Agents & Scouts", description: "Find public basketball agent and scout profiles, with clear identity-check labels.", href: "/agents", icon: "A", color: "#f97316", group: "People" },
+  { title: "Basketball Creators", description: "Explore opt-in media, podcasters, trainers and basketball storytellers.", href: "/creators", icon: "▶", color: "#0d9488", group: "People" },
   { title: "Find Players", description: "Search for players by username and discover public profiles.", href: "/players", icon: "P", color: "#7c3aed", group: "People" },
   { title: "Leagues & Competitions", description: "Browse national and international leagues.", href: "/leagues", icon: "L", color: "#059669", group: "Competitions" },
   { title: "Reviews & Analytics", description: "Read published reviews and team feedback.", href: "/reviews", icon: "★", color: "#d97706", group: "Feedback" },
