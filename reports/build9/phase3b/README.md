@@ -29,3 +29,7 @@ Inherited release blockers remain: production-compatible catalog rehearsal, inst
 ## CI investigation
 
 The inherited membership failure reproduces as a sign-in redirect with no synthetic API requests. Initial fixture bundles lack supplied public configuration; clean-cache underlying Expo export is being tested. The mobile workflow now explicitly clears Metro cache for environment-specific platform exports. Browser failure injection for Connections is reset at that screen because Home now uses the same follow contract. Neither change removes assertions or bypasses authorization.
+
+## Confirmed browser regression and fix
+
+With a correctly configured clean-cache fixture, the actual blank authenticated page reports `isReduceTransparencyEnabled is not a function`. React Native Web does not implement that iOS-only API. Fixed in originating #748 at 7a345d4a with an explicit iOS platform guard and a web-render regression test. Merged forward without rewriting history: #749 61000a72, #750 22685dca, this follow-up 300803de. Before screenshots at detached 59ea3e31 show this genuine baseline crash in both themes; they are not successful pre-redesign screen layouts. The cache change alone is not claimed to fix the crash.
