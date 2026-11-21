@@ -61,7 +61,7 @@ export default function LiveGamesPage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [reminding, setReminding] = useState<string | null>(null);
-  const [expandedPredictions, setExpandedPredictions] = useState<string[]>([]);
+  const [expandedPredictionId, setExpandedPredictionId] = useState<string | null>(null);
   const [clock, setClock] = useState(() => new Date());
   const [lastCheckedAt, setLastCheckedAt] = useState<Date | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -282,13 +282,13 @@ export default function LiveGamesPage() {
           {isRecent && !canJoin && <span className="hc-live-card__muted">Final score {score || "not available"}</span>}
           {allowPredictions && game.opponent_team_id && !["cancelled", "canceled", "postponed", "abandoned"].includes(game.status.toLowerCase()) &&
             <button type="button" className="hc-remind-button"
-              aria-expanded={expandedPredictions.includes(game.id)}
-              onClick={() => setExpandedPredictions(open => open.includes(game.id) ? open.filter(id => id !== game.id) : [...open, game.id])}>
-              <HoopIcon name="trophy" size={16} /> {expandedPredictions.includes(game.id) ? "HIDE FAN PICKS" : "FAN PICKS"}
+              aria-expanded={expandedPredictionId === game.id}
+              onClick={() => setExpandedPredictionId(open => open === game.id ? null : game.id)}>
+              <HoopIcon name="trophy" size={16} /> {expandedPredictionId === game.id ? "HIDE FAN PICKS" : "FAN PICKS"}
             </button>}
           <Link href={(basketballSide === "womens" ? "/womens/" : "/teams/") + game.team_id} className="hc-live-card__muted">Team profile</Link>
         </div>
-        {allowPredictions && game.opponent_team_id && expandedPredictions.includes(game.id) &&
+        {allowPredictions && game.opponent_team_id && expandedPredictionId === game.id &&
           <div className="hc-live-card__prediction">
             <GameWinnerPrediction game={game} homeName={home?.name || "Home"} awayName={away?.name || game.opponent_name} />
           </div>}
