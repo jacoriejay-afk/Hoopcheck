@@ -1,7 +1,12 @@
 {
   "git": {
     "deploymentEnabled": {
-      "reconcile/build8-mobile-705-700-710-711": false
+      "reconcile/build8-mobile-705-700-710-711": false,
+      "reconcile/build9-phase1-20261120": false,
+      "completion/build9-20261120": false,
+      "design/build9-phase3-system": false,
+      "design/build9-phase3-core": false,
+      "feature/build9-phase3-courtside": false
     }
   }
 }

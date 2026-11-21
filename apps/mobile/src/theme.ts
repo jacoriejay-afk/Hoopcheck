@@ -10,9 +10,20 @@ export const tokens = {
   // TeamProfileHero.tsx: solid first gradient stop for native authored hero art.
   entityHero: { background: "#111827", ink: "#FFFFFF", muted: "#E5E7EB" },
   crest: { panel: "#1A1A1A", border: "#2D2D2D", ink: "#F7F7F5", palette: ["#8A2A0D", "#8C1B53", "#173C86", "#176C3D", "#4C2A90", "#7B5900"] },
+  // Build 9 Premium Courtside 2.0: shared native presentation primitives.
+  // Opt-in tokens; existing screens retain their current styles until reviewed.
+  courtside: {
+    navigation: { height: 64, radius: 28, iconSize: 22, touchTarget: 44 },
+    card: { radius: 18, compactPadding: 12, featuredPadding: 16 },
+    hero: { radius: 22, minHeight: 156 },
+    sectionGap: 20,
+  },
+  // QR codes require a fixed light optical background in either theme.
+  qrSurface: "#FFFFFF",
   roles: { women: "#E84393", coaches: "#2456C8", leagues: "#1E9E50", players: "#6C3FD4", alerts: "#F5B800" },
   type: {
     display: { fontFamily: "HoopCheckDisplay", fontSize: 48, fontWeight: "400" as const, letterSpacing: -1.68, lineHeight: 49 },
+    title: { fontFamily: "HoopCheckDisplay", fontSize: 32, lineHeight: 36 },
     section: { fontSize: 17, fontWeight: "700" as const, lineHeight: 22 },
     body: { fontSize: 16, lineHeight: 24 },
     caption: { fontSize: 12, lineHeight: 17 },

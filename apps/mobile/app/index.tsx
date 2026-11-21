@@ -1,47 +1,34 @@
-import { GlassCard, Button } from "../src/primitives";
+import { useState } from "react";
 import { useRouter } from "expo-router";
-import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
+import { BrandLogo } from "../components/BrandLogo";
+import { ExploreLinks } from "../components/ExploreLinks";
+import { Button, Input, SectionHeader } from "../src/primitives";
 import { useEntryTheme } from "../src/theme";
 
-// Metro uses a static asset reference for native image bundling.
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const hoopcheckMark = require("../assets/hoopcheck-mark.png");
-
 export default function WelcomeScreen() {
-  const theme = useEntryTheme();
-  const router = useRouter();
-
-  return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <GlassCard style={styles.content}>
-          <View style={styles.brand}>
-            <Image alt="HoopCheck" accessibilityLabel="HoopCheck" source={hoopcheckMark} style={styles.mark} />
-
-          </View>
-          <Text accessibilityRole="header" style={[theme.type.display, styles.headline, { color: theme.foreground }]}>
-            Know who you’re signing with.
-          </Text>
-          <Text style={[styles.description, { color: theme.muted }]}>
-            Research basketball teams, coaches, and leagues through the experiences of players who have been there.
-          </Text>
-          <Button accessibilityLabel="Sign in" onPress={() => router.push("/sign-in")}>Sign in</Button>
-          <Button secondary accessibilityLabel="Create an account" onPress={() => router.push("/sign-up")}>Create an account</Button>
-        </GlassCard>
-      </ScrollView>
-    </SafeAreaView>
-  );
+  const theme = useEntryTheme(); const router = useRouter(); const [search, setSearch] = useState("");
+  const searchDirectory = () => router.push({ pathname: "/search", params: { q: search } });
+  return <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
+    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.md }}>
+      <View style={{ padding: theme.spacing.md, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, borderRadius: theme.radius.hero }}><BrandLogo /></View>
+      <View style={{ gap: theme.spacing.sm, padding: theme.spacing.sm, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, borderRadius: theme.radius.control }}>
+        <Input accessibilityLabel="Search basketball directory" placeholder="Search teams, leagues, coaches or players" value={search} maxLength={100} onChangeText={setSearch} returnKeyType="search" onSubmitEditing={searchDirectory} />
+        <Button onPress={searchDirectory}>Search</Button>
+      </View>
+      <LinearGradient colors={["#080808", "#171717", "#29150D"]} style={{ padding: theme.spacing.lg, borderRadius: theme.radius.control, gap: theme.spacing.lg }}>
+        <Text style={{ color: theme.button, fontSize: 11, fontWeight: "800", letterSpacing: 1 }}>THE GLOBAL BASKETBALL INTELLIGENCE HUB</Text>
+        <Text accessibilityRole="header" style={{ color: theme.entityHero.ink, fontFamily: "HoopCheckDisplay", fontSize: 32, lineHeight: 34 }}>Know who you’re signing with.</Text>
+        <Text style={{ color: theme.entityHero.muted, fontSize: 15, lineHeight: 21 }}>Explore teams, coaches, leagues, and real basketball experiences. Built for players and fans worldwide.</Text>
+        <Button accessibilityLabel="Create an account" onPress={() => router.push("/sign-up")}>Create an account</Button>
+        <Button secondary accessibilityLabel="Sign in" onPress={() => router.push("/sign-in")} style={{ backgroundColor: "transparent", borderColor: theme.entityHero.muted }}><Text style={{ color: theme.entityHero.ink, fontWeight: "800" }}>Sign in</Text></Button>
+      </LinearGradient>
+      <Button secondary onPress={() => router.push("/fan-live")}>Live Games · Open hub →</Button>
+      <Button secondary onPress={() => router.push({ pathname: "/web", params: { path: "/pre-sign" } })}>Pre-sign check →</Button>
+      <View style={{ marginTop: theme.spacing.xl, gap: theme.spacing.md }}><Text style={{ color: theme.accent, ...theme.type.caption }}>YOUR NEXT MOVE</Text><SectionHeader>Explore HoopCheck</SectionHeader><ExploreLinks publicOnly /></View>
+      <Pressable accessibilityRole="link" onPress={() => router.push("/about")} style={{ minHeight: 48, justifyContent: "center" }}><Text style={{ color: theme.accent }}>About HoopCheck™ →</Text></Pressable>
+    </ScrollView>
+  </SafeAreaView>;
 }
-
-const styles = StyleSheet.create({
-  safeArea: { flex: 1 },
-  scroll: { flexGrow: 1, justifyContent: "center", padding: 24 },
-  content: { width: "100%", maxWidth: 520, alignSelf: "center", gap: 12 },
-  brand: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 12, marginBottom: 20 },
-  mark: { width: 48, height: 48, },
-  headline: {},
-  description: { fontSize: 17, lineHeight: 25, marginBottom: 16 },
-  action: { minHeight: 52, padding: 14, alignItems: "center", justifyContent: "center" },
-  actionLabel: { fontSize: 16, fontWeight: "800", textAlign: "center" },
-});

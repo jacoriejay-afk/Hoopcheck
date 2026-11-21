@@ -41,7 +41,7 @@ export async function GET(request: Request) {
     if (authError || !authData.user) return NextResponse.json({ error: "Sign in to view team pay history." }, { status: 401 });
     const [{ data: viewer, error: viewerError }, { data: viewerSubscription }] = await Promise.all([
       db.from("profiles").select("account_type").eq("id", authData.user.id).maybeSingle(),
-      db.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id", authData.user.id).maybeSingle(),
+      db.from("membership_entitlements").select("plan,status,access_status,current_period_end").eq("user_id", authData.user.id).maybeSingle(),
     ]);
     if (viewerError) throw viewerError;
     const entitlements = getHoopCheckEntitlements({ accountType: viewer?.account_type, subscription: viewerSubscription });
@@ -89,7 +89,7 @@ export async function POST(request: Request) {
     if (authError || !user || !user.email_confirmed_at) return NextResponse.json({ error: "A confirmed player account is required." }, { status: 401 });
     const [{ data: profile, error: profileError }, { data: subscription, error: subscriptionError }] = await Promise.all([
       db.from("profiles").select("account_type,player_verified").eq("id", user.id).maybeSingle(),
-      db.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id", user.id).maybeSingle(),
+      db.from("membership_entitlements").select("plan,status,access_status,current_period_end").eq("user_id", user.id).maybeSingle(),
     ]);
     if (profileError) return NextResponse.json({ error: "Unable to verify your player account." }, { status: 500 });
     const entitlements = getHoopCheckEntitlements({

@@ -4,12 +4,18 @@ on:
   pull_request:
     paths:
       - "apps/mobile/**"
+      - "lib/auth/**"
+      - "lib/billing/**"
+      - "lib/membership-tier.ts"
   push:
     branches:
       - "feat/expo-mobile-foundation"
       - "fix/expo-doctor-dependencies"
     paths:
       - "apps/mobile/**"
+      - "lib/auth/**"
+      - "lib/billing/**"
+      - "lib/membership-tier.ts"
       - ".github/workflows/mobile-check.yml"
 
 jobs:
@@ -21,12 +27,20 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
       - name: Install mobile dependencies
         run: npm ci
+      - name: Verify vendored dependency provenance and current audit
+        run: |
+          node scripts/verify-dependency-provenance.mjs --upstream
+          npm audit --json > /tmp/mobile-audit.json
+          npm audit --omit=dev --json > /tmp/mobile-production-audit.json
+          node -e 'const a = require("/tmp/mobile-audit.json"); for (const n of ["decode-uri-component", "image-size", "query-string"]) if (a.vulnerabilities[n]) throw new Error(n + " advisory regression");'
       - name: Native link and telemetry privacy contracts
         run: npm run test:native
       - name: TypeScript typecheck
@@ -38,6 +52,13 @@ jobs:
       - name: Expo dependency and configuration diagnostics
         run: npx expo-doctor
 
+      - name: Verify generated iOS permissions locally (no compilation or signing)
+        env:
+          EXPO_NO_TELEMETRY: "1"
+        run: |
+          npx --no-install expo prebuild --platform ios --no-install
+          python3 scripts/verify-ios-permissions.py
+
       - name: Export native iOS bundle locally (no EAS build)
         env:
           EXPO_PUBLIC_SUPABASE_URL: https://fixture.supabase.co
@@ -45,6 +66,14 @@ jobs:
           EXPO_PUBLIC_HOOPCHECK_API_URL: https://api.test
           EXPO_NO_TELEMETRY: "1"
         run: npx --no-install expo export --platform ios --max-workers 2 --output-dir /tmp/hoopcheck-mobile-ios
+
+      - name: Export Android Hermes bundle locally
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: https://fixture.supabase.co
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: fixture-publishable-key
+          EXPO_PUBLIC_HOOPCHECK_API_URL: https://api.test
+          EXPO_NO_TELEMETRY: "1"
+        run: npx --no-install expo export --platform android --max-workers 2 --output-dir /tmp/hoopcheck-mobile-android
 
       - name: Export isolated native browser fixture
         env:
@@ -62,9 +91,17 @@ jobs:
           NATIVE_TEST_URL: http://127.0.0.1:8092
           CHROMIUM_PATH: /usr/bin/google-chrome
         run: |
+          node scripts/verify-membership-browser.cjs
+          node scripts/verify-mfa-browser.cjs
+          node scripts/verify-player-profiles-browser.cjs
+          node scripts/verify-media-browser.cjs
+          node scripts/verify-profile-editor-browser.cjs
+          node scripts/verify-club-groups-browser.cjs
+          node scripts/verify-live-games-browser.cjs
           node scripts/verify-feed-browser.cjs
           node scripts/verify-discovery-browser.cjs
           node scripts/verify-theme-preference-browser.cjs
+          node scripts/verify-design-browser.cjs
 
       - name: Upload native browser screenshots
         if: always()

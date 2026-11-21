@@ -1,0 +1,250 @@
+
+> hoopcheck@1.0.0 lint
+> eslint .
+
+
+/workspace/Hoopcheck/app/account/page.tsx
+  100:10  warning  'verified' is assigned a value but never used                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+  500:27  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  507:17  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/workspace/Hoopcheck/app/admin/analytics/page.tsx
+  3:8  warning  'Logo' is defined but never used  @typescript-eslint/no-unused-vars
+
+/workspace/Hoopcheck/app/admin/claims/page.tsx
+  28:26  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+/workspace/Hoopcheck/app/admin/directory/coach-requests/page.tsx
+  14:97   warning  Do not use `location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+  14:209  warning  Do not use `location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+/workspace/Hoopcheck/app/admin/directory/coaches/page.tsx
+  495:27  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/workspace/Hoopcheck/app/admin/directory/providers/page.tsx
+  25:31  warning  React Hook useEffect has a missing dependency: 'load'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/workspace/Hoopcheck/app/admin/directory/requests/page.tsx
+  12:97   warning  Do not use `location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+  12:209  warning  Do not use `location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+/workspace/Hoopcheck/app/admin/privacy-requests/page.tsx
+   68:7  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+   74:7  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+  127:6  warning  React Hook useEffect has a missing dependency: 'load'. Either include it or remove the dependency array                                                                                                                                                             react-hooks/exhaustive-deps
+
+/workspace/Hoopcheck/app/admin/profile-reports/page.tsx
+  11:97   warning  Do not use `location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+  11:209  warning  Do not use `location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+/workspace/Hoopcheck/app/admin/reviews/page.tsx
+  198:9   warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+  211:9   warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+  228:11  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+/workspace/Hoopcheck/app/admin/rights/page.tsx
+   41:10  warning  'busy' is assigned a value but never used                                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+   74:9   warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+   85:9   warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+  118:9   warning  'workflow' is assigned a value but never used                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+  120:18  warning  'advance' is defined but never used                                                                                                                                                                                                                                 @typescript-eslint/no-unused-vars
+
+/workspace/Hoopcheck/app/admin/support/page.tsx
+   5:8    warning  'Logo' is defined but never used                                                                                                                                                                                                                             @typescript-eslint/no-unused-vars
+  13:149  warning  Do not use `location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+/workspace/Hoopcheck/app/admin/team-fanfeed/page.tsx
+  115:28  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/workspace/Hoopcheck/app/admin/team-logos/page.tsx
+  175:158  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/workspace/Hoopcheck/app/admin/users/page.tsx
+  18:89   warning  Do not use `location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination                              @next/next/no-location-assign-relative-destination
+  18:227  warning  Do not use `location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination                              @next/next/no-location-assign-relative-destination
+  18:616  warning  React Hook useEffect has missing dependencies: 'load' and 'loadRoleUsers'. Either include them or remove the dependency array                                                                                                                                                            react-hooks/exhaustive-deps
+  27:296  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/workspace/Hoopcheck/app/admin/verification/page.tsx
+   5:8   warning  'Logo' is defined but never used                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+  34:97  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+/workspace/Hoopcheck/app/api/team-pay-checkins/route.ts
+  19:10  warning  'monthStart' is defined but never used  @typescript-eslint/no-unused-vars
+
+/workspace/Hoopcheck/app/api/trust-score/route.ts
+  3:10  warning  'hasActiveMembershipAtLeast' is defined but never used  @typescript-eslint/no-unused-vars
+
+/workspace/Hoopcheck/app/coaches/[id]/review/page.tsx
+  182:9  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+  400:7  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+/workspace/Hoopcheck/app/connections/page.tsx
+  35:1026  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/workspace/Hoopcheck/app/fan-live/page.tsx
+  171:14  warning  'error' is assigned a value but never used                                                                                                                                                                                                                                               @typescript-eslint/no-unused-vars
+  184:5   warning  React Hook useEffect has a missing dependency: 'selected'. Either include it or remove the dependency array                                                                                                                                                                              react-hooks/exhaustive-deps
+  201:5   warning  React Hook useEffect has a missing dependency: 'selected'. Either include it or remove the dependency array                                                                                                                                                                              react-hooks/exhaustive-deps
+  234:73  warning  Expected an assignment or function call and instead saw an expression                                                                                                                                                                                                                    @typescript-eslint/no-unused-expressions
+  235:53  warning  Expected an assignment or function call and instead saw an expression                                                                                                                                                                                                                    @typescript-eslint/no-unused-expressions
+  272:88  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/workspace/Hoopcheck/app/fans/[id]/page.tsx
+  48:64  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/workspace/Hoopcheck/app/fans/page.tsx
+  29:23  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination                       @next/next/no-location-assign-relative-destination
+  63:27  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/workspace/Hoopcheck/app/feed/page.tsx
+  509:92   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  520:143  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  529:151  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  540:106  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  556:39   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/workspace/Hoopcheck/app/leagues/[id]/page.tsx
+  237:70  warning  '_active' is defined but never used  @typescript-eslint/no-unused-vars
+
+/workspace/Hoopcheck/app/leagues/[id]/review/page.tsx
+  182:9  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+  392:7  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+/workspace/Hoopcheck/app/live-games/page.tsx
+   39:10  warning  'initials' is defined but never used               @typescript-eslint/no-unused-vars
+  175:67  warning  'availability' is defined but never used           @typescript-eslint/no-unused-vars
+  197:41  warning  'availability' is defined but never used           @typescript-eslint/no-unused-vars
+  205:9   warning  'nextUpcoming' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/workspace/Hoopcheck/app/notifications/page.tsx
+  30:19  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+/workspace/Hoopcheck/app/players/[id]/page.tsx
+  122:20  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+/workspace/Hoopcheck/app/players/page.tsx
+  165:23  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/workspace/Hoopcheck/app/privacy-center/page.tsx
+  19:10  warning  'userId' is assigned a value but never used                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+  35:9   warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+  71:9   warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+/workspace/Hoopcheck/app/reviews/page.tsx
+  260:23  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/workspace/Hoopcheck/app/search/page.tsx
+  475:34  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/workspace/Hoopcheck/app/settings/page.tsx
+  28:10  warning  'teamSaving' is assigned a value but never used   @typescript-eslint/no-unused-vars
+  29:10  warning  'teamMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  30:10  warning  'isPlayer' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  70:18  warning  'addPreviousTeam' is defined but never used       @typescript-eslint/no-unused-vars
+
+/workspace/Hoopcheck/app/support/page.tsx
+  41:7  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+  96:9  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+/workspace/Hoopcheck/app/team-dashboard/page.tsx
+  50:20  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+/workspace/Hoopcheck/app/team-hub/groups/[teamId]/page.tsx
+   21:11  warning  'formatNumber' is assigned a value but never used                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+   21:25  warning  'formatDate' is assigned a value but never used                                                                                                                                                                                                                              @typescript-eslint/no-unused-vars
+  129:22  warning  The ref value 'requestVersion.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'requestVersion.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+/workspace/Hoopcheck/app/team-hub/page.tsx
+   9:8  warning  'FanBasketballSideSwitch' is defined but never used  @typescript-eslint/no-unused-vars
+  72:9  warning  'directoryHref' is assigned a value but never used   @typescript-eslint/no-unused-vars
+
+/workspace/Hoopcheck/app/teams/[id]/page.tsx
+   25:8   warning  'ReviewCommunityActions' is defined but never used            @typescript-eslint/no-unused-vars
+   88:10  warning  'averageCategory' is defined but never used                   @typescript-eslint/no-unused-vars
+   96:10  warning  'RatingBar' is defined but never used                         @typescript-eslint/no-unused-vars
+  196:10  warning  'hasApprovedTeamClaim' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  196:32  warning  'setHasApprovedTeamClaim' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  197:10  warning  'membershipPlan' is assigned a value but never used           @typescript-eslint/no-unused-vars
+  514:9   warning  'average' is assigned a value but never used                  @typescript-eslint/no-unused-vars
+  529:9   warning  'communication' is assigned a value but never used            @typescript-eslint/no-unused-vars
+  545:9   warning  'professionalism' is assigned a value but never used          @typescript-eslint/no-unused-vars
+  561:9   warning  'development' is assigned a value but never used              @typescript-eslint/no-unused-vars
+  577:9   warning  'payment' is assigned a value but never used                  @typescript-eslint/no-unused-vars
+
+/workspace/Hoopcheck/app/teams/[id]/review/page.tsx
+  186:9  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+  226:9  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+  384:7  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+/workspace/Hoopcheck/app/teams/page.tsx
+   47:10    warning  'teamCoordinates' is assigned a value but never used                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+  172:6     warning  React Hook useEffect has a missing dependency: 'CONTINENT_COUNTRIES'. Either include it or remove the dependency array                                                                                                                                              react-hooks/exhaustive-deps
+  283:6     warning  React Hook useEffect has a missing dependency: 'CONTINENT_COUNTRIES'. Either include it or remove the dependency array                                                                                                                                              react-hooks/exhaustive-deps
+  431:1067  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+/workspace/Hoopcheck/app/verification/page.tsx
+  34:15   warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+  35:251  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+  48:18   warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+  61:15   warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+/workspace/Hoopcheck/apps/mobile/components/AppLock.tsx
+  36:46  warning  The ref value 'operation.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'operation.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+/workspace/Hoopcheck/apps/mobile/src/native/preferences.tsx
+  30:31  warning  The ref value 'generation.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'generation.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+/workspace/Hoopcheck/components/ClaimProfileButton.tsx
+  35:27  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+/workspace/Hoopcheck/components/FanConnectionButton.tsx
+  49:31  warning  React Hook useEffect has a missing dependency: 'load'. Either include it or remove the dependency array                                                                                                                                                      react-hooks/exhaustive-deps
+  51:17  warning  Do not use `location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+/workspace/Hoopcheck/components/FanTeamPosts.tsx
+  38:21  warning  'formatDate' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  38:33  warning  't' is assigned a value but never used           @typescript-eslint/no-unused-vars
+
+/workspace/Hoopcheck/components/FollowButton.tsx
+  70:7  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+/workspace/Hoopcheck/components/HoopFeedPrivateMedia.tsx
+  59:10  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/workspace/Hoopcheck/components/PlayerContactButton.tsx
+  47:31  warning  React Hook useEffect has a missing dependency: 'load'. Either include it or remove the dependency array                                                                                                                                                      react-hooks/exhaustive-deps
+  61:17  warning  Do not use `location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+/workspace/Hoopcheck/components/ProfileAvatar.tsx
+  19:14  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/workspace/Hoopcheck/components/ReviewCommunityActions.tsx
+   78:9  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+  117:9  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+/workspace/Hoopcheck/components/SocialProfileHeader.tsx
+  38:26  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/workspace/Hoopcheck/components/TeamLeaguePicker.tsx
+  57:63  warning  React Hook useEffect has a missing dependency: 'values'. Either include it or remove the dependency array. If 'setSelectedIds' needs the current value of 'values', you can also switch to useReducer instead of useState and read 'values' in the reducer  react-hooks/exhaustive-deps
+  57:70  warning  React Hook useEffect has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked                                                                                                                    react-hooks/exhaustive-deps
+
+/workspace/Hoopcheck/components/TeamOfficialPrivateImage.tsx
+  32:10  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/workspace/Hoopcheck/components/WatchButton.tsx
+  79:7  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+/workspace/Hoopcheck/lib/directory-sync/preview.ts
+  2:17  warning  'normalizedKey' is defined but never used  @typescript-eslint/no-unused-vars
+
+/workspace/Hoopcheck/lib/seo-metadata.ts
+  71:9  warning  'description' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/workspace/Hoopcheck/scripts/check-hub-theme-pairing.mjs
+  8:7  warning  'sharedFeed' is assigned a value but never used   @typescript-eslint/no-unused-vars
+  9:7  warning  'fanFeedI18n' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+✖ 125 problems (0 errors, 125 warnings)
+

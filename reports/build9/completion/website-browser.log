@@ -1,0 +1,38 @@
+PASS 390px light: both team searches, women’s navigation, long names, bordered results, centered loader, reduced motion, AI art, partial failure recovery
+PASS 390px dark: both team searches, women’s navigation, long names, bordered results, centered loader, reduced motion, AI art, partial failure recovery
+PASS 1440px light: both team searches, women’s navigation, long names, bordered results, centered loader, reduced motion, AI art, partial failure recovery
+PASS 1440px dark: both team searches, women’s navigation, long names, bordered results, centered loader, reduced motion, AI art, partial failure recovery
+PASS: review agreement, shared country flag, Career Passport navigation, crest outline, and auth navigation reset
+PASS mens 390px: editable profile, team dropdown, privacy preservation, review eligibility, compact feed, Settings navigation
+PASS mens 1440px: editable profile, team dropdown, privacy preservation, review eligibility, compact feed, Settings navigation
+PASS womens 390px: editable profile, team dropdown, privacy preservation, review eligibility, compact feed, Settings navigation
+PASS womens 1440px: editable profile, team dropdown, privacy preservation, review eligibility, compact feed, Settings navigation
+Player completion browser checks passed.
+PASS: membership provider/role/billing recovery player light
+PASS: membership provider/role/billing recovery coach light
+PASS: membership provider/role/billing recovery manager light
+PASS: membership provider/role/billing recovery fan light
+PASS: membership provider/role/billing recovery fan-existing light
+PASS: membership provider/role/billing recovery apple light
+PASS: membership provider/role/billing recovery both light
+PASS: membership provider/role/billing recovery both-stripe light
+PASS: membership provider/role/billing recovery manual light
+PASS: membership provider/role/billing recovery unavailable light
+PASS: membership provider/role/billing recovery player dark
+PASS: membership provider/role/billing recovery coach dark
+PASS: membership provider/role/billing recovery manager dark
+PASS: membership provider/role/billing recovery fan dark
+PASS: membership provider/role/billing recovery fan-existing dark
+PASS: membership provider/role/billing recovery apple dark
+PASS: membership provider/role/billing recovery both dark
+PASS: membership provider/role/billing recovery both-stripe dark
+PASS: membership provider/role/billing recovery manual dark
+PASS: membership provider/role/billing recovery unavailable dark
+SITEMAP_FIRST_5_URLS=[
+  "https://hoopcheck.online/",
+  "https://hoopcheck.online/directory",
+  "https://hoopcheck.online/teams",
+  "https://hoopcheck.online/womens",
+  "https://hoopcheck.online/coaches"
+]
+ROBOTS_SITEMAP_URL=https://hoopcheck.online/sitemap.xml

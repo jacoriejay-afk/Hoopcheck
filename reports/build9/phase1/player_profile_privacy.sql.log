@@ -1,0 +1,44 @@
+BEGIN
+CREATE SCHEMA
+CREATE FUNCTION
+DO
+CREATE TABLE
+INSERT 0 6
+GRANT
+GRANT
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+GRANT
+CREATE FUNCTION
+CREATE FUNCTION
+SET
+DO
+SET
+              set_config              
+--------------------------------------
+ 11111111-1111-4111-8111-111111111111
+(1 row)
+
+DO
+              set_config              
+--------------------------------------
+ 55555555-5555-4555-8555-555555555555
+(1 row)
+
+DO
+              set_config              
+--------------------------------------
+ 66666666-6666-4666-8666-666666666666
+(1 row)
+
+DO
+RESET
+DO
+ROLLBACK
+                                              result                                               
+---------------------------------------------------------------------------------------------------
+ PASS: profile, country, moderation, role, literal search and pagination; all fixtures rolled back
+(1 row)
+

@@ -1,0 +1,3 @@
+PASS: suite rejects username regression
+PASS: suite rejects directory regression
+PASS: suite rejects consent regression

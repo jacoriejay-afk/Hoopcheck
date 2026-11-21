@@ -8,7 +8,7 @@ const now = Math.floor(Date.now() / 1000);
 const jwt = Buffer.from(JSON.stringify({ sub: uid, aud: "authenticated", role: "authenticated", iat: now, exp: now + 3600 })).toString("base64url");
 const session = { access_token: ["eyJhbGciOiJub25lIn0", jwt, "fixture"].join("."), refresh_token: "fixture-refresh", token_type: "bearer", expires_in: 3600, expires_at: now + 3600, user };
 let profile = { id: uid, account_type: "player", basketball_type: "mens", display_name: "QA Player", avatar_url: "https://ci.invalid/photo", position: "SG", current_team: null, free_agent: false, current_country: "Country", favorite_leagues: null, height: "193 cm", bio: "A player", hometown: "City", profile_visibility: "players_only", player_verified: false, avatar_moderation_status: "approved" };
-const browser = await chromium.launch({ channel: "chrome", headless: true, args: ["--no-sandbox"] });
+const browser = await chromium.launch({ ...(process.env.CHROMIUM_EXECUTABLE_PATH ? { executablePath: process.env.CHROMIUM_EXECUTABLE_PATH } : { channel: "chrome" }), headless: true, args: ["--no-sandbox"] });
 const context = await browser.newContext();
 try {
   await context.addCookies([{ name: "sb-ci-auth-token", value: "base64-" + Buffer.from(JSON.stringify(session)).toString("base64url"), url: baseURL }]);
@@ -20,6 +20,7 @@ try {
     if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers });
     let data = [];
     if (url.pathname === "/auth/v1/user") data = user;
+    else if (url.pathname.endsWith("/rpc/get_own_profile")) data = profile;
     else if (url.pathname.endsWith("/profiles")) {
       if (request.method() === "PATCH") profile = { ...profile, ...request.postDataJSON() };
       data = profile;
@@ -29,6 +30,7 @@ try {
     else if (url.pathname.includes("/rpc/get_follow_count") || url.pathname.includes("/rpc/get_public_following_count")) data = 0;
     return route.fulfill({ status: 200, headers, contentType: "application/json", body: JSON.stringify(data) });
   });
+  await page.route("**/api/membership", route => route.fulfill({ status:200, contentType:"application/json", body:JSON.stringify({ owner:uid, subscription:null }) }));
   // Next.js may abort a document navigation while the prior page is still
   // settling; retry only that transient Chromium error, not test assertions.
   const navigate = async path => {

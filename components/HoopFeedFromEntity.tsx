@@ -1,4 +1,6 @@
 "use client";
+import { getEffectiveMembership } from "../lib/billing/client-membership";
+
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -20,7 +22,7 @@ export default function HoopFeedFromEntity({ id, column }: { id: string; column:
       const userId = session.user.id;
       const [{ data: profile }, { data: subscription }, { data: role }] = await Promise.all([
         supabase.from("profiles").select("account_type").eq("id", userId).maybeSingle(),
-        supabase.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id", userId).maybeSingle(),
+        getEffectiveMembership(userId),
         supabase.rpc("get_current_user_admin_role"),
       ]);
       if (!active || !getHoopCheckEntitlements({ accountType: profile?.account_type, subscription, isAdmin: role === "admin" }).canReadHoopFeed) return;

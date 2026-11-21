@@ -1,0 +1,19 @@
+Starting Metro Bundler
+warning: Bundler cache is empty, rebuilding (this may take a minute)
+| (node:1580) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:1581) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+iOS node_modules/expo-router/entry.js ▓▓░░░░░░░░░░░░░░ 16.0% ( 49/200)
+iOS node_modules/expo-router/entry.js ▓▓▓▓▓░░░░░░░░░░░ 36.9% (308/570)
+iOS node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓░░░░░░░░ 52.9% (487/693)
+iOS node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓░░░░░░░░ 54.4% (590/800)
+iOS node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓░░░░░░░ 62.2% (746/963)
+iOS node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 66.5% ( 998/1224)
+iOS node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 67.7% (1139/1605)
+iOS node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 67.7% (1301/1766)
+iOS node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 67.7% (1511/1851)
+iOS node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 80.2% (1742/1947)
+iOS node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 91.8% (2055/2156)
+iOS Bundling failed 39255ms node_modules/expo-router/entry.js (2273 modules)
+SyntaxError: node_modules/expo-router/assets/unmatched.png: The "list" argument must be an instance of SharedArrayBuffer, ArrayBuffer or ArrayBufferView.
