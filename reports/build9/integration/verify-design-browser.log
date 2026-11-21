@@ -1,3 +1,13 @@
 PASS light: fresh/restored-auth onboarding dismissal, dashboard scroll and directory/tab input
 PASS light: public About/search gate, native connections retry/fan scope/tabs/empty/navigation, decoded logo/failure fallback, 320px layout
 PASS dark: fresh/restored-auth onboarding dismissal, dashboard scroll and directory/tab input
+locator.waitFor: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for getByText('Connections could not be loaded. Please try again.', { exact: true }) to be visible[22m
+
+    at /workspace/Hoopcheck/apps/mobile/scripts/verify-design-browser.cjs:68:91 {
+  log: [
+    "  - waiting for getByText('Connections could not be loaded. Please try again.', { exact: true }) to be visible"
+  ],
+  name: 'TimeoutError'
+}

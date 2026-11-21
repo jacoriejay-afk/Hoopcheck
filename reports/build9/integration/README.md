@@ -25,7 +25,7 @@ The missing objects have existing definitions; do not create substitute tables o
 5. `20261119075626_restrict_private_profile_columns.sql`: removes private raw reads after compatible owner-read clients exist. Build 7 compatibility is excluded.
 6. Rehearse the editor write candidate; run the integration gate and write preflight plus real owner/non-owner AAL1/AAL2 PostgREST requests before accepting hosted parity.
 
-No hosted project credentials were supplied or accessed. Local fixtures demonstrate selected migration contracts; they do not prove complete hosted schema parity or a full historical migration replay.
+Connected Supabase tools were discovered and used for isolated-project metadata and rollback-only rehearsal. Local fixtures demonstrate selected migration contracts; they do not prove complete hosted schema parity or a full historical migration replay.
 
 ## Features preserved in integrated source
 
@@ -33,7 +33,7 @@ Existing Home dashboard/team/feed previews, feed posts/replies/reactions/polls/s
 
 ## Membership/payment verification
 
-Local entitlement matrix and server tests cover existing roles/tiers, trial eligibility/recovery, StoreKit ownership/source synchronization, checkout policy, ambassador invoice/refund adjustments and webhook handling. Isolated SQL covers StoreKit sources, trial reservation uniqueness and ambassador lifecycle. No Stripe test-mode API calls, Apple Sandbox purchases, renewal, cancellation or restore on a physical device were performed. Those remain acceptance blockers; production billing was untouched.
+Local entitlement matrix and server tests cover existing roles/tiers, trial eligibility/recovery, StoreKit ownership/source synchronization, checkout policy, ambassador invoice/refund adjustments and webhook handling. Isolated SQL covers StoreKit sources, trial reservation uniqueness and ambassador lifecycle. Read-only Stripe test-mode catalog and Tax API calls were performed (details below). No Stripe checkout/payment mutations, Apple Sandbox purchases, renewal, cancellation or restore on a physical device were performed. Those remain acceptance blockers; production billing was untouched.
 
 ## iOS release preparation and manual acceptance
 
@@ -58,4 +58,15 @@ Final approval gates: hosted schema/ACL/hook inventory and reviewed isolated mig
 - Twelve native web browser suites PASS using synthetic intercepted data: membership, MFA, profiles, profile research/Passport, media, editor, groups, games, feed, discovery, theme preference and design/navigation. See `verify-*-browser.log` and `discovery-rerun.log`. Initial discovery text selector timed out; fixed to target the visible directory test ID and assert the route. This is a test correction, not an app redesign.
 - Implementation commit `dd8ddda4`; integration merge `8c37c382`. Draft PR #755: https://github.com/jacoriejay-afk/Hoopcheck/pull/755. Existing #747–#753 remain open/unmodified. Final CI must be checked against the final report/test-selector commit, not substituted from the implementation commit.
 
-No remaining failure in the executed local tests. This does not remove the migration-tooling, hosted acceptance, credential, native compilation, device or release-approval gates above. No claim that all requested Build 9 work is complete.
+Design browser initially timed out in its injected 503 error-state assertion; a final rerun using a terminal 400 rejection passed both themes (`design-final.log`). This separately tests explicit retry UI without transport retries racing the assertion. Original failures remain in diagnostic logs. No remaining failure in the final local verification runs. This does not remove the migration-tooling, hosted acceptance, credential, native compilation, device or release-approval gates above. No claim that all requested Build 9 work is complete.
+
+
+## Connected isolated environment findings
+
+Supabase `HoopCheck-PR17-Test` (`vcprqpjkyubzzcjatdpx`) is ACTIVE_HEALTHY. Fresh metadata confirms missing `membership_entitlements`, `get_own_profile()`, MFA helper, account deletion requests and Apple billing config. Contrary to older reports, `private.is_active_subscriber()` is present. Recent hosted migrations include `20261121062342 isolate_profile_auth_uid_helper_and_restrict_owner_v2`, newer than the repository profile boundary.
+
+The installed `get_public_player_profile(uuid)` is SECURITY DEFINER, owned by `hoopcheck_public_profile_reader`, with empty search_path. A BEGIN/ROLLBACK rehearsal of the existing MFA → StoreKit → profile boundary → restrictions → editor candidate failed with `42501: must be owner of function get_public_player_profile`. A rollback-only ownership reconciliation attempt was denied too. No persistent hosted schema or rows changed; subsequent inventory confirmed missing objects remained absent. Do not overwrite this newer security work. A connection able to act as the actual function owner, plus reconciliation of this installed scoped-definer contract, is required before schema parity can be restored. This is an authorization/environment blocker, not evidence that local synthetic SQL passed on hosted infrastructure.
+
+Read-only Stripe account selection explicitly used `livemode=false`. Six active USD recurring test prices: Pro $4.99/month, $25.45/six months, $53.89/year; Premium $9.99/month, $50.95/six months, $107.89/year. All six API records are test mode. No prices or approved rules changed. Trial periods are null on Price records; seven-day eligibility is applied by checkout policy and must still be accepted end to end. Tax settings are active with default tax behavior `inferred_by_currency` and tax code `txcd_10000000`; per-price behavior is unspecified. No missing-tax-default defect is established. Product-to-environment deployment bindings and actual checkout tax calculations remain unverified.
+
+CI checked for `1755c298`: root CI, Mobile App Checks, NATIVE-2 Security Tests, entitlement matrix and launch gate SUCCESS; unsigned iOS IN_PROGRESS. Subsequent fixture/evidence commit requires its own CI and is not automatically cleared by these results.

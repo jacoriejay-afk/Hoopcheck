@@ -21,7 +21,8 @@ const uid='11111111-1111-4111-8111-111111111111', team='22222222-2222-4222-8222-
     if(url.pathname==='/auth/v1/user')return json(user);
     if(url.pathname==='/rest/v1/rpc/get_public_follow_list'){
      rpcCalls++; const body=JSON.parse(route.request().postData()||'{}');assert.equal(body.p_mode==='following'?body.p_user_id:body.p_target_id,uid);assert.equal(body.p_target_type,body.p_mode==='followers'?'fan':null);
-     if(fail){return json({},503);}
+     // Use a terminal rejection so transport 503 retries cannot race the UI assertion.
+     if(fail){return json({message:'Synthetic connection rejection'},400);}
      if(body.p_mode==='followers')return json([]);
      return json([{target_type:'team',target_id:team,display_name:'Design Club'},{target_type:'fan',target_id:uid,id:uid,display_name:'Design Fan'},{target_type:'player',target_id:uid,id:uid,account_type:'player',display_name:'MUST NOT SHOW PLAYER'}]);
     }
