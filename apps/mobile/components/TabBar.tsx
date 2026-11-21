@@ -1,6 +1,7 @@
+import { BlurView } from "expo-blur";
 import { useMotionSetting } from "../src/motion/Provider";
 import { useEffect, useRef, useState } from "react";
-import { Keyboard, Pressable, Text, View } from "react-native";
+import { AccessibilityInfo, Platform, StyleSheet, Keyboard, Pressable, Text, View } from "react-native";
 import { usePathname, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -19,6 +20,14 @@ const tabs = [
 ] as const;
 export function TabBar() {
   const path = usePathname();
+  // Start opaque until the accessibility preference is known.
+  const [reduceTransparency, setReduceTransparency] = useState(true);
+  useEffect(() => {
+    let active = true;
+    void AccessibilityInfo.isReduceTransparencyEnabled().then(value => { if (active) setReduceTransparency(value); }).catch(() => {});
+    const subscription = AccessibilityInfo.addEventListener("reduceTransparencyChanged", setReduceTransparency);
+    return () => { active = false; subscription.remove(); };
+  }, []);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   useEffect(() => {
     const show = Keyboard.addListener("keyboardDidShow", () => setKeyboardVisible(true));
@@ -47,7 +56,8 @@ export function TabBar() {
   const indicator = useAnimatedStyle(() => ({ transform: [{ translateX: x.get() }], opacity: opacity.get() }));
   if (keyboardVisible) return null;
   if (["/", "/sign-in", "/sign-up", "/forgot-password", "/reset-password", "/auth/callback", "/choose-username"].includes(path)) return null;
-  return <View onLayout={event => setWidth(event.nativeEvent.layout.width)} style={{ backgroundColor: theme.glassFill, marginHorizontal: 12 + Math.max(insets.left, insets.right), marginBottom: Math.max(8, insets.bottom), borderRadius: theme.courtside.navigation.radius, borderCurve: "continuous", overflow: "hidden", borderWidth: 1, borderColor: theme.border }}>
+  return <View onLayout={event => setWidth(event.nativeEvent.layout.width)} style={{ backgroundColor: theme.surface, marginHorizontal: 12 + Math.max(insets.left, insets.right), marginBottom: Math.max(8, insets.bottom), borderRadius: theme.courtside.navigation.radius, borderCurve: "continuous", overflow: "hidden", borderWidth: 1, borderColor: theme.border }}>
+    {Platform.OS === "ios" && !reduceTransparency ? <BlurView pointerEvents="none" accessible={false} intensity={40} tint={theme.dark ? "dark" : "light"} style={StyleSheet.absoluteFill} /> : null}
     {index >= 0 ? <Animated.View pointerEvents="none" style={[{ position: "absolute", top: 0, left: 0, height: 3, width: width / tabs.length * .56, marginLeft: width / tabs.length * .22, backgroundColor: theme.button }, indicator]} /> : null}
     <View accessibilityRole="tablist" style={{ flexDirection: "row" }}>{tabs.map((tab, i) => <Pressable key={tab.route} testID={`tab-${tab.label.toLowerCase()}`} accessibilityRole="tab" accessibilityState={{ selected: index === i }} accessibilityLabel={tab.route === "/feed" && account?.user.accountType === "fan" ? "FAN HQ" : tab.label} onPress={() => { if (path !== tab.route) { pending.current = tab.route; router.navigate(tab.route); } }} style={({ pressed }) => ({ flex: 1, minWidth: 0, minHeight: theme.courtside.navigation.height, paddingVertical: 6, justifyContent: "center", alignItems: "center", gap: 3, opacity: pressed ? .65 : 1 })}>
 

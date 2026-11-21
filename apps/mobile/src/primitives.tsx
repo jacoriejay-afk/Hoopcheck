@@ -1,13 +1,11 @@
 import { Children, type ReactNode } from "react";
-import { BlurView } from "expo-blur";
-import { Platform, Pressable, Text, TextInput, View, type PressableProps, type TextInputProps, type ViewProps } from "react-native";
+import { Pressable, Text, TextInput, View, type PressableProps, type TextInputProps, type ViewProps } from "react-native";
 import { useEntryTheme } from "./theme";
 
 export function GlassCard({ style, children, ...props }: ViewProps) {
   const t = useEntryTheme();
   const frame = [{ borderRadius: t.radius.card, borderCurve: "continuous" as const, borderWidth: 1, borderColor: t.border, overflow: "hidden" as const, padding: t.spacing.lg, backgroundColor: t.surface }, style];
   return <View {...props} style={frame}>
-    {Platform.OS === "ios" && <BlurView pointerEvents="none" intensity={12} tint={t.dark ? "dark" : "light"} style={{ position: "absolute", inset: 0, backgroundColor: t.glassFill }} />}
     {children}
   </View>;
 }
