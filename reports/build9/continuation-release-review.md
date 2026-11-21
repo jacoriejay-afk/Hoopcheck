@@ -80,3 +80,35 @@ Before merging: finish and visually review all five design surfaces, resolve
 compatible dependency blockers, verify the complete final-head test matrix and
 branch protection requirements, and establish the separate backend release gate.
 Physical iPhone interaction remains unverified on this Linux machine.
+
+## Phase 3C checklist update — 2026-11-21
+
+Earlier sections record historical continuation evidence. Current bounded scope,
+raw check results and screenshots are in [Phase 3C](phase3c/README.md), from
+#751 exact head `19baa225`, whose build/mobile/security/unsigned simulator compile
+all passed. The missing Build 9 master remains unrecovered; this is not a replacement.
+
+- [x] Current branch root/mobile TypeScript, 215 native tests, entitlement matrix,
+  website build, surface/theme checks and iOS/web exports pass locally.
+- [x] All 12 localhost browser fixture suites pass; screenshots show actual RN Web
+  in both themes. Full lint: zero errors, 125 inherited warnings.
+- [x] Passport owner/role revalidation, mount/foreground cancellation, timeout,
+  availability, local-file validation and cleanup paths have behavioral tests.
+  Local iOS prebuild permission assertions pass without adding camera, microphone,
+  tracking, contacts, location or Documents exposure.
+- [x] Membership preview reads current bootstrap rights without changing plans,
+  pricing, entitlements, authentication or subscription behavior.
+- [x] Scoped public career links and nonexpired roster opportunities use existing
+  RLS/read contracts; stats summarize only authorized career records.
+- [ ] A compatible current-team identity projection, box-score source and awards
+  source are still absent from the reviewed native-safe contracts. Do not label
+  historical links as a current roster or derived record counts as performance.
+- [ ] New exact-head CI completion (baseline success is not branch acceptance).
+- [ ] Expo Doctor: two network-dependent checks still fail, 16/18 passed.
+- [ ] Supported iOS binary native PDF/share-sheet acceptance, simulator visuals,
+  physical iPhone touch/keyboard/VoiceOver/performance and Build 7 freeze evidence.
+- [ ] Inherited hosted catalog rehearsal, installed-client/privacy compatibility,
+  approved backend rollback/rollout and independent release approval.
+
+Release remains blocked. No merge, deploy, EAS, production, Stripe or Supabase
+mutation was performed. Apple activation remains unchanged.
