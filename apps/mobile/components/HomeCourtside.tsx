@@ -1,3 +1,4 @@
+import { CourtsideBanner } from "./CourtsideBanner";
 import { useCallback, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -8,7 +9,7 @@ import { supabase } from "../src/lib/supabase";
 import { visibleConnections, type PublicConnection } from "../src/native/connectionPresentation";
 import { readBasketballSide, readLiveGames } from "../src/native/liveGames";
 import { readFeedPage, type FeedPost } from "../src/native/feedClient";
-import { Skeleton } from "./Motion";
+import { Reveal, Skeleton } from "./Motion";
 import { Scoreboard } from "./Scoreboard";
 import { EntityArtwork } from "./EntityArtwork";
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
@@ -56,14 +57,14 @@ export function HomeCourtside() {
   if (loading) return <Skeleton review />;
   if (!account) return <View style={{ gap: t.spacing.sm }}><Text accessibilityRole="alert" style={{ color: t.muted }}>{error || "Verify your account to personalize Home."}</Text><Button secondary onPress={retry}>Retry account verification</Button></View>;
   return <View style={{ gap: t.courtside.sectionGap, marginBottom: t.spacing.xl }}>
-    <View style={{ gap: t.spacing.sm }}><SectionHeader>{account.user.displayName ? `Welcome, ${account.user.displayName}` : "Welcome to courtside"}</SectionHeader><Text style={{ color: t.muted, ...t.type.body }}>Your teams. Your game. Your community.</Text></View>
+    <Reveal><CourtsideBanner eyebrow="YOUR COURTSIDE" title={account.user.displayName ? `Welcome, ${account.user.displayName}` : "Welcome to courtside"}>Your teams. Your game. Your community.</CourtsideBanner></Reveal>
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: t.spacing.sm }}>{[{ route: "/fan-live", label: "Game Center" }, { route: "/team-hub/groups", label: "HoopGroups" }, { route: "/reels", label: "Highlight Hub" }].map(item => <Pressable key={item.route} accessibilityRole="link" onPress={() => router.push(item.route as "/feed")} style={({ pressed }) => ({ minHeight: 44, paddingHorizontal: t.spacing.md, justifyContent: "center", backgroundColor: t.accentSurface, borderRadius: t.radius.pill, opacity: pressed ? .7 : 1 })}><Text style={{ color: t.accent, fontWeight: "600" }}>{item.label}</Text></Pressable>)}</View>
     {!data ? <Skeleton /> : <>
-      <SectionHeader>My Teams</SectionHeader>
-      {data.teams === null ? <Text accessibilityRole="alert" style={{ color: t.muted }}>Your teams could not load.</Text> : !data.teams.length ? <View style={{ gap: t.spacing.sm }}><Text style={{ color: t.muted }}>Follow a team to keep your basketball network close.</Text><Button secondary onPress={() => router.push("/teams")}>Find teams</Button></View> : data.teams.slice(0, 4).map(team => <PressableCard key={team.target_id} accessibilityRole="link" onPress={() => router.push({ pathname: "/teams/[id]", params: { id: team.target_id } })}><View style={{ flexDirection: "row", alignItems: "center", gap: t.spacing.md }}><EntityArtwork name={team.display_name || "Team"} kind="teams" size={40} /><Text style={{ flex: 1, color: t.foreground, ...t.type.section }}>{team.display_name || "Team"}</Text><Text style={{ color: t.accent }}>View</Text></View></PressableCard>)}
       <SectionHeader>Live &amp; upcoming</SectionHeader>
       {!gameAccess ? <Text style={{ color: t.muted }}>Game Center is available with eligible memberships.</Text> : data.games === null ? <Text accessibilityRole="alert" style={{ color: t.muted }}>Scores could not load.</Text> : !data.games.games.length ? <Text style={{ color: t.muted }}>No current games. Check back for the next tip-off.</Text> : [...data.games.games].sort((a, b) => Number(b.status === "live") - Number(a.status === "live")).slice(0, 3).map(game => <PressableCard key={game.id} onPress={() => router.push({ pathname: "/fan-live", params: { gameId: game.id } })}><Scoreboard game={game} teams={data.games!.teams} /></PressableCard>)}
       {action("/fan-live", "All games")}
+      <SectionHeader>My Teams</SectionHeader>
+      {data.teams === null ? <Text accessibilityRole="alert" style={{ color: t.muted }}>Your teams could not load.</Text> : !data.teams.length ? <View style={{ gap: t.spacing.sm }}><Text style={{ color: t.muted }}>Follow a team to keep your basketball network close.</Text><Button secondary onPress={() => router.push("/teams")}>Find teams</Button></View> : data.teams.slice(0, 4).map(team => <PressableCard key={team.target_id} accessibilityRole="link" onPress={() => router.push({ pathname: "/teams/[id]", params: { id: team.target_id } })}><View style={{ flexDirection: "row", alignItems: "center", gap: t.spacing.md }}><EntityArtwork name={team.display_name || "Team"} kind="teams" size={40} /><Text style={{ flex: 1, color: t.foreground, ...t.type.section }}>{team.display_name || "Team"}</Text><Text style={{ color: t.accent }}>View</Text></View></PressableCard>)}
       <SectionHeader>From HoopFeed</SectionHeader>
       {!feedAccess ? <Text style={{ color: t.muted }}>Verify your membership to read community posts.</Text> : data.posts === null ? <Text accessibilityRole="alert" style={{ color: t.muted }}>HoopFeed preview could not load.</Text> : !data.posts.length ? <Text style={{ color: t.muted }}>No community posts available yet.</Text> : data.posts.map(post => <PressableCard key={post.id} onPress={() => router.push({ pathname: "/feed", params: { post: post.id } })}><Text style={{ color: t.muted, ...t.type.caption }}>{post.profiles?.display_name || "HoopCheck member"} · {new Date(post.created_at).toLocaleDateString()}</Text><Text numberOfLines={3} style={{ color: t.foreground, ...t.type.body }}>{post.body || (post.video_url ? "Watch a community highlight" : "View community media")}</Text></PressableCard>)}
       {action("/feed", "Open HoopFeed")}
