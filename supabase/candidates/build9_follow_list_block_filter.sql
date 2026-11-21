@@ -81,14 +81,23 @@ AS $function$
         AND (requested.profile_visibility='public' OR requested.id=auth.uid())
     ))
   )
+  -- Filter only the *actual parties* to this follow edge. Never use
+  -- caller-supplied p_user_id/p_target_id as independent block subjects;
+  -- team/league UUIDs are not user accounts.
+  -- Preserve the historical anonymous public discovery contract: an
+  -- anonymous request has no auth.uid() from which to evaluate a user block.
   AND (
     (SELECT auth.uid()) IS NULL
     OR NOT EXISTS (
       SELECT 1 FROM public.user_blocks ub
       WHERE (
-        (ub.blocker_id = (SELECT auth.uid()) AND ub.blocked_id IN (fr.follower_id, fr.target_id, p_user_id, p_target_id))
+        (ub.blocker_id = (SELECT auth.uid())
+          AND (ub.blocked_id = fr.follower_id
+            OR (fr.target_type IN ('player','fan') AND ub.blocked_id = fr.target_id)))
         OR
-        (ub.blocked_id = (SELECT auth.uid()) AND ub.blocker_id IN (fr.follower_id, fr.target_id, p_user_id, p_target_id))
+        (ub.blocked_id = (SELECT auth.uid())
+          AND (ub.blocker_id = fr.follower_id
+            OR (fr.target_type IN ('player','fan') AND ub.blocker_id = fr.target_id)))
       )
     )
   )
