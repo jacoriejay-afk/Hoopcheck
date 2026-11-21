@@ -7,7 +7,7 @@ import "../network.css";
 
 type Agent = { id:string; account_type:string; display_name:string|null; username:string|null;
  avatar_url:string|null; avatar_moderation_status:string|null; country:string|null;
- bio:string|null; experience_summary:string|null; agency_name:string|null; website_url:string|null; identity_checked:boolean; };
+ bio:string|null; experience_summary:string|null; agency_name:string|null; website_url:string|null; identity_checked:boolean; professionally_reviewed:boolean; };
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default function AgentProfilePage(){
@@ -41,7 +41,7 @@ export default function AgentProfilePage(){
           : <span className="hc-network-avatar hc-network-profile-avatar hc-network-fallback">{name.slice(0,2).toUpperCase()}</span>}
         <div><p className="hc-network-eyebrow">{person.account_type==="scout"?"SCOUT PROFILE":"AGENT PROFILE"}</p>
           <h1>{name}</h1><p>{person.username?"@"+person.username+" · ":""}{person.country||"Country not listed"}</p>
-          <span className="hc-network-verification">{person.identity_checked?"Identity checked":"Identity not verified"}</span>
+          <span className="hc-network-verification">{person.professionally_reviewed?"HoopCheck reviewed":person.identity_checked?"Identity checked":"Not yet reviewed"}</span>
         </div>
       </div>
     </header>
