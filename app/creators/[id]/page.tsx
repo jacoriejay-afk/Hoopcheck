@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect,useState } from "react";
-import { supabase } from "../../../lib/supabase";
 import "../../agents/network.css";
 
 type Profile={id:string;display_name:string|null;username:string|null;avatar_url:string|null;avatar_moderation_status:string|null;country:string|null;};
@@ -25,13 +24,12 @@ export default function CreatorProfilePage(){
     let active=true;
     if(!uuid.test(id||"")){setError("Creator profile not found.");setLoading(false);return;}
     void(async()=>{
-      const {data,error:loadError}=await supabase.from("creator_profiles")
-        .select("profile_id,category,headline,description,website_url,profiles!inner(id,display_name,username,avatar_url,avatar_moderation_status,country,profile_visibility,moderation_status)")
-        .eq("profile_id",id).eq("is_published",true).eq("profiles.profile_visibility","public").eq("profiles.moderation_status","normal").maybeSingle();
+      const response=await fetch("/api/network/creators?id="+encodeURIComponent(id),{cache:"no-store"});
+      const payload=await response.json();
       if(!active)return;
-      if(loadError)setError("Creator profile could not be loaded.");
-      else if(!data)setError("This creator showcase is private, unpublished or unavailable.");
-      else setCreator(data as unknown as Creator);
+      if(!response.ok)setError(payload.error||"This creator showcase is unavailable.");
+      else if(!payload.creator)setError("This creator showcase is private or unpublished.");
+      else setCreator(payload.creator as Creator);
       setLoading(false);
     })().catch(()=>{if(active){setError("Creator profile could not be loaded.");setLoading(false);}});
     return()=>{active=false;};
