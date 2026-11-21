@@ -4321,12 +4321,12 @@ html.theme-dark .hc-team-profile-hero .hc-team-social-stats :where(strong,small)
 .hc-membership-page .hc-membership-actions .hc-cancel-subscription {
   border-color: var(--hc-card-border, #b4aea7);
   background: transparent;
-  color: #171717;
+  color: var(--hc-text, #171717);
   box-shadow: none;
 }
 .hc-membership-page .hc-membership-actions .hc-cancel-subscription:hover {
   background: rgba(255, 90, 31, .08);
-  color: #171717;
+  color: var(--hc-text, #171717);
 }
 .hc-membership-page :where(a, button, input, select, textarea):focus-visible {
   outline: 2px solid var(--hc-orange, #ff5a1f);
@@ -4345,4 +4345,28 @@ html.theme-dark .hc-team-profile-hero .hc-team-social-stats :where(strong,small)
   .hc-membership-page .plan-top {
     flex-wrap: wrap;
   }
+}
+
+/* Membership theme parity: use the same surface and typography tokens in both
+   themes. Avoid black-on-dark cards or white labels drawn outside pale panels. */
+.hc-membership-page :where(.active-card, .plan-card, .hc-trial-note, .hc-membership-value, .hc-membership-loading) {
+  background: var(--hc-surface, #fff);
+  color: var(--hc-text, #171717);
+  border-color: var(--hc-divider, #deded8);
+}
+.hc-membership-page .plan-card.featured,
+.hc-membership-page .hc-membership-plan.is-current {
+  border-color: var(--hc-orange, #ff5a1f);
+}
+.hc-membership-page :where(.plan-card h3, .plan-card .price strong, .active-card h2, .hc-membership-value strong) {
+  color: var(--hc-text, #171717);
+}
+.hc-membership-page :where(.plan-description, .plan-card ul, .price span, .active-card p, .active-card .legal-note, .hc-membership-value p, .subscription-legal) {
+  color: var(--hc-text-muted, #666);
+}
+.hc-membership-page .active-card p strong {
+  color: var(--hc-text, #171717);
+}
+.hc-membership-page :where(.active-card .eyebrow, .plan-card .eyebrow) {
+  color: var(--hc-orange, #ff5a1f);
 }
