@@ -49,6 +49,15 @@ assert.ok(webhook.includes('subscription.metadata?.user_id !== userId'), "Webhoo
 assert.ok(webhook.includes('session.metadata?.stripe_trial_reserved === "true"'), "Trial redemption must require reservation marker");
 assert.ok(webhook.includes('subscription.status !== "trialing"'), "Trial redemption must require trialing subscription");
 assert.ok(webhook.includes('subscription.metadata?.stripe_trial_reserved !== "true"'), "Subscription must carry trial marker");
+assert.ok(webhook.includes('event.type === "checkout.session.expired"'), "Webhook must handle signed Checkout expiration");
+assert.ok(webhook.includes('expiredSession.metadata?.stripe_trial_reserved === "true"'), "Expire only explicitly reserved trials");
+assert.ok(webhook.includes('expiredSession.metadata?.user_id !== userId'), "Expired event must prove owner metadata");
+assert.ok(webhook.includes('claim?.state === "reserved" && claim.checkout_session_id === expiredSession.id'), "Expire only exact bound reservation");
+assert.ok(webhook.includes('stripe.checkout.sessions.retrieve(expiredSession.id)'), "Expiry must be re-verified directly with Stripe");
+assert.ok(webhook.includes('canReleaseExpiredTrialSession('), "Expiry must apply conservative Stripe session policy");
+assert.ok(webhook.includes('"mark_expired_stripe_trial"'), "Expiry must retain terminal claim via service-role RPC");
+assert.ok(webhook.indexOf('stripe.checkout.sessions.retrieve(expiredSession.id)') < webhook.indexOf('"mark_expired_stripe_trial"'), "Expiry must verify Stripe session before mutation");
+assert.ok(webhook.includes('expireError || expired !== true'), "Failed expiration RPC must return retryable webhook error");
 assert.ok(webhook.includes('"redeem_stripe_trial"'), "Webhook must redeem bound claim");
 assert.ok(webhook.indexOf('"redeem_stripe_trial"') < webhook.indexOf('await saveSubscription(userId, subscription);'), "Trial claim must redeem before membership is saved");
 assert.ok(checkout.includes('if (!session.url || (trialEligible && !isTrustedStripeCheckoutUrl(session.url))) {'), "Checkout must reject missing hosted URL");
