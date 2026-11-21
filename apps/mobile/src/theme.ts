@@ -17,7 +17,7 @@ export const tokens = {
     card: { radius: 24, compactPadding: 12, featuredPadding: 18 },
     hero: { radius: 28, minHeight: 192 },
     sectionGap: 26,
-    court: { background: "#0D1930", end: "#382024", ink: "#FFFFFF", muted: "#E3EAF1", line: "rgba(255,255,255,0.18)", orange: "#FF9855" },,
+    court: { background: "#0D1930", end: "#382024", ink: "#FFFFFF", muted: "#E3EAF1", line: "rgba(255,255,255,0.18)", orange: "#FF9855" },
     typography: { score: 36, hero: 38, eyebrow: 11 },
   },
   // QR codes require a fixed light optical background in either theme.
