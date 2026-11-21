@@ -12,3 +12,8 @@
 html.theme-dark .hc-live-hub-page .hc-live-card__score{color:#fff}
 html.theme-dark .hc-live-hub-page .hc-live-badge--visible{color:#fff!important;background:#ed3028!important}
 @media(max-width:480px){.hc-live-hub-page .hc-live-card__crest.hc-live-team-logo{flex-basis:44px;width:44px;height:44px;min-width:44px;min-height:44px}}
+
+/* Second Screen: lazy fan picks never compete for space with game actions. */
+.hc-live-card__prediction { width: 100%; padding: 8px 12px 12px; border-top: 1px solid var(--hc-card-border); }
+.hc-live-card__prediction .hc-prediction { margin: 0; }
+@media (max-width: 600px) { .hc-live-card__prediction { padding-inline: 8px; } }
