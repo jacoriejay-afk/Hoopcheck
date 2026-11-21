@@ -92,7 +92,7 @@ async function fixture(browser,theme,allowed=true){
     await page.getByRole('img',{name:'HoopFeed photo',exact:true}).waitFor();
     await page.getByRole('img',{name:'HoopFeed photo',exact:true}).scrollIntoViewIfNeeded();
     try {
-      await page.waitForFunction(()=>{const image=document.querySelector('img[alt="HoopFeed photo"]');return image&&image.complete&&image.naturalWidth===640;},{timeout:15000});
+      await page.waitForFunction(()=>{const image=document.querySelector('img[alt="HoopFeed photo"]');return image&&image.complete&&image.naturalWidth===640;},null,{timeout:15000});
     } catch (error) {
       console.error('Feed image diagnostic', JSON.stringify(await page.evaluate(() => {
         const image=document.querySelector('img[alt="HoopFeed photo"]');
