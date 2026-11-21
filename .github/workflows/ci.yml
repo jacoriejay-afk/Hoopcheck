@@ -147,7 +147,9 @@ jobs:
         run: npm run test:stripe-trial
 
       - name: Verify all Stripe price tier and interval mappings
-        run: node --test scripts/test-stripe-price-mapping.mjs
+        run: |
+          node --test scripts/test-stripe-price-mapping.mjs
+          node --test scripts/test-checkout-membership-policy.mjs
 
       - name: Verify fail-closed Stripe trial recovery policy
         run: npm run test:stripe-trial-recovery

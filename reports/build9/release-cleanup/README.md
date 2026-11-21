@@ -53,7 +53,7 @@ Reconcile canonical follow_relationships and installed profile-lock trigger base
 
 ## Native identity and acceptance
 
-apps/mobile/app.json: online.hoopcheck.app, version 0.2.0, associated domain applinks:hoopcheck.online. App Store ID 6835366982. EAS project 62f822cb-ab9a-42ba-8456-007d2822ef70; remote counters, requireCommit=true, production autoIncrement=true. No local buildNumber proves current remote counter or installed CFBundleVersion. Signing validity, team/profile, remote build counter and installed binary require current authenticated evidence. No signing modification.
+apps/mobile/app.json: online.hoopcheck.app, version 0.2.0, associated domain applinks:hoopcheck.online. App Store ID 6835366982. EAS project 62f822cb-ab9a-42ba-8456-007d2822ef70; remote counters, requireCommit=true, production autoIncrement=true. No local buildNumber proves current remote counter or installed CFBundleVersion. Read-only EAS whoami returned Not logged in; build:version:get --platform ios --profile production --non-interactive --json failed because an Expo account/EXPO_TOKEN is required. Signing validity, team/profile, remote build counter and installed binary require current authenticated evidence. No signing modification.
 
 Physical-iPhone acceptance (pending): record device/iOS, binary version/build/source, cold/relaunch/background, account switch, MFA, owner editing/privacy, Home, feed posting/media/polls, games refresh/chat, groups join/leave/moderation, profiles/search/directories, Passport PDF/share cancellation and file cleanup, light/dark/system, VoiceOver/large text, keyboard/scroll/error/retry.
 
@@ -64,3 +64,8 @@ Apple Sandbox acceptance (pending): record environment, product IDs and sandbox 
 All six workflows passed on b26156af (baseline-ci.json), including unsigned iOS simulator compilation. Changes require fresh exact-head CI; final results will be recorded on PR #755. Native compilation runs through the existing macOS workflow, not EAS. Local Linux has no Xcode.
 
 Recommendation: HOLD. Remaining external gates: four stale test prices and environment bindings; tax scope/configuration/calculation; actual payment/refund/commission acceptance; authorized hosted migration runner and hosted JWT verification; signing/counter evidence; physical-iPhone and Apple Sandbox acceptance. No merge or release approval implied by green CI.
+
+
+## Additional final local evidence
+
+Production build and included bundle/theme/Apple trust-root tracing checks PASS. Mobile full and production audit: zero vulnerabilities. Fresh local prebuild and generated iOS bundle/permission assertions PASS. Checkout regression exercises all six approved prices and explicitly rejects all four stale catalog amounts before billing. The complete server script collection was rerun directly, with individual assertions in hoop-server-final.log; the earlier Node runner summary counts file-level tests as well as named cases. Additional privacy/business/moderation checks pass (27 tests). No native module or mobile dependency changes.
