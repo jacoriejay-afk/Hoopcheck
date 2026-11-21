@@ -17,6 +17,7 @@ for (const required of [
   'process.env.HOOPCHECK_STRIPE_SANDBOX_TRIAL_ENABLED === "true"',
   'process.env.NEXT_PUBLIC_SUPABASE_URL === "https://vcprqpjkyubzzcjatdpx.supabase.co"',
   'process.env.HOOPCHECK_STRIPE_TEST_SUPABASE_URL === process.env.NEXT_PUBLIC_SUPABASE_URL',
+  'siteUrl === "https://hoopcheck-stripe-sandbox-git-fix-website-membe-b926cc-hoopcheck.vercel.app"',
   'stripeConfigMatches && configuredMode === "test"',
 ]) {
   assert.ok(checkout.includes(required), `Trial test rollout missing required isolation guard: ${required}`);
