@@ -290,6 +290,7 @@ export default function TeamsPage() {
         <Link href="/teams" aria-current="page">{t("mensTeams")}</Link>
         <Link href="/womens">{t("womensTeams")}</Link>
         <Link href="/search">{t("search")}</Link>
+        <Link href="/trust-index">Trust Index</Link>
       </nav>
 
       <section className="hc-team-directory-filters" aria-label={t("directoryTitle")}>
