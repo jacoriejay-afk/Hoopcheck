@@ -11,7 +11,9 @@ const validHttps=(raw:string)=>{try{const u=new URL(raw);return u.protocol==="ht
 
 export default function CreatorStudioPage(){
   const [userId,setUserId]=useState("");
-  const [accountPublic,setAccountPublic]=useState(false);
+  const [accountNormal,setAccountNormal]=useState(true);
+  const [publicName,setPublicName]=useState("");
+  const [country,setCountry]=useState("");
   const [profileReady,setProfileReady]=useState(false);
   const [category,setCategory]=useState<Category>("media");
   const [headline,setHeadline]=useState("");
@@ -33,11 +35,12 @@ export default function CreatorStudioPage(){
       const payload=await response.json();
       if(!active)return;
       if(!response.ok||!payload.profile){setError(payload.error||"Creator Studio is unavailable.");setLoading(false);return;}
-      setAccountPublic(payload.profile.profile_visibility==="public"&&payload.profile.moderation_status==="normal");
+      setAccountNormal(payload.profile.moderation_status==="normal");
       setProfileReady(true);
       if(payload.creator){
         const value=payload.creator.category;
         if(categoryOptions.some(([key])=>key===value))setCategory(value as Category);
+        setPublicName(payload.creator.public_name||"");setCountry(payload.creator.country||"");
         setHeadline(payload.creator.headline||"");setDescription(payload.creator.description||"");
         setWebsite(payload.creator.website_url||"");setPublished(Boolean(payload.creator.is_published));
       }
@@ -51,6 +54,7 @@ export default function CreatorStudioPage(){
     setNotice("");setError("");
     const url=website.trim();
     if(url&&!validHttps(url)){setError("Website must be a valid https:// address without embedded login details.");return;}
+    if(published&&publicName.trim().length<2){setError("Choose a public name for the creator directory.");return;}
     if(headline.trim().length>140||description.trim().length>600){setError("Keep your headline under 140 characters and description under 600.");return;}
     setSaving(true);
     try{
@@ -59,11 +63,11 @@ export default function CreatorStudioPage(){
       const response=await fetch("/api/network/creator-studio",{
         method:"PUT",
         headers:{Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},
-        body:JSON.stringify({category,headline:headline.trim(),description:description.trim(),website_url:url||null,is_published:published})
+        body:JSON.stringify({public_name:publicName.trim(),country:country.trim(),category,headline:headline.trim(),description:description.trim(),website_url:url||null,is_published:published})
       });
       const payload=await response.json();
       if(!response.ok)throw new Error(payload.error||"Unable to save creator showcase.");
-      setNotice(published?(payload.publicly_visible?"Creator showcase published.":"Saved. Make your main profile public to appear in discovery."):"Creator draft saved privately.");
+      setNotice(published?(payload.publicly_visible?"Creator showcase published.":"Your showcase was saved, but a moderation hold prevents public discovery."):"Creator draft saved privately.");
     }catch{setError("Could not save your creator profile. Check your connection and try again.");}
     finally{setSaving(false);}
   }
@@ -79,6 +83,10 @@ export default function CreatorStudioPage(){
       :<form onSubmit={e=>void save(e)} className="hc-creator-editor">
         <section className="hc-network-panel">
           <h2>Creator identity</h2>
+          <label htmlFor="hc-creator-name">Public creator name · {publicName.length}/80</label>
+          <input id="hc-creator-name" maxLength={80} value={publicName} onChange={e=>setPublicName(e.target.value)} placeholder="Your creator or media name"/>
+          <label htmlFor="hc-creator-country">Public country (optional) · {country.length}/80</label>
+          <input id="hc-creator-country" maxLength={80} value={country} onChange={e=>setCountry(e.target.value)} placeholder="Country you choose to share"/>
           <label htmlFor="hc-creator-category">Category</label>
           <select id="hc-creator-category" value={category} onChange={e=>setCategory(e.target.value as Category)}>
             {categoryOptions.map(([value,text])=><option value={value} key={value}>{text}</option>)}
@@ -94,9 +102,9 @@ export default function CreatorStudioPage(){
           <h2>Publication</h2>
           <div className="hc-creator-publish">
             <input id="hc-creator-published" type="checkbox" checked={published} onChange={e=>setPublished(e.target.checked)}/>
-            <label htmlFor="hc-creator-published">Publish my creator showcase in the public creator directory. I understand the category, bio and approved profile image will be shown.</label>
+            <label htmlFor="hc-creator-published">Publish the public name, country, category, biography and website I entered here. No private account name, profile picture or location is copied to this showcase.</label>
           </div>
-          {!accountPublic&&<p>Your main HoopCheck profile is not publicly discoverable. Even if this showcase is published, it will stay out of discovery until you make your main profile public and any moderation holds are cleared.</p>}
+          {!accountNormal&&<p>Publishing is unavailable while your account has a moderation restriction. You can keep this as a draft.</p>}
           <p>Publishing does not grant verified status, special posting permissions, or access to paid content. All existing membership and community rules still apply.</p>
           <div className="hc-creator-actions"><button type="submit" disabled={saving}>{saving?"Saving…":"Save creator profile"}</button><Link className="hc-network-ghost" href="/creators">Creator network</Link></div>
           {error&&<p role="alert">{error}</p>}{notice&&<p role="status">{notice}</p>}
