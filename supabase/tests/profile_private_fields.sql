@@ -113,6 +113,7 @@ DO $$ BEGIN
 END $$;
 RESET ROLE;
 \ir ../migrations/20261119075626_restrict_private_profile_columns.sql
+\ir ../candidates/build9_native_profile_editor_write.sql
 SET LOCAL ROLE anon;
 SELECT set_config('request.jwt.claims','{"role":"anon"}',true);
 DO $$ DECLARE col text; BEGIN
@@ -248,5 +249,28 @@ DO $$ BEGIN
  IF (SELECT prosecdef FROM pg_proc WHERE oid='public.is_player_country_public(uuid)'::regprocedure) THEN RAISE EXCEPTION 'public consent RPC must be invoker'; END IF;
  IF EXISTS(SELECT FROM pg_proc p CROSS JOIN LATERAL aclexplode(p.proacl) a WHERE p.oid IN ('public.is_player_country_public(uuid)'::regprocedure,'hoopcheck_security.is_player_country_public(uuid)'::regprocedure) AND a.grantee=0) THEN RAISE EXCEPTION 'PUBLIC can execute consent helpers'; END IF;
 END $$;
+RESET ROLE;
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',true);
+SELECT set_config('request.jwt.claims','{"role":"authenticated","aal":"aal2"}',true);
+DO $$ DECLARE saved uuid; BEGIN
+ UPDATE public.profiles SET display_name='Editor',bio='Bio',hometown='Town',nationality='US',
+ favorite_teams='Team',favorite_leagues='League',interests='Basketball',experience_summary='Career',
+ position='Guard',height='190',current_country='US',current_team='Club',free_agent=false,
+ current_country_public=false,profile_visibility='public'
+ WHERE id=auth.uid() RETURNING id INTO saved;
+ IF saved IS DISTINCT FROM auth.uid() THEN RAISE EXCEPTION 'Full editor UPDATE RETURNING failed'; END IF;
+ BEGIN
+  UPDATE public.profiles SET moderation_note='forged' WHERE id=auth.uid();
+  RAISE EXCEPTION 'Moderation write allowed';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+END $$;
+SELECT set_config('request.jwt.claims','{"role":"authenticated","aal":"aal1"}',true);
+DO $$ DECLARE affected integer; BEGIN
+ UPDATE public.profiles SET bio='MFA bypass' WHERE id=auth.uid();
+ GET DIAGNOSTICS affected=ROW_COUNT;
+ IF affected<>0 THEN RAISE EXCEPTION 'MFA write bypass'; END IF;
+END $$;
+RESET ROLE;
 ROLLBACK;
 SELECT 'PASS: raw private fields denied, masked current/legacy RPCs, owner reads/updates, cross-account/anonymous/MFA/future-column isolation; fixtures rolled back' AS result;
