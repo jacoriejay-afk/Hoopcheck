@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import "./welcome.css";
 import { supabase } from "../../../lib/supabase";
 
 type Role = "player" | "fan" | "coach" | "agent" | "scout" | "club_admin" | "manager" | "guest";
