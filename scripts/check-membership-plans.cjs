@@ -105,7 +105,7 @@ test("trial notice covers all account types and monthly terms only", () => {
     "Trial note must not be Player-only");
   assert.ok(page.includes("not currently available at public checkout"),
     "Do not advertise the trial as live");
-  assert.ok(page.includes("all HoopCheck account types"),
+  assert.ok(page.includes("all supported HoopCheck account types"),
     "Disclose the full role coverage");
 });
 
