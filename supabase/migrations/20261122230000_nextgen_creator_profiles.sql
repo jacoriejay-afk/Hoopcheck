@@ -23,19 +23,9 @@ create index if not exists creator_profiles_published_idx
 
 alter table public.creator_profiles enable row level security;
 
--- Respect current owner profile visibility and moderation dynamically: if a
--- profile becomes private or suspended, its creator showcase disappears.
-create policy "creator profiles public published"
-on public.creator_profiles for select to anon, authenticated
-using (
-  is_published and exists (
-    select 1 from public.profiles p
-    where p.id = creator_profiles.profile_id
-      and p.profile_visibility = 'public'
-      and p.moderation_status = 'normal'
-  )
-);
-
+-- Public reads happen ONLY through /api/network/creators, which projects
+-- approved fields and checks live parent-profile privacy using the server role.
+-- Do not grant direct public SELECT or call into profiles from anon RLS.
 create policy "creator profiles own drafts"
 on public.creator_profiles for select to authenticated
 using (profile_id = (select auth.uid()));
@@ -55,7 +45,7 @@ using (profile_id = (select auth.uid()));
 
 -- Table-level grants do not override RLS. No service role is used by the UI.
 revoke all on public.creator_profiles from anon, authenticated;
-grant select on public.creator_profiles to anon;
 grant select, insert, update, delete on public.creator_profiles to authenticated;
+grant select, insert, update, delete on public.creator_profiles to service_role;
 comment on table public.creator_profiles is
   'Opt-in public creator showcase, not an identity or professional credential verification.';
