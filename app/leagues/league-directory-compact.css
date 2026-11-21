@@ -17,3 +17,7 @@ html body .hc-global-page-shell main.hc-leagues-directory-page .hc-league-direct
 .hc-league-logo-state{display:block;margin:7px 0 10px;color:var(--hc-on-card-muted,var(--hc-foreground-muted));font-size:11px;line-height:1.4}
 .hc-league-page-more{text-align:center;margin:20px auto;display:grid;justify-items:center;gap:12px}
 .hc-league-page-more button{min-height:44px}
+
+.hc-league-profile-jumps{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;padding:8px}
+.hc-league-profile-jumps a{display:inline-flex;align-items:center;min-height:44px;padding:10px 14px;font-size:13px;font-weight:750;text-decoration:none;border:1px solid var(--hc-card-border,var(--border));border-radius:14px;background:var(--hc-card-surface,var(--surface));color:var(--hc-on-card,var(--hc-foreground))}
+.hc-league-profile-jumps a:hover,.hc-league-profile-jumps a:focus-visible{border-color:var(--orange)}
