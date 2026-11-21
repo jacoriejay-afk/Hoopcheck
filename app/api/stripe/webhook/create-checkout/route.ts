@@ -311,7 +311,8 @@ export async function POST(
       existingSubscription?.stripe_customer_id ||
       undefined;
 
-    // The seven-day offer is for first-time monthly members only. Check both
+    // One seven-day trial is available to each eligible first-time monthly member,
+    // regardless of account type, when the isolated rollout is authorized. Check both
     // the HoopCheck subscription record and Stripe's complete customer history;
     // a canceled subscription must never reset eligibility.
     // TEST-ONLY: never issue a public/prod trial. Every condition must match the
@@ -325,7 +326,7 @@ export async function POST(
       process.env.HOOPCHECK_STRIPE_TEST_SUPABASE_URL === process.env.NEXT_PUBLIC_SUPABASE_URL &&
       siteUrl === "https://hoopcheck-stripe-sandbox-git-fix-website-membe-b926cc-hoopcheck.vercel.app" &&
       stripeConfigMatches && configuredMode === "test";
-    let trialEligible = trialRolloutEnabled && checkoutProfile.account_type === "player" && interval === "month" && !promoCodeId && !existingSubscription?.stripe_subscription_id && Boolean(user.email_confirmed_at);
+    let trialEligible = trialRolloutEnabled && typeof checkoutProfile.account_type === "string" && checkoutProfile.account_type.trim().length > 0 && interval === "month" && !promoCodeId && !existingSubscription?.stripe_subscription_id && Boolean(user.email_confirmed_at);
     if (trialEligible) {
       // Check every customer under this email, even when a customer is already
       // linked to the account. A linked ID alone can miss older Stripe history.
@@ -375,7 +376,7 @@ export async function POST(
     // Recheck the final policy after all history lookups. This remains disabled
     // in production until atomic one-time reservation is implemented.
     trialEligible = isEligibleForSevenDayTrial({
-      rolloutEnabled: trialRolloutEnabled && checkoutProfile.account_type === "player",
+      rolloutEnabled: trialRolloutEnabled,
       interval,
       accountType: checkoutProfile.account_type,
       hasPromoCode: Boolean(promoCodeId),
