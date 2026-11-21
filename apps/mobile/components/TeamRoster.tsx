@@ -1,3 +1,4 @@
+import { courtsideFeatures } from "../src/native/courtsideFeatures";
 import { useEffect, useState } from "react";
 import { Text, View } from "react-native";
 import { useRouter } from "expo-router";
@@ -12,12 +13,13 @@ import { Skeleton } from "./Motion";
 export function TeamRoster({ teamId }: { teamId: string }) {
   const t = useEntryTheme(); const router = useRouter(); const active = useActiveScreen(); const { account, loading, retry } = useNativeAccount();
   const uid = account?.user.id; const role = account?.user.accountType; const allowed = canBrowsePlayers(role);
+  const supported = courtsideFeatures.teamRosterHistory && courtsideFeatures.rosterOpportunities;
   const scope = `${teamId}:${uid}:${role}`; const [revision, setRevision] = useState(0);
   const [snapshot, setSnapshot] = useState<{ scope: string; data: Awaited<ReturnType<typeof readTeamRoster>> | null; error: string } | null>(null);
   useEffect(() => {
     let live = true; setSnapshot(null);
     async function load() {
-      if (!active || !allowed || !uid || !role) return;
+      if (!supported || !active || !allowed || !uid || !role) return;
       try {
         const before = await supabase.auth.getSession();
         if (before.error || before.data.session?.user.id !== uid) throw Error("Verify your account again.");
@@ -28,9 +30,10 @@ export function TeamRoster({ teamId }: { teamId: string }) {
       } catch (error) { if (live) setSnapshot({ scope, data: null, error: error instanceof Error ? error.message : "Roster research could not load." }); }
     }
     void load(); return () => { live = false; };
-  }, [teamId, uid, role, scope, active, allowed, revision]);
+  }, [teamId, uid, role, scope, active, allowed, revision, supported]);
   const current = active && account && snapshot?.scope === scope ? snapshot : null;
   if (!loading && account && !allowed) return null;
+  if (!supported) return <View style={{ marginTop: t.spacing.xl, gap: t.spacing.sm }}><SectionHeader>Roster research</SectionHeader><Text style={{ color: t.muted }}>Roster research is unavailable in this release.</Text></View>;
   return <View style={{ marginTop: t.spacing.xl, gap: t.spacing.md }}><SectionHeader>Roster research</SectionHeader>
     {!account ? <><Text style={{ color: t.muted }}>Verify your account to view player research.</Text><Button secondary onPress={retry}>Verify roster access</Button></> : !current ? <Skeleton review /> : current.error ? <><Text accessibilityRole="alert" style={{ color: t.muted }}>{current.error}</Text><Button secondary onPress={() => setRevision(value => value + 1)}>Retry roster research</Button></> : current.data ? <>
       <Text style={{ color: t.muted, ...t.type.caption }}>Players below shared career history linked to this club. This is not a verified current roster.</Text>
