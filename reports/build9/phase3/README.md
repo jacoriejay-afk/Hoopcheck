@@ -29,3 +29,48 @@ Search gains local directory scopes, selected states, 44pt minimum targets and p
 Deferred/disabled: a public exportable Player Passport image is not exposed. The existing gated player ShareSheet remains unchanged; a public passport requires an approved field allowlist and recipient access/consent contract. No public export endpoint or storage policy has been created. Personalized recommendations beyond verified-account greeting and role copy are not enabled: follow-based ranking requires verified API coverage. No backend feature is advertised as available.
 
 Remaining requested implementation/review: full Game Center layout, feed/composer media polish, group discovery layout, Player Passport visual export, team/league/player profile redesign, onboarding/settings polish, image loading audit and cross-screen modal/touch/performance audit. Existing functionality is retained, but retention is not acceptance of the complete redesign.
+
+## Before / after (source behavior comparison; no screenshot evidence)
+
+| Surface | Baseline | This slice |
+|---|---|---|
+| Repeated cards | Each iOS card mounts BlurView | Solid themed surface; no per-card blur |
+| Navigation | Opaque glass-colored fill | iOS blur decoration with opaque reduced-transparency fallback; reserved layout height retained |
+| Search | All authorized directory groups displayed together | Selectable local category scopes; same authorized results and requests |
+| Activity | Filters/actions outside scrolling list; blank loading content | Header scrolls with list; existing skeleton during initial load |
+| Home | Search, directory and account links | Adds verified welcome and Game Center/groups/Reels entry cards |
+
+## Validation limitations
+
+No screenshots captured in this implementation. No Xcode/xcrun or connected simulator was available in this Linux workspace; no EAS simulator was started. Neither simulator nor physical iPhone behavior is verified. Full requested before/after visual acceptance in both themes is outstanding. No claim that Build 7 freeze is resolved.
+
+Initial native test run found a new expo-blur import missing from the test harness; the harness now mocks native blur and AccessibilityInfo, and the full rerun passes. Initial restricted-network dependency test failed; rerun with network access passed. No security override or advisory suppression added.
+
+## Acceptance matrix — do not treat inherited screens as newly accepted
+
+| Gate | Result |
+|---|---|
+| Baseline ancestry and fresh isolated branches | Verified; missing master contents unresolved |
+| Design system | Partial: surface/navigation changes; visual review open |
+| Personalized Home | Partial: verified greeting, role copy and existing route cards; recommendations disabled |
+| HoopFeed/media/composer | Existing implementation preserved; Phase 3 redesign open |
+| Game Center/live chat lifecycle | Existing implementation preserved; Phase 3 redesign/live lifecycle acceptance open |
+| HoopGroups discovery | Existing implementation plus Home shortcut; layout redesign open |
+| Player/Team/League profiles | Existing implementation preserved; Phase 3 redesign open |
+| Player Passport | Visual image export deferred/unavailable; consent/field contract needed |
+| Highlight Hub | Existing Reels entry only; dedicated hub open |
+| Smart Search | Local category scopes added; existing APIs/gates retained; device review open |
+| Activity Center | Scrollable header and loading state added; device review open |
+| Onboarding/settings | Unchanged; Phase 3 review open |
+| Reactions/replies/real counts/tiers/verification/authorization | Services unchanged; regression tests pass; hosted acceptance open |
+| Physical-iPhone freeze, touch overlays, safe areas, transitions, large text | Unverified; no physical evidence |
+| Both-theme simulator before/after comparisons | Missing; release blocker |
+| Full production-compatible backend rehearsal | Inherited blocker; no production access attempted |
+
+## Recorded local checks
+
+PASS: root/mobile TypeScript; lint (zero errors, 125 inherited warnings); 197 native tests; entitlement matrix (10 role/tier cells, 22 entitlements); full website production build including bundle, theme pairing and certificate tracing; iOS Hermes export (7.21 MB); Metro web export. Logs in checks/. Doctor: 16/18, two failed network-dependent checks (Expo schema/React Native Directory), so Doctor acceptance remains blocked.
+
+GitHub Actions started automatically for all three PRs: build, mobile-typecheck and simulator-compile. Captured rollups contain implementation head SHAs and show IN_PROGRESS; no success is claimed. This evidence-only commit creates a new final feature head whose CI must be inspected separately. No workflow manually dispatched, no EAS started. Deployment configs and skip-vercel commit messages are committed for these branches; no deployment command executed.
+
+Draft reviews: #748 system, #749 core, #750 features. Code commits listed in commits.txt; affected source/config files listed in changed-files.txt. These files exclude the final evidence-only commit itself. Working baseline branches remain unchanged.
