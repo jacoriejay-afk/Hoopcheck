@@ -89,7 +89,9 @@ async function fixture(browser,theme,allowed=true){
     await page.getByRole('button',{name:'Media unavailable. Tap to retry.',exact:true}).click();
     await page.getByRole('img',{name:'HoopFeed photo',exact:true}).waitFor();
     await page.waitForFunction(()=>{const image=document.querySelector('img[alt="HoopFeed photo"]');return image&&image.complete&&image.naturalWidth===640;});
-    const photoBox=await page.getByRole('img',{name:'HoopFeed photo',exact:true}).boundingBox();assert.ok(photoBox.width>250&&photoBox.height>120,'Photo has visible dimensions');
+    await page.getByRole('img',{name:'HoopFeed photo',exact:true}).scrollIntoViewIfNeeded();
+    await page.waitForFunction(()=>{const image=document.querySelector('img[alt="HoopFeed photo"]');const box=image?.getBoundingClientRect();return Boolean(box&&box.width>250&&box.height>120);});
+    const photoBox=await page.getByRole('img',{name:'HoopFeed photo',exact:true}).boundingBox();assert.ok(photoBox&&photoBox.width>250&&photoBox.height>120,'Photo has visible dimensions');
     assert.equal(await page.getByRole('heading',{name:'HoopFeed',exact:true}).count(),0,'No duplicate headings');
     await require("./compact-layout.cjs").capture(page, {path:`/tmp/hoopcheck-native-ui/feed-posts-${theme}.png`,fullPage:true});
     await page.getByRole('button',{name:'Create HoopFeed post',exact:true}).click();
