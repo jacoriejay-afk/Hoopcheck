@@ -473,7 +473,7 @@ export default function LeagueDetailPage() {
         {accountType !== "fan" && <Link href="/players">Players</Link>}
         <Link href="/search">Global Search</Link>
       </nav>
-      <section className="hero hc-team-look-hero hc-league-look-hero">
+      <section id="league-insights" className="hero hc-team-look-hero hc-league-look-hero">
         <div className="eyebrow">League Research
         </div>
 
@@ -487,6 +487,7 @@ export default function LeagueDetailPage() {
         </h1>
 
         <div className="entity-actions"><GeoBadge country={league.country} regional={league.country === "Europe"} /><WatchButton targetType="league" targetId={league.id} targetName={league.name} /></div>
+        {!league.logo_url && <p className="muted">Official league crest pending. The current badge is a temporary visual placeholder.</p>}
 
         <p className="hc-team-hero-location">
           {league.country ||
@@ -523,13 +524,16 @@ export default function LeagueDetailPage() {
         </div>
       </section>
 
-      <section className="hero">
+      <nav className="hc-league-profile-jumps" aria-label="League profile sections">
+        <a href="#league-history">Team history</a><a href="#league-clubs">Current clubs</a><a href="#league-insights">League insights</a>
+      </nav>
+      <section id="league-history" className="hero">
         <div className="eyebrow">Team Membership History</div>
         <h2>Teams by season</h2>
         {teamHistory.length ? <div className="grid" style={{ marginTop: "25px" }}>{teamHistory.map((item) => <div className="card" key={item.id}><div className="eyebrow">{item.season || t("seasonNotListed")}</div><h3>{item.team?.name || t("teamNotListed")}</h3><p>{item.start_date || t("startNotListed")} → {item.end_date || t("present")}</p></div>)}</div> : <div className="card"><p>{t("noHistoricalMemberships")}</p></div>}
       </section>
 
-      <section className="hero">
+      <section id="league-clubs" className="hero">
         <div className="eyebrow">Teams In This League</div>
         <h2>Professional organizations</h2>
         <p>
