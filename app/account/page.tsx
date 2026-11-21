@@ -11,6 +11,8 @@ import Surface from "../../components/Surface";
 import SocialProfileHeader, { profileCover } from "../../components/SocialProfileHeader";
 import ProfileAppearance from "../../components/ProfileAppearance";
 import AccountWorkspaces from "./AccountWorkspaces";
+import RoleQuickLinks from "../../components/RoleQuickLinks";
+import "../../components/role-quick-links.css";
 import { GroupCard, Row } from "../../components/LayoutSystem";
 import { useTheme } from "../../components/ThemeProvider";
 import { useLanguage, type Language } from "../../components/LanguageProvider";
@@ -443,11 +445,15 @@ export default function AccountPage() {
       <nav className="hc-social-profile-nav" aria-label={t("accountSettings")}>
         <a href="#profile-appearance">Customize</a>
         <a href="#account-settings">{t("settings")}</a>
+        <a href="#profile-editor">Edit details</a>
+        <Link href="/notifications?tab=messages">Messages</Link>
+        <Link href="/settings">Appearance & language</Link>
         <Link href="/profile">{t("yourProfile")}</Link>
         {profile.account_type === "player" && settingsVisibility === "public" &&
           <Link href={`/players/${encodeURIComponent(userId)}`}>{t("profilePublic")}</Link>}
       </nav>
       <AccountWorkspaces key={userId} userId={userId} />
+      <RoleQuickLinks role={profile.account_type} />
       <ProfileAppearance key={userId} current={cover} onSave={setCover} />
       {profile.account_type === "player" ? <PlayerProfileCompletionCard key={JSON.stringify(profile)} profile={{ ...profile, id: userId }} onPublished={() => { setSettingsVisibility("public"); setProfile(current => ({ ...current, profile_visibility: "public" })); }} /> : (() => { const completion = calculateProfileCompletion({ ...profile, display_name: displayName, bio, avatar_url: avatarUrl, hometown, nationality, interests, favorite_leagues: favoriteLeagues }); const next = completion.nextMissing; return completion.percentage < 100 && next ? <section className="dashboard-card hc-account-profile-completion" style={{marginTop:12}}><strong>Profile {completion.percentage}% complete</strong><p className="muted">Add your {next.label} next.</p><a className="btn" href={"/account#" + (next.key === "avatar_url" ? "profile-editor-field-avatar_url" : "profile-editor-field-" + next.key)}>{next.key === "avatar_url" ? "Add photo" : "Complete profile"}</a></section> : null; })()}
       {(profile as any).moderation_status === "warned" || (profile as any).moderation_status === "flagged" ? <section className="dashboard-card" style={{marginBottom:16,border:"1px solid var(--orange)"}}><strong>{(profile as any).moderation_status === "warned" ? t("accountWarning") : t("profileFlagged")}</strong><p className="muted">{(profile as any).moderation_note || t("supportGuidance")}</p><Link href="/support" className="btn dark">{t("contactSupport")}</Link></section> : null}
