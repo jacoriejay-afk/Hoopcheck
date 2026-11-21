@@ -83,8 +83,9 @@ test("current Pro and Premium plans are labeled and cannot be repurchased in com
 test("active non-Stripe memberships use the shared tier and do not render checkout cards", () => {
   const page = read("app/membership/page.tsx");
   assert.match(page, /getActiveMembershipTier\(subscription\)/);
-  assert.match(page, /\{isActive && subscription && \(/);
-  assert.match(page, /\{subscription\.stripe_subscription_id && <button/);
+  assert.match(page, /\{showMembershipManagement && subscription \? \(/);
+  assert.ok(page.includes("subscription.stripe_subscription_id ? ("),
+    "Stripe and manual grants must use different honest cancellation controls");
 });
 
 
