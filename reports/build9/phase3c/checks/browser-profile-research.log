@@ -1,0 +1,4 @@
+PASS light player: scoped roster/history, private profile denial, canonical verification, server membership preview
+PASS light fan: scoped roster/history, private profile denial, canonical verification, server membership preview
+PASS dark player: scoped roster/history, private profile denial, canonical verification, server membership preview
+PASS dark fan: scoped roster/history, private profile denial, canonical verification, server membership preview

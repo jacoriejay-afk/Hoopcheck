@@ -1,3 +1,4 @@
+import { MembershipPreview } from "../components/MembershipPreview";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AppState, Linking, ScrollView, Text, View } from "react-native";
 import { useFocusEffect } from "expo-router";
@@ -56,6 +57,7 @@ export default function MembershipScreen() {
         <Text style={muted}>{membership ? `${membership.provider === "apple" ? "Apple" : membership.provider === "stripe" ? "Stripe" : "HoopCheck"} · ${membership.status.replaceAll("_", " ")}` : account?.hasPaidMembership ? "Active access verified by HoopCheck" : "Refresh to verify current membership"}</Text>
         {membership?.current_period_end ? <Text style={muted}>{membership.cancel_at_period_end ? "Access ends" : "Current period ends"} {new Date(membership.current_period_end).toLocaleDateString()}</Text> : null}
       </GlassCard>
+      <MembershipPreview />
       {loading ? <Text accessibilityRole="progressbar" style={muted}>Checking membership and Apple prices…</Text> : null}
       {error ? <Text accessibilityRole="alert" style={text}>{error}</Text> : null}
       {message ? <Text accessibilityLiveRegion="polite" style={text}>{message}</Text> : null}

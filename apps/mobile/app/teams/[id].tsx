@@ -1,3 +1,4 @@
+import { TeamRoster } from "../../components/TeamRoster";
 import { EntityHero } from "../../components/EntityHero";
 import { GlassCard, Button } from "../../src/primitives";
 import { useCachedRead, useNetwork } from "../../src/native/network";
@@ -91,6 +92,7 @@ export default function TeamDetailScreen() {
             {safeWebsite(team.website) ? <Button onPress={openWebsite} style={styles.button}><Text style={styles.buttonText}>Open team website ↗</Text></Button> : null}
             <Pressable onPress={() => router.push({ pathname: "/teams/[id]/review", params: { id: team.id, teamName: team.name } })} style={[styles.button, styles.reviewButton]}><Text style={styles.buttonText}>Write a team review</Text></Pressable>
             <View style={{ gap: theme.spacing.md, marginTop: theme.spacing.xl }}><Button secondary onPress={() => router.push({ pathname: "/team-hub/groups/[teamId]", params: { teamId: team.id } })}>Club fan group</Button></View>
+            <TeamRoster key={team.id} teamId={team.id} />
             <View style={styles.reviewsSection}>
               <Text style={styles.reviewsTitle}>Latest reviews</Text>
               <Text style={styles.reviewsSubtitle}>{offline ? "Reconnect to revalidate review access. Reviews are not saved offline." : "Approved reviews only · access follows your HoopCheck account permissions"}</Text>

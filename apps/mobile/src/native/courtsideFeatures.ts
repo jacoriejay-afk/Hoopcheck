@@ -4,5 +4,9 @@ export const courtsideFeatures = {
   playerAchievements: false,
   playerHighlightCollection: false,
   groupMemberDirectory: false,
-  teamRoster: false,
+  teamRoster: false, // Current-club identity projection is still unavailable.
+  teamRosterHistory: true,
+  rosterOpportunities: true,
+  careerStatistics: true,
+  professionalVerification: true,
 } as const;

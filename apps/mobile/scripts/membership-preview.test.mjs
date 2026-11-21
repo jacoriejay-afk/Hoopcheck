@@ -1,0 +1,25 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import vm from 'node:vm';
+import ts from 'typescript';
+import React from 'react';
+import { act, create } from 'react-test-renderer';
+globalThis.IS_REACT_ACT_ENVIRONMENT=true;
+const require=createRequire(import.meta.url);
+const source=readFileSync(new URL('../components/MembershipPreview.tsx',import.meta.url),'utf8');
+test('membership preview reflects only verified rights, clears on identity loss, and has no purchase controls',async()=>{
+ let account={user:{id:'owner',accountType:'fan'},tier:'free',features:{canReadHoopFeed:false,canWriteHoopFeed:false,canUseLiveGameHub:false,canUseLiveGameChat:false,canSwitchBasketballSide:false,canUseFanGroups:true}};
+ const exports={};
+ const stubs={'react-native':{Text:'Text',View:'View'},'../src/theme':{useEntryTheme:()=>({spacing:{sm:8,md:12},type:{caption:{},body:{}}})},'../src/native/useNativeAccount':{useNativeAccount:()=>({account,loading:false,error:'Verify account',retry:()=>{}})},'../src/primitives':{Button:'Button',SectionHeader:'Header'},'./Motion':{Skeleton:'Skeleton'}};
+ const code=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText;
+ vm.runInNewContext(code,{exports,require:id=>stubs[id]||require(id)});
+ let tree;await act(async()=>{tree=create(React.createElement(exports.MembershipPreview));});
+ assert.equal(tree.root.findAllByType('Text').filter(node=>node.props.children==='Included').length,1);
+ assert.equal(tree.root.findAllByType('Button').length,0);
+ account=null;await act(async()=>{tree.update(React.createElement(exports.MembershipPreview));});
+ assert.equal(tree.root.findAllByType('Text').filter(node=>node.props.children==='Included').length,0);
+ assert.equal(tree.root.findAllByType('Button')[0].props.children,'Retry access preview');
+ await act(async()=>tree.unmount());
+});
