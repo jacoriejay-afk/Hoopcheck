@@ -189,6 +189,10 @@ html body .hc-global-page-shell main .hc-directory-compact-meta .hc-follow-compa
 [data-profile-cover="gold"] { --hc-cover-hue: #e5b84c !important; }
 [data-profile-cover="midnight"] { --hc-cover-hue: #5266b5 !important; }
 [data-profile-cover="coral"] { --hc-cover-hue: #ef745c !important; }
+[data-profile-cover="ice"] { --hc-cover-hue: #8bd8f2 !important; }
+[data-profile-cover="sunset"] { --hc-cover-hue: #ff9b4a !important; }
+[data-profile-cover="graphite"] { --hc-cover-hue: #687080 !important; }
+[data-profile-cover="neon"] { --hc-cover-hue: #b6e953 !important; }
 
 .hc-social-profile {
   border: 1px solid var(--hc-border);
@@ -276,6 +280,13 @@ html body .hc-global-page-shell main .hc-social-profile :is(.hc-social-handle,.h
 }
 .hc-cover-options input { width: auto !important; min-height: 0 !important; margin: 0; }
 .hc-cover-swatch { display: inline-block; width: .8rem; height: .8rem; border-radius: 50%; background: var(--hc-cover-hue); }
+
+/* Member layout preferences use existing theme colors and keep the same controls. */
+.hc-member-profile-page[data-profile-layout="showcase"] .hc-social-cover { height: clamp(130px, 25vw, 220px); }
+.hc-member-profile-page[data-profile-layout="showcase"] .hc-social-avatar { width: clamp(88px, 19vw, 122px); }
+.hc-member-profile-page[data-profile-layout="showcase"] .hc-social-avatar-row { margin-top: -40px; }
+.hc-member-profile-page[data-profile-layout="showcase"] .hc-social-profile-body { padding-bottom: 1.4rem; }
+@media (max-width: 420px) { .hc-member-profile-page[data-profile-layout="showcase"] .hc-social-avatar { width: 88px; } }
 
 /* Optional compact member profile layout. Keeps standard theme tokens and accessible controls. */
 .hc-member-profile-page[data-profile-layout="compact"] .hc-social-cover { height: 80px; }
