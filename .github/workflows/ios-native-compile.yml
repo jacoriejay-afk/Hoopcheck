@@ -12,7 +12,8 @@ concurrency:
 jobs:
   simulator-compile:
     runs-on: macos-15
-    timeout-minutes: 40
+    # Cold Xcode compilation plus both Passport simulator runs can exceed forty minutes.
+    timeout-minutes: 55
     defaults:
       run:
         working-directory: apps/mobile
