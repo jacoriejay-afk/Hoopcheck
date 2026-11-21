@@ -10,6 +10,9 @@ assert info.get("NSPhotoLibraryUsageDescription"), "Photo selection needs a purp
 assert info.get("NSFaceIDUsageDescription"), "Device unlock needs a Face ID purpose description"
 assert "NSCameraUsageDescription" not in info, "Library selection must not request a camera"
 assert "NSMicrophoneUsageDescription" not in info, "Library selection must not request a microphone"
+for key in ("NSUserTrackingUsageDescription", "NSContactsUsageDescription", "NSLocationWhenInUseUsageDescription", "NSLocationAlwaysUsageDescription", "NSLocationAlwaysAndWhenInUseUsageDescription"):
+    assert key not in info, f"Passport sharing must not add {key}"
+assert info.get("UIFileSharingEnabled") is not True, "Temporary Passport cache must not expose app Documents"
 projects = list(native.glob("*.xcodeproj/project.pbxproj"))
 assert len(projects) == 1 and "online.hoopcheck.app" in projects[0].read_text(), "Unexpected iOS bundle ID"
-print("PASS generated iOS bundle ID and photo/Face ID permissions; no camera/microphone")
+print("PASS generated iOS bundle ID and existing photo/Face ID permissions; no camera, microphone, tracking, contacts, location or Documents file sharing")
