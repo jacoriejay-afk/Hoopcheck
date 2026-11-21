@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { FlatList, Image, Pressable, RefreshControl, Share, Text, TextInput, View, type ViewToken } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { FlatList, Image, Linking, Pressable, RefreshControl, Share, Text, TextInput, View, type ViewToken } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Button } from "../src/primitives";
@@ -49,8 +50,49 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
   const [autoOpened, setAutoOpened] = useState<string | undefined>(undefined);
   const [openComments, setOpenComments] = useState<Record<string, boolean>>({});
   const [visible, setVisible] = useState(new Set<string>());
-  const viewability = useMemo(() => ({ itemVisiblePercentThreshold: 30 }), []);
-  const viewChanged = useCallback(({ viewableItems }: { viewableItems: ViewToken<FeedPost>[] }) => setVisible(new Set(viewableItems.filter(item => item.isViewable).map(item => item.item.id))), []);
+  const [hiddenReels, setHiddenReels] = useState<{ owner: string; ids: string[] }>({ owner: "", ids: [] });
+  useEffect(() => {
+    if (!uid) return;
+    let alive = true;
+    void AsyncStorage.getItem(`hoopcheck:reels:hidden:${uid}`).then(raw => {
+      const parsed: unknown = raw ? JSON.parse(raw) : [];
+      if (alive) setHiddenReels({ owner: uid, ids: Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string" && isFeedId(id)).slice(-500) : [] });
+    }).catch(() => { if (alive) setHiddenReels({ owner: uid, ids: [] }); });
+    return () => { alive = false; };
+  }, [uid]);
+  const [mutedCreators, setMutedCreators] = useState<{ owner: string; ids: string[] }>({ owner: "", ids: [] });
+  useEffect(() => {
+    if (!uid) return;
+    let alive = true;
+    void AsyncStorage.getItem(`hoopcheck:reels:muted-creators:${uid}`).then(raw => {
+      const parsed: unknown = raw ? JSON.parse(raw) : [];
+      if (alive) setMutedCreators({ owner: uid, ids: Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string" && isFeedId(id)).slice(-500) : [] });
+    }).catch(() => { if (alive) setMutedCreators({ owner: uid, ids: [] }); });
+    return () => { alive = false; };
+  }, [uid]);
+  // Use the owner-scoped shared account block list; fail closed if unavailable.
+  const [blocksVersion, setBlocksVersion] = useState(0);
+  const [blockedCreators, setBlockedCreators] = useState<{ owner: string; ids: string[]; ready: boolean; failed: boolean }>({ owner: "", ids: [], ready: false, failed: false });
+  useEffect(() => {
+    if (!uid || !canRead) { setBlockedCreators({ owner: "", ids: [], ready: false, failed: false }); return; }
+    let alive = true;
+    setBlockedCreators({ owner: uid, ids: [], ready: false, failed: false });
+    void Promise.resolve(supabase.from("user_blocks").select("blocked_id").eq("blocker_id", uid).limit(500))
+      .then(({ data, error }) => {
+        if (alive) setBlockedCreators({ owner: uid, ids: error ? [] : (data || []).map(row => row.blocked_id), ready: true, failed: Boolean(error) });
+      }).catch(() => { if (alive) setBlockedCreators({ owner: uid, ids: [], ready: true, failed: true }); });
+    return () => { alive = false; };
+  }, [uid, canRead, blocksVersion]);
+  // A Reel must own most of the screen before it can play; never play two at once.
+  const viewability = useMemo(() => ({ itemVisiblePercentThreshold: reels ? 75 : 30 }), [reels]);
+  const viewChanged = useCallback(({ viewableItems }: { viewableItems: ViewToken<FeedPost>[] }) => {
+    const candidates = viewableItems.filter(item => item.isViewable).map(item => item.item.id);
+    setVisible(previous => {
+      const nextIds = reels ? candidates.slice(0, 1) : candidates;
+      if (previous.size === nextIds.length && nextIds.every(id => previous.has(id))) return previous;
+      return new Set(nextIds);
+    });
+  }, [reels]);
   const [height, setHeight] = useState(600);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 30000); return () => clearInterval(timer); }, []);
@@ -127,7 +169,43 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
     if (params.comments !== "1" || !linkedId || reels || autoOpened === linkedId || rows.scope !== scope || !rows.posts.some(post => post.id === linkedId)) return;
     setAutoOpened(linkedId); setOpenComments(previous => ({ ...previous, [linkedId]: true })); void loadComments(linkedId);
   }, [params.comments, linkedId, reels, autoOpened, rows, scope, loadComments]);
-  const posts = canRead && rows.scope === scope ? rows.posts.filter(post => !post.expires_at || Date.parse(post.expires_at) > now) : [];
+  const posts = canRead && rows.scope === scope ? rows.posts.filter(post =>
+    (!post.expires_at || Date.parse(post.expires_at) > now) &&
+    (!reels || (
+      (hiddenReels.owner !== uid || !hiddenReels.ids.includes(post.id)) &&
+      (mutedCreators.owner !== uid || !mutedCreators.ids.includes(post.author_id)) &&
+      blockedCreators.owner === uid && blockedCreators.ready && !blockedCreators.failed &&
+      !blockedCreators.ids.includes(post.author_id)
+    )),
+  ) : [];
+  async function hideCreator(authorId: string) {
+    if (!uid || !reels || authorId === uid) return;
+    const existing = mutedCreators.owner === uid ? mutedCreators.ids : [];
+    const ids = [...new Set([...existing, authorId])].slice(-500);
+    setMutedCreators({ owner: uid, ids });
+    try { await AsyncStorage.setItem(`hoopcheck:reels:muted-creators:${uid}`, JSON.stringify(ids)); }
+    catch { setMessage("This creator is hidden for this session. It could not be saved on this device."); }
+  }
+  async function blockAccount(authorId: string) {
+    if (!uid || !canRead || !reels || authorId === uid) return;
+    await action(`block:${authorId}`, async () => {
+      await token();
+      const { error } = await supabase.from("user_blocks").upsert(
+        { blocker_id: uid, blocked_id: authorId }, { onConflict: "blocker_id,blocked_id" });
+      if (error) throw new Error("Could not block this account. Try again.");
+      if (viewer.current.uid !== uid || !viewer.current.canRead) return;
+      setBlockedCreators(current => ({ owner: uid, ids: [...new Set([...(current.owner === uid ? current.ids : []), authorId])], ready: true, failed: false }));
+      setMessage("Creator added to your HoopCheck blocked accounts.");
+    });
+  }
+  async function hideReel(postId: string) {
+    if (!uid || !reels) return;
+    const existing = hiddenReels.owner === uid ? hiddenReels.ids : [];
+    const nextIds = [...new Set([...existing, postId])].slice(-500);
+    setHiddenReels({ owner: uid, ids: nextIds });
+    try { await AsyncStorage.setItem(`hoopcheck:reels:hidden:${uid}`, JSON.stringify(nextIds)); }
+    catch { setMessage("Video hidden for this session. It could not be saved to your device."); }
+  }
   const textStyle = { color: theme.foreground };
   const linkStyle = { color: theme.accent };
   const touch = { minHeight: 44, paddingHorizontal: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 999, backgroundColor: theme.elevatedSurface, justifyContent: "center" as const };
@@ -143,7 +221,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
       <View accessibilityRole="tablist" style={{ flex: 1, flexDirection: "row", gap: 6 }}>{[false, true].map(value => <Pressable key={String(value)} accessibilityRole="tab" accessibilityState={{ selected: reels === value }} aria-selected={reels === value} onPress={() => setReels(value)} style={[touch, { backgroundColor: reels === value ? theme.surface : theme.background, borderColor: reels === value ? theme.accent : theme.border }]}><Text style={{ ...textStyle, fontSize: 14, fontWeight: "700" }}>{value ? "Reels" : "HoopFeed"}</Text></Pressable>)}</View>
       {message || loadError ? <Text accessibilityLiveRegion="polite" style={{ color: theme.muted }}>{loadError || message}</Text> : null}
     </View>
-    <FlatList style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 16, gap: reels ? 0 : 14 }} keyboardShouldPersistTaps="handled" initialNumToRender={4} maxToRenderPerBatch={4} windowSize={5} pagingEnabled={reels} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
+    <FlatList key={reels ? "reels" : "posts"} style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 16, gap: reels ? 0 : 14 }} keyboardShouldPersistTaps="handled" initialNumToRender={reels ? 2 : 4} maxToRenderPerBatch={reels ? 2 : 4} windowSize={reels ? 3 : 5} pagingEnabled={reels} decelerationRate={reels ? "fast" : "normal"} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
       ListHeaderComponent={!reels ? <View style={{ marginBottom: 12 }}>
         {!composerExpanded ? <Pressable accessibilityRole="button" accessibilityLabel="Create HoopFeed post" disabled={!canWrite} onPress={() => setComposerExpanded(true)} style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 18, backgroundColor: theme.surface }}>
           <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: "#171717", alignItems: "center", justifyContent: "center" }}><Text style={{ color: "#FF8A5C", fontWeight: "900", fontSize: 12 }}>HC</Text></View><Text style={{ color: theme.muted, fontSize: 14 }}>Share something…</Text>
@@ -154,8 +232,8 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
         </View>}
         {!canWrite ? <Text style={{ color: theme.muted, marginTop: 8 }}>Your membership does not include posting.</Text> : null}
       </View> : null}
-      refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void load()} />}
-      ListEmptyComponent={loading ? <Skeleton /> : <View style={{ padding: 24, gap: 12 }}><Text style={textStyle}>{loadError || (reels ? "No video posts are available in this page." : "No posts are available in this page.")}</Text><Button secondary onPress={() => void load()}>Refresh</Button></View>}
+      refreshControl={<RefreshControl refreshing={loading} onRefresh={() => { setBlocksVersion(version => version + 1); void load(); }} />}
+      ListEmptyComponent={loading || (reels && blockedCreators.owner === uid && !blockedCreators.ready) ? <Skeleton /> : <View style={{ padding: 24, gap: 12 }}><Text style={textStyle}>{loadError || (reels && blockedCreators.failed ? "Blocked accounts could not be verified. Retry before viewing Reels." : reels ? "No video posts are available in this page." : "No posts are available in this page.")}</Text><Button secondary onPress={() => { setBlocksVersion(version => version + 1); void load(); }}>Refresh</Button></View>}
       renderItem={({ item: post }) => {
         const page = comments.owner === uid ? comments.values[post.id] : undefined;
         const replyTarget = reply && reply.owner === uid && reply.postId === post.id ? reply : null;
@@ -185,6 +263,10 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
             })} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>{!checks[post.id] ? "Checks unavailable" : checks[post.id].mine ? "Checked" : "Check"}{checks[post.id] ? ` · ${checks[post.id].count}` : ""}</Text></Pressable>
             <Pressable accessibilityRole="button" onPress={() => { if (reels) { router.push({ pathname: "/feed", params: { post: post.id, comments: "1" } }); return; } setOpenComments(previous => ({ ...previous, [post.id]: !previous[post.id] })); if (!page || page.error) void loadComments(post.id); }} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Comments</Text></Pressable>
             <Pressable accessibilityRole="button" onPress={() => void action(`share:${post.id}`, async () => { await Share.share({ title: "HoopFeed", message: `https://hoopcheck.online/feed#post-${post.id}` }); })} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Share</Text></Pressable>
+            {reels && <Pressable accessibilityRole="button" accessibilityLabel="Report this Reel" onPress={() => void action(`report:${post.id}`, async () => { await Linking.openURL(`https://hoopcheck.online/support?reportReel=${post.id}`); })} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Report</Text></Pressable>}
+            {reels && <Pressable accessibilityRole="button" accessibilityLabel="Hide this Reel from your device" onPress={() => void hideReel(post.id)} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Hide</Text></Pressable>}
+            {reels && post.author_id !== uid && <Pressable accessibilityRole="button" accessibilityLabel="Hide this creator's Reels on this device" onPress={() => void hideCreator(post.author_id)} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Hide creator</Text></Pressable>}
+            {reels && post.author_id !== uid && <Pressable accessibilityRole="button" accessibilityLabel="Block this HoopCheck account" disabled={Boolean(pending[`block:${post.author_id}`])} onPress={() => void blockAccount(post.author_id)} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Block account</Text></Pressable>}
             <Pressable accessibilityRole="button" disabled={!canWrite || saved[post.id] === undefined || Boolean(pending[`save:${post.id}`])} onPress={() => void action(`save:${post.id}`, async () => { const value = !saved[post.id]; await feedAction(origin, await token(), "bookmark", post.id, value); if (viewer.current.uid === uid) setSaved(previous => ({ ...previous, [post.id]: value })); })} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>{saved[post.id] === undefined ? "Saved status unavailable" : saved[post.id] ? "Saved" : "Save"}</Text></Pressable>
           </View>
           {openComments[post.id] && !reels ? <View style={{ gap: 12 }}>

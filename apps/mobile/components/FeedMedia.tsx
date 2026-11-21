@@ -28,13 +28,13 @@ export function FeedMedia({ userId, postId, reference, video = false, enabled, l
         const { data, error: sessionError } = await supabase.auth.getSession();
         if (sessionError || !data.session || data.session.user.id !== userId) throw new Error("Missing session");
         const uri = await authorizedFeedMedia(origin, project, data.session.access_token, postId, reference, controller.signal);
-        if (active) { setSource({ owner: userId, reference, uri }); expiry = setTimeout(() => setRevision(value => value + 1), 50000); expiryRef.current = expiry; }
+        if (active) { setSource({ owner: userId, reference, uri }); if (!video) { expiry = setTimeout(() => setRevision(value => value + 1), 50000); expiryRef.current = expiry; } }
       } catch { if (active) { setError(true); setSource(null); } }
       finally { clearTimeout(deadline); }
     };
     void load();
     return () => { active = false; controller.abort(); clearTimeout(deadline); clearTimeout(expiry); };
-  }, [enabled, userId, postId, reference, revision]);
+  }, [enabled, userId, postId, reference, revision, video]);
   const uri = enabled && source?.owner === userId && source.reference === reference ? source.uri : null;
   useEffect(() => {
     if (!uri || video) return;

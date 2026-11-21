@@ -57,6 +57,15 @@ export default function SupportPage() {
   }
 
   useEffect(() => {
+    // Existing support queue handles member-submitted Reel reports until a
+    // dedicated moderation table/queue is reviewed and safely released.
+    const reelId = new URLSearchParams(window.location.search).get("reportReel");
+    if (reelId && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(reelId)) {
+      setSubject("Report a HoopFeed Reel");
+      setCategory("security");
+      setPriority("high");
+      setDescription(`Reel: https://hoopcheck.online/feed#post-${reelId}\nReason: `);
+    }
     void load();
   }, []);
 
