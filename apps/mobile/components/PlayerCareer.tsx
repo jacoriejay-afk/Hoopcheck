@@ -1,3 +1,4 @@
+import { courtsideFeatures } from "../src/native/courtsideFeatures";
 import { summarizeCareer } from "../src/native/careerSummary";
 import { useEffect, useState } from "react";
 import { Text, View } from "react-native";
@@ -13,6 +14,7 @@ export function PlayerCareer({ playerId, viewer }: { playerId: string; viewer: P
   const [revision, setRevision] = useState(0);
   const [state, setState] = useState<{ rows: Stop[]; loading: boolean; error: string }>({ rows: [], loading: true, error: "" });
   useEffect(() => {
+    if (!courtsideFeatures.careerStatistics) return;
     let active = true; const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), 15000);
     setState({ rows: [], loading: true, error: "" });
     async function load() {
@@ -30,6 +32,7 @@ export function PlayerCareer({ playerId, viewer }: { playerId: string; viewer: P
     }
     void load(); return () => { active = false; controller.abort(); clearTimeout(timer); };
   }, [playerId, viewer.id, viewer.accountType, revision]);
+  if (!courtsideFeatures.careerStatistics) return <View style={{ gap: t.spacing.sm, marginBottom: t.spacing.lg }}><SectionHeader>Career journey</SectionHeader><Text style={{ color: t.muted }}>Career history is unavailable in this release.</Text></View>;
   const summary = summarizeCareer(state.rows);
   return <View style={{ gap: t.spacing.md, marginBottom: t.spacing.xl }}>
     {!state.loading && !state.error ? <View style={{ gap: t.spacing.sm }}>
