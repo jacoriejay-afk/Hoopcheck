@@ -4,7 +4,7 @@ import { stripeMatchesDeployment } from "../../../../../lib/stripe-key-mode";
 import { createClient } from "@supabase/supabase-js";
 import { applePreventsStripeCheckout } from "../../../../../lib/server/apple/service";
 import { AppleBillingError } from "../../../../../lib/server/apple/proofs";
-import { getActiveMembershipTier } from "../../../../../lib/membership-tier";
+import { getActiveMembershipTier, canStartNewMembershipCheckout } from "../../../../../lib/membership-tier";
 import { isEligibleForSevenDayTrial } from "../../../../../lib/stripe-trial-eligibility";
 import { canReuseOpenTrialSession, isTrustedStripeCheckoutUrl } from "../../../../../lib/stripe-trial-recovery";
 
@@ -288,7 +288,7 @@ export async function POST(
     const currentTier = getActiveMembershipTier(existingSubscription);
     const hasStripeSubscription = existingSubscription?.stripe_subscription_id &&
       ["active", "trialing"].includes(existingSubscription.status || "");
-    if (hasStripeSubscription || currentTier === plan) {
+    if (hasStripeSubscription || !canStartNewMembershipCheckout(currentTier, plan)) {
       return NextResponse.json(
         {
           error:

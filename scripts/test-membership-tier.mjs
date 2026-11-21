@@ -7,9 +7,21 @@ const compiled = ts.transpileModule(source, {
   compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 },
 }).outputText;
 const moduleUrl = "data:text/javascript;base64," + Buffer.from(compiled).toString("base64");
-const { getHoopCheckEntitlements } = await import(moduleUrl);
+const { getHoopCheckEntitlements, getActiveMembershipTier, canStartNewMembershipCheckout } = await import(moduleUrl);
 
 const active = (plan) => ({ plan, status: "active", access_status: "active" });
+// A paid member must never open a same-tier or lower-tier Checkout.
+for (const [current, requested, allowed] of [
+  ["free","pro",true], ["free","premium",true],
+  ["pro","pro",false], ["pro","premium",true],
+  ["premium","pro",false], ["premium","premium",false],
+]) assert.equal(canStartNewMembershipCheckout(current, requested), allowed);
+assert.equal(canStartNewMembershipCheckout(getActiveMembershipTier({plan:"premium",status:"active"}),"pro"),false);
+assert.equal(canStartNewMembershipCheckout(getActiveMembershipTier({plan:"premium",status:"canceled"}),"pro"),true);
+assert.equal(canStartNewMembershipCheckout(getActiveMembershipTier({plan:"premium",status:"active",current_period_end:"2000-01-01T00:00:00Z"}),"pro"),true);
+const checkoutSource = readFileSync(new URL("../app/api/stripe/webhook/create-checkout/route.ts", import.meta.url), "utf8");
+assert.ok(checkoutSource.includes("hasStripeSubscription || !canStartNewMembershipCheckout(currentTier, plan)"));
+
 const keys = [
   "canReadHoopFeed", "canWriteHoopFeed", "canReadFanFeed", "canWriteFanFeed",
   "canReadFullReviews", "canViewTrustScore", "canWriteReviews",

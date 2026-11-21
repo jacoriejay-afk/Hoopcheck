@@ -69,6 +69,14 @@ export function getActiveMembershipTier(
   return "free";
 }
 
+/** Reject same-tier and downgrade checkouts, including active non-Stripe grants. */
+export function canStartNewMembershipCheckout(
+  currentTier: MembershipTier,
+  requestedTier: "pro" | "premium",
+): boolean {
+  return !isAtLeastTier(currentTier, requestedTier);
+}
+
 export function getHoopCheckEntitlements(args: {
   accountType: HoopCheckAccountType | null | undefined;
   subscription?: ActiveMembership | null;
