@@ -33,3 +33,5 @@ The inherited membership failure reproduces as a sign-in redirect with no synthe
 ## Confirmed browser regression and fix
 
 With a correctly configured clean-cache fixture, the actual blank authenticated page reports `isReduceTransparencyEnabled is not a function`. React Native Web does not implement that iOS-only API. Fixed in originating #748 at 7a345d4a with an explicit iOS platform guard and a web-render regression test. Merged forward without rewriting history: #749 61000a72, #750 22685dca, this follow-up 300803de. Before screenshots at detached 59ea3e31 show this genuine baseline crash in both themes; they are not successful pre-redesign screen layouts. The cache change alone is not claimed to fix the crash.
+
+Roster clarification: the website already has roster/roster-board UI. Native roster remains unimplemented here pending review of its existing privacy and role contracts; this does not assert a new schema is necessarily required. Do not treat the disabled native flag as recovery or completion of that website functionality.

@@ -48,7 +48,8 @@ const rows = {
       await page.getByText('Explore basketball',{exact:true}).waitFor({timeout:15000}).catch(async e=>{console.log('URL',page.url());console.log('BODY',await page.locator('body').innerText()); console.log('REQUESTS',requests); await require("./compact-layout.cjs").capture(page, {path:'/tmp/hoopcheck-native-ui/failure.png'}); throw e;});
       await page.getByRole('textbox',{name:'Search basketball directory'}).fill('Olympia');
       await page.getByRole('textbox',{name:'Search basketball directory'}).press('Enter');
-      await page.getByText('Search basketball',{exact:true}).waitFor();
+      await page.waitForURL(url => url.pathname === '/search');
+      await page.getByRole('textbox',{name:'Search basketball directory',exact:true}).waitFor();
       await page.getByText('Olympia Women',{exact:true}).filter({visible:true}).waitFor();
       await require("./compact-layout.cjs").capture(page, {path:`/tmp/hoopcheck-native-ui/search-${theme}.png`,fullPage:true});
       await page.getByText('Olympia Women',{exact:true}).filter({visible:true}).click();

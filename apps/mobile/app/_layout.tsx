@@ -140,7 +140,7 @@ function RootLayout() {
         <Stack.Screen name="womens/index" options={{ title: "Women’s teams" }} />
         <Stack.Screen name="womens/leagues/[id]" options={{ title: "League profile" }} />
         <Stack.Screen name="womens/[id]" options={{ title: "Team profile" }} />
-        <Stack.Screen name="search" options={{ title: "Search" }} />
+        <Stack.Screen name="search" options={{ title: "Search basketball" }} />
         <Stack.Screen name="teams" options={{ title: "Teams" }} />
         <Stack.Screen name="teams/[id]" options={{ title: "Team profile" }} />
         <Stack.Screen name="teams/[id]/review" options={{ title: "Write a review" }} />
