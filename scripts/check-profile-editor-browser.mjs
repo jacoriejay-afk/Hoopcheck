@@ -46,8 +46,8 @@ try {
   await page.goto(`${baseURL}/account`);
   await page.locator('#profile-editor').waitFor();
   await page.getByRole('radio',{name:'Violet'}).check();
-  await page.getByRole('button',{name:'Save cover'}).click();
-  await page.getByRole('status').filter({hasText:'Profile cover saved.'}).waitFor();
+  await page.getByRole('button',{name:'Save profile style'}).click();
+  await page.getByRole('status').filter({hasText:'Profile style and links saved.'}).waitFor();
   assert.equal(user.user_metadata.hoopcheck_profile_cover,'violet');
   assert.equal(await page.locator('.hc-social-profile').getAttribute('data-profile-cover'),'violet');
   await page.locator('#position').selectOption('PG');
