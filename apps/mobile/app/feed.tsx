@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { FlatList, Image, Linking, Pressable, RefreshControl, Share, Text, TextInput, View, type ViewToken } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
@@ -49,6 +50,16 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
   const [autoOpened, setAutoOpened] = useState<string | undefined>(undefined);
   const [openComments, setOpenComments] = useState<Record<string, boolean>>({});
   const [visible, setVisible] = useState(new Set<string>());
+  const [hiddenReels, setHiddenReels] = useState<{ owner: string; ids: string[] }>({ owner: "", ids: [] });
+  useEffect(() => {
+    if (!uid) return;
+    let alive = true;
+    void AsyncStorage.getItem(`hoopcheck:reels:hidden:${uid}`).then(raw => {
+      const parsed: unknown = raw ? JSON.parse(raw) : [];
+      if (alive) setHiddenReels({ owner: uid, ids: Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string" && isFeedId(id)).slice(-500) : [] });
+    }).catch(() => { if (alive) setHiddenReels({ owner: uid, ids: [] }); });
+    return () => { alive = false; };
+  }, [uid]);
   // A Reel must own most of the screen before it can play; never play two at once.
   const viewability = useMemo(() => ({ itemVisiblePercentThreshold: reels ? 75 : 30 }), [reels]);
   const viewChanged = useCallback(({ viewableItems }: { viewableItems: ViewToken<FeedPost>[] }) => {
@@ -135,7 +146,18 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
     if (params.comments !== "1" || !linkedId || reels || autoOpened === linkedId || rows.scope !== scope || !rows.posts.some(post => post.id === linkedId)) return;
     setAutoOpened(linkedId); setOpenComments(previous => ({ ...previous, [linkedId]: true })); void loadComments(linkedId);
   }, [params.comments, linkedId, reels, autoOpened, rows, scope, loadComments]);
-  const posts = canRead && rows.scope === scope ? rows.posts.filter(post => !post.expires_at || Date.parse(post.expires_at) > now) : [];
+  const posts = canRead && rows.scope === scope ? rows.posts.filter(post =>
+    (!post.expires_at || Date.parse(post.expires_at) > now) &&
+    (!reels || hiddenReels.owner !== uid || !hiddenReels.ids.includes(post.id)),
+  ) : [];
+  async function hideReel(postId: string) {
+    if (!uid || !reels) return;
+    const existing = hiddenReels.owner === uid ? hiddenReels.ids : [];
+    const nextIds = [...new Set([...existing, postId])].slice(-500);
+    setHiddenReels({ owner: uid, ids: nextIds });
+    try { await AsyncStorage.setItem(`hoopcheck:reels:hidden:${uid}`, JSON.stringify(nextIds)); }
+    catch { setMessage("Video hidden for this session. It could not be saved to your device."); }
+  }
   const textStyle = { color: theme.foreground };
   const linkStyle = { color: theme.accent };
   const touch = { minHeight: 44, paddingHorizontal: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 999, backgroundColor: theme.elevatedSurface, justifyContent: "center" as const };
@@ -194,6 +216,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
             <Pressable accessibilityRole="button" onPress={() => { if (reels) { router.push({ pathname: "/feed", params: { post: post.id, comments: "1" } }); return; } setOpenComments(previous => ({ ...previous, [post.id]: !previous[post.id] })); if (!page || page.error) void loadComments(post.id); }} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Comments</Text></Pressable>
             <Pressable accessibilityRole="button" onPress={() => void action(`share:${post.id}`, async () => { await Share.share({ title: "HoopFeed", message: `https://hoopcheck.online/feed#post-${post.id}` }); })} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Share</Text></Pressable>
             {reels && <Pressable accessibilityRole="button" accessibilityLabel="Report this Reel" onPress={() => void action(`report:${post.id}`, async () => { await Linking.openURL(`https://hoopcheck.online/support?reportReel=${post.id}`); })} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Report</Text></Pressable>}
+            {reels && <Pressable accessibilityRole="button" accessibilityLabel="Hide this Reel from your device" onPress={() => void hideReel(post.id)} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Hide</Text></Pressable>}
             <Pressable accessibilityRole="button" disabled={!canWrite || saved[post.id] === undefined || Boolean(pending[`save:${post.id}`])} onPress={() => void action(`save:${post.id}`, async () => { const value = !saved[post.id]; await feedAction(origin, await token(), "bookmark", post.id, value); if (viewer.current.uid === uid) setSaved(previous => ({ ...previous, [post.id]: value })); })} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>{saved[post.id] === undefined ? "Saved status unavailable" : saved[post.id] ? "Saved" : "Save"}</Text></Pressable>
           </View>
           {openComments[post.id] && !reels ? <View style={{ gap: 12 }}>
