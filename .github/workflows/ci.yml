@@ -51,6 +51,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify Build 9 signed HTTP guard offline (no network or tokens)
+        run: node scripts/build9-signed-http-acceptance.mjs --self-test
+
       - name: Audit production dependencies (blocking)
         run: npm audit --omit=dev --audit-level=high
 
