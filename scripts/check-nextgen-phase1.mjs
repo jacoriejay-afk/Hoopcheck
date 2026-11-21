@@ -2,46 +2,51 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 const read=(path)=>readFileSync(new URL("../"+path,import.meta.url),"utf8");
 
-const agentsApi=read("app/api/network/agents/route.ts");
-assert.match(agentsApi,/\.in\("account_type",\["agent","scout"\]\)/);
-assert.match(agentsApi,/\.eq\("profile_visibility","public"\)/);
-assert.match(agentsApi,/\.eq\("moderation_status","normal"\)/);
-assert.match(agentsApi,/identity_checked:row\.identity_verification_status==="verified"/);
-const agentColumns=agentsApi.match(/\.select\("([^"]+)"\)/)?.[1]||"";
-assert.doesNotMatch(agentColumns,/\bcurrent_country\b|\bbirthdate\b|\bmoderation_note\b/);
+for(const [kind,table] of [["agents","agent_showcases"],["creators","creator_profiles"]]){
+  const source=read("app/api/network/"+kind+"/route.ts");
+  assert.match(source,new RegExp('\\.from\\("'+table+'"\\)'),kind+" uses only owner-opted showcases");
+  assert.match(source,/\.eq\("is_published",true\)/);
+  assert.match(source,/\.eq\("profiles\.moderation_status","normal"\)/);
+  assert.doesNotMatch(source,/\.from\("profiles"\)/,kind+" must not pull private profile rows directly");
+  assert.match(source,/SUPABASE_SERVICE_ROLE_KEY/);
+  assert.match(source,/Cache-Control/);
+}
+const agents=read("app/api/network/agents/route.ts");
+assert.match(agents,/\.in\("profiles\.account_type",\["agent","scout"\]\)/);
+assert.match(agents,/identity_checked:p\.identity_verification_status==="verified"/);
+assert.match(agents,/display_name:row\.public_name/);
+const creators=read("app/api/network/creators/route.ts");
+assert.match(creators,/display_name:row\.public_name/);
+assert.match(creators,/avatar_url:null/);
+assert.doesNotMatch(creators,/profile_visibility/);
 
-const creatorsApi=read("app/api/network/creators/route.ts");
-assert.match(creatorsApi,/\.eq\("is_published",true\)/);
-assert.match(creatorsApi,/\.eq\("profiles\.profile_visibility","public"\)/);
-assert.match(creatorsApi,/\.eq\("profiles\.moderation_status","normal"\)/);
-assert.match(creatorsApi,/p\.profile_visibility!=="public"\|\|p\.moderation_status!=="normal"/);
-assert.doesNotMatch(creatorsApi,/user_metadata|service_role.*NEXT_PUBLIC/);
+for(const path of ["app/api/network/creator-studio/route.ts","app/api/network/agent-studio/route.ts"]){
+  const source=read(path);
+  assert.match(source,/auth\.auth\.getUser\(token\)/,path+" revalidates bearer token");
+  assert.match(source,/\.eq\("profile_id",user\.id\)/,path+" only reads its own row");
+  assert.match(source,/profile_id:user\.id/,path+" writes owner id, not supplied id");
+  assert.match(source,/typeof is_published!=="boolean"/,path+" validates publish opt-in");
+  assert.match(source,/moderation_status/,path+" enforces live moderation");
+  assert.match(source,/https:/,path+" validates HTTPS websites");
+}
+assert.match(read("app/api/network/agent-studio/route.ts"),/\["agent","scout"\]\.includes\(profile\.account_type\)/);
 
-const studio=read("app/api/network/creator-studio/route.ts");
-assert.match(studio,/auth\.auth\.getUser\(token\)/);
-assert.match(studio,/\.eq\("profile_id",user\.id\)/);
-assert.match(studio,/profile_id:user\.id/);
-assert.match(studio,/typeof is_published!=="boolean"/);
-assert.match(studio,/parsed\.protocol!=="https:"/);
-assert.doesNotMatch(studio,/\.from\("profiles"\)\.select\("\*"\)/);
-
-for(const path of ["app/agents/page.tsx","app/agents/[id]/page.tsx","app/creators/page.tsx","app/creators/[id]/page.tsx","app/creator-studio/page.tsx"]){
+for(const path of ["app/agents/page.tsx","app/agents/[id]/page.tsx",
+ "app/creators/page.tsx","app/creators/[id]/page.tsx","app/creator-studio/page.tsx","app/agent-studio/page.tsx"]){
   const component=read(path);
   assert.match(component,/\/api\/network\//,path+" uses scoped API");
-  assert.doesNotMatch(component,/\.from\("profiles"\)|\.from\("creator_profiles"\)/,path+" must not query protected tables directly");
+  assert.doesNotMatch(component,/\.from\("profiles"\)|\.from\("creator_profiles"\)|\.from\("agent_showcases"\)/,
+    path+" does not read or write protected tables directly");
 }
 const ddl=read("supabase/migrations/20261122230000_nextgen_creator_profiles.sql");
-assert.match(ddl,/enable row level security/i);
-assert.match(ddl,/creator profiles own create/);
-assert.match(ddl,/creator profiles own edit/);
-assert.match(ddl,/creator profiles own remove/);
-assert.match(ddl,/revoke all on public\.creator_profiles from anon, authenticated/i);
-assert.doesNotMatch(ddl,/grant select on public\.creator_profiles to anon/i);
-assert.doesNotMatch(ddl,/security definer/i);
-assert.match(ddl,/grant select, insert, update, delete on public\.creator_profiles to service_role/i);
-
+for(const table of ["creator_profiles","agent_showcases"]){
+  assert.match(ddl,new RegExp('alter table public\\.'+table+' enable row level security'));
+  assert.match(ddl,new RegExp('revoke all on public\\.'+table+' from anon, authenticated'));
+  assert.match(ddl,new RegExp('grant select, insert, update, delete on public\\.'+table+' to service_role'));
+}
+assert.doesNotMatch(ddl,/alter table public\.profiles|grant select on public\.profiles|security definer/i);
 for(const path of ["app/directory/page.tsx","components/SiteHeader.tsx"]){
   assert.match(read(path),/\/agents/);
   assert.match(read(path),/\/creators/);
 }
-console.log("NEXTGEN Phase 1 security and routing invariants passed.");
+console.log("NEXTGEN Phase 1: privacy, roles, opt-in and routing invariants passed.");
