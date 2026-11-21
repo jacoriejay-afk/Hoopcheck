@@ -62,6 +62,8 @@ export default function LiveGamesPage() {
   const [message, setMessage] = useState("");
   const [reminding, setReminding] = useState<string | null>(null);
   const [clock, setClock] = useState(() => new Date());
+  const [lastCheckedAt, setLastCheckedAt] = useState<Date | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const basketballSide = useFanBasketballSide();
 
   const load = useCallback(async (showLoader = false) => {
@@ -95,6 +97,7 @@ export default function LiveGamesPage() {
       supabase.from("fan_live_game_reminders").select("game_id").eq("user_id", user.id),
     ]);
     if (gamesResult.error) setMessage("Game schedules are temporarily unavailable. Please refresh in a moment.");
+    else { setLastCheckedAt(new Date()); setMessage(""); }
     const rawGames = (gamesResult.data || []) as Game[];
     const candidateIds = Array.from(new Set(rawGames.flatMap(game => [game.team_id, game.opponent_team_id].filter((id): id is string => Boolean(id)))));
     const [{ data: sideRows }, { data: womensSideRows }] = await Promise.all([
@@ -150,13 +153,18 @@ export default function LiveGamesPage() {
     const presenceChannel = supabase.channel("live-games-presence-counts")
       .on("postgres_changes", { event: "*", schema: "public", table: "fan_live_chat_presence" }, () => { void load(); })
       .subscribe();
+    // Listen for provider-backed score changes when fan_live_games is published to
+    // Realtime. The regular 60-second refresh remains the fallback if it is not.
+    const gameChangesChannel = supabase.channel("live-games-score-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "fan_live_games" }, () => { void load(); })
+      .subscribe();
     const refresh = window.setInterval(() => {
       setClock(new Date());
       void load();
     }, 60_000);
     const onVisible = () => { if (document.visibilityState === "visible") { setClock(new Date()); void load(); } };
     document.addEventListener("visibilitychange", onVisible);
-    return () => { window.clearInterval(refresh); document.removeEventListener("visibilitychange", onVisible); void supabase.removeChannel(presenceChannel); };
+    return () => { window.clearInterval(refresh); document.removeEventListener("visibilitychange", onVisible); void supabase.removeChannel(presenceChannel); void supabase.removeChannel(gameChangesChannel); };
   }, [load]);
 
   const prepared = useMemo(() => games.map(game => ({
@@ -181,10 +189,10 @@ export default function LiveGamesPage() {
   }), [prepared, query, teams]);
 
   const nowMs = clock.getTime();
+  // Chat availability is not proof that a match has started. Only provider LIVE status earns the badge.
   const live = filtered.filter(({game,availability}) =>
-    !["final","finished","cancelled","canceled","postponed","abandoned"].includes(game.status.toLowerCase()) &&
-    availability.state === "LIVE" && availability.phase !== "post-game" &&
-    (game.status === "live" || availability.phase === "schedule-unknown"));
+    game.status.toLowerCase() === "live" && availability.state === "LIVE" &&
+    availability.phase !== "post-game" && availability.phase !== "closed");
   const upcoming = filtered.filter(({availability,game}) => {
     if (!(availability.state === "UPCOMING" || availability.state === "OPENS SOON")) return false;
     const tip = game.scheduled_at ? Date.parse(game.scheduled_at) : Number.NaN;
@@ -203,6 +211,14 @@ export default function LiveGamesPage() {
 
   const postGameOpen = filtered.filter(({availability,game}) => availability.phase === "post-game" && availability.chatOpen && !["final","finished","cancelled","canceled","postponed","abandoned"].includes(game.status.toLowerCase()));
   const nextUpcoming = upcoming[0] || null;
+
+  async function refreshNow() {
+    if (refreshing) return;
+    setRefreshing(true);
+    try { await load(); setClock(new Date()); }
+    catch { setMessage("Could not refresh games. The last loaded scores may be out of date."); }
+    finally { setRefreshing(false); }
+  }
 
   async function toggleReminder(gameId: string) {
     if (!userId || reminding) return;
@@ -255,6 +271,7 @@ export default function LiveGamesPage() {
           {isUpcoming && <span><HoopIcon name="calendar" size={15} /> {formatViewerLocalTime(tip)}</span>}
           {isRecent && <span><HoopIcon name="check" size={15} /> {availability.chatOpen ? "Post-game conversation" : "Final score"}</span>}
           {variant === "postgame" && <span><HoopIcon name="message-square" size={15} /> Post-game chat remains open</span>}
+          {isLive && <span aria-label="Score source">Provider-reported live score</span>}
         </div>
         {isUpcoming && availability.opensAt && <p className="hc-live-card__muted">{availability.minutesUntilOpen && availability.minutesUntilOpen > 0 ? `Chat opens in ${availability.minutesUntilOpen} min` : "Chat open"} · {formatViewerLocalTime(availability.opensAt.toISOString(), { weekday: undefined })}</p>}
         <div className="hc-live-card__actions">
@@ -263,6 +280,7 @@ export default function LiveGamesPage() {
             <HoopIcon name="bell" size={16} /> {reminding === game.id ? "Saving…" : reminders.includes(game.id) ? "REMINDER SET" : "REMIND ME"}
           </button>}
           {isRecent && !canJoin && <span className="hc-live-card__muted">Final score {score || "not available"}</span>}
+          <Link href={(basketballSide === "womens" ? "/womens/" : "/teams/") + game.team_id} className="hc-live-card__muted">Team profile</Link>
         </div>
       </article>
     );
@@ -274,6 +292,11 @@ export default function LiveGamesPage() {
 
   return <main className="page-shell hc-live-hub-page">
       <FanBasketballSideSwitch /><div className="page-container">
+    <section aria-label="Courtside pulse" className="hc-live-hub-section">
+      <div className="hc-live-section-heading"><div><p className="eyebrow">COURTSIDE PULSE</p><h2>{live.length} live {live.length === 1 ? "game" : "games"} · {live.reduce((total, entry) => total + (presenceCounts[entry.game.id] || 0), 0)} fans in live chats</h2><p className="muted">LIVE reflects the game provider, not just an open chat. Schedules and conversations update independently.</p></div>
+        <button type="button" className="btn dark" disabled={refreshing} onClick={() => void refreshNow()}>{refreshing ? "Checking…" : "Refresh games"}</button></div>
+      <p className="muted" role="status">{lastCheckedAt ? "Scores last checked " + lastCheckedAt.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }) + " · Individual score freshness depends on the provider." : "Score source not checked yet."}</p>
+    </section>
     <section aria-label="Happening Now" className="hc-live-hub-section">
       <div className="hc-live-section-heading"><div><p className="eyebrow">THE CONVERSATION</p><h1>Happening Now</h1></div></div>
       {filtered.filter(({game,availability}) => availability.chatOpen && (presenceCounts[game.id] || 0) > 0)
@@ -281,7 +304,7 @@ export default function LiveGamesPage() {
         .slice(0,8).length > 0
         ? <div className="hc-live-hub-grid">{filtered.filter(({game,availability}) => availability.chatOpen && (presenceCounts[game.id] || 0) > 0)
           .sort((a,b) => (presenceCounts[b.game.id] || 0) - (presenceCounts[a.game.id] || 0))
-          .slice(0,8).map(entry => <GameCard key={entry.game.id} entry={entry} variant={entry.game.status.toLowerCase() === "live" ? "live" : ["final", "finished"].includes(entry.game.status.toLowerCase()) || entry.availability.phase === "post-game" ? "postgame" : "upcoming"} />)}</div>
+          .slice(0,8).map(entry => <GameCard key={entry.game.id} entry={entry} variant={live.some(item => item.game.id === entry.game.id) ? "live" : ["final", "finished"].includes(entry.game.status.toLowerCase()) || entry.availability.phase === "post-game" ? "postgame" : "upcoming"} />)}</div>
         : <p className="muted">Active conversations will appear here when people join a game chat.</p>}
     </section>
     <section className="hc-live-hub-filters" aria-label="Browse game conversations">
@@ -321,12 +344,12 @@ export default function LiveGamesPage() {
             <strong>{key}</strong><span>{entries.length} games {collapsedLeagues.includes(key) ? "＋" : "−"}</span>
           </button>
           {!collapsedLeagues.includes(key) && <div className="hc-live-hub-grid">{entries.map(entry =>
-            <GameCard key={entry.game.id} entry={entry} variant={entry.game.status === "live" ? "live" : ["final","finished"].includes(entry.game.status.toLowerCase()) ? "recent" : "upcoming"} />)}</div>}
+            <GameCard key={entry.game.id} entry={entry} variant={live.some(item => item.game.id === entry.game.id) ? "live" : ["final","finished"].includes(entry.game.status.toLowerCase()) ? "recent" : entry.availability.phase === "post-game" ? "postgame" : "upcoming"} />)}</div>}
         </section>)}
       </section>;
     })()}
 
     {!filtered.length && <section className="hc-live-no-games"><CourtLines variant="circle" className="hc-court-empty-art" /><h2>{games.length ? "No games match these filters" : "No games scheduled yet"}</h2><p>{games.length ? "Try another team, league, or filter — or browse the full team directory." : "The game schedule has no fixtures yet. Browse the team directory while the schedule feed is being populated."}</p><Link href="/teams" className="btn">Browse Teams</Link></section>}
-    <div className="hc-live-hub-footer"><span>Game states refresh automatically every 60 seconds.</span><Link href="/teams">Explore teams <span aria-hidden="true">→</span></Link></div>
+    <div className="hc-live-hub-footer"><span>Game data is checked every 60 seconds while this page is open; actual provider updates may be less frequent.</span><Link href="/teams">Explore teams <span aria-hidden="true">→</span></Link></div>
   </div></main>;
 }

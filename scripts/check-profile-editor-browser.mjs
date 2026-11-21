@@ -48,9 +48,13 @@ try {
   await page.goto(`${baseURL}/account`);
   await page.locator('#profile-editor').waitFor();
   await page.getByRole('radio',{name:'Violet'}).check();
-  await page.getByRole('button',{name:'Save cover'}).click();
-  await page.getByRole('status').filter({hasText:'Profile cover saved.'}).waitFor();
+  await page.getByRole('radio',{name:/Showcase/}).check();
+  await page.getByRole('textbox',{name:'Instagram'}).fill('https://instagram.com/qa_player');
+  await page.getByRole('button',{name:'Save profile style'}).click();
+  await page.getByRole('status').filter({hasText:'Profile style and links saved.'}).waitFor();
   assert.equal(user.user_metadata.hoopcheck_profile_cover,'violet');
+  assert.equal(user.user_metadata.hoopcheck_profile_layout,'showcase');
+  assert.equal(user.user_metadata.hoopcheck_social_links?.instagram,'https://instagram.com/qa_player');
   assert.equal(await page.locator('.hc-social-profile').getAttribute('data-profile-cover'),'violet');
   await page.locator('#position').selectOption('PG');
   await page.locator('#player-height').fill('193 cm');
@@ -93,6 +97,7 @@ try {
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false,'No horizontal overflow');
   await page.goto(`${baseURL}/profile`);
   await page.locator('.hc-social-profile[data-profile-cover="violet"]').waitFor();
+  await page.locator('.hc-member-profile-page[data-profile-layout="showcase"]').waitFor();
   assert.equal(await page.locator('.hc-social-profile').getByText(user.email,{exact:false}).count(),0);
   await page.getByRole('navigation',{name:'Profile quick links'}).getByRole('link',{name:'Settings',exact:true}).click();
   await page.waitForURL(`${baseURL}/settings`);
