@@ -104,8 +104,12 @@ async function fixture(browser,theme,allowed=true){
       console.error('Page errors', JSON.stringify(errors));
       throw error;
     }
-    await page.waitForFunction(()=>{const image=document.querySelector('img[alt="HoopFeed photo"]');const box=image?.getBoundingClientRect();return Boolean(box&&box.width>250&&box.height>120);});
-    const photoBox=await page.getByRole('img',{name:'HoopFeed photo',exact:true}).boundingBox();assert.ok(photoBox&&photoBox.width>250&&photoBox.height>120,'Photo has visible dimensions');
+    // V3 has wider card gutters on a 320pt screen; require a substantial image
+    // relative to the viewport, not an impossible fixed 250pt minimum.
+    await page.waitForFunction(()=>{const image=document.querySelector('img[alt="HoopFeed photo"]');const box=image?.getBoundingClientRect();return Boolean(box&&box.width>Math.min(250,document.documentElement.clientWidth*0.55)&&box.height>120);});
+    const photoBox=await page.getByRole('img',{name:'HoopFeed photo',exact:true}).boundingBox();
+    const minimumPhotoWidth=Math.min(250,require("./compact-layout.cjs").viewport.width*0.55);
+    assert.ok(photoBox&&photoBox.width>minimumPhotoWidth&&photoBox.height>120,'Photo has visible responsive dimensions');
     assert.equal(await page.getByRole('heading',{name:'HoopFeed',exact:true}).count(),0,'No duplicate headings');
     await require("./compact-layout.cjs").capture(page, {path:`/tmp/hoopcheck-native-ui/feed-posts-${theme}.png`,fullPage:true});
     await page.getByRole('button',{name:'Create HoopFeed post',exact:true}).click();
