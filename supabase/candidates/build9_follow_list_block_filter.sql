@@ -9,6 +9,30 @@ BEGIN
  IF to_regprocedure('public.get_public_follow_list(text,text,uuid,uuid)') IS NULL THEN
   RAISE EXCEPTION 'Missing reviewed follow-list function';
  END IF;
+ IF NOT EXISTS (
+  SELECT 1 FROM pg_class c WHERE c.oid='public.user_blocks'::regclass AND c.relrowsecurity
+ ) OR NOT EXISTS (
+  SELECT 1 FROM pg_class c WHERE c.oid='public.follow_relationships'::regclass AND c.relrowsecurity
+ ) THEN
+  RAISE EXCEPTION 'RLS must be enabled on both follow and block tables';
+ END IF;
+ IF NOT EXISTS (
+  SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='user_blocks'
+    AND policyname='user blocks own select'
+ ) OR has_table_privilege('anon','public.user_blocks','SELECT')
+    OR NOT has_table_privilege('authenticated','public.user_blocks','SELECT') THEN
+  RAISE EXCEPTION 'Unexpected block-table select policy or privilege; refuse replacement';
+ END IF;
+ IF NOT EXISTS (
+  SELECT 1 FROM pg_proc p
+  WHERE p.oid='public.get_public_follow_list(text,text,uuid,uuid)'::regprocedure
+    AND p.prosecdef
+    AND p.proconfig @> ARRAY['search_path=""']::text[]
+    AND p.prosrc LIKE '%follower.profile_visibility%'
+    AND p.prosrc NOT LIKE '%public.user_blocks%'
+ ) THEN
+  RAISE EXCEPTION 'Installed follow-list definition differs from reviewed historical baseline';
+ END IF;
 END $guard$;
 -- Keep public follower discovery, but never disclose the followers of a private
 -- player/fan profile to an unrelated anonymous or authenticated visitor.
