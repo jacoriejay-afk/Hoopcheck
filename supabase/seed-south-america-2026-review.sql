@@ -1,10 +1,14 @@
 -- Review-only directory import. DO NOT auto-apply during Build 9 privacy/backend reconciliation.
--- Verified 2026 Brazil LBF: https://lbf.com.br/noticias/pronta-para-comecar/
+-- Brazil's 2026 LBF club list was checked against production: the existing women's teams already cover it; do NOT duplicate.
+-- https://lbf.com.br/noticias/pronta-para-comecar/
+-- Verified 2026 Chile first division eight clubs: https://chilelnf.cl/lnf
+-- Verified Defensor Sporting in 2026 WBL Americas: https://www.fiba.basketball/es/events/womens-basketball-league-americas-2026/news/wbl-americas-2026-teams-announced
 -- Verified 2026/27 Argentine women's league:
 -- https://webadc.gesdeportiva.es/lfb/noticia/52812/el-torneo-apertura-2026-ya-tiene-su-fixture-confirmado
 -- Verified Brazil NBB 2026/27:
 -- https://lnb.com.br/noticias/lnb-define-participantes-e-formato-da-temporada-2026-27-do-nbb-caixa/
 -- Chile LNB 2026: https://lnbchile.com/liga/uno/equipos
+-- This review-only file reflects production directory audit 2026-11-22 (11 existing Brazil women's teams and no Argentina/Chile/Uruguay women's teams).
 -- Season context matters: a directory entry does not assert a currently active roster.
 -- Preflight team-identity/alias review and isolated PostgreSQL rehearsal required before hosted run.
 begin;
@@ -12,7 +16,9 @@ begin;
 insert into public.womens_leagues(name,country,level,active)
 select v.name,v.country,'Professional',true from (values
   ('Brazilian LBF','Brazil'),
-  ('Argentina Women’s Basketball League','Argentina')
+  ('Argentina Women’s Basketball League','Argentina'),
+  ('Liga Nacional Femenina (Chile)','Chile'),
+  ('Liga Femenina de Basketball (Uruguay)','Uruguay')
 ) as v(name,country)
 where not exists (
   select 1 from public.womens_leagues l
@@ -20,17 +26,17 @@ where not exists (
 );
 
 with additions(name,country,league_name,city) as (values
-  -- LBF 2026 official participating teams
-  ('ADRM Maringá Women','Brazil','Brazilian LBF','Maringá'),
-  ('Cerrado BRB Women','Brazil','Brazilian LBF','Brasília'),
-  ('Pontz São José Basketball Women','Brazil','Brazilian LBF','São José dos Campos'),
-  ('Salvador Basketball Women','Brazil','Brazilian LBF','Salvador'),
-  ('Sampaio Basquete Women','Brazil','Brazilian LBF','São Luís'),
-  ('Santo André Women','Brazil','Brazilian LBF','Santo André'),
-  ('SESI Araraquara Basquete Women','Brazil','Brazilian LBF','Araraquara'),
-  ('Sodiê Mesquita Women','Brazil','Brazilian LBF','Mesquita'),
-  ('Sport/Uninassau/Instituto Todos Women','Brazil','Brazilian LBF','Recife'),
-  ('Unimed Campinas Basquete Women','Brazil','Brazilian LBF','Campinas'),
+  -- Chile Liga Nacional Femenina 2026 official first-division roster
+  ('Colegio Los Leones Women','Chile','Liga Nacional Femenina (Chile)','Quilpué'),
+  ('Sportiva Italiana Women','Chile','Liga Nacional Femenina (Chile)','Valparaíso'),
+  ('Boston College Women','Chile','Liga Nacional Femenina (Chile)','Maipú'),
+  ('Sergio Ceppi Women','Chile','Liga Nacional Femenina (Chile)','La Cisterna'),
+  ('UdeC Women','Chile','Liga Nacional Femenina (Chile)','Concepción'),
+  ('Azul y Rojo Women','Chile','Liga Nacional Femenina (Chile)','Santiago'),
+  ('Gimnástico Women','Chile','Liga Nacional Femenina (Chile)','Valparaíso'),
+  ('Luis Matte Larraín Women','Chile','Liga Nacional Femenina (Chile)','Puente Alto'),
+  -- Uruguay FIBA-confirmed international participant 2026; domestic season association requires review
+  ('Defensor Sporting Women','Uruguay','Liga Femenina de Basketball (Uruguay)','Montevideo'),
   -- Liga Femenina Argentina 2026/27, official three-zone fixture
   ('Instituto Women','Argentina','Argentina Women’s Basketball League','Córdoba'),
   ('Rocamora Women','Argentina','Argentina Women’s Basketball League','Concepción del Uruguay'),
