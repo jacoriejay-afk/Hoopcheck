@@ -35,3 +35,40 @@ The inherited membership failure reproduces as a sign-in redirect with no synthe
 With a correctly configured clean-cache fixture, the actual blank authenticated page reports `isReduceTransparencyEnabled is not a function`. React Native Web does not implement that iOS-only API. Fixed in originating #748 at 7a345d4a with an explicit iOS platform guard and a web-render regression test. Merged forward without rewriting history: #749 61000a72, #750 22685dca, this follow-up 300803de. Before screenshots at detached 59ea3e31 show this genuine baseline crash in both themes; they are not successful pre-redesign screen layouts. The cache change alone is not claimed to fix the crash.
 
 Roster clarification: the website already has roster/roster-board UI. Native roster remains unimplemented here pending review of its existing privacy and role contracts; this does not assert a new schema is necessarily required. Do not treat the disabled native flag as recovery or completion of that website functionality.
+
+## Local validation and artifacts
+
+PASS: root and mobile TypeScript; full native suite (200 tests); entitlement matrix (10 role/tier cells, 22 entitlements); full website build with bundle/theme/certificate gates; iOS Hermes and web exports. Full lint: zero errors, the same 125 inherited warnings (see checks/lint.log). An intermediate extra Home hook warning was fixed; it is not part of the final warning count. No blanket lint suppression or dependency audit override was added.
+
+Expo Doctor remains 16/18: Expo schema fetch and React Native Directory metadata requests fail on the environment network. Logs preserve the actual errors; these gates are not claimed passed.
+
+Selected actual browser suites PASS in light/dark: membership unsupported-module/purchase safeguards; design/navigation/320px overflow and decoded image fallback; player privacy/fan denial/current-country opt-in/unconnected career denial/owner Passport preview/web fallback; games/chat/predictions/side gating; group join/post/comment/report/leave; HoopFeed Check/reply/save/poll/moderation/draft retention/Reels playback/alerts and denied membership; discovery/private-review denial; media upload/rotation/retained draft/moderation. Initial profile/game fixtures rejected the new allowed career contract or expected the old combined scoreboard text. Updated assertions explicitly test the new boundary and separate labels. Design failure injection now stays failed until explicit Retry, avoiding auth/focus revalidation consuming a one-shot failure. Feed fixtures now explicitly assert owner identity for Home follow reads and eligible game queries. No assertion permitting private raw profile reads was added.
+
+Screenshots are real rendered React Native Web at synthetic localhost fixtures, NOT generated images, UIKit screenshots, hosted data evidence or simulator acceptance. `screenshots/before/account-{light,dark}.png` show the actual blank authenticated baseline with the unsupported API error. `screenshots/after/account-{light,dark}.png` show the restored account screen. These are the direct before/after crash comparisons. Home, Passport preview, player identity, scoreboards/chat, group conversations, activity and Reels have separate after screenshots. Browser data is synthetic and must not be mistaken for verified player history.
+
+| Artifact | Light | Dark |
+|---|---|---|
+| Baseline account crash | [before](screenshots/before/account-light.png) | [before](screenshots/before/account-dark.png) |
+| Restored account | [after](screenshots/after/account-light.png) | [after](screenshots/after/account-dark.png) |
+| Compact Home | [after](screenshots/after/dashboard-320-light.png) | [after](screenshots/after/dashboard-320-dark.png) |
+| Owner Passport preview | [after](screenshots/after/passport-owner-light.png) | [after](screenshots/after/passport-owner-dark.png) |
+| Game Center | [after](screenshots/after/live-directory-light.png) | [after](screenshots/after/live-directory-dark.png) |
+| Group conversation | [after](screenshots/after/club-group-light.png) | [after](screenshots/after/club-group-dark.png) |
+
+CI failures were inspected and corrected in their originating drafts where appropriate: iOS-only accessibility API guard in #748, native Search title in #749, then normal merges forward into #750/#751. The follow-up surface audit failure was corrected using default print paper; no audit rule changed. Latest exact-head CI still requires completion; earlier failed or passing heads are not substituted. Raw rollups are captured with their head SHA. Evidence-only commits trigger a new final head and require fresh CI inspection.
+
+## Acceptance checklist
+
+- [x] Preserve baseline, stack history and backend authorization; report missing master honestly.
+- [x] Working existing-data Home, grouped scoreboards/detail, joined-group discovery, career timeline, owner Passport preview/native export implementation, activity read/navigation and selected screen/media polish.
+- [x] Keep unsupported data features disabled; document limits rather than fabricate career statistics, trophies, membership or member identities.
+- [x] Run local checks and selected both-theme browser flows; preserve raw logs and real screenshots.
+- [ ] Native simulator visual acceptance and working PDF export/share on a supported iOS binary.
+- [ ] Physical iPhone touch/keyboard/VoiceOver/large-text/performance review; Build 7 freeze diagnosis/resolution.
+- [ ] Full requested native roster/stat/achievement/highlight-collection/member-preview implementation; onboarding/settings and women's league club redesign.
+- [ ] Complete final exact-head CI and Doctor network gates.
+- [ ] Inherited backend catalog/installed-client compatibility/live hosted acceptance and separately approved release rollout.
+
+This is a working follow-up implementation, not a declaration that all Phase 3 acceptance gates have passed. Keep all PRs draft and unmerged.
+
+Final implementation heads captured before the evidence-only commit: #748 7a345d4a (build/mobile checks PASS; unsigned simulator compilation in progress); #749 7773840e and #750 f2c25ca4 (build/mobile/unsigned simulator checks in progress); #751 f4f5112d (security PASS; build/mobile/unsigned simulator checks in progress). Current native rerun: 200/200, zero failures; final mobile types and targeted lint pass. These are timestamped observations, not a claim that pending CI passed. Final evidence commit itself must be checked by its exact SHA in the PR.
