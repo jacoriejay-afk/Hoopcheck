@@ -314,11 +314,16 @@ export async function POST(
     // The seven-day offer is for first-time monthly members only. Check both
     // the HoopCheck subscription record and Stripe's complete customer history;
     // a canceled subscription must never reset eligibility.
-    // Explicitly disabled until isolated trial tests and atomic eligibility reservation pass.
-    // Never enable in production merely because this branch is deployed.
-    // Hard stop: do not allow a flag alone to bypass the missing atomic reservation.
-    // Replace this only after the reservation RPC and webhook lifecycle are verified.
-    const trialRolloutEnabled = false;
+    // TEST-ONLY: never issue a public/prod trial. Every condition must match the
+    // explicitly approved, isolated Stripe/Supabase PR #758 preview.
+    // No general feature flag or cross-environment trial activation is permitted.
+    const trialRolloutEnabled =
+      process.env.VERCEL_ENV === "preview" &&
+      process.env.VERCEL_GIT_COMMIT_REF === "fix/website-membership-layout-20261121" &&
+      process.env.HOOPCHECK_STRIPE_SANDBOX_TRIAL_ENABLED === "true" &&
+      process.env.NEXT_PUBLIC_SUPABASE_URL === "https://vcprqpjkyubzzcjatdpx.supabase.co" &&
+      process.env.HOOPCHECK_STRIPE_TEST_SUPABASE_URL === process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      stripeConfigMatches && configuredMode === "test";
     let trialEligible = trialRolloutEnabled && checkoutProfile.account_type === "player" && interval === "month" && !promoCodeId && !existingSubscription?.stripe_subscription_id && Boolean(user.email_confirmed_at);
     if (trialEligible) {
       // Check every customer under this email, even when a customer is already
