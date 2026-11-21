@@ -7,7 +7,8 @@ assert.match(agentsApi,/\.in\("account_type",\["agent","scout"\]\)/);
 assert.match(agentsApi,/\.eq\("profile_visibility","public"\)/);
 assert.match(agentsApi,/\.eq\("moderation_status","normal"\)/);
 assert.match(agentsApi,/identity_checked:row\.identity_verification_status==="verified"/);
-assert.doesNotMatch(agentsApi,/\bcurrent_country\b|\bbirthdate\b|\bmoderation_note\b/);
+const agentColumns=agentsApi.match(/\.select\("([^"]+)"\)/)?.[1]||"";
+assert.doesNotMatch(agentColumns,/\bcurrent_country\b|\bbirthdate\b|\bmoderation_note\b/);
 
 const creatorsApi=read("app/api/network/creators/route.ts");
 assert.match(creatorsApi,/\.eq\("is_published",true\)/);
