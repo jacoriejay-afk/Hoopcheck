@@ -54,3 +54,16 @@ Inspected only `HoopCheck-PR17-Test` (project `vcprqpjkyubzzcjatdpx`), **not** t
 - This establishes object presence and privileges only. No trial claim writes, real authenticated checkout, signed webhook delivery, concurrent reservation race, or Test Clock lifecycle has been executed.
 
 **Next gate:** review installed function definitions against the proposed SQL and validate isolated checkout/webhook routing and secret configuration before generating test transactions. Keep live rollout hard-disabled.
+
+## Installed function-definition comparison — 2026-11-21
+
+Read-only `pg_get_functiondef` inspection of the isolated test project found all four installed functions equivalent in their PL/pgSQL bodies to `scripts/sql/stripe-trial-claims-proposal.sql`:
+
+- `reserve_stripe_trial`: inserts once using `ON CONFLICT DO NOTHING` and returns whether inserted.
+- `bind_stripe_trial_session`: rejects missing/non-`cs_` IDs, updates only reserved claims, and does not replace an already different session.
+- `redeem_stripe_trial`: transitions only a matching reserved claim; a duplicate event for the same already-redeemed session is idempotently accepted.
+- `mark_expired_stripe_trial`: transitions only a reserved claim bound to the exact session to terminal expired state.
+
+The installed functions use empty search paths and SECURITY INVOKER (as confirmed by `prosecdef=false`); RPC execution remains restricted to `service_role`. Formatting and dollar-quote labels differ, not the reviewed logic. This is a **source/installed definition review**, not a behavioral or concurrency test.
+
+Next required: confirm sandbox webhook routing and signing-secret configuration without exposing secret values; run actual isolated claim and signed-event tests only after endpoint/backend binding is confirmed.
