@@ -9,8 +9,20 @@ const migration = readFileSync("scripts/sql/stripe-trial-claims-proposal.sql", "
 
 assert.match(membership, /a seven-day free trial[\s\S]*not currently available at checkout/i,
   "Public membership copy must disclose that the trial is not active yet");
-assert.match(checkout, /const trialRolloutEnabled = false;/,
-  "Trial issuance must remain hard-disabled until reservation and webhook integration are verified");
+// The public trial stays disabled. Only the pinned, branch-scoped isolated
+// test environment can issue a trial for authenticated sandbox acceptance.
+for (const required of [
+  'process.env.VERCEL_ENV === "preview"',
+  'process.env.VERCEL_GIT_COMMIT_REF === "fix/website-membership-layout-20261121"',
+  'process.env.HOOPCHECK_STRIPE_SANDBOX_TRIAL_ENABLED === "true"',
+  'process.env.NEXT_PUBLIC_SUPABASE_URL === "https://vcprqpjkyubzzcjatdpx.supabase.co"',
+  'process.env.HOOPCHECK_STRIPE_TEST_SUPABASE_URL === process.env.NEXT_PUBLIC_SUPABASE_URL',
+  'stripeConfigMatches && configuredMode === "test"',
+]) {
+  assert.ok(checkout.includes(required), `Trial test rollout missing required isolation guard: ${required}`);
+}
+assert.ok(checkout.includes('const trialRolloutEnabled ='), "Sandbox trial gate must be explicit");
+assert.doesNotMatch(checkout, /const trialRolloutEnabled = true;/, "Trial must never enable unconditionally");
 assert.match(checkout, /\.\.\.\(trialEligible \? \{ trial_period_days: 7 \} : \{\}\)/,
   "Stripe trial must only be issued through eligibility gate");
 assert.match(trialPolicy, /input\.accountType === "player"/,
@@ -65,4 +77,4 @@ assert.ok(checkout.includes('Unable to expire trial checkout with missing or unt
 assert.ok(webhook.includes('subscription.metadata?.stripe_trial_reserved === "true"'), "All subscription sync paths must inspect trial marker");
 assert.ok(webhook.includes('claim?.state !== "redeemed"'), "Subscription sync must reject unredeemed trial claims");
 assert.ok(webhook.includes('Trial subscription owner metadata mismatch.'), "Subscription sync must validate trial owner");
-console.log("Trial release and webhook safety checks passed (trial issuance disabled).");
+console.log("Trial release and webhook safety checks passed (public trial disabled, pinned sandbox test only).");
