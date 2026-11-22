@@ -4,7 +4,6 @@ import { sharePlayerPassport } from "../src/native/passportSharing";
 import { requestNativeAccount } from "../src/native/accountClient";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState, Platform, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useMotionSetting } from "../src/motion/Provider";
 import { motion } from "../src/motion/config";
@@ -83,7 +82,7 @@ export function PlayerPassport({ player }: { player: PlayerProfile }) {
         </View>
         <Text accessibilityRole="header" style={{ color: t.entityHero.ink, fontSize: 24, fontWeight: "800" }}>{pass.name}</Text>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-          <Ionicons name={pass.verified ? "checkmark-circle" : "person-circle-outline"} size={17} color={t.button} />
+          <View accessible={false} style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: t.button }} />
           <Text style={{ color: t.entityHero.ink, fontSize: 12, fontWeight: "700" }}>
             {pass.verified ? "HoopCheck verified player" : "HoopCheck player profile"}
           </Text>
