@@ -10,15 +10,15 @@ The reviewed catalog guard `reports/build9/integration/production-catalog-guard.
 
 | Baseline at inspection | Production | PR17-Test |
 | --- | --- | --- |
-| Recorded migrations | 199 as of 2026-11-22 phase-1 hotfix | 38 at prior inspection |
+| Recorded migrations | **200** as of 2026-11-22 Build8 read-only RPC repair | 38 at prior inspection |
 | Public player RPC owner | `postgres` | `hoopcheck_public_profile_reader` |
 | Public player RPC mode | SECURITY INVOKER, `search_path=public` | restricted SECURITY DEFINER, empty search_path |
 | `follow_relationships` / `user_blocks` | both exist | neither exists |
 | Public follow-list function | exists | absent |
-| `get_own_profile()`, MFA helper, username search, consent helper | absent | absent |
+| `get_own_profile()`, MFA helper / username search, consent helper | **Owner + MFA absent** / **both public read-only RPCs installed** | absent at previous inspection |
 | Anonymous direct SELECT privilege on `profiles.current_country` | granted | not granted |
 
-**2026-11-22 update:** production legacy `get_public_player_profile`, `search_public_players` and `search_public_players_page` now mask opted-out `current_country` (in results and search predicates), plus pending/unapproved avatars. Phase-1 production migration `20261122032844` passed post-deployment catalog and anonymous read-only smoke checks. **The direct `public.profiles.current_country` SELECT grants still expose the raw location column to `anon` and `authenticated`**, and `get_own_profile()` is not installed. This is a remaining **phase-2 privacy rollout blocker**, not a reason to revert the phase-1 masking hotfix. The repository's as-yet-unapplied `20261118162305_player_profile_country_privacy.sql` and `20261119074537_profile_private_field_boundary.sql` contain reviewed masked versions, username discovery and consent APIs, but are **not installed** on production.
+**2026-11-22 update:** production legacy `get_public_player_profile`, `search_public_players` and `search_public_players_page` now mask opted-out `current_country` (in results and search predicates), plus pending/unapproved avatars. Phase-1 production migration `20261122032844` passed post-deployment catalog and anonymous read-only smoke checks. **The direct `public.profiles.current_country` SELECT grants still expose the raw location column to `anon` and `authenticated`**, and `get_own_profile()` is not installed. This is a remaining **phase-2 privacy rollout blocker**, not a reason to revert the phase-1 masking hotfix. **2026-11-22 further update:** production migration `20261122040018` installed two SECURITY INVOKER public RPCs used by real Expo Store build 0.2.0(8) at SHA `c0b77ba3`; username discovery and country-consent lookups now pass the available PostgreSQL 17 synthetic tests and anonymous caller smoke. **Build 8 still requires absent `get_own_profile()`**, so owner profile acceptance and complete backend privacy remain NO-GO. The repository's as-yet-unapplied `20261118162305_player_profile_country_privacy.sql` and `20261119074537_profile_private_field_boundary.sql` contain reviewed masked versions, username discovery and consent APIs, but are **not installed** on production.
 
 ## Exact safe handoff
 
