@@ -33,3 +33,17 @@ test("Review-only schema enforces private messages and server-only moderation",(
   assert.match(sql,/grant execute on function public\.moderate_hoop_group_post\(uuid,uuid,text\) to service_role/);
   assert.doesNotMatch(sql,/\b(?:alter|update|delete from|drop|truncate|insert into)\s+(?:table\s+)?(?:public\.)?team_fan_groups\b/i, "Backend candidate must not mutate Team Fan Groups");
 });
+
+test("Auth changes clear account-specific HoopGroups state and cancel stale responses",()=>{
+  const page=read("app/hoopgroups/page.tsx");
+  assert.match(page,/supabase\.auth\.onAuthStateChange\(/);
+  assert.match(page,/event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED"/);
+  assert.match(page,/subscription\.unsubscribe\(\)/);
+  assert.match(page,/loadGeneration\.current \+= 1/);
+  assert.match(page,/setUserId\(""\); setPosts\(\[\]\)/);
+  assert.match(page,/setMemberships\(\[\]\); setDraft\(""\); setAccountRole\(""\)/);
+  assert.match(page,/if \(generation !== loadGeneration\.current\) return;/);
+  assert.match(page,/channelRef\.current===activeChannel/);
+  assert.match(page,/channelRef\.current === activeChannel/);
+  assert.match(page,/if \(generation === loadGeneration\.current\)/);
+});
