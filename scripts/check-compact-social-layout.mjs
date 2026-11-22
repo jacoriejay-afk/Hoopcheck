@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const read = path => readFileSync(path, "utf8");
-const css = read("app/hoopcheck-compact-social-20261122.css");
+const css = read("app/hc-social-density-20261122.css");
 const layout = read("app/layout.tsx");
 const profile = read("app/profile/page.tsx");
 const feed = read("app/feed/page.tsx");
