@@ -69,7 +69,7 @@ import "./hoopcheck-profile-light-unification.css";
 import "./hoopcheck-passport-mobile-spacing.css";
 import "./hoopcheck-career-review.css";
 import "./hoopcheck-profile-groups-live-accessibility.css";
-import "./hoopcheck-compact-social-20261122.css";
+import "./hc-social-density-20261122.css";
 import { SITE_URL } from "../lib/site-url";
 
 const displayFont = localFont({
