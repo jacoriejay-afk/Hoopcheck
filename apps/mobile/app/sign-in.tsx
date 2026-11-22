@@ -25,9 +25,9 @@ export default function SignInScreen() {
   const reduced = useMotionSetting();
   const entry = useSharedValue(reduced ? 1 : 0);
   useEffect(() => { entry.set(withTiming(1, { duration: reduced ? 0 : 620 })); }, [entry, reduced]);
-  const heroMotion = useAnimatedStyle(() => ({ opacity: .2 + entry.get() * .8,
+  const heroMotion = useAnimatedStyle(() => ({ opacity: .78 + entry.get() * .22,
     transform: [{ translateY: 15 * (1 - entry.get()) }, { scale: .94 + entry.get() * .06 }] }));
-  const formMotion = useAnimatedStyle(() => ({ opacity: .2 + entry.get() * .8,
+  const formMotion = useAnimatedStyle(() => ({ opacity: .88 + entry.get() * .12,
     transform: [{ translateY: 22 * (1 - entry.get()) }] }));
 
   async function signIn() {
