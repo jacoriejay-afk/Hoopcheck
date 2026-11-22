@@ -45,9 +45,9 @@ export function AppOpening({ ready, disabled = false }: { ready: boolean; disabl
     transform: [{ scaleX: progress.get() }],
   }));
   const veil = useAnimatedStyle(() => ({ opacity: exitOpacity.get() }));
-  // Once a cold open has started, never resurrect a blocking overlay after
-  // navigation or a canceled effect. The app always remains usable.
-  if (finished || Platform.OS === "web" || disabled || !ready || (hasPlayedColdOpen && !started.current)) return null;
+  // The effect cleanup resets its restart guard whenever the route or motion
+  // setting changes, so a new finish timer can always be scheduled safely.
+  if (finished || Platform.OS === "web" || disabled || !ready) return null;
   return <Animated.View testID="brand-cold-open" accessibilityViewIsModal={true}
     style={[StyleSheet.absoluteFill, { zIndex: 100, elevation: 100, backgroundColor: "#071426" }, veil]}>
     <LinearGradient colors={["#060E1D", "#102748", "#291625"]} start={{x:0,y:0}} end={{x:1,y:1}}
