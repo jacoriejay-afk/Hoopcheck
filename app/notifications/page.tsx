@@ -68,7 +68,7 @@ export default function NotificationsPage(){
         setSection(tab);const next=new URL(window.location.href);next.searchParams.set("tab",tab);window.history.replaceState(null,"",next.pathname+next.search+next.hash);
       }}>{tab==="alerts"?"Basketball alerts":"Messages & requests"}</button>)}
     </nav>
-    {section==="messages"&&<HoopChatInbox />}
+    {section==="messages"&&<><div className="hc-notifications-messages-link"><span>PRIVATE HOOPCHAT</span><Link href="/messages">Open full Courtside inbox</Link></div><HoopChatInbox /></>}
     {section==="alerts"&&errorMessage&&<div role="alert" className="hc-smooth-inbox-error"><span>{errorMessage}</span> {loadFailed&&<button type="button" onClick={()=>setRetryKey(v=>v+1)}>Retry loading alerts</button>}</div>}
     {section==="alerts"&&!loadFailed&&<ActivityWire items={items}/>}
     {section==="alerts"&&!loadFailed&&<nav className="hc-smooth-inbox-tabs hc-liquid-glass-filter" aria-label="Filter alerts">{([["all","All"],["unread","Unread"],["games","Games"],["clubs","Clubs"],["reviews","Reviews"]] as const).map(([key,label])=><button key={key} type="button" aria-pressed={filter===key} className={filter===key?"is-active":""} onClick={()=>setFilter(key)}>{label}<span>{items.filter(n=>key==="all" || (key==="unread"&&!n.read_at) || (key==="games"&&n.target_type==="game") || (key==="clubs"&&n.target_type!=="game"&&!["review","rating","trust_score","pay_warning"].includes(n.notification_type)) || (key==="reviews"&&["review","rating","trust_score","pay_warning"].includes(n.notification_type))).length}</span></button>)}</nav>}
