@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- Node CommonJS CI regression tests. */
 /* eslint-disable @typescript-eslint/no-require-imports -- Standalone Node regression test uses CommonJS. */
 // Browser regression: exact username search must not expose private location
 // or unapproved avatars through its direct profiles-table query.
