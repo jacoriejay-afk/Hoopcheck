@@ -170,7 +170,7 @@ export default function SafetyCenterPage() {
           </article>;
         })}
       </section>
-      <p className="hc-safety-footnote">Reel removal unpublishes only an approved video and records an immutable staff action. It does not delete original evidence or restore content automatically. Scam Alert tickets stay private; a public incident bulletin needs a separate legal and moderation review.</p>
+      <p className="hc-safety-footnote">Reel removal unpublishes only an approved video and records a reviewer-linked audit entry. It does not delete original evidence or restore content automatically. Scam Alert tickets stay private; a public incident bulletin needs a separate legal and moderation review.</p>
     </>}
   </main>;
 }
