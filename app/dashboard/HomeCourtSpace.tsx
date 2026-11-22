@@ -68,7 +68,7 @@ function restore(raw:string|null,fallback:CourtPrefs):CourtPrefs {
   } catch {return fallback;}
 }
 const spanishLabels:Partial<Record<ActionId,string>>={
-  hoopgroups:"HoopGroups",live:"Partidos",hoopfeed:"HoopFeed",teams:"Consultar equipo",
+  hoopgroups:"HoopGroups",live:"Partidos",hoopfeed:"HoopFeed",teams:"Consultar un equipo",
   players:"Jugadores",search:"Buscar",fans:"Grupos de fans",alerts:"Alertas",
   account:"Mi cuenta",messages:"HoopChat",leagues:"Ligas",coaches:"Entrenadores",
   team_hq:"Equipo HQ",agent_hq:"Agente HQ",
