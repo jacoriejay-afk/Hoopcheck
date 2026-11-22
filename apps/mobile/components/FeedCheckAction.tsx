@@ -35,8 +35,8 @@ export function FeedCheckAction({ checked, count, disabled, busy, onPress }: {
   const available = checked !== undefined && count !== undefined;
   return <Pressable accessibilityRole="button"
     accessibilityLabel={available ? `${selected ? "Remove Check" : "Check post"}, ${count} Checks` : "Checks unavailable"}
-    accessibilityState={{ selected, disabled: disabled || !available, busy }}
-    disabled={disabled || !available} onPress={onPress}
+    accessibilityState={{ selected, disabled: disabled || !available || busy, busy }}
+    disabled={disabled || !available || busy} onPress={onPress}
     style={({ pressed }) => ({
       flexDirection: "row", alignItems: "center", gap: 5, minHeight: 44,
       paddingHorizontal: 11, borderRadius: theme.radius.pill,
