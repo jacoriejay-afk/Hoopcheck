@@ -33,7 +33,7 @@
 .hc-courtside-settings .hc-courtside-color[aria-pressed=true]{outline:3px solid var(--courtside-accent);outline-offset:1px}
 .hc-courtside-alert{padding:13px 15px;border-radius:12px;border:1px solid #d85454;
  background:color-mix(in srgb,#d85454 8%,var(--hc-card-surface,var(--surface)));color:var(--hc-on-card,var(--hc-foreground));font-size:13px}
-.hc-courtside-shell{min-height:610px;display:grid;grid-template-columns:minmax(245px,320px) minmax(0,1fr);
+.hc-courtside-shell{min-height:0;display:grid;grid-template-columns:minmax(245px,320px) minmax(0,1fr);
  border:1px solid var(--hc-card-border,var(--border));border-radius:24px;overflow:hidden;
  background:var(--hc-card-surface,var(--surface));color:var(--hc-on-card,var(--hc-foreground))}
 .hc-courtside-rail{display:flex;flex-direction:column;min-width:0;border-right:1px solid var(--hc-card-border,var(--border));background:color-mix(in srgb,var(--hc-page-bg) 55%,var(--hc-card-surface,var(--surface)))}
@@ -67,7 +67,7 @@
 .hc-courtside-list-empty{padding:20px;display:grid;gap:7px}
 .hc-courtside-list-empty p{font-size:12px;line-height:1.5;margin:0}
 .hc-courtside-list-empty a{font-weight:850;color:var(--courtside-accent);font-size:12px}
-.hc-courtside-stage{min-width:0;min-height:500px;display:flex;flex-direction:column}
+.hc-courtside-stage{min-width:0;min-height:320px;display:flex;flex-direction:column}
 .hc-courtside-stage-header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
  padding:13px 16px;border-bottom:1px solid var(--hc-card-border,var(--border))}
 .hc-courtside-identity{display:flex;align-items:center;gap:9px;min-width:0}
@@ -77,7 +77,7 @@
 .hc-courtside-thread-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .hc-courtside-thread-actions button,.hc-courtside-thread-actions a{min-height:36px;padding:6px 10px;font-size:11px}
 .hc-courtside-thread-actions button[aria-pressed=true]{border-color:var(--courtside-accent);background:var(--courtside-accent-faint)}
-.hc-courtside-history{min-width:0;max-height:58vh;min-height:240px;overflow-y:auto;
+.hc-courtside-history{min-width:0;max-height:min(58vh,580px);min-height:130px;overflow-y:auto;
  display:flex;flex-direction:column;align-items:stretch;gap:10px;padding:16px}
 .hc-courtside-center-note{text-align:center;align-self:center;max-width:94%;border:1px solid var(--hc-card-border,var(--border));
  border-radius:999px;padding:8px 12px;font-size:10px;line-height:1.5;letter-spacing:.03em;font-weight:850;
@@ -140,11 +140,11 @@
  .hc-courtside-settings{grid-template-columns:minmax(0,1fr)}
  .hc-courtside-shell{grid-template-columns:minmax(0,1fr);border-radius:18px}
  .hc-courtside-rail{border-right:0;border-bottom:1px solid var(--hc-card-border,var(--border))}
- .hc-courtside-thread-list{flex-direction:row;min-height:0;max-height:130px;overflow-x:auto;overflow-y:hidden}
+ .hc-courtside-thread-list{flex-direction:row;min-height:0;max-height:114px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x proximity}
  .hc-courtside-thread{flex:0 0 215px;min-width:0;border-left:none;border-bottom:none;border-right:1px solid var(--hc-card-border,var(--border))}
  .hc-courtside-thread.is-active{border-top:3px solid var(--courtside-accent);padding-top:10px}
- .hc-courtside-stage{min-height:420px}
- .hc-courtside-history{max-height:45vh;min-height:210px}
+ .hc-courtside-stage{min-height:0}
+ .hc-courtside-history{max-height:42dvh;min-height:110px}
  .hc-courtside-stage-header{padding:10px 12px}
  .hc-courtside-message{max-width:90%}
  .hc-courtside-starters{padding:8px 10px 5px;gap:5px}
@@ -163,3 +163,27 @@
 .hc-notifications-messages-link{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin:12px 0;padding:12px 14px;border-radius:12px;background:var(--hc-card-surface,var(--surface));border:1px solid var(--hc-card-border,var(--border));color:var(--hc-on-card,var(--hc-foreground))}
 .hc-notifications-messages-link span{font-size:11px;font-weight:950;letter-spacing:.05em}
 .hc-notifications-messages-link a{padding:9px 12px;min-height:42px;display:inline-flex;align-items:center;border-radius:11px;background:var(--orange);color:#171717;font-size:12px;font-weight:850}
+
+/* Keep basketball conversations compact on phones and avoid oversized empty cards.
+   Respect safe areas, keyboard viewport and tap targets at high text zoom. */
+.hc-courtside-thread{scroll-snap-align:start}
+.hc-courtside-history{overscroll-behavior:contain;scrollbar-gutter:stable}
+.hc-courtside-message p{overflow-wrap:anywhere}
+.hc-courtside-stage-header,.hc-courtside-identity,.hc-courtside-identity>span:last-child{min-width:0}
+.hc-courtside-stage-header strong{overflow-wrap:anywhere}
+.hc-courtside-rail{min-width:0}
+.hc-courtside-starters{overflow-x:auto}
+@media(max-width:700px){
+ .hc-courtside-top{gap:8px;margin:7px 0 10px}
+ .hc-courtside-top h2{font-size:clamp(20px,5.7vw,29px)}
+ .hc-courtside-shell{border-radius:14px}
+ .hc-courtside-rail-search{padding:11px 11px 5px}
+ .hc-courtside-filters{padding:5px 10px 9px}
+ .hc-courtside-thread{flex-basis:min(72vw,205px);padding:10px}
+ .hc-courtside-history{padding:10px;scrollbar-gutter:auto}
+ .hc-courtside-center-note{border:0;padding:3px 6px;font-size:10px;letter-spacing:0}
+ .hc-courtside-no-messages,.hc-courtside-no-selection{padding:18px 13px}
+ .hc-courtside-compose textarea{min-height:62px}
+ .hc-courtside-thread-actions{gap:5px}
+ .hc-courtside-thread-actions button,.hc-courtside-thread-actions a{min-height:44px}
+}

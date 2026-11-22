@@ -60,7 +60,8 @@ export default function NotificationsPage(){
   }
   const unreadCount=items.filter(n=>!n.read_at).length;
   const filtered=items.filter(n=>filter==="all" || (filter==="unread"&&!n.read_at) || (filter==="games"&&n.target_type==="game") || (filter==="clubs"&&n.target_type!=="game"&&!["review","rating","trust_score","pay_warning"].includes(n.notification_type)) || (filter==="reviews"&&["review","rating","trust_score","pay_warning"].includes(n.notification_type)));
-  if(loading)return <main className="page-shell hc-notifications-page"><div className="page-container"><HoopLoading label="Loading notifications..." /></div></main>;
+  // Messages own their independent auth and query lifecycle: slow/failed Alerts must not block HoopChat.
+  if(loading&&section==="alerts")return <main className="page-shell hc-notifications-page"><div className="page-container"><HoopLoading label="Loading notifications..." /></div></main>;
   return <main className="page-shell hc-notifications-page"><div className="page-container">
     <header className="hc-alerts-heading">
       <div className="hc-alerts-heading__title"><HoopIcon name="bell" size={21} /><h1>Alerts</h1>{unreadCount>0&&<span className="hc-alerts-heading__count" aria-label="Unread alerts">{unreadCount}</span>}</div>

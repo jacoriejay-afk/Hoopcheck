@@ -1,6 +1,6 @@
 "use client";
 
-import {useCallback,useEffect,useMemo,useRef,useState,type FormEvent} from "react";
+import {useCallback,useEffect,useMemo,useRef,useState,type FormEvent,type UIEvent} from "react";
 import Link from "next/link";
 import {supabase} from "../lib/supabase";
 import {
@@ -39,6 +39,10 @@ export default function HoopChatCourtside(){
   const [prefs,setPrefs]=useState<ThreadPreferences>(emptyPrefs);
   const accountGeneration=useRef(0);
   const loadSequence=useRef(0);
+  const userIdRef=useRef("");
+  const historyRef=useRef<HTMLDivElement|null>(null);
+  const historyThread=useRef<string|null>(null);
+  const followingLatest=useRef(true);
 
   const load=useCallback(async(silent=false)=>{
     const revision=accountGeneration.current;
@@ -50,13 +54,21 @@ export default function HoopChatCourtside(){
       if(!valid())return;
       if(authError){
         // Fail closed: an invalid session cannot keep the last account's messages visible.
+        userIdRef.current="";
         setUserId("");setRequests([]);setMessages([]);setContacts({});setSelectedId(null);
         throw new Error("We couldn't verify your HoopChat session.");
       }
       if(!user){
+        userIdRef.current="";
         setUserId("");setRequests([]);setMessages([]);setContacts({});setSelectedId(null);
         return;
       }
+      // If an auth transition occurred before the event handler cleared state,
+      // never render the previous account's private thread under the new identity.
+      if(userIdRef.current&&userIdRef.current!==user.id){
+        setRequests([]);setMessages([]);setContacts({});setSelectedId(null);
+      }
+      userIdRef.current=user.id;
       setUserId(user.id);
       const {data:requestRows,error:requestError}=await supabase.from("player_contact_requests")
         .select("id,requester_id,player_id,message,status,created_at")
@@ -95,6 +107,7 @@ export default function HoopChatCourtside(){
 
   useEffect(()=>{
     accountGeneration.current+=1;loadSequence.current+=1;
+    userIdRef.current="";
     setUserId("");setRequests([]);setMessages([]);setContacts({});
     setSelectedId(null);setDrafts({});setError("");setFeedback("");setLoading(true);setSending(false);
     void load();
@@ -123,16 +136,19 @@ export default function HoopChatCourtside(){
     window.addEventListener("focus",onFocus);
     return()=>{window.clearInterval(timer);window.removeEventListener("focus",onFocus);};
   },[load,userId]);
+  // Do not reconnect the socket whenever the 25-second inbox refresh recreates requests[].
+  // Only the selected conversation, account, or its accepted status should change this subscription.
+  const selectedStatus=requests.find(r=>r.id===selectedId)?.status;
   useEffect(()=>{
-    const selected=requests.find(r=>r.id===selectedId);
-    if(!userId||!selected||selected.status!=="accepted")return;
+    if(!userId||!selectedId||selectedStatus!=="accepted")return;
     const rev=accountGeneration.current;
-    const channel=supabase.channel("courtside-thread-"+userId+"-"+selected.id)
-      .on("postgres_changes",{event:"INSERT",schema:"public",table:"player_contact_messages",filter:"request_id=eq."+selected.id},()=>{
+    const channel=supabase.channel("courtside-thread-"+userId+"-"+selectedId)
+
+      .on("postgres_changes",{event:"INSERT",schema:"public",table:"player_contact_messages",filter:"request_id=eq."+selectedId},()=>{
         if(rev===accountGeneration.current)void load(true);
       }).subscribe();
     return()=>{void supabase.removeChannel(channel);};
-  },[load,requests,selectedId,userId]);
+  },[load,selectedId,selectedStatus,userId]);
 
   const latest=useMemo(()=>lastByThread(messages),[messages]);
   const ordered=useMemo(()=>sortThreads(requests,latest,prefs.pinned),[requests,latest,prefs.pinned]);
@@ -158,6 +174,31 @@ export default function HoopChatCourtside(){
   });
   const selected=requests.find(r=>r.id===selectedId)||null;
   const activeMessages=messages.filter(m=>m.request_id===selectedId).slice().reverse();
+  const latestMessageId=activeMessages[activeMessages.length-1]?.id||"";
+  useEffect(()=>{
+    const pane=historyRef.current;
+    if(!pane||!selectedId)return;
+    const changedThread=historyThread.current!==selectedId;
+    if(changedThread){
+      historyThread.current=selectedId;
+      followingLatest.current=true;
+    }
+    if(!changedThread&&!followingLatest.current)return;
+    const frame=window.requestAnimationFrame(()=>{
+      const current=historyRef.current;
+      if(current&&historyThread.current===selectedId){
+        current.scrollTop=current.scrollHeight;
+        followingLatest.current=true;
+      }
+    });
+    return ()=>window.cancelAnimationFrame(frame);
+  },[selectedId,latestMessageId]);
+  // Auto-scroll only while the reader follows recent messages; do not yank history upward
+  // when they're reading older messages.
+  function onHistoryScroll(event:UIEvent<HTMLDivElement>){
+    const element=event.currentTarget;
+    followingLatest.current=element.scrollHeight-element.scrollTop-element.clientHeight<100;
+  }
   const totalUnread=requests.reduce((n,r)=>n+(prefs.muted.includes(r.id)?0:numberUnread(r)),0);
   const currentDraft=selectedId?drafts[selectedId]||"":"";
 
@@ -316,7 +357,7 @@ export default function HoopChatCourtside(){
             <Link href={peerHref(selected)}>Profile</Link>
           </div>
         </header>
-        <div className="hc-courtside-history" role="log" aria-label={"Messages with "+peerName(selected)}>
+        <div ref={historyRef} onScroll={onHistoryScroll} className="hc-courtside-history" role="log" aria-label={"Messages with "+peerName(selected)}>
           <div className="hc-courtside-center-note">🏀 THE COURTSIDE THREAD <span>·</span> Only accepted contacts can read this conversation.</div>
           {selected.message&&<div className="hc-courtside-introduction"><small>CONNECTION INTRODUCTION</small><p>{selected.message}</p></div>}
           {activeMessages.map(m=><article className={"hc-courtside-message"+(m.sender_id===userId?" is-mine":"")} key={m.id}>

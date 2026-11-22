@@ -65,3 +65,33 @@ test("Courtside layout is resilient at narrow screen sizes and honors both theme
  assert.match(css,/hc-card-surface/);
  assert.match(css,/:focus-visible/);
 });
+
+test("Messages tab does not wait on unrelated notification requests",()=>{
+ const alerts=read("app/notifications/page.tsx");
+ assert.match(alerts,/if\(loading&&section==="alerts"\)/);
+ assert.doesNotMatch(alerts,/if\(loading\)return/);
+ assert.match(alerts,/section==="messages"&&/);
+});
+test("Realtime channel does not reconnect on every inbox refresh",()=>{
+ const ui=read("components/HoopChatCourtside.tsx");
+ assert.match(ui,/const selectedStatus=requests\.find\(r=>r\.id===selectedId\)\?\.status/);
+ assert.match(ui,/\},\[load,selectedId,selectedStatus,userId\]\)/);
+ assert.doesNotMatch(ui,/\},\[load,requests,selectedId,userId\]\)/);
+ assert.match(ui,/loadSequence\.current/);
+});
+test("History follows latest only while reader is at the bottom",()=>{
+ const ui=read("components/HoopChatCourtside.tsx");
+ assert.match(ui,/historyRef=useRef/);
+ assert.match(ui,/followingLatest=useRef/);
+ assert.match(ui,/onScroll=\{onHistoryScroll\}/);
+ assert.match(ui,/current\.scrollTop=current\.scrollHeight/);
+ assert.match(ui,/latestMessageId/);
+});
+test("Phone chat no longer forces oversized empty conversation blocks",()=>{
+ const css=read("components/HoopChatCourtside.css");
+ assert.match(css,/\.hc-courtside-shell\{min-height:0/);
+ assert.match(css,/\.hc-courtside-stage\{min-width:0;min-height:320px/);
+ assert.match(css,/@media\(max-width:700px\)[\s\S]*\.hc-courtside-stage\{min-height:0\}/);
+ assert.doesNotMatch(css,/\.hc-courtside-shell\{min-height:610px/);
+ assert.match(css,/max-height:42dvh/);
+});
