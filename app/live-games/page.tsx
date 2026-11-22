@@ -333,15 +333,19 @@ export default function LiveGamesPage() {
         <button type="button" className="btn dark" disabled={refreshing} onClick={() => void refreshNow()}>{refreshing ? "Checking…" : "Refresh games"}</button></div>
       <p className="muted" role="status">{lastCheckedAt ? "Scores last checked " + lastCheckedAt.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }) + " · Individual score freshness depends on the provider." : "Score source not checked yet."}</p>
     </section>
-    <section aria-label="Happening Now" className="hc-live-hub-section">
-      <div className="hc-live-section-heading"><div><p className="eyebrow">THE CONVERSATION</p><h1>Happening Now</h1></div></div>
-      {filtered.filter(({game,availability}) => availability.chatOpen && (presenceCounts[game.id] || 0) > 0)
-        .sort((a,b) => (presenceCounts[b.game.id] || 0) - (presenceCounts[a.game.id] || 0))
-        .slice(0,8).length > 0
-        ? <div className="hc-live-hub-grid">{filtered.filter(({game,availability}) => availability.chatOpen && (presenceCounts[game.id] || 0) > 0)
+    <section aria-label="Happening Now" className="hc-live-hub-section hc-live-active-rooms">
+      <div className="hc-live-section-heading"><div><p className="eyebrow">ACTIVE CHAT ROOMS</p><h2>Happening now</h2></div><Link href="/fan-live" className="hc-live-directory-link">Browse rooms →</Link></div>
+      <div className="hc-live-conversations-rail">
+        {filtered.filter(({game,availability}) => availability.chatOpen && (presenceCounts[game.id] || 0) > 0)
           .sort((a,b) => (presenceCounts[b.game.id] || 0) - (presenceCounts[a.game.id] || 0))
-          .slice(0,8).map(entry => <GameCard allowPredictions={false} key={entry.game.id} entry={entry} variant={live.some(item => item.game.id === entry.game.id) ? "live" : ["final", "finished"].includes(entry.game.status.toLowerCase()) || entry.availability.phase === "post-game" ? "postgame" : "upcoming"} />)}</div>
-        : <p className="muted">Active conversations will appear here when people join a game chat.</p>}
+          .slice(0,8).map(({game,home,away}) =>
+            <Link key={game.id} href={`/fan-live/room/${encodeURIComponent(game.id)}`} className="hc-live-conversation-link">
+              <span>{home?.name||"Home"} vs {away?.name||game.opponent_name}</span>
+              <small>{presenceCounts[game.id]} chatting · Open →</small>
+            </Link>)}
+        {!filtered.some(({game,availability}) => availability.chatOpen && (presenceCounts[game.id] || 0)>0) &&
+          <p className="muted">No active rooms yet. Start the conversation from a matchup below.</p>}
+      </div>
     </section>
     <section className="hc-live-hub-filters" aria-label="Browse game conversations">
       <div className="hc-live-hub-filter-tabs">
