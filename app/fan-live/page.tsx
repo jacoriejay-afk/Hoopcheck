@@ -4,12 +4,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
 import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import { GAME_CHAT_OPEN_EARLY_MINUTES, getGameAvailability } from "../../lib/game-availability";
 import "./fan-live.css";
 import "../game-predictions.css";
-import GameWinnerPrediction from "../../components/GameWinnerPrediction";
 import TeamLogo from "../../components/TeamLogo";
 import { getHoopCheckEntitlements } from "../../lib/membership-tier";
 
@@ -56,13 +56,18 @@ export default function FanLivePage() {
   const [reportDetails,setReportDetails]=useState("");
   const [clock,setClock]=useState(()=>new Date());
   const basketballSide = useFanBasketballSide();
-  const bottomRef=useRef<HTMLDivElement|null>(null);
+  const pathname = usePathname();
+  const roomId = pathname?.match(/^\/fan-live\/room\/([0-9a-f-]{36})\/?$/i)?.[1] || null;
+  const inRoom = Boolean(pathname?.startsWith("/fan-live/room/"));
+  const scrollRef = useRef<HTMLDivElement|null>(null);
+  const activeRoomRef = useRef<string|null>(null);
+  const composerRef = useRef<HTMLInputElement|null>(null);
 
   const load = useCallback(async (showLoader=false) => {
     if(showLoader) setLoading(true);
     const {data:{session}}=await supabase.auth.getSession();
     const user=session?.user;
-    if(!user){setUserId(null);setAccountType("");setAllowed(false);setGames([]);setLoading(false);return;}
+    if(!user){setUserId(null);setAccountType("");setAllowed(false);setGames([]);setSelected(null);setLoading(false);return;}
     setUserId(user.id);
     const [{data:profile},{data:subscription},{data:isAdmin}] = await Promise.all([
       supabase.from("profiles").select("account_type").eq("id",user.id).maybeSingle(),
@@ -122,13 +127,14 @@ export default function FanLivePage() {
       basketballSide==="womens" && ids.length?supabase.from("womens_teams").select("id,name,logo_url,logo_bg").in("id",ids):Promise.resolve({data:[] as Team[]}),
     ]);
     setTeams(Object.fromEntries([...(teamRows||[]),...(womensTeamRows||[])].map((t:Team)=>[t.id,t])));
-    const requested=typeof window!=="undefined"?new URLSearchParams(window.location.search).get("gameId"):null;
-    setSelected(current=>(current&&next.find(g=>g.id===current.id))||next.find(g=>g.id===requested)||next.find(g=>g.status==="live")||next[0]||null);
+    // A room URL must resolve to that exact game; never fall back to a different match.
+    setSelected(roomId ? next.find(g=>g.id===roomId) || null : null);
     setClock(new Date()); setLoading(false);
-  },[basketballSide]);
+  },[basketballSide,roomId]);
 
   const loadMessages=useCallback(async(gameId:string)=>{
     const {data,error}=await supabase.from("fan_live_chat_messages").select("id,body,created_at,user_id").eq("game_id",gameId).order("created_at",{ascending:true}).limit(200);
+    if(activeRoomRef.current!==gameId)return;
     if(error){setMessage("Chat history couldn't load. Reconnecting…");return;}
     const incoming=(data||[]) as ChatMessage[];
     setMessages(current=>{
@@ -140,17 +146,27 @@ export default function FanLivePage() {
     const userIds=Array.from(new Set(incoming.map(x=>x.user_id)));
     if(userIds.length){
       const {data:profileRows}=await supabase.from("profiles").select("id,display_name,avatar_url").in("id",userIds);
-      setProfiles(current=>({...current,...Object.fromEntries((profileRows||[]).map((p:any)=>[p.id,{display_name:p.display_name,avatar_url:p.avatar_url}]))}));
+      if(activeRoomRef.current===gameId)setProfiles(current=>({...current,...Object.fromEntries((profileRows||[]).map((p:any)=>[p.id,{display_name:p.display_name,avatar_url:p.avatar_url}]))}));
     }
   },[]);
 
   const refreshPresence=useCallback(async(gameId:string)=>{
     const freshAfter=new Date(Date.now()-75_000).toISOString();
     const {data,error}=await supabase.from("fan_live_chat_presence").select("user_id,last_seen_at").eq("game_id",gameId).gt("last_seen_at",freshAfter);
-    if(!error) setPresenceCount(new Set((data||[]).map((x:any)=>x.user_id)).size);
+    if(!error && activeRoomRef.current===gameId) setPresenceCount(new Set((data||[]).map((x:any)=>x.user_id)).size);
   },[]);
 
   useEffect(()=>{void load(true);},[load]);
+  useEffect(()=>{
+    // Preserve older links sent by notifications and installed native clients.
+    if(inRoom || typeof window==="undefined")return;
+    const oldId=new URLSearchParams(window.location.search).get("gameId");
+    if(oldId && /^[0-9a-f-]{36}$/i.test(oldId))window.location.replace("/fan-live/room/"+encodeURIComponent(oldId));
+  },[inRoom]);
+  useEffect(()=>{
+    activeRoomRef.current=selected?.id||null;
+    setMessages([]);setProfiles({});setPresenceCount(0);setReporting(null);setMessage("");setBody("");
+  },[selected?.id]);
   useEffect(()=>{
     const timer=window.setInterval(()=>{setClock(new Date());void load();},20_000);
     const onVisible=()=>{if(document.visibilityState==="visible"){setClock(new Date());void load();}};
@@ -186,6 +202,7 @@ export default function FanLivePage() {
     const gameId=selected.id; void loadMessages(gameId); void refreshPresence(gameId);
     const channel=supabase.channel("fan-live-chat-messages-"+gameId)
       .on("postgres_changes",{event:"INSERT",schema:"public",table:"fan_live_chat_messages",filter:"game_id=eq."+gameId},payload=>{
+        if(activeRoomRef.current!==gameId)return;
         const item=payload.new as ChatMessage;
         setMessages(current=>{
           if(current.some(m=>m.id===item.id))return current;
@@ -198,17 +215,22 @@ export default function FanLivePage() {
     return()=>{void supabase.removeChannel(channel);};
   },[selected?.id,chatEnabled,loadMessages,refreshPresence]);
 
-  useEffect(()=>{bottomRef.current?.scrollIntoView({behavior:"smooth",block:"end"});},[messages.length,selected?.id]);
+  useEffect(()=>{
+    const list=scrollRef.current;
+    if(list)list.scrollTop=list.scrollHeight; // Scroll messages, never the whole page.
+  },[messages.length,selected?.id]);
 
   async function send(textOverride?:string){
     const text=(textOverride??body).trim();
     if(!text||!selected||!userId||sending)return;
     if(!roomOpen(selected,new Date())){setMessage("Chat closed — final score.");return;}
+    const gameId=selected.id;
     const localId="pending-"+crypto.randomUUID();
     const optimistic:ChatMessage={id:localId,body:text,created_at:new Date().toISOString(),user_id:userId,pending:true};
     setMessages(current=>[...current,optimistic].slice(-200));setBody("");setSending(true);setMessage("");
     const {data,error}=await supabase.from("fan_live_chat_messages").insert({game_id:selected.id,user_id:userId,body:text}).select("id,body,created_at,user_id").single();
     setSending(false);
+    if(activeRoomRef.current!==gameId)return;
     if(error){
       setMessages(current=>current.map(m=>m.id===localId?{...m,failed:true,pending:false}:m));
       setMessage(error.message.includes("SLOW_MODE")?"Slow mode: wait two seconds between messages.":error.message.includes("CHAT_CLOSED")?"Chat closed — final score.":"Message failed to send. Tap Retry to try again.");
@@ -247,44 +269,47 @@ export default function FanLivePage() {
   const shownMessages=useMemo(()=>messages.filter(m=>!blockedUsers.has(m.user_id)&&!mutedUsers.has(m.user_id)),[messages,blockedUsers,mutedUsers]);
   const listedGames=useMemo(()=>{
     const q=roomSearch.trim().toLocaleLowerCase();
-    return !q?games:games.filter(game=>[
+    const matches=!q?games:games.filter(game=>[
       teams[game.team_id]?.name||"",teams[game.opponent_team_id||""]?.name||"",
       game.opponent_name,game.league_name||"",game.country||""
     ].some(value=>value.toLocaleLowerCase().includes(q)));
+    return [...matches].sort((a,b)=>Number(b.status==="live")-Number(a.status==="live")||
+      (Date.parse(a.scheduled_at||"")||0)-(Date.parse(b.scheduled_at||"")||0));
   },[games,roomSearch,teams]);
 
   if(loading)return <main className="page-shell hc-live-room"><div className="page-container"><HoopLoading label="Loading Live Game Hub…" /></div></main>;
   if(!userId)return <main className="page-shell hc-live-room"><div className="page-container"><section className="hero-card"><p className="eyebrow">LIVE GAME HUB</p><h1>LIVE GAME CHAT</h1><p className="muted">Sign in to access Live Game Hub features available to your account.</p><Link className="btn" href="/login">Sign in</Link></section></div></main>;
 
-  return <main className="page-shell hc-live-room">
-      <FanBasketballSideSwitch /><div className="page-container">
-    <nav className="actions" aria-label="Live game navigation"><Link className="btn" href="/live-games">All Games</Link><Link className="btn" href="/teams">Teams</Link><a className="btn dark" href="#live-chat-room">Jump to chat</a></nav>
-    <section className="hero-card hc-live-room-hero"><div><p className="eyebrow">HOOPCHECK · LIVE GAME HUB</p><h1>LIVE GAME CHAT<span>.</span></h1><p className="muted">Real-time conversation with members watching the same game.</p></div>{allowed && chatEnabled && selected && roomOpen(selected, clock) && <div className="hc-live-presence-chip"><span className="hc-live-pulse-dot"/> {presenceCount} {presenceCount===1?"member":"members"} in room</div>}</section>
+  return <main className={"page-shell hc-live-room "+(inRoom?"hc-live-room--chat":"hc-live-room--directory")}>
+      {!inRoom&&<FanBasketballSideSwitch />}<div className="page-container">
+    <nav className="hc-live-room-nav" aria-label="Live game navigation"><Link href="/live-games">← Live Games</Link>{inRoom&&<Link href="/fan-live">All chat rooms</Link>}</nav>
+    <header className="hc-live-room-heading"><div><p className="eyebrow">HOOPCHECK · COURTSIDE</p><h1>{inRoom?"Game chat":"Game chat rooms"}</h1><p>{inRoom?"One game. One conversation.":"Pick a matchup to open its dedicated chat."}</p></div>{inRoom&&selected&&roomOpen(selected,clock)&&<span className="hc-live-presence-chip"><i className="hc-live-pulse-dot"/> {presenceCount} here</span>}</header>
     {allowed && gamesLoadError && <section className="dashboard-card" role="alert"><h2>Game list temporarily unavailable</h2><p className="muted">Your membership is recognized, but the game service could not load. Please retry rather than upgrading again.</p><button type="button" className="btn" onClick={()=>void load(true)}>Retry games</button></section>}
     {!allowed ? <section className="dashboard-card hc-live-empty-state">
       {accountType === "fan" ? <><h2>Fan Pro or Premium required for Live Games</h2><p className="muted">Upgrade your fan membership to browse fixtures and join men's and women's game chats.</p><Link href="/membership" className="btn">View Fan Membership</Link></>
         : !userId ? <><h2>Sign in to view Live Games</h2><Link href="/login" className="btn">Sign In</Link></>
         : <><h2>Live Games are available to players and fans</h2><p className="muted">An active Pro or Premium membership is required for the full Live Game Hub.</p><Link href="/membership" className="btn">View Membership</Link></>}
-    </section> : !games.length?<section className="dashboard-card"><h2>No games available</h2><p className="muted">Check back when the game schedule is updated.</p><Link href="/live-games" className="btn">Browse Games</Link></section>:<section className="hc-live-room-grid">
-      <aside className="dashboard-card hc-live-room-list" aria-label="Choose a game chat room"><div className="hc-live-room-list-heading"><span className="card-kicker">COURTSIDE · CHAT DIRECTORY</span><span>{listedGames.length} rooms</span><input className="hc-live-room-search" type="search" value={roomSearch} onChange={event=>setRoomSearch(event.target.value)} placeholder="Find a team or league…" aria-label="Search game chat rooms" /></div>{listedGames.length===0&&<p role="status">No game rooms match this search.</p>}{listedGames.map(game=>{const a=teams[game.team_id],b=teams[game.opponent_team_id||""]||{id:"",name:game.opponent_name};return <button key={game.id} type="button" className={"hc-live-room-game"+(selected?.id===game.id?" is-selected":"")} aria-pressed={selected?.id===game.id} aria-controls="live-chat-room" onClick={()=>setSelected(game)}><div className="hc-live-room-game-teams">{renderTeamLogo(a)}<div><strong>{a?.name||"Team"} vs {b.name}</strong><span>{game.home_score??"—"} : {game.away_score??"—"} · {game.period_label||game.status}</span></div></div><span className={"hc-live-room-game-status"+(game.status==="live"?" is-live":"")}>{game.status==="live"?"● LIVE":finalStatus(game.status)?"FINAL":roomOpen(game)?"CHAT OPEN":"UPCOMING"}</span></button>})}</aside>
-      {selected&&<section id="live-chat-room" className="dashboard-card hc-live-room-panel" aria-label="Selected game chat room">
-        <GameWinnerPrediction game={selected} homeName={home?.name||"Home"} awayName={away?.name||selected.opponent_name}  />
+    </section> : !games.length?<section className="dashboard-card"><h2>No games available</h2><p className="muted">Check back when the game schedule is updated.</p><Link href="/live-games" className="btn">Browse Games</Link></section>:<section className={"hc-live-room-grid "+(inRoom?"hc-live-room-grid--solo":"hc-live-room-grid--directory")}>
+      {!inRoom&&<aside className="hc-live-room-list" aria-label="Choose a game chat room"><div className="hc-live-room-list-heading"><span className="card-kicker">COURTSIDE · CHAT DIRECTORY</span><span>{listedGames.length} rooms</span><input className="hc-live-room-search" type="search" value={roomSearch} onChange={event=>setRoomSearch(event.target.value)} placeholder="Find a team or league…" aria-label="Search game chat rooms" /></div>{listedGames.length===0&&<p role="status">No game rooms match this search.</p>}{listedGames.map(game=>{const a=teams[game.team_id],b=teams[game.opponent_team_id||""]||{id:"",name:game.opponent_name};return <Link key={game.id} href={"/fan-live/room/"+encodeURIComponent(game.id)} className="hc-live-room-game" aria-label={"Open chat for "+(a?.name||"Home")+" versus "+b.name}><div className="hc-live-room-game-teams">{renderTeamLogo(a)}<div><strong>{a?.name||"Team"} vs {b.name}</strong><span>{game.home_score??"—"} : {game.away_score??"—"} · {game.period_label||game.status}</span></div></div><span className={"hc-live-room-game-status"+(game.status==="live"?" is-live":"")}>{game.status==="live"?"● LIVE":finalStatus(game.status)?"FINAL":roomOpen(game)?"CHAT OPEN":"UPCOMING"}</span><span className="hc-live-room-game-arrow" aria-hidden="true">→</span></Link>})}</aside>}
+      {inRoom&&!selected&&<section className="hc-live-room-state" role="status"><h2>Room unavailable</h2><p>This matchup could not be found for this basketball category, or it is no longer on the current schedule.</p><Link href="/fan-live">Browse chat rooms</Link></section>}
+      {inRoom&&selected&&<section id="live-chat-room" className="hc-live-room-panel" aria-label="Selected game chat room">
         <header className="hc-live-room-scoreboard"><div className="hc-live-room-team">{renderTeamLogo(home)}<strong>{home?.name||"Team"}</strong></div><div className="hc-live-room-score"><span className={"hc-live-badge"+(selected.status==="live"?" is-live":"")}>{selected.status==="live"?<><i/> LIVE</>:finalStatus(selected.status)?"FINAL":availability?.state||"UPCOMING"}</span><strong>{selected.home_score??"—"} <span>:</span> {selected.away_score??"—"}</strong><small>{selected.period_label||selected.league_name||"Score updates automatically"}</small></div><div className="hc-live-room-team">{renderTeamLogo(away)}<strong>{away?.name||selected.opponent_name}</strong></div></header>
         {isClosed?<div className="hc-live-closed-state"><span className="hc-live-closed-icon">✓</span><h2>Chat closed — final score</h2><p>{home?.name||"Home"} {selected.home_score??"—"} – {selected.away_score??"—"} {away?.name||selected.opponent_name}</p><small>This room is read-only after full-time.</small></div>:!chatEnabled?<div className="hc-live-empty-state"><div className="hc-live-empty-ball">●</div>{accountType==="fan"?<><h2>Fan Pro or Premium required for Live Game Chat</h2><p>Upgrade your fan membership to join the live conversation for men's and women's fixtures.</p><Link href="/membership" className="btn">View Fan Membership</Link></>:accountType==="player"?<><h2>Player Pro or Premium required for Live Game Chat</h2><p>An active Pro or Premium player membership unlocks live game chat for men's and women's fixtures.</p><Link href="/membership" className="btn">View Membership</Link></>:!userId?<><h2>Sign in to join Live Game Chat</h2><Link href="/login" className="btn">Sign In</Link></>:<><h2>Live Game Chat is for eligible players and fans</h2><p>Active Pro and Premium player and fan memberships can join the live conversation.</p></>}</div>:!roomOpen(selected,clock)?<div className="hc-live-empty-state"><h2>Chat opens {GAME_CHAT_OPEN_EARLY_MINUTES} minutes before tip-off</h2><p>{selected.scheduled_at?new Date(selected.scheduled_at).toLocaleString():"Tip-off time is not confirmed yet."}</p></div>:<div className="hc-live-chat-shell">
           <div className="hc-live-chat-toolbar"><span><i className="hc-live-pulse-dot"/> {presenceCount} {presenceCount===1?"member":"members"} chatting</span><span>1 message / 2 seconds</span></div>
-          <div className="hc-live-chat-messages" role="log" aria-live="polite" aria-relevant="additions text" aria-label="Live chat messages">
+          <div ref={scrollRef} className="hc-live-chat-messages" role="log" aria-live="polite" aria-relevant="additions text" aria-label="Live chat messages">
             {!shownMessages.length?<div className="hc-live-empty-state"><div className="hc-live-empty-ball">●</div><h2>You're first in — start the conversation</h2><p>Kick off the conversation while you watch.</p></div>:shownMessages.map(item=><article key={item.id} className={"hc-live-chat-message"+(item.user_id===userId?" is-own":"")+(item.failed?" is-failed":"")}>
               <div className="hc-live-chat-avatar">{profiles[item.user_id]?.avatar_url?<img src={profiles[item.user_id].avatar_url!} alt=""/>:initials(profiles[item.user_id]?.display_name||"HoopCheck member")}</div><div className="hc-live-chat-message-body"><div className="hc-live-chat-message-meta"><strong>{item.user_id===userId?"You":profiles[item.user_id]?.display_name||"Fan"}</strong><time>{new Date(item.created_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</time>{item.pending&&<span>Sending…</span>}{item.failed&&<button type="button" onClick={()=>void retry(item)}>Retry</button>}</div><p>{item.body}</p>{item.user_id!==userId&&!item.pending&&<details className="hc-live-message-menu"><summary aria-label="Message moderation options">•••</summary><div><button type="button" onClick={()=>void controlUser(item.user_id,"is_muted")}>{mutedUsers.has(item.user_id)?"Unmute member":"Mute member"}</button><button type="button" onClick={()=>void controlUser(item.user_id,"is_blocked")}>{blockedUsers.has(item.user_id)?"Unblock member":"Block member"}</button><button type="button" onClick={()=>setReporting(item.id)}>Report message</button></div></details>}</div>
             </article>)}
-            <div ref={bottomRef}/>
+
           </div>
-          <form className="hc-live-chat-compose" onSubmit={e=>{e.preventDefault();void send();}}><input value={body} maxLength={500} onChange={e=>setBody(e.target.value)} placeholder="React to the game…" aria-label="Chat message" disabled={isClosed}/><span>{body.length}/500</span><button className="btn" type="submit" disabled={!body.trim()||sending||isClosed}>{sending?"Sending…":"Send"}</button></form>
+          <div className="hc-live-reaction-rail" aria-label="Quick game reactions"><span>React</span>{["🔥","🏀","👏","😮"].map(reaction=><button key={reaction} type="button" aria-label={"Add "+reaction+" reaction"} onClick={()=>{setBody(current=>(current?current+" ":"")+reaction);composerRef.current?.focus();}}>{reaction}</button>)}</div>
+          <form className="hc-live-chat-compose" onSubmit={e=>{e.preventDefault();void send();}}><input ref={composerRef} value={body} maxLength={500} onChange={e=>setBody(e.target.value)} placeholder="React to the game…" aria-label="Chat message" disabled={isClosed}/><span>{body.length}/500</span><button className="btn" type="submit" disabled={!body.trim()||sending||isClosed}>{sending?"Sending…":"Send"}</button></form>
           <p className="hc-live-chat-rules">Keep it respectful. Links are displayed as plain text. Slow mode: one message every two seconds.</p>
         </div>}
         {message&&<p className="hc-live-room-notice" role="status">{message}</p>}
         {reporting&&<div className="hc-live-report-panel"><h3>Report message</h3><label>Reason<select value={reportReason} onChange={e=>setReportReason(e.target.value)}><option value="harassment">Harassment</option><option value="spam">Spam</option><option value="hate">Hate or abuse</option><option value="threat">Threat</option><option value="other">Other</option></select></label><label>Details (optional)<textarea maxLength={500} value={reportDetails} onChange={e=>setReportDetails(e.target.value)} placeholder="Add context for moderators"/></label><div><button className="btn" type="button" onClick={()=>{const item=messages.find(m=>m.id===reporting);if(item)void reportMessage(item);}}>Submit report</button><button className="btn dark" type="button" onClick={()=>setReporting(null)}>Cancel</button></div></div>}
       </section>}
     </section>}
-    <p className="hc-live-room-footnote">Game scores and room status refresh automatically. <Link href="/live-games">Back to all games →</Link></p>
+    <p className="hc-live-room-footnote">Scores and room status follow live game updates. Chat remains subject to moderation and membership access.</p>
   </div></main>;
 }
