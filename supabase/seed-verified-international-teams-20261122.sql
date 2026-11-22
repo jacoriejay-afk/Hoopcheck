@@ -64,6 +64,27 @@ where not exists (
   and t.country='Argentina' and t.basketball_type='mens'
 );
 
+-- Small source-reviewed, copyright-public-domain raster crest pilot.
+-- Both Commons pages identify the exact Argentina basketball clubs and mark the
+-- simple text/geometric artwork PD-textlogo; trademarks remain separate.
+-- This does not represent an endorsement, does not overwrite user-uploaded
+-- logos, and is limited to brand-new records from this seed.
+-- Atenas: https://commons.wikimedia.org/wiki/File:Atenas_cordoba_logo.png
+-- Olimpíco: https://commons.wikimedia.org/wiki/File:Escudo_del_Club_Ciclista_Ol%C3%ADmpico.png
+-- Source-file details & trademark cautions: docs/team-logo-source-review-20261122.md
+with raster_crest(name, image_url) as (
+  values
+    ('Atenas', 'https://upload.wikimedia.org/wikipedia/commons/4/49/Atenas_cordoba_logo.png'),
+    ('Olímpico La Banda', 'https://upload.wikimedia.org/wikipedia/commons/4/41/Escudo_del_Club_Ciclista_Ol%C3%ADmpico.png')
+)
+update public.teams t
+set logo_url = c.image_url, logo_bg = 'transparent'
+from raster_crest c
+where t.name = c.name and t.country = 'Argentina'
+  and t.basketball_type = 'mens'
+  and t.source = 'HoopCheck verified 2026-27 roster'
+  and nullif(btrim(coalesce(t.logo_url, '')), '') is null;
+
 -- womens_teams is the authoritative source for these clubs.
 -- Existing trigger creates the corresponding same-UUID teams mirror and fan group.
 -- Never insert into teams separately for a women’s team.
