@@ -1,9 +1,6 @@
 -- Applied to HoopCheck production on 2026-11-22; Supabase migration history version matches this filename.
 -- Additive migration reconciled with separately rehearsed review candidate; do not rewrite applied history.
--- REVIEW CANDIDATE ONLY. DO NOT APPLY TO PRODUCTION.
--- Run in an isolated schema-equivalent database and review migration ordering,
--- RLS, moderation operations, report abuse, retention, and native compatibility.
--- No team_fan_groups tables or policies are modified.
+-- Initial independent community schema with moderated posts; official Team Fan Groups are untouched.
 create table if not exists public.hoop_group_spaces (
   id uuid primary key default gen_random_uuid(),
   slug text not null unique check (slug ~ '^[a-z0-9-]{3,60}$'),
