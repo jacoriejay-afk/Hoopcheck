@@ -192,14 +192,12 @@ export async function GET(request: NextRequest) {
       if (upsertError) throw upsertError;
     }
 
-    // Close old provider-backed live rows only after a successful provider response.
-    const staleBefore = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
-    let staleQuery = db.from("fan_live_games").update({ status: "final" })
-      .eq("provider_source", "api-sports-basketball").eq("status", "live").lt("started_at", staleBefore);
-    const liveIds = rows.map(row => row.provider_game_id);
-    if (liveIds.length) staleQuery = staleQuery.not("provider_game_id", "in", `(${liveIds.map(id => `"${id.replace(/"/g, "")}"`).join(",")})`);
-    const { error: staleError } = await staleQuery;
-    if (staleError) throw staleError;
+    // Never synthesize a FINAL from elapsed time or absence in a date-scoped feed.
+    // Only an explicit provider FT/AOT/AP/AWD response may finalize a fixture.
+    // An omitted/late fixture retains its last provider status, and the UI marks
+    // an overdue status as UPDATE DELAYED instead of asserting a false result.
+    // NOTE: Prior wrongly finalized rows are displayed as RESULT PENDING if
+    // an in-progress period label remains; they need provider reconciliation.
 
     // Send one in-app reminder when the pregame chat window opens.
     const { data: pendingReminders, error: reminderReadError } = await db.from("fan_live_game_reminders")
