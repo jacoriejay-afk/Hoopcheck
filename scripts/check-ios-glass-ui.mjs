@@ -16,7 +16,7 @@ for(const text of ["hc-feed-editor-surface","hc-feed-extra-options","hc-feed-med
 assert.match(feed,/\<details className="hc-feed-extra-options"/);
 assert.match(feed,/className="hc-feed-post-more"/);
 assert.match(feed,/scrollIntoView\(\{ block: "start" \}\)/);
-assert.match(feed,/Camera & media|>Media<\/button>/);
+assert.match(feed,/Media<\/button>/);
 assert.match(feed,/toggleCheck\(p\)/);
 assert.match(feed,/toggleSave\(p\)/);
 assert.match(feed,/sharePost\(p\)/);
