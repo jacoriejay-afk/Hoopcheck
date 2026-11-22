@@ -18,6 +18,17 @@ on:
         required: true
         type: number
         default: 10
+      table:
+        description: "Directory to scan"
+        required: true
+        type: choice
+        options: [all, teams, womens_teams, leagues]
+        default: all
+      country:
+        description: "Optional exact country filter, e.g. Argentina"
+        required: false
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -54,13 +65,22 @@ jobs:
             echo "::error::Add SUPABASE_SERVICE_ROLE_KEY in GitHub repository Actions secrets before applying."
             exit 1
           fi
+      - name: Test reviewed-logo publishing safety
+        run: node --test scripts/test-team-logo-review-policy.mjs
       - name: Run guarded logo backfill
         shell: bash
+        env:
+          LOGO_TABLE: ${{ inputs.table }}
+          LOGO_COUNTRY: ${{ inputs.country }}
+          LOGO_APPLY: ${{ inputs.apply }}
         run: |
           set -euo pipefail
-          ARGS=(--limit=${{ inputs.limit }} --offset=${{ inputs.offset }})
-          if [ "${{ inputs.apply }}" = "true" ]; then
-            ARGS+=(--apply --approved-sample)
+          ARGS=(--limit=${{ inputs.limit }} --offset=${{ inputs.offset }} "--table=$LOGO_TABLE")
+          if [ -n "$LOGO_COUNTRY" ]; then
+            ARGS+=("--country=$LOGO_COUNTRY")
+          fi
+          if [ "$LOGO_APPLY" = "true" ]; then
+            ARGS+=(--apply --approved-sample --manifest=scripts/reviewed-team-logo-manifest.json)
           fi
           node scripts/backfill-team-logos.mjs "${ARGS[@]}" | tee logo-backfill-report.json
       - name: Upload batch report

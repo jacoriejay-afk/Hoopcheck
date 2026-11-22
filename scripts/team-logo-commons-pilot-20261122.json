@@ -1,0 +1,181 @@
+{
+  "description": "Small curated Wikimedia Commons crest pilot. Do not auto-run as a migration; source page must remain available and trademark policy verified before app-store use.",
+  "entries": [
+    {
+      "table": "teams",
+      "teamId": "cafa186a-1822-41f2-b742-924b9de1913f",
+      "teamName": "Boca Juniors",
+      "country": "Argentina",
+      "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/c/cb/Boca_Juniors_-_Novo_Escudo.svg",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Boca_Juniors_-_Novo_Escudo.svg",
+      "copyrightTag": "Wikimedia Commons PD-textlogo",
+      "trademarkNotice": "Club identifiers; informational identification only. No endorsement.",
+      "reviewDate": "2026-11-22"
+    },
+    {
+      "table": "teams",
+      "teamId": "b374ce9f-fe59-46ce-b2af-fafb9552d74f",
+      "teamName": "Boca Juniors",
+      "country": "Argentina",
+      "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/c/cb/Boca_Juniors_-_Novo_Escudo.svg",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Boca_Juniors_-_Novo_Escudo.svg",
+      "copyrightTag": "Wikimedia Commons PD-textlogo",
+      "trademarkNotice": "Club identifiers; informational identification only. No endorsement.",
+      "reviewDate": "2026-11-22"
+    },
+    {
+      "table": "teams",
+      "teamId": "6a2186c0-3932-409c-8c59-52556d74be33",
+      "teamName": "Boca Juniors Basketball",
+      "country": "Argentina",
+      "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/c/cb/Boca_Juniors_-_Novo_Escudo.svg",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Boca_Juniors_-_Novo_Escudo.svg",
+      "copyrightTag": "Wikimedia Commons PD-textlogo",
+      "trademarkNotice": "Club identifiers; informational identification only. No endorsement.",
+      "reviewDate": "2026-11-22"
+    },
+    {
+      "table": "womens_teams",
+      "teamId": "44e20cab-1815-4d71-a943-0733a4fdc377",
+      "teamName": "Boca Juniors Women",
+      "country": "Argentina",
+      "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/c/cb/Boca_Juniors_-_Novo_Escudo.svg",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Boca_Juniors_-_Novo_Escudo.svg",
+      "copyrightTag": "Wikimedia Commons PD-textlogo",
+      "trademarkNotice": "Club identifiers; informational identification only. No endorsement.",
+      "reviewDate": "2026-11-22"
+    },
+    {
+      "table": "teams",
+      "teamId": "59a4b8e4-53d4-45a1-a346-711a45d0ef71",
+      "teamName": "Ferro Carril Oeste",
+      "country": "Argentina",
+      "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/c/c6/Escudo_del_Club_Ferro_Carril_Oeste.svg",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Escudo_del_Club_Ferro_Carril_Oeste.svg",
+      "copyrightTag": "Wikimedia Commons PD-textlogo",
+      "trademarkNotice": "Club identifiers; informational identification only. No endorsement.",
+      "reviewDate": "2026-11-22"
+    },
+    {
+      "table": "womens_teams",
+      "teamId": "e7cd8a94-b125-4449-840c-7557b492bf27",
+      "teamName": "Ferro Carril Oeste Women",
+      "country": "Argentina",
+      "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/c/c6/Escudo_del_Club_Ferro_Carril_Oeste.svg",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Escudo_del_Club_Ferro_Carril_Oeste.svg",
+      "copyrightTag": "Wikimedia Commons PD-textlogo",
+      "trademarkNotice": "Club identifiers; informational identification only. No endorsement.",
+      "reviewDate": "2026-11-22"
+    },
+    {
+      "table": "teams",
+      "teamId": "f44abd14-c3ed-47b3-80d7-e95a57fae74c",
+      "teamName": "Instituto",
+      "country": "Argentina",
+      "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/f/fa/Instituto_acc_cordoba_logo.svg",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Instituto_acc_cordoba_logo.svg",
+      "copyrightTag": "Wikimedia Commons PD-textlogo",
+      "trademarkNotice": "Club identifiers; informational identification only. No endorsement.",
+      "reviewDate": "2026-11-22"
+    },
+    {
+      "table": "womens_teams",
+      "teamId": "3617b1c3-d22d-457b-8740-855086b99c52",
+      "teamName": "Instituto Women",
+      "country": "Argentina",
+      "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/f/fa/Instituto_acc_cordoba_logo.svg",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Instituto_acc_cordoba_logo.svg",
+      "copyrightTag": "Wikimedia Commons PD-textlogo",
+      "trademarkNotice": "Club identifiers; informational identification only. No endorsement.",
+      "reviewDate": "2026-11-22"
+    },
+    {
+      "table": "teams",
+      "teamId": "5ab6efd2-4c3f-4134-8da7-3b5d5ab37ab0",
+      "teamName": "Obras Basket",
+      "country": "Argentina",
+      "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/7/7a/Osbasket.png",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Osbasket.png",
+      "copyrightTag": "Wikimedia Commons PD-textlogo",
+      "trademarkNotice": "Club identifiers; informational identification only. No endorsement.",
+      "reviewDate": "2026-11-22"
+    },
+    {
+      "table": "womens_teams",
+      "teamId": "64194c72-d593-4e09-8d8b-7e3d79e34276",
+      "teamName": "Obras Basket Women",
+      "country": "Argentina",
+      "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/7/7a/Osbasket.png",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Osbasket.png",
+      "copyrightTag": "Wikimedia Commons PD-textlogo",
+      "trademarkNotice": "Club identifiers; informational identification only. No endorsement.",
+      "reviewDate": "2026-11-22"
+    },
+    {
+      "table": "teams",
+      "teamId": "d2d81924-b4ad-4b95-b9db-82c264bad1b6",
+      "teamName": "San Lorenzo",
+      "country": "Argentina",
+      "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/d/d7/Escudo_San_Lorenzo_2026.svg",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Escudo_San_Lorenzo_2026.svg",
+      "copyrightTag": "Wikimedia Commons PD-textlogo",
+      "trademarkNotice": "Club identifiers; informational identification only. No endorsement.",
+      "reviewDate": "2026-11-22"
+    },
+    {
+      "table": "teams",
+      "teamId": "54d5c7eb-ea5d-4696-9ff8-73a93ef89d96",
+      "teamName": "San Lorenzo de Almagro",
+      "country": "Argentina",
+      "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/d/d7/Escudo_San_Lorenzo_2026.svg",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Escudo_San_Lorenzo_2026.svg",
+      "copyrightTag": "Wikimedia Commons PD-textlogo",
+      "trademarkNotice": "Club identifiers; informational identification only. No endorsement.",
+      "reviewDate": "2026-11-22"
+    },
+    {
+      "table": "teams",
+      "teamId": "f0e6b64f-dbd3-4152-91f0-c6b3b96a2b43",
+      "teamName": "Flamengo",
+      "country": "Brazil",
+      "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/9/96/Clube_de_Regatas_do_Flamengo_logo.svg",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Clube_de_Regatas_do_Flamengo_logo.svg",
+      "copyrightTag": "Wikimedia Commons PD-textlogo",
+      "trademarkNotice": "Club identifiers; informational identification only. No endorsement.",
+      "reviewDate": "2026-11-22"
+    },
+    {
+      "table": "teams",
+      "teamId": "616b3959-63b4-4556-9373-61e5b4eb551c",
+      "teamName": "Flamengo",
+      "country": "Brazil",
+      "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/9/96/Clube_de_Regatas_do_Flamengo_logo.svg",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Clube_de_Regatas_do_Flamengo_logo.svg",
+      "copyrightTag": "Wikimedia Commons PD-textlogo",
+      "trademarkNotice": "Club identifiers; informational identification only. No endorsement.",
+      "reviewDate": "2026-11-22"
+    },
+    {
+      "table": "teams",
+      "teamId": "d47c2c6f-03ba-42a4-96b0-f2f09def60cd",
+      "teamName": "Kosner Baskonia",
+      "country": "Spain",
+      "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/8/8c/Baskonia_logo.png",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Baskonia_logo.png",
+      "copyrightTag": "Wikimedia Commons PD-textlogo",
+      "trademarkNotice": "Club identifiers; informational identification only. No endorsement.",
+      "reviewDate": "2026-11-22"
+    },
+    {
+      "table": "teams",
+      "teamId": "b63b8648-2923-4097-9751-9e7216130953",
+      "teamName": "Kosner Baskonia Vitoria-Gasteiz",
+      "country": "Spain",
+      "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/8/8c/Baskonia_logo.png",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Baskonia_logo.png",
+      "copyrightTag": "Wikimedia Commons PD-textlogo",
+      "trademarkNotice": "Club identifiers; informational identification only. No endorsement.",
+      "reviewDate": "2026-11-22"
+    }
+  ]
+}

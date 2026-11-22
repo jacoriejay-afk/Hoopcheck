@@ -77,14 +77,14 @@ export default function FanGroupsPage() {
   }, [userId, query, page, side, onlyFollowed, followedKey, followedIds, key]);
 
   const labels = spanish
-    ? { title: "HoopGroups", intro: "Comunidades oficiales de clubes, de baloncesto femenino y masculino.", all: "Todos", women: "Femenino", men: "Masculino", mine: "Mis equipos", search: "Buscar grupos por club", open: "Abrir grupo", team: "Perfil del equipo", empty: "No hay grupos para estos filtros.", retry: "No se pudieron cargar los grupos.", previous: "Anterior", next: "Siguiente", signIn: "Inicia sesión para ver los grupos" }
-    : { title: "HoopGroups", intro: "Explore official club communities for women's and men's basketball.", all: "All clubs", women: "Women", men: "Men", mine: "My Teams", search: "Search groups by club", open: "Open group", team: "Team profile", empty: "No groups match these filters.", retry: "Could not load groups.", previous: "Previous", next: "Next", signIn: "Sign in to browse groups" };
+    ? { title: "Grupos de aficionados", intro: "Comunidades de aficionados oficiales de cada club. HoopGroups es una sección diferente.", all: "Todos", women: "Femenino", men: "Masculino", mine: "Mis equipos", search: "Buscar grupos por club", open: "Abrir grupo", team: "Perfil del equipo", empty: "No hay grupos para estos filtros.", retry: "No se pudieron cargar los grupos.", previous: "Anterior", next: "Siguiente", signIn: "Inicia sesión para ver los grupos" }
+    : { title: "Team Fan Groups", intro: "Official fan communities for individual women's and men's clubs. HoopGroups is a separate feature.", all: "All clubs", women: "Women", men: "Men", mine: "My Teams", search: "Search groups by club", open: "Open group", team: "Team profile", empty: "No groups match these filters.", retry: "Could not load groups.", previous: "Previous", next: "Next", signIn: "Sign in to browse groups" };
 
   return <main className="page-shell hc-fan-groups-directory">
     <div className="page-container">
       <header className="hc-discovery-heading">
         <div><p className="eyebrow">HOOPCHECK COMMUNITY</p><h1>{labels.title}</h1><p className="muted">{labels.intro}</p></div>
-        <Link href="/teams" className="btn dark">{spanish ? "Explorar clubes" : "Explore clubs"}</Link>
+        <div className="actions"><Link href="/teams" className="btn dark">{spanish ? "Explorar clubes" : "Explore clubs"}</Link><Link href="/hoopgroups" className="btn">{spanish ? "Comunidades HoopGroups" : "HoopGroups communities"}</Link></div>
       </header>
       {!userId ? <Link className="btn" href="/login?returnTo=%2Fteam-hub%2Fgroups">{labels.signIn}</Link> : <>
         <section className="hc-team-directory-filters" aria-label={spanish ? "Filtros de grupos" : "Group filters"}>
