@@ -9,7 +9,7 @@ const feed = read("app/feed/page.tsx");
 
 // The styling must be scoped: the app's entitlement, message, and moderation
 // code paths are not replaced by this appearance-only feature.
-assert.match(layout, /import "\.\/hoopcheck-compact-social-20261122\.css";/);
+assert.match(layout, /import "\.\/hc-social-density-20261122\.css";/);
 assert.match(css, /--hc-social-edge:/);
 assert.match(css, /main\.hc-feed-page > \.page-container/);
 assert.match(css, /main\.hc-feed-page \.hc-feed-stream/);
