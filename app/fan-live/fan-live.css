@@ -151,3 +151,43 @@ html body main.hc-live-room.hc-live-room--chat .hc-live-room-predictions {margin
 html body main.hc-live-room.hc-live-room--chat .hc-live-room-predictions>summary {cursor:pointer;min-height:38px;padding:8px 3px;font-size:12px;font-weight:850;color:var(--hc-on-card,var(--ink));list-style-position:inside}
 html body main.hc-live-room.hc-live-room--chat .hc-live-room-predictions>summary::marker {color:var(--hc-orange,#ff642a)}
 html body main.hc-live-room.hc-live-room--chat .hc-live-room-predictions .hc-prediction {margin:0 0 9px}
+
+
+/* LIVECHAT-DB-1: compact database-backed room directory and connection state. */
+html body main.hc-live-room .hc-live-room-sync {
+  margin: -6px 0 11px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--hc-foreground-muted, var(--gray-500));
+}
+html body main.hc-live-room.hc-live-room--directory .hc-live-room-game {
+  grid-template-columns: minmax(0,1fr) auto auto;
+  gap: 10px;
+  min-height: 61px;
+}
+html body main.hc-live-room.hc-live-room--directory .hc-live-room-game-join {
+  display: grid;
+  gap: 4px;
+  justify-items: end;
+  text-align: right;
+  white-space: nowrap;
+}
+html body main.hc-live-room.hc-live-room--directory .hc-live-room-game-join small {
+  color: var(--hc-foreground-muted, var(--gray-500));
+  font-size: 10px;
+}
+html body main.hc-live-room.hc-live-room--directory .hc-live-room-game-join strong {
+  color: var(--hc-orange, #d74c17);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .03em;
+}
+html body main.hc-live-room.hc-live-room--directory .hc-live-room-game:focus-visible {
+  outline: 2px solid var(--hc-orange, #ff642a);
+  outline-offset: -2px;
+}
+@media(max-width:520px){
+  html body main.hc-live-room.hc-live-room--directory .hc-live-room-game {grid-template-columns:minmax(0,1fr) auto;gap:6px}
+  html body main.hc-live-room.hc-live-room--directory .hc-live-room-game-status {grid-column:2;grid-row:1;align-self:start}
+  html body main.hc-live-room.hc-live-room--directory .hc-live-room-game-join {grid-column:2;grid-row:1;align-self:end;padding-top:22px}
+}
