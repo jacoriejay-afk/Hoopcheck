@@ -9,7 +9,7 @@ BEGIN
      NOT (SELECT relrowsecurity FROM pg_class WHERE oid='public.profiles'::regclass) OR
      EXISTS (SELECT 1 FROM pg_proc WHERE pronamespace='public'::regnamespace
           AND proname IN ('search_public_players_by_username','is_player_country_public')) OR
-     NOT (SELECT bool_and(md5(prosrc)=v.md5)
+     NOT (SELECT count(*)=3 AND bool_and(md5(prosrc)=v.md5)
           FROM (VALUES
            ('public.get_public_player_profile(uuid)','d9cd27d5b6e426397674d48184530b24'),
            ('public.search_public_players(text,text,text,boolean,integer)','c2eee54d975b81dfeea139cacc2b8bee'),
@@ -20,6 +20,7 @@ BEGIN
   END IF;
 END $guard$;
 
+-- BEGIN PUBLIC READONLY RPCS
 CREATE FUNCTION public.search_public_players_by_username(
   p_username text, p_country text DEFAULT NULL, p_limit integer DEFAULT 30, p_offset integer DEFAULT 0
 )
@@ -68,13 +69,16 @@ $rpc$;
 REVOKE ALL ON FUNCTION public.is_player_country_public(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.is_player_country_public(uuid) TO anon,authenticated;
 
+-- END PUBLIC READONLY RPCS
 DO $post$
 BEGIN
  IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.search_public_players_by_username(text,text,integer,integer)')
     AND NOT prosecdef AND provolatile='s' AND pg_get_userbyid(proowner)='postgres')
  OR NOT EXISTS (SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.is_player_country_public(uuid)')
     AND NOT prosecdef AND provolatile='s' AND pg_get_userbyid(proowner)='postgres')
- OR has_function_privilege('PUBLIC'::name,'public.is_player_country_public(uuid)','EXECUTE') THEN
+ OR EXISTS (SELECT 1 FROM pg_proc p CROSS JOIN LATERAL aclexplode(p.proacl) a
+            WHERE p.oid=to_regprocedure('public.is_player_country_public(uuid)')
+              AND a.grantee=0 AND a.privilege_type='EXECUTE') THEN
     RAISE EXCEPTION 'Build 8 public compatibility contract postcheck failed';
  END IF;
 END $post$;
