@@ -49,6 +49,18 @@ export default function Settings() {
         <Text style={{color:theme.foreground,fontWeight:"700"}}>Privacy center</Text>
       </Pressable>
     </View>
+    <View style={{ gap: 10 }}>
+      <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 19, fontWeight: "800" }}>Career & team reviews</Text>
+      <Text style={{ color: theme.muted, lineHeight: 20 }}>Save playing history first. Reviews are optional and require verification.</Text>
+      {([{ title: "Career Passport · My Journey", path: "/profile#career-passport" },
+         { title: "Team review checklist", path: "/account#team-review-checklist" },
+         { title: "Membership & billing", path: "/membership" }] as const).map(item =>
+        <Pressable key={item.path} accessibilityRole="link"
+          onPress={() => router.push({ pathname: "/web", params: { path: item.path } })}
+          style={{ minHeight: 48, justifyContent: "center", paddingHorizontal: 14, borderWidth: 1, borderColor: theme.border, backgroundColor: theme.surface, borderRadius: theme.radius.control }}>
+          <Text style={{ color: theme.foreground, fontWeight: "700" }}>{item.title}</Text>
+        </Pressable>)}
+    </View>
     <AlternateIcons />
     {error ? <Text accessibilityRole="alert" style={{ color: theme.accent }}>{error}</Text> : null}
   </ScrollView>;

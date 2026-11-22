@@ -1,6 +1,6 @@
 "use client";
 
-import { getOwnProfile } from "../../lib/auth/own-profile";
+import { readOwnProfile } from "../../lib/read-own-profile";
 import { getEffectiveMembership } from "../../lib/billing/client-membership";
 
 
@@ -18,6 +18,9 @@ import { getPlayerProfileCompletion } from "../../lib/player-profile-completion"
 import TeamLogo from "../../components/TeamLogo";
 import { getGameAvailability } from "../../lib/game-availability";
 import "./home-3.css";
+import RoleQuickLinks, { getRoleExperience } from "../../components/RoleQuickLinks";
+import HomeCourtSpace from "./HomeCourtSpace";
+import "../../components/role-quick-links.css";
 
 type Profile = {
   id?: string;
@@ -51,6 +54,7 @@ export default function DashboardPage() {
   const basketballSide = useFanBasketballSide();
   const [profile,setProfile] = useState<Profile|null>(null);
   const [email,setEmail] = useState("");
+  const [authenticatedUserId,setAuthenticatedUserId] = useState("");
   const [teams,setTeams] = useState<Team[]>([]);
   const [feedPost,setFeedPost] = useState<FeedPost|null>(null);
   const [homeGames,setHomeGames] = useState<HomeGame[]>([]);
@@ -60,7 +64,6 @@ export default function DashboardPage() {
   const [canViewTrust,setCanViewTrust] = useState(false);
   const [hasFeedAccess,setHasFeedAccess] = useState(false);
   const [canWriteReviews,setCanWriteReviews] = useState(false);
-  const [canUseLiveGames,setCanUseLiveGames] = useState(false);
   const [membershipTier,setMembershipTier] = useState<"free"|"pro"|"premium">("free");
   const [loading,setLoading] = useState(true);
   const [loadError,setLoadError] = useState(false);
@@ -71,7 +74,7 @@ export default function DashboardPage() {
   useEffect(() => {
     let mounted = true;
     async function loadHome() {
-      if(mounted){setLoading(true);setLoadError(false);setAuthErrorDetail("");}
+      if(mounted){setLoading(true);setLoadError(false);setAuthErrorDetail("");setAuthenticatedUserId("");}
       // Capture auth events as well as session reads. Some browsers can stall a
       // getSession call during token refresh even after SIGNED_IN has fired.
       let resolveAuthEvent: (session: any) => void = () => {};
@@ -106,9 +109,10 @@ export default function DashboardPage() {
       if (!user) { router.replace("/login?returnTo=/dashboard"); return; }
       if (!mounted) return;
       setEmail(user.email||"");
+      setAuthenticatedUserId(user.id);
 
       const [profileResult, subscriptionResult, followsResult] = await Promise.allSettled([
-        withTimeout(getOwnProfile(supabase, user.id), 8000),
+        withTimeout(readOwnProfile<Profile>(user.id, "id,display_name,first_name,last_name,bio,position,current_team,current_country,height,free_agent,profile_visibility,nationality,hometown,avatar_url,interests,favorite_leagues,player_verified,account_type"), 8000),
         withTimeout(getEffectiveMembership(user.id), 8000),
         withTimeout(supabase.from("follow_relationships").select("target_id").eq("follower_id",user.id).eq("target_type","team").order("created_at",{ascending:false}).limit(100), 8000)
       ] as const);
@@ -124,7 +128,6 @@ export default function DashboardPage() {
       const entitlements = getHoopCheckEntitlements({ accountType: p?.account_type, subscription, playerVerified: p?.player_verified === true });
       setMembershipTier(entitlements.tier);
       setCanWriteReviews(entitlements.canWriteReviews);
-      setCanUseLiveGames(entitlements.canUseLiveGameHub);
       // A dismissed reminder stays hidden for 30 days on this device.
       // Do not show review prompts to fans or players without write access.
       if (entitlements.canWriteReviews) {
@@ -251,16 +254,12 @@ export default function DashboardPage() {
         <Link href="/search" className="hc-home3-search"><HoopIcon name="search" size={17}/> <span>Search players, coaches, teams, or leagues…</span></Link>
         <section className="hc-home3-greeting">
           <div className="hc-home3-greeting-line"><strong>Welcome back, {displayName}</strong><span className="hc-home3-tier">{membershipTier.toUpperCase()}</span></div>
-          <p>Know who you’re signing with.</p>
+          <p>{getRoleExperience(profile?.account_type).subtitle}</p>
           {<><div className="hc-home3-completion" role="progressbar" aria-label="Player profile completion" aria-valuemin={0} aria-valuemax={100} aria-valuenow={completion}><span style={{width:`${completion}%`}}/></div><div className="hc-home3-progress-label"><span>{completion === 100 ? "Profile complete" : `Profile ${completion}% — finish for full visibility`}</span>{completion < 100 && <Link href="/account#edit-profile">Finish</Link>}</div></>}
         </section>
+        <RoleQuickLinks role={profile?.account_type} profileId={authenticatedUserId} compact />
         {homeGames.length > 0 && <section className="hc-home3-section"><div className="hc-home3-heading"><h2>YOUR TEAMS — LIVE & NEXT</h2><Link href="/live-games">All games →</Link></div><div className="hc-home3-game-strip">{homeGames.map(game => { const isLive = game.status === "live" || game.status === "in_progress"; const team = teams.find(t => t.id === game.team_id || t.id === game.opponent_team_id); const availability = getGameAvailability({status:game.status,scheduledAt:game.scheduled_at,startedAt:game.started_at,endsAt:game.ends_at}); return <Link key={game.id} href={availability.chatOpen ? `/fan-live?gameId=${encodeURIComponent(game.id)}` : "/live-games"} className="hc-home3-game"><small>{game.league_name || team?.league_name || "Basketball"} · {isLive ? "LIVE" : "UPCOMING"}</small><strong>{team?.name || "Your team"} vs {game.opponent_name || "Opponent"}</strong><span>{isLive ? [game.home_score,game.away_score].every(v => v !== null) ? `${game.home_score} – ${game.away_score}` : "Live now" : game.scheduled_at ? new Date(game.scheduled_at).toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}) : "Time TBD"}</span><small>{availability.chatOpen ? "Join game chat →" : availability.opensAt ? `Chat opens ${availability.opensAt.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"})}` : availability.state === "UPCOMING" ? "Chat opens before tip-off" : availability.state}</small></Link>; })}</div></section>}
-        <section className="hc-home3-section"><h2>{language === "es" ? "ACCIONES RÁPIDAS" : "QUICK ACTIONS"}</h2><div className="hc-home3-actions">
-          <Link href="/teams"><HoopIcon name="shield-check" size={22}/><span>{language === "es" ? "Consultar un equipo" : "Check a Team"}</span></Link>
-          <Link href={canWriteReviews ? "/teams" : profile?.account_type === "fan" || profile?.account_type === "club_admin" || profile?.account_type === "manager" ? "/team-hub" : profile?.account_type === "agent" || profile?.account_type === "scout" ? "/agents-hq" : "/coaches"}><HoopIcon name="edit" size={22}/><span>{canWriteReviews ? (language === "es" ? "Elegir equipo para reseñar" : "Choose Team to Review") : profile?.account_type === "agent" || profile?.account_type === "scout" ? "Agents HQ" : profile?.account_type === "coach" ? (language === "es" ? "Entrenadores" : "Coaches") : (language === "es" ? "Centro de equipos" : "Team Hub")}</span></Link>
-          <Link href={profile?.account_type === "agent" || profile?.account_type === "scout" || profile?.account_type === "coach" ? "/players" : profile?.account_type === "club_admin" || profile?.account_type === "manager" ? "/teams" : canUseLiveGames ? "/live-games" : "/players"}><HoopIcon name="basketball" size={22}/><span>{profile?.account_type === "agent" || profile?.account_type === "scout" || profile?.account_type === "coach" ? (language === "es" ? "Jugadores" : "Players") : profile?.account_type === "club_admin" || profile?.account_type === "manager" ? (language === "es" ? "Equipos" : "Teams") : canUseLiveGames ? (language === "es" ? "Partidos en vivo" : "Live Games") : (language === "es" ? "Jugadores" : "Players")}</span></Link>
-          <Link href={profile?.account_type === "agent" || profile?.account_type === "scout" ? "/coaches" : profile?.account_type === "coach" ? "/teams" : profile?.account_type === "club_admin" || profile?.account_type === "manager" ? "/account" : "/team-hub/groups"}><HoopIcon name="users" size={22}/><span>{profile?.account_type === "agent" || profile?.account_type === "scout" ? (language === "es" ? "Entrenadores" : "Coaches") : profile?.account_type === "coach" ? (language === "es" ? "Equipos" : "Teams") : profile?.account_type === "club_admin" || profile?.account_type === "manager" ? (language === "es" ? "Cuenta" : "Account") : (language === "es" ? "Grupos de aficionados" : "Fan Groups")}</span></Link>
-        </div></section>
+        <HomeCourtSpace profileId={authenticatedUserId} role={profile?.account_type} hasFeedAccess={hasFeedAccess} language={language} />
         {popularTeams.length > 0 && <section className="hc-home3-section"><div className="hc-home3-heading"><h2>POPULAR — TEAMS YOU FOLLOW</h2><Link href="/teams">Explore teams →</Link></div><div className="hc-home3-rated-list">{popularTeams.map(({team,followers})=><Link key={team.id} href={`${basketballSide === "womens" ? "/womens" : "/teams"}/${team.id}`} className="hc-home3-rated-team"><span>{team.name}<small>{team.league_name || team.country || "Basketball"}</small></span><strong>{followers.toLocaleString()}<small>followers</small></strong></Link>)}</div></section>}
         {ratedTeams.length > 0 && <section className="hc-home3-section"><div className="hc-home3-heading"><h2>TOP RATED — TEAMS YOU FOLLOW</h2><Link href="/teams">Explore teams →</Link></div><div className="hc-home3-rated-list">{ratedTeams.map(({team,rating,count})=><Link key={team.id} href={`${basketballSide === "womens" ? "/womens" : "/teams"}/${team.id}`} className="hc-home3-rated-team"><span>{team.name}<small>{team.league_name || team.country || "Basketball"}</small></span><strong>{rating.toFixed(1)}/5 <small>({count} reviews)</small></strong></Link>)}</div></section>}
         {canWriteReviews && reviewNudgeVisible && <section className="hc-home3-review-nudge" aria-label="Review reminder"><div><strong>Played for a team recently?</strong><p>Share your experience to help the next player make an informed decision.</p></div><div className="hc-home3-nudge-actions"><Link href="/teams">Choose a team to review</Link><button type="button" aria-label="Dismiss review reminder for 30 days" onClick={() => { try { if(profile?.id) window.localStorage.setItem(`hc-home3-review-nudge:${profile.id}`, String(Date.now())); } catch {} setReviewNudgeVisible(false); }}>Dismiss</button></div></section>}

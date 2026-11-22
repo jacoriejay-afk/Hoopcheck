@@ -53,6 +53,8 @@ export default function AgentsHQPage() {
       <article className="dashboard-card"><h2>Find players</h2><p className="muted">Search public player profiles by name and country.</p><Link className="btn" href="/players">Explore players</Link></article>
       <article className="dashboard-card"><h2>Research teams</h2><p className="muted">Explore clubs and their public profiles across leagues.</p><Link className="btn" href="/directory">Team directory</Link></article>
       <article className="dashboard-card"><h2>Connections</h2><p className="muted">Review your network and access permitted player outreach.</p><Link className="btn" href="/connections">Open connections</Link></article>
+      <article className="dashboard-card"><h2>Professional directory</h2><p className="muted">Discover public agents and scouts. An identity check is distinct from professional licensing.</p><Link className="btn" href="/agents">Browse agents &amp; scouts</Link><Link className="btn" href="/agent-studio">Edit my professional showcase</Link></article>
+      <article className="dashboard-card"><h2>Creator network</h2><p className="muted">Build your own opt-in creator showcase or discover basketball media and trainers.</p><Link className="btn" href="/creator-studio">Creator Studio</Link></article>
     </section>
   </div></main>;
 }

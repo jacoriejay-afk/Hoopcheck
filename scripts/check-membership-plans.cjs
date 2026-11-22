@@ -31,14 +31,17 @@ test("coach and manager comparison offers Premium, not Pro", () => {
   assert.match(html, /coaches and team managers/i);
 });
 
-test("priced professional audiences keep both paid choices and current prices", () => {
-  for (const audience of ["player"]) {
-    const html = render({ audience, billingTerm: "year" });
-    assert.match(html, /Choose Pro/);
-    assert.match(html, /Choose Premium/);
-    assert.match(html, /\$50\.90/);
-    assert.match(html, /\$101\.90/);
-  }
+test("priced Player choices retain approved prices while unpriced Fan tiers cannot be purchased", () => {
+  const player = render({ audience: "player", billingTerm: "year" });
+  assert.match(player, /Choose Pro/);
+  assert.match(player, /Choose Premium/);
+  assert.match(player, /\$50\.90/);
+  assert.match(player, /\$101\.90/);
+  const fan = render({ audience: "fan", billingTerm: "year" });
+  assert.match(fan, /Not yet priced/);
+  assert.match(fan, /Fan membership comparison/);
+  assert.doesNotMatch(fan, /\$50\.90|\$101\.90|\$4\.99|\$9\.99/);
+  assert.doesNotMatch(fan, /Choose Pro|Choose Premium/);
 });
 
 test("checkout choices are disabled during loading", () => {
@@ -83,10 +86,16 @@ test("current Pro and Premium plans are labeled and cannot be repurchased in com
 test("active non-Stripe memberships use the shared tier and do not render checkout cards", () => {
   const page = read("app/membership/page.tsx");
   assert.match(page, /getActiveMembershipTier\(subscription\)/);
-  assert.match(page, /isActive && subscription &&/);
-  assert.match(page, /subscription\.provider === "apple"/);
-  assert.match(page, /Manage Apple subscription/);
-  assert.match(page, /billing\?\.stripe_customer_id \|\| billing\?\.stripe_subscription_id/);
+  if (page.includes("getEffectiveMembership(user.id)")) {
+    assert.match(page, /isActive && subscription/, "Show managed provider access only when entitlement is active");
+    assert.match(page, /subscription\.provider === "apple"/, "Apple membership must have Apple-only management");
+    assert.match(page, /subscription\.provider === "manual"/, "Manual memberships need accurate support instructions");
+    assert.match(page, /!stripeOngoing && !appleOngoing/, "Never offer a second provider checkout");
+    assert.match(page, /disabled=\{!canBuy \|\| Boolean\(busy\)\}/, "Loading or existing access must disable checkout");
+  } else {
+    assert.ok(page.includes("showMembershipManagement && subscription ? ("), "Billing management remains available behind a stable loading state");
+    assert.ok(page.includes("subscription.stripe_subscription_id ? ("), "Stripe and manual grants must use different honest cancellation controls");
+  }
 });
 
 
@@ -97,18 +106,138 @@ test("team directory list and map send session bearer token for trust scores", (
   assert.match(page, /headers: session\?\.access_token \? \{ Authorization: `Bearer \$\{session\.access_token\}` \} : \{\}, cache: "no-store"/);
 });
 
-test("checkout rejects equal and lower active tiers even without a Stripe subscription ID", () => {
-  const checkout = fs.readFileSync("app/api/stripe/webhook/create-checkout/route.ts", "utf8");
-  assert.match(checkout, /stripe_subscription_id, status, plan, current_period_end/);
-  assert.match(checkout, /const currentTier = getActiveMembershipTier\(existingSubscription\)/);
-  assert.match(checkout, /if \(hasStripeSubscription \|\| !canStartNewMembershipCheckout\(currentTier, plan\)\)/);
-  assert.match(read("lib/membership-tier.ts"), /return !isAtLeastTier\(currentTier, requestedTier\)/);
+test("trial notice covers currently supported eligible roles and monthly terms only", () => {
+  const page = read("app/membership/page.tsx");
+  if (page.includes("getEffectiveMembership(user.id)")) {
+    assert.ok(page.includes('accountType !== "fan" && billingInterval === "month"'),
+      "Keep unpriced fan products unavailable while displaying monthly trial planning to eligible roles");
+    assert.ok(page.includes('Paid fan products have not been priced'),
+      "Fan paid products remain held rather than silently sold");
+  } else {
+    assert.ok(page.includes('{billingInterval === "month" && ('), "All priced account types should see the monthly trial notice");
+  }
+  assert.ok(page.includes('<p className="hc-trial-note"'), "Trial note must remain visible");
+  assert.ok(!page.includes('accountType === "player" && billingInterval === "month"'),
+    "Trial notice must not be Player-only");
+  assert.ok(page.includes("not currently available at public checkout"),
+    "No unverified live trial promise");
+  assert.ok(page.includes("all supported HoopCheck account types"), "Describe supported role coverage");
 });
 
 
-test("unpriced fan comparisons preserve legacy features without prices or purchase controls", () => {
- const html=render({audience:"fan",currentTier:"pro"});
- assert.match(html,/CURRENT/);assert.match(html,/Existing entitlement/);
- assert.doesNotMatch(html,/Choose Pro|Choose Premium|\$4\.99|\$9\.99/);
- assert.match(read("app/api/stripe/webhook/create-checkout/route.ts"),/checkoutProfile.account_type === "fan"/);
+test("public trial display is guarded by server activation or an explicit hard-off gate", () => {
+  const page = read("app/membership/page.tsx");
+  const checkout = read("app/api/stripe/webhook/create-checkout/route.ts");
+  const statusEndpoint = read("app/api/membership/trial-status/route.ts");
+  if (checkout.includes('const trialRolloutEnabled = false;')) {
+    assert.ok(page.includes("not currently available at public checkout"),
+      "Hard-disabled checkout must not advertise a live trial");
+    assert.ok(checkout.includes("rolloutEnabled: trialRolloutEnabled,"),
+      "Server must use hard-off eligibility in both initial and final trial decisions");
+    assert.ok(!page.includes('trialPubliclyAvailable ? ('),
+      "Do not display a live trial based on an unrelated feature flag");
+  } else {
+    assert.ok(page.includes('fetch("/api/membership/trial-status"'),
+      "Membership page must check server availability");
+    assert.ok(page.includes("trialPubliclyAvailable ? ("),
+      "Live trial can only appear after the server confirms activation");
+  }
+  assert.ok(statusEndpoint.includes("canEnableProductionSevenDayTrial({"),
+    "Future activation must use canonical production gate");
+  assert.ok(statusEndpoint.includes("Cache-Control") && statusEndpoint.includes("no-store"),
+    "Offer status must be uncacheable across rollout changes");
+  assert.ok(statusEndpoint.includes("stripeMatchesDeployment(process.env.STRIPE_SECRET_KEY)"),
+    "Server must verify Stripe environment match");
+});
+
+
+test("checkout rejects equal and lower active tiers even without a Stripe subscription ID", () => {
+  const checkout = fs.readFileSync("app/api/stripe/webhook/create-checkout/route.ts", "utf8");
+  const tiers = fs.readFileSync("lib/membership-tier.ts", "utf8");
+  assert.match(checkout, /stripe_subscription_id, status, plan, current_period_end/);
+  assert.match(checkout, /const currentTier = getActiveMembershipTier\(existingSubscription\)/);
+  assert.match(checkout, /if \(hasStripeSubscription \|\| !canStartNewMembershipCheckout\(currentTier, plan\)\)/);
+  assert.match(tiers, /return !isAtLeastTier\(currentTier, requestedTier\)/);
+});
+
+
+test("Stripe cancellation is visible for active, trialing and overdue membership states", () => {
+  const page = read("app/membership/page.tsx");
+  const cancelApi = read("app/api/stripe/cancel-subscription/route.ts");
+  if (page.includes("getEffectiveMembership(user.id)")) {
+    assert.ok(page.includes('["active", "trialing", "past_due", "unpaid", "incomplete", "paused"]'),
+      "Stripe renewal controls must handle active/trialing/delinquent states");
+    assert.ok(page.includes('subscription?.provider === "apple"'),
+      "Apple subscriptions must never be cancelled through Stripe");
+    assert.ok(page.includes('billingAction("cancel", "/api/stripe/cancel-subscription"'),
+      "Cancellation must use authenticated server action");
+    assert.ok(page.includes('Cancel Stripe renewal at the end of your current billing period?'),
+      "Renewal cancellation must be explicit and period-end");
+  } else {
+    assert.match(page, /hasManageableSubscription = Boolean\(subscription\?\.stripe_subscription_id/);
+    assert.match(page, /"active", "trialing", "past_due", "unpaid"/);
+    assert.match(page, /showMembershipManagement && subscription/);
+    assert.ok(page.includes('"Cancel Subscription"'));
+    assert.ok(page.includes("onClick={cancelMembership}"));
+    assert.ok(page.includes('data?.cancel_at_period_end !== true'));
+    assert.ok(page.includes("Automatic renewal is off"));
+  }
+  assert.ok(cancelApi.includes("stripe.subscriptions.update(subscription.stripe_subscription_id"),
+    "Cancellation must target owner-bound Stripe subscription");
+  assert.ok(cancelApi.includes('cancel_at_period_end: action === "cancel"'),
+    "Stripe cancellation must occur at period end");
+});
+
+
+test("non-Stripe memberships have a clearly explained billing support path", () => {
+  const page = read("app/membership/page.tsx");
+  const support = read("app/support/page.tsx");
+  assert.ok(page.includes('/support?membershipCancellation=1'),
+    "Manual-grant subscriptions need a real support route");
+  assert.ok(page.includes("no linked Stripe subscription"),
+    "Manual memberships must not pretend they have a Stripe renewal");
+  assert.ok(page.includes('subscription.provider === "manual"') || page.includes("showMembershipManagement"),
+    "Only manual memberships should use the manual billing path");
+  assert.ok(support.includes('get("membershipCancellation") === "1"'),
+    "Support tickets must identify cancellation requests");
+  assert.ok(support.includes('setCategory("billing")'),
+    "Cancellation requests must enter billing queue");
+});
+
+
+test("membership and shared cards use contained borders, equal radii and responsive controls", () => {
+  const css = read("app/globals.css");
+  const comparison = read("components/MembershipComparison.tsx");
+  assert.ok(!comparison.includes('style={{border:currentTier'),
+    "Current plans may not use inline extra-width borders");
+  assert.ok(css.includes(".hc-membership-page .hc-membership-plan.is-current"),
+    "Plan comparison must follow shared border styling");
+  assert.ok(css.includes("outline-offset: -3px"), "Membership keyboard focus stays inside borders");
+  assert.ok(css.includes(".hc-membership-page .hc-membership-actions"), "Actions need the shared responsive layout");
+  assert.ok(css.includes(".dashboard-card::after { content: none; }"), "Decorative overflow must be removed");
+  assert.ok(css.includes(".hc-membership-page .plan-top"), "Mobile price and title must wrap");
+});
+
+
+test("membership loading does not flash purchase choices during subscription refresh", () => {
+  const page = read("app/membership/page.tsx");
+  const css = read("app/globals.css");
+  if (page.includes("getEffectiveMembership(user.id)")) {
+    assert.ok(page.includes("const current = ++generation.current;"),
+      "Account switching and async refreshes must invalidate older loads");
+    assert.ok(page.includes("setLoading(true);") && page.includes("setSubscription(null);"),
+      "Refresh must clear stale purchasable entitlements");
+    assert.ok(page.includes('!loading && !isActive && accountType && accountType !== "fan"'),
+      "Loading or unknown account must not display purchase cards");
+    assert.ok(page.includes('disabled={!canBuy || Boolean(busy)}'),
+      "Pending actions must disable checkout buttons");
+    assert.ok(page.includes('disabled={loading || Boolean(busy)}'),
+      "Loading state must disable refresh actions");
+  } else {
+    assert.ok(page.includes("async function loadSubscription(silent = false)"), "Polling must support quiet refresh");
+    assert.ok(page.includes("await loadSubscription(true)"), "Checkout return polling must keep cancellation controls");
+    assert.ok(page.includes("{loading ? ("), "Initial state must not show premature purchase cards");
+    assert.ok(page.includes('className="hc-membership-loading"'), "Loading state must have stable layout");
+    assert.ok(css.includes(".hc-membership-page .hc-membership-loading {"), "Loading state must use shared card styling");
+  }
 });

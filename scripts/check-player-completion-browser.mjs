@@ -23,7 +23,12 @@ try {
     else if (url.pathname.endsWith("/rpc/get_own_profile")) data = profile;
     else if (url.pathname.endsWith("/profiles")) {
       if (request.method() === "PATCH") profile = { ...profile, ...request.postDataJSON() };
-      data = profile;
+      // PostgREST maybeSingle() GET uses the JSON array representation,
+      // while single() explicitly requests a vendor object media type.
+      // Return the correct shape so profile completion tests exercise the
+      // actual owner reader, rather than a synthetic transport mismatch.
+      const wantsObject = (request.headers().accept || "").includes("application/vnd.pgrst.object+json");
+      data = request.method() === "GET" && !wantsObject ? [profile] : profile;
     } else if (url.pathname.includes("/rpc/get_public_player_profile")) data = [{ ...profile, player_position: profile.position }];
     else if (url.pathname.includes("/rpc/get_current_user_admin_role")) data = null;
     else if (url.pathname.includes("/rpc/is_current_user_admin_or_moderator")) data = false;
@@ -47,7 +52,14 @@ try {
   for (const path of ["/dashboard", "/account", "/profile", `/players/${uid}`]) {
     await navigate(path);
     const progress = page.getByRole("progressbar", { name: "Player profile completion" });
-    await progress.waitFor();
+    try {
+      await progress.waitFor({ timeout: 12000 });
+    } catch (error) {
+      // Synthetic browser fixture only: show which route dropped the expected
+      // completion surface, without masking failures or logging real user data.
+      const content = await page.locator("main").first().innerText().catch(() => "No main content");
+      throw new Error(`Player completion missing on ${path}; rendered: ${content.slice(0, 900)}`, { cause: error });
+    }
     assert.equal(await progress.getAttribute("aria-valuenow"), "86", path);
   }
   await navigate("/complete-profile");

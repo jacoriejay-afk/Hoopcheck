@@ -1,0 +1,30 @@
+# Build 9 — current main reconciliation, 2026-11-22
+
+## Status: isolated review candidate, NOT release approval
+
+The 2026-11-22 comparison from protected Build 9 integration `7ed57d881db4fa5e5292ab14a01249de9a09faed` to website/security `main` `11792fb0ee7eeb7daac8b44696a1b3946c052e2e` (common ancestor `f8e457055f50abfe1388c82292f05a3f88363f5f`) found **122 main-changed files** and **15 files edited by both sides**.
+
+This isolated candidate staged **107 main-only paths** by exact Git blobs, without overwriting any shared path. Three dependency manifests were then deliberately restored from the protected integration branch after the first Mobile App Checks failed at `npm ci`: main's `apps/mobile/package.json` required Sharp 0.34.5 and incompatible optional binary packages while Build 9's mobile lock pinned 0.35.5; root `package.json` and `package-lock.json` also differed across branches. The integration manifest and lockfile set remains the tested baseline, **not an accidental downgrade of app functionality**. Any new main dependencies must be reviewed as one manifest+lockfile update before approval.
+
+### Seven shared files with disjoint line edits reconciled
+
+- `.github/workflows/ci.yml`: include both independent checks.
+- `app/api/stripe/webhook/route.ts`: preserve all independent webhook validation and state-transition checks, including main trial redemptions.
+- `app/feed/page.tsx`, `app/layout.tsx`, `app/live-games/page.tsx`, `app/settings/page.tsx`: keep independent web UI/role/locale improvements.
+- `apps/mobile/components/FeedMedia.tsx`: preserve both native media behavior and UI changes.
+
+All seven had **zero overlapping diff hunks** against the exact common ancestor, and both edit streams were applied; compile and behavioral tests are still required for semantic compatibility.
+
+### Eight shared paths with overlapping edits manually reconciled
+
+- `app/account/page.tsx`, `app/dashboard/page.tsx`, `app/profile/page.tsx`, `app/players/[id]/page.tsx`: use production-compatible `readOwnProfile` for owner views (live `get_own_profile()` is still absent). Keep protected Build 9 `getEffectiveMembership`, owner-only checks and profile editor field allowlists.
+- `app/api/stripe/webhook/create-checkout/route.ts`: preserve Build 9 Apple-versus-Stripe double-billing protection, deletion and moderation gates and fan-no-price hold; add latest-main shared supported-account validation. **Trial rollout remains explicitly disabled** pending actual sandbox acceptance.
+- `app/membership/page.tsx`: preserve Build 9 effective entitlement/Apple/Stripe separation, signed billing actions, account-switch safety and the fan paid-product hold; clarify that planned one-time monthly trial is **not currently available at public checkout**.
+- `app/search/page.tsx`: deliberately **retain the server-authorized `search_public_players_by_username` RPC** (installed in production by migration `20261122040018`) rather than reverting to a direct raw-profile username lookup. The new dual-path privacy test asserts masked opt-out country, approved-only avatar, hidden/suspended profile exclusion and exact username matching.
+- `apps/mobile/app/feed.tsx`: preserve colorful Arena layout, polling and media composer **and** add latest-main persisted per-user Reel hide/mute, report and account blocking, with blocked-creator reads failing closed before Reels can play.
+
+### Prohibited shortcuts / remaining release gates
+
+This is a **source-level reconciliation candidate**, not a completed Git branch merge or tested TestFlight build. Run exact-head root/mobile CI, entitlement, browser, unsigned Xcode compile and iOS Passport tests. The signed production iOS app still requires real iPhone testing, Apple Sandbox purchase/restore/cancel, Apple/Expo signing and build-counter verification, real Auth-issued owner/nonowner AAL1/AAL2 HTTP tests, production-schema-equivalent PostgreSQL 17 rollback rehearsal and legacy Build 7/8 country-column compatibility. Production `profiles.current_country` direct SELECT is not revoked and the protected owner RPC remains absent. Avoid applying the candidate migrations, changing billing, starting EAS, or merging PR #755 until external release gates are independently approved.
+
+Actual real iOS Passport PDF/share-sheet/cleanup simulator tests passed in both themes on [PR #813](https://github.com/jacoriejay-afk/Hoopcheck/pull/813), which was merged into the *protected integration* separately. That simulator result is **not a physical-iPhone or Apple Sandbox pass**.

@@ -1,0 +1,54 @@
+.hc-role-quick-links{margin:16px 0 20px;padding:clamp(14px,2vw,22px);border:1px solid var(--hc-card-border,var(--border));border-radius:22px;background:var(--hc-card-surface,var(--surface));color:var(--hc-on-card,var(--hc-foreground))}
+.hc-role-quick-links__heading h2{margin:0 0 4px;font-size:clamp(19px,2.2vw,25px)}
+.hc-role-quick-links__heading p{margin:4px 0}
+.hc-role-quick-links__grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-top:14px}
+.hc-role-quick-links__grid a{display:flex;min-width:0;min-height:76px;flex-direction:column;align-items:flex-start;gap:6px;justify-content:center;padding:12px;border-radius:15px;border:1px solid var(--hc-card-border,var(--border));background:color-mix(in srgb,var(--orange) 6%,var(--hc-card-surface,var(--surface)));color:var(--hc-on-card,var(--hc-foreground));text-decoration:none;overflow-wrap:anywhere}
+.hc-role-quick-links__grid a:hover,.hc-role-quick-links__grid a:focus-visible{border-color:var(--orange);outline-offset:2px}
+.hc-role-quick-links__grid strong{font-size:14px}
+.hc-role-quick-links__grid small{font-size:12px;color:var(--hc-on-card-muted,var(--hc-foreground-muted))}
+.hc-role-quick-links.is-compact{margin:0 0 10px}
+@media(max-width:850px){.hc-role-quick-links__grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:440px){.hc-role-quick-links__grid a{min-height:72px;padding:10px}}
+
+
+/* UNIVERSAL-COURTSIDE: compact personalized header and edit controls. */
+.hc-home3 .hc-role-quick-links {min-width:0;}
+.hc-role-quick-links__heading {display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.hc-role-quick-links__heading > div {min-width:0;flex:1;}
+.hc-role-quick-links__heading h2 {font-family:var(--font-display,inherit);font-size:clamp(18px,4vw,23px);line-height:1.16;overflow-wrap:normal;word-break:normal;}
+.hc-role-quick-links__heading .muted {font-size:12px;line-height:1.35;}
+.hc-role-quick-links__heading button {flex:0 0 auto;border:1px solid var(--hc-card-border,var(--border));border-radius:999px;padding:9px 12px;min-height:44px;font-size:12px;font-weight:850;color:var(--hc-on-card,var(--hc-foreground));background:var(--hc-card-surface,var(--surface));cursor:pointer;}
+.hc-role-quick-links__grid > a {border-left:3px solid var(--hc-courtside-accent,#f65b21);}
+.hc-role-quick-links__grid > a strong {overflow-wrap:normal;word-break:normal;hyphens:none;}
+.hc-courtside-editor {display:grid;gap:12px;margin-top:14px;padding-top:13px;border-top:1px solid var(--hc-card-border,var(--border));}
+.hc-courtside-editor > label {display:grid;gap:5px;font-size:12px;font-weight:850;}
+.hc-courtside-editor > label input {min-width:0;width:100%;min-height:44px;border-radius:10px;border:1px solid var(--hc-card-border,var(--border));background:var(--hc-card-surface,var(--surface));color:var(--hc-on-card,var(--hc-foreground));padding:9px 11px;font-size:16px;}
+.hc-courtside-editor fieldset {min-width:0;margin:0;padding:0;border:0;}
+.hc-courtside-editor legend {font-size:12px;font-weight:850;margin-bottom:7px;}
+.hc-courtside-colors {display:flex;gap:14px;flex-wrap:wrap;}
+.hc-courtside-colors label {display:inline-flex;align-items:center;gap:6px;font-size:12px;text-transform:capitalize;}
+.hc-courtside-options {display:grid;gap:4px;}
+.hc-courtside-option {display:flex;align-items:center;justify-content:space-between;min-height:44px;gap:10px;border-bottom:1px solid var(--hc-card-border,var(--border));}
+.hc-courtside-option label {display:inline-flex;align-items:center;gap:8px;min-width:0;font-size:13px;}
+.hc-courtside-option > div {display:flex;flex:0 0 auto;gap:5px;}
+.hc-courtside-option button,.hc-courtside-editor-footer button {min-width:36px;min-height:36px;border-radius:9px;border:1px solid var(--hc-card-border,var(--border));background:var(--hc-card-surface,var(--surface));color:var(--hc-on-card,var(--hc-foreground));cursor:pointer;}
+.hc-courtside-option button:disabled {opacity:.35;}
+.hc-courtside-editor-footer {display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.hc-courtside-editor-footer small {font-size:11px;color:var(--hc-on-card-muted,var(--hc-foreground-muted));}
+.hc-role-quick-links :is(a,button,input):focus-visible {outline:2px solid var(--hc-courtside-accent,#f65b21);outline-offset:2px;}
+@media(max-width:767px){
+  .hc-home3 .hc-role-quick-links.is-compact {padding:12px!important;margin:0 0 4px!important;border-radius:17px;}
+  .hc-home3 .hc-role-quick-links.is-compact .hc-role-quick-links__heading {gap:9px;align-items:flex-start;}
+  .hc-home3 .hc-role-quick-links.is-compact .hc-role-quick-links__heading h2 {font-size:19px!important;margin:2px 0 3px;}
+  .hc-home3 .hc-role-quick-links.is-compact .hc-role-quick-links__heading .eyebrow {font-size:9px;}
+  .hc-home3 .hc-role-quick-links.is-compact .hc-role-quick-links__heading .muted {font-size:11px;line-height:1.35;}
+  .hc-home3 .hc-role-quick-links.is-compact .hc-role-quick-links__heading button {font-size:11px;padding:7px 10px;}
+  .hc-home3 .hc-role-quick-links.is-compact .hc-role-quick-links__grid {display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;margin-top:10px!important;}
+  .hc-home3 .hc-role-quick-links.is-compact .hc-role-quick-links__grid > a {min-width:0;min-height:62px!important;padding:9px 10px!important;border-radius:12px;gap:3px!important;justify-content:center;}
+  .hc-home3 .hc-role-quick-links.is-compact .hc-role-quick-links__grid > a strong {font-size:13px!important;line-height:1.2!important;}
+  .hc-home3 .hc-role-quick-links.is-compact .hc-role-quick-links__grid > a small {font-size:11px!important;line-height:1.25!important;}
+}
+@media(max-width:350px){
+  .hc-home3 .hc-role-quick-links.is-compact .hc-role-quick-links__grid > a strong {font-size:12px!important;}
+  .hc-home3 .hc-role-quick-links.is-compact .hc-role-quick-links__heading {flex-wrap:wrap;}
+}

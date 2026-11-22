@@ -1,0 +1,29 @@
+/* Accessible, compact HoopChat inbox; inherits the shared surface theme. */
+.hc-notifications-main-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+.hc-notifications-main-tabs button{min-height:44px;padding:10px 18px;border-radius:16px;border:1px solid var(--hc-card-border,var(--border));background:var(--hc-card-surface,var(--surface));color:var(--hc-on-card,var(--hc-foreground));font:inherit;font-weight:750;cursor:pointer}
+.hc-notifications-main-tabs button[aria-pressed="true"]{background:var(--orange);color:#171717;border-color:var(--orange)}
+.hc-message-inbox{color:var(--hc-foreground);min-width:0}
+.hc-message-inbox__intro{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:12px 0}
+.hc-message-inbox__intro h2{margin:0}
+.hc-message-inbox__layout{display:grid;grid-template-columns:minmax(190px,310px) minmax(0,1fr);min-height:390px;border:1px solid var(--hc-card-border,var(--border));border-radius:22px;overflow:hidden;background:var(--hc-card-surface,var(--surface));color:var(--hc-on-card,var(--hc-foreground))}
+.hc-message-inbox__list{min-width:0;border-inline-end:1px solid var(--hc-card-border,var(--border));overflow:auto;max-height:70vh}
+.hc-message-inbox__thread{width:100%;display:grid;gap:3px;text-align:start;padding:14px;border:0;border-bottom:1px solid var(--hc-card-border,var(--border));background:transparent;color:inherit;cursor:pointer;overflow-wrap:anywhere}
+.hc-message-inbox__thread:hover,.hc-message-inbox__thread.is-selected{background:color-mix(in srgb,var(--orange) 12%,transparent)}
+.hc-message-inbox__thread strong{font-size:15px}
+.hc-message-inbox__thread small,.hc-message-inbox__thread span{font-size:12px;color:var(--hc-on-card-muted,var(--hc-foreground-muted));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hc-message-inbox__conversation{padding:clamp(12px,2vw,24px);min-width:0;display:flex;flex-direction:column;gap:14px}
+.hc-message-inbox__conversation>header{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding-bottom:10px;border-bottom:1px solid var(--hc-card-border,var(--border))}
+.hc-message-inbox__conversation>header div{display:grid;gap:2px}
+.hc-message-inbox__conversation>header small{color:var(--hc-on-card-muted,var(--hc-foreground-muted))}
+.hc-message-inbox__history{min-height:160px;max-height:55vh;overflow:auto;display:flex;flex-direction:column;gap:10px}
+.hc-message-inbox__request{margin:0;background:color-mix(in srgb,var(--orange) 9%,transparent);padding:12px;border-radius:14px;overflow-wrap:anywhere}
+.hc-message-inbox__bubble{align-self:flex-start;max-width:90%;padding:10px 13px;border:1px solid var(--hc-card-border,var(--border));border-radius:16px;background:var(--hc-page-bg);color:var(--hc-foreground);overflow-wrap:anywhere}
+.hc-message-inbox__bubble.is-mine{align-self:flex-end;background:color-mix(in srgb,var(--orange) 17%,var(--hc-card-surface,var(--surface)))}
+.hc-message-inbox__bubble strong,.hc-message-inbox__bubble time{display:block;font-size:11px}
+.hc-message-inbox__bubble p{white-space:pre-wrap;margin:5px 0}
+.hc-message-inbox__bubble time{color:var(--hc-foreground-muted)}
+.hc-message-inbox__composer{display:grid;gap:9px;margin-top:auto}
+.hc-message-inbox__composer textarea{width:100%;min-height:76px;resize:vertical;border-radius:14px;border:1px solid var(--hc-card-border,var(--border));padding:12px;background:var(--hc-page-bg);color:var(--hc-foreground)}
+.hc-message-inbox__composer .btn{justify-self:end}
+.hc-message-inbox__empty{padding:16px}
+@media(max-width:700px){.hc-message-inbox__layout{grid-template-columns:minmax(0,1fr)}.hc-message-inbox__list{display:flex;max-height:135px;border-inline-end:0;border-bottom:1px solid var(--hc-card-border,var(--border))}.hc-message-inbox__thread{flex:0 0 185px;border-bottom:0;border-inline-end:1px solid var(--hc-card-border,var(--border))}.hc-message-inbox__history{max-height:45vh}.hc-message-inbox__conversation{padding:14px}}

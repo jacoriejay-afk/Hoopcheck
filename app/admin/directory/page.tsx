@@ -136,6 +136,8 @@ export default function AdminDirectoryPage() {
               <Link href="/admin/ambassadors" prefetch={false} style={styles.secondaryButton}>Ambassador administration</Link>
             </>}
             <Link href="/admin/reviews" className="admin-primary-action" style={styles.secondaryButton}>{t("reviewQueue")}</Link>
+            <Link href="/admin/safety-center" style={styles.secondaryButton}>Reels &amp; Safety moderation</Link>
+            <Link href="/admin/agent-reviews" style={styles.secondaryButton}>Agent &amp; Scout reviews</Link>
             <Link href="/admin/users?account_type=manager" style={styles.secondaryButton}>Team Managers</Link>
 
             <Link

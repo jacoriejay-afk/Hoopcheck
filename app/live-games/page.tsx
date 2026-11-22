@@ -12,6 +12,8 @@ import CourtLines from "../../components/CourtLines";
 import { getGameAvailability, formatViewerLocalTime } from "../../lib/game-availability";
 import { HoopIcon } from "../../components/HoopCheckUI";
 import TeamLogo from "../../components/TeamLogo";
+import GameWinnerPrediction from "../../components/GameWinnerPrediction";
+import "../game-predictions.css";
 import "./live-games-chat.css";
 import { getHoopCheckEntitlements } from "../../lib/membership-tier";
 
@@ -56,11 +58,14 @@ export default function LiveGamesPage() {
   const [filter, setFilter] = useState<Filter>("live");
   const [collapsedLeagues, setCollapsedLeagues] = useState<string[]>([]);
   const [query, setQuery] = useState("");
+  const [countryFocus, setCountryFocus] = useState("");
+  const [leagueFocus, setLeagueFocus] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
   const [allowed, setAllowed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [reminding, setReminding] = useState<string | null>(null);
+  const [expandedPredictionId, setExpandedPredictionId] = useState<string | null>(null);
   const [clock, setClock] = useState(() => new Date());
   const [lastCheckedAt, setLastCheckedAt] = useState<Date | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -180,13 +185,37 @@ export default function LiveGamesPage() {
     away: teams[game.opponent_team_id || ""] || { id: game.opponent_team_id || "", name: game.opponent_name },
   })), [games, teams, clock]);
 
+  // Activity ordering uses provider status and real chat presence, never
+  // invented popularity metrics. Limit choices so mobile users needn't scroll.
+  const discoveryShortcuts = useMemo(() => {
+    const countries = new Map<string, { games: number; activity: number }>();
+    const leagues = new Map<string, { games: number; activity: number }>();
+    for (const { game, home } of prepared) {
+      const country = game.country || home?.country || "";
+      const league = game.league_name || home?.league_name || "";
+      const activity = (presenceCounts[game.id] || 0) * 4 + (game.status.toLowerCase() === "live" ? 8 : 0);
+      for (const [name, map] of [[country, countries], [league, leagues]] as const) {
+        if (!name) continue;
+        const existing = map.get(name) || { games: 0, activity: 0 };
+        map.set(name, { games: existing.games + 1, activity: existing.activity + activity });
+      }
+    }
+    const top = (items: Map<string, { games: number; activity: number }>) =>
+      [...items.entries()].sort((a,b) => b[1].activity - a[1].activity || b[1].games - a[1].games || a[0].localeCompare(b[0]))
+        .slice(0, 7).map(([name, counts]) => ({ name, games: counts.games }));
+    return { countries: top(countries), leagues: top(leagues) };
+  }, [prepared, presenceCounts]);
+
   const filtered = useMemo(() => prepared.filter(({game,home,away,availability}) => {
     const leagueName = game.league_name || teams[game.team_id]?.league_name || "";
+    const gameCountry = game.country || home?.country || "";
+    if (countryFocus && gameCountry !== countryFocus) return false;
+    if (leagueFocus && leagueName !== leagueFocus) return false;
 
     const search = query.trim().toLocaleLowerCase();
     if (search && ![home?.name, away?.name, game.opponent_name, leagueName, game.country, home?.country, away?.country].some(value => value?.toLocaleLowerCase().includes(search))) return false;
     return true;
-  }), [prepared, query, teams]);
+  }), [prepared, query, teams, countryFocus, leagueFocus]);
 
   const nowMs = clock.getTime();
   // Chat availability is not proof that a match has started. Only provider LIVE status earns the badge.
@@ -232,7 +261,7 @@ export default function LiveGamesPage() {
     setReminding(null);
   }
 
-  function GameCard({ entry, variant }: { entry: typeof prepared[number]; variant: "live" | "upcoming" | "recent" | "postgame" }) {
+  function GameCard({ entry, variant, allowPredictions = true }: { entry: typeof prepared[number]; variant: "live" | "upcoming" | "recent" | "postgame"; allowPredictions?: boolean }) {
     const {game,availability,home,away} = entry;
     const leagueName = game.league_name || teams[game.team_id]?.league_name || "League not listed";
     const country = game.country || teams[game.team_id]?.country || "";
@@ -280,8 +309,18 @@ export default function LiveGamesPage() {
             <HoopIcon name="bell" size={16} /> {reminding === game.id ? "Saving…" : reminders.includes(game.id) ? "REMINDER SET" : "REMIND ME"}
           </button>}
           {isRecent && !canJoin && <span className="hc-live-card__muted">Final score {score || "not available"}</span>}
+          {allowPredictions && game.opponent_team_id && !["cancelled", "canceled", "postponed", "abandoned"].includes(game.status.toLowerCase()) &&
+            <button type="button" className="hc-remind-button"
+              aria-expanded={expandedPredictionId === game.id}
+              onClick={() => setExpandedPredictionId(open => open === game.id ? null : game.id)}>
+              <HoopIcon name="trophy" size={16} /> {expandedPredictionId === game.id ? "HIDE FAN PICKS" : "FAN PICKS"}
+            </button>}
           <Link href={(basketballSide === "womens" ? "/womens/" : "/teams/") + game.team_id} className="hc-live-card__muted">Team profile</Link>
         </div>
+        {allowPredictions && game.opponent_team_id && expandedPredictionId === game.id &&
+          <div className="hc-live-card__prediction">
+            <GameWinnerPrediction game={game} homeName={home?.name || "Home"} awayName={away?.name || game.opponent_name} />
+          </div>}
       </article>
     );
   }
@@ -304,7 +343,7 @@ export default function LiveGamesPage() {
         .slice(0,8).length > 0
         ? <div className="hc-live-hub-grid">{filtered.filter(({game,availability}) => availability.chatOpen && (presenceCounts[game.id] || 0) > 0)
           .sort((a,b) => (presenceCounts[b.game.id] || 0) - (presenceCounts[a.game.id] || 0))
-          .slice(0,8).map(entry => <GameCard key={entry.game.id} entry={entry} variant={live.some(item => item.game.id === entry.game.id) ? "live" : ["final", "finished"].includes(entry.game.status.toLowerCase()) || entry.availability.phase === "post-game" ? "postgame" : "upcoming"} />)}</div>
+          .slice(0,8).map(entry => <GameCard allowPredictions={false} key={entry.game.id} entry={entry} variant={live.some(item => item.game.id === entry.game.id) ? "live" : ["final", "finished"].includes(entry.game.status.toLowerCase()) || entry.availability.phase === "post-game" ? "postgame" : "upcoming"} />)}</div>
         : <p className="muted">Active conversations will appear here when people join a game chat.</p>}
     </section>
     <section className="hc-live-hub-filters" aria-label="Browse game conversations">
@@ -316,6 +355,27 @@ export default function LiveGamesPage() {
       <div className="hc-live-hub-filter-tools">
         <input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search teams, leagues, countries…" aria-label="Search games" className="hc-live-hub-search" />
       </div>
+      {(countryFocus || leagueFocus || query) && <button type="button" className="hc-live-clear-filters" onClick={() => { setCountryFocus(""); setLeagueFocus(""); setQuery(""); }}>Clear all filters</button>}
+      <div className="hc-live-discovery" aria-label="Browse games by activity and region">
+        {discoveryShortcuts.countries.length > 1 && <div className="hc-live-shortcut-section">
+          <strong>Countries with fixtures</strong>
+          <div className="hc-live-shortcut-chips">
+            {discoveryShortcuts.countries.map(({name,games}) => <button key={name} type="button" aria-pressed={countryFocus === name}
+              onClick={() => setCountryFocus(current => current === name ? "" : name)} title={name + ": " + games + " fixtures"}>
+              {name} <span>{games}</span>
+            </button>)}
+          </div>
+        </div>}
+        {discoveryShortcuts.leagues.length > 1 && <div className="hc-live-shortcut-section">
+          <strong>Leagues to browse</strong>
+          <div className="hc-live-shortcut-chips">
+            {discoveryShortcuts.leagues.map(({name,games}) => <button key={name} type="button" aria-pressed={leagueFocus === name}
+              onClick={() => setLeagueFocus(current => current === name ? "" : name)} title={name + ": " + games + " fixtures"}>
+              {name} <span>{games}</span>
+            </button>)}
+          </div>
+        </div>}
+      </div>
     </section>
     {message && <p className="hc-live-hub-message" role="status">{message}</p>}
 
@@ -326,7 +386,9 @@ export default function LiveGamesPage() {
       const ordered = [...selected].sort((a,b) => {
         const mineA = followedIds.includes(a.game.team_id) || Boolean(a.game.opponent_team_id && followedIds.includes(a.game.opponent_team_id));
         const mineB = followedIds.includes(b.game.team_id) || Boolean(b.game.opponent_team_id && followedIds.includes(b.game.opponent_team_id));
-        return Number(mineB) - Number(mineA) || Date.parse(a.game.scheduled_at || "") - Date.parse(b.game.scheduled_at || "");
+        return Number(mineB) - Number(mineA)
+          || (presenceCounts[b.game.id] || 0) - (presenceCounts[a.game.id] || 0)
+          || Date.parse(a.game.scheduled_at || "") - Date.parse(b.game.scheduled_at || "");
       });
       const groups = new Map<string, typeof prepared>();
       for (const entry of ordered) {

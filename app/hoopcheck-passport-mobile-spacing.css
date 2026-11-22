@@ -1,0 +1,193 @@
+/* Build 9 web/PWA: notch clearance, compact Home Court and career country stamps.
+   Loaded after the original site styles to prevent competing layout overrides. */
+.hc-profile-passport-anchor,.hc-profile-identity-passport {
+  min-width:0;scroll-margin-top:calc(110px + env(safe-area-inset-top,0px));
+}
+.hc-member-profile-page .hc-journey-section {
+  margin:12px 0 14px;padding:clamp(14px,3.5vw,22px);min-width:0;overflow:hidden;
+}
+.hc-member-profile-page .hc-journey-heading {margin-bottom:12px}
+.hc-member-profile-page .hc-journey-heading h2 {font-size:clamp(23px,5.5vw,30px)}
+.hc-passport-countries {margin:12px 0 16px}
+.hc-passport-countries__top {
+  display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;
+}
+.hc-passport-countries__top strong {
+  font-family:var(--font-display),Impact,sans-serif;font-size:18px;letter-spacing:.025em;
+}
+.hc-passport-countries__top span {font-size:12px;font-weight:800;color:#b95121}
+.hc-passport-stamp-grid {
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));
+  gap:10px;list-style:none;margin:0;padding:2px;
+}
+.hc-passport-country-stamp {
+  display:flex;flex-direction:column;justify-content:center;gap:7px;
+  min-width:0;min-height:140px;padding:14px;border:2px dashed #b86743;border-radius:17px;
+  background:linear-gradient(145deg,#fff9ee,#f4e7d5);
+  box-shadow:inset 0 0 0 4px rgba(183,92,48,.09);color:#542a20;
+  transform:rotate(var(--hc-stamp-tilt,0deg));
+}
+.hc-passport-country-stamp__top {
+  display:flex;align-items:center;gap:7px;font-size:9px;font-weight:900;letter-spacing:.1em;
+}
+.hc-passport-country-stamp__top span:first-child {font-size:22px;line-height:1}
+.hc-passport-country-stamp__country {
+  display:block;font-family:var(--font-display),Impact,sans-serif;
+  font-size:clamp(20px,5vw,27px);line-height:1.1;overflow-wrap:anywhere;
+}
+.hc-passport-country-stamp__clubs {
+  font-size:12px;font-weight:700;line-height:1.3;overflow-wrap:break-word;
+}
+.hc-passport-country-stamp__bottom {
+  display:flex;align-items:flex-start;flex-wrap:wrap;gap:5px 8px;
+  margin-top:auto;font-size:10px;font-weight:850;
+}
+.hc-passport-country-stamp__bottom em {
+  font-size:9px;font-style:normal;color:#8a391c;border:1px solid #cf8b6c;
+  padding:2px 5px;border-radius:9px;
+}
+.hc-passport-countries__note {
+  margin:9px 0 0;font-size:11px;line-height:1.45;color:#645b56;
+}
+.theme-dark .hc-member-profile-page .hc-journey-section,
+.theme-dark .player-profile-page .hc-journey-section {
+  background:#181c2a;color:#f2f4fa;border-color:#3d4660;
+}
+.theme-dark .hc-passport-country-stamp {
+  background:linear-gradient(145deg,#2e3046,#262539);
+  border-color:#ff995b;color:#fff1e7;
+  box-shadow:inset 0 0 0 4px rgba(255,128,73,.09);
+}
+.theme-dark .hc-passport-countries__top span,
+.theme-dark .hc-passport-countries__note {color:#f2b895}
+.theme-dark .hc-passport-country-stamp__bottom em {color:#ffc6a9;border-color:#b8643b}
+@media(prefers-reduced-motion:reduce) {
+  .hc-passport-country-stamp {transform:none}
+}
+@media(max-width:767px) {
+  /* The former black-translucent PWA status bar allowed text behind the clock.
+     Mask that strip even for iOS versions retaining overlay behavior. */
+  html body:has(header.site-header-global.hc-liquid-glass-header)::before {
+    content:"";position:fixed;inset:0 0 auto;min-height:8px;
+    height:calc(env(safe-area-inset-top,0px) + 8px);
+    background:var(--hc-tab-bg,#f7f7f5);z-index:1199;pointer-events:none;
+  }
+  html body header.site-header-global.hc-template-header.hc-liquid-glass-header {
+    inset-block-start:calc(var(--hc-safe-area-top, env(safe-area-inset-top, 0px)) + 8px)!important;
+    margin-block-start:8px!important;
+    max-width:calc(100% - 20px)!important;
+  }
+  html body .hc-global-page-shell > .hc-route-transition {
+    padding-block-end:calc(114px + env(safe-area-inset-bottom,0px))!important;
+    scroll-padding-block-end:calc(114px + env(safe-area-inset-bottom,0px));
+  }
+  .hc-home3 .hc-home3-stack {gap:14px}
+  .hc-home3 .hc-role-quick-links {padding:12px!important;margin:0 0 4px}
+  .hc-home3 .hc-role-quick-links__heading h2 {font-size:18px;line-height:1.2}
+  .hc-home3 .hc-role-quick-links__heading .muted {font-size:12px;line-height:1.35;margin:4px 0 0}
+  .hc-home3 .hc-role-quick-links__grid {gap:7px;margin-top:9px}
+  .hc-home3 .hc-role-quick-links__grid a {min-height:64px;padding:9px}
+  .hc-home3 .hc-role-quick-links__grid strong {font-size:13px;line-height:1.2}
+  .hc-home3 .hc-role-quick-links__grid small {font-size:11px;line-height:1.25}
+  .hc-home3 .hc-court {padding:12px;margin-top:2px;border-radius:17px}
+  .hc-home3 .hc-court-head {margin-bottom:10px}
+  .hc-home3 .hc-court-actions {grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .hc-home3 .hc-court-actions a {
+    min-height:62px;flex-direction:row;gap:8px;padding:8px 10px;
+    justify-content:flex-start;text-align:left;
+  }
+  .hc-home3 .hc-court-actions a span {
+    font-size:12px;overflow-wrap:normal;word-break:normal;hyphens:none;
+  }
+  .hc-home3 .hc-court-actions a svg {flex:0 0 21px;width:21px;height:21px}
+  .hc-home3 .hc-home3-heading {align-items:flex-start;gap:8px}
+  .hc-home3 .hc-home3-heading h2 {font-size:17px;line-height:1.2;overflow-wrap:normal;min-width:0}
+  .hc-home3 .hc-home3-heading a {flex:0 0 auto;padding-top:4px}
+  .hc-member-profile-page .hc-social-profile-nav {
+    display:flex;flex-wrap:nowrap;align-items:center;gap:7px;overflow-x:auto;
+    scroll-snap-type:x proximity;padding:7px 0 10px;margin:9px 0 10px;
+    overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;
+  }
+  .hc-member-profile-page .hc-social-profile-nav a {
+    flex:0 0 auto;display:inline-flex;align-items:center;min-height:40px;padding:8px 12px;
+    white-space:nowrap;font-size:12px;font-weight:700;scroll-snap-align:start;
+    border:1px solid var(--hc-card-border,var(--border));border-radius:999px;
+    text-decoration:none;background:var(--hc-card-surface,var(--surface));
+    color:var(--hc-on-card,var(--hc-foreground));
+  }
+  .hc-member-profile-page .hc-social-profile-nav a:focus-visible {
+    outline:2px solid #ff6a25;outline-offset:2px;
+  }
+  .hc-member-profile-page .hc-ux2b-completion-card {margin:10px 0 14px;padding:14px!important}
+  .hc-member-profile-page .hc-journey-section {margin:4px 0 12px}
+  .hc-member-profile-page .hc-journey-heading .hc-journey-stamp {
+    width:52px;height:52px;flex:0 0 52px;
+  }
+}
+@media(max-width:420px) {
+  .hc-passport-stamp-grid {grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .hc-passport-country-stamp {min-height:136px;padding:10px;transform:none}
+  .hc-passport-country-stamp__country {font-size:20px}
+  .hc-passport-country-stamp__clubs {font-size:11px}
+}
+
+
+/* Build 9 career history and team-review handoff: compact mobile-first editor. */
+.hc-journey-editor { margin-top:18px; min-width:0; }
+.hc-journey-editor__intro { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; border:1px solid var(--hc-card-border,#d5d5d1); border-radius:14px; background:var(--hc-card-surface,var(--surface)); padding:13px; color:var(--hc-on-card,var(--hc-foreground)); }
+.hc-journey-editor__intro > div { flex:1 1 210px; min-width:0; }
+.hc-journey-editor__intro strong { display:block; font-size:15px; letter-spacing:-.015em; }
+.hc-journey-editor__intro p { margin:4px 0 0; font-size:12px; line-height:1.45; color:var(--hc-muted-text,var(--muted)); }
+.hc-journey-add { flex:0 0 auto; min-height:44px; }
+.hc-journey-feedback { margin:10px 0; padding:10px 12px; border:1px solid var(--hc-card-border,#bdbdbd); border-radius:10px; font-size:12px; color:inherit; overflow-wrap:anywhere; }
+.hc-journey-form { min-width:0; gap:12px; }
+.hc-journey-form .hc-shared-picker { min-width:0; }
+.hc-journey-form .hc-shared-picker-label { color:inherit; font-size:13px; font-weight:800; }
+.hc-journey-form .hc-shared-picker-trigger { min-height:48px; font-size:13px; text-align:left; }
+.hc-journey-selected-team { display:grid; gap:2px; margin:0; padding:11px; border:1px solid #ec9a6f; border-radius:10px; background:rgba(255,120,62,.08); color:inherit; overflow-wrap:anywhere; }
+.hc-journey-selected-team strong { font-size:14px; color:inherit; }
+.hc-journey-selected-team span { font-size:12px; color:inherit; opacity:.8; }
+.hc-journey-manual-link { justify-self:start; min-height:42px; padding:8px 0; border:0; background:transparent; color:#d85b26; text-decoration:underline; text-underline-offset:3px; font-size:12px; font-weight:800; cursor:pointer; }
+.hc-journey-season-fields { display:grid; gap:12px; }
+.hc-journey-season-fields .eyebrow { margin:4px 0 0; font-size:11px; }
+.hc-journey-save { min-height:48px; }
+.hc-journey-save:disabled { opacity:.55; cursor:not-allowed; }
+.hc-journey-review-hint { margin:10px 2px 0; font-size:11px; line-height:1.5; color:var(--hc-muted-text,var(--muted)); }
+.hc-journey-stop__footer .hc-journey-review-link { display:inline-flex; align-items:center; min-height:36px; padding:6px 9px; border:1px solid #d65e2c; border-radius:10px; color:#bd4d1e; font-size:11px; font-weight:850; text-decoration:none; }
+.hc-settings-organized-nav { display:flex; flex-wrap:wrap; gap:8px; }
+.hc-settings-organized-nav a { display:inline-flex; align-items:center; min-height:44px; padding:9px 12px; border-radius:12px; text-decoration:none; font-size:13px; }
+.hc-settings-workspace-links { display:grid; gap:7px; margin-top:10px; }
+.hc-settings-workspace-links a { display:flex; align-items:center; min-height:44px; padding:10px 12px; border:1px solid var(--hc-card-border,var(--border)); border-radius:10px; color:var(--hc-foreground,inherit); text-decoration:none; font-size:13px; font-weight:700; }
+.hc-settings-workspace-links a:focus-visible,
+.hc-settings-organized-nav a:focus-visible,
+.hc-journey-manual-link:focus-visible,
+.hc-journey-stop__footer .hc-journey-review-link:focus-visible { outline:2px solid #ff7a40; outline-offset:2px; }
+.theme-dark .hc-journey-form { background:#1f2433; border-color:#47536b; }
+.theme-dark .hc-journey-form label { color:#f4f5fa; }
+.theme-dark .hc-journey-form input { background:#252b3b; border-color:#677187; color:#fff; }
+.theme-dark .hc-journey-selected-team { background:#352b2d; border-color:#b66a46; color:#fff; }
+.theme-dark .hc-journey-manual-link,
+.theme-dark .hc-journey-stop__footer .hc-journey-review-link { color:#ffb58a; border-color:#a9603c; }
+.theme-dark .hc-journey-public-toggle { background:#252b3b; border-color:#4d5569; }
+.theme-dark .hc-journey-public-toggle strong,.theme-dark .hc-journey-public-toggle small { color:#fff; }
+@media(max-width:767px) {
+  .hc-journey-section { scroll-margin-top:115px; }
+  .hc-journey-editor__intro { align-items:stretch; }
+  .hc-journey-add { width:100%; }
+  .hc-journey-form { padding:13px; }
+  .hc-journey-stop__footer > div { flex-wrap:wrap; }
+  /* Keep the final form controls clear of HoopCheck's floating bottom tabs. */
+  .hc-member-profile-page .hc-journey-editor,
+  .player-profile-page .hc-journey-editor { padding-bottom:calc(100px + env(safe-area-inset-bottom,0px)); }
+  .hc-settings-organized-nav { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:380px) { .hc-settings-organized-nav { grid-template-columns:1fr; } }
+
+
+.hc-journey-review-status { display:inline-flex;align-items:center;min-height:34px;padding:6px 9px;border-radius:10px;border:1px solid #67957d;background:#e9f8ef;color:#185b3c;font-size:11px;font-weight:850; }
+.hc-journey-match-panel { display:grid;gap:9px;margin-top:12px;padding:12px;border:1px solid var(--hc-card-border,#dadada);border-radius:12px;background:var(--hc-card-surface,var(--surface));color:var(--hc-on-card,var(--hc-foreground)); }
+.hc-journey-match-panel p { margin:0;font-size:12px;line-height:1.45; }
+.hc-journey-match-panel button:not(.hc-shared-picker-trigger):not(.hc-shared-picker-row) { justify-self:start;min-height:36px; }
+.theme-dark .hc-journey-review-status { background:#193a2d;border-color:#448d66;color:#baf4d1; }
+
+#team-review-checklist { scroll-margin-top:calc(120px + env(safe-area-inset-top,0px)); }

@@ -13,7 +13,7 @@ type Props = {
   multiple?:boolean; returnValue?:"id"|"name"; basketballType?:Gender|null;
   onChange?:(value:string)=>void; onChangeMany?:(values:string[])=>void;
   onSelectItem?:(item:{id:string;name:string;country:string;city:string;league_name:string})=>void;
-  disabled?:boolean;
+  disabled?:boolean; includeAllTeams?:boolean;
 };
 
 async function fetchAll<T>(table:string, columns:string, filters:(query:any)=>any):Promise<T[]> {
@@ -39,7 +39,7 @@ function norm(value:string|null|undefined){return (value||"").trim().toLowerCase
 
 export default function TeamLeaguePicker({
   mode="team",directorySource="teams",leagueSource,allCategories=false,label,placeholder,value="",values,multiple=false,returnValue="id",
-  basketballType=null,onChange,onChangeMany,onSelectItem,disabled=false,
+  basketballType=null,onChange,onChangeMany,onSelectItem,disabled=false,includeAllTeams=false,
 }:Props){
   const [open,setOpen]=useState(false);
   const [items,setItems]=useState<Item[]>([]);
@@ -69,7 +69,7 @@ export default function TeamLeaguePicker({
           const eligibleRows=allCategories||table==="womens_leagues"?rows:rows.filter(row=>!row.basketball_type||norm(row.basketball_type)===activeGender);
           nextItems=eligibleRows.map(row=>({id:row.id,name:row.name,country:row.country||"",city:"",leagues:[],leagueIds:[],aliases:[row.name],aliasIds:[row.id]}));
         }else{
-          const sources:("teams"|"womens_teams")[]=directorySource==="both"?["teams","womens_teams"]:directorySource==="teams"&&activeGender==="womens"?["womens_teams"]:[directorySource];
+          const sources:("teams"|"womens_teams")[]=includeAllTeams?["teams"]:directorySource==="both"?["teams","womens_teams"]:directorySource==="teams"&&activeGender==="womens"?["womens_teams"]:[directorySource];
           const dataSets=await Promise.all(sources.map(async source=>{
             const columns=source==="womens_teams"?"id,name,country,city,league_name,league_id,created_at":"id,name,country,city,league_name,league_id,basketball_type,created_at";
             const [rows,leagueRows,memberships]=await Promise.all([
@@ -99,8 +99,8 @@ export default function TeamLeaguePicker({
           const grouped=new Map<string,TeamRow[]>();
           for(const row of teamRows){
             if(row.source==="womens_teams"&&activeGender!=="womens")continue;
-            if(row.source==="teams"&&row.basketball_type&&activeGender==="mens"&&!["mens","men","male"].includes(norm(row.basketball_type)))continue;
-            if(row.source==="teams"&&row.basketball_type&&activeGender==="womens"&&!["womens","women","female"].includes(norm(row.basketball_type)))continue;
+            if(!includeAllTeams&&row.source==="teams"&&row.basketball_type&&activeGender==="mens"&&!["mens","men","male"].includes(norm(row.basketball_type)))continue;
+            if(!includeAllTeams&&row.source==="teams"&&row.basketball_type&&activeGender==="womens"&&!["womens","women","female"].includes(norm(row.basketball_type)))continue;
             const key=cleanName(row.name)+"|"+norm(row.country);
             const group=grouped.get(key)||[];group.push(row);grouped.set(key,group);
           }
@@ -138,7 +138,7 @@ export default function TeamLeaguePicker({
       }finally{if(active)setLoading(false);}
     })();
     return()=>{active=false;};
-  },[open,hasLoaded,mode,activeGender,directorySource,leagueSource,allCategories,selectedIds.length]);
+  },[open,hasLoaded,mode,activeGender,directorySource,leagueSource,allCategories,includeAllTeams,selectedIds.length]);
 
   const countries=useMemo(()=>[...new Set(items.map(item=>item.country).filter(Boolean))].sort(),[items]);
   const leagues=useMemo(()=>{
@@ -189,7 +189,7 @@ export default function TeamLeaguePicker({
       <section className="hc-shared-picker-dialog hc-liquid-glass-picker-dialog" role="dialog" aria-modal="true" aria-label={label||(mode==="team"?"Choose a team":"Choose a league")}>
         <header className="hc-shared-picker-sticky">
           <div className="hc-shared-picker-dialog-heading"><strong>{mode==="team"?"Choose a team":"Choose a league"}</strong><button type="button" onClick={()=>setOpen(false)} aria-label="Close picker">×</button></div>
-          {basketballType==null&&!allCategories&&<div className="hc-shared-picker-gender"><button type="button" className={activeGender==="mens"?"is-active":""} onClick={()=>{setActiveGender("mens");setItems([]);setHasLoaded(false);setCountry("");setLeague("");}}>Men’s</button><button type="button" className={activeGender==="womens"?"is-active":""} onClick={()=>{setActiveGender("womens");setItems([]);setHasLoaded(false);setCountry("");setLeague("");}}>Women’s</button></div>}
+          {basketballType==null&&!allCategories&&!includeAllTeams&&<div className="hc-shared-picker-gender"><button type="button" className={activeGender==="mens"?"is-active":""} onClick={()=>{setActiveGender("mens");setItems([]);setHasLoaded(false);setCountry("");setLeague("");}}>Men’s</button><button type="button" className={activeGender==="womens"?"is-active":""} onClick={()=>{setActiveGender("womens");setItems([]);setHasLoaded(false);setCountry("");setLeague("");}}>Women’s</button></div>}
           <label className="hc-shared-picker-search-label">Search {mode==="team"?"teams":"leagues"}<input autoFocus value={query} onChange={event=>setQuery(event.target.value)} placeholder="Name, abbreviation, city or country…" /></label>
           <div className={"hc-shared-picker-filters"+(mode==="league"?" is-league-picker":"")}>
             <label>Country<select value={country} onChange={event=>{setCountry(event.target.value);setLeague("");}}><option value="">All countries</option>{countries.map(item=><option key={item} value={item}>{item}</option>)}</select></label>

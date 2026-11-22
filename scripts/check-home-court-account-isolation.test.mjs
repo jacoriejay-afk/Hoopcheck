@@ -1,0 +1,55 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { test } from "node:test";
+
+const read=path=>readFileSync(new URL("../"+path,import.meta.url),"utf8");
+
+test("Authenticated user ID and role are passed to the two courtside surfaces",()=>{
+  const dashboard=read("app/dashboard/page.tsx");
+  assert.match(dashboard,/setAuthenticatedUserId\(user\.id\)/);
+  assert.match(dashboard,/<HomeCourtSpace profileId=\{authenticatedUserId\} role=\{profile\?\.account_type\}/);
+  assert.match(dashboard,/<RoleQuickLinks role=\{profile\?\.account_type\} profileId=\{authenticatedUserId\}/);
+  assert.doesNotMatch(dashboard,/<HomeCourtSpace profileId=\{profile\?\.id \|\| email\}/);
+});
+
+test("My Court storage is user-and-role scoped with legacy account migration",()=>{
+  const source=read("app/dashboard/HomeCourtSpace.tsx");
+  assert.match(source,/identity=profileId\?profileId\+"\:"\+activeRole/);
+  assert.match(source,/getItem\("hc-court-v2:"\+identity\)/);
+  assert.match(source,/getItem\("hc-court-v1:"\+profileId\)/);
+  assert.match(source,/setLoadedIdentity\(identity\)/);
+  assert.match(source,/if\(!identity\|\|loadedIdentity!==identity\)return/);
+  assert.match(source,/if\(!profileId\|\|loadedIdentity!==identity\)return null/);
+  assert.match(source,/setItem\("hc-court-v2:"\+identity,JSON\.stringify\(prefs\)\)/);
+});
+
+test("All supported roles have My Court presets without duplicate featured quick actions",()=>{
+  const source=read("app/dashboard/HomeCourtSpace.tsx");
+  for(const role of ["player","fan","coach","agent","scout","club_admin","admin","creator","member"]){
+    assert.match(source,new RegExp("\\b"+role+":\\{accent:"));
+  }
+  assert.match(source,/current\.featured===id/);
+  assert.match(source,/current\.actions\.filter\(item=>item!==id\)/);
+  assert.match(source,/hasFeedAccess\?"/);
+  assert.match(source,/feature\(event\.target\.value as ActionId\)/);
+});
+
+test("Courtside shortcuts are independently scoped, editable and role-specific",()=>{
+  const source=read("components/RoleQuickLinks.tsx");
+  for(const role of ["player","fan","coach","agent","club_admin","admin","creator","member"]){
+    assert.match(source,new RegExp("\\b"+role+":\\{title:"));
+  }
+  assert.match(source,/setItem\("hc-courtside-v1:"\+identity,JSON\.stringify\(prefs\)\)/);
+  assert.match(source,/if\(profileId&&loadedIdentity!==identity\)return null/);
+  assert.match(source,/aria-expanded=\{editing\}/);
+  assert.match(source,/current\.links\.length>=4/);
+});
+
+test("iPhone CSS prioritizes two readable columns and keeps bottom navigation clear",()=>{
+  const court=read("app/dashboard/home-court-space.css");
+  const role=read("components/role-quick-links.css");
+  assert.match(court,/\.hc-home3 \.hc-court \.hc-court-actions \{display:grid!important;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/);
+  assert.match(court,/overflow-wrap:normal;word-break:normal;hyphens:none/);
+  assert.match(court,/padding-bottom:calc\(155px \+ env\(safe-area-inset-bottom,0px\)\)!important/);
+  assert.match(role,/\.hc-home3 \.hc-role-quick-links\.is-compact \.hc-role-quick-links__grid \{display:grid!important;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/);
+});

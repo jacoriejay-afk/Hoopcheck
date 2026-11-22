@@ -1,6 +1,6 @@
 "use client";
 
-import { getOwnProfile } from "../../lib/auth/own-profile";
+import { readOwnProfile } from "../../lib/read-own-profile";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -15,6 +15,9 @@ import HoopPassport from "../../components/HoopPassport";
 import { useLanguage } from "../../components/LanguageProvider";
 import { calculateProfileCompletion } from "../../lib/profile-completion";
 import PlayerProfileCompletionCard from "../../components/PlayerProfileCompletionCard";
+import PlayerJourney from "../../components/PlayerJourney";
+import { getHoopCheckEntitlements } from "../../lib/membership-tier";
+import { getEffectiveMembership } from "../../lib/billing/client-membership";
 
 function calculatePostingStreak(rows: { activity_date: string }[]) {
   const dates = new Set(rows.map(row => String(row.activity_date).slice(0, 10)));
@@ -38,6 +41,7 @@ export default function ProfilePage() {
   const [socialLinks, setSocialLinks] = useState<{ label: string; url: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [postingStreak, setPostingStreak] = useState(0);
+  const [canManageJourney, setCanManageJourney] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
 
@@ -71,7 +75,7 @@ export default function ProfilePage() {
       }
       setSocialLinks(safeLinks);
       const result = await Promise.race([
-        getOwnProfile(supabase, user.id),
+        readOwnProfile(user.id, "id,display_name,username,first_name,last_name,account_type,bio,position,years_pro,current_country,current_team,height,player_verified,coach_verified,avatar_url,avatar_moderation_status,basketball_type,free_agent,hometown,nationality,interests,favorite_leagues,profile_visibility"),
         new Promise<any>((resolve) => setTimeout(() => resolve({ data: null, error: new Error("Profile request timed out") }), 8000)),
       ]);
       if (!active) return;
@@ -86,6 +90,21 @@ export default function ProfilePage() {
     })().catch(() => { if (active) { setLoadError(true); setLoading(false); } });
     return () => { active = false; };
   }, [retryKey]);
+
+  // Use provider-aware effective entitlements for Stripe and Apple, not a Stripe-only subscription read.
+  useEffect(() => {
+    let active = true;
+    setCanManageJourney(false);
+    if (p?.id && p.account_type === "player") {
+      void getEffectiveMembership(p.id).then(({ data, error }) => {
+        if (active && !error) setCanManageJourney(getHoopCheckEntitlements({
+          accountType: p.account_type,
+          subscription: data,
+        }).canUseProPassport);
+      }).catch(() => { if (active) setCanManageJourney(false); });
+    }
+    return () => { active = false; };
+  }, [p?.id, p?.account_type]);
 
   if (loading) {
     return (
@@ -141,11 +160,19 @@ export default function ProfilePage() {
             : <Link href="/account#visibility">{t("editVisibility")}</Link>)}
           {p.account_type === "player" && <Link href="/account#team-review-checklist">Team review checklist</Link>}
         </nav>
+        {p.account_type === "player" && <div id="career-passport" className="hc-profile-passport-anchor">
+          <PlayerJourney playerId={p.id} isOwnProfile={true} canManage={canManageJourney}
+            playerName={name} verifiedPlayer={p.player_verified === true} />
+        </div>}
           {p.account_type === "player" ? <PlayerProfileCompletionCard profile={p} onPublished={() => setP((current: any) => ({ ...current, profile_visibility: "public" }))} /> : profileCompletion < 100 && <div className="hc-profile-completion">
             <div className="hc-profile-completion-copy"><strong>Profile {profileCompletion}% complete</strong><span>— add your {firstMissingField}</span><Link href={"/account#profile-editor-field-" + nextFieldAnchor}>Complete profile <span aria-hidden="true">→</span></Link></div>
             <div className="hc-profile-completion-track" role="progressbar" aria-label={t("profileCompleteness")} aria-valuemin={0} aria-valuemax={100} aria-valuenow={profileCompletion}><span style={{width: profileCompletion + "%"}} /></div>
           </div>}
-        <div id="career-passport" style={{ scrollMarginTop: 96 }}><HoopPassport name={name} accountType={p.account_type||"member"} username={p.username} verified={Boolean(p.player_verified||p.coach_verified)} country={p.current_country} position={p.account_type==="player"?p.position:null} team={p.account_type==="player"?p.current_team:null}/></div>
+        <div id={p.account_type === "player" ? "identity-passport" : "career-passport"} className="hc-profile-identity-passport">
+          <HoopPassport name={name} accountType={p.account_type||"member"} username={p.username}
+            verified={Boolean(p.player_verified||p.coach_verified)} country={p.current_country}
+            position={p.account_type==="player"?p.position:null} team={p.account_type==="player"?p.current_team:null}/>
+        </div>
         <nav className="hc-profile-action-hub" aria-label="Profile quick links">
           <Link href="/membership" className="hc-profile-membership-link"><HoopIcon name="star" size={20} /><span>Membership &amp; Perks</span><HoopIcon name="chevron-right" size={18} /></Link>
           <div className="hc-profile-quick-grid">

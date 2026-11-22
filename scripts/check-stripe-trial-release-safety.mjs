@@ -4,14 +4,74 @@ import { readFileSync } from "node:fs";
 const checkout = readFileSync("app/api/stripe/webhook/create-checkout/route.ts", "utf8");
 const webhook = readFileSync("app/api/stripe/webhook/route.ts", "utf8");
 const trialPolicy = readFileSync("lib/stripe-trial-eligibility.ts", "utf8");
+const membership = readFileSync("app/membership/page.tsx", "utf8");
+const productionGate = readFileSync("lib/stripe-trial-production-rollout.ts", "utf8");
 const migration = readFileSync("scripts/sql/stripe-trial-claims-proposal.sql", "utf8");
 
-assert.match(checkout, /const trialRolloutEnabled = false;/,
-  "Trial issuance must remain hard-disabled until reservation and webhook integration are verified");
+assert.ok(membership.includes("one-time seven-day free trial") &&
+  membership.includes("not currently available at public checkout"),
+  "Public membership copy must disclose that the all-user trial is not yet live");
+// Support two strictly gated release stages without weakening any Stripe
+// customer-history, atomic reservation, entitlement or webhook assertions below:
+// (1) the Build 9 hard HOLD until real Sandbox acceptance; (2) the separately
+// reviewed preview/production feature flag conditions used by current main.
+const hardHeld = checkout.includes("const trialRolloutEnabled = false;");
+if (hardHeld) {
+  assert.ok(!checkout.includes("const sandboxTrialRolloutEnabled ="),
+    "A hard-held Build 9 checkout must not silently enable the sandbox rollout");
+  assert.ok(!checkout.includes("const productionTrialRolloutEnabled ="),
+    "A hard-held Build 9 checkout must not silently enable production trials");
+  assert.ok(checkout.includes("let trialEligible = trialRolloutEnabled && isSupportedSubscriptionAccountType(checkoutProfile.account_type)"),
+    "Even disabled Build 9 trials must retain identical server-side role guards");
+  assert.ok(checkout.includes("rolloutEnabled: trialRolloutEnabled,"),
+    "Final eligibility must remain gated by the disabled trial flag");
+} else {
+  // The public trial stays disabled unless the pinned, branch-scoped isolated
+  // test environment OR the separately accepted production feature gate passes.
+  for (const required of [
+    'process.env.VERCEL_ENV === "preview"',
+    'process.env.VERCEL_GIT_COMMIT_REF === "fix/website-membership-layout-20261121"',
+    'process.env.HOOPCHECK_STRIPE_SANDBOX_TRIAL_ENABLED === "true"',
+    'process.env.NEXT_PUBLIC_SUPABASE_URL === "https://vcprqpjkyubzzcjatdpx.supabase.co"',
+    'process.env.HOOPCHECK_STRIPE_TEST_SUPABASE_URL === process.env.NEXT_PUBLIC_SUPABASE_URL',
+    'siteUrl === "https://hoopcheck-stripe-sandbox-git-fix-website-membe-b926cc-hoopcheck.vercel.app"',
+    'stripeConfigMatches && configuredMode === "test"',
+  ]) {
+    assert.ok(checkout.includes(required), `Trial test rollout missing required isolation guard: ${required}`);
+  }
+  assert.ok(checkout.includes('const sandboxTrialRolloutEnabled ='), "Sandbox gate must remain explicit");
+  assert.ok(checkout.includes('const productionTrialRolloutEnabled = canEnableProductionSevenDayTrial({'), "Public trial must use the isolated production gate");
+  assert.ok(checkout.includes('const trialRolloutEnabled = sandboxTrialRolloutEnabled || productionTrialRolloutEnabled;'), "Rollout must require one of the separate guarded environments");
+}
+for (const value of [
+  'input.vercelEnvironment === "production"',
+  'input.featureEnabled === "true"',
+  'input.siteUrl === "https://hoopcheck.online"',
+  'input.supabaseUrl === "https://ucbdceaieyenljcwlhnj.supabase.co"',
+  'input.stripeCheckoutMode === "live"',
+  'input.checkoutEnabled === true',
+  'input.stripeKeyMatches === true',
+]) {
+  assert.ok(productionGate.includes(value), `Production trial gate missing: ${value}`);
+}
+assert.ok(!checkout.includes("const trialRolloutEnabled = true;"), "No unconditional trial activation");
+assert.doesNotMatch(checkout, /const trialRolloutEnabled = true;/, "Trial must never enable unconditionally");
 assert.match(checkout, /\.\.\.\(trialEligible \? \{ trial_period_days: 7 \} : \{\}\)/,
   "Stripe trial must only be issued through eligibility gate");
-assert.match(trialPolicy, /input\.accountType === "player"/,
-  "Only Player accounts may receive the trial");
+assert.ok(trialPolicy.includes("isSupportedSubscriptionAccountType(input.accountType)"),
+  "All currently supported billing roles may receive one trial");
+assert.ok(checkout.includes("if (!isSupportedSubscriptionAccountType(checkoutProfile.account_type))"),
+  "Checkout must reject roles the webhook cannot activate");
+assert.ok(webhook.includes("if (!isSupportedSubscriptionAccountType(ownerProfile.account_type))"),
+  "Webhook and Checkout must share the same account-type eligibility");
+assert.ok(!trialPolicy.includes('input.accountType === "player"'),
+  "Trial eligibility must not be Player-only");
+assert.ok(!checkout.includes('trialRolloutEnabled && checkoutProfile.account_type === "player"'),
+  "Initial trial gate must include all valid account types");
+assert.ok(checkout.includes("rolloutEnabled: trialRolloutEnabled,"),
+  "Final eligibility gate must not restrict trials by account type");
+assert.ok(membership.includes("all supported HoopCheck account types"),
+  "Public trial notice must describe all supported account types");
 assert.match(migration, /user_id uuid primary key/,
   "Claims must be unique per user");
 assert.match(migration, /revoke all on function public\.reserve_stripe_trial\(uuid\) from public, anon, authenticated/,
@@ -46,6 +106,15 @@ assert.ok(webhook.includes('subscription.metadata?.user_id !== userId'), "Webhoo
 assert.ok(webhook.includes('session.metadata?.stripe_trial_reserved === "true"'), "Trial redemption must require reservation marker");
 assert.ok(webhook.includes('subscription.status !== "trialing"'), "Trial redemption must require trialing subscription");
 assert.ok(webhook.includes('subscription.metadata?.stripe_trial_reserved !== "true"'), "Subscription must carry trial marker");
+assert.ok(webhook.includes('event.type === "checkout.session.expired"'), "Webhook must handle signed Checkout expiration");
+assert.ok(webhook.includes('expiredSession.metadata?.stripe_trial_reserved === "true"'), "Expire only explicitly reserved trials");
+assert.ok(webhook.includes('expiredSession.metadata?.user_id !== userId'), "Expired event must prove owner metadata");
+assert.ok(webhook.includes('claim?.state === "reserved" && claim.checkout_session_id === expiredSession.id'), "Expire only exact bound reservation");
+assert.ok(webhook.includes('stripe.checkout.sessions.retrieve(expiredSession.id)'), "Expiry must be re-verified directly with Stripe");
+assert.ok(webhook.includes('canReleaseExpiredTrialSession('), "Expiry must apply conservative Stripe session policy");
+assert.ok(webhook.includes('"mark_expired_stripe_trial"'), "Expiry must retain terminal claim via service-role RPC");
+assert.ok(webhook.indexOf('stripe.checkout.sessions.retrieve(expiredSession.id)') < webhook.indexOf('"mark_expired_stripe_trial"'), "Expiry must verify Stripe session before mutation");
+assert.ok(webhook.includes('expireError || expired !== true'), "Failed expiration RPC must return retryable webhook error");
 assert.ok(webhook.includes('"redeem_stripe_trial"'), "Webhook must redeem bound claim");
 assert.ok(webhook.indexOf('"redeem_stripe_trial"') < webhook.indexOf('await saveSubscription(userId, subscription);'), "Trial claim must redeem before membership is saved");
 assert.ok(checkout.includes('if (!session.url || (trialEligible && !isTrustedStripeCheckoutUrl(session.url))) {'), "Checkout must reject missing hosted URL");
@@ -53,4 +122,4 @@ assert.ok(checkout.includes('Unable to expire trial checkout with missing or unt
 assert.ok(webhook.includes('subscription.metadata?.stripe_trial_reserved === "true"'), "All subscription sync paths must inspect trial marker");
 assert.ok(webhook.includes('claim?.state !== "redeemed"'), "Subscription sync must reject unredeemed trial claims");
 assert.ok(webhook.includes('Trial subscription owner metadata mismatch.'), "Subscription sync must validate trial owner");
-console.log("Trial release and webhook safety checks passed (trial issuance disabled).");
+console.log("Trial release and webhook safety checks passed (public trial disabled, pinned sandbox test only).");
