@@ -184,6 +184,29 @@ jobs:
       - name: Verify native bootstrap authorization
         run: node --test scripts/test-mobile-bootstrap.mjs
 
+      - name: Rehearse guarded legacy player privacy functions with synthetic PostgreSQL roles
+        env:
+          PGPASSWORD: postgres
+        run: |
+          set -o pipefail
+          node scripts/rehearse-legacy-player-privacy.mjs | psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_rls_test
+
+      - name: Verify scoped Build8 owner profile RPC with opted-in MFA and RLS
+        env:
+          PGPASSWORD: postgres
+        run: |
+          set -o pipefail
+          createdb -h 127.0.0.1 -U postgres hoopcheck_build8_owner_test
+          node scripts/check-build8-owner-profile.mjs | psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_build8_owner_test
+
+      - name: Verify Build 8 public RPC compatibility under synthetic RLS roles
+        env:
+          PGPASSWORD: postgres
+        run: |
+          set -o pipefail
+          createdb -h 127.0.0.1 -U postgres hoopcheck_build8_compat_test
+          node scripts/check-build8-readonly-compat.mjs | psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_build8_compat_test
+
       - name: Verify unified HoopFeed RLS migration safeguards
         run: npm run test:hoopfeed-rls
 
@@ -216,6 +239,9 @@ jobs:
 
       - name: Verify read-only NBA validation authorization and error handling
         run: node --test scripts/test-balldontlie-validation.mjs
+
+      - name: Verify licensed logo matches are explicitly reviewed
+        run: node --test scripts/test-team-logo-review-policy.mjs
 
       - name: Lint
         run: npm run lint
