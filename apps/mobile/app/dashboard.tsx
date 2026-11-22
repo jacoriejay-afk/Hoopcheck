@@ -110,7 +110,7 @@ export default function DashboardScreen() {
             <Text style={{color:theme.muted,fontSize:13}}>{(roleShortcuts[accountType]||roleShortcuts.fan).description}</Text>
             <View style={{flexDirection:"row",flexWrap:"wrap",gap:8}}>
               {(roleShortcuts[accountType]||roleShortcuts.fan).links.map(item=><Pressable key={item.path} accessibilityRole="button" onPress={()=>router.push(item.path)} style={{minHeight:44,justifyContent:"center",paddingVertical:10,paddingHorizontal:12,borderRadius:14,backgroundColor:theme.accentSurface,borderWidth:1,borderColor:theme.border}}>
-                <Text style={{color:theme.foreground,fontWeight:"750",fontSize:13}}>{item.label}</Text>
+                <Text style={{color:theme.foreground,fontWeight:"700",fontSize:13}}>{item.label}</Text>
               </Pressable>)}
             </View>
           </GlassSurface>
