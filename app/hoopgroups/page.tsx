@@ -69,7 +69,10 @@ export default function HoopGroupsPage() {
   }, [sessionRevision]);
 
   useEffect(() => {
-    void load().catch(() => { setReady(true); setBackendReady(false); });
+    const generation = loadGeneration.current + 1;
+    void load().catch(() => {
+      if (generation === loadGeneration.current) { setReady(true); setBackendReady(false); }
+    });
     return () => { loadGeneration.current += 1; };
   }, [load]);
   useEffect(() => {
@@ -93,7 +96,7 @@ export default function HoopGroupsPage() {
   const availableChannels = channels.filter(item => item.space_id === selected?.id);
   const channel = availableChannels.find(item => item.id === channelId) || availableChannels[0] || null;
   const joined = Boolean(selected && memberships.includes(selected.id));
-  channelRef.current = channel?.id || "";
+  useEffect(() => { channelRef.current = channel?.id || ""; }, [channel?.id]);
 
   useEffect(() => {
     if (!enabled || !backendReady || !channel?.id || !joined) { setPosts([]); return; }
