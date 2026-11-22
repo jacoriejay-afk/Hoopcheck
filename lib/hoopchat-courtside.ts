@@ -3,7 +3,7 @@ export type ChatRequest = {
   status:string; created_at:string;
 };
 export type ChatMessage = {id:string; request_id:string; sender_id:string; body:string; created_at:string};
-export type ChatContact = {id:string;display_name:string|null;username:string|null};
+export type ChatContact = {id:string;display_name:string|null;username:string|null;account_type:string|null};
 export type ChatAppearance = {
   layout:"courtside"|"classic"; density:"comfortable"|"compact";
   scale:"normal"|"large"; accent:"orange"|"blue"|"purple";
