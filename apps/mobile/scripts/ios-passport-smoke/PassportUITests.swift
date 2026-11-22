@@ -6,7 +6,12 @@ final class PassportUITests: XCTestCase {
     // Explicit guard returns preserve defer evidence on failures as well as success.
     continueAfterFailure = true
     let app = XCUIApplication(bundleIdentifier: "online.hoopcheck.app")
-    app.launchArguments += ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+    // CI only: Xcode UI-test launches do not inherit Expo CLI's Metro host.
+    // The simulator-only standalone fixture must use the local packager;
+    // RCTBundleURLProvider reads RCT_jsLocation from launch argument defaults.
+    // Do not alter production app startup or relax the real PDF/share tests.
+    app.launchArguments += ["-AppleLanguages", "(en)", "-AppleLocale", "en_US",
+                            "-RCT_jsLocation", "127.0.0.1:8081"]
     app.launch()
     defer {
       let end = XCTAttachment(screenshot: app.screenshot())
