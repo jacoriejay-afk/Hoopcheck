@@ -2,6 +2,7 @@ import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Button, GlassCard } from "../src/primitives";
+import HoopGroupsChannels from "../components/HoopGroupsChannels";
 import { useEntryTheme } from "../src/theme";
 
 const spaces = [
@@ -20,6 +21,7 @@ export default function HoopGroups() {
     <ScrollView contentContainerStyle={{padding:16,gap:12,paddingBottom:40}}>
       <Text accessibilityRole="header" style={{fontSize:29,fontWeight:"900",color:theme.foreground}}>HoopGroups</Text>
       <Text style={{color:theme.muted,lineHeight:22}}>Topic-based basketball servers and channels, separate from each club’s Team Fan Group.</Text>
+      {process.env.EXPO_PUBLIC_HOOPGROUPS_CHANNELS_ENABLED === "true" ? <HoopGroupsChannels /> : <>
       <GlassCard><Text style={{color:theme.foreground,fontWeight:"800",fontSize:18}}>Community server preview</Text>
         <Text style={{color:theme.muted,marginTop:8}}>These are planned dedicated communities. Channels are not live until the backend and moderation release is approved.</Text>
         <Button secondary onPress={()=>router.push("/team-hub/groups")}>Browse official Team Fan Groups</Button>
