@@ -1,7 +1,43 @@
+import { useEffect, useRef } from "react";
 import { Text, View } from "react-native";
+import Animated, { cancelAnimation, useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from "react-native-reanimated";
+import { useMotionSetting } from "../src/motion/Provider";
+import { motion } from "../src/motion/config";
 import { EntityArtwork } from "./EntityArtwork";
 import { useEntryTheme } from "../src/theme";
 import type { LiveGame, GameTeam } from "../src/native/liveGames";
+
+/**
+ * Short, one-shot pulse only when a previously rendered LIVE score changes.
+ * Initial loads, final/scheduled games, missing scores and Reduce Motion stay still.
+ * No guessed score, animation timer, subscription or data-status change.
+ */
+function ScoreValue({ gameId, name, score, live, color, fontSize, fontFamily }: {
+  gameId: string; name: string; score: number | null; live: boolean; color: string; fontSize: number; fontFamily?: string;
+}) {
+  const reduced = useMotionSetting();
+  const previous = useRef<{ gameId: string; score: number | null; live: boolean } | null>(null);
+  const scale = useSharedValue(1);
+  useEffect(() => {
+    const last = previous.current;
+    previous.current = { gameId, score, live };
+    cancelAnimation(scale);
+    if (reduced || !live || !last?.live || last.gameId !== gameId || last.score == null || score == null || last.score === score) {
+      scale.set(1);
+      return;
+    }
+    scale.set(withSequence(
+      withTiming(1.12, { duration: 140 }),
+      withSpring(1, motion.spring),
+    ));
+    return () => cancelAnimation(scale);
+  }, [gameId, score, live, reduced, scale]);
+  const animated = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
+  return <Animated.Text selectable accessibilityLabel={`${name}: ${score == null ? "score not reported" : score}`}
+    style={[{ color, fontSize, fontFamily, fontWeight: "700", letterSpacing: -.6, fontVariant: ["tabular-nums"] }, animated]}>
+    {score ?? "—"}
+  </Animated.Text>;
+}
 
 /** Same score hierarchy in Home, league groups and game detail. Null is never zero. */
 export function Scoreboard({ game, teams }: { game: LiveGame; teams: Record<string, GameTeam> }) {
@@ -17,7 +53,7 @@ export function Scoreboard({ game, teams }: { game: LiveGame; teams: Record<stri
     {([{ name: home, score: game.home_score }, { name: away, score: game.away_score }]).map((team, index) => <View key={index} style={{ flexDirection: "row", gap: t.spacing.md, alignItems: "center" }}>
       <EntityArtwork name={team.name} kind="teams" size={36} />
       <Text style={{ flex: 1, minWidth: 0, color: t.foreground, ...t.type.section }}>{team.name}</Text>
-      <Text selectable accessibilityLabel={`${team.name}: ${team.score == null ? "score not reported" : team.score}`} style={{ color: t.foreground, fontSize: t.courtside.typography.score, fontFamily: t.type.ui.fontFamily, fontWeight: "700", letterSpacing: -.6, fontVariant: ["tabular-nums"] }}>{team.score ?? "—"}</Text>
+      <ScoreValue gameId={game.id} name={team.name} score={team.score} live={live} color={t.foreground} fontSize={t.courtside.typography.score} fontFamily={t.type.ui.fontFamily} />
     </View>)}
     {game.home_score == null || game.away_score == null ? <Text style={{ color: t.muted, ...t.type.caption }}>Score not reported</Text> : null}
   </View>;
