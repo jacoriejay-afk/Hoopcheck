@@ -340,8 +340,16 @@ export default function LiveGamesPage() {
       <div className="hc-live-activity-panel__intro"><div><p className="eyebrow">ACTIVITY-FIRST DISCOVERY</p><h2>Find your game faster</h2><p className="muted">Live chat participation, live fixtures, then scheduled games determine the order. Counts are from currently loaded games.</p></div>
         <button type="button" onClick={() => { setCountryFocus(""); setLeagueFocus(""); setQuery(""); }} disabled={!countryFocus && !leagueFocus && !query}>Clear filters</button></div>
       <div className="hc-live-activity-panel__pickers">
-        <label>Country <select aria-label="Filter games by country" value={countryFocus} onChange={event => { setCountryFocus(event.target.value); setLeagueFocus(""); setShowAllGroups(false); }}><option value="">All countries ({activityIndex.countries.length})</option>{activityIndex.countries.map(item => <option key={item.name} value={item.name}>{item.name} · {item.games} games</option>)}</select></label>
-        <label>League <select aria-label="Filter games by league" value={leagueFocus} onChange={event => { setLeagueFocus(event.target.value); setShowAllGroups(false); }}><option value="">All leagues ({activityIndex.leagues.length})</option>{activityIndex.leagues.map(item => <option key={item.name} value={item.name}>{item.name} · {item.games} games</option>)}</select></label>
+        <details><summary>Browse all countries ({activityIndex.countries.length}){countryFocus ? " · " + countryFocus : ""}</summary>
+          <div className="hc-live-activity-panel__choices" role="group" aria-label="Filter games by country">
+            {activityIndex.countries.map(item => <button type="button" key={item.name} aria-pressed={countryFocus===item.name} onClick={() => { setCountryFocus(current=>current===item.name?"":item.name); setLeagueFocus(""); setShowAllGroups(false); }}>{item.name} · {item.games} games</button>)}
+          </div>
+        </details>
+        <details><summary>Browse all leagues ({activityIndex.leagues.length}){leagueFocus ? " · " + leagueFocus : ""}</summary>
+          <div className="hc-live-activity-panel__choices" role="group" aria-label="Filter games by league">
+            {activityIndex.leagues.map(item => <button type="button" key={item.name} aria-pressed={leagueFocus===item.name} onClick={() => { setLeagueFocus(current=>current===item.name?"":item.name); setShowAllGroups(false); }}>{item.name} · {item.games} games</button>)}
+          </div>
+        </details>
       </div>
       <div className="hc-live-activity-panel__top"><strong>Active countries</strong><div>{activityIndex.countries.slice(0,6).map(item => <button type="button" key={item.name} aria-pressed={countryFocus === item.name} onClick={() => { setCountryFocus(current => current === item.name ? "" : item.name); setLeagueFocus(""); }}>{item.name}<small>{item.members} chatting · {item.live} live · {item.games} games</small></button>)}</div></div>
       <div className="hc-live-activity-panel__top"><strong>Active leagues</strong><div>{activityIndex.leagues.slice(0,6).map(item => <button type="button" key={item.name} aria-pressed={leagueFocus === item.name} onClick={() => setLeagueFocus(current => current === item.name ? "" : item.name)}>{item.name}<small>{item.members} chatting · {item.live} live · {item.games} games</small></button>)}</div></div>
