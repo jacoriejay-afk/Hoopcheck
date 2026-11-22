@@ -27,7 +27,7 @@ try {
       // while single() explicitly requests a vendor object media type.
       // Return the correct shape so profile completion tests exercise the
       // actual owner reader, rather than a synthetic transport mismatch.
-      const wantsObject = /application\\/vnd\\.pgrst\\.object\\+json/i.test(request.headers().accept || "");
+      const wantsObject = (request.headers().accept || "").includes("application/vnd.pgrst.object+json");
       data = request.method() === "GET" && !wantsObject ? [profile] : profile;
     } else if (url.pathname.includes("/rpc/get_public_player_profile")) data = [{ ...profile, player_position: profile.position }];
     else if (url.pathname.includes("/rpc/get_current_user_admin_role")) data = null;
