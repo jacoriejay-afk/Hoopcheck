@@ -334,7 +334,7 @@ export default function AccountPage() {
     (async () => {
       const { data } = await readOwnProfile<{ theme_preference: string | null; preferred_language: string | null; notification_preferences: Record<string, unknown> | null; profile_visibility: string | null; current_country_public: boolean | null }>(userId, "theme_preference,preferred_language,notification_preferences,profile_visibility,current_country_public");
       if (!alive || !data) return;
-      const theme = ["system","light","dark"].includes(data.theme_preference) ? data.theme_preference as "system"|"light"|"dark" : "system";
+      const theme = typeof data.theme_preference === "string" && ["system","light","dark"].includes(data.theme_preference) ? data.theme_preference as "system"|"light"|"dark" : "system";
       const localTheme = localStorage.getItem("hoopcheck-theme");
       const cookieHasTheme = document.cookie.split(";").some((item) => item.trim().startsWith("hoopcheck-theme="));
       setThemePreference(localTheme && ["system","light","dark"].includes(localTheme) ? localTheme as "system"|"light"|"dark" : theme);
