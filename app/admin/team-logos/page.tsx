@@ -21,6 +21,11 @@ export default function AdminTeamLogosPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [queueSearch, setQueueSearch] = useState("");
+  const [queueGender, setQueueGender] = useState<"all" | "mens" | "womens">("all");
+  const [queueCoverage, setQueueCoverage] = useState<"missing" | "all" | "complete">("missing");
+  const [queuePage, setQueuePage] = useState(0);
+  const [rightsReviewed, setRightsReviewed] = useState(false);
 
   // Read the complete directory. The previous 2,000-row limit excluded hundreds
   // of clubs from the admin logo queue, even though all teams are public.
@@ -92,6 +97,7 @@ export default function AdminTeamLogosPage() {
   }
 
   async function uploadManual() {
+    if (!rightsReviewed) { setMessage("Review the logo identity and your right to display it before publishing."); return; }
     if (!selectedTeam || !file) { setMessage("Select a team and choose an image."); return; }
     if (!["image/png", "image/jpeg", "image/webp", "image/svg+xml"].includes(file.type)) { setMessage("Use PNG, SVG, JPG, or WebP."); return; }
     setBusy(true); setMessage("");
@@ -149,6 +155,7 @@ export default function AdminTeamLogosPage() {
   }
 
   async function approveCandidate(index: number) {
+    if (!rightsReviewed) { setMessage("Review this crest identity and usage rights before publishing."); return; }
     const candidate = candidates[index];
     if (!candidate) return;
     setBusy(true); setMessage("");
@@ -161,8 +168,28 @@ export default function AdminTeamLogosPage() {
   }
 
   function updateCandidate(index: number, key: "teamId" | "bg", value: string) {
+    if (key === "teamId") setRightsReviewed(false);
     setCandidates((items) => items.map((item, i) => i === index ? { ...item, [key]: value } : item));
   }
+
+  const matchingQueue = teams.filter(team => {
+    const gender = team.tableName === "womens_teams" ? "womens" : team.basketball_type || "mens";
+    if (queueGender !== "all" && gender !== queueGender) return false;
+    const hasLogo = Boolean(team.logo_url?.trim());
+    if (queueCoverage === "missing" && hasLogo) return false;
+    if (queueCoverage === "complete" && !hasLogo) return false;
+    const term = queueSearch.trim().toLocaleLowerCase();
+    return !term || [team.name, team.country || "", gender].some(value => value.toLocaleLowerCase().includes(term));
+  }).sort((a,b) => (a.country || "").localeCompare(b.country || "") || a.name.localeCompare(b.name));
+  const queuePageSize = 40;
+  const queuePages = Math.max(1, Math.ceil(matchingQueue.length / queuePageSize));
+  const pageIndex = Math.min(queuePage, queuePages - 1);
+  const visibleQueue = matchingQueue.slice(pageIndex * queuePageSize, (pageIndex + 1) * queuePageSize);
+  const selectFromQueue = (team: Team) => {
+    setSelectedTeam(team.tableName + ":" + team.id);
+    setRightsReviewed(false);
+    document.getElementById("hc-logo-target")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   return <main className="admin-team-logo-studio" style={{ minHeight: "100vh", background: "#0A0A0A", color: "#F7F7F5", padding: "28px 16px 70px" }}>
     <div style={{ maxWidth: 1050, margin: "0 auto" }}>
@@ -177,22 +204,45 @@ export default function AdminTeamLogosPage() {
           <span style={{ border: "1px solid #444", borderRadius: 10, padding: "12px 16px" }}>Includes men's, standalone women's and mirrored women's club records</span>
         </section>
       )}
+      {!loading && teams.length > 0 && <section aria-label="Missing team logo queue" style={{ borderTop: "1px solid #444", paddingTop: 16, marginTop: 18 }}>
+        <h2 style={{ fontSize: 19, margin: "0 0 8px" }}>Logo review queue · {matchingQueue.length} clubs</h2>
+        <p style={{ color: "#aaa", fontSize: 13, marginBottom: 12 }}>Filter all men’s and women’s clubs, including mirror-safe women’s profiles. Select a club to review its real crest below.</p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+          <input type="search" value={queueSearch} onChange={e => { setQueueSearch(e.target.value); setQueuePage(0); }} placeholder="Club or country" aria-label="Search logo queue" style={{ ...inputStyle, maxWidth: 270, padding: 9 }} />
+          <select aria-label="Filter logo queue by gender" value={queueGender} onChange={e => { setQueueGender(e.target.value as typeof queueGender); setQueuePage(0); }} style={{ ...inputStyle, width: "auto", padding: 9 }}><option value="all">Men + Women</option><option value="mens">Men</option><option value="womens">Women</option></select>
+          <select aria-label="Filter logo queue by coverage" value={queueCoverage} onChange={e => { setQueueCoverage(e.target.value as typeof queueCoverage); setQueuePage(0); }} style={{ ...inputStyle, width: "auto", padding: 9 }}><option value="missing">Missing crests</option><option value="all">All clubs</option><option value="complete">With logos</option></select>
+        </div>
+        <div style={{ display: "grid", gap: 3 }}>
+          {visibleQueue.map(team => <div key={team.tableName + team.id} style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, padding: "5px 1px", borderBottom: "1px solid #272727" }}>
+            <TeamLogo name={team.name} logoUrl={team.logo_url} logoBg={team.logo_bg} size={34} />
+            <div style={{ flex: 1, minWidth: 0 }}><strong style={{ fontSize: 13, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{team.name}</strong><span style={{ color: "#aaa", fontSize: 11 }}>{team.country || "Country unlisted"} · {team.tableName === "womens_teams" || team.basketball_type === "womens" ? "Women" : "Men"} · {team.logo_url?.trim() ? "Image ready" : "Needs approved crest"}</span></div>
+            <button type="button" onClick={() => selectFromQueue(team)} style={{ flexShrink: 0, border: "1px solid #666", borderRadius: 999, padding: "7px 12px", background: "transparent", color: "#fff", fontSize: 12 }}>{selectedTeam === team.tableName + ":" + team.id ? "Selected" : "Choose"}</button>
+          </div>)}
+          {visibleQueue.length === 0 && <p role="status" style={{ color: "#aaa" }}>No clubs match these filters.</p>}
+        </div>
+        {queuePages > 1 && <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 14 }}>
+          <button type="button" disabled={pageIndex === 0} onClick={() => setQueuePage(Math.max(0, pageIndex - 1))} style={{ padding: "7px 12px" }}>Previous</button>
+          <span style={{ fontSize: 12 }}>{pageIndex + 1} / {queuePages}</span>
+          <button type="button" disabled={pageIndex + 1 >= queuePages} onClick={() => setQueuePage(pageIndex + 1)} style={{ padding: "7px 12px" }}>Next</button>
+        </div>}
+      </section>}
       {message && <p role="status" style={{ border: "1px solid #444", borderRadius: 9, padding: 12, background: "#151515" }}>{message}</p>}
       {loading ? <p>Checking access and loading teams…</p> : <>
-        <section style={{ border: "1px solid #333", background: "#111", borderRadius: 14, padding: 18, marginTop: 22 }}>
+        <section id="hc-logo-target" style={{ border: "1px solid #333", background: "#111", borderRadius: 14, padding: 18, marginTop: 22 }}>
           <h2>1. Choose a team</h2>
-          <TeamLeaguePicker mode="team" directorySource="both" label="Team" value={selectedTeam} basketballType={pickerGender(selectedTeam)} onChange={setSelectedTeam} placeholder="Search teams by name, city or country" />
+          <TeamLeaguePicker mode="team" directorySource="both" label="Team" value={selectedTeam} basketballType={pickerGender(selectedTeam)} onChange={value => { setSelectedTeam(value); setRightsReviewed(false); }} placeholder="Search teams by name, city or country" />
           {selectedTeam && <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 12 }}><TeamLogo name={teams.find((team) => team.tableName + ":" + team.id === selectedTeam)?.name || "Team"} logoUrl={teams.find((team) => team.tableName + ":" + team.id === selectedTeam)?.logo_url} logoBg={teams.find((team) => team.tableName + ":" + team.id === selectedTeam)?.logo_bg} size={64}/><span>{teams.find((team) => team.tableName + ":" + team.id === selectedTeam)?.logo_url ? "Current approved logo" : "Using designed fallback"}</span></div>}
         </section>
         <section style={{ border: "1px solid #333", background: "#111", borderRadius: 14, padding: 18, marginTop: 16 }}>
           <h2>2. Upload an approved logo</h2>
           {selectedTeam && teams.find((team) => team.tableName + ":" + team.id === selectedTeam)?.logo_url && <button type="button" disabled={busy} onClick={() => void revertToFallback()} style={{ marginBottom: 12, border: "1px solid #F5B800", borderRadius: 999, background: "transparent", color: "#F7F7F5", padding: "9px 14px", fontWeight: 800 }}>Revert to designed fallback</button>}
           <p style={{ color: "#aaa" }}>PNG, SVG, JPG, or WebP. Maximum 5 MB. The image is copied into the HoopCheck team-logos bucket.</p>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, margin: "9px 0", fontSize: 13 }}><input type="checkbox" checked={rightsReviewed} onChange={e => setRightsReviewed(e.target.checked)} /> I verified this club’s identity and our right to display the uploaded crest.</label>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 12 }}>
-            <label style={{ display: "grid", gap: 7 }}>Logo file<input type="file" accept="image/png,image/svg+xml,image/jpeg,image/webp" onChange={(event: ChangeEvent<HTMLInputElement>) => setFile(event.target.files?.[0] || null)}/></label>
+            <label style={{ display: "grid", gap: 7 }}>Logo file<input type="file" accept="image/png,image/svg+xml,image/jpeg,image/webp" onChange={(event: ChangeEvent<HTMLInputElement>) => { setFile(event.target.files?.[0] || null); setRightsReviewed(false); }}/></label>
             <label style={{ display: "grid", gap: 7 }}>Logo tile background<select value={bg} onChange={(event) => setBg(event.target.value as typeof bg)} style={inputStyle}><option value="transparent">Transparent</option><option value="light">Light tile</option><option value="dark">Dark tile</option></select></label>
           </div>
-          <button disabled={busy} onClick={() => void uploadManual()} style={{ marginTop: 14, border: 0, borderRadius: 999, background: "var(--hc-button-primary-bg)", color: "var(--hc-button-primary-fg)", padding: "11px 18px", fontWeight: 900 }}>{busy ? "Working…" : "Upload and publish logo"}</button>
+          <button disabled={busy || !rightsReviewed} onClick={() => void uploadManual()} style={{ marginTop: 14, border: 0, borderRadius: 999, background: "var(--hc-button-primary-bg)", color: "var(--hc-button-primary-fg)", padding: "11px 18px", fontWeight: 900 }}>{busy ? "Working…" : "Upload and publish logo"}</button>
         </section>
         <section style={{ border: "1px solid #333", background: "#111", borderRadius: 14, padding: 18, marginTop: 16 }}>
           <h2>3. Fetch candidates from official source pages</h2>
@@ -202,7 +252,7 @@ export default function AdminTeamLogosPage() {
           <div style={{ display: "grid", gap: 12, marginTop: 16 }}>
             {candidates.map((candidate, index) => <article key={candidate.sourceUrl + index} style={{ border: "1px solid #444", borderRadius: 12, padding: 14, display: "grid", gridTemplateColumns: "100px minmax(0,1fr)", gap: 14, alignItems: "center" }}>
               <div style={{ background: candidate.bg === "light" ? "#F7F7F5" : candidate.bg === "dark" ? "#0A0A0A" : "#222", borderRadius: 10, padding: 8 }}><img src={candidate.imageData} alt="Logo candidate preview" style={{ width: 84, height: 84, objectFit: "contain" }}/></div>
-              <div style={{ minWidth: 0 }}><p style={{ overflowWrap: "anywhere", color: "#aaa", fontSize: 12 }}>{candidate.sourceUrl}</p><p style={{ overflowWrap: "anywhere", fontSize: 12 }}>Image: {candidate.imageUrl}</p><TeamLeaguePicker mode="team" directorySource="both" label="Assign team" value={candidate.teamId} basketballType={pickerGender(candidate.teamId)} onChange={value=>updateCandidate(index,"teamId",value)} placeholder="Search team" /><label style={{ display: "block", marginTop: 8 }}>Tile background<select value={candidate.bg} onChange={(event) => updateCandidate(index, "bg", event.target.value)} style={{ ...inputStyle, marginTop: 5 }}><option value="transparent">Transparent</option><option value="light">Light</option><option value="dark">Dark</option></select></label><button disabled={busy || candidate.approved} onClick={() => void approveCandidate(index)} style={{ marginTop: 10, border: 0, borderRadius: 999, background: candidate.approved ? "#333" : "#FF5A1F", color: "#fff", padding: "9px 14px", fontWeight: 900 }}>{candidate.approved ? "Approved and published" : "Approve and publish"}</button></div>
+              <div style={{ minWidth: 0 }}><p style={{ overflowWrap: "anywhere", color: "#aaa", fontSize: 12 }}>{candidate.sourceUrl}</p><p style={{ overflowWrap: "anywhere", fontSize: 12 }}>Image: {candidate.imageUrl}</p><TeamLeaguePicker mode="team" directorySource="both" label="Assign team" value={candidate.teamId} basketballType={pickerGender(candidate.teamId)} onChange={value=>updateCandidate(index,"teamId",value)} placeholder="Search team" /><label style={{ display: "block", marginTop: 8 }}>Tile background<select value={candidate.bg} onChange={(event) => updateCandidate(index, "bg", event.target.value)} style={{ ...inputStyle, marginTop: 5 }}><option value="transparent">Transparent</option><option value="light">Light</option><option value="dark">Dark</option></select></label><button disabled={busy || !rightsReviewed || candidate.approved} onClick={() => void approveCandidate(index)} style={{ marginTop: 10, border: 0, borderRadius: 999, background: candidate.approved ? "#333" : "#FF5A1F", color: "#fff", padding: "9px 14px", fontWeight: 900 }}>{candidate.approved ? "Approved and published" : "Approve and publish"}</button></div>
             </article>)}
           </div>
         </section>
