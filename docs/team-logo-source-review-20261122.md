@@ -5,7 +5,7 @@
 | Division | Country | Scope | Source |
 | --- | --- | ---: | --- |
 | Liga Nacional de Básquet 2026–27 | Argentina | 6 missing men's teams | https://deportv.gob.ar/basquetbol/liga-nacional-basquet-202627-calendario-equipos-planteles-nid:17463 |
-| La Liga Argentina 2026–27 | Argentina | 17 missing men's teams, southern conference | https://www.unocontraunoweb.com/2026/09/03/la-liga-argentina-confirmo-a-sus-participantes-para-la-temporada-2026-27/ |
+| La Liga Argentina 2026–27 | Argentina | 34 missing men's teams, both conferences | https://www.unocontraunoweb.com/2026/09/03/la-liga-argentina-confirmo-a-sus-participantes-para-la-temporada-2026-27/ |
 | LNBP Femenil 2026 | Mexico | 8 missing women's teams | https://sipse.com/novedades/calor-cancun-femenil-listo-debutar-temporada-2026-lnbp-505444.html |
 | Liga de México / LMBPF 2026 | Mexico | 6 missing women's teams | https://deportedigital.mx/la-liga-de-mexico-de-basquetbol-profesional-anuncia-la-temporada-2026-con-seis-equipos-confirmados |
 
