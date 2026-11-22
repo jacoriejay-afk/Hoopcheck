@@ -201,9 +201,16 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
     if (!uid || !canRead || !reels || authorId === uid) return;
     await action(`block:${authorId}`, async () => {
       await token();
-      const { error } = await supabase.from("user_blocks").upsert(
-        { blocker_id: uid, blocked_id: authorId }, { onConflict: "blocker_id,blocked_id" });
-      if (error) throw new Error("Could not block this account. Try again.");
+      // user_blocks intentionally grants INSERT + owner SELECT, not UPDATE.
+      // An upsert requires UPDATE and would fail under the production RLS boundary.
+      const { error } = await supabase.from("user_blocks").insert({ blocker_id: uid, blocked_id: authorId });
+      if (error) {
+        if (error.code !== "23505") throw new Error("Could not block this account. Try again.");
+        // Repeated taps are idempotent only if an owner-scoped read proves the row exists.
+        const { data: existing, error: verifyError } = await supabase.from("user_blocks")
+          .select("blocked_id").eq("blocker_id", uid).eq("blocked_id", authorId).maybeSingle();
+        if (verifyError || existing?.blocked_id !== authorId) throw new Error("Could not confirm this account is blocked. Try again.");
+      }
       if (viewer.current.uid !== uid || !viewer.current.canRead) return;
       setBlockedCreators(current => ({ owner: uid, ids: [...new Set([...(current.owner === uid ? current.ids : []), authorId])], ready: true, failed: false }));
       setMessage("Creator added to your HoopCheck blocked accounts.");
