@@ -1,5 +1,6 @@
-import { getEffectiveMembership } from "../../lib/billing/client-membership";
 "use client";
+
+import { getEffectiveMembership } from "../../lib/billing/client-membership";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
