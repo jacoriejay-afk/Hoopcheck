@@ -1,4 +1,3 @@
-import { BrandLogo } from "../components/BrandLogo";
 import "react-native-gesture-handler";
 import { StoreKitProvider } from "../src/native/storekit";
 import { NativeDraftProvider } from "../src/native/drafts";
@@ -125,15 +124,7 @@ function RootLayout() {
         <Stack.Screen name="choose-username" options={{ title: "Choose username" }} />
         <Stack.Screen name="forgot-password" options={{ title: "Reset password" }} />
         <Stack.Screen name="reset-password" options={{ title: "Choose new password" }} />
-        <Stack.Screen name="dashboard" options={{
-          title: "HoopCheck™",
-          headerTitle: () => <BrandLogo />,
-          headerStyle: { backgroundColor: theme.background },
-          headerTitleStyle: { fontWeight: "800", color: theme.foreground },
-          headerTintColor: theme.accent,
-          headerShadowVisible: false,
-          contentStyle: { backgroundColor: theme.background },
-        }} />
+        <Stack.Screen name="dashboard" options={{ headerShown: false, contentStyle: { backgroundColor: theme.background } }} />
         <Stack.Screen name="players" options={{ title: "Find players" }} />
         <Stack.Screen name="players/[id]" options={{ title: "Player profile" }} />
         <Stack.Screen name="coaches" options={{ title: "Find a coach" }} />

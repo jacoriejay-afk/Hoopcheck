@@ -10,7 +10,7 @@ import { supabase } from "../src/lib/supabase";
 import { visibleConnections, type PublicConnection } from "../src/native/connectionPresentation";
 import { readBasketballSide, readLiveGames } from "../src/native/liveGames";
 import { readFeedPage, type FeedPost } from "../src/native/feedClient";
-import { Reveal, Skeleton } from "./Motion";
+import { Skeleton } from "./Motion";
 import { Scoreboard } from "./Scoreboard";
 import { EntityArtwork } from "./EntityArtwork";
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
@@ -114,8 +114,7 @@ export function HomeCourtside() {
     {route:"/team-hub/groups",title:"Fan Groups",icon:"people-outline",tone:"green"},
   ] as const;
   return <View style={{gap:14,marginBottom:t.spacing.lg}}>
-    <Reveal>
-      <View style={{borderRadius:19,overflow:"hidden",borderWidth:1,
+    <View style={{borderRadius:19,overflow:"hidden",borderWidth:1,
         borderColor:t.dark?"rgba(255,150,74,.70)":"rgba(211,93,29,.58)",
         backgroundColor:"#101F35"}}>
         <LinearGradient colors={["#0D203B","#153A62","#351B25"]} start={{x:0,y:0}}
@@ -145,8 +144,7 @@ export function HomeCourtside() {
             <Text style={{color:"#FFA362",fontWeight:"700",fontSize:12}}>Edit profile →</Text>
           </Pressable>
         </View>
-      </View>
-    </Reveal>
+    </View>
     <ArenaHeading title="QUICK ACTIONS"/>
     <View style={{flexDirection:"row",gap:6}}>
       {actions.map(item=><ArenaAction key={item.title} route={item.route as HomeRoute} title={item.title}
