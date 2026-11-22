@@ -168,6 +168,7 @@ export default function AdminTeamLogosPage() {
   }
 
   function updateCandidate(index: number, key: "teamId" | "bg", value: string) {
+    if (key === "teamId") setRightsReviewed(false);
     setCandidates((items) => items.map((item, i) => i === index ? { ...item, [key]: value } : item));
   }
 
@@ -186,6 +187,7 @@ export default function AdminTeamLogosPage() {
   const visibleQueue = matchingQueue.slice(pageIndex * queuePageSize, (pageIndex + 1) * queuePageSize);
   const selectFromQueue = (team: Team) => {
     setSelectedTeam(team.tableName + ":" + team.id);
+    setRightsReviewed(false);
     document.getElementById("hc-logo-target")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
@@ -228,7 +230,7 @@ export default function AdminTeamLogosPage() {
       {loading ? <p>Checking access and loading teams…</p> : <>
         <section id="hc-logo-target" style={{ border: "1px solid #333", background: "#111", borderRadius: 14, padding: 18, marginTop: 22 }}>
           <h2>1. Choose a team</h2>
-          <TeamLeaguePicker mode="team" directorySource="both" label="Team" value={selectedTeam} basketballType={pickerGender(selectedTeam)} onChange={setSelectedTeam} placeholder="Search teams by name, city or country" />
+          <TeamLeaguePicker mode="team" directorySource="both" label="Team" value={selectedTeam} basketballType={pickerGender(selectedTeam)} onChange={value => { setSelectedTeam(value); setRightsReviewed(false); }} placeholder="Search teams by name, city or country" />
           {selectedTeam && <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 12 }}><TeamLogo name={teams.find((team) => team.tableName + ":" + team.id === selectedTeam)?.name || "Team"} logoUrl={teams.find((team) => team.tableName + ":" + team.id === selectedTeam)?.logo_url} logoBg={teams.find((team) => team.tableName + ":" + team.id === selectedTeam)?.logo_bg} size={64}/><span>{teams.find((team) => team.tableName + ":" + team.id === selectedTeam)?.logo_url ? "Current approved logo" : "Using designed fallback"}</span></div>}
         </section>
         <section style={{ border: "1px solid #333", background: "#111", borderRadius: 14, padding: 18, marginTop: 16 }}>
@@ -237,7 +239,7 @@ export default function AdminTeamLogosPage() {
           <p style={{ color: "#aaa" }}>PNG, SVG, JPG, or WebP. Maximum 5 MB. The image is copied into the HoopCheck team-logos bucket.</p>
           <label style={{ display: "flex", alignItems: "center", gap: 8, margin: "9px 0", fontSize: 13 }}><input type="checkbox" checked={rightsReviewed} onChange={e => setRightsReviewed(e.target.checked)} /> I verified this club’s identity and our right to display the uploaded crest.</label>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 12 }}>
-            <label style={{ display: "grid", gap: 7 }}>Logo file<input type="file" accept="image/png,image/svg+xml,image/jpeg,image/webp" onChange={(event: ChangeEvent<HTMLInputElement>) => setFile(event.target.files?.[0] || null)}/></label>
+            <label style={{ display: "grid", gap: 7 }}>Logo file<input type="file" accept="image/png,image/svg+xml,image/jpeg,image/webp" onChange={(event: ChangeEvent<HTMLInputElement>) => { setFile(event.target.files?.[0] || null); setRightsReviewed(false); }}/></label>
             <label style={{ display: "grid", gap: 7 }}>Logo tile background<select value={bg} onChange={(event) => setBg(event.target.value as typeof bg)} style={inputStyle}><option value="transparent">Transparent</option><option value="light">Light tile</option><option value="dark">Dark tile</option></select></label>
           </div>
           <button disabled={busy || !rightsReviewed} onClick={() => void uploadManual()} style={{ marginTop: 14, border: 0, borderRadius: 999, background: "var(--hc-button-primary-bg)", color: "var(--hc-button-primary-fg)", padding: "11px 18px", fontWeight: 900 }}>{busy ? "Working…" : "Upload and publish logo"}</button>
