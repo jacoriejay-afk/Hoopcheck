@@ -19,7 +19,8 @@ test("Members can join, leave and manually refresh moderated channels",()=>{
   assert.match(page,/\.delete\(\)\.eq\("space_id",selected\.id\)\.eq\("user_id",userId\)/);
   assert.match(page,/async function refresh\(\)/);
   assert.match(page,/Refresh messages/);
-  assert.match(page,/Leave community/);
+  assert.match(page,/Leave group/);
+  assert.doesNotMatch(page,/href="\/team-hub\/groups"/, "HoopGroups directory should be independent of official club Fan Groups");
   assert.match(css,/\.hc-hoopgroups-refresh/);
   assert.match(css,/min-height:44px/);
 });
