@@ -26,6 +26,7 @@ assert.match(css, /hc-my-court/);
 assert.match(profile, /className="hc-profile-passport-anchor"/);
 assert.doesNotMatch(profile, /<div id="career-passport"/);
 assert.match(css, /scroll-padding-block-end/);
+assert.match(journey, /isOwnProfile&&canManage&&!loading&&!loadError&&<div className="hc-journey-editor"/, "Prevent saving while career stops are still loading or failed");
 assert.match(journey, /Retry loading career stops/, "A failed read needs a visible retry, not a false empty history");
 assert.match(journey, /!loadError && visibleStops.length > 0/, "Do not render stale career stops after a read failure");
 assert.match(journey, /finally \{\s*setSaving\(false\)/, "Save must clear the loading state even on an exception");
