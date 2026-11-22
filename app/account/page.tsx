@@ -474,7 +474,7 @@ export default function AccountPage() {
           <SettingsRow icon="mail" label={t("email")} value={email || t("notSelected")} onClick={changeEmail} />
         </SettingsGroup>
         {profile.account_type === "player" && <SettingsGroup title="Career & team reviews">
-          <SettingsRow icon="file" label="Career Passport" value="Add teams, seasons, and countries" href="/profile#career-passport" />
+          {profile.account_type === "player" && <SettingsRow icon="file" label="Career Passport" value="Add teams, seasons, and countries" href="/profile#career-passport" />}
           <SettingsRow icon="star" label="Team reviews" value="Check eligibility when ready" href="#team-review-checklist" />
         </SettingsGroup>}
         <SettingsGroup title="Security & membership">
