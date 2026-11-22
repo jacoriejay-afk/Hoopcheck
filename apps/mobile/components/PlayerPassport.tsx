@@ -4,9 +4,6 @@ import { sharePlayerPassport } from "../src/native/passportSharing";
 import { requestNativeAccount } from "../src/native/accountClient";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState, Platform, Text, View } from "react-native";
-import Animated, { FadeInDown } from "react-native-reanimated";
-import { useMotionSetting } from "../src/motion/Provider";
-import { motion } from "../src/motion/config";
 import { BrandLogo } from "./BrandLogo";
 import { Sheet } from "./Sheet";
 import { Button } from "../src/primitives";
@@ -19,7 +16,6 @@ import type { PlayerProfile } from "../src/native/playerProfiles";
 
 export function PlayerPassport({ player }: { player: PlayerProfile }) {
   const t = useEntryTheme(); const haptic = useHaptics();
-  const reduced = useMotionSetting();
   const { account } = useNativeAccount();
   const [open, setOpen] = useState(false); const [busy, setBusy] = useState(false); const [error, setError] = useState("");
   const locked = useRef(false);
@@ -72,7 +68,7 @@ export function PlayerPassport({ player }: { player: PlayerProfile }) {
   return <>
     <Button secondary onPress={() => { setError(""); setOpen(true); }}>Preview Player Passport</Button>
     <Sheet dismissible={!busy} open={open} onClose={() => { if (!busy) setOpen(false); }} title="Your Player Passport">
-      {open ? <Animated.View entering={reduced ? undefined : FadeInDown.duration(motion.fade)} style={{
+      {open ? <View style={{
         backgroundColor: t.entityHero.background, borderRadius: 18, borderCurve: "continuous",
         padding: 16, gap: 12, borderWidth: 1, borderColor: t.glassBorder, borderTopWidth: 3, borderTopColor: t.button,
       }}>
@@ -96,7 +92,7 @@ export function PlayerPassport({ player }: { player: PlayerProfile }) {
           <Text style={{ color: t.entityHero.muted, width: 104, fontSize: 12 }}>{label}</Text>
           <Text style={{ color: t.entityHero.ink, flex: 1, minWidth: 0, fontSize: 13, fontWeight: "700" }}>{value}</Text>
         </View>)}
-      </Animated.View> : null}
+      </View> : null
       <Text style={{ color: t.muted, ...t.type.caption }}>Sharing exports the name, position, team, experience and verification shown above as a PDF. It excludes your location, contact information and private career stops. Share only with people you choose.</Text>
       <Button disabled={busy} accessibilityState={{ busy, disabled: busy }} onPress={() => void share()}>{busy ? "Preparing Passport…" : "Export & share PDF"}</Button>
       {error ? <Text accessibilityRole="alert" style={{ color: t.muted }}>{error}</Text> : null}
