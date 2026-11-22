@@ -9,7 +9,8 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "test:native": "node --experimental-strip-types --test scripts/*.test.mjs"
+    "test:native": "node --experimental-strip-types --test scripts/*.test.mjs",
+    "check:ios-release-identity": "node scripts/check-ios-release-identity.cjs"
   },
   "dependencies": {
     "@expo/vector-icons": "15.0.3",
