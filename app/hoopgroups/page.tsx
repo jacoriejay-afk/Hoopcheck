@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import HoopGroupsManage, { GROUP_COLORS, GROUP_ICONS, type GroupSpace, type GroupChannel } from "../../components/HoopGroupsManage";
 import HoopGroupsChatSettings, { type ChatPrefs } from "../../components/HoopGroupsChatSettings";
+import HoopGroupsOwnerModeration from "../../components/HoopGroupsOwnerModeration";
 import "./hoopgroups.css";
 
 type Space = GroupSpace;
@@ -235,6 +236,7 @@ export default function HoopGroupsPage() {
         onUpdated={updated=>setSpaces(items=>items.map(item=>item.id===updated.id?updated:item))}
         onChannelCreated={created=>{setChannels(items=>[...items,created]);setChannelId(created.id);}}
         onChannelUpdated={(id,name)=>setChannels(items=>items.map(item=>item.id===id?{...item,name}:item))}/>
+      <HoopGroupsOwnerModeration userId={userId} spaceId={selected?.id||""} isOwner={Boolean(selected?.owner_id===userId)}/>
       {!visibleSpaces.length&&<p role="status" className="hc-hoopgroups-empty">No communities match yet. Choose Explore, change your search, or create a server.</p>}
       {visibleSpaces.length>0&&<div className="hc-hoopgroups-shell" style={{"--hc-group-accent":GROUP_COLORS[selected?.accent_color||"orange"]||GROUP_COLORS.orange} as CSSProperties}>
       <nav className="hc-hoopgroups-servers" aria-label="Community servers">{visibleSpaces.map(space =>
