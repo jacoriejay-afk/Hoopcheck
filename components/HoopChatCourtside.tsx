@@ -298,6 +298,7 @@ export default function HoopChatCourtside(){
           <div className="hc-courtside-identity"><span className="hc-courtside-avatar" aria-hidden="true">{initials(peerName(selected))}</span>
             <span><strong>{peerName(selected)}</strong><small>{selected.status==="accepted"?"Secure by connection · player contact":"Contact request"}</small></span></div>
           <div className="hc-courtside-thread-actions">
+            {selected.status==="accepted"&&<button type="button" onClick={()=>markRead(selected.id)}>Mark read</button>}
             <button type="button" aria-pressed={prefs.pinned.includes(selected.id)} onClick={()=>togglePinned(selected.id)}>
               {prefs.pinned.includes(selected.id)?"Unpin":"Pin"} <span aria-hidden="true">★</span></button>
             <button type="button" aria-pressed={prefs.muted.includes(selected.id)} onClick={()=>toggleMuted(selected.id)}>
