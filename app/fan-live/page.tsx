@@ -101,7 +101,7 @@ export default function FanLivePage() {
       candidateIds.length
         ? supabase.from("teams").select("id").in("id",candidateIds).eq("basketball_type",basketballSide==="womens"?"womens":"mens")
         : Promise.resolve({data:[] as {id:string}[]}),
-      basketballSide==="womens" && candidateIds.length
+      (basketballSide==="womens" || Boolean(roomId)) && candidateIds.length
         ? supabase.from("womens_teams").select("id").in("id",candidateIds)
         : Promise.resolve({data:[] as {id:string}[]}),
     ]);
@@ -110,7 +110,8 @@ export default function FanLivePage() {
     // as the home team or the opponent; do not silently drop away-team women's games.
     const staleScheduledCutoff=Date.now()-4*60*60_000;
     const next=rawGames.filter(g=>{
-      if(!sideIds.has(g.team_id)&&!sideIds.has(g.opponent_team_id||""))return false;
+      // Deep links must open their original game even when the viewer last browsed the opposite basketball side.
+      if(!sideIds.has(g.team_id)&&!sideIds.has(g.opponent_team_id||"")&&g.id!==roomId)return false;
       // A scheduled fixture several hours past tip-off is not evidence of a live game.
       // Hide it until the provider confirms the result; never fabricate a final score.
       if(g.status==="scheduled"&&g.scheduled_at){
@@ -125,7 +126,7 @@ export default function FanLivePage() {
     const ids=Array.from(new Set(next.flatMap(g=>[g.team_id,g.opponent_team_id].filter((x):x is string=>Boolean(x)))));
     const [{data:teamRows},{data:womensTeamRows}]=await Promise.all([
       ids.length?supabase.from("teams").select("id,name,logo_url,logo_bg").in("id",ids):Promise.resolve({data:[] as Team[]}),
-      basketballSide==="womens" && ids.length?supabase.from("womens_teams").select("id,name,logo_url,logo_bg").in("id",ids):Promise.resolve({data:[] as Team[]}),
+      (basketballSide==="womens" || Boolean(roomId)) && ids.length?supabase.from("womens_teams").select("id,name,logo_url,logo_bg").in("id",ids):Promise.resolve({data:[] as Team[]}),
     ]);
     setTeams(Object.fromEntries([...(teamRows||[]),...(womensTeamRows||[])].map((t:Team)=>[t.id,t])));
     // A room URL must resolve to that exact game; never fall back to a different match.
