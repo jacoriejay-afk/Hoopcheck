@@ -310,7 +310,7 @@ export default function LiveGamesPage() {
         {presentation.isUnverified && <p className="hc-live-card__muted">Last reported score · Result/status not verified</p>}
         {isUpcoming && availability.opensAt && <p className="hc-live-card__muted">{availability.minutesUntilOpen && availability.minutesUntilOpen > 0 ? `Chat opens in ${availability.minutesUntilOpen} min` : "Chat open"} · {formatViewerLocalTime(availability.opensAt.toISOString(), { weekday: undefined })}</p>}
         <div className="hc-live-card__actions">
-          {canJoin && <Link href={`/fan-live/room/${encodeURIComponent(game.id)}`} className="btn hc-live-join">{joinedGameIds.has(game.id) ? "IN CHAT ✓" : "JOIN CHAT"} <span aria-hidden="true">→</span></Link>}
+          <Link href={`/fan-live/room/${encodeURIComponent(game.id)}`} className={canJoin?"btn hc-live-join":"hc-live-room-view"} aria-label={(canJoin?"Join":"View")+" game chat for "+(home?.name||"Home")+" versus "+(away?.name||game.opponent_name)}>{canJoin?(joinedGameIds.has(game.id)?"IN CHAT ✓":"JOIN CHAT"):"VIEW ROOM"} <span aria-hidden="true">→</span></Link>
           {isUpcoming && <button type="button" className={`hc-remind-button ${reminders.includes(game.id) ? "is-set" : ""}`} disabled={reminding === game.id} onClick={() => void toggleReminder(game.id)}>
             <HoopIcon name="bell" size={16} /> {reminding === game.id ? "Saving…" : reminders.includes(game.id) ? "REMINDER SET" : "REMIND ME"}
           </button>}

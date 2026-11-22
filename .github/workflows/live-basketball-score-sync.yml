@@ -5,7 +5,9 @@ on:
   schedule:
     # Four runs per hour = 96 scheduled API calls per day, leaving four calls
     # of headroom under the free tier's 100-request daily limit.
-    - cron: "*/15 * * * *"
+    # Avoid the common top-of-hour / round-quarter GitHub Actions congestion;
+    # schedules can still be delayed or dropped and are not per-second live scores.
+    - cron: "7,22,37,52 * * * *"
 
 permissions:
   contents: read
