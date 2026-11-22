@@ -35,6 +35,8 @@ export default function AccountScreen() {
         <Button secondary onPress={() => router.push("/membership")}>Membership and restore purchases</Button>
         <Button secondary onPress={retry}>Refresh account</Button>
         <Button secondary onPress={() => router.push("/account/edit")}>Edit profile</Button>
+        <Button secondary onPress={() => router.push("/messages")}>HoopChat · messages and requests</Button>
+        <Button secondary onPress={() => router.push("/notifications")}>Basketball alerts</Button>
         {account.user.accountType === "player" ? <Button secondary onPress={() => router.push({ pathname: "/players/[id]", params: { id: account.user.id } })}>View public player profile</Button> : null}
         <Pressable accessibilityRole="link" onPress={() => router.push({ pathname: "/web", params: { path: "/account" } })} style={{ minHeight: 48, justifyContent: "center" }}><Text style={{ color: theme.accent }}>Edit profile and manage account on HoopCheck</Text></Pressable>
       </> : <View style={{ gap: 12 }}><Text accessibilityRole="alert" style={{ color: theme.foreground }}>{error}</Text><Button secondary onPress={retry}>Try again</Button></View>}

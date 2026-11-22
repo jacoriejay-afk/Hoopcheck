@@ -1,5 +1,6 @@
 import { LeagueClubs } from "../../components/EntityCompetition";
 import { EntityHero } from "../../components/EntityHero";
+import { DirectoryCrest } from "../../components/DirectoryIdentity";
 import { GlassCard, Button } from "../../src/primitives";
 import { useCachedRead, useNetwork } from "../../src/native/network";
 import { OfflineBanner } from "../../components/OfflineBanner";
@@ -12,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../../src/lib/supabase";
 
 type ReviewSummary = { id: string; overall_rating: number | null; title: string | null; body: string | null; created_at: string; player_season: string | null; is_anonymous: boolean };
-type League = { id: string; name: string; country: string | null; level: string | null; season: string | null; website: string | null };
+type League = { id: string; name: string; country: string | null; level: string | null; season: string | null; website: string | null; logo_url: string | null };
 function safeWebsite(value: string | null) { if (!value) return null; try { const url = new URL(value.startsWith("http") ? value : `https://${value}`); return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : null; } catch { return null; } }
 
 export default function LeagueDetailScreen() {
@@ -58,7 +59,7 @@ export default function LeagueDetailScreen() {
     async function load() {
       setLoading(true);
       if (!id) { setError(true); setLoading(false); return; }
-      const { data, error: queryError } = await read(`leagues:profile:${id}`, () => supabase.from("leagues").select("id,name,country,level,season,website").eq("id", id).eq("active", true).eq("basketball_type", "mens").maybeSingle());
+      const { data, error: queryError } = await read(`leagues:profile:${id}`, () => supabase.from("leagues").select("id,name,country,level,season,website,logo_url").eq("id", id).eq("active", true).eq("basketball_type", "mens").maybeSingle());
       if (!alive) return;
       if (queryError || !data) { setError(true); setLeague(null); } else { setError(false); setLeague(data as League); }
       setLoading(false);
@@ -84,6 +85,11 @@ export default function LeagueDetailScreen() {
         ) : (
           <>
             <EntityHero name={league.name} country={league.country} kind="leagues" label="LEAGUE PROFILE" path={`/leagues/${league.id}`} />
+            <View style={{marginTop:12,flexDirection:"row",alignItems:"center",gap:12}}>
+              <DirectoryCrest name={league.name} kind="leagues" logoUrl={league.logo_url} size={70}/>
+              <View style={{flex:1}}><Text style={{color:theme.foreground,fontWeight:"800"}}>{league.logo_url?"League logo URL on record":"League badge placeholder"}</Text>
+                <Text style={{color:theme.muted,fontSize:12}}>Official crest identity and usage rights require verification.</Text></View>
+            </View>
             <GlassCard style={styles.card}>
               <Text style={styles.label}>COMPETITION LEVEL</Text><Text style={styles.value}>{league.level || "Not listed"}</Text>
               <View style={styles.divider} />
