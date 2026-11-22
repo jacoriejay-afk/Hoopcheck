@@ -13,20 +13,21 @@ export const tokens = {
   // Build 9 Premium Courtside 2.0: shared native presentation primitives.
   // Opt-in tokens; existing screens retain their current styles until reviewed.
   courtside: {
-    navigation: { height: 70, radius: 30, iconSize: 22, touchTarget: 44 },
-    card: { radius: 24, compactPadding: 12, featuredPadding: 18 },
-    hero: { radius: 28, minHeight: 192 },
-    sectionGap: 26,
+    navigation: { height: 60, radius: 22, iconSize: 21, touchTarget: 44 },
+    card: { radius: 17, compactPadding: 10, featuredPadding: 12 },
+    hero: { radius: 18, minHeight: 92 },
+    sectionGap: 14,
     court: { background: "#0D1930", end: "#382024", ink: "#FFFFFF", muted: "#E3EAF1", line: "rgba(255,255,255,0.18)", orange: "#FF9855" },
-    typography: { score: 36, hero: 38, eyebrow: 11 },
+    typography: { score: 28, hero: 25, eyebrow: 10 },
   },
   // QR codes require a fixed light optical background in either theme.
   qrSurface: "#FFFFFF",
   roles: { women: "#E84393", coaches: "#2456C8", leagues: "#1E9E50", players: "#6C3FD4", alerts: "#F5B800" },
   type: {
-    display: { fontFamily: "HoopCheckDisplay", fontSize: 48, fontWeight: "400" as const, letterSpacing: -1.68, lineHeight: 49 },
-    title: { fontFamily: "HoopCheckDisplay", fontSize: 32, lineHeight: 36 },
-    section: { fontSize: 17, fontWeight: "700" as const, lineHeight: 22 },
+    ui: { fontFamily: Platform.select({ ios: "AvenirNext-DemiBold", android: "sans-serif-medium", default: "Arial" }) || "System" },
+    display: { fontFamily: "HoopCheckDisplay", fontSize: 34, fontWeight: "400" as const, letterSpacing: -.8, lineHeight: 38 },
+    title: { fontFamily: Platform.select({ ios: "AvenirNext-DemiBold", android: "sans-serif-medium", default: "Arial" }) || "System", fontSize: 24, lineHeight: 29 },
+    section: { fontSize: 15, fontWeight: "700" as const, lineHeight: 20 },
     body: { fontSize: 16, lineHeight: 24 },
     caption: { fontSize: 12, lineHeight: 17 },
     fontFamily: Platform.select({ ios: "System", android: "sans-serif", default: "Arial" }),
