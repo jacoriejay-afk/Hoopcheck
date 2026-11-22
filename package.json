@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && npm run audit:bundle && npm run check:hub-theme-pairing && node scripts/check-apple-certificate-tracing.mjs",
+    "build": "next build && npm run audit:bundle && npm run check:hub-theme-pairing && node scripts/check-apple-certificate-tracing.mjs && npm run check:build9-passport-layout",
     "start": "next start",
     "lint": "eslint .",
     "audit:surfaces": "node scripts/audit-hardcoded-surfaces.mjs",
@@ -17,7 +17,8 @@
     "check:rounded-corners": "node scripts/check-rounded-corners.mjs",
     "test:hoopfeed-rls": "node scripts/test-unified-hoopfeed-rls.mjs",
     "test:stripe-trial": "node scripts/test-stripe-trial-eligibility.mjs",
-    "test:stripe-trial-recovery": "node scripts/test-stripe-trial-recovery.mjs"
+    "test:stripe-trial-recovery": "node scripts/test-stripe-trial-recovery.mjs",
+    "check:build9-passport-layout": "node scripts/check-build9-career-passport-layout.mjs"
   },
   "dependencies": {
     "@apple/app-store-server-library": "3.1.0",
