@@ -12,6 +12,17 @@ import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../src/lib/supabase";
 import { useEntryTheme } from "../src/theme";
 
+type RoleAction = {path: "/account" | "/teams" | "/players" | "/fan-live" | "/messages" | "/feed" | "/leagues" | "/team-hub/groups" | "/hoopgroups";label:string};
+const roleActions: Record<string,{heading:string;description:string;links:RoleAction[]}> = {
+  player: {heading:"Player courtside",description:"Career, teams, conversations",links:[{path:"/account",label:"My profile"},{path:"/teams",label:"Research clubs"},{path:"/messages",label:"HoopChat"},{path:"/fan-live",label:"Live games"}]},
+  fan: {heading:"Fan courtside",description:"Clubs, games and supporter communities",links:[{path:"/fan-live",label:"Live games"},{path:"/team-hub/groups",label:"Team Fan Groups"},{path:"/hoopgroups",label:"HoopGroups"},{path:"/feed",label:"HoopFeed"}]},
+  coach: {heading:"Coach courtside",description:"Players, clubs and professional contacts",links:[{path:"/players",label:"Find players"},{path:"/leagues",label:"Leagues"},{path:"/teams",label:"Clubs"},{path:"/messages",label:"HoopChat"}]},
+  agent: {heading:"Agent courtside",description:"Talent, opportunities and contacts",links:[{path:"/players",label:"Find talent"},{path:"/leagues",label:"Leagues"},{path:"/messages",label:"Contacts"},{path:"/account",label:"My account"}]},
+  scout: {heading:"Scout courtside",description:"Talent and basketball discovery",links:[{path:"/players",label:"Find talent"},{path:"/leagues",label:"Leagues"},{path:"/messages",label:"Contacts"},{path:"/hoopgroups",label:"HoopGroups"}]},
+  manager: {heading:"Team manager courtside",description:"Your club and its supporters",links:[{path:"/teams",label:"Team directory"},{path:"/team-hub/groups",label:"Team Fan Groups"},{path:"/messages",label:"HoopChat"},{path:"/account",label:"My account"}]},
+};
+roleActions.club_admin=roleActions.manager;
+
 const accountLinks = [
   { path: "/about", label: "About HoopCheck" },
   { path: "/account", label: "Account settings" },
@@ -103,6 +114,16 @@ export default function DashboardScreen() {
             </Pressable>
           </GlassSurface>
           <HomeCourtside />
+          {roleActions[accountType] ? <GlassSurface style={{ padding: 12, borderRadius: 17, marginBottom: 12, gap: 8 }}>
+            <Text accessibilityRole="header" style={{ color: theme.foreground, fontFamily: theme.type.ui.fontFamily, fontSize: 17, fontWeight: "800" }}>{roleActions[accountType].heading}</Text>
+            <Text style={{ color: theme.muted, fontSize: 12 }}>{roleActions[accountType].description}</Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7 }}>
+              {roleActions[accountType].links.map(item => <Pressable key={item.path} accessibilityRole="link" onPress={() => router.push(item.path)}
+                style={({ pressed }) => ({ minHeight: 44, justifyContent: "center", paddingHorizontal: 11, borderRadius: 12, borderWidth: 1, borderColor: theme.border, backgroundColor: theme.accentSurface, opacity: pressed ? .72 : 1 })}>
+                <Text style={{ color: theme.foreground, fontFamily: theme.type.ui.fontFamily, fontWeight: "700", fontSize: 12 }}>{item.label}</Text>
+              </Pressable>)}
+            </View>
+          </GlassSurface> : null}
           <SectionHeader>Explore basketball</SectionHeader>
           <View style={styles.directories}><ExploreLinks /></View>
 
