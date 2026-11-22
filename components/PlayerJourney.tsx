@@ -234,7 +234,7 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage, playe
     </div> : !loading && !loadError && <div className="hc-journey-empty"><span>01 / CAREER PASSPORT</span><h3>No career stops added yet</h3><p>Build a timeline of the teams, leagues, countries, seasons, and positions that shaped your career.</p></div>}
     {isOwnProfile && canManage && !loading && !loadError && <PlayerPassportExport playerName={playerName} verifiedPlayer={verifiedPlayer} stops={stops} />}
     {isOwnProfile&&!canManage&&<div className="hc-journey-upgrade"><strong>Premium Players · My Journey</strong><p>Add career stops and create your professional basketball passport. Public sharing is always optional.</p><Link href="/membership" className="btn">Unlock My Journey</Link></div>}
-    {isOwnProfile&&canManage&&<div className="hc-journey-editor">
+    {isOwnProfile&&canManage&&!loading&&!loadError&&<div className="hc-journey-editor">
       <div className="hc-journey-editor__intro">
         <div><strong>Career history & team reviews</strong><p>Find your club, save the season, and review it separately when you're ready. Adding a career stop does not publish a review or verify team affiliation.</p></div>
         <button type="button" className="btn hc-journey-add" aria-expanded={editingStop} aria-controls="career-stop-form" onClick={()=>{setEditingStop(value=>!value);setMessage("");}}>{editingStop?"Close form":"+ Add a career stop"}</button>
