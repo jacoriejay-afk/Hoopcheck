@@ -171,11 +171,17 @@ export default function ReelsViewer() {
 
   async function blockCreator(authorId: string) {
     if (!viewerId || authorId === viewerId) return;
-    const { error } = await supabase.from("user_blocks").upsert(
-      { blocker_id: viewerId, blocked_id: authorId },
-      { onConflict: "blocker_id,blocked_id" },
-    );
-    if (error) { setMessage("Could not block this account. Try again."); return; }
+    // Production user_blocks intentionally allows owner INSERT/SELECT, not UPDATE.
+    const { error } = await supabase.from("user_blocks").insert({ blocker_id: viewerId, blocked_id: authorId });
+    if (error) {
+      if (error.code !== "23505") { setMessage("Could not block this account. Try again."); return; }
+      // A duplicate is success only after an owner-scoped RLS read proves it exists.
+      const { data: existing, error: verifyError } = await supabase.from("user_blocks")
+        .select("blocked_id").eq("blocker_id", viewerId).eq("blocked_id", authorId).maybeSingle();
+      if (verifyError || existing?.blocked_id !== authorId) {
+        setMessage("Could not confirm this account is blocked. Try again."); return;
+      }
+    }
     setReels(current => current.filter(post => post.author_id !== authorId));
     setMessage("Creator added to your HoopCheck blocked accounts.");
   }
