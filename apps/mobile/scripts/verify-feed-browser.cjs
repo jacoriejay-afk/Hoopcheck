@@ -60,6 +60,12 @@ async function fixture(browser,theme,allowed=true){
         return json([...blocked].map(blocked_id=>({blocked_id})));
       }
       if(table==='feed_post_bookmarks')return json(saved?[{post_id:id(1)}]:[]);
+      if(table==='fan_live_games'){
+        // Optional HomeCourt live score rail: no scheduled games in the
+        // synthetic fixture, without changing LIVE/final authority.
+        assert.equal(method,'GET');
+        return json([]);
+      }
       if(table==='get_public_follow_list'){
         // Read-only public follow rail is optional. No synthetic accounts are
         // following in this fixture, and no private relation rows are exposed.
