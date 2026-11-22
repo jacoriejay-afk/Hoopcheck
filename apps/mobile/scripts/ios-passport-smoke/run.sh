@@ -81,12 +81,18 @@ for theme in light dark; do
     echo "Simulator JS bundle location was not persisted; refusing to run an unconfigured smoke test" >&2
     exit 1
   fi
-  echo "PASSPORT_SMOKE_THEME=$theme: executing real unsigned Passport PDF/share XCTest"
+  # Cold light-mode xcodebuild must compile the real UI-test runner before XCTest
+  # begins. A measured run spent ~14 minutes building and only 18 seconds in
+  # XCTest before its prior 900s budget expired. Keep finite, per-theme budgets
+  # and always require passing assertions in both themes.
+  xctest_timeout_seconds=900
+  if [[ "$theme" == "light" ]]; then xctest_timeout_seconds=1500; fi
+  echo "PASSPORT_SMOKE_THEME=$theme: executing real unsigned Passport PDF/share XCTest (budget=${xctest_timeout_seconds}s)"
   # Cold simulator runs can hang indefinitely inside UIKit/Expo Print.
   # Fail closed with a useful log and xcresult instead of hitting the outer
   # workflow timeout without diagnostic evidence. Never skip either theme.
   if ! python3 scripts/ios-passport-smoke/run-bounded-xctest.py \
-    --log "$artifact_root/$theme-test.log" --timeout-seconds 900 -- \
+    --log "$artifact_root/$theme-test.log" --timeout-seconds "$xctest_timeout_seconds" -- \
     xcodebuild test -workspace ios/HoopCheck.xcworkspace -scheme HoopCheck \
     -configuration Debug -sdk iphonesimulator -destination "id=$simulator_id" \
     -derivedDataPath /tmp/hoopcheck-ios-derived \

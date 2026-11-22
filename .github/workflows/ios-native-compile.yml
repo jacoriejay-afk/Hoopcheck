@@ -17,8 +17,9 @@ concurrency:
 jobs:
   simulator-compile:
     runs-on: macos-15
-    # Cold Xcode compilation plus both Passport simulator runs can exceed forty minutes.
-    timeout-minutes: 55
+    # Allow the cold real UI-test runner to compile before genuine light/dark XCTests.
+    # Both themes still fail closed under their own bounded watchdogs.
+    timeout-minutes: 75
     defaults:
       run:
         working-directory: apps/mobile
