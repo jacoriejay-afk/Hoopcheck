@@ -52,3 +52,7 @@ Exact reviewed Git blobs for `app/reels/ReelsViewer.tsx` and its Phase 5 safety 
 ## Posts/Reels scope transition native-list fix
 
 The expanded native browser fixture reached a blank Reel view after switching `FlatList` from Posts to Reels while its `viewabilityConfig` and `onViewableItemsChanged` callbacks change. React Native VirtualizedList should not have those props changed on the same mounted list. Keyed `FlatList` by the existing owner+tab `scope` so a tab or account switch creates a fresh list instance and the correct 30%/75% viewability rules are established at mount; also clear stale visible IDs on scope changes. No auth, Reel account block, subscription, RLS, or media access check was relaxed. The fixture now logs only sanitized request paths and JS exceptions on failures, not tokens or post bodies. Exact-head native tests remain required.
+
+## Directory hydration acceptance — CI timing fix
+
+Root CI at `bde22fbe` compiled and reached `scripts/check-team-discovery-browser.mjs`; first-frame Coaches grid link count returned zero before the client directory navigation was mounted. `DirectoryLayout` source still declares four public guest categories (Men, Women, Coaches, Leagues) plus conditional player category. The browser test now waits for four DOM links in the mounted grid before asserting **four accessible links**, selected route and dimensions, preserving every existing visual/layout/route assertion. An actually missing link remains a timeout failure. No server route, page visibility, or permissions changed.

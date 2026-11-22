@@ -49,6 +49,11 @@ try {
       await page.locator(`html.theme-${theme}`).waitFor();
       const directoryNav = page.locator('.hc-shared-directory-tile-grid');
       const directoryLinks = directoryNav.getByRole('link');
+      // Navigation is rendered by a hydrated client component. Wait for
+      // the real four accessible guest routes rather than sampling an empty
+      // first frame; never reduce the guest route count or skip geometry checks.
+      await directoryNav.waitFor({ state: 'visible' });
+      await page.waitForFunction(() => document.querySelectorAll('.hc-shared-directory-tile-grid a').length === 4, null, { timeout: 15000 });
       assert.equal(await directoryLinks.count(), 4, 'Guest directory switcher has four accessible routes');
       assert.equal(await directoryNav.locator('[aria-current="page"]').getAttribute('href'), '/coaches');
       // Route hydration can replace the directory grid after the locator resolves.
