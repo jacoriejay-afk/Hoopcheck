@@ -1,9 +1,9 @@
 name: HoopCheck Launch Test (Final Gate)
 on:
   push:
-    branches: [main]
+    branches: [main, "integration/build9-backend-completion-20261121"]
   pull_request:
-    branches: [main, "fix/build9-iphone-repairs"]
+    branches: [main, "fix/build9-iphone-repairs", "integration/build9-backend-completion-20261121"]
   workflow_dispatch:
 jobs:
   launch-test:

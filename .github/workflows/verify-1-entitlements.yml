@@ -2,7 +2,7 @@ name: VERIFY-1 entitlement matrix
 
 on:
   pull_request:
-    branches: [main, "fix/build9-iphone-repairs"]
+    branches: [main, "fix/build9-iphone-repairs", "integration/build9-backend-completion-20261121"]
     paths:
       - "apps/mobile/**"
       - "lib/membership-tier.ts"
@@ -12,6 +12,9 @@ on:
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/verify-1-entitlements.yml"
+  push:
+    branches:
+      - "integration/build9-backend-completion-20261121"
   workflow_dispatch:
 
 jobs:

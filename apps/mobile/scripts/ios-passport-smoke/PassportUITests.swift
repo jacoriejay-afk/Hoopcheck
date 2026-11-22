@@ -25,7 +25,9 @@ final class PassportUITests: XCTestCase {
     guard share.waitForExistence(timeout: 105) else {
       // Check real PDF generation, not the 30s production UX timeout: a cold
       // CI simulator can take longer to start the native Print WebKit process.
-      XCTFail("Real Expo Print did not generate a valid local PDF within the bounded CI window"); return
+      let state = app.staticTexts["passport-smoke-status"].label
+      let detail = app.staticTexts["passport-smoke-detail"].label
+      XCTFail("Real Expo Print did not generate a valid local PDF within the bounded CI window (state=\(state), detail=\(detail))"); return
     }
     let pdf = XCTAttachment(screenshot: app.screenshot())
     pdf.name = "native-pdf-ready"

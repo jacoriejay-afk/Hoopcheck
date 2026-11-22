@@ -7,16 +7,12 @@ on:
       - "lib/auth/**"
       - "lib/billing/**"
       - "lib/membership-tier.ts"
+      - ".github/workflows/mobile-check.yml"
   push:
     branches:
       - "feat/expo-mobile-foundation"
       - "fix/expo-doctor-dependencies"
-    paths:
-      - "apps/mobile/**"
-      - "lib/auth/**"
-      - "lib/billing/**"
-      - "lib/membership-tier.ts"
-      - ".github/workflows/mobile-check.yml"
+      - "integration/build9-backend-completion-20261121"
 
 jobs:
   mobile-typecheck:

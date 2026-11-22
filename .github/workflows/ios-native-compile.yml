@@ -1,5 +1,8 @@
 name: Unsigned iOS Native Verification
 on:
+  push:
+    branches:
+      - "integration/build9-backend-completion-20261121"
   pull_request:
     paths:
       - "apps/mobile/**"
