@@ -20,6 +20,8 @@ for(const [name,fingerprint] of [
   ["get_public_player_profile(uuid)","d9cd27d5b6e426397674d48184530b24"],
   ["search_public_players(text,text,text,boolean,integer)","c2eee54d975b81dfeea139cacc2b8bee"],
   ["search_public_players_page(text,text,text,boolean,integer,integer)","9645a81f5e34e52e95946744ba05c9d1"],
+  ["search_public_players_by_username(text,text,integer,integer)","5970446048bb69b39ebf46c911bea8ac"],
+  ["is_player_country_public(uuid)","1040aa769cb9e51a51c40b5bdd14ee6b"],
   ["get_public_follow_list(text,text,uuid,uuid)","557d85a6abf873e47ffc1f4ae283debd"],
 ]){
   assert.ok(statements.includes("public."+name),"production signature missing for "+name);
