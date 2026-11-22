@@ -1,17 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 
 type PendingPost={id:string;space_id:string;channel_id:string;author_id:string;body:string;created_at:string};
 export default function HoopGroupsOwnerModeration({userId,spaceId,isOwner}:{
   userId:string;spaceId:string;isOwner:boolean;
 }) {
+  const generation=useRef(0);
   const [open,setOpen]=useState(false);
   const [busy,setBusy]=useState(false);
   const [posts,setPosts]=useState<PendingPost[]>([]);
   const [feedback,setFeedback]=useState("");
-  useEffect(()=>{setOpen(false);setPosts([]);setFeedback("");setBusy(false);},[userId,spaceId]);
+  useEffect(()=>{generation.current+=1;setOpen(false);setPosts([]);setFeedback("");setBusy(false);return ()=>{generation.current+=1;};},[userId,spaceId]);
   if(!isOwner||!userId||!spaceId) return null;
   async function token() {
     const {data:{session}}=await supabase.auth.getSession();
@@ -20,6 +21,7 @@ export default function HoopGroupsOwnerModeration({userId,spaceId,isOwner}:{
   }
   async function load() {
     if(busy) return;
+    const revision=generation.current;
     setBusy(true);setFeedback("");
     try {
       const bearer=await token();
@@ -28,12 +30,14 @@ export default function HoopGroupsOwnerModeration({userId,spaceId,isOwner}:{
       });
       if(!response.ok) throw new Error(response.status===503?"Community moderation is not active yet.":"Unable to load pending messages.");
       const data=await response.json();
+      if(revision!==generation.current) return;
       setPosts(((data.posts||[]) as PendingPost[]).filter(post=>post.space_id===spaceId));
-    } catch(error) {setFeedback(error instanceof Error?error.message:"Unable to load messages.");}
-    finally{setBusy(false);}
+    } catch(error) {if(revision===generation.current) setFeedback(error instanceof Error?error.message:"Unable to load messages.");}
+    finally{if(revision===generation.current) setBusy(false);}
   }
   async function decide(postId:string,status:"approved"|"rejected") {
     if(busy) return;
+    const revision=generation.current;
     setBusy(true);setFeedback("");
     try {
       const bearer=await token();
@@ -42,10 +46,11 @@ export default function HoopGroupsOwnerModeration({userId,spaceId,isOwner}:{
         body:JSON.stringify({id:postId,status}),cache:"no-store"
       });
       if(!response.ok) throw new Error(response.status===403?"You cannot moderate this community.":"Unable to save moderation.");
+      if(revision!==generation.current) return;
       setPosts(items=>items.filter(post=>post.id!==postId));
       setFeedback(status==="approved"?"Message approved. It will appear in the channel.":"Message rejected.");
-    } catch(error) {setFeedback(error instanceof Error?error.message:"Unable to moderate.");}
-    finally {setBusy(false);}
+    } catch(error) {if(revision===generation.current) setFeedback(error instanceof Error?error.message:"Unable to moderate.");}
+    finally {if(revision===generation.current) setBusy(false);}
   }
   return <section className="hc-hoopgroups-owner-queue">
     <button type="button" className="hc-hoopgroups-queue-toggle" aria-expanded={open}
