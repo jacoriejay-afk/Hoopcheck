@@ -27,6 +27,8 @@ test("role is server-backed, chat is request-scoped, community channels default 
   assert.doesNotMatch(dashboard,/user_metadata\?\.account_type/);
   assert.match(roles,/useNativeAccount/);
   assert.match(roles,/if \(!workspace\) return null/);
+  assert.match(roles,/My club groups/);
+  assert.doesNotMatch(roles,/label: "Fan Groups"/);
   assert.match(chat,/player_contact_requests/);
   assert.match(chat,/player_contact_messages/);
   assert.match(chat,/selected.status!=="accepted"/);
