@@ -35,7 +35,7 @@ export function courtChoices(_role: string, features: CourtFeatures) {
 
 export function defaultCourtActions(role: string, features: CourtFeatures): CourtActionId[] {
   const allowed = new Set(courtChoices(role, features).map(action => action.id));
-  const preferred = roleDefaults[role] ?? ["teams", "live", "chat", "leagues"];
+  const preferred: readonly CourtActionId[] = roleDefaults[role] ?? ["teams", "live", "chat", "leagues"];
   const ordered = [...preferred, ...COURT_ACTIONS.map(action => action.id)];
   return [...new Set(ordered)].filter(id => allowed.has(id)).slice(0, 4);
 }
