@@ -1,26 +1,23 @@
-# Build 9 late-main website delta — isolated review only (2026-11-22)
+# Build 9 newest-main reconciliation — source review, HOLD (2026-11-22)
 
-Input development baseline `2c3b06e5409cac7edf242e4eb1477d51ff52515d`. Production main reference `7f4c61844058891ce8555c2a6d3719aea2018e99`. Compare anchored to former main baseline `896c6c608ea062e4330ca76ff5580191bcaad3df`.
+Baseline: development `2c3b06e5409cac7edf242e4eb1477d51ff52515d`; newer production website main `7f4c61844058891ce8555c2a6d3719aea2018e99`; source branch starts from exact Build 9 integration commit.
 
-## Reviewed mechanical operation
+## Imported without overwriting protected Build 9 code
 
-Imported thirteen **main-changed / development-unchanged paths** by exact current-main blob SHA. No development-changed file was overwritten. Did **not** import `package.json` because combined dependency/script semantics need a separate review. Did **not** touch production main, database, Stripe, Apple, EAS or protected integration.
+- 13 main-changed/development-unchanged paths imported at original main blob SHAs, including HoopGroups UI, career team picker, role links, editor CSS, test contracts and a **review-only** HoopGroups candidate SQL. Never install this SQL in production without separate authorization.
+- Manually reconciled My Court `HomeCourtSpace.tsx` and its CSS to current main: correct `hc-my-court` class (not legacy decorative `hc-court`), normal-flow mobile editor geometry, role-filtered Team HQ/Agent HQ options and stale choice cleanup. Existing locked HoopFeed fallback and separate local user/role storage are preserved.
+- Account page intentionally starts from protected integration and adds three navigation shortcuts plus `RoleQuickLinks`, retaining `getEffectiveMembership` (never replace with raw `subscriptions`), owner/private gating, review eligibility and the two-factor authentication link.
+- Both Passport mobile spacing and career/review CSS imports are present in app layout.
+- Package build retains the Apple App Store Server dependency and Build 9 Passport checks; adds new HoopGroups control tests as a build gate, with no dependency or lockfile changes.
+- `app/dashboard/page.tsx` deliberately retains integration `getEffectiveMembership` against newer-main raw-subscription query. `app/settings/page.tsx` deliberately retains integration `getOwnProfile` and real `/account/security` links, not newer-main fallback to direct profile reads or incorrect security anchors.
 
-Potentially sensitive code under review: HoopGroups controls and candidate-only SQL (marked never run on production), team-directory / career chooser, My Court CSS and role links. Source copy is not a production feature-activation authorization.
+## Required review
 
-## Shared paths left untouched for actual semantic merge
+- Exact candidate-head root CI, typecheck, Next build, both-theme 320/375/390px account/Court editor/HoopGroups browser tests, role/access fixtures, security/entitlement matrix.
+- Examine the six former shared paths and compare generated CSS selectors with older `hc-court` decorative art. Confirm `getOwnProfile` compatibility remains a **release gate** because production `get_own_profile()` is absent.
+- Revalidate current main and integration before merging; this review branch is not intended to replace newer production changes in main.
+- #836 exact six-head CI integration gate and subsequent merged-branch push checks must pass separately.
 
-- `app/account/page.tsx`
-- `app/dashboard/HomeCourtSpace.tsx`
-- `app/dashboard/home-court-space.css`
-- `app/dashboard/page.tsx`
-- `app/layout.tsx`
-- `app/settings/page.tsx`
+## Explicit release hold
 
-Reconcile each against source changes on both sides. Do not replace integration's native/Stripe/Apple provider-aware entitlement, role-scoped navigation, privacy/RLS, or security boundary.
-
-## Gates
-
-TypeScript / root CI / web build / accessibility & both themes / real browser screenshot comparison / component fixtures. Current development iOS CI-gate PR #836 remains separate and must be verified first. Do not merge this draft before resolving all six shared files and validating newly imported component contracts with the same combined head.
-
-Production rollout PR #755 remains HOLD pending source merge, genuine Auth AAL1/AAL2 requests, production-schema-equivalent PostgreSQL 17 migration and rollback, installed-client compatibility, real iPhone/Apple Sandbox, approved signing/counter.
+Production-schema-equivalent PostgreSQL 17 migration rehearsal/rollback; valid owner/non-owner AAL1/AAL2 signed HTTP; private country/grant review and installed Build7/8 client compatibility; physical iPhone startup/OAuth/Face ID/Passport share; real Apple Sandbox/StoreKit subscriptions, one-time monthly trial, restore/cancel, approved signing identity and build counter. No production Supabase/Stripe mutations, EAS, store submission, TestFlight or release #755 merge.
