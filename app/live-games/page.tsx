@@ -270,7 +270,7 @@ export default function LiveGamesPage() {
     const isLive = variant === "live" && presentation.isVerifiedLive;
     const isUpcoming = variant === "upcoming";
     const isRecent = variant === "recent";
-    const canJoin = availability.chatOpen && !presentation.isUnverified && !["cancelled","canceled","postponed","abandoned"].includes(game.status.toLowerCase());
+    const canJoin = availability.chatOpen && !presentation.isUnverified && !["cancelled","canceled","postponed","abandoned"].includes(game.status.toLowerCase()) && (!presentation.isVerifiedFinal || process.env.NEXT_PUBLIC_LIVE_POSTGAME_CHAT_ENABLED === "true");
     const score = scoreText(game);
     const tip = game.scheduled_at || game.started_at;
     return (
