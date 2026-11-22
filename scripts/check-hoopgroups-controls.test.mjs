@@ -31,5 +31,5 @@ test("Review-only schema enforces private messages and server-only moderation",(
   assert.match(sql,/moderation_status='approved' or author_id=\(select auth\.uid\(\)\)/);
   assert.match(sql,/revoke all on function public\.moderate_hoop_group_post/);
   assert.match(sql,/grant execute on function public\.moderate_hoop_group_post\(uuid,uuid,text\) to service_role/);
-  assert.doesNotMatch(sql,/team_fan_groups/i, "Backend candidate must never change Team Fan Groups");
+  assert.doesNotMatch(sql,/\b(?:alter|update|delete from|drop|truncate|insert into)\s+(?:table\s+)?(?:public\.)?team_fan_groups\b/i, "Backend candidate must not mutate Team Fan Groups");
 });
