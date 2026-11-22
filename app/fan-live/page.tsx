@@ -20,19 +20,14 @@ type Team = { id:string; name:string; logo_url?:string|null; logo_bg?:"transpare
 type ChatMessage = { id:string; body:string; created_at:string; user_id:string; pending?:boolean; failed?:boolean };
 type Profile = { display_name:string|null; avatar_url:string|null };
 
-const finalStatus = (status:string) => ["final","finished","cancelled","canceled","postponed","abandoned"].includes(status.toLowerCase());
 const initials = (name:string) => name.trim().split(/\s+/).filter(Boolean).slice(0,2).map(part=>part[0]).join("").toUpperCase() || "HC";
 const renderTeamLogo = (team:Team|null|undefined) => <TeamLogo name={team?.name||"Team"} logoUrl={team?.logo_url} logoBg={team?.logo_bg} size={44} className="hc-live-team-logo" />;
 
-const roomOpen = (game:Game, now=new Date()) => {
-  if (finalStatus(game.status)) return false;
-  const tip = Date.parse(game.scheduled_at || game.started_at || "");
-  if (!Number.isFinite(tip)) return ["live","in_progress"].includes(game.status.toLowerCase());
-  if (now.getTime() < tip - GAME_CHAT_OPEN_EARLY_MINUTES*60_000) return false;
-  const end = Date.parse(game.ends_at || "");
-  if (Number.isFinite(end)) return now.getTime() < end;
-  return !Number.isFinite(tip) || now.getTime() < tip + 4*60*60_000;
-};
+// Use the same 60-minute pregame / 2-hour verified postgame lifecycle as
+// the main directory. Database RLS remains authoritative for message writes.
+const roomOpen = (game:Game, now=new Date()) => getGameAvailability({
+  status:game.status, scheduledAt:game.scheduled_at, startedAt:game.started_at, endsAt:game.ends_at, now
+}).chatOpen;
 
 export default function FanLivePage() {
   const [games,setGames]=useState<Game[]>([]);
@@ -51,6 +46,9 @@ export default function FanLivePage() {
   const [message,setMessage]=useState("");
   const [gamesLoadError,setGamesLoadError]=useState(false);
   const [presenceCount,setPresenceCount]=useState(0);
+  const [roomPresenceCounts,setRoomPresenceCounts]=useState<Record<string,number>>({});
+  const [gameStream,setGameStream]=useState<"connecting"|"live"|"fallback">("connecting");
+  const [chatStream,setChatStream]=useState<"connecting"|"live"|"fallback">("connecting");
   const [mutedUsers,setMutedUsers]=useState<Set<string>>(new Set());
   const [blockedUsers,setBlockedUsers]=useState<Set<string>>(new Set());
   const [reporting,setReporting]=useState<string|null>(null);
@@ -94,10 +92,21 @@ export default function FanLivePage() {
       ? await fetch("/api/game-predictions?mode=games", { headers: { Authorization: "Bearer " + (session?.access_token || "") }, cache: "no-store" })
           .then(async response => { const json = await response.json(); return { data: json.games || [], error: response.ok ? null : new Error("player-game-list-unavailable") }; })
       : await supabase.from("fan_live_games").select("id,team_id,opponent_team_id,opponent_name,status,home_score,away_score,started_at,ends_at,scheduled_at,league_name,country,period_label").in("status",["scheduled","live","final","cancelled","postponed","abandoned"]).gte("scheduled_at",recentWindowStart).order("scheduled_at",{ascending:true,nullsFirst:false}).limit(500);
+    // Resolve direct links by their exact game ID. A current game can sit
+    // outside a seven-day list or beyond the 500-row discovery limit.
+    // RLS still applies: only eligible viewers can fetch protected game rows.
+    const directRoomResult = roomId && (fanCanChat || playerCanChat || moderatorCanChat)
+      ? await supabase.from("fan_live_games")
+          .select("id,team_id,opponent_team_id,opponent_name,status,home_score,away_score,started_at,ends_at,scheduled_at,league_name,country,period_label")
+          .eq("id",roomId).maybeSingle()
+      : null;
     const {data:controls}=await supabase.from("fan_live_chat_user_controls").select("target_user_id,is_blocked,is_muted").eq("user_id",user.id);
-    setGamesLoadError(Boolean(gameResult.error));
+    setGamesLoadError(Boolean(gameResult.error && !directRoomResult?.data));
     if(gameResult.error) setMessage("Game updates are temporarily unavailable. Reconnecting…");
-    const rawGames=(gameResult.data||[]) as Game[];
+    const rawList=(gameResult.data||[]) as Game[];
+    const rawGames=directRoomResult?.data
+      ? Array.from(new Map([...rawList,directRoomResult.data as Game].map(game=>[game.id,game])).values())
+      : rawList;
     const candidateIds=Array.from(new Set(rawGames.flatMap(g=>[g.team_id,g.opponent_team_id].filter((x):x is string=>Boolean(x)))));
     const [{data:sideRows},{data:womensSideRows}]=await Promise.all([
       candidateIds.length
@@ -116,13 +125,26 @@ export default function FanLivePage() {
       if(!sideIds.has(g.team_id)&&!sideIds.has(g.opponent_team_id||"")&&g.id!==roomId)return false;
       // A scheduled fixture several hours past tip-off is not evidence of a live game.
       // Hide it until the provider confirms the result; never fabricate a final score.
-      if(g.status==="scheduled"&&g.scheduled_at){
+      if(g.id!==roomId && g.status==="scheduled"&&g.scheduled_at){
         const tipoff=Date.parse(g.scheduled_at);
         if(Number.isFinite(tipoff)&&tipoff<staleScheduledCutoff)return false;
       }
       return true;
     });
     setGames(next);
+    if (fanCanChat || playerCanChat || moderatorCanChat) {
+      const freshAfter=new Date(Date.now()-75_000).toISOString();
+      const {data:present}=await supabase.from("fan_live_chat_presence")
+        .select("game_id,user_id").gte("last_seen_at",freshAfter).limit(2000);
+      const counts:Record<string,number>={};
+      const seen=new Set<string>();
+      for(const row of present||[]){
+        const key=row.game_id+":"+row.user_id;
+        if(seen.has(key))continue;
+        seen.add(key);counts[row.game_id]=(counts[row.game_id]||0)+1;
+      }
+      setRoomPresenceCounts(counts);
+    } else setRoomPresenceCounts({});
     setMutedUsers(new Set((controls||[]).filter((x:any)=>x.is_muted).map((x:any)=>x.target_user_id)));
     setBlockedUsers(new Set((controls||[]).filter((x:any)=>x.is_blocked).map((x:any)=>x.target_user_id)));
     const ids=Array.from(new Set(next.flatMap(g=>[g.team_id,g.opponent_team_id].filter((x):x is string=>Boolean(x)))));
