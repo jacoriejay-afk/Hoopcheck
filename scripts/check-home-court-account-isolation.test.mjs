@@ -53,3 +53,22 @@ test("iPhone CSS prioritizes two readable columns and keeps bottom navigation cl
   assert.match(court,/padding-bottom:calc\(155px \+ env\(safe-area-inset-bottom,0px\)\)!important/);
   assert.match(role,/\.hc-home3 \.hc-role-quick-links\.is-compact \.hc-role-quick-links__grid \{display:grid!important;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/);
 });
+
+test("Dashboard Court Space does not inherit illustration aspect ratio or perspective",()=>{
+  const global=read("app/globals.css");
+  const court=read("app/dashboard/home-court-space.css");
+  const role=read("components/role-quick-links.css");
+  assert.match(global,/\.hc-hero-art > \.hc-court \{\s*width: min\(82%, 470px\); aspect-ratio: 1 \/ 1\.04/);
+  assert.doesNotMatch(global,/(?:^|\n)\.hc-court \{\s*width: min\(82%, 470px\)/);
+  assert.doesNotMatch(global,/\n\s*\.hc-court \{ width: 78%; \}/);
+  assert.match(court,/section\.hc-court \{[\s\S]*?aspect-ratio: auto !important;[\s\S]*?transform: none !important;/);
+  assert.match(court,/section\.hc-court \{[\s\S]*?height: auto !important;/);
+  assert.match(global,/\.page-container input:not\(\[type="checkbox"\]\):not\(\[type="radio"\]\)/);
+  for(const css of [court,role]){
+    assert.match(css,/input\[type="radio"\]/);
+    assert.match(css,/input\[type="checkbox"\]/);
+    assert.match(css,/width: 18px !important;/);
+    assert.match(css,/max-width: 18px !important;/);
+  }
+  assert.match(court,/body:has\(main\.hc-home3\)::before/);
+});
