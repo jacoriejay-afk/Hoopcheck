@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { getPlayerProfileCompletion, type PlayerProfileCompletionRecord } from "../lib/player-profile-completion";
 import { supabase } from "../lib/supabase";
+import { readOwnProfile } from "../lib/read-own-profile";
 import { HoopIcon } from "./HoopCheckUI";
 
 export default function PlayerProfileCompletionCard({ profile, onPublished }: { profile: PlayerProfileCompletionRecord; onPublished?: () => void }) {
@@ -13,9 +14,7 @@ export default function PlayerProfileCompletionCard({ profile, onPublished }: { 
 
   const refreshProfile = useCallback(async () => {
     if (!profile.id) return;
-    const { data, error: readError } = await supabase.from("profiles")
-      .select("id,account_type,avatar_url,position,current_team,free_agent,current_country,favorite_leagues,height,bio,hometown,profile_visibility")
-      .eq("id", profile.id).maybeSingle();
+    const { data, error: readError } = await readOwnProfile<PlayerProfileCompletionRecord>(profile.id, "id,account_type,avatar_url,position,current_team,free_agent,current_country,favorite_leagues,height,bio,hometown,profile_visibility");
     if (!readError && data) setCurrentProfile(current => ({ ...current, ...data }));
   }, [profile.id]);
 
@@ -46,10 +45,11 @@ export default function PlayerProfileCompletionCard({ profile, onPublished }: { 
       const { data, error: updateError } = await supabase.from("profiles")
         .update({ profile_visibility: "public" })
         .eq("id", currentProfile.id)
-        .select("id,account_type,avatar_url,position,current_team,free_agent,current_country,favorite_leagues,height,bio,hometown,profile_visibility")
+        .select("id")
         .maybeSingle();
       if (updateError || !data) throw updateError || new Error("Your profile could not be made public. Please try again.");
-      setCurrentProfile(current => ({ ...current, ...data }));
+      setCurrentProfile(current => ({ ...current, profile_visibility: "public" }));
+      void refreshProfile();
       onPublished?.();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Your profile could not be made public. Please try again.");
