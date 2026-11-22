@@ -2,7 +2,7 @@ import { CourtsideBanner } from "../components/CourtsideBanner";
 import { GlassSurface } from "../components/GlassSurface";
 import { Scoreboard } from "../components/Scoreboard";
 import { Skeleton } from "../components/Motion";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { SectionList, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Button, PressableCard } from "../src/primitives";
@@ -44,6 +44,11 @@ export default function LiveGames() {
   const [snapshot, setSnapshot] = useState<{ scope: string; data: Games } | null>(null);
   const [loading, setLoading] = useState(false);
   const [revision, setRevision] = useState(0);
+  const [presenceCounts,setPresenceCounts]=useState<Record<string,number>>({});
+  const [countryFocus,setCountryFocus]=useState("");
+  const [leagueFocus,setLeagueFocus]=useState("");
+  const [allGroups,setAllGroups]=useState(false);
+  const [expandedGroups,setExpandedGroups]=useState<string[]>([]);
   useEffect(() => {
     if (!allowed || !uid || sideChoice?.owner !== uid || !active) { setSnapshot(null); return; }
     let valid = true, inFlight = false;
@@ -54,6 +59,18 @@ export default function LiveGames() {
         if (authError || data.session?.user.id !== uid) throw new Error("Missing session");
         const games = await readLiveGames(supabase, side, account.features.canUseLiveGameHub ? null : { origin, token: data.session.access_token });
         if (valid && viewer.current.scope === scope && viewer.current.allowed) setSnapshot({ scope, data: games });
+        // Presence counts are best-effort, never used to decide whether a game is LIVE.
+        if (account.features.canUseLiveGameHub) {
+          const recent = new Date(Date.now() - 75_000).toISOString();
+          const present = await supabase.from("fan_live_chat_presence")
+            .select("game_id").gt("last_seen_at", recent).limit(1500);
+          if (valid && viewer.current.scope===scope && !present.error) {
+            const ids=new Set(games.games.map(game=>game.id));
+            const counts:Record<string,number>={};
+            for (const row of present.data||[]) if(ids.has(row.game_id)) counts[row.game_id]=(counts[row.game_id]||0)+1;
+            setPresenceCounts(counts);
+          }
+        } else if(valid) setPresenceCounts({});
       } catch { if (valid) { setSnapshot(null); setError("Live games could not load. Try again."); } }
       finally { inFlight = false; if (valid) setLoading(false); }
     };
@@ -73,16 +90,40 @@ export default function LiveGames() {
       const session = await supabase.auth.getSession();
       if (session.error || session.data.session?.user.id !== uid || !viewer.current.allowed) throw new Error("Session changed");
       await saveBasketballSide(supabase, uid, value);
-      if (viewer.current.scope === scope) setSideChoice({ owner: uid, side: value });
+      if (viewer.current.scope === scope) {setSideChoice({ owner: uid, side: value });setCountryFocus("");setLeagueFocus("");setExpandedGroups([]);setAllGroups(false);}
     } catch { if (viewer.current.scope === scope) setError("Basketball preference could not be saved. Try again."); }
     finally { setSavingSide(false); }
   }
+  const discovery = useMemo(() => {
+    const games = data?.games || [];
+    const countries = new Map<string,number>();
+    const leagues = new Map<string,number>();
+    for(const game of games){
+      const country=game.country||"Other countries", league=game.league_name||"Other leagues";
+      countries.set(country,(countries.get(country)||0)+1);
+      leagues.set(league,(leagues.get(league)||0)+1);
+    }
+    const popular=(map:Map<string,number>)=>[...map].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+    return {countries:popular(countries),leagues:popular(leagues)};
+  },[data]);
   const leagueGroups = new Map<string, Games["games"]>();
   for (const item of data?.games ?? []) {
-    const key = [item.league_name || "Around the court", item.country].filter(Boolean).join(" · ");
-    const rows = leagueGroups.get(key) || []; rows.push(item); leagueGroups.set(key, rows);
+    const country=item.country||"Other countries",league=item.league_name||"Other leagues";
+    if(countryFocus && country!==countryFocus) continue;
+    if(leagueFocus && league!==leagueFocus) continue;
+    const key = country + " / " + league;
+    const rows=leagueGroups.get(key)||[];rows.push(item);leagueGroups.set(key,rows);
   }
-  const sections = [...leagueGroups].map(([title, rows]) => ({ title, data: rows }));
+  const rankedGroups=[...leagueGroups].sort(([a,ga],[b,gb])=>{
+    const count=(rows:Games["games"])=>rows.reduce((n,g)=>n+(presenceCounts[g.id]||0),0);
+    const live=(rows:Games["games"])=>rows.filter(g=>g.status==="live").length;
+    return count(gb)-count(ga)||live(gb)-live(ga)||gb.length-ga.length||a.localeCompare(b);
+  });
+  const sections = (allGroups?rankedGroups:rankedGroups.slice(0,4)).map(([title,rows])=>({
+    title, total:rows.length,
+    chatting:rows.reduce((n,g)=>n+(presenceCounts[g.id]||0),0),
+    data:expandedGroups.includes(title)?rows:rows.slice(0,3)
+  }));
   const chatEnabled = active && account.features.canUseLiveGameChat && !offline;
   return <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={100} style={{ flex: 1, backgroundColor: theme.background }}>
     <View style={{ padding: 16, gap: 10 }}>
@@ -95,8 +136,25 @@ export default function LiveGames() {
       <GlassSurface style={{ padding: theme.spacing.lg, borderRadius: 24 }}><Scoreboard game={game} teams={data?.teams || {}} /></GlassSurface>
       <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 20 }}>{(["chat", "predictions"] as const).map(value => <Pressable key={value} accessibilityRole="tab" aria-selected={panel === value} accessibilityState={{ selected: panel === value }} onPress={() => setPanel(value)} style={{ minHeight: 44, justifyContent: "center" }}><Text style={{ color: panel === value ? theme.accent : theme.foreground, fontWeight: "800" }}>{value === "chat" ? "Chat" : "Predictions"}</Text></Pressable>)}</View>
       {panel === "chat" ? <GameChat key={`${uid}:${game.id}`} gameId={game.id} userId={uid!} enabled={chatEnabled} /> : <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 24 }}><GamePrediction key={`${uid}:${game.id}`} game={game} userId={uid!} homeName={data?.teams[game.team_id]?.name || "Home team"} awayName={data?.teams[game.opponent_team_id || ""]?.name || game.opponent_name} active={active} /></ScrollView>}
-    </View> : <SectionList sections={sections} stickySectionHeadersEnabled={false} renderSectionHeader={({ section }) => <Text accessibilityRole="header" style={{ ...theme.type.section, color: theme.foreground, paddingVertical: theme.spacing.md }}>{section.title}</Text>} keyExtractor={item => item.id} contentContainerStyle={{ padding: 16, gap: 12 }} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => setRevision(value => value + 1)} />} renderItem={({ item }) => <PressableCard accessibilityRole="button" onPress={() => router.push({ pathname: "/fan-live", params: { gameId: item.id } })}>
+    </View> : <SectionList sections={sections} stickySectionHeadersEnabled={false} renderSectionHeader={({ section }) => <Text accessibilityRole="header" style={{ ...theme.type.section, color: theme.foreground, paddingVertical: theme.spacing.md }}>{section.title} · {section.chatting} chatting</Text>}
+    renderSectionFooter={({section})=>section.total>3?<Pressable accessibilityRole="button" onPress={()=>setExpandedGroups(current=>current.includes(section.title)?current.filter(item=>item!==section.title):[...current,section.title])}
+      style={{minHeight:44,justifyContent:"center",alignItems:"center",borderWidth:1,borderColor:theme.border,borderRadius:14,marginTop:8,backgroundColor:theme.surface}}>
+      <Text style={{color:theme.accent,fontWeight:"800"}}>{expandedGroups.includes(section.title)?"Show 3 games":`Show all ${section.total} games`}</Text>
+    </Pressable>:null} keyExtractor={item => item.id} contentContainerStyle={{ padding: 16, gap: 12 }} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => setRevision(value => value + 1)} />} renderItem={({ item }) => <PressableCard accessibilityRole="button" onPress={() => router.push({ pathname: "/fan-live", params: { gameId: item.id } })}>
       <Scoreboard game={item} teams={data?.teams || {}} />
-    </PressableCard>} ListHeaderComponent={gameId && !loading ? <Text style={{ color: theme.muted, paddingBottom: 12 }}>The requested game is unavailable in this basketball side. Choose a game or switch sides.</Text> : null} ListEmptyComponent={loading ? <Skeleton /> : <View style={{ gap: 12 }}><Text style={textStyle}>{error || "No current games are available."}</Text><Button secondary onPress={() => setRevision(value => value + 1)}>Refresh games</Button></View>} />}
+    </PressableCard>} ListHeaderComponent={<View style={{gap:10,marginBottom:12}}>
+      <Text style={{fontSize:18,fontWeight:"900",color:theme.foreground}}>Browse by activity</Text>
+      <Text style={{color:theme.muted,fontSize:12}}>Prioritized by members in chat, live status and available fixtures. The provider decides LIVE status.</Text>
+      <Text style={{color:theme.foreground,fontWeight:"750"}}>Popular countries</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:7}}>
+        {[["","All countries"],...discovery.countries.slice(0,6).map(([name,count])=>[name,`${name} (${count})`])].map(([value,label])=><Pressable key={value||"all"} accessibilityRole="button" accessibilityState={{selected:countryFocus===value}} onPress={()=>{setCountryFocus(value);setLeagueFocus("");setExpandedGroups([]);}} style={{paddingHorizontal:12,minHeight:44,justifyContent:"center",borderRadius:14,borderWidth:1,borderColor:countryFocus===value?theme.accent:theme.border,backgroundColor:countryFocus===value?theme.accentSurface:theme.surface}}><Text style={{color:theme.foreground,fontSize:12,fontWeight:"750"}}>{label}</Text></Pressable>)}
+      </ScrollView>
+      <Text style={{color:theme.foreground,fontWeight:"750"}}>Popular leagues</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:7}}>
+        {[["","All leagues"],...discovery.leagues.slice(0,6).map(([name,count])=>[name,`${name} (${count})`])].map(([value,label])=><Pressable key={value||"all"} accessibilityRole="button" accessibilityState={{selected:leagueFocus===value}} onPress={()=>{setLeagueFocus(value);setExpandedGroups([]);}} style={{paddingHorizontal:12,minHeight:44,justifyContent:"center",borderRadius:14,borderWidth:1,borderColor:leagueFocus===value?theme.accent:theme.border,backgroundColor:leagueFocus===value?theme.accentSurface:theme.surface}}><Text style={{color:theme.foreground,fontSize:12,fontWeight:"750"}}>{label}</Text></Pressable>)}
+      </ScrollView>
+      {rankedGroups.length>4?<Button secondary onPress={()=>setAllGroups(value=>!value)}>{allGroups?"Show compact groups":`Show all ${rankedGroups.length} country / league groups`}</Button>:null}
+      {gameId&&!loading?<Text style={{color:theme.muted}}>Requested game unavailable in this basketball side. Choose a game or switch sides.</Text>:null}
+    </View>} ListEmptyComponent={loading ? <Skeleton /> : <View style={{ gap: 12 }}><Text style={textStyle}>{error || "No current games are available."}</Text><Button secondary onPress={() => setRevision(value => value + 1)}>Refresh games</Button></View>} />}
   </KeyboardAvoidingView>;
 }
