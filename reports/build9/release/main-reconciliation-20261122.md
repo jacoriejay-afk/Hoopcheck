@@ -32,3 +32,7 @@ Actual real iOS Passport PDF/share-sheet/cleanup simulator tests passed in both 
 ## CI failure remediation — exact-head follow-up
 
 The imported `Verify scoped Build8 owner profile RPC` step duplicated the existing Build9 `Verify staged owner RPC` and attempted `createdb hoopcheck_build8_owner_test` twice in one workflow, causing the second create to error. Removed only the duplicate import step; the original fail-closed real PostgreSQL test remains intact and unchanged. Root CI must be rerun on this new head; no test is disabled or production database changed.
+
+## Website membership + test reconciliation
+
+The six failing imported test expectations were tied to an older website page. The Build9 source retains provider-isolated Apple/Stripe management, authentication-epoch guards and disabled Fan purchase flow. Adapted the six tests to assert actual source contracts without dropping eligibility, downgrade, cancellation or privacy safeguards. Added an owner billing-support link for manual grants and gated purchase cards behind a verified nonloading account. Public trial-status endpoint is explicitly disabled to mirror the currently hard-off checkout; still checks the canonical production gate, so no environment flag can advertise an unavailable trial. No live Stripe or Supabase setting was changed. Exact-head CI required.

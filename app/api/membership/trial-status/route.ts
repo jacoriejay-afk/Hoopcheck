@@ -10,7 +10,10 @@ export const dynamic = "force-dynamic";
  * exact production gate and every user's eligibility before issuing a trial.
  */
 export function GET() {
-  const available = canEnableProductionSevenDayTrial({
+  // Public trial is still disabled in Build 9 Checkout pending signed sandbox acceptance.
+  // An unrelated environment flag must never claim an unavailable offer is live.
+  const trialActivationApproved = false;
+  const available = trialActivationApproved && canEnableProductionSevenDayTrial({
     vercelEnvironment: process.env.VERCEL_ENV,
     featureEnabled: process.env.HOOPCHECK_SEVEN_DAY_TRIAL_ENABLED,
     siteUrl: process.env.VERCEL_ENV === "production"
