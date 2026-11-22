@@ -31,7 +31,7 @@ function ArenaHeading({title,cta,onPress}: {title:string;cta?:string;onPress?:()
   return <View style={{ flexDirection:"row",alignItems:"center",gap:8,minHeight:30 }}>
     <View style={{width:4,height:24,borderRadius:3,backgroundColor:"#FF7A32"}} />
     <Text accessibilityRole="header" style={{flex:1,minWidth:0,color:theme.foreground,
-      fontFamily:"HoopCheckDisplay",fontSize:21,lineHeight:25}}>{title}</Text>
+      fontFamily:"HoopCheckDisplay",fontSize:21,lineHeight:25,textTransform:"uppercase"}}>{title}</Text>
     {cta&&onPress?<Pressable accessibilityRole="link" onPress={onPress} style={{minHeight:44,
       justifyContent:"center",paddingHorizontal:5}}>
       <Text style={{color:theme.accent,fontSize:12,fontWeight:"700"}}>{cta} →</Text>
@@ -201,7 +201,7 @@ export function HomeCourtside() {
         </View>
       </View>
     </View>:null}
-    <ArenaHeading title="MY TEAMS" cta="See all" onPress={()=>router.push("/teams")}/>
+    <ArenaHeading title="My Teams" cta="See all" onPress={()=>router.push("/teams")}/>
     <View style={{borderRadius:16,backgroundColor:t.elevatedSurface,borderWidth:1,
       borderColor:t.dark?"rgba(74,147,234,.35)":t.border,padding:10,flexDirection:"row",
       alignItems:"center",gap:10,minHeight:66}}>
