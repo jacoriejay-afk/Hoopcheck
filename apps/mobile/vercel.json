@@ -17,7 +17,10 @@
       "design/build9-v3-compact-motion-20261122": false,
       "design/build9-arena-home-20261122": false,
       "integration/build9-arena-ui-20261122": false,
-      "feature/build9-opening-login-motion-20261122": false
+      "feature/build9-opening-login-motion-20261122": false,
+      "integration/build9-opening-login-safe-20261122": false,
+      "integration/build9-combined-review-20261122": false,
+      "integration/build9-native-full-reconcile-20261122": false
     }
   }
 }
