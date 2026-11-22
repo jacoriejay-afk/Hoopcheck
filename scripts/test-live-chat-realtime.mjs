@@ -46,8 +46,8 @@ assert.match(cron,/endingByProviderId\.get\(row\.provider_game_id\) \|\| confirm
 assert.doesNotMatch(cron,/update\(\{\s*status:\s*["']final["']\s*\}\)/,"No fabricated final statuses");
 
 const scoreWorkflow=read(".github/workflows/live-basketball-score-sync.yml");
-assert.match(scoreWorkflow,/cron: "7,22,37,52 \\* \\* \\* \\*"/,"Free-tier score ingest must avoid top-of-hour congestion");
-assert.doesNotMatch(scoreWorkflow,/cron: "[^"]*(?:\\*\\/5|\\*\\/1)[^"]*"/,"Never overspend the free-tier provider request budget");
+assert.ok(scoreWorkflow.includes('- cron: "7,22,37,52 * * * *"'),"Provider sync stays at four off-peak checks per hour");
+assert.ok(!scoreWorkflow.includes("*/5 ") && !scoreWorkflow.includes("*/1 "),"Never overspend the free-tier provider request budget");
 
 const sql=read("supabase/candidates/live_game_chat_realtime_directory_review_only.sql");
 assert.match(sql,/REVIEW ONLY/);
