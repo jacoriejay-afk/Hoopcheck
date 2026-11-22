@@ -45,6 +45,10 @@ assert.match(cron,/finalStatuses.has\(providerStatus\) \? "final"/,"Final status
 assert.match(cron,/endingByProviderId\.get\(row\.provider_game_id\) \|\| confirmedAt/,"Re-polling finals must preserve first confirmed end time");
 assert.doesNotMatch(cron,/update\(\{\s*status:\s*["']final["']\s*\}\)/,"No fabricated final statuses");
 
+const scoreWorkflow=read(".github/workflows/live-basketball-score-sync.yml");
+assert.match(scoreWorkflow,/cron: "7,22,37,52 \\* \\* \\* \\*"/,"Free-tier score ingest must avoid top-of-hour congestion");
+assert.doesNotMatch(scoreWorkflow,/cron: "[^"]*(?:\\*\\/5|\\*\\/1)[^"]*"/,"Never overspend the free-tier provider request budget");
+
 const sql=read("supabase/candidates/live_game_chat_realtime_directory_review_only.sql");
 assert.match(sql,/REVIEW ONLY/);
 assert.match(sql,/current_user_has_live_game_membership\(\)/,"Room history must remain membership gated");
