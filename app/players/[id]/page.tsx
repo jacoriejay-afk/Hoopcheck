@@ -1,6 +1,6 @@
 "use client";
 
-import { getOwnProfile } from "../../../lib/auth/own-profile";
+import { readOwnProfile } from "../../../lib/read-own-profile";
 import { getEffectiveMembership } from "../../../lib/billing/client-membership";
 
 
@@ -69,8 +69,15 @@ export default function PlayerProfilePage() {
         setLoading(false);
       } else if (user?.id === params.id) {
         // Owners can always open their own player profile, even if they keep it private.
-        const { data: own } = await getOwnProfile(supabase, params.id);
-        if (own) {
+        const { data: own } = await readOwnProfile<{
+          id: string; display_name: string | null; avatar_url: string | null;
+          country: string | null; bio: string | null; position: string | null;
+          years_pro: number | null; current_country: string | null;
+          current_country_public: boolean | null; current_team: string | null;
+          player_verified: boolean | null; player_verified_at: string | null;
+          account_type: string;
+        }>(params.id, "id,display_name,avatar_url,country,bio,position,years_pro,current_country,current_country_public,current_team,player_verified,player_verified_at,account_type");
+        if (own?.account_type === "player") {
           setCountryPublic(Boolean(own.current_country_public));
           setPlayer({
             id: own.id,
@@ -81,7 +88,7 @@ export default function PlayerProfilePage() {
             player_position: own.position,
             years_pro: own.years_pro,
             current_country: own.current_country,
-            current_country_public: own.current_country_public,
+            current_country_public: Boolean(own.current_country_public),
             current_team: own.current_team,
             player_verified: Boolean(own.player_verified),
             player_verified_at: own.player_verified_at,
@@ -94,7 +101,7 @@ export default function PlayerProfilePage() {
         setIsOwnProfile(user.id===params.id);
         if (user.id === params.id) {
           const [{ data: ownProfile }, { data: ownSubscription }, { data: count }] = await Promise.all([
-            getOwnProfile(supabase, user.id),
+            readOwnProfile<PlayerProfileCompletionRecord>(user.id, "id,account_type,avatar_url,position,current_team,free_agent,current_country,favorite_leagues,height,bio,hometown,profile_visibility"),
             getEffectiveMembership(user.id),
             supabase.rpc("get_follow_count", { p_target_type: "player", p_target_id: user.id }),
           ]);
