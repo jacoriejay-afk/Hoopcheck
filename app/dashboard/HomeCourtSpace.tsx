@@ -45,6 +45,11 @@ function roleKey(role:string|null|undefined):string {
   if(key==="manager"||key==="team_manager") return "club_admin";
   return Object.prototype.hasOwnProperty.call(presets,key) ? key : "member";
 }
+function actionAllowedForRole(role:string,id:ActionId):boolean {
+  if(id==="team_hq") return role==="club_admin"||role==="admin";
+  if(id==="agent_hq") return role==="agent"||role==="scout"||role==="admin";
+  return true;
+}
 function defaults(role:string):CourtPrefs {
   const preset=presets[role]||presets.member;
   return {name:"My Court",accent:preset.accent,featured:preset.featured,actions:[...preset.actions]};
@@ -93,7 +98,10 @@ export default function HomeCourtSpace({profileId,role,hasFeedAccess,language}:{
     try{
       const stored=window.localStorage.getItem("hc-court-v2:"+identity)
         ||window.localStorage.getItem("hc-court-v1:"+profileId);
-      setPrefs(restore(stored,base));
+      const saved=restore(stored,base);
+      const featured=actionAllowedForRole(activeRole,saved.featured)?saved.featured:base.featured;
+      const actions=saved.actions.filter(id=>actionAllowedForRole(activeRole,id)&&id!==featured);
+      setPrefs({...saved,featured,actions:actions.length?actions:base.actions.filter(id=>id!==featured)});
     }catch{setPrefs(base);}
     setEditing(false);
     setLoadedIdentity(identity);
@@ -131,10 +139,11 @@ export default function HomeCourtSpace({profileId,role,hasFeedAccess,language}:{
       return {...current,featured:id,actions};
     });
   }
-  const selected=prefs.actions.map(id=>ACTION_MAP.get(id)).filter((a):a is Action=>!!a);
+  const roleActions=ACTIONS.filter(action=>actionAllowedForRole(activeRole,action.id));
+  const selected=prefs.actions.filter(id=>actionAllowedForRole(activeRole,id)).map(id=>ACTION_MAP.get(id)).filter((a):a is Action=>!!a);
   const featured=ACTION_MAP.get(prefs.featured)||ACTIONS[0];
   if(!profileId||loadedIdentity!==identity)return null;
-  return <section className="hc-court" style={{"--hc-court-accent":prefs.accent==="blue"?"#2563eb":prefs.accent==="purple"?"#7c3aed":"#f65b21"} as CSSProperties} aria-label="Your personalized court space">
+  return <section className="hc-my-court" style={{"--hc-court-accent":prefs.accent==="blue"?"#2563eb":prefs.accent==="purple"?"#7c3aed":"#f65b21"} as CSSProperties} aria-label="Your personalized court space">
     <header className="hc-court-head">
       <div><span className="hc-court-kicker">{activeRole.replace("_"," ").toUpperCase()} COURT SPACE</span><h2>{prefs.name.trim()||"My Court"}</h2></div>
       <button type="button" onClick={()=>setEditing(value=>!value)} aria-expanded={editing} aria-controls="hc-court-editor">
@@ -153,10 +162,10 @@ export default function HomeCourtSpace({profileId,role,hasFeedAccess,language}:{
       </Link>)}
     </nav>
     {editing&&<div id="hc-court-editor" className="hc-court-editor" aria-label="Customize My Court">
-      <label>Rename your court<input maxLength={36} value={prefs.name} onChange={e=>setPrefs(current=>({...current,name:e.target.value}))} placeholder="My Court"/></label>
+      <label>Rename your court<input type="text" autoComplete="off" maxLength={36} value={prefs.name} onChange={e=>setPrefs(current=>({...current,name:e.target.value}))} placeholder="My Court"/></label>
       <fieldset><legend>Accent color</legend><div className="hc-court-color-choices">{accents.map(accent=><label key={accent}><input type="radio" name={"court-accent-"+identity} value={accent} checked={prefs.accent===accent} onChange={()=>setPrefs(current=>({...current,accent}))}/><span className={"hc-court-swatch hc-court-swatch--"+accent}/>{accent}</label>)}</div></fieldset>
-      <fieldset><legend>Featured shortcut</legend><select aria-label="Featured shortcut" className="hc-court-feature-select" value={prefs.featured} onChange={event=>feature(event.target.value as ActionId)}>{ACTIONS.map(a=><option key={a.id} value={a.id}>{a.label}</option>)}</select></fieldset>
-      <fieldset><legend>Quick actions (choose 1–6, change order)</legend><div className="hc-court-options">{ACTIONS.filter(a=>a.id!==prefs.featured).map(action=>{
+      <fieldset><legend>Featured shortcut</legend><p className="hc-court-help">Choose what opens from the main court card.</p><select aria-label="Featured shortcut" className="hc-court-feature-select" value={prefs.featured} onChange={event=>feature(event.target.value as ActionId)}>{roleActions.map(a=><option key={a.id} value={a.id}>{a.label}</option>)}</select></fieldset>
+      <fieldset><legend>Quick actions (choose 1–6, change order)</legend><div className="hc-court-options">{roleActions.filter(a=>a.id!==prefs.featured).map(action=>{
         const index=prefs.actions.indexOf(action.id),active=index>=0;
         return <div className="hc-court-option" key={action.id}>
           <label><input type="checkbox" checked={active} disabled={active?prefs.actions.length<=1:prefs.actions.length>=6} onChange={()=>toggle(action.id)}/>{action.label}</label>
