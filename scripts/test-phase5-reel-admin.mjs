@@ -100,6 +100,7 @@ test("ordinary users and authorization RPC failures cannot moderate", async () =
 test("moderation requires a valid reported Reel and substantive evidence", async () => {
   for (const payload of [
     { ...requestBody, postId: "not-a-uuid" },
+    { ...requestBody, postId: "11111111-1111-4111-8111-1111-111111111111" }, // invalid extra UUID group
     { ...requestBody, ticketId: "bad" },
     { ...requestBody, reason: "short" },
     { ...requestBody, reason: "a".repeat(1001) },
