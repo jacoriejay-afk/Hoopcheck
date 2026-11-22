@@ -21,6 +21,7 @@ import "../hoopfeed-shared.css";
 import "./feed-camera-picker.css";
 import "./feed-compact-hero.css";
 import "./feed-pull-refresh.css";
+import "./feed-light-mode-fix.css";
 
 type MiniProfile = { display_name: string | null; avatar_url: string | null; account_type?: string | null; current_team?: string | null };
 type Post = TaggedPost & { entity?: EntityTag; post_location?: string | null; id:string; shared_post_id?:string|null; shared_post?:{author_id:string;profiles?:{display_name:string|null}|null}|null; body:string; image_url:string|null; image_urls?:string[]|null; video_url?:string|null; post_kind?:string|null; poll_options?:string[]|null; topic_tag?:TopicTag|null; game_day_team?:string|null; game_day_opponent?:string|null; game_day_score_for?:number|null; game_day_score_against?:number|null; created_at:string; expires_at:string|null; author_id:string; ageLabel?:string; profiles?:MiniProfile|null };
@@ -503,7 +504,7 @@ export default function Feed(){
         {(["Top", "Latest"] as const).map(item => <button key={item} type="button" aria-pressed={sort === item} onClick={() => chooseSort(item)}>{item}</button>)}
       </div>
     </div>
-    <div className="hf5-type-row hc-liquid-glass-filter" role="group" aria-label="Filter HoopFeed by post type">{TYPE_FILTERS.map(t=><button type="button" key={t} className={"hf5-type-chip"+(typeFilter===t?" is-active":"")} aria-pressed={typeFilter===t} onClick={()=>{setTypeFilter(t);setVisibleLimit(30);}}>{t}</button>)}</div>
+    <div className="hf5-type-row hc-liquid-glass-filter" role="group" aria-label="Filter HoopFeed by post type">{TYPE_FILTERS.map(t=><button type="button" key={t} className={"hf5-type-chip"+(typeFilter===t?" is-active":"")} aria-pressed={typeFilter===t} onClick={()=>{setTypeFilter(t);setVisibleLimit(30);}}>{t}</button>)}{process.env.NEXT_PUBLIC_HOOPCHECK_REELS_ENABLED === "true" && <Link href="/reels" className="hf5-type-chip hc-feed-reels-tab" aria-label="Watch HoopFeed Reels">▶ Reels</Link>}</div>
 
     {!composerExpanded && <button type="button" className="hc-feed-slim-composer" onClick={() => setComposerExpanded(true)} aria-controls="hc-feed-composer-fields">
       <span className="hc-feed-composer__avatar" aria-hidden="true">{profile?.avatar_url ? <img src={profile.avatar_url} alt="" /> : "HC"}</span>
