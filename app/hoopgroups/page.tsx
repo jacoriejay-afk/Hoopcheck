@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import "./hoopgroups.css";
@@ -32,12 +32,23 @@ export default function HoopGroupsPage() {
   const [feedback, setFeedback] = useState("");
   const [ready, setReady] = useState(false);
   const [backendReady, setBackendReady] = useState(false);
+  const [sessionRevision, setSessionRevision] = useState(0);
+  const loadGeneration = useRef(0);
+  const channelRef = useRef("");
 
   const load = useCallback(async () => {
+    // A session transition invalidates every outstanding account-specific read.
+    const generation = ++loadGeneration.current;
+    setReady(false); setBackendReady(false); setBusy(false);
+    setUserId(""); setAccountRole(""); setSpaces([]); setChannels([]);
+    setMemberships([]); setSpaceId(""); setChannelId(""); setPosts([]);
+    setDraft(""); setFeedback("");
     const { data: { user } } = await supabase.auth.getUser();
+    if (generation !== loadGeneration.current) return;
     if (!user) { setReady(true); return; }
     setUserId(user.id);
     const { data: profile } = await supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle();
+    if (generation !== loadGeneration.current) return;
     setAccountRole(profile?.account_type || "");
     if (!enabled) { setReady(true); return; }
     const [spaceResult, channelResult, memberResult] = await Promise.all([
@@ -45,6 +56,7 @@ export default function HoopGroupsPage() {
       supabase.from("hoop_group_channels").select("id,space_id,slug,name,sort_index").order("sort_index"),
       supabase.from("hoop_group_members").select("space_id").eq("user_id", user.id),
     ]);
+    if (generation !== loadGeneration.current) return;
     if (spaceResult.error || channelResult.error || memberResult.error) {
       setFeedback("HoopGroups channels are not available. The separate community backend has not been approved for release.");
       setReady(true); return;
@@ -54,9 +66,27 @@ export default function HoopGroupsPage() {
     setChannels((channelResult.data || []) as Channel[]);
     setMemberships((memberResult.data || []).map(item => item.space_id));
     setReady(true);
-  }, []);
+  }, [sessionRevision]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const generation = loadGeneration.current + 1;
+    void load().catch(() => {
+      if (generation === loadGeneration.current) { setReady(true); setBackendReady(false); }
+    });
+    return () => { loadGeneration.current += 1; };
+  }, [load]);
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+      // Never await a Supabase request inside the auth callback.
+      loadGeneration.current += 1;
+      setReady(false); setBackendReady(false); setUserId(""); setPosts([]);
+      setMemberships([]); setDraft(""); setAccountRole(""); setSpaces([]); setChannels([]);
+      setSpaceId(""); setChannelId(""); setFeedback(""); setBusy(false);
+      setSessionRevision(value => value + 1);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   const ordered = useMemo(() => [...spaces].sort((a,b) =>
     Number(b.category === accountRole || accountRole === "scout" && b.category === "agents") -
@@ -66,6 +96,7 @@ export default function HoopGroupsPage() {
   const availableChannels = channels.filter(item => item.space_id === selected?.id);
   const channel = availableChannels.find(item => item.id === channelId) || availableChannels[0] || null;
   const joined = Boolean(selected && memberships.includes(selected.id));
+  useEffect(() => { channelRef.current = channel?.id || ""; }, [channel?.id]);
 
   useEffect(() => {
     if (!enabled || !backendReady || !channel?.id || !joined) { setPosts([]); return; }
@@ -79,17 +110,21 @@ export default function HoopGroupsPage() {
 
   async function join() {
     if (!selected || !userId || busy || !backendReady) return;
+    const generation = loadGeneration.current;
     setBusy(true);setFeedback("");
     const { error } = await supabase.from("hoop_group_members").insert({ space_id: selected.id, user_id: userId });
+    if (generation !== loadGeneration.current) return;
     if (error) setFeedback("Unable to join this community.");
     else setMemberships(items => [...new Set([...items, selected.id])]);
     setBusy(false);
   }
   async function leave() {
     if (!selected || !userId || busy || !joined) return;
+    const generation = loadGeneration.current;
     setBusy(true); setFeedback("");
     const { error } = await supabase.from("hoop_group_members")
       .delete().eq("space_id",selected.id).eq("user_id",userId);
+    if (generation !== loadGeneration.current) return;
     if (error) setFeedback("Could not leave this community. Please try again.");
     else {
       setMemberships(items=>items.filter(id=>id!==selected.id));
@@ -99,38 +134,48 @@ export default function HoopGroupsPage() {
   }
   async function refresh() {
     if (!channel || !joined || busy || !backendReady) return;
+    const generation = loadGeneration.current;
     setBusy(true); setFeedback("");
     const activeChannel=channel.id;
     const {data,error}=await supabase.from("hoop_group_posts")
       .select("id,author_id,body,moderation_status,created_at")
       .eq("channel_id",activeChannel).order("created_at",{ascending:false}).limit(100);
+    if (generation !== loadGeneration.current) return;
     if (error) setFeedback("Could not refresh channel messages.");
-    else if (channel.id===activeChannel) setPosts(((data||[]) as Post[]).reverse());
+    else if (channelRef.current===activeChannel) setPosts(((data||[]) as Post[]).reverse());
     setBusy(false);
   }
   async function send() {
     if (!channel || !userId || !joined || !draft.trim() || busy || !backendReady) return;
+    const generation = loadGeneration.current;
+    const activeChannel = channel.id;
     setBusy(true);setFeedback("");
     const { error } = await supabase.from("hoop_group_posts").insert({
-      channel_id:channel.id,author_id:userId,body:draft.trim().slice(0,1200),moderation_status:"pending"
+      channel_id:activeChannel,author_id:userId,body:draft.trim().slice(0,1200),moderation_status:"pending"
     });
+    if (generation !== loadGeneration.current) return;
     if (error) setFeedback("Could not submit message.");
     else {
       setDraft("");setFeedback("Message submitted for moderation. It is visible only to you until approved.");
-      const {data}=await supabase.from("hoop_group_posts").select("id,author_id,body,moderation_status,created_at").eq("channel_id",channel.id).order("created_at",{ascending:false}).limit(100);
-      setPosts(((data||[]) as Post[]).reverse());
+      const {data}=await supabase.from("hoop_group_posts").select("id,author_id,body,moderation_status,created_at").eq("channel_id",activeChannel).order("created_at",{ascending:false}).limit(100);
+      if (generation !== loadGeneration.current) return;
+      if (channelRef.current === activeChannel) setPosts(((data||[]) as Post[]).reverse());
     }
     setBusy(false);
   }
   async function report(post: Post) {
     const reason = window.prompt("Why are you reporting this message? (3–350 characters)")?.trim();
     if (!reason || reason.length < 3 || reason.length > 350 || !userId) return;
+    const generation = loadGeneration.current;
     const {error}=await supabase.from("hoop_group_reports").insert({post_id:post.id,reporter_id:userId,reason});
+    if (generation !== loadGeneration.current) return;
     setFeedback(error ? "Report could not be submitted or was already filed." : "Report submitted for review.");
   }
   async function block(post: Post) {
     if (!userId || post.author_id === userId || !window.confirm("Hide this member's messages from your HoopGroups?")) return;
+    const generation = loadGeneration.current;
     const {error}=await supabase.from("hoop_group_blocks").insert({blocker_id:userId,blocked_id:post.author_id});
+    if (generation !== loadGeneration.current) return;
     if (error) setFeedback("Could not block this member.");
     else setPosts(items=>items.filter(item=>item.author_id!==post.author_id));
   }
