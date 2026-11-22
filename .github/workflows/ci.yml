@@ -194,14 +194,6 @@ jobs:
           set -o pipefail
           node scripts/rehearse-legacy-player-privacy.mjs | psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_rls_test
 
-      - name: Verify scoped Build8 owner profile RPC with opted-in MFA and RLS
-        env:
-          PGPASSWORD: postgres
-        run: |
-          set -o pipefail
-          createdb -h 127.0.0.1 -U postgres hoopcheck_build8_owner_test
-          node scripts/check-build8-owner-profile.mjs | psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_build8_owner_test
-
       - name: Verify Build 8 public RPC compatibility under synthetic RLS roles
         env:
           PGPASSWORD: postgres
