@@ -259,7 +259,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
     </GlassSurface>
     {message || loadError ? <Text accessibilityLiveRegion="polite"
       style={{ color: theme.muted, paddingHorizontal: 18 }}>{loadError || message}</Text> : null}
-    <FlatList keyboardDismissMode="on-drag" style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 12, gap: reels ? 0 : theme.spacing.md }} keyboardShouldPersistTaps="handled" initialNumToRender={reels ? 2 : 4} maxToRenderPerBatch={reels ? 2 : 4} windowSize={reels ? 3 : 5} pagingEnabled={reels} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
+    <FlatList key={reels ? "reels" : "posts"} keyboardDismissMode="on-drag" style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 12, gap: reels ? 0 : theme.spacing.md }} keyboardShouldPersistTaps="handled" initialNumToRender={reels ? 2 : 4} maxToRenderPerBatch={reels ? 2 : 4} windowSize={reels ? 3 : 5} pagingEnabled={reels} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
       ListHeaderComponent={!reels ? <View style={{ marginBottom: theme.spacing.sm, gap: theme.spacing.sm }}><CourtsideBanner eyebrow="HOOPFEED" title="Your basketball community">Stories, perspectives and conversations from around the game.</CourtsideBanner>
         <Pressable accessibilityRole="button" accessibilityLabel="Meet HoopBot welcome guide"
           onPress={()=>router.push("/feed-welcome")}
