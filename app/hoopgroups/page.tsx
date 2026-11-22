@@ -65,7 +65,7 @@ export default function HoopGroupsPage() {
     ]);
     if (generation !== loadGeneration.current) return;
     if (spaceResult.error || channelResult.error || memberResult.error) {
-      setFeedback("HoopGroups channels are not available. The separate community backend has not been approved for release.");
+      setFeedback("HoopGroups could not load. Please check your connection and try again.");
       setReady(true); return;
     }
     setBackendReady(true);
@@ -137,7 +137,7 @@ export default function HoopGroupsPage() {
         .select("id,author_id,body,moderation_status,created_at").eq("channel_id",currentChannel)
         .order("created_at",{ascending:false}).limit(100);
       if(!active||generation!==loadGeneration.current||channelRef.current!==currentChannel) return;
-      if(error) setFeedback("Could not load channel messages.");
+      if(error) setFeedback("Could not load group discussion posts.");
       else setPosts(((data||[]) as Post[]).reverse());
     }
     void readMessages();
@@ -178,7 +178,7 @@ export default function HoopGroupsPage() {
       .select("id,author_id,body,moderation_status,created_at")
       .eq("channel_id",activeChannel).order("created_at",{ascending:false}).limit(100);
     if (generation !== loadGeneration.current) return;
-    if (error) setFeedback("Could not refresh channel messages.");
+    if (error) setFeedback("Could not refresh group discussion posts.");
     else if (channelRef.current===activeChannel) setPosts(((data||[]) as Post[]).reverse());
     setBusy(false);
   }
@@ -191,9 +191,9 @@ export default function HoopGroupsPage() {
       channel_id:activeChannel,author_id:userId,body:draft.trim().slice(0,1200),moderation_status:"pending"
     });
     if (generation !== loadGeneration.current) return;
-    if (error) setFeedback("Could not submit message.");
+    if (error) setFeedback("Could not submit the post.");
     else {
-      setDraft("");setFeedback("Message submitted for moderation. It is visible only to you until approved.");
+      setDraft("");setFeedback("Post submitted for approval. It is visible only to you until approved.");
       const {data}=await supabase.from("hoop_group_posts").select("id,author_id,body,moderation_status,created_at").eq("channel_id",activeChannel).order("created_at",{ascending:false}).limit(100);
       if (generation !== loadGeneration.current) return;
       if (channelRef.current === activeChannel) setPosts(((data||[]) as Post[]).reverse());
@@ -237,7 +237,7 @@ export default function HoopGroupsPage() {
         onChannelCreated={created=>{setChannels(items=>[...items,created]);setChannelId(created.id);}}
         onChannelUpdated={(id,name)=>setChannels(items=>items.map(item=>item.id===id?{...item,name}:item))}/>
       <HoopGroupsOwnerModeration userId={userId} spaceId={selected?.id||""} isOwner={Boolean(selected?.owner_id===userId)}/>
-      {!visibleSpaces.length&&<p role="status" className="hc-hoopgroups-empty">No communities match yet. Choose Explore, change your search, or create a server.</p>}
+      {!visibleSpaces.length&&<p role="status" className="hc-hoopgroups-empty">No groups match. Try another search or create a group.</p>}
       {visibleSpaces.length>0&&<div className="hc-hoopgroups-shell" style={{"--hc-group-accent":GROUP_COLORS[selected?.accent_color||"orange"]||GROUP_COLORS.orange} as CSSProperties}>
       <nav className="hc-hoopgroups-servers" aria-label="Discover and select HoopGroups">{visibleSpaces.map(space =>
         <button key={space.id} type="button" aria-pressed={selected?.id===space.id} onClick={()=>{setSpaceId(space.id);setChannelId("");setFeedback("");}}><strong aria-hidden="true">{GROUP_ICONS[space.icon_key]||"🏀"}</strong><span>{space.name}<small>{space.owner_id===userId?"Your group":memberships.includes(space.id)?"Joined":"Explore group"}</small></span></button>)}</nav>
@@ -249,7 +249,7 @@ export default function HoopGroupsPage() {
         {selected && joined && <button type="button" className="hc-hoopgroups-leave" disabled={busy} onClick={()=>void leave()}>Leave group</button>}
         
       </aside>
-      <section className={"hc-hoopgroups-chat "+(chatPrefs.density==="compact"?"is-compact ":"")+(chatPrefs.style==="plain"?"is-plain ":"")+(chatPrefs.scale==="large"?"is-large":"")} aria-label="Community channel"><header><div className="hc-hoopgroups-channel-title"><strong>{channel?.name || "Discussion"}</strong><small>{joined ? "You're a member" : "Join to read and post"} · moderated channel</small></div><div className="hc-hoopgroups-chat-tools"><HoopGroupsChatSettings userId={userId} spaceId={selected?.id||""} onChange={setChatPrefs}/><button type="button" className="hc-hoopgroups-refresh" onClick={()=>void refresh()} disabled={!joined || !channel || busy}>Refresh messages</button></div></header>
+      <section className={"hc-hoopgroups-chat "+(chatPrefs.density==="compact"?"is-compact ":"")+(chatPrefs.style==="plain"?"is-plain ":"")+(chatPrefs.scale==="large"?"is-large":"")} aria-label="Community channel"><header><div className="hc-hoopgroups-channel-title"><strong>{channel?.name || "Discussion"}</strong><small>{joined ? "You're a member" : "Join to read and post"} · moderated group discussion</small></div><div className="hc-hoopgroups-chat-tools"><HoopGroupsChatSettings userId={userId} spaceId={selected?.id||""} onChange={setChatPrefs}/><button type="button" className="hc-hoopgroups-refresh" onClick={()=>void refresh()} disabled={!joined || !channel || busy}>Refresh messages</button></div></header>
         <div className="hc-hoopgroups-messages" role="log" aria-label="Community discussion" aria-live="polite" aria-relevant="additions text">{joined ? posts.length ? posts.map(post => <article key={post.id}><div className="hc-hoopgroups-post-head"><span className="hc-hoopgroups-post-avatar" aria-hidden="true">{post.author_id===userId?"YOU":post.author_id.slice(0,2).toUpperCase()}</span><div><strong>{post.author_id===userId?"You":"Community member"}</strong><small>{new Date(post.created_at).toLocaleString()}</small></div></div><p>{post.body}</p>{post.moderation_status!=="approved" ? <small>Pending moderation · visible to you</small> : post.author_id!==userId && <div className="actions"><button type="button" onClick={()=>void report(post)}>Report</button><button type="button" onClick={()=>void block(post)}>Block member</button></div>}</article>) : <p>No approved discussion posts yet.</p> : <p>Join this group to see community posts.</p>}</div>
         {feedback && <p role="status">{feedback}</p>}
         {joined && channel && <form className="hc-hoopgroups-compose" onSubmit={event=>{event.preventDefault();void send();}}><label htmlFor="hc-group-post">Post in {selected?.name || "HoopGroups"} · {channel.name}</label><textarea id="hc-group-post" value={draft} maxLength={1200} rows={3} onChange={event=>setDraft(event.target.value)} placeholder="Share a basketball discussion… (review required)" /><button type="submit" className="btn" disabled={busy || !draft.trim()}>Post for approval</button></form>}
