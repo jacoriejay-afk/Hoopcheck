@@ -146,3 +146,8 @@ html body main.hc-live-room .hc-live-room-footnote {font-size:10px;margin-top:13
 @media(prefers-reduced-motion:reduce){
   html body main.hc-live-room .hc-live-reaction-rail button {transition:none}
 }
+
+html body main.hc-live-room.hc-live-room--chat .hc-live-room-predictions {margin:7px 0}
+html body main.hc-live-room.hc-live-room--chat .hc-live-room-predictions>summary {cursor:pointer;min-height:38px;padding:8px 3px;font-size:12px;font-weight:850;color:var(--hc-on-card,var(--ink));list-style-position:inside}
+html body main.hc-live-room.hc-live-room--chat .hc-live-room-predictions>summary::marker {color:var(--hc-orange,#ff642a)}
+html body main.hc-live-room.hc-live-room--chat .hc-live-room-predictions .hc-prediction {margin:0 0 9px}
