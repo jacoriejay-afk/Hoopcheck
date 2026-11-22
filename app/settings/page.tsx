@@ -1,6 +1,6 @@
 "use client";
 
-import { getOwnProfile } from "../../lib/auth/own-profile";
+import { readOwnProfile } from "../../lib/read-own-profile";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -41,7 +41,7 @@ export default function SettingsPage() {
       const user = data.session?.user;
       if (!user) return;
       const [{ data: profile }, { data: prefs }] = await Promise.all([
-        getOwnProfile(supabase, user.id),
+        readOwnProfile<{account_type:string|null;theme_preference:string|null;preferred_language:string|null}>(user.id, "id,account_type,theme_preference,preferred_language"),
         supabase.from("user_preferences").select("notifications_enabled").eq("user_id", user.id).maybeSingle(),
       ]);
       if (!active) return;
