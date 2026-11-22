@@ -38,9 +38,25 @@ state=$(xcrun simctl list devices available --json | python3 -c 'import sys,json
 if [[ "$state" != "Booted" ]]; then xcrun simctl boot "$simulator_id"; fi
 xcrun simctl bootstatus "$simulator_id" -b
 for theme in light dark; do
+  if [[ "$theme" == "dark" ]]; then
+    # Test both themes on real simulator boot sessions. Reusing the warm WebKit
+    # print helper from the light test can stall the dark-mode Expo Print PDF.
+    # Do NOT omit the dark test or treat a timed-out PDF as a pass.
+    xcrun simctl shutdown "$simulator_id"
+    for attempt in $(seq 1 30); do
+      state=$(xcrun simctl list devices available --json | python3 -c 'import sys,json; d=json.load(sys.stdin); print(next(x["state"] for a in d["devices"].values() for x in a if x["udid"]==sys.argv[1]))' "$simulator_id")
+      if [[ "$state" == "Shutdown" ]]; then break; fi
+      sleep 1
+    done
+    if [[ "$state" != "Shutdown" ]]; then echo "Simulator did not shut down before dark Passport test" >&2; exit 1; fi
+    xcrun simctl boot "$simulator_id"
+    xcrun simctl bootstatus "$simulator_id" -b
+  fi
   xcrun simctl ui "$simulator_id" appearance "$theme"
   if ! xcodebuild test -workspace ios/HoopCheck.xcworkspace -scheme HoopCheck -configuration Debug -sdk iphonesimulator -destination "id=$simulator_id" -derivedDataPath /tmp/hoopcheck-ios-derived -resultBundlePath "$artifact_root/$theme.xcresult" -only-testing:PassportSmokeUITests CODE_SIGNING_ALLOWED=NO > "$artifact_root/$theme-test.log" 2>&1; then
     tail -n 140 "$artifact_root/$theme-test.log"
+    echo "=== Tail of synthetic local Metro log (no production auth) ==="
+    tail -n 100 "$artifact_root/metro.log" || true
     if [[ -d "$artifact_root/$theme.xcresult" ]]; then xcrun xcresulttool export attachments --path "$artifact_root/$theme.xcresult" --output-path "$artifact_root/$theme-screenshots" || true; fi
     exit 1
   fi
