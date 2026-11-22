@@ -10,8 +10,6 @@ import { useTheme } from "../../components/ThemeProvider";
 import ThemeToast from "../../components/ThemeToast";
 
 type Theme = "system" | "dark" | "light";
-type TeamOption = { id: string; name: string; country: string | null; league_name: string | null };
-type TeamAffiliation = { id: string; team_id: string; relationship: "current" | "former"; verified: boolean; team?: TeamOption };
 const normalizeTheme = (value: unknown): Theme =>
   value === "dark" || value === "light" || value === "system" ? value : value === "dynamic" ? "dark" : "system";
 
@@ -24,11 +22,6 @@ export default function SettingsPage() {
   const languageChangedByUser = useRef(false);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
-  const [teams, setTeams] = useState<TeamOption[]>([]);
-  const [teamAffiliations, setTeamAffiliations] = useState<TeamAffiliation[]>([]);
-  const [selectedPreviousTeam, setSelectedPreviousTeam] = useState("");
-  const [teamSaving, setTeamSaving] = useState(false);
-  const [teamMessage, setTeamMessage] = useState("");
   const [isPlayer, setIsPlayer] = useState(false);
 
   useEffect(() => {
@@ -47,17 +40,11 @@ export default function SettingsPage() {
     void supabase.auth.getSession().then(async ({ data }) => {
       const user = data.session?.user;
       if (!user) return;
-      const [{ data: profile }, { data: prefs }, { data: teamsData }, { data: affiliationsData }] = await Promise.all([
+      const [{ data: profile }, { data: prefs }] = await Promise.all([
         getOwnProfile(supabase, user.id),
         supabase.from("user_preferences").select("notifications_enabled").eq("user_id", user.id).maybeSingle(),
-        supabase.from("teams").select("id,name,country,league_name").or("basketball_type.eq.mens,source.eq.womens_teams_mirror").eq("active", true).order("name").limit(1000),
-        supabase.from("player_team_affiliations").select("id,team_id,relationship,verified").eq("user_id", user.id),
       ]);
       if (!active) return;
-      const availableTeams = (teamsData ?? []) as TeamOption[];
-      const affiliations = (affiliationsData ?? []) as TeamAffiliation[];
-      setTeams(availableTeams);
-      setTeamAffiliations(affiliations.map((a) => ({ ...a, team: availableTeams.find((team) => team.id === a.team_id) })));
       setIsPlayer(profile?.account_type === "player");
       const cookieHasTheme = document.cookie.split(";").some((item) => item.trim().startsWith("hoopcheck-theme="));
       if (profile?.theme_preference && !localTheme && !cookieHasTheme) setTheme(normalizeTheme(profile.theme_preference));
@@ -69,24 +56,6 @@ export default function SettingsPage() {
     return () => { active = false; };
   }, [setTheme]);
 
-  async function addPreviousTeam() {
-    if (!selectedPreviousTeam) { setTeamMessage(t("chooseTeamFirst")); return; }
-    if (teamAffiliations.some((a) => a.team_id === selectedPreviousTeam)) { setTeamMessage(t("teamAlreadyInHistory")); return; }
-    setTeamSaving(true); setTeamMessage("");
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setTeamMessage(t("signInToUpdateTeamHistory")); return; }
-      const { data, error } = await supabase.from("player_team_affiliations").insert({ user_id: user.id, team_id: selectedPreviousTeam, relationship: "former", verified: false }).select("id,team_id,relationship,verified").single();
-      if (error) throw error;
-      const team = teams.find((item) => item.id === selectedPreviousTeam);
-      if (data) setTeamAffiliations((current) => [...current, { ...data, team }]);
-      setSelectedPreviousTeam("");
-      setTeamMessage(t("previousTeamAdded"));
-    } catch (error) {
-      console.error("Could not add previous team:", error);
-      setTeamMessage(error instanceof Error ? error.message : "Could not add that team. Please try again.");
-    } finally { setTeamSaving(false); }
-  }
 
   async function save(nextTheme = theme, nextNotifications = notifications, nextLanguage = language) {
     setTheme(nextTheme);
@@ -133,13 +102,16 @@ export default function SettingsPage() {
         <div className="eyebrow">{t("controlCenter")}</div>
         <h1>{t("settings")}</h1>
         <p className="muted">{t("settingsIntro")}</p>
-        <nav className="hc-settings-shortcuts" aria-label="Account and settings sections">
-          <Link href="/account">Account & profile</Link>
-          <Link href="/account#account-settings">Security & membership</Link>
+        <nav className="hc-settings-shortcuts hc-settings-organized-nav" aria-label="Account and settings sections">
+          <Link href="/account#account-settings">Profile & account</Link>
+          {isPlayer&&<Link href="/profile#career-passport">Career history</Link>}
+          {isPlayer&&<Link href="/account#team-review-checklist">Team reviews</Link>}
+          <Link href="/membership">Membership</Link>
+          <Link href="/account/security">Security</Link>
+          <Link href="/privacy-center">Privacy</Link>
           <Link href="/notifications">Alerts</Link>
           <Link href="/notifications?tab=messages">Messages</Link>
-          <Link href="/privacy-center">Privacy center</Link>
-          <Link href="/support">Support</Link>
+          <Link href="/support">Help</Link>
         </nav>
         <div className="settings-grid">
           <section className="settings-card">
@@ -173,10 +145,15 @@ export default function SettingsPage() {
             <Link href="/search" className="btn dark">{t("findSomethingToFollow")}</Link>
           </section>
           <section className="settings-card">
-            <span className="card-kicker">{t("motion")}</span>
-            <h2>{t("mobileSmoothInteractions")}</h2>
-            <p className="muted">{t("reducedMotionDescription")}</p>
-            <div className="motion-demo"><span /><span /><span /></div>
+            <span className="card-kicker">ACCOUNT TOOLS</span>
+            <h2>Your HoopCheck workspace</h2>
+            <p className="muted">Keep profile editing, career history and reviews separate from app preferences.</p>
+            <div className="hc-settings-workspace-links">
+              <Link href="/account">Edit profile</Link>
+              {isPlayer&&<Link href="/profile#career-passport">Career Passport</Link>}
+              {isPlayer&&<Link href="/account#team-review-checklist">Review a team</Link>}
+              <Link href="/account/security">Security settings</Link>
+            </div>
           </section>
         </div>
         <ThemeToast className="settings-save" tone={saving ? "info" : "success"}>{saving ? t("saving") : saveMessage || t("saved") + " " + t("otherPreferencesAutoSave")}</ThemeToast>

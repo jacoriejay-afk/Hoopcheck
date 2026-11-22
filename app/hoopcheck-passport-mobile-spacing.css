@@ -130,3 +130,64 @@
   .hc-passport-country-stamp__country {font-size:20px}
   .hc-passport-country-stamp__clubs {font-size:11px}
 }
+
+
+/* Build 9 career history and team-review handoff: compact mobile-first editor. */
+.hc-journey-editor { margin-top:18px; min-width:0; }
+.hc-journey-editor__intro { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; border:1px solid var(--hc-card-border,#d5d5d1); border-radius:14px; background:var(--hc-card-surface,var(--surface)); padding:13px; color:var(--hc-on-card,var(--hc-foreground)); }
+.hc-journey-editor__intro > div { flex:1 1 210px; min-width:0; }
+.hc-journey-editor__intro strong { display:block; font-size:15px; letter-spacing:-.015em; }
+.hc-journey-editor__intro p { margin:4px 0 0; font-size:12px; line-height:1.45; color:var(--hc-muted-text,var(--muted)); }
+.hc-journey-add { flex:0 0 auto; min-height:44px; }
+.hc-journey-feedback { margin:10px 0; padding:10px 12px; border:1px solid var(--hc-card-border,#bdbdbd); border-radius:10px; font-size:12px; color:inherit; overflow-wrap:anywhere; }
+.hc-journey-form { min-width:0; gap:12px; }
+.hc-journey-form .hc-shared-picker { min-width:0; }
+.hc-journey-form .hc-shared-picker-label { color:inherit; font-size:13px; font-weight:800; }
+.hc-journey-form .hc-shared-picker-trigger { min-height:48px; font-size:13px; text-align:left; }
+.hc-journey-selected-team { display:grid; gap:2px; margin:0; padding:11px; border:1px solid #ec9a6f; border-radius:10px; background:rgba(255,120,62,.08); color:inherit; overflow-wrap:anywhere; }
+.hc-journey-selected-team strong { font-size:14px; color:inherit; }
+.hc-journey-selected-team span { font-size:12px; color:inherit; opacity:.8; }
+.hc-journey-manual-link { justify-self:start; min-height:42px; padding:8px 0; border:0; background:transparent; color:#d85b26; text-decoration:underline; text-underline-offset:3px; font-size:12px; font-weight:800; cursor:pointer; }
+.hc-journey-season-fields { display:grid; gap:12px; }
+.hc-journey-season-fields .eyebrow { margin:4px 0 0; font-size:11px; }
+.hc-journey-save { min-height:48px; }
+.hc-journey-save:disabled { opacity:.55; cursor:not-allowed; }
+.hc-journey-review-hint { margin:10px 2px 0; font-size:11px; line-height:1.5; color:var(--hc-muted-text,var(--muted)); }
+.hc-journey-stop__footer .hc-journey-review-link { display:inline-flex; align-items:center; min-height:36px; padding:6px 9px; border:1px solid #d65e2c; border-radius:10px; color:#bd4d1e; font-size:11px; font-weight:850; text-decoration:none; }
+.hc-settings-organized-nav { display:flex; flex-wrap:wrap; gap:8px; }
+.hc-settings-organized-nav a { display:inline-flex; align-items:center; min-height:44px; padding:9px 12px; border-radius:12px; text-decoration:none; font-size:13px; }
+.hc-settings-workspace-links { display:grid; gap:7px; margin-top:10px; }
+.hc-settings-workspace-links a { display:flex; align-items:center; min-height:44px; padding:10px 12px; border:1px solid var(--hc-card-border,var(--border)); border-radius:10px; color:var(--hc-foreground,inherit); text-decoration:none; font-size:13px; font-weight:700; }
+.hc-settings-workspace-links a:focus-visible,
+.hc-settings-organized-nav a:focus-visible,
+.hc-journey-manual-link:focus-visible,
+.hc-journey-stop__footer .hc-journey-review-link:focus-visible { outline:2px solid #ff7a40; outline-offset:2px; }
+.theme-dark .hc-journey-form { background:#1f2433; border-color:#47536b; }
+.theme-dark .hc-journey-form label { color:#f4f5fa; }
+.theme-dark .hc-journey-form input { background:#252b3b; border-color:#677187; color:#fff; }
+.theme-dark .hc-journey-selected-team { background:#352b2d; border-color:#b66a46; color:#fff; }
+.theme-dark .hc-journey-manual-link,
+.theme-dark .hc-journey-stop__footer .hc-journey-review-link { color:#ffb58a; border-color:#a9603c; }
+.theme-dark .hc-journey-public-toggle { background:#252b3b; border-color:#4d5569; }
+.theme-dark .hc-journey-public-toggle strong,.theme-dark .hc-journey-public-toggle small { color:#fff; }
+@media(max-width:767px) {
+  .hc-journey-section { scroll-margin-top:115px; }
+  .hc-journey-editor__intro { align-items:stretch; }
+  .hc-journey-add { width:100%; }
+  .hc-journey-form { padding:13px; }
+  .hc-journey-stop__footer > div { flex-wrap:wrap; }
+  /* Keep the final form controls clear of HoopCheck's floating bottom tabs. */
+  .hc-member-profile-page .hc-journey-editor,
+  .player-profile-page .hc-journey-editor { padding-bottom:calc(100px + env(safe-area-inset-bottom,0px)); }
+  .hc-settings-organized-nav { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:380px) { .hc-settings-organized-nav { grid-template-columns:1fr; } }
+
+
+.hc-journey-review-status { display:inline-flex;align-items:center;min-height:34px;padding:6px 9px;border-radius:10px;border:1px solid #67957d;background:#e9f8ef;color:#185b3c;font-size:11px;font-weight:850; }
+.hc-journey-match-panel { display:grid;gap:9px;margin-top:12px;padding:12px;border:1px solid var(--hc-card-border,#dadada);border-radius:12px;background:var(--hc-card-surface,var(--surface));color:var(--hc-on-card,var(--hc-foreground)); }
+.hc-journey-match-panel p { margin:0;font-size:12px;line-height:1.45; }
+.hc-journey-match-panel button:not(.hc-shared-picker-trigger):not(.hc-shared-picker-row) { justify-self:start;min-height:36px; }
+.theme-dark .hc-journey-review-status { background:#193a2d;border-color:#448d66;color:#baf4d1; }
+
+#team-review-checklist { scroll-margin-top:calc(120px + env(safe-area-inset-top,0px)); }

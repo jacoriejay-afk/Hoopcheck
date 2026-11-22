@@ -138,6 +138,18 @@ export default function AccountPage() {
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [adminRole, setAdminRole] = useState<"admin"|"moderator"|null>(null);
 
+  // A career stop can lead here, but never bypasses the existing verification checklist.
+  useEffect(() => {
+    const teamId = new URLSearchParams(window.location.search).get("reviewTeam");
+    if (teamId && /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(teamId)) setReviewTeamId(teamId);
+  }, []);
+
+  // Account data and its review checklist arrive after the hash navigation.
+  useEffect(() => {
+    if (loading || window.location.hash !== "#team-review-checklist") return;
+    document.getElementById("team-review-checklist")?.scrollIntoView({block:"start"});
+  }, [loading, reviewTeamId]);
+
   useEffect(() => {
     let active = true;
     async function load() {
@@ -459,24 +471,33 @@ export default function AccountPage() {
       {profile.account_type === "player" ? <PlayerProfileCompletionCard key={JSON.stringify(profile)} profile={{ ...profile, id: userId }} onPublished={() => { setSettingsVisibility("public"); setProfile(current => ({ ...current, profile_visibility: "public" })); }} /> : (() => { const completion = calculateProfileCompletion({ ...profile, display_name: displayName, bio, avatar_url: avatarUrl, hometown, nationality, interests, favorite_leagues: favoriteLeagues }); const next = completion.nextMissing; return completion.percentage < 100 && next ? <section className="dashboard-card hc-account-profile-completion" style={{marginTop:12}}><strong>Profile {completion.percentage}% complete</strong><p className="muted">Add your {next.label} next.</p><a className="btn" href={"/account#" + (next.key === "avatar_url" ? "profile-editor-field-avatar_url" : "profile-editor-field-" + next.key)}>{next.key === "avatar_url" ? "Add photo" : "Complete profile"}</a></section> : null; })()}
       {(profile as any).moderation_status === "warned" || (profile as any).moderation_status === "flagged" ? <section className="dashboard-card" style={{marginBottom:16,border:"1px solid var(--orange)"}}><strong>{(profile as any).moderation_status === "warned" ? t("accountWarning") : t("profileFlagged")}</strong><p className="muted">{(profile as any).moderation_note || t("supportGuidance")}</p><Link href="/support" className="btn dark">{t("contactSupport")}</Link></section> : null}
       <section id="account-settings" className="hc-settings" aria-label={t("accountSettings")}>
-        <SettingsGroup title={t("accountSection")}>
+        <SettingsGroup title="Profile & account">
           <SettingsRow icon="user" label={t("editProfile")} value={t("editDetails")} href="#profile-editor" />
-          {profile.account_type === "player" && <SettingsRow icon="user" label="Career Passport" value="View your player passport" href="/profile#career-passport" />}
           <SettingsRow icon="mail" label={t("email")} value={email || t("notSelected")} onClick={changeEmail} />
+        </SettingsGroup>
+        {profile.account_type === "player" && <SettingsGroup title="Career & team reviews">
+          {profile.account_type === "player" && <SettingsRow icon="file" label="Career Passport" value="Add teams, seasons and countries" href="/profile#career-passport" />}
+          <SettingsRow icon="star" label="Team reviews" value="Finish eligibility checklist when ready" href="#team-review-checklist" />
+        </SettingsGroup>}
+        <SettingsGroup title="Security & membership">
           <SettingsRow icon="shield" label="Two-factor authentication" value="Authenticator and recovery" href="/account/security" />
           <SettingsRow icon="lock" label={t("changePassword")} value={t("updatePassword")} onClick={() => { setPasswordMessage(""); setPasswordModal(true); }} />
           <SettingsRow icon="crown" label={t("membershipLabel")} value={subscription?.plan === "premium" ? "Premium" : subscription?.plan === "pro" ? t("pro") : t("freePlan")} href="/membership" />
         </SettingsGroup>
-        <SettingsGroup title={t("preferences")}>
+        <SettingsGroup title="Appearance & language">
           <div className="hc-setting-row"><SettingsGlyph name="moon"/><div className="hc-setting-copy"><strong>{t("darkMode")}</strong><small>{themePreference === "system" ? t("followsDevice") : themePreference === "dark" ? t("on") : t("off")}</small></div><button type="button" role="switch" aria-checked={themePreference === "dark" || (themePreference === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches)} className={"hc-switch "+((themePreference === "dark" || (themePreference === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches)) ? "is-on" : "")} onClick={() => changeTheme((themePreference === "system" ? (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches) : themePreference === "dark") ? "light" : "dark")}><span/></button></div>
           {themePreference !== "system" && <div className="hc-setting-subrow"><button type="button" className="hc-text-button" onClick={() => changeTheme("system")}>{t("useDeviceSetting")}</button></div>}
           <div className="hc-setting-row"><SettingsGlyph name="globe"/><div className="hc-setting-copy"><strong>{t("language")}</strong><small>{t("chooseAppLanguage")}</small></div><select aria-label={t("language")} className="hc-setting-select" value={preferredLanguage} onChange={e=>changeLanguage(e.target.value)}><option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="tr">Türkçe</option><option value="pt">Português</option><option value="it">Italiano</option><option value="el">Ελληνικά</option><option value="ar">العربية</option><option value="ru">Русский</option><option value="az">Azərbaycanca</option><option value="pl">Polski</option><option value="zh">中文</option><option value="ja">日本語</option><option value="sr">Српски</option><option value="fi">Suomi</option><option value="he">עברית</option><option value="lt">Lietuvių</option><option value="uk">Українська</option></select></div>
+        </SettingsGroup>
+        <SettingsGroup title="Notifications & messages">
+          <SettingsRow icon="activity" label="Alerts center" value="Game, team and activity alerts" href="/notifications" />
+          <SettingsRow icon="message" label="Messages" value="Senders and conversations" href="/notifications?tab=messages" />
           <SettingsToggle icon="message" label={t("gameChatAlerts")} checked={notificationPreferences.game_chat_alerts} onChange={v=>changeNotification("game_chat_alerts",v)} />
           <SettingsToggle icon="user-plus" label={t("newFollower")} checked={notificationPreferences.new_follower} onChange={v=>changeNotification("new_follower",v)} />
           <SettingsToggle icon="star" label={t("teamFollowReview")} checked={notificationPreferences.team_reviews} onChange={v=>changeNotification("team_reviews",v)} />
           <SettingsToggle icon="activity" label={t("hoopFeedActivity")} checked={notificationPreferences.hoopfeed_activity} onChange={v=>changeNotification("hoopfeed_activity",v)} />
         </SettingsGroup>
-        <SettingsGroup title={t("privacySection")}>
+        <SettingsGroup title="Privacy & visibility">
           <SettingsToggle icon="map-pin" label={t("showCountryOnFeed")} checked={countryPublic} onChange={changeCountryVisibility} />
           {profile.account_type !== "fan" && <div className="hc-setting-row"><SettingsGlyph name="eye"/><div className="hc-setting-copy"><strong>{t("whoCanSeeProfile")}</strong><small>{settingsVisibility === "public" ? t("public") : t("playersOnly")}</small></div><select aria-label={t("whoCanSeeProfile")} className="hc-setting-select" value={settingsVisibility} onChange={e=>changeVisibility(e.target.value as "public"|"players_only")}><option value="public">{t("public")}</option><option value="players_only">{t("playersOnly")}</option></select></div>}
         </SettingsGroup>

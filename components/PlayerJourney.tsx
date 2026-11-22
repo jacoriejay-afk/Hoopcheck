@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type FormEvent, type CSSProperties } from
 import Link from "next/link";
 import { supabase } from "../lib/supabase";
 import PlayerPassportExport from "./PlayerPassportExport";
+import TeamLeaguePicker from "./TeamLeaguePicker";
 
 type CareerStop = {
   id: string;
@@ -17,7 +18,6 @@ type CareerStop = {
   stop_order: number;
   is_public: boolean;
 };
-type DirectoryTeam = { id: string; name: string; country: string | null; league_name: string | null };
 
 const FLAGS: Record<string,string> = {
   "United States":"🇺🇸",Canada:"🇨🇦",Mexico:"🇲🇽",Spain:"🇪🇸",France:"🇫🇷",Germany:"🇩🇪",Italy:"🇮🇹",
@@ -42,11 +42,15 @@ function normalizePassportCountry(country:string) {
 
 export default function PlayerJourney({ playerId, isOwnProfile, canManage, playerName, verifiedPlayer }: { playerId:string; isOwnProfile:boolean; canManage:boolean; playerName:string; verifiedPlayer:boolean }) {
   const [stops,setStops] = useState<CareerStop[]>([]);
-  const [teams,setTeams] = useState<DirectoryTeam[]>([]);
   const [loading,setLoading] = useState(true);
   const [saving,setSaving] = useState(false);
   const [message,setMessage] = useState("");
   const [teamId,setTeamId] = useState("");
+  const [editingStop,setEditingStop] = useState(false);
+  const [manualTeam,setManualTeam] = useState(false);
+  const [matchingStop,setMatchingStop] = useState<string|null>(null);
+  const [matching,setMatching] = useState(false);
+  const [reviewedTeams,setReviewedTeams] = useState<Record<string,string>>({});
   const [teamName,setTeamName] = useState("");
   const [leagueName,setLeagueName] = useState("");
   const [country,setCountry] = useState("");
@@ -85,26 +89,54 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage, playe
 
   useEffect(() => {
     let active = true;
-    void Promise.all([
-      supabase.from("player_career_stops").select("id,player_id,team_id,team_name,league_name,country,seasons,position,stop_order,is_public").eq("player_id",playerId).order("stop_order",{ascending:true}).order("created_at",{ascending:true}),
-      supabase.from("teams").select("id,name,country,league_name").or("basketball_type.eq.mens,source.eq.womens_teams_mirror").eq("active",true).order("name").limit(500),
-    ]).then(([stopResult,teamResult]) => {
-      if(!active) return;
-      if(!stopResult.error) setStops((stopResult.data||[]) as CareerStop[]);
-      setTeams((teamResult.data||[]) as DirectoryTeam[]);
-      setLoading(false);
-    }).catch(()=>{ if(active) setLoading(false); });
+    void (async () => {
+      try {
+        const {data,error} = await supabase.from("player_career_stops")
+          .select("id,player_id,team_id,team_name,league_name,country,seasons,position,stop_order,is_public")
+          .eq("player_id",playerId).order("stop_order",{ascending:true}).order("created_at",{ascending:true});
+        if(!active) return;
+        if(!error) setStops((data||[]) as CareerStop[]);
+      } finally {
+        if(active) setLoading(false);
+      }
+    })().catch(()=>{if(active) setLoading(false);});
     return ()=>{active=false;};
   },[playerId]);
 
-  function chooseTeam(value:string) {
-    setTeamId(value);
-    const selected = teams.find(team=>team.id===value);
-    if(selected) {
-      setTeamName(selected.name);
-      setLeagueName(selected.league_name||"");
-      if(selected.country) setCountry(selected.country);
-    }
+  useEffect(() => {
+    if(!isOwnProfile) return;
+    let active = true;
+    setReviewedTeams({});
+    void supabase.auth.getUser().then(async ({data:{user}}) => {
+      if(!active || user?.id!==playerId) return;
+      const {data,error} = await supabase.from("reviews").select("team_id,status").eq("author_id",playerId).not("team_id","is",null);
+      if(!active || error) return;
+      setReviewedTeams(Object.fromEntries((data||[]).filter(row=>row.team_id).map(row=>[String(row.team_id),String(row.status||"submitted")])));
+    }).catch(()=>{});
+    return ()=>{active=false;};
+  },[isOwnProfile,playerId]);
+
+  function chooseTeam(item:{id:string;name:string;country:string;league_name:string}) {
+    setTeamId(item.id);
+    setTeamName(item.name);
+    setLeagueName(item.league_name);
+    setCountry(item.country);
+    if(item.id) setManualTeam(false);
+  }
+
+  async function matchExistingStop(stop:CareerStop,item:{id:string;name:string;country:string;league_name:string}) {
+    if(!canManage || matching || !item.id) return;
+    setMatching(true);setMessage("");
+    try {
+      const {data:{user}} = await supabase.auth.getUser();
+      if(user?.id!==playerId) {setMessage("Sign in as the profile owner to match a team.");return;}
+      const changes = {team_id:item.id,team_name:item.name,country:item.country||stop.country,league_name:item.league_name||stop.league_name};
+      const {error} = await supabase.from("player_career_stops").update(changes).eq("id",stop.id).eq("player_id",playerId);
+      if(error) {setMessage("Team match could not be saved. Try again.");return;}
+      setStops(current=>current.map(row=>row.id===stop.id?{...row,...changes}:row));
+      setMatchingStop(null);
+      setMessage("Team linked to your career stop. Review eligibility is still checked separately.");
+    } finally {setMatching(false);}
   }
 
   async function addStop(event:FormEvent<HTMLFormElement>) {
@@ -123,7 +155,8 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage, playe
     if(error) setMessage(error.message.includes("row-level security") ? "My Journey requires an active Premium Player membership." : "Couldn't save this career stop. Please try again.");
     else {
       setTeamId("");setTeamName("");setLeagueName("");setCountry("");setSeasons("");setPosition("");setIsPublic(false);
-      setMessage("Career stop added.");await load();
+      setManualTeam(false);setEditingStop(false);
+      setMessage("Career stop saved privately. You can review this team later after completing the review checklist.");await load();
     }
     setSaving(false);
   }
@@ -143,7 +176,7 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage, playe
     setMessage("Career stop removed.");
   }
 
-  return <section className="hc-journey-section">
+  return <section id="career-passport" className="hc-journey-section">
     <div className="hc-journey-heading"><div><p className="eyebrow">CAREER PASSPORT</p><h2>My Journey<span>.</span></h2><p>Every stop tells part of the story.</p></div><span className="hc-journey-stamp">PLAYER<br/>HISTORY</span></div>
     {loading ? <p className="muted">Loading career stops…</p> : stamps.length > 0 && <div className="hc-passport-countries" aria-label="Countries played">
       <div className="hc-passport-countries__top"><strong>Countries played</strong><span>{stamps.length} {stamps.length === 1 ? "country" : "countries"}</span></div>
@@ -167,24 +200,53 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage, playe
           <div className="hc-journey-stop__top"><span className="hc-journey-stop__flag" aria-label={stop.country}>{FLAGS[stop.country]||"🌍"}</span><span className="hc-journey-stop__season">{stop.seasons}</span>{stop.is_public&&<span className="hc-journey-public">PUBLIC</span>}</div>
           <div className="hc-journey-stop__team"><span className="hc-journey-stop__crest">{monogram(stop.team_name)}</span><div><h3>{stop.team_name}</h3><p>{stop.league_name||"League not listed"} · {stop.country}</p>{stop.position&&<small>Position · {stop.position}</small>}</div></div>
           <div className="hc-journey-stop__footer">
-            {stop.team_id ? <Link href={`/teams/${stop.team_id}`}>View team profile →</Link> : <span className="muted">Team not linked to directory</span>}
-            {isOwnProfile&&canManage&&<div><button type="button" onClick={()=>void toggleVisibility(stop)}>{stop.is_public?"Make private":"Make public"}</button><button type="button" onClick={()=>void removeStop(stop)}>Remove</button></div>}
+            {stop.team_id ? <Link href={`/teams/${encodeURIComponent(stop.team_id)}`}>Team profile</Link> : <span className="muted">Unlisted team</span>}
+            {isOwnProfile&&<div>{stop.team_id ? reviewedTeams[stop.team_id] ? <span className="hc-journey-review-status">Review {reviewedTeams[stop.team_id] === "approved" ? "published" : reviewedTeams[stop.team_id] === "pending" ? "pending" : "submitted"}</span> : <Link className="hc-journey-review-link" href={`/account?reviewTeam=${encodeURIComponent(stop.team_id)}#team-review-checklist`}>Review when ready →</Link> : canManage&&<button type="button" onClick={()=>setMatchingStop(current=>current===stop.id?null:stop.id)} aria-expanded={matchingStop===stop.id}>Match team</button>}{canManage&&<><button type="button" onClick={()=>void toggleVisibility(stop)}>{stop.is_public?"Make private":"Make public"}</button><button type="button" onClick={()=>void removeStop(stop)}>Remove</button></>}</div>}
           </div>
+          {isOwnProfile&&canManage&&matchingStop===stop.id&&<div className="hc-journey-match-panel">
+            <p>Find the same club in HoopCheck to connect this existing career stop to its review page.</p>
+            <TeamLeaguePicker mode="team" directorySource="teams" includeAllTeams basketballType="mens" placeholder="Search name, league or country" onSelectItem={item=>{void matchExistingStop(stop,item);}} disabled={matching} />
+            <button type="button" onClick={()=>setMatchingStop(null)} disabled={matching}>Cancel</button>
+          </div>}
         </div>
       </article>)}
     </div> : !loading && <div className="hc-journey-empty"><span>01 / CAREER PASSPORT</span><h3>No career stops added yet</h3><p>Build a timeline of the teams, leagues, countries, seasons, and positions that shaped your career.</p></div>}
     {isOwnProfile && canManage && !loading && <PlayerPassportExport playerName={playerName} verifiedPlayer={verifiedPlayer} stops={stops} />}
     {isOwnProfile&&!canManage&&<div className="hc-journey-upgrade"><strong>Premium Players · My Journey</strong><p>Add career stops and create your professional basketball passport. Public sharing is always optional.</p><Link href="/membership" className="btn">Unlock My Journey</Link></div>}
-    {isOwnProfile&&canManage&&<form className="hc-journey-form hc-liquid-glass-journey-form" onSubmit={addStop}>
-      <p className="eyebrow">ADD CAREER STOP</p>
-      <label>Match a HoopCheck team <select value={teamId} onChange={event=>chooseTeam(event.target.value)}><option value="">Not listed / enter team below</option>{teams.map(team=><option key={team.id} value={team.id}>{team.name}{team.country?` · ${team.country}`:""}</option>)}</select></label>
-      <label>Team name <input value={teamName} onChange={event=>setTeamName(event.target.value)} maxLength={160} required placeholder="Team or club name"/></label>
-      <label>League <input value={leagueName} onChange={event=>setLeagueName(event.target.value)} maxLength={160} placeholder="League name"/></label>
-      <div className="hc-journey-form__row"><label>Country <input value={country} onChange={event=>setCountry(event.target.value)} maxLength={100} required placeholder="Country"/></label><label>Seasons <input value={seasons} onChange={event=>setSeasons(event.target.value)} maxLength={80} required placeholder="2024–25"/></label></div>
-      <label>Position <input value={position} onChange={event=>setPosition(event.target.value)} maxLength={60} placeholder="Point guard, wing…"/></label>
-      <label className="hc-journey-public-toggle"><input type="checkbox" checked={isPublic} onChange={event=>setIsPublic(event.target.checked)}/><span><strong>Show this stop publicly</strong><small>Off by default. Only this career stop becomes visible on your public profile.</small></span></label>
-      {message&&<p role="status" className="muted">{message}</p>}
-      <button type="submit" className="btn" disabled={saving}>{saving?"Saving…":"Add Career Stop"}</button>
-    </form>}
+    {isOwnProfile&&canManage&&<div className="hc-journey-editor">
+      <div className="hc-journey-editor__intro">
+        <div><strong>Career history & team reviews</strong><p>Find your club, save the season, and review it separately when you're ready. Adding a career stop does not publish a review or verify team affiliation.</p></div>
+        <button type="button" className="btn hc-journey-add" aria-expanded={editingStop} aria-controls="career-stop-form" onClick={()=>{setEditingStop(value=>!value);setMessage("");}}>{editingStop?"Close form":"+ Add a career stop"}</button>
+      </div>
+      {message&&<p role="status" className="hc-journey-feedback">{message}</p>}
+      {editingStop&&<form id="career-stop-form" className="hc-journey-form hc-liquid-glass-journey-form" onSubmit={addStop}>
+        <p className="eyebrow">STEP 1 · FIND YOUR TEAM</p>
+        {!manualTeam ? <>
+          <TeamLeaguePicker mode="team" directorySource="teams" includeAllTeams basketballType="mens" label="Search the HoopCheck team directory" placeholder="Search team, country or league" value={teamId} onChange={value=>{if(!value)chooseTeam({id:"",name:"",country:"",league_name:""});}} onSelectItem={chooseTeam} />
+          {teamId&&<p className="hc-journey-selected-team"><strong>{teamName}</strong><span>{[leagueName,country].filter(Boolean).join(" · ") || "Team selected"}</span></p>}
+          <button type="button" className="hc-journey-manual-link" onClick={()=>{setManualTeam(true);chooseTeam({id:"",name:"",country:"",league_name:""});}}>Can't find your team? Enter it manually</button>
+        </> : <>
+          <button type="button" className="hc-journey-manual-link" onClick={()=>{setManualTeam(false);chooseTeam({id:"",name:"",country:"",league_name:""});}}>← Back to team search</button>
+          <label>Team name <input value={teamName} onChange={event=>setTeamName(event.target.value)} maxLength={160} required placeholder="Team or club name"/></label>
+          <label>League <input value={leagueName} onChange={event=>setLeagueName(event.target.value)} maxLength={160} placeholder="League name"/></label>
+          <label>Country <input value={country} onChange={event=>setCountry(event.target.value)} maxLength={100} required placeholder="Country"/></label>
+        </>}
+        {!manualTeam&&teamId&&(!country||!leagueName) && <div className="hc-journey-form__row">
+          {!country&&<label>Country <input value={country} onChange={event=>setCountry(event.target.value)} maxLength={100} required placeholder="Country"/></label>}
+          {!leagueName&&<label>League (optional) <input value={leagueName} onChange={event=>setLeagueName(event.target.value)} maxLength={160} placeholder="League name"/></label>}
+        </div>}
+        {(!manualTeam||!!teamName)&&<div className="hc-journey-season-fields">
+          <p className="eyebrow">STEP 2 · YOUR SEASON</p>
+          <div className="hc-journey-form__row">
+            <label>Season <input value={seasons} onChange={event=>setSeasons(event.target.value)} maxLength={80} required placeholder="2024–25"/></label>
+            <label>Position (optional) <input value={position} onChange={event=>setPosition(event.target.value)} maxLength={60} placeholder="Guard, forward…"/></label>
+          </div>
+          <label className="hc-journey-public-toggle"><input type="checkbox" checked={isPublic} onChange={event=>setIsPublic(event.target.checked)}/><span><strong>Show this stop publicly</strong><small>Off by default. Career entries are player-reported, not verified reviews.</small></span></label>
+          <button type="submit" className="btn hc-journey-save" disabled={saving||(!manualTeam&&!teamId)}>{saving?"Saving…":"Save career stop"}</button>
+        </div>}
+      </form>}
+      <p className="hc-journey-review-hint">Reviews are optional and separate. A verified player, eligible playing history, and an active review-writing membership are required.</p>
+    </div>}
+
   </section>;
 }
