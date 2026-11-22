@@ -12,17 +12,17 @@ import type { LiveGame, GameTeam } from "../src/native/liveGames";
  * Initial loads, final/scheduled games, missing scores and Reduce Motion stay still.
  * No guessed score, animation timer, subscription or data-status change.
  */
-function ScoreValue({ name, score, live, color, fontSize, fontFamily }: {
-  name: string; score: number | null; live: boolean; color: string; fontSize: number; fontFamily?: string;
+function ScoreValue({ gameId, name, score, live, color, fontSize, fontFamily }: {
+  gameId: string; name: string; score: number | null; live: boolean; color: string; fontSize: number; fontFamily?: string;
 }) {
   const reduced = useMotionSetting();
-  const previous = useRef<number | null | undefined>(undefined);
+  const previous = useRef<{ gameId: string; score: number | null } | null>(null);
   const scale = useSharedValue(1);
   useEffect(() => {
     const last = previous.current;
-    previous.current = score;
+    previous.current = { gameId, score };
     cancelAnimation(scale);
-    if (reduced || !live || last == null || score == null || last === score) {
+    if (reduced || !live || !last || last.gameId !== gameId || last.score == null || score == null || last.score === score) {
       scale.set(1);
       return;
     }
@@ -31,7 +31,7 @@ function ScoreValue({ name, score, live, color, fontSize, fontFamily }: {
       withSpring(1, motion.spring),
     ));
     return () => cancelAnimation(scale);
-  }, [score, live, reduced, scale]);
+  }, [gameId, score, live, reduced, scale]);
   const animated = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
   return <Animated.Text selectable accessibilityLabel={`${name}: ${score == null ? "score not reported" : score}`}
     style={[{ color, fontSize, fontFamily, fontWeight: "700", letterSpacing: -.6, fontVariant: ["tabular-nums"] }, animated]}>
@@ -53,7 +53,7 @@ export function Scoreboard({ game, teams }: { game: LiveGame; teams: Record<stri
     {([{ name: home, score: game.home_score }, { name: away, score: game.away_score }]).map((team, index) => <View key={index} style={{ flexDirection: "row", gap: t.spacing.md, alignItems: "center" }}>
       <EntityArtwork name={team.name} kind="teams" size={36} />
       <Text style={{ flex: 1, minWidth: 0, color: t.foreground, ...t.type.section }}>{team.name}</Text>
-      <ScoreValue name={team.name} score={team.score} live={live} color={t.foreground} fontSize={t.courtside.typography.score} fontFamily={t.type.ui.fontFamily} />
+      <ScoreValue gameId={game.id} name={team.name} score={team.score} live={live} color={t.foreground} fontSize={t.courtside.typography.score} fontFamily={t.type.ui.fontFamily} />
     </View>)}
     {game.home_score == null || game.away_score == null ? <Text style={{ color: t.muted, ...t.type.caption }}>Score not reported</Text> : null}
   </View>;
