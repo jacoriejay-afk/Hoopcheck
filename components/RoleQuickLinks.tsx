@@ -97,7 +97,7 @@ function restore(raw:string|null,role:string):CourtsidePrefs {
   try{
     const value=JSON.parse(raw) as Partial<CourtsidePrefs>;
     const choices=Array.isArray(value.links)
-      ? [...new Set(value.links.filter((href):href is string=>typeof href==="string"&&items.some(item=>item.href===href)))].slice(0,4)
+      ? [...new Set(value.links.map(href=>href==="/notifications?tab=messages"?"/messages":href).filter((href):href is string=>typeof href==="string"&&items.some(item=>item.href===href)))].slice(0,4)
       : standard.links;
     return {
       title:typeof value.title==="string"?value.title.slice(0,34):standard.title,
