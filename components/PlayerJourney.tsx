@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent, type CSSProperties } from "react";
 import Link from "next/link";
 import { supabase } from "../lib/supabase";
 import PlayerPassportExport from "./PlayerPassportExport";
@@ -30,6 +30,16 @@ const FLAGS: Record<string,string> = {
 };
 const monogram = (name:string) => name.split(/\s+/).filter(Boolean).slice(0,2).map(part=>part[0]).join("").toUpperCase() || "HC";
 
+// Only saved career stops produce stamps; never infer them from a player's location or nationality.
+function normalizePassportCountry(country:string) {
+  const clean = country.trim().replace(/\s+/g, " ");
+  const key = clean.toLocaleLowerCase("en");
+  if (key === "turkey" || key === "türkiye") return "Türkiye";
+  if (key === "czech republic" || key === "czechia") return "Czechia";
+  return clean;
+}
+
+
 export default function PlayerJourney({ playerId, isOwnProfile, canManage, playerName, verifiedPlayer }: { playerId:string; isOwnProfile:boolean; canManage:boolean; playerName:string; verifiedPlayer:boolean }) {
   const [stops,setStops] = useState<CareerStop[]>([]);
   const [teams,setTeams] = useState<DirectoryTeam[]>([]);
@@ -43,6 +53,27 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage, playe
   const [seasons,setSeasons] = useState("");
   const [position,setPosition] = useState("");
   const [isPublic,setIsPublic] = useState(false);
+  // Retain the RLS boundary and filter again to prevent public view of private entries.
+  const visibleStops = useMemo(() => isOwnProfile ? stops : stops.filter(stop => stop.is_public), [stops, isOwnProfile]);
+  const stamps = useMemo(() => {
+    const countries = new Map<string,{country:string;teams:string[];seasons:string[];privateCount:number}>();
+    for (const stop of visibleStops) {
+      const country = normalizePassportCountry(stop.country || "");
+      if (!country) continue;
+      const key = country.toLocaleLowerCase("en");
+      let stamp = countries.get(key);
+      if (!stamp) {
+        stamp = {country,teams:[],seasons:[],privateCount:0};
+        countries.set(key,stamp);
+      }
+      const team = stop.team_name?.trim();
+      const season = stop.seasons?.trim();
+      if (team && !stamp.teams.includes(team)) stamp.teams.push(team);
+      if (season && !stamp.seasons.includes(season)) stamp.seasons.push(season);
+      if (!stop.is_public) stamp.privateCount++;
+    }
+    return [...countries.values()];
+  },[visibleStops]);
 
   async function load() {
     const {data,error} = await supabase.from("player_career_stops")
@@ -114,9 +145,24 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage, playe
 
   return <section className="hc-journey-section">
     <div className="hc-journey-heading"><div><p className="eyebrow">CAREER PASSPORT</p><h2>My Journey<span>.</span></h2><p>Every stop tells part of the story.</p></div><span className="hc-journey-stamp">PLAYER<br/>HISTORY</span></div>
-    {loading ? <p className="muted">Loading career stops…</p> : stops.length ? <div className="hc-journey-timeline">
-      {stops.map((stop,index) => <article className="hc-journey-stop" key={stop.id}>
-        <div className="hc-journey-stop__rail"><span className="hc-journey-stop__dot">{String(index+1).padStart(2,"0")}</span>{index<stops.length-1&&<span className="hc-journey-stop__line"/>}</div>
+    {loading ? <p className="muted">Loading career stops…</p> : stamps.length > 0 && <div className="hc-passport-countries" aria-label="Countries played">
+      <div className="hc-passport-countries__top"><strong>Countries played</strong><span>{stamps.length} {stamps.length === 1 ? "country" : "countries"}</span></div>
+      <ul className="hc-passport-stamp-grid" aria-label="Career country stamps">
+        {stamps.map((stamp,index) => <li className="hc-passport-country-stamp" key={stamp.country.toLocaleLowerCase("en")}
+          style={{"--hc-stamp-tilt":index % 2 ? "1deg" : "-1deg"} as CSSProperties}>
+          <span className="hc-passport-country-stamp__top"><span aria-hidden="true">{FLAGS[stamp.country] || "🌍"}</span>
+            <span>HOOPCHECK · CAREER</span></span>
+          <strong className="hc-passport-country-stamp__country">{stamp.country}</strong>
+          <span className="hc-passport-country-stamp__clubs">{stamp.teams.slice(0,2).join(" · ")}{stamp.teams.length > 2 ? ` +${stamp.teams.length - 2} teams` : ""}</span>
+          <span className="hc-passport-country-stamp__bottom"><span>{stamp.seasons.slice(0,2).join(" / ") || "Season not listed"}</span>
+            {isOwnProfile && stamp.privateCount > 0 && <em>Includes private</em>}</span>
+        </li>)}
+      </ul>
+      <p className="hc-passport-countries__note">Career entries are player-reported, not independently verified.{isOwnProfile ? " Private entries are visible only to you." : ""}</p>
+    </div>}
+    {!loading && visibleStops.length > 0 ? <div className="hc-journey-timeline">
+      {visibleStops.map((stop,index) => <article className="hc-journey-stop" key={stop.id}>
+        <div className="hc-journey-stop__rail"><span className="hc-journey-stop__dot">{String(index+1).padStart(2,"0")}</span>{index<visibleStops.length-1&&<span className="hc-journey-stop__line"/>}</div>
         <div className="hc-journey-stop__card">
           <div className="hc-journey-stop__top"><span className="hc-journey-stop__flag" aria-label={stop.country}>{FLAGS[stop.country]||"🌍"}</span><span className="hc-journey-stop__season">{stop.seasons}</span>{stop.is_public&&<span className="hc-journey-public">PUBLIC</span>}</div>
           <div className="hc-journey-stop__team"><span className="hc-journey-stop__crest">{monogram(stop.team_name)}</span><div><h3>{stop.team_name}</h3><p>{stop.league_name||"League not listed"} · {stop.country}</p>{stop.position&&<small>Position · {stop.position}</small>}</div></div>
@@ -126,7 +172,7 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage, playe
           </div>
         </div>
       </article>)}
-    </div> : <div className="hc-journey-empty"><span>01 / CAREER PASSPORT</span><h3>No career stops added yet</h3><p>Build a timeline of the teams, leagues, countries, seasons, and positions that shaped your career.</p></div>}
+    </div> : !loading && <div className="hc-journey-empty"><span>01 / CAREER PASSPORT</span><h3>No career stops added yet</h3><p>Build a timeline of the teams, leagues, countries, seasons, and positions that shaped your career.</p></div>}
     {isOwnProfile && canManage && !loading && <PlayerPassportExport playerName={playerName} verifiedPlayer={verifiedPlayer} stops={stops} />}
     {isOwnProfile&&!canManage&&<div className="hc-journey-upgrade"><strong>Premium Players · My Journey</strong><p>Add career stops and create your professional basketball passport. Public sharing is always optional.</p><Link href="/membership" className="btn">Unlock My Journey</Link></div>}
     {isOwnProfile&&canManage&&<form className="hc-journey-form hc-liquid-glass-journey-form" onSubmit={addStop}>
