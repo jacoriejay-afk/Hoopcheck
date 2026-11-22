@@ -11,10 +11,10 @@
 - The candidate ran successfully inside `BEGIN ... ROLLBACK` before the unchanged SQL was applied **only** to the test project.
 - Verified every new table has RLS enabled; `anon` has no SELECT grant; `authenticated` has no direct UPDATE grant on posts; `hoop_group_moderation_events` grants no client access.
 - Role-simulated SQL transaction tested member join, own pending message visibility, non-member isolation, write-denial, and unprivileged moderation denial. Rolled back; staging kept zero test memberships and messages.
-- Test advisors flagged missing indexes on a few new foreign keys, plus pre-existing unrelated notices. No production DDL was executed.
+- Test advisors flagged missing indexes on four new foreign keys; covering indexes were then added to the reviewed candidate and test-only schema and independently verified present. Existing unrelated advisor notices were not modified. No production DDL was executed.
 
 ## Release requirements
-1. Add reviewed covering indexes for the new member-user, block-user, report-reporter and moderation-actor foreign keys. Rehearse again using a schema-equivalent production snapshot without weakening RLS.
+1. The new member-user, block-user, report-reporter and moderation-actor indexes are present in staging and in the review candidate. Rehearse the final candidate against a schema-equivalent production snapshot without weakening RLS.
 2. Validate browser HTTP requests with two real staging accounts: join, leave, channel switch, message submission as pending, approved visibility, report, block, and rejected unauthorized writes. Test role switching, mobile overflow, Safari PWA and both themes.
 3. Verify an authorized moderator can read and act on pending posts via `moderate_hoop_group_post`, and cannot bypass eligibility, audit, or lifecycle checks. Test moderation state transitions and abuse throttling.
 4. Produce a properly versioned, reviewed production migration and a rollback procedure that preserves any approved community data. Never copy test users or stage posts to production.
