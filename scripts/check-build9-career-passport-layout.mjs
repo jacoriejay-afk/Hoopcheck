@@ -21,5 +21,8 @@ assert.doesNotMatch(journey, /\["Austria","Portugal","Azerbaijan"\]/, "Do not ha
 assert.match(layout, /statusBarStyle: "default"/);
 assert.match(css, /safe-area-inset-top/);
 assert.match(css, /hc-court-actions a span/);
+assert.match(css, /hc-my-court/);
+assert.match(profile, /className="hc-profile-passport-anchor"/);
+assert.doesNotMatch(profile, /<div id="career-passport"/);
 assert.match(css, /scroll-padding-block-end/);
 console.log("PASS: Build 9 passport stamps, privacy and mobile safe-area contracts");

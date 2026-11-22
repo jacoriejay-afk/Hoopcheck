@@ -1,0 +1,9 @@
+# Build9 theme browser check fixture reconciliation — 2026-11-22
+
+At exact PR #838 head `0d87a6a5e11c44a64a7fff5277da9963d2cb26d9`, root [HoopCheck CI run 45005716825](https://github.com/jacoriejay-afk/Hoopcheck/actions/runs/45005716825) passed TypeScript, lint, build, security, billing, private-profile, and device team-discovery tests, then FAILED on `theme-browser-check.mjs:346`: signed-in synthetic HoopFeed composer `.hc-feed-slim-composer` never became visible.
+
+**Root cause:** Latest main's theme fixture mocked `/rest/v1/subscriptions`, but integrated Build9 resolves membership solely via `getEffectiveMembership` using a Bearer-protected `/api/membership` endpoint. The mock did not provide a correctly scoped membership response and resulting locked HoopFeed was expected fail-closed behavior. Do not revert Build9's Apple/Stripe membership resolver to make the test pass.
+
+**Isolated fixture fix (no production code):** Route only the synthetic local test `/api/membership` request; require exact expected Bearer token and GET, otherwise return 401. For valid requests return `{ owner: userId, subscription: { ...proActive, billing_interval: "month", provider: "stripe" } }` matching the actual parser's required provider metadata; assert that HoopFeed paid composer appeared only after a signed membership proof. Keep role/entitlement and account isolation contract checks unchanged.
+
+**Gate:** Re-run root CI, both-theme/Spanish browser suites, and entitlement/security tests on this updated exact head before any merge. Production #755 remains HOLD; this fixture is not actual Apple/Stripe Sandbox billing proof.
