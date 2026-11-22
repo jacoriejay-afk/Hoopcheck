@@ -68,6 +68,7 @@ import "./hoopcheck-visual-final.css";
 import "./hoopcheck-ui-video-consistency.css";
 import "./hoopcheck-discovery-profile.css";
 import "./hoopcheck-profile-light-unification.css";
+import "./hoopcheck-passport-mobile-spacing.css";
 import { SITE_URL } from "../lib/site-url";
 
 const displayFont = localFont({
@@ -108,7 +109,7 @@ export const metadata: Metadata = {
     images: [socialImage],
   },
   manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, title: "HoopCheck", statusBarStyle: "black-translucent" },
+  appleWebApp: { capable: true, title: "HoopCheck", statusBarStyle: "default" },
   icons: {
     icon: [{ url: "/favicon.svg", type: "image/svg+xml", sizes: "any" }],
     apple: [{ url: "/icons/hoopcheck-180.png", sizes: "180x180", type: "image/png" }],
