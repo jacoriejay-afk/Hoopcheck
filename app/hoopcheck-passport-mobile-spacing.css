@@ -73,7 +73,8 @@
     background:var(--hc-tab-bg,#f7f7f5);z-index:1199;pointer-events:none;
   }
   html body header.site-header-global.hc-template-header.hc-liquid-glass-header {
-    inset-block-start:8px!important;margin-block-start:8px!important;
+    inset-block-start:calc(var(--hc-safe-area-top, env(safe-area-inset-top, 0px)) + 8px)!important;
+    margin-block-start:8px!important;
     max-width:calc(100% - 20px)!important;
   }
   html body .hc-global-page-shell > .hc-route-transition {
