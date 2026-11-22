@@ -220,8 +220,8 @@ export default function HoopGroupsPage() {
   return <main className="page-shell hc-hoopgroups-page"><div className="page-container">
     <header className="hc-hoopgroups-header"><div><p className="eyebrow">HOOPCHECK · COMMUNITY</p><h1>HoopGroups</h1><p className="muted">Find your basketball people. Discover independent communities, start your own group, and keep conversations moving.</p></div></header>
     {!ready && <p role="status">Loading communities…</p>}
-    {ready && !userId && <section className="dashboard-card"><h2>Join the conversation</h2><p>Sign in to browse community channels.</p><Link href={"/login?returnTo="+encodeURIComponent(returnTo)} className="btn">Sign in</Link></section>}
-    {ready && userId && !backendReady ? <section className="dashboard-card hc-hoopgroups-coming-soon" role="status"><p className="eyebrow">COMMUNITY STATUS</p><h2>HoopGroups are not open yet</h2><p className="muted">The independent community database and moderation system have not been activated on HoopCheck. You can explore the planned group categories below, but joining, creating and posting are not available yet.</p>
+    {ready && enabled && !userId && <section className="dashboard-card"><h2>Join the conversation</h2><p>Sign in to browse community channels.</p><Link href={"/login?returnTo="+encodeURIComponent(returnTo)} className="btn">Sign in</Link></section>}
+    {ready && (!enabled || (userId && !backendReady)) ? <section className="dashboard-card hc-hoopgroups-coming-soon" role="status"><p className="eyebrow">COMMUNITY STATUS</p><h2>HoopGroups are not open yet</h2><p className="muted">The independent community database and moderation system have not been activated on HoopCheck. You can explore the planned group categories below, but joining, creating and posting are not available yet.</p>
       <div className="hc-hoopgroups-preview">{planned.map(space=><article key={space.slug}><strong>{space.name}</strong><p>{space.description}</p><small>Coming soon · group discussion and moderated posts</small></article>)}</div></section> : null}
     {ready && userId && backendReady && <>
       <div className="hc-hoopgroups-discovery">
