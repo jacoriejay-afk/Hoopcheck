@@ -45,7 +45,7 @@ export default function TeamProfileHero({
     >
       {coverUrl ? <div aria-hidden="true" style={{position:"absolute",inset:0,zIndex:-2,backgroundImage:`url("${coverUrl.replace(/"/g, "%22")}")`,backgroundSize:"cover",backgroundPosition:"center"}} /> : null}
       <div aria-hidden="true" style={{position:"absolute",inset:0,zIndex:-1,background:"linear-gradient(90deg,rgba(4,8,16,.94),rgba(4,8,16,.72) 65%,rgba(4,8,16,.58))"}} />
-      {!coverUrl ? <span aria-hidden="true" style={{position:"absolute",right:-18,bottom:-75,fontSize:"clamp(150px,30vw,320px)",fontWeight:900,opacity:.07,lineHeight:1,pointerEvents:"none"}}>{initials}</span> : null}
+      {!coverUrl ? <span aria-hidden="true" style={{position:"absolute",right:0,bottom:-75,maxWidth:"100%",overflow:"hidden",whiteSpace:"nowrap",textAlign:"right",fontSize:"clamp(150px,30vw,320px)",fontWeight:900,opacity:.07,lineHeight:1,pointerEvents:"none"}}>{initials}</span> : null}
       <div style={{display:"flex",alignItems:"center",gap:"clamp(12px, 2vw, 20px)",flexWrap:"wrap"}}>
         <div style={{padding:12,borderRadius:20,background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.2)"}}>
           <TeamLogo name={name} logoUrl={logoUrl} logoBg={logoBg} size={88} className="hc-team-profile-logo" />
