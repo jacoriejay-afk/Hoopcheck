@@ -417,3 +417,21 @@ html:is(.theme-light,.theme-dark) body main.hc-account-page .hc-layout-row + .hc
   .hc-feed-page :is(.hc-feed-action-pill,.hc-feed-editor-surface,.hc-feed-post-more__menu),
   .hc-account-page .hc-account-tools {transition:none!important}
 }
+
+
+/* Build 9 browser contrast regression repair — scoped to the affected
+   surfaces. Keep orange branding while pairing it with readable ink. */
+html:is(.theme-light,.theme-dark) body main.hc-feed-page .hc-feed-compose-fab {
+  color:#141414!important;
+  -webkit-text-fill-color:#141414!important;
+}
+html.theme-light body main.hc-live-hub-page .hc-live-directory-link {
+  color:#8c3600!important;
+  -webkit-text-fill-color:#8c3600!important;
+}
+/* Club hero titles, location and chips use white: ensure a truly dark
+   opaque backdrop even when global glass/card resets are active. */
+html:is(.theme-light,.theme-dark) body main .hc-team-look-hero {
+  background-color:#111827!important;
+  background-image:linear-gradient(125deg,#111827 0%,#3f2130 66%,#10131a 100%)!important;
+}
