@@ -6,6 +6,7 @@ import SocialProfileHeader, { profileCover } from "../../components/SocialProfil
 import OwnProfilePostsGrid from "../../components/OwnProfilePostsGrid";
 import ProfileLatestPost from "../../components/ProfileLatestPost";
 import { getCachedSession, supabase } from "../../lib/supabase";
+import { readOwnProfile } from "../../lib/read-own-profile";
 import HoopLoading from "../../components/HoopLoading";
 import { HoopIcon, VerifiedBadge } from "../../components/HoopCheckUI";
 import Surface from "../../components/Surface";
@@ -69,11 +70,7 @@ export default function ProfilePage() {
       }
       setSocialLinks(safeLinks);
       const result = await Promise.race([
-        supabase
-          .from("profiles")
-          .select("id,display_name,username,first_name,last_name,account_type,bio,position,years_pro,current_country,current_team,height,player_verified,coach_verified,avatar_url,avatar_moderation_status,basketball_type,free_agent,hometown,nationality,interests,favorite_leagues,profile_visibility")
-          .eq("id", user.id)
-          .maybeSingle(),
+        readOwnProfile(user.id, "id,display_name,username,first_name,last_name,account_type,bio,position,years_pro,current_country,current_team,height,player_verified,coach_verified,avatar_url,avatar_moderation_status,basketball_type,free_agent,hometown,nationality,interests,favorite_leagues,profile_visibility"),
         new Promise<any>((resolve) => setTimeout(() => resolve({ data: null, error: new Error("Profile request timed out") }), 8000)),
       ]);
       if (!active) return;
