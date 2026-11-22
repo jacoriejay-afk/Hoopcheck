@@ -29,6 +29,8 @@ PR [#789](https://github.com/jacoriejay-afk/Hoopcheck/pull/789) was merged, and 
 
 Source inspection found the legacy search functions mask opted-out `current_country` in results **and** query/filter matching, and suppress unapproved avatar URLs. The public detail RPC has an existing owner exception for opt-out country and still uses legacy players-only visibility; that behavior is *not* equivalent to the restricted PR17 implementation. No live personally identifiable rows were read or changed during this audit.
 
+**Read-only production RLS policy inventory:** `profiles_public_read` gives `anon` SELECT for `profile_visibility='public'`; `profiles_authenticated_read` gives `authenticated` SELECT for public or own rows (and authorized admin/moderator); and `profiles_own_update` limits UPDATE to `auth.uid()=id` in both USING and WITH CHECK. Since both request roles also hold column-level SELECT on `current_country`, **direct Data API SELECT on publicly visible profile rows can bypass the new legacy-RPC country masking**. RLS controls *which rows*, not masking an individual opted-out column. This is an unresolved privacy exposure; no actual user rows were queried to demonstrate it.
+
 ### Automated read-only regression gate
 
 New file: [production-post-hotfix-catalog-guard.sql](./production-post-hotfix-catalog-guard.sql).
