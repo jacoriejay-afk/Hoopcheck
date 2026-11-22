@@ -15,7 +15,7 @@ const map: Record<string, { heading: string; links: Shortcut[] }> = {
     { label: "HoopChat", href: "/messages", icon: "chatbubble-ellipses-outline" }] },
   fan: { heading: "FAN HQ", links: [
     { label: "Live games", href: "/fan-live", icon: "flash-outline" },
-    { label: "Fan Groups", href: "/team-hub/groups", icon: "people-outline" },
+    { label: "My club groups", href: "/team-hub/groups", icon: "people-outline" },
     { label: "Teams", href: "/teams", icon: "basketball-outline" }] },
   coach: { heading: "COACH HQ", links: [
     { label: "Discover players", href: "/players", icon: "person-outline" },
@@ -31,7 +31,7 @@ const map: Record<string, { heading: string; links: Shortcut[] }> = {
     { label: "HoopChat", href: "/messages", icon: "chatbubble-ellipses-outline" }] },
   manager: { heading: "TEAM HQ", links: [
     { label: "My clubs", href: "/teams", icon: "basketball-outline" },
-    { label: "Fan Groups", href: "/team-hub/groups", icon: "people-outline" },
+    { label: "Manage club fans", href: "/team-hub/groups", icon: "people-outline" },
     { label: "Messages", href: "/messages", icon: "chatbubble-ellipses-outline" }] },
 };
 map.club_admin = map.manager;
