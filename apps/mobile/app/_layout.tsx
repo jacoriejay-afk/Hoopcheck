@@ -14,6 +14,7 @@ import { DevicePreferences } from "../src/native/preferences";
 import { NetworkProvider } from "../src/native/network";
 import { MotionProvider } from "../src/motion/Provider";
 import { AppLock } from "../components/AppLock";
+import { AppOpening } from "../components/AppOpening";
 import { TabBar } from "../components/TabBar";
 import { RouteFade } from "../components/RouteFade";
 import { motion } from "../src/motion/config";
@@ -151,6 +152,8 @@ function RootLayout() {
         <Stack.Screen name="leagues/[id]" options={{ title: "League profile" }} />
       </Stack></RouteFade>
       {signedIn ? <TabBar /> : null}<AppLock authReady={sessionReady} userId={session.userId} startupError={session.error} retryStartup={() => { void bootstrap.current?.retry(); }} protectedScreen={signedIn && !["sign-in", "sign-up", "reset-password", "auth"].includes(segments[0] ?? "")} />
+      <AppOpening ready={sessionReady && (fontsLoaded || Boolean(fontError))}
+        disabled={["auth", "reset-password"].includes(segments[0] ?? "")} />
     </BottomSheetModalProvider></NativeDraftProvider></StoreKitProvider></NativeAccountProvider></MfaSessionProvider></NetworkProvider></DevicePreferences></MotionProvider></SafeAreaProvider></GestureHandlerRootView>
 
 

@@ -1,4 +1,5 @@
 import { GlassCard, Input, Button } from "../src/primitives";
+import { ArenaBrand } from "../components/ArenaBrand";
 import { useEntryTheme, type EntryTheme } from "../src/theme";
 import { useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from "react-native";
@@ -30,6 +31,7 @@ export default function ForgotPasswordScreen() {
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, paddingVertical: 16 }}>
         <GlassCard style={styles.container}>
+          <ArenaBrand size={62} compact dark={theme.dark}/>
           <Text style={[styles.title, { fontFamily: "HoopCheckDisplay", fontWeight: "400" }]}>Reset password</Text>
           <Text style={styles.subtitle}>Enter your account email to request a recovery message.</Text>
           <Text style={styles.label}>Email</Text>

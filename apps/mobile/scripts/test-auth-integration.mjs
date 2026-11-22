@@ -24,7 +24,7 @@ function screen(path, { state = [], params = {}, segments = [], pathname = "/", 
   Stack.Screen = "Screen";
   const imports = name => {
     if (name === "react") return { useRef: value => ({ current: value }), useState: initial => [state[slot++] ?? initial, () => {}], useEffect: f => effects.push(f) };
-    if (name === "react-native") return { Platform: { OS: "ios" }, StyleSheet: { create: s => s }, Alert: { alert: (...args) => calls.alerts.push(args) }, AccessibilityInfo: { isReduceMotionEnabled: async () => false }, Image: "Image", ScrollView: "ScrollView", Text: "Text", View: "View", Pressable: "Pressable", KeyboardAvoidingView: "KeyboardAvoidingView", ActivityIndicator: "ActivityIndicator" };
+    if (name === "react-native") return { Platform: { OS: "ios", select: options => options.ios }, StyleSheet: { create: s => s, absoluteFill: {} }, Alert: { alert: (...args) => calls.alerts.push(args) }, AccessibilityInfo: { isReduceMotionEnabled: async () => false }, Image: "Image", ScrollView: "ScrollView", Text: "Text", View: "View", Pressable: "Pressable", KeyboardAvoidingView: "KeyboardAvoidingView", ActivityIndicator: "ActivityIndicator" };
     if (name === "expo-router") return { Stack, Link: "Link", useRouter: () => router, useLocalSearchParams: () => params, useGlobalSearchParams: () => params, useSegments: () => segments, usePathname: () => pathname };
     if (name === "expo-linking") return { createURL: p => `hoopcheck://${p}`, openURL: async url => calls.oauthUrls.push(url) };
     if (name === "expo-font") return { useFonts: () => [fontsLoaded, null] };
@@ -33,6 +33,13 @@ function screen(path, { state = [], params = {}, segments = [], pathname = "/", 
     if (name.endsWith("/theme")) return { useEntryTheme: () => theme };
     if (name === "expo-linear-gradient") return { LinearGradient: "LinearGradient" };
     if (name.endsWith("/BrandLogo")) return { BrandLogo: "BrandLogo" };
+    if (name.endsWith("/ArenaBrand")) return { ArenaBrand: "ArenaBrand" };
+    if (name.endsWith("/AppOpening")) return { AppOpening: "AppOpening" };
+    if (name === "@expo/vector-icons") return { Ionicons: "Ionicons" };
+    if (name === "react-native-reanimated") return { __esModule: true, default: { View: "AnimatedView" },
+      useSharedValue: initial => ({ get: () => initial, set() {} }),
+      useAnimatedStyle: render => render(), withTiming: value => value };
+
     if (name.endsWith("/ExploreLinks")) return { ExploreLinks: "ExploreLinks" };
     if (name.endsWith("/primitives")) return { GlassCard: "GlassCard", Input: "Input", Button: "Button" };
     if (name.endsWith("/supabase")) return { supabase, supabaseConfigurationError: configurationError };
@@ -48,7 +55,7 @@ function screen(path, { state = [], params = {}, segments = [], pathname = "/", 
     if (name.endsWith("/native/drafts")) return { NativeDraftProvider: "NativeDraftProvider" };
     if (name.endsWith("/native/useNativeAccount")) return { NativeAccountProvider: "NativeAccountProvider" };
     if (name.endsWith("/native/network")) return { NetworkProvider: "NetworkProvider" };
-    if (name.endsWith("/motion/Provider")) return { MotionProvider: "MotionProvider" };
+    if (name.endsWith("/motion/Provider")) return { MotionProvider: "MotionProvider", useMotionSetting: () => true };
     if (name.endsWith("/motion/config")) return { motion: { logo: 300, shortFade: 100, splashDeadline: 2000 } };
     if (name.endsWith("/native/telemetry")) return { traceFlow: (_, fn) => fn(), Sentry: { wrap: component => component } };
     if (name.endsWith("/Onboarding")) return { Onboarding: "Onboarding" };
