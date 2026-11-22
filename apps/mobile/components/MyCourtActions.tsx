@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Reveal } from "./Motion";
@@ -26,10 +26,10 @@ export function MyCourtActions({ userId, role, feedEnabled }: {
 }) {
   const theme = useEntryTheme();
   const router = useRouter();
-  const features: CourtFeatures = {
+  const features = useMemo<CourtFeatures>(() => ({
     feed: feedEnabled,
     hoopgroups: process.env.EXPO_PUBLIC_HOOPGROUPS_CHANNELS_ENABLED === "true",
-  };
+  }), [feedEnabled]);
   const storageKey = `hoopcheck:my-court:v1:${userId}`;
   const [selected, setSelected] = useState<CourtActionId[]>(() => defaultCourtActions(role, features));
   const [ready, setReady] = useState(false);
@@ -53,7 +53,7 @@ export function MyCourtActions({ userId, role, feedEnabled }: {
       if (active) setError("Custom shortcuts could not be loaded on this device.");
     }).finally(() => { if (active) setReady(true); });
     return () => { active = false; };
-  }, [storageKey, role, feedEnabled, features.hoopgroups]);
+  }, [storageKey, role, features]);
 
   function update(next: CourtActionId[]) {
     if (!ready) return;
