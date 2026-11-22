@@ -365,3 +365,21 @@ html body main .hc-team-look-hero .hc-team-follow-pill.is-following {
   }
   .hc-team-profile-overview-grid > * { overflow-wrap: anywhere; }
 }
+
+
+/* BUILD9-TEAM-GRADIENT-CONTRAST
+   The hero uses a dark background image/gradient, but the CSS background-color
+   fallback was transparent. Browser contrast checks correctly treated white
+   hero text over a white ancestor as unsafe in light mode. Give the hero a
+   real dark solid fallback, retaining its existing cover/gradient layer. */
+html.theme-light body main section.hc-team-look-hero,
+html.theme-dark body main section.hc-team-look-hero {
+  background-color: #111827 !important;
+}
+/* The women's hero kicker must remain legible against the dark hero in both
+   themes, independent of generic page copy/theme defaults. */
+html.theme-light body main section.hc-team-look-hero.hc-womens-branded-hero p.hc-team-hero-kicker,
+html.theme-dark body main section.hc-team-look-hero.hc-womens-branded-hero p.hc-team-hero-kicker {
+  color: #ffe2cf !important;
+  -webkit-text-fill-color: #ffe2cf !important;
+}
