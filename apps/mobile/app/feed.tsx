@@ -45,6 +45,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
   const [message, setMessage] = useState("");
   const [loadError, setLoadError] = useState("");
   const [checks, setChecks] = useState<Record<string, { count: number; mine: boolean }>>({});
+  const [checkPulses, setCheckPulses] = useState<{ scope: string; values: Record<string, number> }>({ scope: "", values: {} });
   const [saved, setSaved] = useState<Record<string, boolean | undefined>>({});
   const requests = useRef(new Set<string>());
   const [pending, setPending] = useState<Record<string, boolean>>({});
@@ -136,7 +137,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
     finally { if (current === generation.current) setLoading(false); }
   }, [uid, canRead, reels, linkedId, scope]);
   useEffect(() => {
-    setRows({ scope, posts: [] }); setNext(null); setChecks({}); setSaved({}); setOpenComments({}); setMessage("");
+    setRows({ scope, posts: [] }); setNext(null); setChecks({}); setCheckPulses({ scope, values: {} }); setSaved({}); setOpenComments({}); setMessage("");
     if (canRead) void load(); else setLoading(false);
     // This is an async request generation counter, not a mounted node reference.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -300,18 +301,31 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
           {post.post_kind === "poll" && options.length ? <FeedPoll userId={uid!} postId={post.id} options={options} enabled={canWrite && focused} /> : null}
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, paddingTop: 12, borderTopWidth: 1, borderColor: theme.border }}>
             <FeedCheckAction checked={checks[post.id]?.mine} count={checks[post.id]?.count}
+              pulseKey={checkPulses.scope === scope ? checkPulses.values[post.id] ?? 0 : 0}
               disabled={!canWrite || !checks[post.id]} busy={Boolean(pending[`check:${post.id}`])}
               onPress={() => void action(`check:${post.id}`, async () => {
               await token();
+              const wasChecked = checks[post.id]?.mine;
               let activity;
-              try { activity = await toggleFeedCheck(supabase, uid!, post.id, checks[post.id]?.mine === true); }
+              try { activity = await toggleFeedCheck(supabase, uid!, post.id, wasChecked === true); }
               catch {
                 if (viewer.current.uid === uid) setChecks(previous => { const result = { ...previous }; delete result[post.id]; return result; });
                 throw new Error("Check status could not be confirmed. Refresh the feed before trying again.");
               }
-              if (viewer.current.uid !== uid || !viewer.current.canRead) return;
+              if (viewer.current.uid !== uid || viewer.current.scope !== scope || !viewer.current.canRead) return;
               const total = activity.find(row => row.post_id === post.id);
-              if (total && Number.isSafeInteger(Number(total.checks_count)) && Number(total.checks_count) >= 0) setChecks(previous => ({ ...previous, [post.id]: { count: Number(total.checks_count), mine: total.checked_by_me === true } }));
+              if (total && Number.isSafeInteger(Number(total.checks_count)) && Number(total.checks_count) >= 0) {
+                setChecks(previous => ({ ...previous, [post.id]: { count: Number(total.checks_count), mine: total.checked_by_me === true } }));
+                if (wasChecked === false && total.checked_by_me === true) {
+                  setCheckPulses(previous => ({
+                    scope,
+                    values: {
+                      ...(previous.scope === scope ? previous.values : {}),
+                      [post.id]: ((previous.scope === scope ? previous.values[post.id] : 0) ?? 0) + 1,
+                    },
+                  }));
+                }
+              }
             })} />
             <Pressable accessibilityRole="button" onPress={() => { if (reels) { router.push({ pathname: "/feed", params: { post: post.id, comments: "1" } }); return; } setOpenComments(previous => ({ ...previous, [post.id]: !previous[post.id] })); if (!page || page.error) void loadComments(post.id); }} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Comments</Text></Pressable>
             <Pressable accessibilityRole="button" onPress={() => void action(`share:${post.id}`, async () => { await Share.share({ title: "HoopFeed", message: `https://hoopcheck.online/feed#post-${post.id}` }); })} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Share</Text></Pressable>
