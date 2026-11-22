@@ -599,6 +599,20 @@ try {
       document.documentElement.style.setProperty("--hc-safe-area-bottom", "34px");
       localStorage.setItem("sb-ci-auth-token", JSON.stringify(authSession));
     }, { themePreference: theme, authSession: session, language: testLanguage });
+    // The route sweep uses a separate browser context from the screenshot tests.
+    // Match the production owner-bound provider-aware membership API contract.
+    // Deny missing/foreign bearer tokens instead of unlocking anonymous clients.
+    let signedSweepMembershipRequests = 0;
+    await page.route("**/api/membership", async (route) => {
+      const request = route.request();
+      const authorized = request.method() === "GET" && request.headers().authorization === `Bearer ${session.access_token}`;
+      if (!authorized) {
+        await route.fulfill({ status: 401, contentType: "application/json", headers: { "cache-control": "no-store" }, body: JSON.stringify({ error: "Unauthorized" }) });
+        return;
+      }
+      signedSweepMembershipRequests++;
+      await route.fulfill({ status: 200, contentType: "application/json", headers: { "cache-control": "no-store" }, body: JSON.stringify({ owner: userId, subscription: effectiveSubscription }) });
+    });
     await page.route("https://ci.invalid/**", async (route) => {
       const request = route.request();
       const url = new URL(request.url());
@@ -839,7 +853,7 @@ try {
         await page.getByRole("tab", { name: "Fan Group" }).click();
         await page.locator("main.hc-womens-profile-page .hc-team-fan-group-entry").waitFor({ state: "visible", timeout: 15000 });
         const fanGroupEntry = (await page.locator("main.hc-womens-profile-page .hc-team-fan-group-entry").innerText()).trim();
-        if (!/fan group/i.test(fanGroupEntry) || !/joined/i.test(fanGroupEntry)) errors.push("women team profile: Fan Group entry is missing or not joined: " + fanGroupEntry);
+        if (!/fan group/i.test(fanGroupEntry) || !/(?:joined|unido)/i.test(fanGroupEntry)) errors.push("women team profile: Fan Group entry is missing or not joined: " + fanGroupEntry);
       }
       if (requestedPath === "/fan-feed") {
         // HF-5: Fan Feed now redirects into the shared HoopFeed community.
@@ -891,6 +905,7 @@ try {
         // LIVECHAT-2: assert the new conversation-first layout rather than the removed hero.
         const hub = page.locator("main.hc-live-hub-page");
         await hub.getByRole("heading", { name: "Happening Now" }).waitFor({ state: "visible" });
+        assert.ok(signedSweepMembershipRequests > 0, "Live Games must require signed, provider-aware membership verification");
         assert.equal(await hub.locator(".hc-live-hub-hero").count(), 0, "old hero must be removed");
         for (const label of ["Live Now", "Upcoming", "My Teams"]) {
           assert.equal(await hub.getByRole("button", { name: label, exact: true }).count(), 1, "missing segment: " + label);
@@ -947,6 +962,7 @@ try {
           : requestedPath === "/dashboard" ? ["QUICK ACTIONS", "Check a Team"]
             : requestedPath === "/search" ? ["Browse directories"]
             : ["ROSTER BOARD", "No approved reviews yet"];
+        await page.waitForFunction(expected => expected.every(text => document.body.innerText.toLocaleUpperCase().includes(text.toLocaleUpperCase())), expectedText, { timeout: 15000 });
         const missingText = expectedText.filter((expected) => !visibleText.toLocaleUpperCase().includes(expected.toLocaleUpperCase()));
         if (missingText.length) errors.push("language assertions missing: " + missingText.join(", "));
       }
@@ -1059,6 +1075,8 @@ try {
   }
   console.log("THEME_COMPONENT_INVENTORY=" + JSON.stringify(themeComponentInventory, null, 2));
   console.log("THEME_ROUTE_SWEEP=" + JSON.stringify(routeSweepResults, null, 2));
+  const failures = routeSweepResults.filter(result => result.status === "FAIL");
+  assert.equal(failures.length, 0, "Theme route failures: " + failures.map(result => `${result.theme} ${result.requestedPath}: ${result.reason}`).join("; "));
 
 } finally {
   await browser.close();
