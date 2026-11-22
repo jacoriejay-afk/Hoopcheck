@@ -13,7 +13,8 @@ assert.equal((statements.match(/\bBEGIN TRANSACTION READ ONLY;/g)||[]).length,1)
 assert.equal((statements.match(/^ROLLBACK;$/gm)||[]).length,1);
 assert.match(statements,/Different installed production contract/);
 assert.match(statements,/Production function drift detected/);
-assert.match(statements,/Production advanced beyond the captured Build 9 baseline/);
+assert.match(statements,/Owner\/MFA security boundary advanced beyond captured baseline/);
+assert.match(statements,/Build 8 public RPC compatibility migration missing/);
 assert.match(statements,/Raw country access has changed/);
 assert.match(statements,/profile.*relrowsecurity|relrowsecurity.*profiles/);
 for(const [name,fingerprint] of [
