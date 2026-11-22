@@ -3,7 +3,9 @@ import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// Standard UUID is 8-4-4-4-12. The previous pattern required an extra
+// four-hex group and prevented legitimate moderators from acting on reports.
+const UUID = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
 const headers = { "Cache-Control": "private, no-store" };
 const response = (error: string, status: number) => NextResponse.json({ error }, { status, headers });
 
