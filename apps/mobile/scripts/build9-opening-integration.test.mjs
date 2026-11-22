@@ -25,7 +25,7 @@ test("Interrupted opening never strands the user behind a non-interactive overla
   const opening = read("components/AppOpening.tsx");
   assert.match(opening, /hasPlayedColdOpen/);
   assert.match(opening, /started\.current = false;/);
-  assert.match(opening, /hasPlayedColdOpen && !started\.current/);
+  assert.match(opening, /!ready \|\| disabled \|\| finished \|\| started\.current/);
   assert.match(opening, /timeouts\.current\.forEach\(clearTimeout\)/);
   assert.match(opening, /cancelAnimation\(progress\)/);
   assert.match(opening, /Platform\.OS === "web"/);
