@@ -1,5 +1,6 @@
 import { AlternateIcons } from "../components/AlternateIcons";
 import { useState } from "react";
+import { useRouter } from "expo-router";
 import { Pressable, ScrollView, Switch, Text, View } from "react-native";
 import * as LocalAuthentication from "expo-local-authentication";
 import { useDevicePreferences } from "../src/native/preferences";
@@ -7,6 +8,7 @@ import { useEntryTheme } from "../src/theme";
 
 export default function Settings() {
   const theme = useEntryTheme();
+  const router = useRouter();
   const { preferences, update } = useDevicePreferences();
   const [themeBusy, setThemeBusy] = useState(false);
   const [error, setError] = useState("");
@@ -36,6 +38,16 @@ export default function Settings() {
       }} style={{ minHeight: 48, justifyContent: "center", borderRadius: theme.radius.control, paddingHorizontal: 16, backgroundColor: preferences.theme === value ? theme.accentSurface : theme.surface, borderWidth: 1, borderColor: preferences.theme === value ? theme.accent : theme.border }}>
         <Text style={{ color: theme.foreground }}>{value === "system" ? "Use device theme" : value === "light" ? "Light" : "Dark"}{preferences.theme === value ? " ✓" : ""}</Text>
       </Pressable>)}
+    </View>
+    <View style={{gap:10}}><Text style={{color:theme.foreground,fontSize:19,fontWeight:"800"}}>Account & community</Text>
+      {([{title:"Account and profile",path:"/account"},{title:"Messages and requests",path:"/messages"},{title:"Basketball alerts",path:"/notifications"},{title:"Account security",path:"/account/security"}] as const).map(item=><Pressable key={item.path} accessibilityRole="button" onPress={()=>router.push(item.path)}
+        style={{minHeight:48,justifyContent:"center",borderWidth:1,borderColor:theme.border,backgroundColor:theme.surface,paddingHorizontal:14,borderRadius:theme.radius.control}}>
+          <Text style={{color:theme.foreground,fontWeight:"700"}}>{item.title}</Text>
+      </Pressable>)}
+      <Pressable accessibilityRole="button" onPress={()=>router.push({pathname:"/web",params:{path:"/privacy-center"}})}
+        style={{minHeight:48,justifyContent:"center",borderWidth:1,borderColor:theme.border,backgroundColor:theme.surface,paddingHorizontal:14,borderRadius:theme.radius.control}}>
+        <Text style={{color:theme.foreground,fontWeight:"700"}}>Privacy center</Text>
+      </Pressable>
     </View>
     <AlternateIcons />
     {error ? <Text accessibilityRole="alert" style={{ color: theme.accent }}>{error}</Text> : null}

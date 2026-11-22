@@ -12,7 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { supabase } from "../src/lib/supabase";
 
-type League = { id: string; name: string; country: string | null; level: string | null; season: string | null; website: string | null };
+type League = { id: string; name: string; country: string | null; level: string | null; season: string | null; website: string | null; logo_url: string | null };
 const PAGE_SIZE = 40;
 
 export default function LeaguesScreen() {
@@ -37,7 +37,7 @@ export default function LeaguesScreen() {
     if (start === 0) setLoading(true);
     setError("");
     const clean = search.trim().replace(/[^\p{L}\p{N} '\-]/gu, " ").replace(/\s+/g, " ").trim();
-    let query = supabase.from("leagues").select("id,name,country,level,season,website").eq("active", true).eq("basketball_type", "mens").order("name", { ascending: true }).range(start, start + PAGE_SIZE);
+    let query = supabase.from("leagues").select("id,name,country,level,season,website,logo_url").eq("active", true).eq("basketball_type", "mens").order("name", { ascending: true }).range(start, start + PAGE_SIZE);
     if (clean) query = query.or(`name.ilike.%${clean}%,country.ilike.%${clean}%,level.ilike.%${clean}%`);
     const { data, error: queryError } = await read(`leagues:${clean}:${start}`, () => query);
     if (currentRequest !== requestId.current) return;
@@ -98,9 +98,10 @@ export default function LeaguesScreen() {
           renderItem={({ item, index }) => (
             <Reveal key={`${appliedTerm}:${item.id}`} index={index}>
             <Pressable onPress={() => router.push({ pathname: "/leagues/[id]", params: { id: item.id } })} style={styles.card}>
-              <DirectoryCrest name={item.name} kind="leagues" />
+              <DirectoryCrest name={item.name} kind="leagues" logoUrl={item.logo_url} />
               <View style={styles.cardBody}>
                 <Text style={styles.leagueName}>{item.name}</Text>
+                {!item.logo_url && <Text style={styles.meta}>Official crest pending · showing league badge</Text>}
                 <CountryChip country={item.country} />
                 <Text style={styles.meta}>{item.country || "Country not listed"}{item.level ? ` · ${item.level}` : ""}</Text>
                 {item.season ? <Text style={styles.season}>Season: {item.season}</Text> : null}
