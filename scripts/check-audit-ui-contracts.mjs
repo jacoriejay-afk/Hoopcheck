@@ -13,7 +13,12 @@ assert.ok(women.includes('country={team.country || t("international")}'), 'Women
 assert.ok(!women.includes('country={\x60\x24{countryFlag'), 'Women profile does not prefix a flag twice');
 const account = read('app/account/page.tsx');
 assert.ok(account.includes('profile.account_type === "player" && <SettingsRow') && account.includes('label="Career Passport"') && account.includes('href="/profile#career-passport"'), 'Career Passport shortcut is player-only');
-assert.ok(read('app/profile/page.tsx').includes('id="career-passport"'), 'Career Passport deep link target exists');
+const ownProfile = read('app/profile/page.tsx');
+const journey = read('components/PlayerJourney.tsx');
+const anchoredJourney = ownProfile.includes('<PlayerJourney') && journey.includes('<section id="career-passport"');
+assert.ok(ownProfile.includes('id="career-passport"') || anchoredJourney, 'Career Passport deep link target exists');
+assert.ok(!(ownProfile.includes('<div id="career-passport"') && journey.includes('<section id="career-passport"')),
+  'Career Passport hash target must have one owner, not duplicate IDs');
 const css = read('app/hoopcheck-directory-profile.css');
 assert.ok(css.includes('hc-team-logo__crest path { fill: none !important;'), 'Fallback crest outline remains hollow');
 const header = read('components/SiteHeader.tsx');
