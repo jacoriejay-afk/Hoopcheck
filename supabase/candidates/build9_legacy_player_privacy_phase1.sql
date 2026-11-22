@@ -4,7 +4,8 @@
 -- No table/role/column grant changes; Phase 2 direct raw SELECT restriction
 -- remains blocked on installed-client compatibility and real JWT acceptance.
 -- Apply only to the verified production project after exact-head tests.
-BEGIN;
+-- Run via an atomic transactional migration executor (Supabase apply_migration)
+-- or psql --single-transaction; do not execute statements individually.
 SET LOCAL lock_timeout = '4s';
 SET LOCAL statement_timeout = '25s';
 DO $guard$
@@ -196,5 +197,4 @@ BEGIN
  OR position('current_country_public' IN p.prosrc)=0;
  IF damaged IS NOT NULL THEN RAISE EXCEPTION 'Post-migration RPC contract failed: %',damaged; END IF;
 END $verify$;
-COMMIT;
 NOTIFY pgrst, 'reload schema';
