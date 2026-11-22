@@ -1,8 +1,7 @@
 -- Applied to HoopCheck production on 2026-11-22; Supabase migration history version matches this filename.
 -- Additive migration reconciled with separately rehearsed review candidate; do not rewrite applied history.
--- REVIEW CANDIDATE v2; TEST DATABASE ONLY until explicitly approved.
--- Requires hoopgroups_channels_v1_review_only.sql first.
--- Preserves existing Team Fan Groups, moderator-only approval and all v1 RLS policies.
+-- Owner-controlled group settings and topics, applied after the V1 community schema.
+-- Separate Team Fan Groups remain unchanged.
 alter table public.hoop_group_spaces
   add column if not exists owner_id uuid references auth.users(id) on delete set null,
   add column if not exists accent_color text not null default 'orange',
