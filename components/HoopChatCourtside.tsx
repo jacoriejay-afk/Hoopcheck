@@ -1,6 +1,6 @@
 "use client";
 
-import {useCallback,useEffect,useMemo,useRef,useState,type FormEvent} from "react";
+import {useCallback,useEffect,useMemo,useRef,useState,type FormEvent,type UIEvent} from "react";
 import Link from "next/link";
 import {supabase} from "../lib/supabase";
 import {
@@ -195,7 +195,7 @@ export default function HoopChatCourtside(){
   },[selectedId,latestMessageId]);
   // Auto-scroll only while the reader follows recent messages; do not yank history upward
   // when they're reading older messages.
-  function onHistoryScroll(event:React.UIEvent<HTMLDivElement>){
+  function onHistoryScroll(event:UIEvent<HTMLDivElement>){
     const element=event.currentTarget;
     followingLatest.current=element.scrollHeight-element.scrollTop-element.clientHeight<100;
   }
