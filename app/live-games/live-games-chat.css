@@ -60,3 +60,8 @@ html body main.hc-live-hub-page .hc-live-conversation-link:hover {border-color:v
   html body main.hc-live-hub-page .hc-live-card__crest.hc-live-team-logo {flex-basis:32px;width:32px;height:32px;min-width:32px;min-height:32px}
   html body main.hc-live-hub-page .hc-live-card__side strong {font-size:11px}
 }
+
+html body main.hc-live-hub-page .hc-live-discovery-toggle {margin:2px 0 0}
+html body main.hc-live-hub-page .hc-live-discovery-toggle>summary {display:list-item;list-style-position:inside;cursor:pointer;color:var(--hc-on-card,var(--ink));font-size:12px;font-weight:850;min-height:36px;padding:7px 1px}
+html body main.hc-live-hub-page .hc-live-discovery-toggle>summary::marker {color:var(--hc-orange,#ff642a)}
+html body main.hc-live-hub-page .hc-live-discovery-toggle[open] .hc-live-discovery {padding:5px 0 9px}
