@@ -19,6 +19,7 @@ import "../hoopfeed-shared.css";
 import "./feed-camera-picker.css";
 import "./feed-compact-hero.css";
 import "./feed-pull-refresh.css";
+import "./feed-light-mode-fix.css";
 
 type MiniProfile = { display_name: string | null; avatar_url: string | null; account_type?: string | null; current_team?: string | null };
 type Post = TaggedPost & { entity?: EntityTag; post_location?: string | null; id:string; shared_post_id?:string|null; shared_post?:{author_id:string;profiles?:{display_name:string|null}|null}|null; body:string; image_url:string|null; image_urls?:string[]|null; video_url?:string|null; post_kind?:string|null; poll_options?:string[]|null; topic_tag?:TopicTag|null; game_day_team?:string|null; game_day_opponent?:string|null; game_day_score_for?:number|null; game_day_score_against?:number|null; created_at:string; expires_at:string|null; author_id:string; ageLabel?:string; profiles?:MiniProfile|null };
@@ -490,7 +491,6 @@ export default function Feed(){
   return <PageShell><main className="page-shell hc-feed-page" onTouchStart={(event)=>{touchStartY.current=window.scrollY===0?(event.touches[0]?.clientY??null):null;}} onTouchEnd={(event)=>{const start=touchStartY.current;touchStartY.current=null;const end=event.changedTouches[0]?.clientY??0;if(start!==null&&end-start>80&&user&&profile&&!refreshing){void(async()=>{setRefreshing(true);try{await load(user);setNow(Date.now());}catch(error){console.error("HoopFeed refresh failed",error);setMsg("Could not refresh HoopFeed. Please try again.");}finally{setRefreshing(false);}})();}}}><div className="page-container">
     {title}
 
-    <div className="hc-feed-bot-entry"><span><strong>New to HoopFeed?</strong> Meet HoopBot, your automated community guide.</span><Link href="/feed/welcome">Welcome & getting started</Link></div>
     <div className="hc-feed-organization">
       <div className="hc-feed-segments" role="group" aria-label="HoopFeed segments">
         {SEGMENTS.map(item => <button key={item} type="button" aria-pressed={segment === item} onClick={() => chooseSegment(item)}>
