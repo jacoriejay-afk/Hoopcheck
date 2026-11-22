@@ -301,7 +301,7 @@ export default function LiveGamesPage() {
         </div>
         {isUpcoming && availability.opensAt && <p className="hc-live-card__muted">{availability.minutesUntilOpen && availability.minutesUntilOpen > 0 ? `Chat opens in ${availability.minutesUntilOpen} min` : "Chat open"} · {formatViewerLocalTime(availability.opensAt.toISOString(), { weekday: undefined })}</p>}
         <div className="hc-live-card__actions">
-          {canJoin && <Link href={`/fan-live?gameId=${encodeURIComponent(game.id)}`} className="btn hc-live-join">{joinedGameIds.has(game.id) ? "IN CHAT ✓" : "JOIN CHAT"} <span aria-hidden="true">→</span></Link>}
+          {canJoin && <Link href={`/fan-live/room/${encodeURIComponent(game.id)}`} className="btn hc-live-join">{joinedGameIds.has(game.id) ? "IN CHAT ✓" : "JOIN CHAT"} <span aria-hidden="true">→</span></Link>}
           {isUpcoming && <button type="button" className={`hc-remind-button ${reminders.includes(game.id) ? "is-set" : ""}`} disabled={reminding === game.id} onClick={() => void toggleReminder(game.id)}>
             <HoopIcon name="bell" size={16} /> {reminding === game.id ? "Saving…" : reminders.includes(game.id) ? "REMINDER SET" : "REMIND ME"}
           </button>}
