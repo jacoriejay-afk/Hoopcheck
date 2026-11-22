@@ -971,8 +971,8 @@ try {
         await teamSearch.fill("A.B.B Ego Spor");
         await page.getByRole("button", { name: /A\.B\.B Ego Spor/ }).click();
         await page.getByRole("button", { name: "Fetch candidate previews" }).waitFor({ state: "visible", timeout: 10000 });
-        await page.locator("select").first().waitFor({ state: "visible", timeout: 10000 });
-        await page.locator("select").first().selectOption("light");
+        await page.getByLabel("Logo tile background").waitFor({ state: "visible", timeout: 10000 });
+        await page.getByLabel("Logo tile background").selectOption("light");
         await page.locator("textarea").first().fill("https://official.example/club");
         await page.route("**/api/admin/team-logo-candidate", route => route.fulfill({
           status: 200,
