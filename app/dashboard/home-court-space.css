@@ -155,3 +155,18 @@
   /* Do not let the fixed bottom tabs swallow the last editor control. */
   .hc-home3 .page-container { padding-bottom: calc(155px + env(safe-area-inset-bottom, 0px)) !important; }
 }
+
+/* A solid iOS status-bar scrim prevents scrolling cards appearing behind the
+   clock above the floating nav; the header itself remains in front. */
+@media (max-width: 767px) {
+  html body:has(main.hc-home3)::before {
+    position: fixed !important;
+    inset: 0 0 auto 0 !important;
+    height: max(50px, var(--hc-safe-area-top, 0px)) !important;
+    min-height: 50px !important;
+    z-index: 1199 !important;
+    opacity: 1 !important;
+    background: var(--hc-tab-bg, var(--hc-page-bg, #f7f7f5)) !important;
+    pointer-events: none !important;
+  }
+}
