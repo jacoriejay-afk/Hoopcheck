@@ -32,7 +32,11 @@ export async function GET(request: Request) {
         .order("created_at",{ascending:false}).limit(100),
     ]);
     if(posts.error || reports.error) throw new Error("Moderation queue unavailable");
-    return NextResponse.json({posts:posts.data||[],reports:reports.data||[]},{headers:noStore});
+    const ids=[...new Set((reports.data||[]).map(item=>item.post_id))];
+    const reported=ids.length?await db.from("hoop_group_posts").select("id,channel_id,author_id,body,moderation_status,created_at").in("id",ids)
+      :{data:[],error:null};
+    if(reported.error) throw new Error("Reported posts unavailable");
+    return NextResponse.json({posts:posts.data||[],reports:reports.data||[],reported:reported.data||[]},{headers:noStore});
   } catch(error) {
     console.error("HoopGroups moderator queue error:",error);
     return NextResponse.json({error:"Moderation queue unavailable."},{status:500,headers:noStore});
