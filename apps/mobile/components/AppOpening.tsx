@@ -11,7 +11,6 @@ let hasPlayedColdOpen = false;
 export function AppOpening({ ready, disabled = false }: { ready: boolean; disabled?: boolean }) {
   const reduced = useMotionSetting();
   const [finished, setFinished] = useState(hasPlayedColdOpen || Platform.OS === "web");
-  const started = useRef(false);
   const progress = useSharedValue(0);
   const exitOpacity = useSharedValue(1);
   const timeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -22,8 +21,7 @@ export function AppOpening({ ready, disabled = false }: { ready: boolean; disabl
     setFinished(true);
   }
   useEffect(() => {
-    if (!ready || disabled || finished || started.current || Platform.OS === "web") return;
-    started.current = true;
+    if (!ready || disabled || finished || Platform.OS === "web") return;
     hasPlayedColdOpen = true;
     progress.set(withTiming(1, { duration: reduced ? 0 : 580 }));
     timeouts.current.push(setTimeout(() => {

@@ -8,6 +8,7 @@ test("native cold open is skippable, bounded and preserves the existing splash w
   const root=read("../app/_layout.tsx");
   const motion=read("../src/motion/config.ts");
   assert.match(opening, /hasPlayedColdOpen/);
+  assert.doesNotMatch(opening, /started\\.current/);
   assert.match(opening, /Skip opening animation/);
   assert.match(opening, /Platform\.OS === "web"/);
   assert.match(opening, /useMotionSetting/);
