@@ -16,13 +16,13 @@ function ScoreValue({ gameId, name, score, live, color, fontSize, fontFamily }: 
   gameId: string; name: string; score: number | null; live: boolean; color: string; fontSize: number; fontFamily?: string;
 }) {
   const reduced = useMotionSetting();
-  const previous = useRef<{ gameId: string; score: number | null } | null>(null);
+  const previous = useRef<{ gameId: string; score: number | null; live: boolean } | null>(null);
   const scale = useSharedValue(1);
   useEffect(() => {
     const last = previous.current;
-    previous.current = { gameId, score };
+    previous.current = { gameId, score, live };
     cancelAnimation(scale);
-    if (reduced || !live || !last || last.gameId !== gameId || last.score == null || score == null || last.score === score) {
+    if (reduced || !live || !last?.live || last.gameId !== gameId || last.score == null || score == null || last.score === score) {
       scale.set(1);
       return;
     }
