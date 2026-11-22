@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-11-22",
+  "release": "Build 9",
+  "source_branch": "integration/build9-backend-completion-20261121",
+  "release_commit": null,
+  "build": {
+    "expo_project_id": "62f822cb-ab9a-42ba-8456-007d2822ef70",
+    "app_id": "6835366982",
+    "bundle_id": "online.hoopcheck.app",
+    "version": "0.2.0",
+    "last_verified_store_build": 8
+  },
+  "gates": [
+    {
+      "id": "native_feature_integration",
+      "status": "PASS",
+      "details": "PR #808 role HQ/HoopChat/HoopBot/HoopGroups merged; verified feature paths present in Build 9 integration",
+      "evidence": "https://github.com/jacoriejay-afk/Hoopcheck/pull/808"
+    },
+    {
+      "id": "expo_identity_structure",
+      "status": "PASS",
+      "details": "Bundle/EAS app ID, associated domains, remote autoIncrement, requireCommit and submit app ID statically verified; this is not Apple signing approval",
+      "evidence": "https://github.com/jacoriejay-afk/Hoopcheck/blob/integration/build9-backend-completion-20261121/apps/mobile/eas.json"
+    },
+    {
+      "id": "production_website",
+      "status": "PASS",
+      "details": "Current website deployment verified READY; no claim about iOS binary",
+      "evidence": "https://hoopcheck.online"
+    },
+    {
+      "id": "source_main_reconciliation",
+      "status": "HOLD",
+      "details": "Release branch diverged: 230 ahead and 21 behind main when checked. Reconcile current main without overwriting protected backend, website, or StoreKit changes.",
+      "evidence": null
+    },
+    {
+      "id": "exact_head_all_ci",
+      "status": "HOLD",
+      "details": "Need exact release commit green web/native/security/entitlements, unsigned macOS iOS compile, iOS Passport smoke and screenshots in both themes.",
+      "evidence": null
+    },
+    {
+      "id": "startup_passport_fixes",
+      "status": "HOLD",
+      "details": "PRs #813/#814/#815 contain overlapping intro/Passport fixes; await real unsigned iOS simulator evidence and merge only a conflict-free choice.",
+      "evidence": null
+    },
+    {
+      "id": "production_schema_rehearsal",
+      "status": "HOLD",
+      "details": "Production schema/owner/ACL-equivalent PostgreSQL 17 migration rehearsal and verified rollback are missing.",
+      "evidence": null
+    },
+    {
+      "id": "owner_mfa_signed_http",
+      "status": "HOLD",
+      "details": "Production lacks protected get_own_profile() and global opt-in MFA. Candidate PR #812 merged as uninstalled SQL; need real Auth-issued owner/non-owner AAL1/AAL2 acceptance.",
+      "evidence": null
+    },
+    {
+      "id": "private_country_column_boundary",
+      "status": "HOLD",
+      "details": "Anon and authenticated roles can still SELECT raw profiles.current_country. Do not revoke until installed Build 7/8 profile/owner read compatibility is proved.",
+      "evidence": null
+    },
+    {
+      "id": "build7_8_compatibility",
+      "status": "HOLD",
+      "details": "Build 7 compiled source hash is not currently resolvable; Build 8 owner-profile call still lacks live protected backend contract. Verify on installed clients.",
+      "evidence": null
+    },
+    {
+      "id": "apple_bundle_signing",
+      "status": "HOLD",
+      "details": "Confirm approved bundle identifier in Apple Developer/ASC, live signing/profile capabilities, entitlements and remote next build number. No automatic signing prompts.",
+      "evidence": null
+    },
+    {
+      "id": "physical_iphone",
+      "status": "HOLD",
+      "details": "Cold start/freeze/touches, interruption recovery, OAuth/email, Face ID, chat, group navigation, both themes and profile editor not proven on a physical iPhone.",
+      "evidence": null
+    },
+    {
+      "id": "apple_sandbox_subscriptions",
+      "status": "HOLD",
+      "details": "Pro/Premium trial, purchase, cancel, renew, refund, restore, app switching, membership and Stripe/Apple entitlements need actual Apple Sandbox acceptance.",
+      "evidence": null
+    },
+    {
+      "id": "security_advisors",
+      "status": "HOLD",
+      "details": "Review callable SECURITY DEFINER warnings individually and leaked-password-protection settings; do not blanket revoke auth policies.",
+      "evidence": null
+    },
+    {
+      "id": "owner_release_authorization",
+      "status": "HOLD",
+      "details": "Final owner approval after the above evidence and dry-run release report; no EAS or TestFlight triggered by this manifest.",
+      "evidence": null
+    }
+  ]
+}
