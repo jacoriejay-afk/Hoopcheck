@@ -12,8 +12,8 @@ for(const [kind,table] of [["agents","agent_showcases"],["creators","creator_pro
   assert.match(source,/Cache-Control/);
 }
 const agents=read("app/api/network/agents/route.ts");
-assert.match(agents,/profiles!agent_showcases_profile_id_fkey!inner\\(/,"agent showcase must join public owner profile, not reviewer");
-assert.doesNotMatch(agents,/profiles!inner\\(/,"public agent showcase join must be unambiguous");
+assert.match(agents,/profiles!agent_showcases_profile_id_fkey!inner\(/,"agent showcase must join public owner profile, not reviewer");
+assert.doesNotMatch(agents,/profiles!inner\(/,"public agent showcase join must be unambiguous");
 assert.match(agents,/\.in\("profiles\.account_type",\["agent","scout"\]\)/);
 assert.match(agents,/identity_checked:p\.identity_verification_status==="verified"/);
 assert.match(agents,/display_name:row\.public_name/);
@@ -53,8 +53,8 @@ for(const path of ["app/directory/page.tsx","components/SiteHeader.tsx"]){
 }
 
 const agentReview=read("app/api/network/agent-reviews/route.ts");
-assert.equal((agentReview.match(/profiles!agent_showcases_profile_id_fkey!inner\\(/g)||[]).length,2,"review list and review update must each join the agent owner FK");
-assert.doesNotMatch(agentReview,/profiles!inner\\(/,"moderation agent lookup must be unambiguous");
+assert.equal((agentReview.match(/profiles!agent_showcases_profile_id_fkey!inner\(/g)||[]).length,2,"review list and review update must each join the agent owner FK");
+assert.doesNotMatch(agentReview,/profiles!inner\(/,"moderation agent lookup must be unambiguous");
 assert.match(agentReview,/auth\.auth\.getUser\(token\)/);
 assert.match(agentReview,/scoped\.rpc\("get_current_user_admin_role"\)/);
 assert.match(agentReview,/user\.id===profile_id/);
