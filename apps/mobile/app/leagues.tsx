@@ -1,4 +1,5 @@
-import { DirectoryCrest, CountryChip } from "../components/DirectoryIdentity";
+import { CountryChip } from "../components/DirectoryIdentity";
+import { EntityArtwork } from "../components/EntityArtwork";
 import { Input, Button } from "../src/primitives";
 import { useCachedRead, useNetwork } from "../src/native/network";
 import { OfflineBanner } from "../components/OfflineBanner";
@@ -98,7 +99,7 @@ export default function LeaguesScreen() {
           renderItem={({ item, index }) => (
             <Reveal key={`${appliedTerm}:${item.id}`} index={index}>
             <Pressable onPress={() => router.push({ pathname: "/leagues/[id]", params: { id: item.id } })} style={styles.card}>
-              <DirectoryCrest name={item.name} kind="leagues" logoUrl={item.logo_url} />
+              <EntityArtwork name={item.name} kind="leagues" logoUrl={item.logo_url} />
               <View style={styles.cardBody}>
                 <Text style={styles.leagueName}>{item.name}</Text>
                 {!item.logo_url && <Text style={styles.meta}>Official crest pending · showing league badge</Text>}
