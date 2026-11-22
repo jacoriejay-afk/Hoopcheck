@@ -46,6 +46,10 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage, playe
   const [saving,setSaving] = useState(false);
   const [message,setMessage] = useState("");
   const [loadError,setLoadError] = useState("");
+  const describeLoadError = (error: { code?: string; message?: string }) =>
+    error.code === "42P01" || error.code === "PGRST205" || /player_career_stops.*(schema cache|does not exist)/i.test(error.message || "")
+      ? "Career Passport is not available yet. Its secure career-history database must be activated before stops can load or save."
+      : "Career stops could not load. Check your connection and retry.";
   const [teamId,setTeamId] = useState("");
   const [editingStop,setEditingStop] = useState(false);
   const [manualTeam,setManualTeam] = useState(false);
@@ -87,7 +91,7 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage, playe
       const {data,error} = await supabase.from("player_career_stops")
         .select("id,player_id,team_id,team_name,league_name,country,seasons,position,stop_order,is_public")
         .eq("player_id",playerId).order("stop_order",{ascending:true}).order("created_at",{ascending:true});
-      if (error) { setLoadError("Career stops could not load. Please retry."); return; }
+      if (error) { setLoadError(describeLoadError(error)); return; }
       setStops((data||[]) as CareerStop[]);
     } catch {
       setLoadError("Career stops could not load. Check your connection and retry.");
@@ -107,7 +111,7 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage, playe
           .select("id,player_id,team_id,team_name,league_name,country,seasons,position,stop_order,is_public")
           .eq("player_id",playerId).order("stop_order",{ascending:true}).order("created_at",{ascending:true});
         if(!active) return;
-        if(error) setLoadError("Career stops could not load. Please retry.");
+        if(error) setLoadError(describeLoadError(error));
         else setStops((data||[]) as CareerStop[]);
       } catch {
         if(active) setLoadError("Career stops could not load. Check your connection and retry.");
@@ -233,7 +237,7 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage, playe
       </article>)}
     </div> : !loading && !loadError && <div className="hc-journey-empty"><span>01 / CAREER PASSPORT</span><h3>No career stops added yet</h3><p>Build a timeline of the teams, leagues, countries, seasons, and positions that shaped your career.</p></div>}
     {isOwnProfile && canManage && !loading && !loadError && <PlayerPassportExport playerName={playerName} verifiedPlayer={verifiedPlayer} stops={stops} />}
-    {isOwnProfile&&!canManage&&<div className="hc-journey-upgrade"><strong>Premium Players · My Journey</strong><p>Add career stops and create your professional basketball passport. Public sharing is always optional.</p><Link href="/membership" className="btn">Unlock My Journey</Link></div>}
+    {isOwnProfile&&!canManage&&!loadError&&<div className="hc-journey-upgrade"><strong>Premium Players · My Journey</strong><p>Add career stops and create your professional basketball passport. Public sharing is always optional.</p><Link href="/membership" className="btn">Unlock My Journey</Link></div>}
     {isOwnProfile&&canManage&&!loading&&!loadError&&<div className="hc-journey-editor">
       <div className="hc-journey-editor__intro">
         <div><strong>Career history & team reviews</strong><p>Find your club, save the season, and review it separately when you're ready. Adding a career stop does not publish a review or verify team affiliation.</p></div>
