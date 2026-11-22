@@ -236,7 +236,7 @@ export default function FanLivePage() {
       if(!roomOpen(selected,new Date())){return;}
       const now=new Date().toISOString();
       const {error}=await supabase.from("fan_live_chat_presence").upsert({game_id:gameId,user_id:userId,last_seen_at:now},{onConflict:"game_id,user_id"});
-      
+      if(error)return; // Do not count an unaccepted heartbeat as a joined member.
       await refreshPresence(gameId);
     };
     void heartbeat();
