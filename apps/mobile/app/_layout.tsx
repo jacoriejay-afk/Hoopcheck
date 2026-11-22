@@ -68,7 +68,7 @@ function RootLayout() {
   useEffect(() => {
     if (!sessionReady || segments[0] === "about") return;
     const currentRoute = segments[0] ?? "";
-    const inAppArea = ["dashboard", "team-hub", "fan-live", "notifications", "feed", "fan-feed", "reels", "account", "search", "teams", "womens", "leagues", "players", "coaches", "choose-username", "settings", "membership"].includes(currentRoute);
+    const inAppArea = ["dashboard", "team-hub", "fan-live", "notifications", "messages", "feed-welcome", "hoopgroups", "feed", "fan-feed", "reels", "account", "search", "teams", "womens", "leagues", "players", "coaches", "choose-username", "settings", "membership"].includes(currentRoute);
     if (["web", "sign-in", "sign-up"].includes(currentRoute)) return;
     const onPasswordRecovery = currentRoute === "reset-password";
     // Let the OAuth callback exchange its PKCE code and choose the destination.
@@ -105,10 +105,13 @@ function RootLayout() {
       >
         <Stack.Screen name="connections" options={{ title: "Connections" }} />
         <Stack.Screen name="about" options={{ title: "About HoopCheck" }} />
-        <Stack.Screen name="team-hub/groups/index" options={{ title: "HoopGroups" }} />
+        <Stack.Screen name="team-hub/groups/index" options={{ title: "Team Fan Groups" }} />
         <Stack.Screen name="team-hub/groups/[teamId]" options={{ title: "Club group" }} />
         <Stack.Screen name="fan-live" options={{ title: "Live Games" }} />
         <Stack.Screen name="notifications" options={{ title: "Activity Center" }} />
+        <Stack.Screen name="messages" options={{ title: "HoopChat messages" }} />
+        <Stack.Screen name="feed-welcome" options={{ title: "Welcome to HoopFeed" }} />
+        <Stack.Screen name="hoopgroups" options={{ title: "HoopGroups communities" }} />
         <Stack.Screen name="feed" options={{ headerShown: false }} />
         <Stack.Screen name="fan-feed" options={{ headerShown: false }} />
         <Stack.Screen name="reels" options={{ headerShown: false }} />
