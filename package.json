@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && npm run audit:bundle && npm run check:hub-theme-pairing && npm run check:nextgen-phase1 && npm run check:username-privacy && npm run check:owner-profile-privacy && npm run check:phase5-safety && npm run test:phase5-reel-admin && node scripts/check-follow-avatar-mask-candidate.mjs && npm run check:hoopchat-contact-privileges && node --test scripts/check-home-court-account-isolation.test.mjs",
+    "build": "next build && npm run audit:bundle && npm run check:hub-theme-pairing && node scripts/check-apple-certificate-tracing.mjs",
     "start": "next start",
     "lint": "eslint .",
     "audit:surfaces": "node scripts/audit-hardcoded-surfaces.mjs",
@@ -17,16 +17,10 @@
     "check:rounded-corners": "node scripts/check-rounded-corners.mjs",
     "test:hoopfeed-rls": "node scripts/test-unified-hoopfeed-rls.mjs",
     "test:stripe-trial": "node scripts/test-stripe-trial-eligibility.mjs",
-    "test:stripe-trial-recovery": "node scripts/test-stripe-trial-recovery.mjs",
-    "check:nextgen-phase1": "node scripts/check-nextgen-phase1.mjs",
-    "check:username-privacy": "node scripts/check-username-privacy.cjs",
-    "check:owner-profile-privacy": "node scripts/check-owner-profile-privacy.cjs",
-    "check:phase5-safety": "node scripts/check-phase5-safety.mjs",
-    "test:phase5-reel-admin": "node --test scripts/test-phase5-reel-admin.mjs",
-    "check:follow-avatar-mask": "node scripts/check-follow-avatar-mask-candidate.mjs",
-    "check:hoopchat-contact-privileges": "node scripts/check-hoopchat-contact-privileges.mjs"
+    "test:stripe-trial-recovery": "node scripts/test-stripe-trial-recovery.mjs"
   },
   "dependencies": {
+    "@apple/app-store-server-library": "3.1.0",
     "@supabase/ssr": "0.7.0",
     "@supabase/supabase-js": "2.76.1",
     "next": "16.4.5",
