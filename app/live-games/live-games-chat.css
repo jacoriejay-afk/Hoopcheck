@@ -17,3 +17,15 @@ html.theme-dark .hc-live-hub-page .hc-live-badge--visible{color:#fff!important;b
 .hc-live-card__prediction { width: 100%; padding: 8px 12px 12px; border-top: 1px solid var(--hc-card-border); }
 .hc-live-card__prediction .hc-prediction { margin: 0; }
 @media (max-width: 600px) { .hc-live-card__prediction { padding-inline: 8px; } }
+
+/* Phase 5: fast region/league switching on the single Live Games screen. */
+.hc-live-discovery{display:grid;gap:10px;margin-top:10px;min-width:0}
+.hc-live-shortcut-section{display:grid;gap:7px;min-width:0}
+.hc-live-shortcut-section>strong{color:var(--hc-foreground);font-size:.74rem;text-transform:uppercase;letter-spacing:.07em}
+.hc-live-shortcut-chips{display:flex;align-items:center;gap:7px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin;padding-bottom:5px;max-width:100%;min-width:0;overscroll-behavior-inline:contain}
+.hc-live-shortcut-chips button{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;max-width:230px;overflow:hidden;text-overflow:ellipsis;flex:none;border:1px solid var(--hc-card-border);border-radius:999px;background:var(--hc-surface-soft);color:var(--hc-foreground);padding:9px 12px;font:inherit;font-size:.79rem;font-weight:750;min-height:40px;cursor:pointer}
+.hc-live-shortcut-chips button[aria-pressed="true"]{background:var(--hc-orange,#ff6729);color:#101010;border-color:transparent}
+.hc-live-shortcut-chips button span{font-size:.7rem;opacity:.8}
+.hc-live-shortcut-chips button:focus-visible,.hc-live-clear-filters:focus-visible{outline:3px solid var(--hc-orange,#ff6729);outline-offset:2px}
+.hc-live-clear-filters{cursor:pointer;border:1px solid var(--hc-card-border);border-radius:999px;background:var(--hc-surface-soft);color:var(--hc-foreground);padding:8px 12px;font-size:.8rem;font-weight:800;min-height:40px;justify-self:start}
+@media(max-width:600px){.hc-live-discovery{gap:8px}.hc-live-shortcut-chips button{max-width:176px;padding-inline:10px}.hc-live-clear-filters{min-height:44px}}

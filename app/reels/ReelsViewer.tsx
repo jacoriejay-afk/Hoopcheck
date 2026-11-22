@@ -216,7 +216,7 @@ export default function ReelsViewer() {
             <nav aria-label="Reel actions">
               <Link href={`/feed#post-${post.id}`}>Check & comment</Link>
               <button type="button" onClick={() => void sharePost(post.id)}>Share</button>
-              <Link href={`/support?reportReel=${post.id}`} aria-label="Report this Reel to HoopCheck support">Report</Link>
+              <Link href={`/support?reportReel=${post.id}`} aria-label="Confidentially report this Reel to HoopCheck moderation">Report Reel</Link>
               <button type="button" onClick={() => hidePost(post.id)}>Hide</button>
               {post.author_id !== viewerId && <button type="button" onClick={() => hideCreator(post.author_id)}>Hide creator</button>}
               {post.author_id !== viewerId && <button type="button" onClick={() => void blockCreator(post.author_id)}>Block account</button>}

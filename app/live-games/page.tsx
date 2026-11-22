@@ -13,7 +13,6 @@ import TeamLogo from "../../components/TeamLogo";
 import GameWinnerPrediction from "../../components/GameWinnerPrediction";
 import "../game-predictions.css";
 import "./live-games-chat.css";
-import "./live-activity-overview.css";
 import { getHoopCheckEntitlements } from "../../lib/membership-tier";
 
 type Game = {
@@ -56,11 +55,9 @@ export default function LiveGamesPage() {
   const [joinedGameIds, setJoinedGameIds] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<Filter>("live");
   const [collapsedLeagues, setCollapsedLeagues] = useState<string[]>([]);
-  const [expandedGameGroups, setExpandedGameGroups] = useState<string[]>([]);
   const [query, setQuery] = useState("");
   const [countryFocus, setCountryFocus] = useState("");
   const [leagueFocus, setLeagueFocus] = useState("");
-  const [showAllGroups, setShowAllGroups] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [allowed, setAllowed] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -185,32 +182,32 @@ export default function LiveGamesPage() {
     away: teams[game.opponent_team_id || ""] || { id: game.opponent_team_id || "", name: game.opponent_name },
   })), [games, teams, clock]);
 
-  const activityIndex = useMemo(() => {
-    const countries = new Map<string, { name: string; games: number; members: number; live: number }>();
-    const leagues = new Map<string, { name: string; games: number; members: number; live: number }>();
-    for (const entry of prepared) {
-      const country = entry.game.country || entry.home?.country || "Other countries";
-      const league = entry.game.league_name || entry.home?.league_name || "Other leagues";
-      const liveNow = entry.game.status.toLowerCase() === "live" && entry.availability.state === "LIVE";
-      for (const [map, key] of [[countries, country], [leagues, league]] as const) {
-        const next = map.get(key) || { name: key, games: 0, members: 0, live: 0 };
-        next.games++;
-        next.members += presenceCounts[entry.game.id] || 0;
-        if (liveNow) next.live++;
-        map.set(key, next);
+  // Activity ordering uses provider status and real chat presence, never
+  // invented popularity metrics. Limit choices so mobile users needn't scroll.
+  const discoveryShortcuts = useMemo(() => {
+    const countries = new Map<string, { games: number; activity: number }>();
+    const leagues = new Map<string, { games: number; activity: number }>();
+    for (const { game, home } of prepared) {
+      const country = game.country || home?.country || "";
+      const league = game.league_name || home?.league_name || "";
+      const activity = (presenceCounts[game.id] || 0) * 4 + (game.status.toLowerCase() === "live" ? 8 : 0);
+      for (const [name, map] of [[country, countries], [league, leagues]] as const) {
+        if (!name) continue;
+        const existing = map.get(name) || { games: 0, activity: 0 };
+        map.set(name, { games: existing.games + 1, activity: existing.activity + activity });
       }
     }
-    const rank = (a: { games: number; members: number; live: number }, b: { games: number; members: number; live: number }) =>
-      b.members - a.members || b.live - a.live || b.games - a.games;
-    return { countries: [...countries.values()].sort(rank), leagues: [...leagues.values()].sort(rank) };
+    const top = (items: Map<string, { games: number; activity: number }>) =>
+      [...items.entries()].sort((a,b) => b[1].activity - a[1].activity || b[1].games - a[1].games || a[0].localeCompare(b[0]))
+        .slice(0, 7).map(([name, counts]) => ({ name, games: counts.games }));
+    return { countries: top(countries), leagues: top(leagues) };
   }, [prepared, presenceCounts]);
 
   const filtered = useMemo(() => prepared.filter(({game,home,away,availability}) => {
-    const actualCountry = game.country || home?.country || "Other countries";
-    const actualLeague = game.league_name || home?.league_name || "Other leagues";
-    if (countryFocus && countryFocus !== actualCountry) return false;
-    if (leagueFocus && leagueFocus !== actualLeague) return false;
     const leagueName = game.league_name || teams[game.team_id]?.league_name || "";
+    const gameCountry = game.country || home?.country || "";
+    if (countryFocus && gameCountry !== countryFocus) return false;
+    if (leagueFocus && leagueName !== leagueFocus) return false;
 
     const search = query.trim().toLocaleLowerCase();
     if (search && ![home?.name, away?.name, game.opponent_name, leagueName, game.country, home?.country, away?.country].some(value => value?.toLocaleLowerCase().includes(search))) return false;
@@ -336,24 +333,6 @@ export default function LiveGamesPage() {
         <button type="button" className="btn dark" disabled={refreshing} onClick={() => void refreshNow()}>{refreshing ? "Checking…" : "Refresh games"}</button></div>
       <p className="muted" role="status">{lastCheckedAt ? "Scores last checked " + lastCheckedAt.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }) + " · Individual score freshness depends on the provider." : "Score source not checked yet."}</p>
     </section>
-    <section aria-label="Browse leagues and countries by live activity" className="hc-live-activity-panel">
-      <div className="hc-live-activity-panel__intro"><div><p className="eyebrow">ACTIVITY-FIRST DISCOVERY</p><h2>Find your game faster</h2><p className="muted">Live chat participation, live fixtures, then scheduled games determine the order. Counts are from currently loaded games.</p></div>
-        <button type="button" onClick={() => { setCountryFocus(""); setLeagueFocus(""); setQuery(""); }} disabled={!countryFocus && !leagueFocus && !query}>Clear filters</button></div>
-      <div className="hc-live-activity-panel__pickers">
-        <details><summary>Browse all countries ({activityIndex.countries.length}){countryFocus ? " · " + countryFocus : ""}</summary>
-          <div className="hc-live-activity-panel__choices" role="group" aria-label="Filter games by country">
-            {activityIndex.countries.map(item => <button type="button" key={item.name} aria-pressed={countryFocus===item.name} onClick={() => { setCountryFocus(current=>current===item.name?"":item.name); setLeagueFocus(""); setShowAllGroups(false); }}>{item.name} · {item.games} games</button>)}
-          </div>
-        </details>
-        <details><summary>Browse all leagues ({activityIndex.leagues.length}){leagueFocus ? " · " + leagueFocus : ""}</summary>
-          <div className="hc-live-activity-panel__choices" role="group" aria-label="Filter games by league">
-            {activityIndex.leagues.map(item => <button type="button" key={item.name} aria-pressed={leagueFocus===item.name} onClick={() => { setLeagueFocus(current=>current===item.name?"":item.name); setShowAllGroups(false); }}>{item.name} · {item.games} games</button>)}
-          </div>
-        </details>
-      </div>
-      <div className="hc-live-activity-panel__top"><strong>Active countries</strong><div>{activityIndex.countries.slice(0,6).map(item => <button type="button" key={item.name} aria-pressed={countryFocus === item.name} onClick={() => { setCountryFocus(current => current === item.name ? "" : item.name); setLeagueFocus(""); }}>{item.name}<small>{item.members} chatting · {item.live} live · {item.games} games</small></button>)}</div></div>
-      <div className="hc-live-activity-panel__top"><strong>Active leagues</strong><div>{activityIndex.leagues.slice(0,6).map(item => <button type="button" key={item.name} aria-pressed={leagueFocus === item.name} onClick={() => setLeagueFocus(current => current === item.name ? "" : item.name)}>{item.name}<small>{item.members} chatting · {item.live} live · {item.games} games</small></button>)}</div></div>
-    </section>
     <section aria-label="Happening Now" className="hc-live-hub-section">
       <div className="hc-live-section-heading"><div><p className="eyebrow">THE CONVERSATION</p><h1>Happening Now</h1></div></div>
       {filtered.filter(({game,availability}) => availability.chatOpen && (presenceCounts[game.id] || 0) > 0)
@@ -373,6 +352,27 @@ export default function LiveGamesPage() {
       <div className="hc-live-hub-filter-tools">
         <input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search teams, leagues, countries…" aria-label="Search games" className="hc-live-hub-search" />
       </div>
+      {(countryFocus || leagueFocus || query) && <button type="button" className="hc-live-clear-filters" onClick={() => { setCountryFocus(""); setLeagueFocus(""); setQuery(""); }}>Clear all filters</button>}
+      <div className="hc-live-discovery" aria-label="Browse games by activity and region">
+        {discoveryShortcuts.countries.length > 1 && <div className="hc-live-shortcut-section">
+          <strong>Countries with fixtures</strong>
+          <div className="hc-live-shortcut-chips">
+            {discoveryShortcuts.countries.map(({name,games}) => <button key={name} type="button" aria-pressed={countryFocus === name}
+              onClick={() => setCountryFocus(current => current === name ? "" : name)} title={name + ": " + games + " fixtures"}>
+              {name} <span>{games}</span>
+            </button>)}
+          </div>
+        </div>}
+        {discoveryShortcuts.leagues.length > 1 && <div className="hc-live-shortcut-section">
+          <strong>Leagues to browse</strong>
+          <div className="hc-live-shortcut-chips">
+            {discoveryShortcuts.leagues.map(({name,games}) => <button key={name} type="button" aria-pressed={leagueFocus === name}
+              onClick={() => setLeagueFocus(current => current === name ? "" : name)} title={name + ": " + games + " fixtures"}>
+              {name} <span>{games}</span>
+            </button>)}
+          </div>
+        </div>}
+      </div>
     </section>
     {message && <p className="hc-live-hub-message" role="status">{message}</p>}
 
@@ -383,7 +383,9 @@ export default function LiveGamesPage() {
       const ordered = [...selected].sort((a,b) => {
         const mineA = followedIds.includes(a.game.team_id) || Boolean(a.game.opponent_team_id && followedIds.includes(a.game.opponent_team_id));
         const mineB = followedIds.includes(b.game.team_id) || Boolean(b.game.opponent_team_id && followedIds.includes(b.game.opponent_team_id));
-        return Number(mineB) - Number(mineA) || (presenceCounts[b.game.id] || 0) - (presenceCounts[a.game.id] || 0) || Date.parse(a.game.scheduled_at || "") - Date.parse(b.game.scheduled_at || "");
+        return Number(mineB) - Number(mineA)
+          || (presenceCounts[b.game.id] || 0) - (presenceCounts[a.game.id] || 0)
+          || Date.parse(a.game.scheduled_at || "") - Date.parse(b.game.scheduled_at || "");
       });
       const groups = new Map<string, typeof prepared>();
       for (const entry of ordered) {
@@ -394,22 +396,15 @@ export default function LiveGamesPage() {
         const key = (timeBucket ? timeBucket + " · " : "") + country + " / " + league;
         groups.set(key, [...(groups.get(key) || []), entry]);
       }
-      const groupRows = [...groups.entries()].sort((a,b) => {
-        const activity = (rows: typeof prepared) => rows.reduce((n,entry) => n + (presenceCounts[entry.game.id] || 0),0);
-        return activity(b[1]) - activity(a[1]) || b[1].length - a[1].length;
-      });
       return <section className="hc-live-hub-section" aria-label={filter === "my-teams" ? "My team games" : filter === "upcoming" ? "Upcoming games" : "Live conversations"}>
         {!ordered.length && <p className="muted">No games in this segment right now.</p>}
-        {(showAllGroups ? groupRows : groupRows.slice(0, 4)).map(([key, entries]) => <section key={key} className="hc-live-hub-section">
+        {[...groups.entries()].map(([key, entries]) => <section key={key} className="hc-live-hub-section">
           <button type="button" aria-expanded={!collapsedLeagues.includes(key)} className="hc-live-section-heading" onClick={() => setCollapsedLeagues(current => current.includes(key) ? current.filter(value => value !== key) : [...current,key])}>
             <strong>{key}</strong><span>{entries.length} games {collapsedLeagues.includes(key) ? "＋" : "−"}</span>
           </button>
-          {!collapsedLeagues.includes(key) && <div className="hc-live-hub-grid">{(expandedGameGroups.includes(key) ? entries : entries.slice(0, 3)).map(entry =>
-            <GameCard key={entry.game.id} entry={entry} variant={live.some(item => item.game.id === entry.game.id) ? "live" : ["final","finished"].includes(entry.game.status.toLowerCase()) ? "recent" : entry.availability.phase === "post-game" ? "postgame" : "upcoming"} />)}
-            {entries.length > 3 && <button className="hc-live-view-all" type="button" onClick={() => setExpandedGameGroups(current => current.includes(key) ? current.filter(item => item !== key) : [...current, key])}>{expandedGameGroups.includes(key) ? "Show top 3 games" : `See all ${entries.length} games in this group`}</button>}
-          </div>}
+          {!collapsedLeagues.includes(key) && <div className="hc-live-hub-grid">{entries.map(entry =>
+            <GameCard key={entry.game.id} entry={entry} variant={live.some(item => item.game.id === entry.game.id) ? "live" : ["final","finished"].includes(entry.game.status.toLowerCase()) ? "recent" : entry.availability.phase === "post-game" ? "postgame" : "upcoming"} />)}</div>}
         </section>)}
-        {groupRows.length > 4 && <button type="button" className="hc-live-view-all" onClick={() => setShowAllGroups(value => !value)}>{showAllGroups ? "Show compact overview" : `Show all ${groupRows.length} league / country groups`}</button>}
       </section>;
     })()}
 
