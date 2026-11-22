@@ -160,7 +160,7 @@ export default function ProfilePage() {
             : <Link href="/account#visibility">{t("editVisibility")}</Link>)}
           {p.account_type === "player" && <Link href="/account#team-review-checklist">Team review checklist</Link>}
         </nav>
-        {p.account_type === "player" && <div id="career-passport" className="hc-profile-passport-anchor">
+        {p.account_type === "player" && <div className="hc-profile-passport-anchor">
           <PlayerJourney playerId={p.id} isOwnProfile={true} canManage={canManageJourney}
             playerName={name} verifiedPlayer={p.player_verified === true} />
         </div>}

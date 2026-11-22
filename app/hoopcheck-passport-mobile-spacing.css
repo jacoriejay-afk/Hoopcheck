@@ -89,7 +89,7 @@
   .hc-home3 .hc-role-quick-links__grid a {min-height:64px;padding:9px}
   .hc-home3 .hc-role-quick-links__grid strong {font-size:13px;line-height:1.2}
   .hc-home3 .hc-role-quick-links__grid small {font-size:11px;line-height:1.25}
-  .hc-home3 .hc-court {padding:12px;margin-top:2px;border-radius:17px}
+  .hc-home3 .hc-my-court {padding:12px;margin-top:2px;border-radius:17px}
   .hc-home3 .hc-court-head {margin-bottom:10px}
   .hc-home3 .hc-court-actions {grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
   .hc-home3 .hc-court-actions a {
@@ -191,3 +191,6 @@
 .theme-dark .hc-journey-review-status { background:#193a2d;border-color:#448d66;color:#baf4d1; }
 
 #team-review-checklist { scroll-margin-top:calc(120px + env(safe-area-inset-top,0px)); }
+
+/* PlayerJourney is the single Career Passport hash target. */
+.hc-member-profile-page #career-passport {scroll-margin-top:calc(110px + env(safe-area-inset-top,0px));}
