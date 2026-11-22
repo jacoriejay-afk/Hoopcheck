@@ -19,7 +19,10 @@ assert.match(groups, /HoopGroups are not open yet/, "Never claim uninstalled bac
 assert.match(groups, /\(!enabled \|\| \(userId && !backendReady\)\)/, "Unauthenticated visitors must see unavailability too");
 assert.match(groups, /aria-live="polite" aria-relevant="additions text"/, "Community discussion should announce new messages accessibly");
 assert.match(live, /aria-label="Search game chat rooms"/, "Live-room directory needs accessible search");
-assert.match(live, /aria-pressed=\{selected\?\.id===game\.id\}/, "Selected room needs an accessible state");
+assert.match(live, /href=\{"\/fan-live\/room\/"\+encodeURIComponent\(game\.id\)\}/, "Every room entry must open a dedicated game URL");
+assert.match(live, /inRoom&&selected&&<section/, "Room messages must render only on the dedicated page");
+assert.match(read("app/fan-live/room/[gameId]/page.tsx"), /from "\.\.\/\.\.\/page"/, "Dedicated game route must exist");
+assert.match(live, /activeRoomRef\.current!==gameId/, "Old responses may not overwrite a new room");
 assert.match(live, /id="live-chat-room"/, "Chat must have a reachable jump target");
 assert.match(live, /role="log" aria-live="polite"/, "Chat updates must be announced without stealing focus");
 assert.match(passport, /PGRST205/, "Missing career table must be explained rather than presented as an empty timeline");

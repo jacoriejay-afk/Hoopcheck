@@ -29,3 +29,39 @@ html.theme-dark .hc-live-hub-page .hc-live-badge--visible{color:#fff!important;b
 .hc-live-shortcut-chips button:focus-visible,.hc-live-clear-filters:focus-visible{outline:3px solid var(--hc-orange,#ff6729);outline-offset:2px}
 .hc-live-clear-filters{cursor:pointer;border:1px solid var(--hc-card-border);border-radius:999px;background:var(--hc-surface-soft);color:var(--hc-foreground);padding:8px 12px;font-size:.8rem;font-weight:800;min-height:40px;justify-self:start}
 @media(max-width:600px){.hc-live-discovery{gap:8px}.hc-live-shortcut-chips button{max-width:176px;padding-inline:10px}.hc-live-clear-filters{min-height:44px}}
+
+/* Compact live game directory and single-row active conversations. */
+html body main.hc-live-hub-page .hc-live-hub-section {margin-block:14px}
+html body main.hc-live-hub-page .hc-live-section-heading {margin-bottom:9px}
+html body main.hc-live-hub-page .hc-live-section-heading :is(h1,h2) {font-size:clamp(17px,3vw,23px);line-height:1.2;margin:0}
+html body main.hc-live-hub-page .hc-live-hub-filters {padding:9px 0;margin-block:12px;border:0;border-radius:0;border-top:1px solid var(--hc-card-border,var(--border));border-bottom:1px solid var(--hc-card-border,var(--border));background:transparent}
+html body main.hc-live-hub-page .hc-live-hub-grid {gap:8px}
+html body main.hc-live-hub-page .hc-live-hub-card {padding:10px 12px;border:1px solid var(--hc-card-border,var(--border));border-radius:11px;box-shadow:none;min-height:0}
+html body main.hc-live-hub-page .hc-live-hub-card.is-live {border-inline-start:3px solid #e53935;box-shadow:none}
+html body main.hc-live-hub-page .hc-live-hub-card__top {margin-bottom:9px;gap:6px}
+html body main.hc-live-hub-page .hc-live-card__teams {gap:6px}
+html body main.hc-live-hub-page .hc-live-card__side strong {font-size:12px}
+html body main.hc-live-hub-page .hc-live-card__meta {gap:7px;margin-block:8px 3px;font-size:11px}
+html body main.hc-live-hub-page .hc-live-card__actions {gap:6px;margin-top:7px;flex-wrap:wrap}
+html body main.hc-live-hub-page .hc-live-card__crest.hc-live-team-logo {flex-basis:36px;width:36px;height:36px;min-width:36px;min-height:36px}
+html body main.hc-live-hub-page .hc-live-join {padding:8px 13px;min-height:40px;border-radius:999px;font-size:12px}
+html body main.hc-live-hub-page .hc-live-active-rooms {border:0}
+html body main.hc-live-hub-page .hc-live-directory-link {color:var(--hc-orange,#ff642a);font-size:12px;font-weight:800;text-decoration:none}
+html body main.hc-live-hub-page .hc-live-conversations-rail {display:flex;gap:7px;overflow-x:auto;overscroll-behavior-inline:contain;scrollbar-width:thin;padding-bottom:6px;max-width:100%}
+html body main.hc-live-hub-page .hc-live-conversations-rail .muted {font-size:12px}
+html body main.hc-live-hub-page .hc-live-conversation-link {display:flex;flex:0 0 auto;max-width:min(260px,75vw);min-width:165px;flex-direction:column;gap:3px;padding:9px 12px;border:1px solid var(--hc-card-border,var(--border));border-radius:10px;background:var(--hc-card-surface,var(--surface));color:var(--hc-on-card,var(--ink));text-decoration:none}
+html body main.hc-live-hub-page .hc-live-conversation-link span {overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:12px;font-weight:850}
+html body main.hc-live-hub-page .hc-live-conversation-link small {font-size:10px;color:var(--gray-500)}
+html body main.hc-live-hub-page .hc-live-conversation-link:hover {border-color:var(--hc-orange,#ff642a)}
+@media(max-width:600px){
+  html body main.hc-live-hub-page .page-container {padding-left:10px;padding-right:10px}
+  html body main.hc-live-hub-page .hc-live-hub-card {padding:9px 10px}
+  html body main.hc-live-hub-page .hc-live-hub-section {margin-block:11px}
+  html body main.hc-live-hub-page .hc-live-card__crest.hc-live-team-logo {flex-basis:32px;width:32px;height:32px;min-width:32px;min-height:32px}
+  html body main.hc-live-hub-page .hc-live-card__side strong {font-size:11px}
+}
+
+html body main.hc-live-hub-page .hc-live-discovery-toggle {margin:2px 0 0}
+html body main.hc-live-hub-page .hc-live-discovery-toggle>summary {display:list-item;list-style-position:inside;cursor:pointer;color:var(--hc-on-card,var(--ink));font-size:12px;font-weight:850;min-height:36px;padding:7px 1px}
+html body main.hc-live-hub-page .hc-live-discovery-toggle>summary::marker {color:var(--hc-orange,#ff642a)}
+html body main.hc-live-hub-page .hc-live-discovery-toggle[open] .hc-live-discovery {padding:5px 0 9px}
