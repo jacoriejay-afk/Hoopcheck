@@ -22,6 +22,11 @@ const ACTIONS: Action[] = [
 ];
 const allowed = new Set<ActionId>(ACTIONS.map(action => action.id));
 const accents: CourtPrefs["accent"][] = ["orange", "blue", "purple"];
+const spanishLabels: Partial<Record<ActionId, string>> = {
+  hoopgroups: "HoopGroups", live: "Partidos en vivo", hoopfeed: "HoopFeed",
+  teams: "Consultar un equipo", players: "Jugadores", search: "Buscar",
+  fans: "Grupos de aficionados", alerts: "Alertas", account: "Mi cuenta",
+};
 
 function restore(raw: string | null): CourtPrefs {
   if (!raw) return DEFAULT;
@@ -40,7 +45,8 @@ function restore(raw: string | null): CourtPrefs {
   } catch { return DEFAULT; }
 }
 
-export default function HomeCourtSpace({ profileId, hasFeedAccess }: { profileId: string; hasFeedAccess: boolean }) {
+export default function HomeCourtSpace({ profileId, hasFeedAccess, language }: { profileId: string; hasFeedAccess: boolean; language: string }) {
+  const spanish = language === "es";
   const [prefs, setPrefs] = useState<CourtPrefs>(DEFAULT);
   const [ready, setReady] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -88,10 +94,10 @@ export default function HomeCourtSpace({ profileId, hasFeedAccess }: { profileId
       <span><strong>HoopGroups</strong><small>Explore basketball communities, channels & conversations</small></span>
       <HoopIcon name="arrow-right" size={19}/>
     </Link>
-    <div className="hc-court-quick-heading">QUICK ACTIONS <small>{selected.length} pinned</small></div>
+    <div className="hc-court-quick-heading"><h2>{spanish ? "ACCIONES RÁPIDAS" : "QUICK ACTIONS"}</h2><small>{selected.length} {spanish ? "fijados" : "pinned"}</small></div>
     <nav className="hc-court-actions" aria-label="My Court quick actions">
       {selected.map(action => <Link key={action.id} href={action.id === "hoopfeed" && !hasFeedAccess ? "/membership" : action.href}>
-        <HoopIcon name={action.icon} size={21}/><span>{action.id === "hoopfeed" && !hasFeedAccess ? "Unlock HoopFeed" : action.label}</span>
+        <HoopIcon name={action.icon} size={21}/><span>{action.id === "hoopfeed" && !hasFeedAccess ? (spanish ? "Desbloquear HoopFeed" : "Unlock HoopFeed") : spanish ? spanishLabels[action.id] ?? action.label : action.label}</span>
       </Link>)}
     </nav>
     {editing && <div id="hc-court-editor" className="hc-court-editor">
