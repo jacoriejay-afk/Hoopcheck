@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 
 const read = path => readFileSync(new URL("../" + path, import.meta.url), "utf8");
 const css = read("app/hoopcheck-profile-groups-live-accessibility.css");
+const lightProfileCss = read("app/hoopcheck-profile-light-unification.css");
 const layout = read("app/layout.tsx");
 const groups = read("app/hoopgroups/page.tsx");
 const team = read("components/TeamProfileHero.tsx");
@@ -10,6 +11,7 @@ const live = read("app/fan-live/page.tsx");
 const passport = read("components/PlayerJourney.tsx");
 
 assert.match(layout, /hoopcheck-profile-groups-live-accessibility\.css/, "Late CSS override must be loaded");
+assert.doesNotMatch(lightProfileCss, /\.hc-team-look-hero/, "Light cards must not override dark branded club hero backgrounds or white text");
 assert.match(css, /\.hc-team-look-hero[\s\S]*?-webkit-text-fill-color:#fff !important/, "Dark team hero must force readable white text");
 assert.match(css, /\.hc-team-look-hero \.hc-team-hero-fan-link[\s\S]*?color:#101010/, "Orange fan-group button needs dark text");
 assert.match(team, /Club Fan Group/, "A club's official Fan Group must not be named a HoopGroup");
