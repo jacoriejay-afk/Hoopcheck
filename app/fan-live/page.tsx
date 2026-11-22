@@ -49,7 +49,7 @@ export default function FanLivePage() {
   const [roomPresenceCounts,setRoomPresenceCounts]=useState<Record<string,number>>({});
   const [gameStream,setGameStream]=useState<"connecting"|"live"|"fallback">("connecting");
   const [chatStream,setChatStream]=useState<"connecting"|"live"|"fallback">("connecting");
-  const [serverRoomOpen,setServerRoomOpen]=useState<boolean|null>(null);
+  const [serverRoomOpen,setServerRoomOpen]=useState<{gameId:string;open:boolean}|null>(null);
   const [mutedUsers,setMutedUsers]=useState<Set<string>>(new Set());
   const [blockedUsers,setBlockedUsers]=useState<Set<string>>(new Set());
   const [reporting,setReporting]=useState<string|null>(null);
@@ -218,17 +218,17 @@ export default function FanLivePage() {
   // Postgres owns room opening/closing; UI eligibility alone must never
   // suggest a message can be sent if the server-side room guard denies it.
   useEffect(()=>{
-    if(!selected?.id||!chatEnabled){setServerRoomOpen(false);return;}
+    if(!selected?.id||!chatEnabled){setServerRoomOpen(null);return;}
+    const gameId=selected.id;
     let current=true;
-    setServerRoomOpen(null);
-    void supabase.rpc("fan_live_chat_room_open",{p_game_id:selected.id}).then(({data,error})=>{
-      if(current)setServerRoomOpen(!error&&data===true);
+    void supabase.rpc("fan_live_chat_room_open",{p_game_id:gameId}).then(({data,error})=>{
+      if(current)setServerRoomOpen({gameId,open:!error&&data===true});
     });
     return()=>{current=false;};
   },[selected?.id,selected?.status,selected?.ends_at,chatEnabled,clock]);
 
   useEffect(()=>{
-    if(!selected||!chatEnabled||!userId||serverRoomOpen!==true)return;
+    if(!selected||!chatEnabled||!userId||serverRoomOpen?.gameId!==selected.id||serverRoomOpen.open!==true)return;
     let stopped=false;
     const gameId=selected.id;
     const heartbeat=async()=>{
@@ -248,7 +248,7 @@ export default function FanLivePage() {
       stopped=true;window.clearInterval(timer);void supabase.removeChannel(presenceChannel);
       void supabase.from("fan_live_chat_presence").delete().eq("game_id",gameId).eq("user_id",userId);
     };
-  },[selected?.id,selected?.status,selected?.scheduled_at,selected?.ends_at,chatEnabled,userId,serverRoomOpen,refreshPresence]);
+  },[selected?.id,selected?.status,selected?.scheduled_at,selected?.ends_at,chatEnabled,userId,serverRoomOpen?.gameId,serverRoomOpen?.open,refreshPresence]);
 
   useEffect(()=>{
     if(!selected||!chatEnabled){setMessages([]);setPresenceCount(0);return;}
@@ -290,7 +290,7 @@ export default function FanLivePage() {
   async function send(textOverride?:string){
     const text=(textOverride??body).trim();
     if(!text||!selected||!userId||sending)return;
-    if(serverRoomOpen!==true||!roomOpen(selected,new Date())){setMessage("This game chat is read-only or still connecting.");return;}
+    if(serverRoomOpen?.gameId!==selected.id||serverRoomOpen.open!==true||!roomOpen(selected,new Date())){setMessage("This game chat is read-only or still connecting.");return;}
     const gameId=selected.id;
     const localId="pending-"+crypto.randomUUID();
     const optimistic:ChatMessage={id:localId,body:text,created_at:new Date().toISOString(),user_id:userId,pending:true};
@@ -334,7 +334,7 @@ export default function FanLivePage() {
   const away=selected?(teams[selected.opponent_team_id||""]||{id:"",name:selected.opponent_name}):null;
   const availability=selected?getGameAvailability({status:selected.status,scheduledAt:selected.scheduled_at,startedAt:selected.started_at,endsAt:selected.ends_at,now:clock}):null;
   const isClosed=availability?.state==="CLOSED";
-  const canSend=Boolean(chatEnabled&&serverRoomOpen===true&&selected&&roomOpen(selected,clock));
+  const canSend=Boolean(chatEnabled&&serverRoomOpen?.gameId===selected?.id&&serverRoomOpen?.open&&selected&&roomOpen(selected,clock));
   const shownMessages=useMemo(()=>messages.filter(m=>!blockedUsers.has(m.user_id)&&!mutedUsers.has(m.user_id)),[messages,blockedUsers,mutedUsers]);
   const listedGames=useMemo(()=>{
     const q=roomSearch.trim().toLocaleLowerCase();
@@ -376,7 +376,7 @@ export default function FanLivePage() {
             </article>)}
 
           </div>
-          {!canSend&&!isClosed&&<p className="hc-live-chat-readonly" role="status">{serverRoomOpen===null?"Checking game-room access…":"The room is read-only until the game database opens chat."}</p>}
+          {!canSend&&!isClosed&&<p className="hc-live-chat-readonly" role="status">{serverRoomOpen?.gameId!==selected?.id?"Checking game-room access…":"The room is read-only until the game database opens chat."}</p>}
           {canSend&&<div className="hc-live-reaction-rail" aria-label="Quick game reactions"><span>React</span>{["🔥","🏀","👏","😮"].map(reaction=><button key={reaction} type="button" aria-label={"Add "+reaction+" reaction"} onClick={()=>{setBody(current=>((current?current+" ":"")+reaction).slice(0,500));composerRef.current?.focus();}}>{reaction}</button>)}</div>}
           {canSend&&<form className="hc-live-chat-compose" onSubmit={e=>{e.preventDefault();void send();}}><input ref={composerRef} value={body} maxLength={500} onChange={e=>setBody(e.target.value)} placeholder="React to the game…" aria-label="Chat message" disabled={isClosed}/><span>{body.length}/500</span><button className="btn" type="submit" disabled={!body.trim()||sending||isClosed}>{sending?"Sending…":"Send"}</button></form>}
           {canSend&&<p className="hc-live-chat-rules">Keep it respectful. Links are displayed as plain text. Slow mode: one message every two seconds.</p>}
