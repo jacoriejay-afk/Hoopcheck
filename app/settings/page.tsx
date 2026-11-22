@@ -133,6 +133,14 @@ export default function SettingsPage() {
         <div className="eyebrow">{t("controlCenter")}</div>
         <h1>{t("settings")}</h1>
         <p className="muted">{t("settingsIntro")}</p>
+        <nav className="hc-settings-shortcuts" aria-label="Account and settings sections">
+          <Link href="/account">Account & profile</Link>
+          <Link href="/account#account-settings">Security & membership</Link>
+          <Link href="/notifications">Alerts</Link>
+          <Link href="/notifications?tab=messages">Messages</Link>
+          <Link href="/privacy-center">Privacy center</Link>
+          <Link href="/support">Support</Link>
+        </nav>
         <div className="settings-grid">
           <section className="settings-card">
             <span className="card-kicker">{t("language").toUpperCase()}</span>
