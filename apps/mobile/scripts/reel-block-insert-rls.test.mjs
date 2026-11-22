@@ -1,0 +1,20 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { test } from "node:test";
+const read = file => readFileSync(new URL(file, import.meta.url), "utf8");
+test("Reels account block matches owner INSERT-only production RLS", () => {
+  const feed = read("../app/feed.tsx");
+  const start = feed.indexOf("async function blockAccount(authorId: string) {");
+  const end = feed.indexOf("  async function hideReel(postId: string)", start);
+  assert.ok(start !== -1 && end > start);
+  const block = feed.slice(start, end);
+  assert.match(block, /await token\(\)/);
+  assert.match(block, /\.from\("user_blocks"\)\.insert\(\{ blocker_id: uid, blocked_id: authorId \}\)/);
+  assert.doesNotMatch(block, /\.upsert\(/);
+  assert.match(block, /error\.code !== "23505"/);
+  assert.match(block, /\.select\("blocked_id"\)\.eq\("blocker_id", uid\)\.eq\("blocked_id", authorId\)\.maybeSingle\(\)/);
+  assert.match(block, /existing\?\.blocked_id !== authorId/);
+  const browser = read("./verify-feed-browser.cjs");
+  assert.match(browser, /resolution=merge-duplicates/);
+  assert.match(browser, /blocker_id,uid/);
+});

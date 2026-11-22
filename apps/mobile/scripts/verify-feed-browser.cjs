@@ -55,7 +55,7 @@ async function fixture(browser,theme,allowed=true){
       if(table==='feed_post_archives')return json([]);
       if(table==='user_blocks'){
         assert.ok(allowed,'Denied viewer cannot access account blocks');
-        if(method==='POST'){const record=JSON.parse(body);assert.equal(record.blocker_id,uid);assert.equal(record.blocked_id,id(5));blocked.add(record.blocked_id);return json({},201);}
+        if(method==='POST'){assert.ok(!String(request.headers().prefer||'').includes('resolution=merge-duplicates'),'Reel blocking must use INSERT, not UPDATE-requiring upsert');const record=JSON.parse(body);assert.equal(record.blocker_id,uid);assert.equal(record.blocked_id,id(5));blocked.add(record.blocked_id);return json({},201);}
         assert.equal(url.searchParams.get('blocker_id'),`eq.${uid}`,'Only owner block list can be read');
         return json([...blocked].map(blocked_id=>({blocked_id})));
       }
