@@ -48,7 +48,11 @@ export default function HoopChatCourtside(){
     try{
       const {data:{user},error:authError}=await supabase.auth.getUser();
       if(!valid())return;
-      if(authError)throw new Error("We couldn't verify your HoopChat session.");
+      if(authError){
+        // Fail closed: an invalid session cannot keep the last account's messages visible.
+        setUserId("");setRequests([]);setMessages([]);setContacts({});setSelectedId(null);
+        throw new Error("We couldn't verify your HoopChat session.");
+      }
       if(!user){
         setUserId("");setRequests([]);setMessages([]);setContacts({});setSelectedId(null);
         return;
@@ -296,7 +300,7 @@ export default function HoopChatCourtside(){
       <div className="hc-courtside-stage">
         {selected?<><header className="hc-courtside-stage-header">
           <div className="hc-courtside-identity"><span className="hc-courtside-avatar" aria-hidden="true">{initials(peerName(selected))}</span>
-            <span><strong>{peerName(selected)}</strong><small>{selected.status==="accepted"?"Secure by connection · player contact":"Contact request"}</small></span></div>
+            <span><strong>{peerName(selected)}</strong><small>{selected.status==="accepted"?"Accepted contact · private HoopChat":"Contact request"}</small></span></div>
           <div className="hc-courtside-thread-actions">
             {selected.status==="accepted"&&<button type="button" onClick={()=>markRead(selected.id)}>Mark read</button>}
             <button type="button" aria-pressed={prefs.pinned.includes(selected.id)} onClick={()=>togglePinned(selected.id)}>
