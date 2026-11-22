@@ -396,3 +396,11 @@ html.theme-light body main section.hc-team-look-hero.hc-womens-branded-hero p.hc
   color: #171717 !important;
   -webkit-text-fill-color: #171717 !important;
 }
+
+/* BUILD9-MENS-KICKER-CONTRAST: light-mode copy resets can darken the nested
+   label. Keep the visible text cream against the verified dark hero surface. */
+html.theme-light body main.hc-team-entity-profile section.hc-team-look-hero:not(.hc-womens-branded-hero) p.hc-team-hero-kicker > span,
+html.theme-dark body main.hc-team-entity-profile section.hc-team-look-hero:not(.hc-womens-branded-hero) p.hc-team-hero-kicker > span {
+  color:#ffe2cf!important;
+  -webkit-text-fill-color:#ffe2cf!important;
+}
