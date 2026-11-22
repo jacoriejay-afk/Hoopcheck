@@ -1,4 +1,6 @@
 import { HomeCourtside } from "../components/HomeCourtside";
+import { RoleHub } from "../components/RoleHub";
+import { useNativeAccount } from "../src/native/useNativeAccount";
 import { GlassSurface } from "../components/GlassSurface";
 import { BrandLogo } from "../components/BrandLogo";
 import { LinearGradient } from "expo-linear-gradient";
@@ -28,15 +30,16 @@ export default function DashboardScreen() {
   const [search, setSearch] = useState("");
   const [busy, setBusy] = useState(false);
   const [email, setEmail] = useState("");
-  const [accountType, setAccountType] = useState("");
+  const { account: currentAccount } = useNativeAccount();
+  // Display the verified profile role, not editable auth metadata.
+  const accountType = currentAccount?.user.accountType.replaceAll("_", " ") || "";
 
   useEffect(() => {
     let alive = true;
     supabase.auth.getUser().then(({ data, error }) => {
       if (!alive || error) return;
       setEmail(data.user?.email ?? "");
-      const role = data.user?.user_metadata?.account_type;
-      if (typeof role === "string") setAccountType(role.replaceAll("_", " "));
+
     });
     return () => { alive = false; };
   }, []);
@@ -103,6 +106,7 @@ export default function DashboardScreen() {
             </Pressable>
           </GlassSurface>
           <HomeCourtside />
+          <RoleHub />
           <SectionHeader>Explore basketball</SectionHeader>
           <View style={styles.directories}><ExploreLinks /></View>
 
