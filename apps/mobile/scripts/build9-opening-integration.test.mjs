@@ -26,8 +26,8 @@ test("Interrupted opening never strands the user behind a non-interactive overla
   assert.match(opening, /hasPlayedColdOpen/);
   // OAuth callback/recovery interruption must not replay and block touches again.
   assert.match(opening, /\(!ready \|\| disabled\) && hasPlayedColdOpen/);
-  assert.match(opening, /aborted\.current = true/);
-  assert.match(opening, /finished \|\| aborted\.current/);
+  assert.match(opening, /setInterrupted\(true\)/);
+  assert.match(opening, /finished \|\| interrupted/);
   assert.match(opening, /started\.current = false;/);
   assert.match(opening, /!ready \|\| disabled \|\| finished \|\| started\.current/);
   assert.match(opening, /timeouts\.current\.forEach\(clearTimeout\)/);
