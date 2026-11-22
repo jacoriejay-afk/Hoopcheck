@@ -50,6 +50,50 @@ create table if not exists public.hoop_group_blocks (
   primary key(blocker_id,blocked_id),
   check(blocker_id <> blocked_id)
 );
+-- Moderator actions are server-only, independently audited and atomic.
+create table if not exists public.hoop_group_moderation_events (
+  id uuid primary key default gen_random_uuid(),
+  post_id uuid not null references public.hoop_group_posts(id) on delete cascade,
+  actor_id uuid not null references auth.users(id),
+  from_status text not null,
+  to_status text not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists hoop_group_moderation_events_post_idx on public.hoop_group_moderation_events(post_id,created_at desc);
+alter table public.hoop_group_moderation_events enable row level security;
+revoke all on public.hoop_group_moderation_events from public,anon,authenticated;
+
+create or replace function public.moderate_hoop_group_post(
+  p_post_id uuid, p_actor_id uuid, p_new_status text)
+returns table(id uuid, moderation_status text)
+language plpgsql security invoker set search_path=''
+as $
+declare previous text;
+begin
+  if p_new_status not in ('approved','rejected','removed') then
+    raise exception 'Invalid moderation action';
+  end if;
+  if not exists (
+    select 1 from public.admin_roles
+    where user_id=p_actor_id and role in ('admin','moderator')
+  ) then raise exception 'Not authorized to moderate';
+  end if;
+  select p.moderation_status into previous
+    from public.hoop_group_posts p where p.id=p_post_id for update;
+  if not found then raise exception 'Post not found'; end if;
+  if not ((previous='pending' and p_new_status in ('approved','rejected','removed'))
+    or (previous='approved' and p_new_status='removed')) then
+    raise exception 'Invalid moderation transition';
+  end if;
+  update public.hoop_group_posts p set moderation_status=p_new_status
+    where p.id=p_post_id;
+  insert into public.hoop_group_moderation_events(post_id,actor_id,from_status,to_status)
+    values(p_post_id,p_actor_id,previous,p_new_status);
+  return query select p.id,p.moderation_status from public.hoop_group_posts p where p.id=p_post_id;
+end; $;
+revoke all on function public.moderate_hoop_group_post(uuid,uuid,text) from public,anon,authenticated;
+grant execute on function public.moderate_hoop_group_post(uuid,uuid,text) to service_role;
+
 alter table public.hoop_group_spaces enable row level security;
 alter table public.hoop_group_channels enable row level security;
 alter table public.hoop_group_members enable row level security;
