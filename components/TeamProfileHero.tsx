@@ -50,7 +50,7 @@ export default function TeamProfileHero({
         <div style={{padding:12,borderRadius:20,background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.2)"}}>
           <TeamLogo name={name} logoUrl={logoUrl} logoBg={logoBg} size={88} className="hc-team-profile-logo" />
         </div>
-        <div style={{flex:"1 1 180px",minWidth:0}}>
+        <div style={{flex:"1 1 180px",minWidth:0,backgroundColor:gender==="mens"?"#111827":undefined}}>
           <p className="hc-team-hero-kicker" style={{fontSize:11,fontWeight:800,letterSpacing:2,color:"#f9d2b5",marginBottom:8}}><span style={{color:"#ffe2cf"}}>{claimed ? "OFFICIAL CLUB PROFILE" : "CLUB PROFILE"}</span></p>
           <h1 id="hc-team-profile-title" style={{fontSize:"clamp(26px,4.5vw,52px)",fontWeight:900,lineHeight:1.1,letterSpacing:"-.035em",overflowWrap:"anywhere",color:"#fff",margin:"0 0 12px"}}>{name}{claimed ? <span aria-label="Verified club" title="Verified club" style={{color:accent,marginLeft:10}}>✓</span> : null}</h1>
           <p className="hc-team-hero-location" style={{color:"#e5e7eb",margin:0}}>{countryFlag(country)} {[city,country].filter(Boolean).join(", ") || "Location not listed"}</p>
