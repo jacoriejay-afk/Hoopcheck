@@ -10,7 +10,7 @@ The reviewed catalog guard `reports/build9/integration/production-catalog-guard.
 
 | Baseline at inspection | Production | PR17-Test |
 | --- | --- | --- |
-| Recorded migrations | 196 | 38 |
+| Recorded migrations | 199 as of 2026-11-22 phase-1 hotfix | 38 at prior inspection |
 | Public player RPC owner | `postgres` | `hoopcheck_public_profile_reader` |
 | Public player RPC mode | SECURITY INVOKER, `search_path=public` | restricted SECURITY DEFINER, empty search_path |
 | `follow_relationships` / `user_blocks` | both exist | neither exists |
@@ -18,7 +18,7 @@ The reviewed catalog guard `reports/build9/integration/production-catalog-guard.
 | `get_own_profile()`, MFA helper, username search, consent helper | absent | absent |
 | Anonymous direct SELECT privilege on `profiles.current_country` | granted | not granted |
 
-The production legacy `search_public_players` and `search_public_players_page` definitions currently RETURN and search/filter `current_country` without an opt-in predicate; these are **privacy rollout blockers**, not recommended compatibility adapters. The repository's as-yet-unapplied `20261118162305_player_profile_country_privacy.sql` and `20261119074537_profile_private_field_boundary.sql` contain reviewed masked versions, username discovery and consent APIs, but are **not installed** on production.
+**2026-11-22 update:** production legacy `get_public_player_profile`, `search_public_players` and `search_public_players_page` now mask opted-out `current_country` (in results and search predicates), plus pending/unapproved avatars. Phase-1 production migration `20261122032844` passed post-deployment catalog and anonymous read-only smoke checks. **The direct `public.profiles.current_country` SELECT grants still expose the raw location column to `anon` and `authenticated`**, and `get_own_profile()` is not installed. This is a remaining **phase-2 privacy rollout blocker**, not a reason to revert the phase-1 masking hotfix. The repository's as-yet-unapplied `20261118162305_player_profile_country_privacy.sql` and `20261119074537_profile_private_field_boundary.sql` contain reviewed masked versions, username discovery and consent APIs, but are **not installed** on production.
 
 ## Exact safe handoff
 

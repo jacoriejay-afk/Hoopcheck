@@ -4,6 +4,10 @@
 -- Run via psql -X -v ON_ERROR_STOP=1 after independently verifying the project.
 -- A stale baseline MUST cause failure; do not change the expected fingerprints
 -- simply to make a failing production deployment pass.
+-- 2026-11-22 phase-1 legacy RPC masking installed by production migration
+-- 20261122032844 (PR #789); table SELECT grants remain unchanged.
+-- Source hashes were captured after the successful atomic migration and
+-- verified with anonymous read-only smoke tests. This is NOT phase-2 approval.
 BEGIN TRANSACTION READ ONLY;
 DO $catalog$
 DECLARE
@@ -21,11 +25,11 @@ BEGIN
   INTO changed
   FROM (VALUES
     ('public.get_public_player_profile(uuid)',
-       '5d7ea9682e0f549b359888c019a657bb', false, 'search_path=public'),
+       'd9cd27d5b6e426397674d48184530b24', false, 'search_path=public'),
     ('public.search_public_players(text,text,text,boolean,integer)',
-       '378505e5bc40299370a991d17058a095', false, 'search_path=public'),
+       'c2eee54d975b81dfeea139cacc2b8bee', false, 'search_path=public'),
     ('public.search_public_players_page(text,text,text,boolean,integer,integer)',
-       '0b35b8188a6a26fb457b6cca1295a93e', false, 'search_path=public'),
+       '9645a81f5e34e52e95946744ba05c9d1', false, 'search_path=public'),
     ('public.get_public_follow_list(text,text,uuid,uuid)',
        '557d85a6abf873e47ffc1f4ae283debd', true, 'search_path=""')
   ) AS v(signature, source_md5, expected_definer, expected_search_path)
@@ -57,6 +61,6 @@ BEGIN
     RAISE EXCEPTION 'Raw country access has changed; re-review privacy transition and old clients';
   END IF;
 
-  RAISE NOTICE 'PASS: captured production RPC baseline matches; privacy migration is still NOT applied or approved';
+  RAISE NOTICE 'PASS: guarded phase-1 legacy player privacy RPCs are installed; raw direct-column access and Build 9 phase 2 are NOT approved';
 END $catalog$;
 ROLLBACK;
