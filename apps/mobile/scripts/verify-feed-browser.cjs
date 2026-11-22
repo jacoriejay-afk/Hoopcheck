@@ -60,6 +60,12 @@ async function fixture(browser,theme,allowed=true){
         return json([...blocked].map(blocked_id=>({blocked_id})));
       }
       if(table==='feed_post_bookmarks')return json(saved?[{post_id:id(1)}]:[]);
+      if(table==='get_public_follow_list'){
+        // Read-only public follow rail is optional. No synthetic accounts are
+        // following in this fixture, and no private relation rows are exposed.
+        assert.equal(method,'POST');
+        return json([]);
+      }
       if(table==='get_hoopfeed_check_totals')return json(JSON.parse(body).post_ids.map(post_id=>({post_id,checks_count:checked?1:0,checked_by_me:checked})));
       if(table==='feed_post_checks'){checked=method==='POST';return route.fulfill({status:204});}
       if(table==='get_hoopfeed_poll_totals')return json([0,1].map(option_index=>({option_index,votes_count:vote===option_index?1:0,voted_by_me:vote===option_index})));
