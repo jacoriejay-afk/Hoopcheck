@@ -8,7 +8,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
-import { GAME_CHAT_OPEN_EARLY_MINUTES, getGameAvailability } from "../../lib/game-availability";
+import { GAME_CHAT_OPEN_EARLY_MINUTES, getGameAvailability, isGameChatOpen } from "../../lib/game-availability";
 import { getLiveGameStatusPresentation } from "../../lib/live-game-status";
 import "./fan-live.css";
 import "../game-predictions.css";
@@ -26,9 +26,10 @@ const renderTeamLogo = (team:Team|null|undefined) => <TeamLogo name={team?.name|
 
 // Use the same 60-minute pregame / 2-hour verified postgame lifecycle as
 // the main directory. Database RLS remains authoritative for message writes.
-const roomOpen = (game:Game, now=new Date()) => getGameAvailability({
+const POSTGAME_CHAT_ENABLED = process.env.NEXT_PUBLIC_LIVE_POSTGAME_CHAT_ENABLED==="true";
+const roomOpen = (game:Game, now=new Date()) => isGameChatOpen({
   status:game.status, scheduledAt:game.scheduled_at, startedAt:game.started_at, endsAt:game.ends_at, now
-}).chatOpen;
+}, POSTGAME_CHAT_ENABLED);
 
 export default function FanLivePage() {
   const [games,setGames]=useState<Game[]>([]);
@@ -220,7 +221,7 @@ export default function FanLivePage() {
   // Postgres owns room opening/closing; UI eligibility alone must never
   // suggest a message can be sent if the server-side room guard denies it.
   useEffect(()=>{
-    if(!selected?.id||!chatEnabled){setServerRoomOpen(null);return;}
+    if(!selected?.id||!chatEnabled||!roomOpen(selected,clock)){setServerRoomOpen(null);return;}
     const gameId=selected.id;
     let current=true;
     void supabase.rpc("fan_live_chat_room_open",{p_game_id:gameId}).then(({data,error})=>{
@@ -335,7 +336,7 @@ export default function FanLivePage() {
   const home=selected?teams[selected.team_id]:null;
   const away=selected?(teams[selected.opponent_team_id||""]||{id:"",name:selected.opponent_name}):null;
   const availability=selected?getGameAvailability({status:selected.status,scheduledAt:selected.scheduled_at,startedAt:selected.started_at,endsAt:selected.ends_at,now:clock}):null;
-  const isClosed=availability?.state==="CLOSED";
+  const isClosed=availability?.state==="CLOSED" || (availability?.phase==="post-game" && !POSTGAME_CHAT_ENABLED);
   const canSend=Boolean(chatEnabled&&serverRoomOpen?.gameId===selected?.id&&serverRoomOpen?.open&&selected&&roomOpen(selected,clock));
   const shownMessages=useMemo(()=>messages.filter(m=>!blockedUsers.has(m.user_id)&&!mutedUsers.has(m.user_id)),[messages,blockedUsers,mutedUsers]);
   const listedGames=useMemo(()=>{
@@ -363,7 +364,7 @@ export default function FanLivePage() {
         : !userId ? <><h2>Sign in to view Live Games</h2><Link href="/login" className="btn">Sign In</Link></>
         : <><h2>Live Games are available to players and fans</h2><p className="muted">An active Pro or Premium membership is required for the full Live Game Hub.</p><Link href="/membership" className="btn">View Membership</Link></>}
     </section> : !games.length&&!inRoom?<section className="dashboard-card"><h2>No games available</h2><p className="muted">Check back when the game schedule is updated.</p><Link href="/live-games" className="btn">Browse Games</Link></section>:<section className={"hc-live-room-grid "+(inRoom?"hc-live-room-grid--solo":"hc-live-room-grid--directory")}>
-      {!inRoom&&<aside className="hc-live-room-list" aria-label="Choose a game chat room"><div className="hc-live-room-list-heading"><span className="card-kicker">COURTSIDE · CHAT DIRECTORY</span><span>{listedGames.length} rooms</span><input className="hc-live-room-search" type="search" value={roomSearch} onChange={event=>setRoomSearch(event.target.value)} placeholder="Find a team or league…" aria-label="Search game chat rooms" /></div>{listedGames.length===0&&<p role="status">No game rooms match this search.</p>}{listedGames.map(game=>{const a=teams[game.team_id],b=teams[game.opponent_team_id||""]||{id:"",name:game.opponent_name},status=getLiveGameStatusPresentation(game,clock),postgame=["final","finished"].includes(game.status.toLowerCase()),joining=chatEnabled&&roomOpen(game,clock)&&(!postgame||process.env.NEXT_PUBLIC_LIVE_POSTGAME_CHAT_ENABLED==="true");return <Link key={game.id} href={"/fan-live/room/"+encodeURIComponent(game.id)} className="hc-live-room-game" aria-label={"Open chat for "+(a?.name||"Home")+" versus "+b.name}><div className="hc-live-room-game-teams">{renderTeamLogo(a)}<div><strong>{a?.name||"Team"} vs {b.name}</strong><span>{game.home_score??"—"} : {game.away_score??"—"} · {status.showPeriod?game.period_label:status.label}</span></div></div><span className={"hc-live-room-game-status"+(game.status==="live"?" is-live":"")}>{!chatEnabled?"MEMBERS ONLY":status.isUnverified?status.label:status.isVerifiedLive?"● LIVE":status.isVerifiedFinal?"FINAL":joining?"CHAT OPEN":"UPCOMING"}</span><span className="hc-live-room-game-join"><small>{roomPresenceCounts[game.id]||0} here</small><strong>{joining?"JOIN CHAT":"VIEW ROOM"} <span aria-hidden="true">→</span></strong></span></Link>})}</aside>}
+      {!inRoom&&<aside className="hc-live-room-list" aria-label="Choose a game chat room"><div className="hc-live-room-list-heading"><span className="card-kicker">COURTSIDE · CHAT DIRECTORY</span><span>{listedGames.length} rooms</span><input className="hc-live-room-search" type="search" value={roomSearch} onChange={event=>setRoomSearch(event.target.value)} placeholder="Find a team or league…" aria-label="Search game chat rooms" /></div>{listedGames.length===0&&<p role="status">No game rooms match this search.</p>}{listedGames.map(game=>{const a=teams[game.team_id],b=teams[game.opponent_team_id||""]||{id:"",name:game.opponent_name},status=getLiveGameStatusPresentation(game,clock),joining=chatEnabled&&roomOpen(game,clock);return <Link key={game.id} href={"/fan-live/room/"+encodeURIComponent(game.id)} className="hc-live-room-game" aria-label={"Open chat for "+(a?.name||"Home")+" versus "+b.name}><div className="hc-live-room-game-teams">{renderTeamLogo(a)}<div><strong>{a?.name||"Team"} vs {b.name}</strong><span>{game.home_score??"—"} : {game.away_score??"—"} · {status.showPeriod?game.period_label:status.label}</span></div></div><span className={"hc-live-room-game-status"+(game.status==="live"?" is-live":"")}>{!chatEnabled?"MEMBERS ONLY":status.isUnverified?status.label:status.isVerifiedLive?"● LIVE":status.isVerifiedFinal?"FINAL":joining?"CHAT OPEN":"UPCOMING"}</span><span className="hc-live-room-game-join"><small>{roomPresenceCounts[game.id]||0} here</small><strong>{joining?"JOIN CHAT":"VIEW ROOM"} <span aria-hidden="true">→</span></strong></span></Link>})}</aside>}
       {inRoom&&!selected&&<section className="hc-live-room-state" role="status"><h2>Room unavailable</h2><p>This matchup could not be found for this basketball category, or it is no longer on the current schedule.</p><Link href="/fan-live">Browse chat rooms</Link></section>}
       {inRoom&&selected&&<section id="live-chat-room" className="hc-live-room-panel" aria-label="Selected game chat room">
         <header className="hc-live-room-scoreboard"><div className="hc-live-room-team">{renderTeamLogo(home)}<strong>{home?.name||"Team"}</strong></div><div className="hc-live-room-score"><span className={"hc-live-badge"+(selectedStatus?.isVerifiedLive?" is-live":"")}>{selectedStatus?.isUnverified?selectedStatus.label:selectedStatus?.isVerifiedLive?<><i/> LIVE</>:selectedStatus?.isVerifiedFinal?"FINAL":availability?.state||"UPCOMING"}</span><strong>{selected.home_score??"—"} <span>:</span> {selected.away_score??"—"}</strong><small>{selectedStatus?.showPeriod?selected.period_label:selectedStatus?.isUnverified?"Provider update pending":selected.league_name||"Score updates automatically"}</small></div><div className="hc-live-room-team">{renderTeamLogo(away)}<strong>{away?.name||selected.opponent_name}</strong></div></header>
