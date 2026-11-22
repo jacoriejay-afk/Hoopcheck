@@ -58,15 +58,6 @@ jobs:
             echo "::warning::Full audit reports unresolved advisories. Review the audit output; the production-only audit above remains blocking."
           fi
 
-      # Temporary diagnostics for this isolated security branch; remove after
-      # reviewing the regenerated lockfile and before proposing a merge.
-      - name: Regenerate candidate lockfile and print reviewed dependency diff
-        run: |
-          npm audit fix --package-lock-only --ignore-scripts --no-fund || true
-          echo "BEGIN_REGENERATED_LOCKFILE_20261122"
-          cat package-lock.json
-          echo "END_REGENERATED_LOCKFILE_20261122"
-
       - name: Audit hardcoded white surfaces (blocking)
         run: npm run audit:surfaces
 
