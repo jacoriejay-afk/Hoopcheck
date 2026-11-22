@@ -32,6 +32,7 @@ export default function HoopGroups() {
         <Text style={{color:theme.muted,marginTop:5}}>{space.description}</Text>
         <View style={{flexDirection:"row",gap:6,flexWrap:"wrap",marginTop:8}}>{["#welcome","#general","#game-talk"].map(channel=><Text key={channel} style={{fontSize:12,color:theme.foreground,backgroundColor:theme.chip,borderRadius:12,padding:7}}>{channel}</Text>)}</View>
       </GlassCard>)}
+      </>}
     </ScrollView>
   </SafeAreaView>;
 }
