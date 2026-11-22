@@ -48,7 +48,7 @@ test("Courtside shortcuts are independently scoped, editable and role-specific",
 test("iPhone CSS prioritizes two readable columns and keeps bottom navigation clear",()=>{
   const court=read("app/dashboard/home-court-space.css");
   const role=read("components/role-quick-links.css");
-  assert.match(court,/\.hc-home3 \.hc-court \.hc-court-actions \{display:grid!important;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/);
+  assert.match(court,/\.hc-home3 \.hc-my-court \.hc-court-actions \{display:grid!important;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/);
   assert.match(court,/overflow-wrap:normal;word-break:normal;hyphens:none/);
   assert.match(court,/padding-bottom:calc\(155px \+ env\(safe-area-inset-bottom,0px\)\)!important/);
   assert.match(role,/\.hc-home3 \.hc-role-quick-links\.is-compact \.hc-role-quick-links__grid \{display:grid!important;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/);
@@ -58,11 +58,13 @@ test("Dashboard Court Space does not inherit illustration aspect ratio or perspe
   const global=read("app/globals.css");
   const court=read("app/dashboard/home-court-space.css");
   const role=read("components/role-quick-links.css");
-  assert.match(global,/\.hc-hero-art > \.hc-court \{\s*width: min\(82%, 470px\); aspect-ratio: 1 \/ 1\.04/);
-  assert.doesNotMatch(global,/(?:^|\n)\.hc-court \{\s*width: min\(82%, 470px\)/);
-  assert.doesNotMatch(global,/\n\s*\.hc-court \{ width: 78%; \}/);
-  assert.match(court,/section\.hc-court \{[\s\S]*?aspect-ratio: auto !important;[\s\S]*?transform: none !important;/);
-  assert.match(court,/section\.hc-court \{[\s\S]*?height: auto !important;/);
+  assert.match(global,/\.hc-hero-art > \.hc-my-court \{\s*width: min\(82%, 470px\); aspect-ratio: 1 \/ 1\.04/);
+  assert.doesNotMatch(global,/(?:^|\n)\.hc-my-court \{\s*width: min\(82%, 470px\)/);
+  assert.doesNotMatch(global,/\n\s*\.hc-my-court \{ width: 78%; \}/);
+  assert.match(court,/section\.hc-my-court \{[\s\S]*?aspect-ratio: auto !important;[\s\S]*?transform: none !important;/);
+  assert.match(read("app/dashboard/HomeCourtSpace.tsx"),/className="hc-my-court"/);
+  assert.doesNotMatch(read("app/dashboard/HomeCourtSpace.tsx"),/className="hc-court"/);
+  assert.match(court,/section\.hc-my-court \{[\s\S]*?height: auto !important;/);
   assert.match(global,/\.page-container input:not\(\[type="checkbox"\]\):not\(\[type="radio"\]\)/);
   for(const css of [court,role]){
     assert.match(css,/input\[type="radio"\]/);
