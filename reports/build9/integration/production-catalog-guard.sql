@@ -5,7 +5,8 @@
 -- A stale baseline MUST cause failure; do not change the expected fingerprints
 -- simply to make a failing production deployment pass.
 -- 2026-11-22 phase-1 legacy RPC masking installed by production migration
--- 20261122032844 (PR #789); table SELECT grants remain unchanged.
+-- 20261122032844 (PR #789); two SECURITY INVOKER Build8 public RPCs installed
+-- in 20261122040018 (#802). Raw table SELECT grants remain unchanged.
 -- Source hashes were captured after the successful atomic migration and
 -- verified with anonymous read-only smoke tests. This is NOT phase-2 approval.
 BEGIN TRANSACTION READ ONLY;
@@ -30,6 +31,10 @@ BEGIN
        'c2eee54d975b81dfeea139cacc2b8bee', false, 'search_path=public'),
     ('public.search_public_players_page(text,text,text,boolean,integer,integer)',
        '9645a81f5e34e52e95946744ba05c9d1', false, 'search_path=public'),
+    ('public.search_public_players_by_username(text,text,integer,integer)',
+       '5970446048bb69b39ebf46c911bea8ac', false, 'search_path=public'),
+    ('public.is_player_country_public(uuid)',
+       '1040aa769cb9e51a51c40b5bdd14ee6b', false, 'search_path=public'),
     ('public.get_public_follow_list(text,text,uuid,uuid)',
        '557d85a6abf873e47ffc1f4ae283debd', true, 'search_path=""')
   ) AS v(signature, source_md5, expected_definer, expected_search_path)
@@ -49,10 +54,14 @@ BEGIN
 
   IF to_regprocedure('public.get_own_profile()') IS NOT NULL
      OR to_regprocedure('hoopcheck_security.mfa_satisfied()') IS NOT NULL
-     OR to_regprocedure('public.search_public_players_by_username(text,text,integer,integer)') IS NOT NULL
-     OR to_regprocedure('public.is_player_country_public(uuid)') IS NOT NULL
   THEN
-    RAISE EXCEPTION 'Production advanced beyond the captured Build 9 baseline; re-review before any rollout';
+    RAISE EXCEPTION 'Owner/MFA security boundary advanced beyond captured baseline; re-review before rollout';
+  END IF;
+  IF to_regprocedure('public.search_public_players_by_username(text,text,integer,integer)') IS NULL
+     OR to_regprocedure('public.is_player_country_public(uuid)') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM supabase_migrations.schema_migrations WHERE version='20261122040018')
+  THEN
+    RAISE EXCEPTION 'Build 8 public RPC compatibility migration missing; release HOLD';
   END IF;
 
   IF NOT has_column_privilege('anon','public.profiles','current_country','SELECT')
@@ -61,6 +70,6 @@ BEGIN
     RAISE EXCEPTION 'Raw country access has changed; re-review privacy transition and old clients';
   END IF;
 
-  RAISE NOTICE 'PASS: guarded phase-1 legacy player privacy RPCs are installed; raw direct-column access and Build 9 phase 2 are NOT approved';
+  RAISE NOTICE 'PASS: Phase1 masked legacy + Build8 public RPCs installed; raw direct-column access and owner/MFA phase2 are NOT approved';
 END $catalog$;
 ROLLBACK;
