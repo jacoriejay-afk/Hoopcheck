@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable @typescript-eslint/no-require-imports -- Standalone CommonJS EAS preflight runs directly with Node, without a TypeScript loader. */
 "use strict";
 
 /** Explicit opt-in release prerequisite, NOT an EAS build command.
