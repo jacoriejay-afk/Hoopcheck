@@ -72,7 +72,7 @@ export default function HoopChatCourtside(){
           .select("id,request_id,sender_id,body,created_at").in("request_id",accepted)
           .order("created_at",{ascending:false}).limit(600)
           :Promise.resolve({data:[] as ChatMessage[],error:null}),
-        peers.length?supabase.from("profiles").select("id,display_name,username").in("id",peers)
+        peers.length?supabase.from("profiles").select("id,display_name,username,account_type").in("id",peers)
           :Promise.resolve({data:[] as ChatContact[],error:null})
       ]);
       if(!valid())return;
@@ -140,6 +140,12 @@ export default function HoopChatCourtside(){
   const peerName=(r:ChatRequest)=>{
     const profile=contacts[peerId(r)];
     return profile?.display_name?.trim()||(profile?.username?"@"+profile.username:"HoopCheck member");
+  };
+  const peerHref=(r:ChatRequest)=>{
+    const id=encodeURIComponent(peerId(r));
+    const type=contacts[peerId(r)]?.account_type;
+    return type==="player"?"/players/"+id:type==="coach"?"/coaches/"+id:
+      type==="agent"||type==="scout"?"/agents":"/search";
   };
   const numberUnread=(r:ChatRequest)=>unreadCount(r,messages,userId,prefs.seen[r.id]);
   const filtered=ordered.filter(r=>{
@@ -307,7 +313,7 @@ export default function HoopChatCourtside(){
               {prefs.pinned.includes(selected.id)?"Unpin":"Pin"} <span aria-hidden="true">★</span></button>
             <button type="button" aria-pressed={prefs.muted.includes(selected.id)} onClick={()=>toggleMuted(selected.id)}>
               {prefs.muted.includes(selected.id)?"Unmute":"Mute"}</button>
-            <Link href={"/players/"+encodeURIComponent(peerId(selected))}>Profile</Link>
+            <Link href={peerHref(selected)}>Profile</Link>
           </div>
         </header>
         <div className="hc-courtside-history" role="log" aria-label={"Messages with "+peerName(selected)}>
