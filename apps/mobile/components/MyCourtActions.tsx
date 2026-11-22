@@ -87,7 +87,7 @@ export function MyCourtActions({ userId, role, feedEnabled }: {
       </Pressable>
     </View>
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7 }}>
-      {cards.map((action, index) => {
+      {cards.map(action => {
         const accent = colors[action.tone][theme.dark ? "dark" : "light"];
         return <View key={action.id} style={{ width: "48%", flexGrow: 1 }}>
           <Pressable accessibilityRole="link" accessibilityLabel={action.label} onPress={() => router.push(action.href)}
