@@ -89,10 +89,14 @@ const uid='11111111-1111-4111-8111-111111111111', team='22222222-2222-4222-8222-
   await require("./compact-layout.cjs").capture(page, {path:`${output}/team-artwork-fallback-${theme}.png`,fullPage:true});
   await page.setViewportSize({width:320,height:740});await page.goto(base+'/dashboard');await page.getByRole('heading',{name:'Explore basketball',exact:true}).filter({visible:true}).waitFor();
   await page.getByRole('heading',{name:'My Teams',exact:true}).filter({visible:true}).waitFor();
-  await page.getByRole('heading',{name:'QUICK ACTIONS',exact:true}).filter({visible:true}).waitFor();
+  await page.getByRole('heading',{name:'MY COURT',exact:true}).filter({visible:true}).waitFor();
   assert.equal(await page.getByRole('img',{name:'HoopCheck™',exact:true}).count(),1,'Dashboard renders one official brand header');
-  await page.getByRole('link',{name:'Check a Team',exact:true}).waitFor();
-  await page.getByRole('link',{name:'Fan Groups',exact:true}).waitFor();
+  await page.getByRole('link',{name:'Check teams',exact:true}).waitFor();
+  await page.getByRole('link',{name:'Live games',exact:true}).waitFor();
+  await page.getByRole('link',{name:'Fan groups',exact:true}).waitFor();
+  await page.getByRole('button',{name:'Customize My Court',exact:true}).click();
+  await page.getByRole('checkbox',{name:'Leagues',exact:true}).waitFor();
+  await page.getByRole('button',{name:'Finish customizing My Court',exact:true}).click();
   await page.getByRole('button',{name:'Open account menu',exact:true}).waitFor();
   assert.equal(await page.getByText('43%',{exact:false}).count(),0,'Do not show mockup profile metrics');
   assert.equal(await page.getByRole('link',{name:'Review a Team',exact:true}).count(),0,'Fans never receive player-review CTA');
