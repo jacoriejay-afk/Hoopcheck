@@ -459,7 +459,7 @@ export default function AccountPage() {
       <header className="hc-account-minimal-header">
         <div className="hc-account-minimal-header__identity">
           <span className="hc-account-minimal-header__avatar">{avatarUrl?<img src={avatarUrl} alt="" />:(displayName||profile.username||"HC").slice(0,1).toUpperCase()}</span>
-          <span className="hc-account-minimal-header__copy"><h1>Account</h1><small>{displayName||profile.username||t("yourAccount")}{profile.username?" · @"+profile.username:""}</small></span>
+          <span className="hc-account-minimal-header__copy"><h1>Account</h1><small>{t("accountPreferences")} · {displayName||profile.username||t("yourAccount")}{profile.username?" · @"+profile.username:""}</small></span>
         </div>
         <Link href="/profile" className="hc-account-minimal-header__link">View profile</Link>
       </header>
