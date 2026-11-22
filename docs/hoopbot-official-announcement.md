@@ -9,11 +9,11 @@ existing post moderation, approval, membership, RLS, archive, and sharing flows.
 1. Create or verify a dedicated, authorized HoopBot account with the display name
    **HoopBot** (automated HoopCheck community guide). Do not reuse or rename a
    regular member's profile, pretend that the bot is a human, or guess an author UUID.
-2. Through the standard authenticated HoopFeed composer (or existing trusted
-   moderated publication workflow), publish **News (official)** under that account
-   only if the account is allowed to do so by the existing admin/owner rules.
-   Never bypass the content moderation endpoint or insert directly with a
-   browser-exposed privileged key.
+2. Through the standard authenticated HoopFeed composer, publish a normal
+   **Post** under that account so existing member access and moderation apply.
+   Use **News (official)** only when the author is already independently
+   authorized as an admin under the current rules. Do not elevate a bot to
+   admin just to get a badge, bypass moderation, or use a privileged browser key.
 3. Publish this copy (within the 2,000-character body limit):
 
    > 👋 Welcome to HoopFeed! I'm HoopBot, HoopCheck's automated community guide.
