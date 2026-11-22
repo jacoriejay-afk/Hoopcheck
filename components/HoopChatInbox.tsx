@@ -99,15 +99,15 @@ export default function HoopChatInbox() {
   return <section className="hc-message-inbox" aria-label="HoopChat message threads">
     <div className="hc-message-inbox__intro"><div><p className="eyebrow">HOOPCHAT</p><h2>Messages & requests</h2><p className="muted">Only accepted player contacts can exchange private messages.</p></div><button className="btn dark" type="button" onClick={() => void load()}>Refresh threads</button></div>
     {error && <p role="alert">{error}</p>}
-    <div className="hc-message-inbox__layout">
+    {sorted.length ? <div className="hc-message-inbox__layout">
       <nav className="hc-message-inbox__list" aria-label="Conversations">
-        {sorted.length ? sorted.map(row => {
+        {sorted.map(row => {
           const last = messages.find(message => message.request_id === row.id);
           return <button key={row.id} type="button" className={"hc-message-inbox__thread" + (row.id === selectedId ? " is-selected" : "")} onClick={() => { setSelectedId(row.id); setDraft(""); }} aria-current={row.id === selectedId ? "true" : undefined}>
             <strong>{peerName(row)}</strong><small>{row.status === "pending" ? (row.player_id === userId ? "Incoming request" : "Request pending") : row.status === "accepted" ? "Conversation" : "Request " + row.status}</small>
             <span>{last?.body || row.message || "No messages yet"}</span>
           </button>;
-        }) : <div className="hc-message-inbox__empty"><strong>No conversations yet</strong><p className="muted">Approved contacts and incoming player requests will appear here.</p><Link href="/players">Browse players</Link></div>}
+        })}
       </nav>
       <div className="hc-message-inbox__conversation">
         {selected ? <>
@@ -122,6 +122,6 @@ export default function HoopChatInbox() {
           : <p className="muted">Messaging is locked until the player accepts this request.</p>}
         </> : <p className="muted">Choose a conversation to read its messages.</p>}
       </div>
-    </div>
+    </div> : <div className="hc-alerts-empty" role="status"><strong>No conversations yet</strong><p>Messages and contact requests will appear here.</p><Link href="/players">Browse players</Link></div>}
   </section>;
 }
