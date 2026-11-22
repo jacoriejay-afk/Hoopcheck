@@ -35,14 +35,32 @@ print(phones[0]['udid'])
 PY
 )
 state=$(xcrun simctl list devices available --json | python3 -c 'import sys,json; d=json.load(sys.stdin); print(next(x["state"] for a in d["devices"].values() for x in a if x["udid"]==sys.argv[1]))' "$simulator_id")
+boot_ready() {
+  local theme="$1"
+  echo "PASSPORT_SMOKE_SIM_BOOT_WAIT theme=$theme id=$simulator_id"
+  if ! python3 scripts/ios-passport-smoke/run-bounded-xctest.py \
+    --log "$artifact_root/$theme-boot.log" --timeout-seconds 480 -- \
+    xcrun simctl bootstatus "$simulator_id" -b; then
+    tail -n 100 "$artifact_root/$theme-boot.log" || true
+    xcrun simctl list devices available || true
+    echo "PASSPORT_SMOKE_BOOT_FAILED theme=$theme; real XCTest not accepted" >&2
+    return 1
+  fi
+}
 if [[ "$state" != "Booted" ]]; then xcrun simctl boot "$simulator_id"; fi
-xcrun simctl bootstatus "$simulator_id" -b
+boot_ready light
 for theme in light dark; do
   if [[ "$theme" == "dark" ]]; then
     # Test both themes on real simulator boot sessions. Reusing the warm WebKit
     # print helper from the light test can stall the dark-mode Expo Print PDF.
     # Do NOT omit the dark test or treat a timed-out PDF as a pass.
-    xcrun simctl shutdown "$simulator_id"
+    if ! python3 scripts/ios-passport-smoke/run-bounded-xctest.py \
+      --log "$artifact_root/dark-shutdown.log" --timeout-seconds 120 -- \
+      xcrun simctl shutdown "$simulator_id"; then
+      tail -n 100 "$artifact_root/dark-shutdown.log" || true
+      echo "PASSPORT_SMOKE_SHUTDOWN_FAILED; dark theme was not tested" >&2
+      exit 1
+    fi
     for attempt in $(seq 1 30); do
       state=$(xcrun simctl list devices available --json | python3 -c 'import sys,json; d=json.load(sys.stdin); print(next(x["state"] for a in d["devices"].values() for x in a if x["udid"]==sys.argv[1]))' "$simulator_id")
       if [[ "$state" == "Shutdown" ]]; then break; fi
@@ -50,7 +68,7 @@ for theme in light dark; do
     done
     if [[ "$state" != "Shutdown" ]]; then echo "Simulator did not shut down before dark Passport test" >&2; exit 1; fi
     xcrun simctl boot "$simulator_id"
-    xcrun simctl bootstatus "$simulator_id" -b
+    boot_ready dark
   fi
   xcrun simctl ui "$simulator_id" appearance "$theme"
   # RN 0.81 Debug can resolve a nil bundle URL on headless CI simulators even
