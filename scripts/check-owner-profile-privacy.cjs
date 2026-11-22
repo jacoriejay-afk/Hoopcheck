@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- Node CommonJS CI regression tests. */
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const helper = fs.readFileSync("lib/read-own-profile.ts", "utf8");
