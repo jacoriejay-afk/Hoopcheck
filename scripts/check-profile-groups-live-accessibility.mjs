@@ -1,0 +1,27 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+
+const read = path => readFileSync(new URL("../" + path, import.meta.url), "utf8");
+const css = read("app/hoopcheck-profile-groups-live-accessibility.css");
+const layout = read("app/layout.tsx");
+const groups = read("app/hoopgroups/page.tsx");
+const team = read("components/TeamProfileHero.tsx");
+const live = read("app/fan-live/page.tsx");
+const passport = read("components/PlayerJourney.tsx");
+
+assert.match(layout, /hoopcheck-profile-groups-live-accessibility\.css/, "Late CSS override must be loaded");
+assert.match(css, /\.hc-team-look-hero[\s\S]*?-webkit-text-fill-color:#fff !important/, "Dark team hero must force readable white text");
+assert.match(css, /\.hc-team-look-hero \.hc-team-hero-fan-link[\s\S]*?color:#101010/, "Orange fan-group button needs dark text");
+assert.match(team, /Club Fan Group/, "A club's official Fan Group must not be named a HoopGroup");
+assert.doesNotMatch(team, />Explore HoopGroup</, "Do not mislabel club Fan Groups");
+assert.doesNotMatch(groups, /href="\/team-hub\/groups"/, "HoopGroups page must not embed Fan Group navigation");
+assert.match(groups, /HoopGroups are not open yet/, "Never claim uninstalled backend is live");
+assert.match(groups, /\(!enabled \|\| \(userId && !backendReady\)\)/, "Unauthenticated visitors must see unavailability too");
+assert.match(groups, /aria-live="polite" aria-relevant="additions text"/, "Community discussion should announce new messages accessibly");
+assert.match(live, /aria-label="Search game chat rooms"/, "Live-room directory needs accessible search");
+assert.match(live, /aria-pressed=\{selected\?\.id===game\.id\}/, "Selected room needs an accessible state");
+assert.match(live, /id="live-chat-room"/, "Chat must have a reachable jump target");
+assert.match(live, /role="log" aria-live="polite"/, "Chat updates must be announced without stealing focus");
+assert.match(passport, /PGRST205/, "Missing career table must be explained rather than presented as an empty timeline");
+assert.match(passport, /isOwnProfile&&!canManage&&!loadError/, "Missing database must not trigger a misleading paid-upgrade prompt");
+console.log("PASS: club profile contrast, HoopGroups separation, Career Passport outage, and accessible Live Chat");
