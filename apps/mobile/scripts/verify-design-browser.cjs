@@ -46,6 +46,9 @@ const uid='11111111-1111-4111-8111-111111111111', team='22222222-2222-4222-8222-
   await page.getByRole('textbox',{name:'Email',exact:true}).waitFor();assert.equal(new URL(page.url()).pathname,'/sign-in');
   await page.getByRole('button',{name:'Show password',exact:true}).waitFor();
   await page.getByRole('button',{name:'Continue with Google',exact:true}).waitFor();
+  // Wait for the 620ms branded entrance to settle before visual review; an
+  // in-flight opacity snapshot makes otherwise legible fields appear disabled.
+  await page.waitForTimeout(750);
   await require("./compact-layout.cjs").capture(page, {path:`${output}/sign-in-arena-${theme}.png`,fullPage:true});
   const token=Buffer.from('{"alg":"HS256"}').toString('base64url')+'.'+Buffer.from(JSON.stringify({sub:uid,aud:'authenticated',exp:Math.floor(Date.now()/1000)+3600,role:'authenticated'})).toString('base64url')+'.fixture';
   await page.addInitScript(({token,user})=>localStorage.setItem('sb-fixture-auth-token',JSON.stringify({access_token:token,refresh_token:'fixture',token_type:'bearer',expires_at:Math.floor(Date.now()/1000)+3600,user})),{token,user});
