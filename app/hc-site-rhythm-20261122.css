@@ -17,14 +17,16 @@
 /* Header and page share a single alignment grid. Avoid changing floating tab bar. */
 html body header.site-header-global.hc-template-header {
   box-sizing:border-box;
-  width:calc(100% - 2 * var(--hc-edge-gutter))!important;
+  width:calc(100% - var(--hc-edge-gutter) - var(--hc-edge-gutter))!important;
   max-width:none!important;
-  margin-inline:var(--hc-edge-gutter)!important;
+  margin-inline-start:max(var(--hc-edge-gutter),env(safe-area-inset-left,0px))!important;
+  margin-inline-end:max(var(--hc-edge-gutter),env(safe-area-inset-right,0px))!important;
   padding-inline:clamp(10px,2vw,20px)!important;
 }
 html body .hc-global-page-shell > .hc-route-transition {
-  width:min(100%,calc(var(--hc-shell-width) + 2 * var(--hc-edge-gutter)))!important;
-  padding-inline:var(--hc-edge-gutter)!important;
+  width:min(100%,calc(var(--hc-shell-width) + var(--hc-edge-gutter) + var(--hc-edge-gutter)))!important;
+  padding-inline-start:max(var(--hc-edge-gutter),env(safe-area-inset-left,0px))!important;
+  padding-inline-end:max(var(--hc-edge-gutter),env(safe-area-inset-right,0px))!important;
   box-sizing:border-box;
 }
 html body .hc-global-page-shell > .hc-route-transition main > .page-container {
