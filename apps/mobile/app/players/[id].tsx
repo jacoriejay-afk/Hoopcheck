@@ -119,19 +119,19 @@ function PlayerProfileDetails({ viewer }: { viewer: PlayerViewer }) {
             <GlassCard style={styles.hero}>
               <LinearGradient colors={["#0C1D36", "#152A40", "#402422"]}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                style={{ width: "100%", padding: 20, borderRadius: 25, borderCurve: "continuous",
-                  gap: 18, minHeight: 220, overflow: "hidden" }}>
+                style={{ width: "100%", padding: 12, borderRadius: 16, borderCurve: "continuous",
+                  gap: 9, minHeight: 112, overflow: "hidden" }}>
                 <View pointerEvents="none" accessible={false} style={{
-                  position: "absolute", right: -66, top: -72, width: 206, height: 206,
-                  borderRadius: 103, borderColor: "rgba(255,255,255,.12)", borderWidth: 1,
+                  position: "absolute", right: -66, top: -72, width: 164, height: 164,
+                  borderRadius: 82, borderColor: "rgba(255,255,255,.12)", borderWidth: 1,
                 }} />
                 <View pointerEvents="none" accessible={false} style={{
-                  position: "absolute", right: -26, top: -26, width: 134, height: 134,
-                  borderRadius: 67, borderColor: "rgba(255,255,255,.12)", borderWidth: 1,
+                  position: "absolute", right: -26, top: -26, width: 104, height: 104,
+                  borderRadius: 52, borderColor: "rgba(255,255,255,.12)", borderWidth: 1,
                 }} />
                 <View style={{ flexDirection: "row", justifyContent: "space-between",
                   alignItems: "center", gap: 10 }}>
-                  <Text style={{ color: "#FFAC72", fontWeight: "900", fontSize: 10, letterSpacing: 2.2 }}>HOOPCHECK / ATHLETE</Text>
+                  <Text style={{ color: "#FFAC72", fontFamily: "HoopCheckDisplay", fontSize: 11, letterSpacing: .7 }}>HOOPCHECK</Text>
                   {player.player_verified ? <View style={{ flexDirection: "row", gap: 5,
                     alignItems: "center", borderColor: "rgba(118,242,184,.38)", borderWidth: 1,
                     backgroundColor: "rgba(30,134,97,.22)", borderRadius: 100, paddingHorizontal: 10,
@@ -140,28 +140,25 @@ function PlayerProfileDetails({ viewer }: { viewer: PlayerViewer }) {
                     <Text style={{ color: "#C4FBE1", fontSize: 10, fontWeight: "900" }}>VERIFIED</Text>
                   </View> : null}
                 </View>
-                <View style={{ flexDirection: compactHero ? "column" : "row",
-                  alignItems: compactHero ? "flex-start" : "center", gap: 16 }}>
-                  <View style={{ borderRadius: 28, padding: 3, borderWidth: 2, borderColor: "rgba(255,164,95,.73)",
+                <View style={{ flexDirection: "row",
+                  alignItems: "center", gap: 10 }}>
+                  <View style={{ borderRadius: 18, padding: 2, borderWidth: 1, borderColor: "rgba(255,164,95,.73)",
                     backgroundColor: "rgba(255,255,255,.08)" }}>
-                    <ProfileAvatar url={player.avatar_url} name={name} size={compactHero ? 78 : 102} />
+                    <ProfileAvatar url={player.avatar_url} name={name} size={compactHero ? 62 : 80} />
                   </View>
-                  <View style={{ flex: compactHero ? undefined : 1, alignSelf: compactHero ? "stretch" : undefined, minWidth: 0, gap: 8 }}>
-                    <Text style={{ color: "#E9EFF5", fontSize: 11, fontWeight: "900",
-                      letterSpacing: 1.5 }}>PLAYER PROFILE</Text>
-                    <Text accessibilityRole="header" style={{ fontFamily: "HoopCheckDisplay",
-                      fontSize: compactHero ? 30 : 36, lineHeight: compactHero ? 34 : 39, color: "#FFFFFF" }}>{name}</Text>
-                    <View style={{ height: 3, width: 48, backgroundColor: "#FF8F56", borderRadius: 3 }} />
+                  <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+                    <Text style={{ color: "#E9EFF5", fontSize: 10, fontWeight: "600" }}>Player</Text>
+                    <Text accessibilityRole="header" numberOfLines={2} style={{ fontFamily: theme.type.ui.fontFamily,
+                      fontWeight: "700", fontSize: compactHero ? 21 : 25, lineHeight: compactHero ? 26 : 30, color: "#FFFFFF" }}>{name}</Text>
+                    <View style={{ height: 2, width: 28, backgroundColor: "#FF8F56", borderRadius: 2 }} />
                   </View>
                 </View>
-                <Text style={{ color: "#E0E8F2", fontSize: 12 }}>A basketball story worth following.</Text>
-              </LinearGradient>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm, marginVertical: theme.spacing.md }}>
-                <Chip>Player</Chip>
-                {player.position ? <Chip>{player.position}</Chip> : null}
+               </LinearGradient>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm, marginVertical: theme.spacing.sm }}>
+                 {player.position ? <Chip>{player.position}</Chip> : null}
               </View>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xl, paddingVertical: theme.spacing.md, borderTopWidth: 1, borderColor: theme.border, width: "100%" }}>
-                {[{ label: "PRO EXPERIENCE", value: player.years_pro === null ? "Not listed" : `${player.years_pro} ${player.years_pro === 1 ? "year" : "years"}` }, { label: "CURRENT TEAM", value: player.current_team || "Not listed" }].map(item => <View key={item.label} style={{ flexShrink: 1, gap: theme.spacing.xs }}><Text style={{ ...theme.type.caption, color: theme.muted, letterSpacing: 1 }}>{item.label}</Text><Text selectable style={{ ...theme.type.section, color: theme.foreground }}>{item.value}</Text></View>)}
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.md, paddingVertical: theme.spacing.sm, borderTopWidth: 1, borderColor: theme.border, width: "100%" }}>
+                {[{ label: "PRO EXPERIENCE", value: player.years_pro === null ? "Not listed" : `${player.years_pro} ${player.years_pro === 1 ? "year" : "years"}` }, { label: "CURRENT TEAM", value: player.current_team || "Not listed" }].map(item => <View key={item.label} style={{ flexShrink: 1, gap: theme.spacing.xs }}><Text style={{ ...theme.type.caption, color: theme.muted }}>{item.label}</Text><Text selectable style={{ ...theme.type.section, color: theme.foreground }}>{item.value}</Text></View>)}
               </View>
               <ShareSheet title={name} path={`/players/${player.id}`} />
               <PlayerPassport player={player} />
@@ -236,5 +233,5 @@ function Info({ label, value }: { label: string; value: string | number | null |
 }
 
 const createStyles = (theme: EntryTheme) => StyleSheet.create({
-  safe: {flex:1,backgroundColor: theme.background},content: {padding:16,paddingBottom:34,width:"100%",maxWidth:720,alignSelf:"center"},back: {color: theme.accent,fontSize:15,fontWeight:"800",marginBottom:18},hero: {backgroundColor: theme.surface,borderRadius:theme.courtside.hero.radius,borderCurve:"continuous",padding:theme.spacing.xl,borderTopWidth:3,borderTopColor:theme.button,alignItems:"flex-start",marginBottom:14},avatar: {width:60,height:60,borderRadius:18,backgroundColor: theme.chip,alignItems:"center",justifyContent:"center",marginBottom:15},avatarText: {fontSize:26,fontWeight:"900",color: theme.onChip},kicker: {fontSize:10,fontWeight:"900",letterSpacing:1.4,color: theme.accent},heroTitle: {fontSize:36,lineHeight:40,fontWeight: "400", fontFamily: "HoopCheckDisplay",color: theme.foreground,marginTop:5},emptyTitle: {fontSize:22,fontWeight:"900",color: theme.foreground,textAlign:"center"},handle: {color: theme.muted,fontSize:14,marginTop:4},pill: {backgroundColor: theme.chip,borderRadius:20,paddingHorizontal:10,paddingVertical:5,marginTop:12},pillText: {color: theme.onChip,fontSize:10,fontWeight:"900",letterSpacing:0.7},card: {backgroundColor: theme.surface,borderRadius: theme.radius.card,padding:17,marginBottom:12,borderWidth:1,borderColor: theme.border},sectionTitle: {fontSize:16,fontWeight:"900",color: theme.foreground,marginBottom:12},infoRow: {paddingVertical:9,borderBottomWidth:1,borderBottomColor: theme.border,gap:4},label: {fontSize:11,fontWeight:"800",color: theme.muted,textTransform:"uppercase",letterSpacing:0.5},value: {fontSize:15,color: theme.foreground,fontWeight:"600"},body: {fontSize:14,lineHeight:21,color: theme.muted},footer: {fontSize:12,lineHeight:18,color: theme.muted,textAlign:"center",paddingHorizontal:4,marginTop:4},loader: {marginTop:60},empty: {backgroundColor: theme.surface,padding:22,borderRadius: theme.radius.card,alignItems:"center"},button: {backgroundColor: theme.button,padding:13,borderRadius: theme.radius.control,marginTop:16},buttonText: {color: theme.onButton,fontWeight:"900"},reportCard: {backgroundColor: theme.surface,borderRadius: theme.radius.card,padding:17,marginBottom:12,borderWidth:1,borderColor: theme.border},reportButton: {backgroundColor: theme.button,paddingHorizontal:14,paddingVertical:12,borderRadius: theme.radius.control,alignItems:"center",justifyContent:"center",marginTop:14},reportButtonText: {color: theme.onButton,fontWeight:"800",fontSize:14},reportForm: {marginTop:12},reportInput: {minHeight:100,borderWidth:1,borderColor: theme.border,borderRadius: theme.radius.control,padding:12,color: theme.foreground,fontSize:14,marginTop:8},characterCount: {fontSize:11,color: theme.muted,textAlign:"right",marginTop:5},reportActions: {flexDirection:"row",gap:10,marginTop:12},cancelButton: {flex:1,borderWidth:1,borderColor: theme.border,padding:12,borderRadius: theme.radius.control,alignItems:"center",justifyContent:"center"},cancelButtonText: {color: theme.foreground,fontWeight:"800"},disabledButton: {opacity:0.5},reportMessage: {marginTop:10,color: theme.error,fontSize:13,lineHeight:19}
+  safe: {flex:1,backgroundColor: theme.background},content: {padding:12,paddingBottom:24,width:"100%",maxWidth:720,alignSelf:"center"},back: {color: theme.accent,fontSize:14,fontWeight:"700",marginBottom:8},hero: {backgroundColor: theme.surface,borderRadius:theme.courtside.hero.radius,borderCurve:"continuous",padding:theme.spacing.md,borderTopWidth:0,alignItems:"flex-start",marginBottom:14},avatar: {width:60,height:60,borderRadius:18,backgroundColor: theme.chip,alignItems:"center",justifyContent:"center",marginBottom:15},avatarText: {fontSize:26,fontWeight:"900",color: theme.onChip},kicker: {fontSize:10,fontWeight:"900",letterSpacing:1.4,color: theme.accent},heroTitle: {fontSize:36,lineHeight:40,fontWeight: "400", fontFamily: "HoopCheckDisplay",color: theme.foreground,marginTop:5},emptyTitle: {fontSize:22,fontWeight:"900",color: theme.foreground,textAlign:"center"},handle: {color: theme.muted,fontSize:14,marginTop:4},pill: {backgroundColor: theme.chip,borderRadius:20,paddingHorizontal:10,paddingVertical:5,marginTop:12},pillText: {color: theme.onChip,fontSize:10,fontWeight:"900",letterSpacing:0.7},card: {backgroundColor: theme.surface,borderRadius: theme.radius.card,padding:12,marginBottom:8,borderWidth:1,borderColor: theme.border},sectionTitle: {fontSize:15,fontWeight:"700",fontFamily:theme.type.ui.fontFamily,color: theme.foreground,marginBottom:8},infoRow: {paddingVertical:9,borderBottomWidth:1,borderBottomColor: theme.border,gap:4},label: {fontSize:11,fontWeight:"800",color: theme.muted,textTransform:"uppercase",letterSpacing:0.5},value: {fontSize:15,color: theme.foreground,fontWeight:"600"},body: {fontSize:14,lineHeight:21,color: theme.muted},footer: {fontSize:12,lineHeight:18,color: theme.muted,textAlign:"center",paddingHorizontal:4,marginTop:4},loader: {marginTop:60},empty: {backgroundColor: theme.surface,padding:22,borderRadius: theme.radius.card,alignItems:"center"},button: {backgroundColor: theme.button,padding:13,borderRadius: theme.radius.control,marginTop:16},buttonText: {color: theme.onButton,fontWeight:"900"},reportCard: {backgroundColor: theme.surface,borderRadius: theme.radius.card,padding:12,marginBottom:8,borderWidth:1,borderColor: theme.border},reportButton: {backgroundColor: theme.button,paddingHorizontal:14,paddingVertical:12,borderRadius: theme.radius.control,alignItems:"center",justifyContent:"center",marginTop:14},reportButtonText: {color: theme.onButton,fontWeight:"800",fontSize:14},reportForm: {marginTop:12},reportInput: {minHeight:100,borderWidth:1,borderColor: theme.border,borderRadius: theme.radius.control,padding:12,color: theme.foreground,fontSize:14,marginTop:8},characterCount: {fontSize:11,color: theme.muted,textAlign:"right",marginTop:5},reportActions: {flexDirection:"row",gap:10,marginTop:12},cancelButton: {flex:1,borderWidth:1,borderColor: theme.border,padding:12,borderRadius: theme.radius.control,alignItems:"center",justifyContent:"center"},cancelButtonText: {color: theme.foreground,fontWeight:"800"},disabledButton: {opacity:0.5},reportMessage: {marginTop:10,color: theme.error,fontSize:13,lineHeight:19}
 });

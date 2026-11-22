@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';import{test}from'node:test';import{readF
 globalThis.IS_REACT_ACT_ENVIRONMENT=true;const require=createRequire(import.meta.url),exports={};
 const code=ts.transpileModule(readFileSync(new URL('../src/primitives.tsx',import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText;
 const Pressable=({children,...props})=>React.createElement('Pressable',props,typeof children==='function'?children({pressed:false}):children);
-const stubs={'expo-blur':{BlurView:'BlurView'},'react-native':{Platform:{OS:'ios'},Pressable,Text:'Text',View:'View',TextInput:'TextInput'},'./theme':{useEntryTheme:()=>({foreground:'#111',onButton:'#fff',button:'#f90',spacing:{md:12},radius:{control:12}})}};
+const stubs={'expo-blur':{BlurView:'BlurView'},'react-native':{Platform:{OS:'ios'},Pressable,Text:'Text',View:'View',TextInput:'TextInput'},'./theme':{useEntryTheme:()=>({foreground:'#111',onButton:'#fff',button:'#f90',spacing:{md:12},radius:{control:12},type:{ui:{fontFamily:'AvenirNext-DemiBold'}}})}};
 vm.runInNewContext(code,{exports,require:id=>Object.hasOwn(stubs,id)?stubs[id]:require(id)});
 async function render(children){let tree;await act(async()=>{tree=create(React.createElement(exports.Button,null,children));});return tree;}
 test('the actual shared button wraps interpolated string/number labels in native Text',async()=>{
