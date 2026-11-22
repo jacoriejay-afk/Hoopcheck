@@ -62,6 +62,7 @@ export default function FanLivePage() {
   const scrollRef = useRef<HTMLDivElement|null>(null);
   const activeRoomRef = useRef<string|null>(null);
   const composerRef = useRef<HTMLInputElement|null>(null);
+  const followLatestRef = useRef(true);
 
   const load = useCallback(async (showLoader=false) => {
     if(showLoader) setLoading(true);
@@ -133,7 +134,7 @@ export default function FanLivePage() {
   },[basketballSide,roomId]);
 
   const loadMessages=useCallback(async(gameId:string)=>{
-    const {data,error}=await supabase.from("fan_live_chat_messages").select("id,body,created_at,user_id").eq("game_id",gameId).order("created_at",{ascending:true}).limit(200);
+    const {data,error}=await supabase.from("fan_live_chat_messages").select("id,body,created_at,user_id").eq("game_id",gameId).order("created_at",{ascending:false}).limit(200);
     if(activeRoomRef.current!==gameId)return;
     if(error){setMessage("Chat history couldn't load. Reconnecting…");return;}
     const incoming=(data||[]) as ChatMessage[];
@@ -165,6 +166,7 @@ export default function FanLivePage() {
   },[inRoom]);
   useEffect(()=>{
     activeRoomRef.current=selected?.id||null;
+    followLatestRef.current=true;
     setMessages([]);setProfiles({});setPresenceCount(0);setReporting(null);setMessage("");setBody("");
   },[selected?.id]);
   useEffect(()=>{
@@ -210,14 +212,20 @@ export default function FanLivePage() {
           if(optimistic) return current.map(m=>m.id===optimistic.id?item:m);
           return [...current,item].slice(-200);
         });
-        setProfiles(current=>current[item.user_id]?current:{...current,[item.user_id]:{display_name:null,avatar_url:null}});
+        // Resolve sender labels for new realtime arrivals without stale-room updates.
+        void supabase.from("profiles")
+          .select("id,display_name,avatar_url").eq("id",item.user_id).maybeSingle()
+          .then(({data})=>{
+            if(data && activeRoomRef.current===gameId)
+              setProfiles(current=>({...current,[item.user_id]:{display_name:data.display_name,avatar_url:data.avatar_url}}));
+          });
       }).subscribe();
     return()=>{void supabase.removeChannel(channel);};
   },[selected?.id,chatEnabled,loadMessages,refreshPresence]);
 
   useEffect(()=>{
     const list=scrollRef.current;
-    if(list)list.scrollTop=list.scrollHeight; // Scroll messages, never the whole page.
+    if(list && followLatestRef.current)list.scrollTop=list.scrollHeight; // Never jump the viewport or interrupt readers of older messages.
   },[messages.length,selected?.id]);
 
   async function send(textOverride?:string){
@@ -296,13 +304,13 @@ export default function FanLivePage() {
         <header className="hc-live-room-scoreboard"><div className="hc-live-room-team">{renderTeamLogo(home)}<strong>{home?.name||"Team"}</strong></div><div className="hc-live-room-score"><span className={"hc-live-badge"+(selected.status==="live"?" is-live":"")}>{selected.status==="live"?<><i/> LIVE</>:finalStatus(selected.status)?"FINAL":availability?.state||"UPCOMING"}</span><strong>{selected.home_score??"—"} <span>:</span> {selected.away_score??"—"}</strong><small>{selected.period_label||selected.league_name||"Score updates automatically"}</small></div><div className="hc-live-room-team">{renderTeamLogo(away)}<strong>{away?.name||selected.opponent_name}</strong></div></header>
         {isClosed?<div className="hc-live-closed-state"><span className="hc-live-closed-icon">✓</span><h2>Chat closed — final score</h2><p>{home?.name||"Home"} {selected.home_score??"—"} – {selected.away_score??"—"} {away?.name||selected.opponent_name}</p><small>This room is read-only after full-time.</small></div>:!chatEnabled?<div className="hc-live-empty-state"><div className="hc-live-empty-ball">●</div>{accountType==="fan"?<><h2>Fan Pro or Premium required for Live Game Chat</h2><p>Upgrade your fan membership to join the live conversation for men's and women's fixtures.</p><Link href="/membership" className="btn">View Fan Membership</Link></>:accountType==="player"?<><h2>Player Pro or Premium required for Live Game Chat</h2><p>An active Pro or Premium player membership unlocks live game chat for men's and women's fixtures.</p><Link href="/membership" className="btn">View Membership</Link></>:!userId?<><h2>Sign in to join Live Game Chat</h2><Link href="/login" className="btn">Sign In</Link></>:<><h2>Live Game Chat is for eligible players and fans</h2><p>Active Pro and Premium player and fan memberships can join the live conversation.</p></>}</div>:!roomOpen(selected,clock)?<div className="hc-live-empty-state"><h2>Chat opens {GAME_CHAT_OPEN_EARLY_MINUTES} minutes before tip-off</h2><p>{selected.scheduled_at?new Date(selected.scheduled_at).toLocaleString():"Tip-off time is not confirmed yet."}</p></div>:<div className="hc-live-chat-shell">
           <div className="hc-live-chat-toolbar"><span><i className="hc-live-pulse-dot"/> {presenceCount} {presenceCount===1?"member":"members"} chatting</span><span>1 message / 2 seconds</span></div>
-          <div ref={scrollRef} className="hc-live-chat-messages" role="log" aria-live="polite" aria-relevant="additions text" aria-label="Live chat messages">
+          <div ref={scrollRef} className="hc-live-chat-messages" onScroll={event=>{const el=event.currentTarget;followLatestRef.current=el.scrollHeight-el.scrollTop-el.clientHeight<140;}} role="log" aria-live="polite" aria-relevant="additions text" aria-label="Live chat messages">
             {!shownMessages.length?<div className="hc-live-empty-state"><div className="hc-live-empty-ball">●</div><h2>You're first in — start the conversation</h2><p>Kick off the conversation while you watch.</p></div>:shownMessages.map(item=><article key={item.id} className={"hc-live-chat-message"+(item.user_id===userId?" is-own":"")+(item.failed?" is-failed":"")}>
               <div className="hc-live-chat-avatar">{profiles[item.user_id]?.avatar_url?<img src={profiles[item.user_id].avatar_url!} alt=""/>:initials(profiles[item.user_id]?.display_name||"HoopCheck member")}</div><div className="hc-live-chat-message-body"><div className="hc-live-chat-message-meta"><strong>{item.user_id===userId?"You":profiles[item.user_id]?.display_name||"Fan"}</strong><time>{new Date(item.created_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</time>{item.pending&&<span>Sending…</span>}{item.failed&&<button type="button" onClick={()=>void retry(item)}>Retry</button>}</div><p>{item.body}</p>{item.user_id!==userId&&!item.pending&&<details className="hc-live-message-menu"><summary aria-label="Message moderation options">•••</summary><div><button type="button" onClick={()=>void controlUser(item.user_id,"is_muted")}>{mutedUsers.has(item.user_id)?"Unmute member":"Mute member"}</button><button type="button" onClick={()=>void controlUser(item.user_id,"is_blocked")}>{blockedUsers.has(item.user_id)?"Unblock member":"Block member"}</button><button type="button" onClick={()=>setReporting(item.id)}>Report message</button></div></details>}</div>
             </article>)}
 
           </div>
-          <div className="hc-live-reaction-rail" aria-label="Quick game reactions"><span>React</span>{["🔥","🏀","👏","😮"].map(reaction=><button key={reaction} type="button" aria-label={"Add "+reaction+" reaction"} onClick={()=>{setBody(current=>(current?current+" ":"")+reaction);composerRef.current?.focus();}}>{reaction}</button>)}</div>
+          <div className="hc-live-reaction-rail" aria-label="Quick game reactions"><span>React</span>{["🔥","🏀","👏","😮"].map(reaction=><button key={reaction} type="button" aria-label={"Add "+reaction+" reaction"} onClick={()=>{setBody(current=>((current?current+" ":"")+reaction).slice(0,500));composerRef.current?.focus();}}>{reaction}</button>)}</div>
           <form className="hc-live-chat-compose" onSubmit={e=>{e.preventDefault();void send();}}><input ref={composerRef} value={body} maxLength={500} onChange={e=>setBody(e.target.value)} placeholder="React to the game…" aria-label="Chat message" disabled={isClosed}/><span>{body.length}/500</span><button className="btn" type="submit" disabled={!body.trim()||sending||isClosed}>{sending?"Sending…":"Send"}</button></form>
           <p className="hc-live-chat-rules">Keep it respectful. Links are displayed as plain text. Slow mode: one message every two seconds.</p>
         </div>}
