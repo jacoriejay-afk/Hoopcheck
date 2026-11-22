@@ -75,7 +75,7 @@ export default function HoopGroupsManage({userId,selected,channels,onCreated,onU
           .insert({slug,name:cleanName,description:description.trim().slice(0,300),category,
             owner_id:initialUser,accent_color:accent,icon_key:icon})
           .select("id,slug,name,category,description,owner_id,accent_color,icon_key").single();
-        if(error || !data) throw new Error("Could not create this server. You can own up to three, and each server needs a unique name.");
+        if(error || !data) throw new Error("Could not create this group. You can own up to three groups, and each needs a unique name.");
         if(accountRef.current!==initialUser) return;
         await onCreated(data as GroupSpace);
         setMode("closed");
@@ -84,17 +84,17 @@ export default function HoopGroupsManage({userId,selected,channels,onCreated,onU
           .update({name:cleanName,description:description.trim().slice(0,300),accent_color:accent,icon_key:icon})
           .eq("id",selected.id).eq("owner_id",initialUser)
           .select("id,slug,name,category,description,owner_id,accent_color,icon_key").single();
-        if(error || !data) throw new Error("Could not save server settings.");
+        if(error || !data) throw new Error("Could not save group settings.");
         if(accountRef.current!==initialUser) return;
         onUpdated(data as GroupSpace);setMode("closed");
       } else if(mode==="channel" && selected) {
-        if(channels.length>=12) throw new Error("This server already has the maximum 12 channels.");
+        if(channels.length>=12) throw new Error("This group already has the maximum 12 discussion topics.");
         const slug=slugify(cleanName).slice(0,40);
-        if(slug.length<2) throw new Error("Channel name needs at least two letters or numbers.");
+        if(slug.length<2) throw new Error("Topic name needs at least two letters or numbers.");
         const {data,error}=await supabase.from("hoop_group_channels")
           .insert({space_id:selected.id,name:cleanName,slug,sort_index:channels.length})
           .select("id,space_id,slug,name,sort_index").single();
-        if(error || !data) throw new Error("Channel could not be created. Try a different name.");
+        if(error || !data) throw new Error("Topic could not be created. Try a different name.");
         if(accountRef.current!==initialUser) return;
         onChannelCreated(data as GroupChannel);setMode("closed");
       } else if(mode==="rename" && selected) {
@@ -103,7 +103,7 @@ export default function HoopGroupsManage({userId,selected,channels,onCreated,onU
         const {data,error}=await supabase.from("hoop_group_channels")
           .update({name:cleanName}).eq("id",channel.id).eq("space_id",selected.id)
           .select("id").single();
-        if(error || !data) throw new Error("Could not rename that channel.");
+        if(error || !data) throw new Error("Could not rename that topic.");
         if(accountRef.current!==initialUser) return;
         onChannelUpdated(channel.id,cleanName);setMode("closed");
       }
@@ -114,28 +114,28 @@ export default function HoopGroupsManage({userId,selected,channels,onCreated,onU
 
   return <section className="hc-groups-management" aria-label="Community creation and settings">
     <div className="hc-groups-management-actions">
-      <button type="button" onClick={()=>changeMode(mode==="create"?"closed":"create")} aria-expanded={mode==="create"}>+ Create server</button>
-      {isOwner&&<><button type="button" onClick={()=>changeMode(mode==="edit"?"closed":"edit")} aria-expanded={mode==="edit"}>Server settings</button>
-        <button type="button" onClick={()=>changeMode(mode==="channel"?"closed":"channel")} aria-expanded={mode==="channel"}>+ Add channel</button>
-        <button type="button" onClick={()=>changeMode(mode==="rename"?"closed":"rename")} aria-expanded={mode==="rename"}>Rename channel</button></>}
+      <button type="button" onClick={()=>changeMode(mode==="create"?"closed":"create")} aria-expanded={mode==="create"}>+ Create group</button>
+      {isOwner&&<><button type="button" onClick={()=>changeMode(mode==="edit"?"closed":"edit")} aria-expanded={mode==="edit"}>Group settings</button>
+        <button type="button" onClick={()=>changeMode(mode==="channel"?"closed":"channel")} aria-expanded={mode==="channel"}>+ Add topic</button>
+        <button type="button" onClick={()=>changeMode(mode==="rename"?"closed":"rename")} aria-expanded={mode==="rename"}>Rename topic</button></>}
     </div>
     {mode!=="closed"&&<form className="hc-groups-manage-form" onSubmit={event=>void submit(event)}>
-      <h3>{mode==="create"?"Create a basketball server":mode==="edit"?"Customize your server":mode==="channel"?"Create a text channel":"Rename a text channel"}</h3>
+      <h3>{mode==="create"?"Create a basketball group":mode==="edit"?"Customize your group":mode==="channel"?"Create a discussion topic":"Rename a discussion topic"}</h3>
       {(mode==="create"||mode==="edit")&&<>
-        <label>Server name<input value={name} onChange={event=>setName(event.target.value)} maxLength={80} required minLength={3} placeholder="e.g. Overseas Hoopers"/></label>
+        <label>Group name<input value={name} onChange={event=>setName(event.target.value)} maxLength={80} required minLength={3} placeholder="e.g. Overseas Hoopers"/></label>
         <label>Description<textarea rows={2} maxLength={300} value={description} onChange={event=>setDescription(event.target.value)} placeholder="Who should join this basketball community?"/></label>
         {mode==="create"&&<label>Topic<select value={category} onChange={event=>setCategory(event.target.value)}>{CATEGORIES.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>}
-        <fieldset><legend>Server icon</legend><div className="hc-groups-icon-choices">{Object.entries(GROUP_ICONS).map(([key,emoji])=><button key={key} type="button" aria-label={key} aria-pressed={icon===key} onClick={()=>setIcon(key)}>{emoji}</button>)}</div></fieldset>
-        <fieldset><legend>Server accent color</legend><div className="hc-groups-color-choices">{Object.entries(GROUP_COLORS).map(([key,color])=><button key={key} type="button" aria-label={key} title={key} aria-pressed={accent===key} onClick={()=>setAccent(key)} style={{"--group-swatch":color} as CSSProperties}><span/></button>)}</div></fieldset>
+        <fieldset><legend>Group icon</legend><div className="hc-groups-icon-choices">{Object.entries(GROUP_ICONS).map(([key,emoji])=><button key={key} type="button" aria-label={key} aria-pressed={icon===key} onClick={()=>setIcon(key)}>{emoji}</button>)}</div></fieldset>
+        <fieldset><legend>Group accent color</legend><div className="hc-groups-color-choices">{Object.entries(GROUP_COLORS).map(([key,color])=><button key={key} type="button" aria-label={key} title={key} aria-pressed={accent===key} onClick={()=>setAccent(key)} style={{"--group-swatch":color} as CSSProperties}><span/></button>)}</div></fieldset>
       </>}
       {(mode==="channel"||mode==="rename")&&<>
-        {mode==="rename"&&<label>Channel<select value={channelId} onChange={event=>{setChannelId(event.target.value);setChannelName(channels.find(c=>c.id===event.target.value)?.name||"");}}>{channels.map(c=><option value={c.id} key={c.id}># {c.name}</option>)}</select></label>}
-        <label>Channel name<input value={channelName} onChange={event=>setChannelName(event.target.value)} maxLength={50} minLength={2} required placeholder="e.g. training-tips"/></label>
-        <p className="muted">Channel messages remain moderated. Only server owners can manage channels.</p>
+        {mode==="rename"&&<label>Discussion topic<select value={channelId} onChange={event=>{setChannelId(event.target.value);setChannelName(channels.find(c=>c.id===event.target.value)?.name||"");}}>{channels.map(c=><option value={c.id} key={c.id}># {c.name}</option>)}</select></label>}
+        <label>Topic name<input value={channelName} onChange={event=>setChannelName(event.target.value)} maxLength={50} minLength={2} required placeholder="e.g. training-tips"/></label>
+        <p className="muted">Discussion posts are moderated. Only group owners can manage topics.</p>
       </>}
-      {mode==="create"&&<p className="muted">You can own up to 3 communities. New servers include #welcome, #general and #game-talk. Members join voluntarily.</p>}
+      {mode==="create"&&<p className="muted">You can create up to three groups. Each starts with Welcome, General and Game Talk topics. People choose whether to join.</p>}
       {feedback&&<p role="alert">{feedback}</p>}
-      <div className="hc-groups-manage-form-actions"><button type="button" disabled={busy} onClick={()=>changeMode("closed")}>Cancel</button><button className="btn" type="submit" disabled={busy}>{busy?"Saving…":mode==="create"?"Create server":"Save changes"}</button></div>
+      <div className="hc-groups-manage-form-actions"><button type="button" disabled={busy} onClick={()=>changeMode("closed")}>Cancel</button><button className="btn" type="submit" disabled={busy}>{busy?"Saving…":mode==="create"?"Create group":"Save changes"}</button></div>
     </form>}
   </section>;
 }
