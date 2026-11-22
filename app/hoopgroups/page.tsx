@@ -35,6 +35,7 @@ export default function HoopGroupsPage() {
   const [ready, setReady] = useState(false);
   const [backendReady, setBackendReady] = useState(false);
   const [sessionRevision, setSessionRevision] = useState(0);
+  const [returnTo,setReturnTo] = useState("/hoopgroups");
   const [discoverQuery,setDiscoverQuery] = useState("");
   const [discoverFilter,setDiscoverFilter] = useState<"all"|"joined"|"mine">("all");
   const [chatPrefs,setChatPrefs] = useState<ChatPrefs>({density:"cozy",style:"cards",scale:"normal"});
@@ -77,6 +78,11 @@ export default function HoopGroupsPage() {
     setReady(true);
   }, [sessionRevision]);
 
+  useEffect(() => {
+    const query=new URLSearchParams(window.location.search).get("group");
+    if(query && /^[a-z0-9-]{3,60}$/.test(query))
+      setReturnTo("/hoopgroups?group="+encodeURIComponent(query));
+  },[]);
   useEffect(() => {
     const generation = loadGeneration.current + 1;
     void load().catch(() => {
@@ -213,7 +219,7 @@ export default function HoopGroupsPage() {
   return <main className="page-shell hc-hoopgroups-page"><div className="page-container">
     <header className="hc-hoopgroups-header"><div><p className="eyebrow">HOOPCHECK COMMUNITIES</p><h1>HoopGroups</h1><p className="muted">Server-style basketball communities organized by topic and channels. This is separate from every club's Team Fan Group.</p></div><Link href="/team-hub/groups" className="btn dark">Team Fan Groups</Link></header>
     {!ready && <p role="status">Loading communities…</p>}
-    {ready && !userId && <section className="dashboard-card"><h2>Join the conversation</h2><p>Sign in to browse community channels.</p><Link href="/login?returnTo=%2Fhoopgroups" className="btn">Sign in</Link></section>}
+    {ready && !userId && <section className="dashboard-card"><h2>Join the conversation</h2><p>Sign in to browse community channels.</p><Link href={"/login?returnTo="+encodeURIComponent(returnTo)} className="btn">Sign in</Link></section>}
     {ready && userId && !backendReady ? <section className="dashboard-card"><h2>Community servers · preview</h2><p className="muted">These dedicated servers and channels are not live. Team Fan Groups remain available separately while the new moderation and database rollout is reviewed.</p>
       <div className="hc-hoopgroups-preview">{planned.map(space=><article key={space.slug}><strong>{space.name}</strong><p>{space.description}</p><small>Planned channels: #welcome · #general · #game-talk</small></article>)}</div><Link href="/team-hub/groups" className="btn">Browse official Team Fan Groups</Link></section> : null}
     {ready && userId && backendReady && <>
