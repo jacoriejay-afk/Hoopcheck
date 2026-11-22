@@ -85,7 +85,7 @@ export default function PlayerProfilePage() {
             player_position: own.position,
             years_pro: own.years_pro,
             current_country: own.current_country,
-            current_country_public: own.current_country_public,
+            current_country_public: Boolean(own.current_country_public),
             current_team: own.current_team,
             player_verified: Boolean(own.player_verified),
             player_verified_at: own.player_verified_at,
