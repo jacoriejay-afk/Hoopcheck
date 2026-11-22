@@ -33,7 +33,7 @@ export async function GET(request:Request){
     const {url,anon,db}=clients();
     if(!await reviewer(request,url,anon))return forbidden();
     const {data,error}=await db.from("agent_showcases").select(
-      "profile_id,public_name,agency_name,website_url,country,is_published,updated_at,review_status,review_note,reviewed_at,profiles!inner(account_type,moderation_status)"
+      "profile_id,public_name,agency_name,website_url,country,is_published,updated_at,review_status,review_note,reviewed_at,profiles!agent_showcases_profile_id_fkey!inner(account_type,moderation_status)"
     ).eq("is_published",true).in("profiles.account_type",["agent","scout"])
       .eq("profiles.moderation_status","normal").order("updated_at",{ascending:false}).limit(100);
     if(error)throw error;
@@ -56,7 +56,7 @@ export async function POST(request:Request){
         {status:400,headers:noStore});
     if(user.id===profile_id)return NextResponse.json({error:"You cannot review your own showcase."},{status:403,headers:noStore});
     const {data:record,error:lookupError}=await db.from("agent_showcases").select(
-      "profile_id,is_published,updated_at,profiles!inner(account_type,moderation_status)"
+      "profile_id,is_published,updated_at,profiles!agent_showcases_profile_id_fkey!inner(account_type,moderation_status)"
     ).eq("profile_id",profile_id).maybeSingle();
     const p=Array.isArray(record?.profiles)?record.profiles[0]:record?.profiles;
     if(lookupError||!record||!record.is_published||!p
