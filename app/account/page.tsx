@@ -6,6 +6,7 @@ import { HoopIcon, VerifiedBadge } from "../../components/HoopCheckUI";
 import Link from "next/link";
 import HoopLoading from "../../components/HoopLoading";
 import { supabase } from "../../lib/supabase";
+import { readOwnProfile } from "../../lib/read-own-profile";
 import ThemeToast from "../../components/ThemeToast";
 import Surface from "../../components/Surface";
 import SocialProfileHeader, { profileCover } from "../../components/SocialProfileHeader";
@@ -150,7 +151,7 @@ export default function AccountPage() {
       setEmailConfirmed(Boolean(user.email_confirmed_at));
       setUserId(user.id);
       const [{ data: profileData, error: profileError }, { data: subscriptionData }, { data: adminRoleData }] = await Promise.all([
-        supabase.from("profiles").select("account_type,basketball_type,display_name,username,first_name,last_name,professional_experience,bio,position,years_pro,current_country,current_country_public,current_team,favorite_teams,profile_visibility,player_verified,coach_verified,coach_profile_id,experience_summary,profile_claimed,avatar_url,avatar_moderation_status,moderation_status,moderation_note").eq("id", user.id).maybeSingle(),
+        readOwnProfile<Profile>(user.id, "account_type,basketball_type,display_name,username,first_name,last_name,professional_experience,bio,position,years_pro,current_country,current_country_public,current_team,favorite_teams,profile_visibility,player_verified,coach_verified,coach_profile_id,experience_summary,profile_claimed,avatar_url,avatar_moderation_status,moderation_status,moderation_note"),
         supabase.from("subscriptions").select("plan,status,access_status,current_period_end,cancel_at_period_end").eq("user_id", user.id).maybeSingle(),
         supabase.rpc("get_current_user_admin_role"),
       ]);
@@ -331,7 +332,7 @@ export default function AccountPage() {
     if (!userId) return;
     let alive = true;
     (async () => {
-      const { data } = await supabase.from("profiles").select("theme_preference,preferred_language,notification_preferences,profile_visibility,current_country_public").eq("id", userId).maybeSingle();
+      const { data } = await readOwnProfile<{ theme_preference: string | null; preferred_language: string | null; notification_preferences: Record<string, unknown> | null; profile_visibility: string | null; current_country_public: boolean | null }>(userId, "theme_preference,preferred_language,notification_preferences,profile_visibility,current_country_public");
       if (!alive || !data) return;
       const theme = ["system","light","dark"].includes(data.theme_preference) ? data.theme_preference as "system"|"light"|"dark" : "system";
       const localTheme = localStorage.getItem("hoopcheck-theme");
