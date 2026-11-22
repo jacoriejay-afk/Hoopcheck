@@ -48,6 +48,9 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage, playe
   const [teamId,setTeamId] = useState("");
   const [editingStop,setEditingStop] = useState(false);
   const [manualTeam,setManualTeam] = useState(false);
+  const [matchingStop,setMatchingStop] = useState<string|null>(null);
+  const [matching,setMatching] = useState(false);
+  const [reviewedTeams,setReviewedTeams] = useState<Record<string,string>>({});
   const [teamName,setTeamName] = useState("");
   const [leagueName,setLeagueName] = useState("");
   const [country,setCountry] = useState("");
@@ -97,12 +100,40 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage, playe
     return ()=>{active=false;};
   },[playerId]);
 
+  useEffect(() => {
+    if(!isOwnProfile) return;
+    let active = true;
+    setReviewedTeams({});
+    void supabase.auth.getUser().then(async ({data:{user}}) => {
+      if(!active || user?.id!==playerId) return;
+      const {data,error} = await supabase.from("reviews").select("team_id,status").eq("author_id",playerId).not("team_id","is",null);
+      if(!active || error) return;
+      setReviewedTeams(Object.fromEntries((data||[]).filter(row=>row.team_id).map(row=>[String(row.team_id),String(row.status||"submitted")])));
+    }).catch(()=>{});
+    return ()=>{active=false;};
+  },[isOwnProfile,playerId]);
+
   function chooseTeam(item:{id:string;name:string;country:string;league_name:string}) {
     setTeamId(item.id);
     setTeamName(item.name);
     setLeagueName(item.league_name);
     setCountry(item.country);
     if(item.id) setManualTeam(false);
+  }
+
+  async function matchExistingStop(stop:CareerStop,item:{id:string;name:string;country:string;league_name:string}) {
+    if(!canManage || matching || !item.id) return;
+    setMatching(true);setMessage("");
+    try {
+      const {data:{user}} = await supabase.auth.getUser();
+      if(user?.id!==playerId) {setMessage("Sign in as the profile owner to match a team.");return;}
+      const changes = {team_id:item.id,team_name:item.name,country:item.country||stop.country,league_name:item.league_name||stop.league_name};
+      const {error} = await supabase.from("player_career_stops").update(changes).eq("id",stop.id).eq("player_id",playerId);
+      if(error) {setMessage("Team match could not be saved. Try again.");return;}
+      setStops(current=>current.map(row=>row.id===stop.id?{...row,...changes}:row));
+      setMatchingStop(null);
+      setMessage("Team linked to your career stop. Review eligibility is still checked separately.");
+    } finally {setMatching(false);}
   }
 
   async function addStop(event:FormEvent<HTMLFormElement>) {
@@ -167,8 +198,13 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage, playe
           <div className="hc-journey-stop__team"><span className="hc-journey-stop__crest">{monogram(stop.team_name)}</span><div><h3>{stop.team_name}</h3><p>{stop.league_name||"League not listed"} · {stop.country}</p>{stop.position&&<small>Position · {stop.position}</small>}</div></div>
           <div className="hc-journey-stop__footer">
             {stop.team_id ? <Link href={`/teams/${encodeURIComponent(stop.team_id)}`}>Team profile</Link> : <span className="muted">Unlisted team</span>}
-            {isOwnProfile&&<div>{stop.team_id&&<Link className="hc-journey-review-link" href={`/account?reviewTeam=${encodeURIComponent(stop.team_id)}#team-review-checklist`}>Review when ready →</Link>}{canManage&&<><button type="button" onClick={()=>void toggleVisibility(stop)}>{stop.is_public?"Make private":"Make public"}</button><button type="button" onClick={()=>void removeStop(stop)}>Remove</button></>}</div>}
+            {isOwnProfile&&<div>{stop.team_id ? reviewedTeams[stop.team_id] ? <span className="hc-journey-review-status">Review {reviewedTeams[stop.team_id] === "approved" ? "published" : reviewedTeams[stop.team_id] === "pending" ? "pending" : "submitted"}</span> : <Link className="hc-journey-review-link" href={`/account?reviewTeam=${encodeURIComponent(stop.team_id)}#team-review-checklist`}>Review when ready →</Link> : canManage&&<button type="button" onClick={()=>setMatchingStop(current=>current===stop.id?null:stop.id)} aria-expanded={matchingStop===stop.id}>Match team</button>}{canManage&&<><button type="button" onClick={()=>void toggleVisibility(stop)}>{stop.is_public?"Make private":"Make public"}</button><button type="button" onClick={()=>void removeStop(stop)}>Remove</button></>}</div>}
           </div>
+          {isOwnProfile&&canManage&&matchingStop===stop.id&&<div className="hc-journey-match-panel">
+            <p>Find the same club in HoopCheck to connect this existing career stop to its review page.</p>
+            <TeamLeaguePicker mode="team" directorySource="teams" includeAllTeams basketballType="mens" placeholder="Search name, league or country" onSelectItem={item=>{void matchExistingStop(stop,item);}} disabled={matching} />
+            <button type="button" onClick={()=>setMatchingStop(null)} disabled={matching}>Cancel</button>
+          </div>}
         </div>
       </article>)}
     </div> : !loading && <div className="hc-journey-empty"><span>01 / CAREER PASSPORT</span><h3>No career stops added yet</h3><p>Build a timeline of the teams, leagues, countries, seasons, and positions that shaped your career.</p></div>}
