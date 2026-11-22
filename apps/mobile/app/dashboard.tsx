@@ -1,4 +1,5 @@
 import { HomeCourtside } from "../components/HomeCourtside";
+import { GlassSurface } from "../components/GlassSurface";
 import { ExploreLinks } from "../components/ExploreLinks";
 import { Input, Chip, SectionHeader } from "../src/primitives";
 import { useEffect, useState } from "react";
@@ -64,11 +65,34 @@ export default function DashboardScreen() {
     <SafeAreaView edges={["left", "right", "bottom"]} style={[styles.safe, { backgroundColor: theme.background }]}>
       <ScrollView keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled" testID="dashboard-scroll" contentContainerStyle={styles.scroll}>
         <View style={styles.content}>
-          <View style={{ gap: theme.spacing.xs, paddingVertical: theme.spacing.sm }}><Text style={{ ...theme.type.caption, color: theme.accent, fontWeight: "700" }}>COURTSIDE</Text><Text accessibilityRole="header" style={{ ...theme.type.title, color: theme.foreground }}>Your courtside.</Text></View>
-          <View style={{ marginTop: theme.spacing.sm, marginBottom: theme.spacing.lg, padding: theme.spacing.xs, backgroundColor: theme.surface, borderRadius: theme.radius.control, borderWidth: 1, borderColor: theme.border, flexDirection: "row", alignItems: "center" }}>
-            <Input style={{ flex: 1, minWidth: 0, borderWidth: 0 }} accessibilityLabel="Search basketball directory" placeholder="Search basketball" value={search} maxLength={100} onChangeText={setSearch} returnKeyType="search" onSubmitEditing={() => router.push({ pathname: "/search", params: { q: search } })} />
-            <Pressable accessibilityRole="button" accessibilityLabel="Search" onPress={() => router.push({ pathname: "/search", params: { q: search } })} style={({ pressed }) => ({ minHeight: 48, minWidth: 48, justifyContent: "center", alignItems: "center", opacity: pressed ? .7 : 1 })}><Ionicons name="search" size={22} color={theme.accent} /></Pressable>
+          <View style={{ flexDirection: "row", alignItems: "center",
+            justifyContent: "space-between", paddingVertical: 13, gap: 12 }}>
+            <View style={{ flex: 1, gap: 4 }}>
+              <Text style={{ color: theme.accent, fontSize: 11, fontWeight: "900", letterSpacing: 2.2 }}>THE COURTSIDE</Text>
+              <Text accessibilityRole="header" style={{ fontFamily: "HoopCheckDisplay",
+                fontSize: 34, lineHeight: 36, color: theme.foreground }}>Your game. Your world.</Text>
+            </View>
+            <GlassSurface style={{ width: 48, height: 48, borderRadius: 20, alignItems: "center", justifyContent: "center" }}>
+              <Ionicons name="basketball" size={23} color={theme.accent} />
+            </GlassSurface>
           </View>
+          <GlassSurface style={{ flexDirection: "row", alignItems: "center", marginTop: 4,
+            marginBottom: 23, borderRadius: 20, paddingLeft: 15, paddingRight: 5 }}>
+            <Ionicons name="search-outline" size={21} color={theme.accent} />
+            <Input style={{ flex: 1, minWidth: 0, backgroundColor: "transparent", borderWidth: 0,
+              fontSize: 15 }} accessibilityLabel="Search basketball directory" placeholder="Search players, teams, leagues…" value={search}
+              maxLength={100} onChangeText={setSearch} returnKeyType="search"
+              onSubmitEditing={() => router.push({ pathname: "/search", params: { q: search } })} />
+            <Pressable accessibilityRole="button" accessibilityLabel="Search"
+              onPress={() => router.push({ pathname: "/search", params: { q: search } })}
+              style={({ pressed }) => ({
+                minHeight: 44, minWidth: 44, borderRadius: 15,
+                backgroundColor: theme.accentSurface, justifyContent: "center", alignItems: "center",
+                opacity: pressed ? .72 : 1,
+              })}>
+              <Ionicons name="arrow-forward" size={20} color={theme.accent} />
+            </Pressable>
+          </GlassSurface>
           <HomeCourtside />
           <SectionHeader>Explore basketball</SectionHeader>
           <View style={styles.directories}><ExploreLinks /></View>

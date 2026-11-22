@@ -16,6 +16,8 @@ async function render(accountType, path, platform = "ios") {
   const exports = {};
   const stubs = {
     'expo-blur': { BlurView: 'BlurView' },
+    'expo-linear-gradient': { LinearGradient: 'LinearGradient' },
+    'expo-glass-effect': { GlassView: 'GlassView', isGlassEffectAPIAvailable: () => false, isLiquidGlassAvailable: () => false },
     'react-native': { Platform: { OS: platform }, StyleSheet: { absoluteFill: {} }, AccessibilityInfo: { isReduceTransparencyEnabled: platform === "ios" ? async () => true : undefined, addEventListener: () => ({ remove() {} }) }, Keyboard: { addListener: () => ({ remove() {} }) }, Pressable: 'Pressable', Text: 'Text', View: 'View' },
     'expo-router': { usePathname: () => path, useRouter: () => ({ navigate: route => navigations.push(route) }) },
     '@expo/vector-icons': { Ionicons: 'Ionicons' },
@@ -28,7 +30,7 @@ async function render(accountType, path, platform = "ios") {
     '../src/motion/Provider': { useMotionSetting: () => true },
     '../src/motion/config': { motion: { shortFade: 0, spring: {} } },
     '../src/native/haptics': { useHaptics: () => () => {} },
-    '../src/theme': { useEntryTheme: () => ({ courtside: { navigation: { radius: 24, height: 56, iconSize: 22 } } }) },
+    '../src/theme': { useEntryTheme: () => ({ courtside: { navigation: { radius: 24, height: 56, iconSize: 22 } }, surface: '#fff', background: '#fff', border: '#ddd', muted: '#333', foreground: '#000', accent: '#f60', accentSurface: '#fee', glassFill: 'rgba(255,255,255,.6)', glassBorder: '#eee', dark: false }) },
     '../src/native/useNativeAccount': { useNativeAccount: () => ({ account: accountType ? { user: { accountType } } : null }) },
   };
   const code = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } }).outputText;

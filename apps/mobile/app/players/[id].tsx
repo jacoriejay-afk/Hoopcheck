@@ -5,6 +5,8 @@ import { PlayerAccess } from "../../components/PlayerAccess";
 import { ProfileAvatar } from "../../components/ProfileAvatar";
 import { readPlayerProfile, type PlayerProfile, type PlayerViewer } from "../../src/native/playerProfiles";
 import { GlassCard, Button, Chip } from "../../src/primitives";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 import { ShareSheet } from "../../components/ShareSheet";
 import { Sheet } from "../../components/Sheet";
 import { BottomSheetTextInput } from "@gorhom/bottom-sheet";
@@ -13,7 +15,7 @@ import { useNetwork, requireOnline } from "../../src/native/network";
 import { Skeleton } from "../../components/Motion";
 import { useEntryTheme, type EntryTheme } from "../../src/theme";
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, RefreshControl, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { supabase } from "../../src/lib/supabase";
@@ -23,6 +25,7 @@ export default function PlayerDetailScreen() { return <PlayerAccess>{viewer => <
 function PlayerProfileDetails({ viewer }: { viewer: PlayerViewer }) {
   const theme = useEntryTheme();
   const styles = createStyles(theme);
+  const compactHero = useWindowDimensions().width < 390;
   const { id: viewerId, accountType } = viewer;
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -114,10 +117,45 @@ function PlayerProfileDetails({ viewer }: { viewer: PlayerViewer }) {
         ) : player ? (
           <>
             <GlassCard style={styles.hero}>
-              <View style={{ width: "100%", backgroundColor: theme.courtside.court.background, padding: theme.spacing.lg, borderRadius: theme.radius.card, gap: theme.spacing.lg }}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.lg }}><ProfileAvatar url={player.avatar_url} name={name} size={96} /><View style={{ flex: 1, gap: theme.spacing.sm }}><Text style={[styles.kicker, { color: theme.courtside.court.orange }]}>PLAYER PROFILE</Text><Text style={{ ...theme.type.caption, color: theme.courtside.court.muted }}>HOOPCHECK ATHLETES</Text></View></View>
-                <Text accessibilityRole="header" style={[styles.heroTitle, { color: theme.courtside.court.ink }]}>{name}</Text>
-              </View>
+              <LinearGradient colors={["#0C1D36", "#152A40", "#402422"]}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                style={{ width: "100%", padding: 20, borderRadius: 25, borderCurve: "continuous",
+                  gap: 18, minHeight: 220, overflow: "hidden" }}>
+                <View pointerEvents="none" accessible={false} style={{
+                  position: "absolute", right: -66, top: -72, width: 206, height: 206,
+                  borderRadius: 103, borderColor: "rgba(255,255,255,.12)", borderWidth: 1,
+                }} />
+                <View pointerEvents="none" accessible={false} style={{
+                  position: "absolute", right: -26, top: -26, width: 134, height: 134,
+                  borderRadius: 67, borderColor: "rgba(255,255,255,.12)", borderWidth: 1,
+                }} />
+                <View style={{ flexDirection: "row", justifyContent: "space-between",
+                  alignItems: "center", gap: 10 }}>
+                  <Text style={{ color: "#FFAC72", fontWeight: "900", fontSize: 10, letterSpacing: 2.2 }}>HOOPCHECK / ATHLETE</Text>
+                  {player.player_verified ? <View style={{ flexDirection: "row", gap: 5,
+                    alignItems: "center", borderColor: "rgba(118,242,184,.38)", borderWidth: 1,
+                    backgroundColor: "rgba(30,134,97,.22)", borderRadius: 100, paddingHorizontal: 10,
+                    paddingVertical: 6 }}>
+                    <Ionicons name="checkmark-circle" size={13} color="#9DF1CA" />
+                    <Text style={{ color: "#C4FBE1", fontSize: 10, fontWeight: "900" }}>VERIFIED</Text>
+                  </View> : null}
+                </View>
+                <View style={{ flexDirection: compactHero ? "column" : "row",
+                  alignItems: compactHero ? "flex-start" : "center", gap: 16 }}>
+                  <View style={{ borderRadius: 28, padding: 3, borderWidth: 2, borderColor: "rgba(255,164,95,.73)",
+                    backgroundColor: "rgba(255,255,255,.08)" }}>
+                    <ProfileAvatar url={player.avatar_url} name={name} size={compactHero ? 78 : 102} />
+                  </View>
+                  <View style={{ flex: compactHero ? undefined : 1, alignSelf: compactHero ? "stretch" : undefined, minWidth: 0, gap: 8 }}>
+                    <Text style={{ color: "#E9EFF5", fontSize: 11, fontWeight: "900",
+                      letterSpacing: 1.5 }}>PLAYER PROFILE</Text>
+                    <Text accessibilityRole="header" style={{ fontFamily: "HoopCheckDisplay",
+                      fontSize: compactHero ? 30 : 36, lineHeight: compactHero ? 34 : 39, color: "#FFFFFF" }}>{name}</Text>
+                    <View style={{ height: 3, width: 48, backgroundColor: "#FF8F56", borderRadius: 3 }} />
+                  </View>
+                </View>
+                <Text style={{ color: "#E0E8F2", fontSize: 12 }}>A basketball story worth following.</Text>
+              </LinearGradient>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm, marginVertical: theme.spacing.md }}>
                 <Chip>Player</Chip>
                 {player.position ? <Chip>{player.position}</Chip> : null}

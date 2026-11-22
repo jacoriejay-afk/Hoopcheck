@@ -1,4 +1,6 @@
 import { CourtsideBanner } from "./CourtsideBanner";
+import { GlassSurface } from "./GlassSurface";
+import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -58,7 +60,30 @@ export function HomeCourtside() {
   if (!account) return <View style={{ gap: t.spacing.sm }}><Text accessibilityRole="alert" style={{ color: t.muted }}>{error || "Verify your account to personalize Home."}</Text><Button secondary onPress={retry}>Retry account verification</Button></View>;
   return <View style={{ gap: t.courtside.sectionGap, marginBottom: t.spacing.xl }}>
     <Reveal><CourtsideBanner eyebrow="YOUR COURTSIDE" title={account.user.displayName ? `Welcome, ${account.user.displayName}` : "Welcome to courtside"}>Your teams. Your game. Your community.</CourtsideBanner></Reveal>
-    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: t.spacing.sm }}>{[{ route: "/fan-live", label: "Game Center" }, { route: "/team-hub/groups", label: "HoopGroups" }, { route: "/reels", label: "Highlight Hub" }].map(item => <Pressable key={item.route} accessibilityRole="link" onPress={() => router.push(item.route as "/feed")} style={({ pressed }) => ({ minHeight: 44, paddingHorizontal: t.spacing.md, justifyContent: "center", backgroundColor: t.accentSurface, borderRadius: t.radius.pill, opacity: pressed ? .7 : 1 })}><Text style={{ color: t.accent, fontWeight: "600" }}>{item.label}</Text></Pressable>)}</View>
+    <View style={{ flexDirection: "row", gap: 9 }}>
+      {([
+        { route: "/fan-live", label: "Game Center", subtitle: "LIVE & NEXT", icon: "flash" },
+        { route: "/team-hub/groups", label: "HoopGroups", subtitle: "YOUR PEOPLE", icon: "people" },
+        { route: "/reels", label: "Highlight Hub", subtitle: "WATCH & SHARE", icon: "play" },
+      ] as const).map(item => <Pressable key={item.route} accessibilityRole="link"
+        accessibilityLabel={item.label} onPress={() => router.push(item.route as "/feed")}
+        style={({ pressed }) => ({ flex: 1, minWidth: 0, opacity: pressed ? .72 : 1 })}>
+        <GlassSurface native={false} style={{
+          minHeight: 116, borderRadius: 22, padding: 12, gap: 12,
+          justifyContent: "space-between",
+        }} intensity={35}>
+          <View style={{ width: 36, height: 36, borderRadius: 14, backgroundColor: t.accentSurface,
+            justifyContent: "center", alignItems: "center" }}>
+            <Ionicons name={item.icon} color={t.accent} size={19} />
+          </View>
+          <View style={{ gap: 4 }}>
+            <Text numberOfLines={1} style={{ color: t.foreground, fontWeight: "800", fontSize: 12 }}>{item.label}</Text>
+            <Text numberOfLines={1} style={{ color: t.muted, fontWeight: "800", fontSize: 9,
+              letterSpacing: .6 }}>{item.subtitle}</Text>
+          </View>
+        </GlassSurface>
+      </Pressable>)}
+    </View>
     {!data ? <Skeleton /> : <>
       <SectionHeader>Live &amp; upcoming</SectionHeader>
       {!gameAccess ? <Text style={{ color: t.muted }}>Game Center is available with eligible memberships.</Text> : data.games === null ? <Text accessibilityRole="alert" style={{ color: t.muted }}>Scores could not load.</Text> : !data.games.games.length ? <Text style={{ color: t.muted }}>No current games. Check back for the next tip-off.</Text> : [...data.games.games].sort((a, b) => Number(b.status === "live") - Number(a.status === "live")).slice(0, 3).map(game => <PressableCard key={game.id} onPress={() => router.push({ pathname: "/fan-live", params: { gameId: game.id } })}><Scoreboard game={game} teams={data.games!.teams} /></PressableCard>)}

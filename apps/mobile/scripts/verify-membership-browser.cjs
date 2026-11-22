@@ -23,7 +23,7 @@ async function verify(browser,theme,role){
   assert.equal(await page.getByRole('button',{name:/^Review (Pro|Premium)/}).count(),0);
   if(role==='fan')await page.getByText('No paid fan products are offered. Existing membership access and purchase restoration are preserved.',{exact:true}).waitFor();
   for(const name of ['Refresh membership','Restore purchases','Manage Apple subscription','Terms of use','Privacy policy']){const button=page.getByRole('button',{name,exact:true});await button.scrollIntoViewIfNeeded();const box=await button.boundingBox();assert.ok(box&&box.height>=48,name+' touch target');}
-  const expected=theme==='dark'?'rgb(0, 0, 0)':'rgb(244, 244, 241)';
+  const expected=theme==='dark'?'rgb(8, 13, 22)':'rgb(245, 247, 251)';
   const fill=await page.getByText('HoopCheck Membership',{exact:true}).evaluate(el=>{while(el){const value=getComputedStyle(el).backgroundColor;if(value!=='rgba(0, 0, 0, 0)'&&value!=='transparent')return value;el=el.parentElement;}return null;});assert.equal(fill,expected);
   assert.equal(calls.some(path=>path.startsWith('/api/mobile/purchases/')||path.startsWith('/api/stripe/')),false,'web/old native module absence must not begin billing');assert.deepEqual(errors,[]);
   await require("./compact-layout.cjs").capture(page, {path:`/tmp/hoopcheck-native-ui/${theme}-membership-${role}.png`,fullPage:true});

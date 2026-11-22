@@ -87,9 +87,29 @@ async function fixture(browser,theme,allowed=true){
     if(!allowed){await page.getByText('An active HoopCheck membership is required to use HoopFeed.',{exact:true}).waitFor();assert.ok(!calls.some(c=>c.path.endsWith('/feed_posts')));return;}
     await page.getByText('Fixture community discussion',{exact:true}).waitFor();
     await page.getByRole('button',{name:'Media unavailable. Tap to retry.',exact:true}).click();
+    // The taller Courtside V3 header can put the first image below the fold.
+    // Scroll before asserting load: FeedMedia deliberately defers offscreen media.
     await page.getByRole('img',{name:'HoopFeed photo',exact:true}).waitFor();
-    await page.waitForFunction(()=>{const image=document.querySelector('img[alt="HoopFeed photo"]');return image&&image.complete&&image.naturalWidth===640;});
-    const photoBox=await page.getByRole('img',{name:'HoopFeed photo',exact:true}).boundingBox();assert.ok(photoBox.width>250&&photoBox.height>120,'Photo has visible dimensions');
+    await page.getByRole('img',{name:'HoopFeed photo',exact:true}).scrollIntoViewIfNeeded();
+    try {
+      await page.waitForFunction(()=>{const image=document.querySelector('img[alt="HoopFeed photo"]');return image&&image.complete&&image.naturalWidth===640;},null,{timeout:15000});
+    } catch (error) {
+      console.error('Feed image diagnostic', JSON.stringify(await page.evaluate(() => {
+        const image=document.querySelector('img[alt="HoopFeed photo"]');
+        const parent=image?.parentElement?.parentElement;
+        return {src:image?.getAttribute('src'),srcSet:image?.getAttribute('srcset'),complete:image?.complete,naturalWidth:image?.naturalWidth,
+          naturalHeight:image?.naturalHeight,imageRect:image?.getBoundingClientRect().toJSON(),mediaText:parent?.innerText?.slice(0,250)};
+      })));
+      console.error('Feed media requests', JSON.stringify(calls.filter(call=>call.path.includes('/media')||call.path.includes('/storage/v1/')).slice(-20)));
+      console.error('Page errors', JSON.stringify(errors));
+      throw error;
+    }
+    // V3 has wider card gutters on a 320pt screen; require a substantial image
+    // relative to the viewport, not an impossible fixed 250pt minimum.
+    await page.waitForFunction(()=>{const image=document.querySelector('img[alt="HoopFeed photo"]');const box=image?.getBoundingClientRect();return Boolean(box&&box.width>Math.min(250,document.documentElement.clientWidth*0.55)&&box.height>120);});
+    const photoBox=await page.getByRole('img',{name:'HoopFeed photo',exact:true}).boundingBox();
+    const minimumPhotoWidth=Math.min(250,require("./compact-layout.cjs").viewport.width*0.55);
+    assert.ok(photoBox&&photoBox.width>minimumPhotoWidth&&photoBox.height>120,'Photo has visible responsive dimensions');
     assert.equal(await page.getByRole('heading',{name:'HoopFeed',exact:true}).count(),0,'No duplicate headings');
     await require("./compact-layout.cjs").capture(page, {path:`/tmp/hoopcheck-native-ui/feed-posts-${theme}.png`,fullPage:true});
     await page.getByRole('button',{name:'Create HoopFeed post',exact:true}).click();
