@@ -2,7 +2,7 @@ import { CourtsideBanner } from "../components/CourtsideBanner";
 import { GlassSurface } from "../components/GlassSurface";
 import { Scoreboard } from "../components/Scoreboard";
 import { Skeleton } from "../components/Motion";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { SectionList, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Button, PressableCard } from "../src/primitives";
@@ -94,7 +94,7 @@ export default function LiveGames() {
     } catch { if (viewer.current.scope === scope) setError("Basketball preference could not be saved. Try again."); }
     finally { setSavingSide(false); }
   }
-  const discovery = useMemo(() => {
+  const discovery = (() => {
     const games = data?.games || [];
     const countries = new Map<string,number>();
     const leagues = new Map<string,number>();
@@ -105,7 +105,7 @@ export default function LiveGames() {
     }
     const popular=(map:Map<string,number>)=>[...map].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
     return {countries:popular(countries),leagues:popular(leagues)};
-  },[data]);
+  })();
   const leagueGroups = new Map<string, Games["games"]>();
   for (const item of data?.games ?? []) {
     const country=item.country||"Other countries",league=item.league_name||"Other leagues";
