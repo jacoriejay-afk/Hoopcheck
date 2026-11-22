@@ -11,8 +11,8 @@ let hasPlayedColdOpen = false;
 export function AppOpening({ ready, disabled = false }: { ready: boolean; disabled?: boolean }) {
   const reduced = useMotionSetting();
   const [finished, setFinished] = useState(hasPlayedColdOpen || Platform.OS === "web");
+  const [interrupted, setInterrupted] = useState(false);
   const started = useRef(false);
-  const aborted = useRef(false);
   const progress = useSharedValue(0);
   const exitOpacity = useSharedValue(1);
   const timeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -24,11 +24,11 @@ export function AppOpening({ ready, disabled = false }: { ready: boolean; disabl
   }
   useEffect(() => {
     // An OAuth, recovery or session interruption must never replay a started opening.
-    if ((!ready || disabled) && hasPlayedColdOpen) {
-      aborted.current = true;
+    if ((!ready || disabled) && hasPlayedColdOpen && !finished && !interrupted) {
+      setInterrupted(true);
       return;
     }
-    if (aborted.current || !ready || disabled || finished || started.current || Platform.OS === "web") return;
+    if (interrupted || !ready || disabled || finished || started.current || Platform.OS === "web") return;
     started.current = true;
     hasPlayedColdOpen = true;
     progress.set(withTiming(1, { duration: reduced ? 0 : 580 }));
@@ -41,7 +41,7 @@ export function AppOpening({ ready, disabled = false }: { ready: boolean; disabl
       // Motion settings and route eligibility can change mid-opening. Reset
       // this guard so the effect is never stranded without a completion timer.
       started.current = false; };
-  }, [ready, disabled, finished, reduced, progress, exitOpacity]);
+  }, [ready, disabled, finished, interrupted, reduced, progress, exitOpacity]);
   const mark = useAnimatedStyle(() => ({
     opacity: .25 + .75 * progress.get(),
     transform: [{ translateY: 12 * (1-progress.get()) }, { scale: .84 + .16 * progress.get() }],
@@ -53,7 +53,7 @@ export function AppOpening({ ready, disabled = false }: { ready: boolean; disabl
   const veil = useAnimatedStyle(() => ({ opacity: exitOpacity.get() }));
   // The effect cleanup resets its restart guard whenever the route or motion
   // setting changes, so a new finish timer can always be scheduled safely.
-  if (finished || aborted.current || Platform.OS === "web" || disabled || !ready) return null;
+  if (finished || interrupted || Platform.OS === "web" || disabled || !ready) return null;
   return <Animated.View testID="brand-cold-open" accessibilityViewIsModal={true}
     style={[StyleSheet.absoluteFill, { zIndex: 100, elevation: 100, backgroundColor: "#071426" }, veil]}>
     <LinearGradient colors={["#060E1D", "#102748", "#291625"]} start={{x:0,y:0}} end={{x:1,y:1}}
