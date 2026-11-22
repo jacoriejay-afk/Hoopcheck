@@ -35,10 +35,12 @@ assert.match(chat,/void loadMessages\(gameId\)/,"Persisted message history must 
 assert.match(chat,/fan_live_chat_presence/,"Directory occupancy must be read from database-backed presence");
 assert.match(chat,/roomPresenceCounts\[game.id\]/,"Directory must show actual room occupancy");
 assert.match(chat,/serverRoomOpen\?\.gameId!==selected.id/,"Postgres authorization guard must decide whether users can send");
+assert.match(chat,/NEXT_PUBLIC_LIVE_POSTGAME_CHAT_ENABLED==="true"/,"Postgame JOIN must stay off until reviewed database rollout");
 assert.match(chat,/JOIN CHAT/,"Directory must clearly offer join action");
 
 const hub=read("app/live-games/page.tsx");
 assert.match(hub,/VIEW ROOM/,"Live game directory must link to dedicated rooms even before opening or after close");
+assert.match(hub,/NEXT_PUBLIC_LIVE_POSTGAME_CHAT_ENABLED === "true"/,"Live hub must not advertise unactivated postgame chat");
 assert.match(hub,/fan-live\/room/,"Hub must open persisted game-specific chats");
 const cron=read("app/api/cron/live-basketball/route.ts");
 assert.match(cron,/finalStatuses.has\(providerStatus\) \? "final"/,"Final status must come from provider, never a clock");
