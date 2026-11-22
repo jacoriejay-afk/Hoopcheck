@@ -201,6 +201,19 @@ export default function FanLivePage() {
     return()=>{window.clearInterval(timer);document.removeEventListener("visibilitychange",onVisible);};
   },[load]);
 
+  // Score/status records come from the provider-backed database. Supabase
+  // Realtime updates the directory as soon as an ingest commits; the 20s
+  // refresh above remains the fallback if a websocket is interrupted.
+  useEffect(()=>{
+    const channel=supabase.channel("fan-live-directory-game-updates")
+      .on("postgres_changes",{event:"*",schema:"public",table:"fan_live_games"},()=>{void load();})
+      .subscribe(status=>{
+        if(status==="SUBSCRIBED")setGameStream("live");
+        else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"||status==="CLOSED")setGameStream("fallback");
+      });
+    return()=>{void supabase.removeChannel(channel);};
+  },[load]);
+
   useEffect(()=>{
     if(!selected||!chatEnabled||!userId)return;
     let stopped=false;
@@ -244,8 +257,16 @@ export default function FanLivePage() {
             if(data && activeRoomRef.current===gameId)
               setProfiles(current=>({...current,[item.user_id]:{display_name:data.display_name,avatar_url:data.avatar_url}}));
           });
-      }).subscribe();
-    return()=>{void supabase.removeChannel(channel);};
+      }).subscribe(status=>{
+        if(status==="SUBSCRIBED"){setChatStream("live");void loadMessages(gameId);}
+        else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"||status==="CLOSED")setChatStream("fallback");
+      });
+    // A missed websocket event must not permanently hide delivered messages.
+    // History is persisted in Postgres, so recover from the same room cursor.
+    const recovery=window.setInterval(()=>{
+      if(document.visibilityState==="visible")void loadMessages(gameId);
+    },15_000);
+    return()=>{window.clearInterval(recovery);void supabase.removeChannel(channel);};
   },[selected?.id,chatEnabled,loadMessages,refreshPresence]);
 
   useEffect(()=>{
@@ -298,8 +319,8 @@ export default function FanLivePage() {
   const selectedStatus=selected?getLiveGameStatusPresentation(selected,clock):null;
   const home=selected?teams[selected.team_id]:null;
   const away=selected?(teams[selected.opponent_team_id||""]||{id:"",name:selected.opponent_name}):null;
-  const isClosed=selected?finalStatus(selected.status)||(Number.isFinite(Date.parse(selected.ends_at||""))?clock.getTime()>=Date.parse(selected.ends_at||""):(Number.isFinite(Date.parse(selected.scheduled_at||selected.started_at||""))&&clock.getTime()>=Date.parse(selected.scheduled_at||selected.started_at||"")+4*60*60_000)):false;
   const availability=selected?getGameAvailability({status:selected.status,scheduledAt:selected.scheduled_at,startedAt:selected.started_at,endsAt:selected.ends_at,now:clock}):null;
+  const isClosed=availability?.state==="CLOSED";
   const shownMessages=useMemo(()=>messages.filter(m=>!blockedUsers.has(m.user_id)&&!mutedUsers.has(m.user_id)),[messages,blockedUsers,mutedUsers]);
   const listedGames=useMemo(()=>{
     const q=roomSearch.trim().toLocaleLowerCase();
@@ -308,8 +329,9 @@ export default function FanLivePage() {
       game.opponent_name,game.league_name||"",game.country||""
     ].some(value=>value.toLocaleLowerCase().includes(q)));
     return [...matches].sort((a,b)=>Number(b.status==="live")-Number(a.status==="live")||
+      (roomPresenceCounts[b.id]||0)-(roomPresenceCounts[a.id]||0)||
       (Date.parse(a.scheduled_at||"")||0)-(Date.parse(b.scheduled_at||"")||0));
-  },[games,roomSearch,teams]);
+  },[games,roomSearch,teams,roomPresenceCounts]);
 
   if(loading)return <main className="page-shell hc-live-room"><div className="page-container"><HoopLoading label="Loading Live Game Hub…" /></div></main>;
   if(!userId)return <main className="page-shell hc-live-room"><div className="page-container"><section className="hero-card"><p className="eyebrow">LIVE GAME HUB</p><h1>LIVE GAME CHAT</h1><p className="muted">Sign in to access Live Game Hub features available to your account.</p><Link className="btn" href="/login">Sign in</Link></section></div></main>;
