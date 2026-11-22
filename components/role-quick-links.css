@@ -1,0 +1,11 @@
+.hc-role-quick-links{margin:16px 0 20px;padding:clamp(14px,2vw,22px);border:1px solid var(--hc-card-border,var(--border));border-radius:22px;background:var(--hc-card-surface,var(--surface));color:var(--hc-on-card,var(--hc-foreground))}
+.hc-role-quick-links__heading h2{margin:0 0 4px;font-size:clamp(19px,2.2vw,25px)}
+.hc-role-quick-links__heading p{margin:4px 0}
+.hc-role-quick-links__grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-top:14px}
+.hc-role-quick-links__grid a{display:flex;min-width:0;min-height:76px;flex-direction:column;align-items:flex-start;gap:6px;justify-content:center;padding:12px;border-radius:15px;border:1px solid var(--hc-card-border,var(--border));background:color-mix(in srgb,var(--orange) 6%,var(--hc-card-surface,var(--surface)));color:var(--hc-on-card,var(--hc-foreground));text-decoration:none;overflow-wrap:anywhere}
+.hc-role-quick-links__grid a:hover,.hc-role-quick-links__grid a:focus-visible{border-color:var(--orange);outline-offset:2px}
+.hc-role-quick-links__grid strong{font-size:14px}
+.hc-role-quick-links__grid small{font-size:12px;color:var(--hc-on-card-muted,var(--hc-foreground-muted))}
+.hc-role-quick-links.is-compact{margin:0 0 10px}
+@media(max-width:850px){.hc-role-quick-links__grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:440px){.hc-role-quick-links__grid a{min-height:72px;padding:10px}}

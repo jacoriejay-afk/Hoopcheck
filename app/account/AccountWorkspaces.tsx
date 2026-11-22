@@ -29,6 +29,8 @@ export default function AccountWorkspaces({ userId }: { userId: string }) {
         {access.staff && <Link href="/admin/directory">Admin Control Center</Link>}
         {access.owner && <Link href="/admin/ambassadors" prefetch={false}>Ambassador administration</Link>}
         {access.staff && <Link href="/admin/reviews">Manage reviews</Link>}
+        {access.staff && <Link href="/admin/hoopgroups">HoopGroups moderation</Link>}
+        {access.staff && <Link href="/admin/league-logos">League logo studio</Link>}
         {access.staff && <Link href="/admin/rights">Rights coverage</Link>}
       </nav>
     </section>
