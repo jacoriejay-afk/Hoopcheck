@@ -88,4 +88,42 @@ create trigger hoop_group_spaces_defaults_insert
 after insert on public.hoop_group_spaces
 for each row execute function public.hoop_group_create_defaults();
 
+-- Community owners can moderate only posts in their own servers. The RPC
+-- remains service-role only and writes the same audit event as platform staff.
+-- This changes only the moderator authorization predicate, not post visibility.
+create or replace function public.moderate_hoop_group_post(
+  p_post_id uuid, p_actor_id uuid, p_new_status text)
+returns table(id uuid, moderation_status text)
+language plpgsql security invoker set search_path=''
+as $moderation$
+declare previous text;
+begin
+  if p_new_status not in ('approved','rejected','removed') then
+    raise exception 'Invalid moderation action';
+  end if;
+  if not exists (
+    select 1 from public.admin_roles a
+    where a.user_id=p_actor_id and a.role in ('admin','moderator')
+  ) and not exists (
+    select 1 from public.hoop_group_posts p
+    join public.hoop_group_channels c on c.id=p.channel_id
+    join public.hoop_group_spaces s on s.id=c.space_id
+    where p.id=p_post_id and s.owner_id=p_actor_id
+  ) then raise exception 'Not authorized to moderate'; end if;
+  select p.moderation_status into previous
+    from public.hoop_group_posts p where p.id=p_post_id for update;
+  if not found then raise exception 'Post not found'; end if;
+  if not ((previous='pending' and p_new_status in ('approved','rejected','removed'))
+    or (previous='approved' and p_new_status='removed')) then
+    raise exception 'Invalid moderation transition';
+  end if;
+  update public.hoop_group_posts p set moderation_status=p_new_status
+    where p.id=p_post_id;
+  insert into public.hoop_group_moderation_events(post_id,actor_id,from_status,to_status)
+    values(p_post_id,p_actor_id,previous,p_new_status);
+  return query select p.id,p.moderation_status from public.hoop_group_posts p where p.id=p_post_id;
+end; $moderation$;
+revoke all on function public.moderate_hoop_group_post(uuid,uuid,text) from public,anon,authenticated;
+grant execute on function public.moderate_hoop_group_post(uuid,uuid,text) to service_role;
+
 commit;
