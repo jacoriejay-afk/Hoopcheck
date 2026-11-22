@@ -67,7 +67,7 @@ create or replace function public.moderate_hoop_group_post(
   p_post_id uuid, p_actor_id uuid, p_new_status text)
 returns table(id uuid, moderation_status text)
 language plpgsql security invoker set search_path=''
-as $
+as $moderation$
 declare previous text;
 begin
   if p_new_status not in ('approved','rejected','removed') then
@@ -90,7 +90,7 @@ begin
   insert into public.hoop_group_moderation_events(post_id,actor_id,from_status,to_status)
     values(p_post_id,p_actor_id,previous,p_new_status);
   return query select p.id,p.moderation_status from public.hoop_group_posts p where p.id=p_post_id;
-end; $;
+end; $moderation$;
 revoke all on function public.moderate_hoop_group_post(uuid,uuid,text) from public,anon,authenticated;
 grant execute on function public.moderate_hoop_group_post(uuid,uuid,text) to service_role;
 
