@@ -92,7 +92,7 @@ export function PlayerPassport({ player }: { player: PlayerProfile }) {
           <Text style={{ color: t.entityHero.muted, width: 104, fontSize: 12 }}>{label}</Text>
           <Text style={{ color: t.entityHero.ink, flex: 1, minWidth: 0, fontSize: 13, fontWeight: "700" }}>{value}</Text>
         </View>)}
-      </View> : null
+      </View> : null}
       <Text style={{ color: t.muted, ...t.type.caption }}>Sharing exports the name, position, team, experience and verification shown above as a PDF. It excludes your location, contact information and private career stops. Share only with people you choose.</Text>
       <Button disabled={busy} accessibilityState={{ busy, disabled: busy }} onPress={() => void share()}>{busy ? "Preparing Passport…" : "Export & share PDF"}</Button>
       {error ? <Text accessibilityRole="alert" style={{ color: t.muted }}>{error}</Text> : null}
