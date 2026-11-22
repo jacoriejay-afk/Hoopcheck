@@ -104,7 +104,7 @@ html:is(.theme-light,.theme-dark) body main.hc-feed-page .hf5-type-row {
 html:is(.theme-light,.theme-dark) body main.hc-feed-page .hf5-type-row .hf5-type-chip {
   flex:none!important;min-height:38px!important;padding:6px 11px!important;
   border:1px solid var(--hc-ios-edge)!important;border-radius:999px!important;
-  background:var(--hc-ios-glass)!important;color:var(--hc-ios-ink)!important;
+  background:var(--hc-surface-raised)!important;color:var(--hc-ios-ink)!important;
   font-size:11px!important;letter-spacing:0!important;box-shadow:none!important;
 }
 html:is(.theme-light,.theme-dark) body main.hc-feed-page .hf5-type-row .hf5-type-chip.is-active {
