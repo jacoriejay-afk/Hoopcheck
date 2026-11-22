@@ -179,11 +179,33 @@ export async function GET(request: NextRequest) {
         home_score: storedStatus === "scheduled" ? null : primaryScore,
         away_score: storedStatus === "scheduled" ? null : opponentScore,
         started_at: storedStatus === "scheduled" ? null : startDate,
+        // Only a genuine provider terminal event receives a completion time.
+        // A later provider correction to live/scheduled clears a stale end.
+        ends_at: null as string | null,
         scheduled_at: startDate,
         league_name: game.league?.name || null,
         country: game.league?.country || null,
         period_label: liveStatuses.has(providerStatus) ? (game.status?.long || providerStatus) : null
       });
+    }
+
+    // Preserve the first provider-confirmed final timestamp. Repeated 15-minute
+    // syncs must not keep reopening a two-hour post-game conversation window.
+    // A missing fixture or elapsed tipoff is NEVER evidence of a final score.
+    const finalized = rows.filter(row => row.status === "final");
+    if (finalized.length) {
+      const providerIds = finalized.map(row => row.provider_game_id);
+      const { data: previous, error: previousError } = await db
+        .from("fan_live_games")
+        .select("provider_game_id,ends_at")
+        .eq("provider_source", "api-sports-basketball")
+        .in("provider_game_id", providerIds);
+      if (previousError) throw previousError;
+      const endingByProviderId = new Map((previous || []).map(row => [row.provider_game_id, row.ends_at]));
+      const confirmedAt = new Date().toISOString();
+      for (const row of finalized) {
+        row.ends_at = endingByProviderId.get(row.provider_game_id) || confirmedAt;
+      }
     }
 
     if (rows.length) {
