@@ -37,3 +37,6 @@ A path was copied only when its Git blob SHA equals the common ancestor in Build
 
 ## Release hold
 Do not apply SQL, revoke raw profile read privileges, sign or submit an iOS build, deploy or merge #755. Before promoting, check TypeScript, website build, privacy/backend/entitlements, native compile; safely reconcile the 22 paths; verify signed owner/nonowner AAL1/AAL2, real iPhone, Passport sharing, and Apple Sandbox. Existing billing/subscriptions and installed Build 7/8 APIs must stay compatible.\n
+## Follow-up guarded checkout reconciliation
+
+Reviewed both changed-source sides of Stripe Checkout and signed trial webhooks. The candidate now includes both main's production-trial isolation and Stripe Tax/redeem/expire guards **and** Build 9's Apple subscription duplication check, account moderation/deletion gates and unpriced Fan purchase restriction. The compact Apple-aware membership UI retains its auth-safety logic, with a fail-closed server trial-status disclosure. These three dual-changed paths are proposed as reviewed reconciliations; **19 remain for manual review**. Full exact-head CI and sandbox acceptance are mandatory.

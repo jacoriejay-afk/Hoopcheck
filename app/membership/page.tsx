@@ -22,6 +22,7 @@ function MembershipContent() {
   const [accountType, setAccountType] = useState<string | null>(null), [userId, setUserId] = useState("");
   const [loading, setLoading] = useState(true), [busy, setBusy] = useState("");
   const [billingInterval, setBillingInterval] = useState<BillingInterval>("month");
+  const [trialPubliclyAvailable,setTrialPubliclyAvailable] = useState(false);
   const [message, setMessage] = useState(""), [error, setError] = useState("");
   const [authRevision, setAuthRevision] = useState(0);
   const generation = useRef(0), acting = useRef(false), authEpoch = useRef(0);
@@ -47,6 +48,16 @@ function MembershipContent() {
       })(), new Promise<never>((_, reject) => { deadline = setTimeout(() => { controller.abort(); reject(Error("Membership verification timed out. Please try again.")); }, 30000); })]);
     } catch (value) { if (current === generation.current) setError(value instanceof Error ? value.message : "Membership could not be verified."); }
     finally { clearTimeout(deadline); controller.abort(); if (current === generation.current) setLoading(false); }
+  }, []);
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetch("/api/membership/trial-status", { cache: "no-store", signal: controller.signal })
+      .then(response => response.ok ? response.json() : null)
+      .then((payload: { available?: boolean } | null) => {
+        if (!controller.signal.aborted) setTrialPubliclyAvailable(payload?.available === true);
+      })
+      .catch(() => { /* A failed status request must never advertise an unavailable trial. */ });
+    return () => controller.abort();
   }, []);
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange(event => {
@@ -100,7 +111,7 @@ function MembershipContent() {
     void billingAction("checkout", "/api/stripe/webhook/create-checkout", { plan, interval, ...(code?.trim() ? { promoCode: code.trim() } : {}) });
   };
   return <main className="hc-membership-page">
-    <section className="hero membership-hero"><div className="eyebrow">HoopCheck Membership</div><h1>Research deeper.<br />Decide smarter.</h1><p>Research teams, coaches and leagues through first-hand basketball experiences. Existing role, verification and moderation rules apply to every membership.</p><p className="legal-note">The one-time seven-day free trial for all supported HoopCheck account types is not currently available at public checkout. Any trial offer must first pass the approved checkout eligibility and tax checks.</p><div className="hero-links"><Link href="/search">Global Research Search →</Link></div></section>
+    <section className="hero membership-hero"><div className="eyebrow">HoopCheck Membership</div><h1>Research deeper.<br />Decide smarter.</h1><p>Research teams, coaches and leagues through first-hand basketball experiences. Existing role, verification and moderation rules apply to every membership.</p>{!trialPubliclyAvailable ? <p className="legal-note">The one-time seven-day free trial for all supported HoopCheck account types is not currently available at public checkout. Any trial offer must first pass the approved checkout eligibility and tax checks.</p> : null}<div className="hero-links"><Link href="/search">Global Research Search →</Link></div></section>
     {loading ? <HoopLoading label="Verifying membership and billing…" /> : null}
     {error ? <div className="status error" role="alert">{error}</div> : null}
     {message ? <div className="status success" role="status">{message}</div> : null}
@@ -117,7 +128,7 @@ function MembershipContent() {
       {accountType === "fan" ? <div className="dashboard-card"><h2>Fan membership status</h2><p>Paid fan products have not been priced and are not offered for purchase. Existing Pro and Premium entitlements, renewals and billing-management access remain unchanged.</p><Link className="btn" href="/team-hub/groups">Explore HoopGroups</Link></div> : null}
       {isActive && subscription && <MembershipComparison audience={accountType === "fan" ? "fan" : "player"} currentTier={currentTier} billingTerm={billingInterval} premiumOnly={premiumOnlyAccount} />}
       {!isActive && accountType !== "fan" ? <><div className="section-heading"><div className="eyebrow">CHOOSE YOUR ACCESS</div><h2>{premiumOnlyAccount ? "Premium for coaches and team managers." : "Built for basketball professionals."}</h2><p>Choose a billing period. New purchases are available after your account and current billing are verified.</p></div><div className="hc-billing-options" role="group" aria-label="Choose billing term">{(["month", "6_month", "year"] as const).map(term => <button key={term} type="button" aria-pressed={billingInterval === term} className="hc-billing-option" onClick={() => setBillingInterval(term)}><span>{term === "month" ? "Monthly" : term === "6_month" ? "6 months" : "Annual"}</span><small>{BILLING_LABELS[term]}</small></button>)}</div>
-        {accountType === "player" && billingInterval === "month" ? <p className="hc-trial-note" role="note"><strong>7-day trial update:</strong> A seven-day free trial for first-time monthly Player Pro and Premium memberships is being prepared, but it is not currently available at checkout. Your selected monthly price and any applicable taxes or discounts are shown before payment.</p> : null}
+        {billingInterval === "month" ? <p className="hc-trial-note" role="note">{trialPubliclyAvailable ? <> <strong>7-day free trial:</strong> Eligible first-time members across all supported HoopCheck account types can receive one seven-day trial for monthly Pro or Premium memberships, subject to account-specific purchase rules. Your Checkout confirmation shows the price, taxes and first payment date.</> : <> <strong>7-day trial update:</strong> A one-time seven-day free trial for eligible first-time monthly Pro and Premium memberships across all supported HoopCheck account types is being prepared, but it is not currently available at public checkout. Account-specific purchase restrictions still apply; taxes and total appear before payment.</>}</p> : null}
         <div className="plans">{!premiumOnlyAccount ? <div className="plan-card"><div className="eyebrow">HOOPCHECK PRO</div><h3>Pro</h3><div className="price"><strong>{PLAN_PRICES.pro[billingInterval]}</strong><span>{BILLING_LABELS[billingInterval]}</span></div><p>Full coach, team and league reviews, HoopFeed and eligible research tools.</p><button className="btn plan-button" disabled={!canBuy || Boolean(busy)} onClick={() => checkout("pro")}>Get Pro — {billingInterval === "month" ? "Monthly" : billingInterval === "6_month" ? "6 Months" : "1 Year"}</button></div> : null}<div className="plan-card featured"><div className="eyebrow">HOOPCHECK PREMIUM</div><h3>Premium</h3><div className="price"><strong>{PLAN_PRICES.premium[billingInterval]}</strong><span>{BILLING_LABELS[billingInterval]}</span></div><p>Pro benefits with eligible Premium tools for your account.</p><button className="btn plan-button" disabled={!canBuy || Boolean(busy)} onClick={() => checkout("premium")}>Get Premium — {billingInterval === "month" ? "Monthly" : billingInterval === "6_month" ? "6 Months" : "1 Year"}</button></div></div>
 
       </> : null}

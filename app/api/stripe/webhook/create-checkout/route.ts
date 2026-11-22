@@ -5,8 +5,10 @@ import { createClient } from "@supabase/supabase-js";
 import { applePreventsStripeCheckout } from "../../../../../lib/server/apple/service";
 import { AppleBillingError } from "../../../../../lib/server/apple/proofs";
 import { getActiveMembershipTier, canStartNewMembershipCheckout } from "../../../../../lib/membership-tier";
-import { isEligibleForSevenDayTrial } from "../../../../../lib/stripe-trial-eligibility";
+import { isEligibleForSevenDayTrial, isSupportedSubscriptionAccountType } from "../../../../../lib/stripe-trial-eligibility";
 import { canReuseOpenTrialSession, isTrustedStripeCheckoutUrl } from "../../../../../lib/stripe-trial-recovery";
+import { canEnableProductionSevenDayTrial } from "../../../../../lib/stripe-trial-production-rollout";
+import { canEnableProductionSevenDayTrial } from "../../../../../lib/stripe-trial-production-rollout";
 
 function getAdminSupabase() {
   const supabaseUrl =
@@ -175,6 +177,9 @@ export async function POST(
       return NextResponse.json({ error: "Unable to verify your HoopCheck account type." }, { status: 403 });
     }
     if (["suspended", "banned", "removed"].includes(checkoutProfile.moderation_status || "")) return NextResponse.json({ error: "Purchasing is unavailable for this account. Existing billing can still be managed." }, { status: 403 });
+    if (!isSupportedSubscriptionAccountType(checkoutProfile.account_type)) {
+      return NextResponse.json({ error: "This account type cannot purchase a membership yet." }, { status: 403 });
+    }
     if (["coach", "manager"].includes(checkoutProfile.account_type) && plan !== "premium") {
       return NextResponse.json({ error: "Coach and Team Manager accounts require HoopCheck Premium." }, { status: 403 });
     }
@@ -328,15 +333,34 @@ export async function POST(
       existingSubscription?.stripe_customer_id ||
       undefined;
 
-    // The seven-day offer is for first-time monthly members only. Check both
+    // One seven-day trial is available to each eligible first-time monthly member,
+    // regardless of account type, when the isolated rollout is authorized. Check both
     // the HoopCheck subscription record and Stripe's complete customer history;
     // a canceled subscription must never reset eligibility.
-    // Explicitly disabled until isolated trial tests and atomic eligibility reservation pass.
-    // Never enable in production merely because this branch is deployed.
-    // Hard stop: do not allow a flag alone to bypass the missing atomic reservation.
-    // Replace this only after the reservation RPC and webhook lifecycle are verified.
-    const trialRolloutEnabled = false;
-    let trialEligible = trialRolloutEnabled && checkoutProfile.account_type === "player" && interval === "month" && !promoCodeId && !existingSubscription?.stripe_subscription_id && Boolean(user.email_confirmed_at);
+    // Sandbox only: preserve the exact branch, test Supabase project and Stripe
+    // test credentials. No production feature setting can enable a preview.
+    const sandboxTrialRolloutEnabled =
+      process.env.VERCEL_ENV === "preview" &&
+      process.env.VERCEL_GIT_COMMIT_REF === "fix/website-membership-layout-20261121" &&
+      process.env.HOOPCHECK_STRIPE_SANDBOX_TRIAL_ENABLED === "true" &&
+      process.env.NEXT_PUBLIC_SUPABASE_URL === "https://vcprqpjkyubzzcjatdpx.supabase.co" &&
+      process.env.HOOPCHECK_STRIPE_TEST_SUPABASE_URL === process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      siteUrl === "https://hoopcheck-stripe-sandbox-git-fix-website-membe-b926cc-hoopcheck.vercel.app" &&
+      stripeConfigMatches && configuredMode === "test";
+
+    // Public trials remain OFF until a separate production flag is deliberately
+    // configured after sandbox lifecycle, payment/tax and rollback acceptance.
+    const productionTrialRolloutEnabled = canEnableProductionSevenDayTrial({
+      vercelEnvironment: process.env.VERCEL_ENV,
+      featureEnabled: process.env.HOOPCHECK_SEVEN_DAY_TRIAL_ENABLED,
+      siteUrl,
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      stripeCheckoutMode: configuredMode,
+      checkoutEnabled,
+      stripeKeyMatches: stripeConfigMatches,
+    });
+    const trialRolloutEnabled = sandboxTrialRolloutEnabled || productionTrialRolloutEnabled;
+    let trialEligible = trialRolloutEnabled && isSupportedSubscriptionAccountType(checkoutProfile.account_type) && interval === "month" && !promoCodeId && !existingSubscription?.stripe_subscription_id && Boolean(user.email_confirmed_at);
     if (trialEligible) {
       // Check every customer under this email, even when a customer is already
       // linked to the account. A linked ID alone can miss older Stripe history.
@@ -386,7 +410,7 @@ export async function POST(
     // Recheck the final policy after all history lookups. This remains disabled
     // in production until atomic one-time reservation is implemented.
     trialEligible = isEligibleForSevenDayTrial({
-      rolloutEnabled: trialRolloutEnabled && checkoutProfile.account_type === "player",
+      rolloutEnabled: trialRolloutEnabled,
       interval,
       accountType: checkoutProfile.account_type,
       hasPromoCode: Boolean(promoCodeId),

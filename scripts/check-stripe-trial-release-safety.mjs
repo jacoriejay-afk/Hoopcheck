@@ -107,3 +107,9 @@ assert.ok(webhook.includes('subscription.metadata?.stripe_trial_reserved === "tr
 assert.ok(webhook.includes('claim?.state !== "redeemed"'), "Subscription sync must reject unredeemed trial claims");
 assert.ok(webhook.includes('Trial subscription owner metadata mismatch.'), "Subscription sync must validate trial owner");
 console.log("Trial release and webhook safety checks passed (public trial disabled, pinned sandbox test only).");
+
+// Build 9 addenda: retain existing native/provider and moderation fail-closed gates.
+assert.ok(checkout.includes("applePreventsStripeCheckout"), "Active Apple subscribers cannot start duplicate Stripe checkout");
+assert.ok(checkout.includes("account_deletion_requests"), "Pending account deletion stops checkout");
+assert.ok(checkout.includes('checkoutProfile.account_type === "fan"'), "Unpriced Fan checkout stays disabled");
+assert.ok(checkout.includes("moderation_status"), "Suspended account checkout is denied");
