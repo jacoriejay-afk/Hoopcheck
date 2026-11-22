@@ -435,3 +435,21 @@ html:is(.theme-light,.theme-dark) body main .hc-team-look-hero {
   background-color:#111827!important;
   /* Preserve team-specific arena artwork / gradient; pair the white title with an opaque fallback. */
 }
+
+
+/* Native team hero text surface isolation: generic profile card styling must not
+   place opaque light backgrounds behind white club names/location. Keep pill
+   tint and original women’s arena background while retaining dark hero ink. */
+html:is(.theme-light,.theme-dark) body main .hc-team-look-hero :is(
+  #hc-team-profile-title,.hc-team-hero-location,.hc-team-hero-chip
+) {
+  background-color:transparent!important;
+}
+html:is(.theme-light,.theme-dark) body main .hc-team-look-hero .hc-team-hero-chip {
+  background-color:rgba(255,255,255,.13)!important;
+}
+html:is(.theme-light,.theme-dark) body main .hc-team-look-hero .hc-team-hero-kicker {
+  color:#ffdac3!important;
+  -webkit-text-fill-color:#ffdac3!important;
+  background-color:transparent!important;
+}
