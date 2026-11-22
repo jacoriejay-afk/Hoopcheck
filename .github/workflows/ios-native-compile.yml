@@ -17,8 +17,9 @@ concurrency:
 jobs:
   simulator-compile:
     runs-on: macos-15
-    # Cold Xcode compilation plus both Passport simulator runs can exceed forty minutes.
-    timeout-minutes: 55
+    # Allow the cold real UI-test runner to compile before genuine light/dark XCTests.
+    # Both themes still fail closed under their own bounded watchdogs.
+    timeout-minutes: 75
     defaults:
       run:
         working-directory: apps/mobile
@@ -45,6 +46,10 @@ jobs:
         run: node --test scripts/tooling-compatibility.test.mjs
       - name: Compile the real StoreKit core and exercise product policies
         run: swift test --package-path modules/hoopcheck-storekit
+      - name: Verify Passport XCTest watchdog fail-closed behavior
+        run: |
+          bash -n scripts/ios-passport-smoke/run.sh
+          python3 -m unittest discover -s scripts/ios-passport-smoke -p 'test_bounded_xctest.py' -v
       - name: Generate the native simulator project locally
         run: npx --no-install expo prebuild --platform ios --no-install
       - name: Verify generated permissions
