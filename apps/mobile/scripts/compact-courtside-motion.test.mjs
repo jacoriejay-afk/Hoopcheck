@@ -13,7 +13,10 @@ test("compact V3 removes oversized editorial captions without dropping data feat
   assert.doesNotMatch(banner, /THE GAME IS YOURS|A basketball story worth following/);
   assert.doesNotMatch(home, /LIVE & NEXT|YOUR PEOPLE|WATCH & SHARE/);
   assert.doesNotMatch(player, /A basketball story worth following/);
-  for (const screen of [home, feed, live, groups]) assert.match(screen, /CourtsideBanner/);
+  assert.match(home, /ArenaHeading/);
+  assert.match(home, /account\.tier/);
+  assert.match(home, /get_public_follow_list/);
+  for (const screen of [feed, live, groups]) assert.match(screen, /CourtsideBanner/);
   assert.match(feed, /canReadHoopFeed/);
   assert.match(live, /canUseLiveGameChat/);
   assert.match(groups, /readClubGroups/);
