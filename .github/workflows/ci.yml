@@ -57,6 +57,9 @@ jobs:
       - name: Verify production catalog guard offline (no database access)
         run: node scripts/check-build9-production-catalog-guard.mjs
 
+      - name: Verify Build 9 main reconciliation preserves billing, profile and Reel safety
+        run: node scripts/check-build9-main-reconciliation.mjs
+
       - name: Verify staged owner RPC, opt-in MFA and RLS in isolated PostgreSQL
         env:
           PGPASSWORD: postgres
