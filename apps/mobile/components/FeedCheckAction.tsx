@@ -7,29 +7,32 @@ import { motion } from "../src/motion/config";
 import { useEntryTheme } from "../src/theme";
 
 /** Visual feedback only: the parent owns the verified Check API and membership gates. */
-export function FeedCheckAction({ checked, count, disabled, busy, onPress }: {
+export function FeedCheckAction({ checked, count, pulseKey, disabled, busy, onPress }: {
   checked: boolean | undefined;
   count: number | undefined;
+  /** Increments only after the current viewer's successful server-acknowledged Check. */
+  pulseKey: number;
   disabled: boolean;
   busy: boolean;
   onPress: () => void;
 }) {
   const theme = useEntryTheme();
   const reduced = useMotionSetting();
-  const last = useRef<boolean | undefined>(undefined);
+  const lastPulse = useRef(pulseKey);
   const scale = useSharedValue(1);
   useEffect(() => {
-    const before = last.current;
-    last.current = checked;
+    const previous = lastPulse.current;
+    lastPulse.current = pulseKey;
     cancelAnimation(scale);
-    // Never celebrate initial loads or an unverified/failed Check request.
-    if (reduced || before !== false || checked !== true) {
+    // Only an explicit, server-confirmed Check from this viewer can advance the key.
+    // Initial loads, polling, account switches, unchecked transitions and Reduce Motion stay still.
+    if (reduced || checked !== true || pulseKey <= previous) {
       scale.set(1);
     } else {
       scale.set(withSequence(withTiming(1.16, { duration: 120 }), withSpring(1, motion.spring)));
     }
     return () => cancelAnimation(scale);
-  }, [checked, reduced, scale]);
+  }, [checked, pulseKey, reduced, scale]);
   const animated = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
   const selected = checked === true;
   const available = checked !== undefined && count !== undefined;
