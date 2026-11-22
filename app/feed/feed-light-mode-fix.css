@@ -1,0 +1,31 @@
+/* HoopFeed mobile/light-mode repair. Scoped to the feed so profile and membership themes stay untouched. */
+.hc-feed-page{min-width:0;color:var(--hc-foreground);background:transparent}
+.hc-feed-page>.page-container{min-width:0;overflow-x:clip}
+.hc-feed-page .hc-feed-organization{min-width:0;gap:8px}
+.hc-feed-page .hc-feed-segments{min-width:0;flex:1 1 280px;justify-content:space-between}
+.hc-feed-page .hc-feed-sorts{flex:0 0 auto}
+.hc-feed-page .hc-feed-segments button{flex:1 1 0;min-width:0;padding-inline:7px;white-space:normal}
+.hc-feed-page .hf5-type-row{width:100%;max-width:100%;min-width:0;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none}
+.hc-feed-page .hf5-type-row::-webkit-scrollbar{display:none}
+.hc-feed-page .hf5-type-chip{flex-shrink:0}
+.hc-feed-page .hc-feed-slim-composer{min-width:0}
+.hc-feed-page .hc-feed-slim-composer span:last-child{min-width:0;overflow-wrap:anywhere}
+html.theme-light .hc-feed-page :is(.hc-feed-slim-composer,.hc-feed-editor-surface,.hc-feed-shared-card,.hc-feed-shared-empty,.hc-feed-skeleton,.hc-hoopfeed-comments){
+  background:var(--hc-surface-raised)!important;color:var(--hc-foreground)!important;border-color:var(--hc-border)!important;
+}
+html.theme-light .hc-feed-page :is(.hc-feed-composer__avatar,.player-avatar-fallback,.hc-feed-post-avatar){
+  background:var(--hc-surface-soft)!important;color:var(--hc-foreground)!important;border:1px solid var(--hc-border)!important;
+}
+html.theme-light .hc-feed-page :is(.hc-feed-slim-composer,.hc-feed-editor-surface,.hc-feed-shared-card,.hc-feed-shared-empty) :is(h2,p,strong,span,small,button){
+  color:inherit;
+}
+html.theme-light .hc-feed-page .hc-feed-action-pill{background:var(--hc-surface-soft)!important;color:var(--hc-foreground)!important;border-color:var(--hc-border)!important}
+html.theme-light .hc-feed-page .hc-feed-segments,html.theme-light .hc-feed-page .hc-feed-sorts{background:var(--hc-surface-soft)!important;color:var(--hc-foreground)!important}
+html.theme-light .hc-feed-page .hc-feed-segments button[aria-pressed=true],html.theme-light .hc-feed-page .hc-feed-sorts button[aria-pressed=true]{background:var(--hc-surface-raised)!important;border:1px solid var(--hc-border)!important}
+@media(max-width:600px){
+ .hc-feed-page .hc-feed-organization{align-items:stretch}
+ .hc-feed-page .hc-feed-segments{flex-basis:100%;width:100%}
+ .hc-feed-page .hc-feed-sorts{width:max-content}
+ .hc-feed-page .hc-feed-shared-card,.hc-feed-page .hc-feed-shared-empty{border-radius:16px!important;padding:14px!important}
+ .hc-feed-page .hc-feed-compose-fab{bottom:calc(96px + env(safe-area-inset-bottom,0px));right:16px;width:50px;height:50px}
+}
