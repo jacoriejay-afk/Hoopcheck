@@ -44,3 +44,7 @@ The production native `parseNativeAccount` requires boolean `canUseLiveGameChat`
 ## Real production Reel block privilege fix
 
 Read-only production PostgreSQL confirmed `public.user_blocks` has RLS on and authenticated grants `SELECT=true`, `INSERT=true`, `UPDATE=false`, with **no UPDATE RLS policy** and unique `(blocker_id, blocked_id)`. Thus an `upsert(... onConflict)` would fail against the intentional permissions even though the synthetic browser fixture accepted POST. Replaced the native operation with a plain **INSERT** (allowed by owner-only INSERT policy); duplicate `23505` resolves as success only after an owner-scoped SELECT verifies the exact block row. Other errors remain fail-closed, and existing owner/account identity checks stay enforced. Added a guard preventing this source regression. No production SQL or user data was changed. Real Auth-issued HTTP verification is still required before release.
+
+## Web Reels block RLS hotfix parity
+
+Exact reviewed Git blobs for `app/reels/ReelsViewer.tsx` and its Phase 5 safety guard were carried from independent website hotfix [#825](https://github.com/jacoriejay-afk/Hoopcheck/pull/825) to this Build9 isolated source candidate, to preserve web/native parity. Both files were byte-identical to latest main before the copy; no conflicting Build9 edits were overwritten. Both web and native now INSERT owner-only block rows and verify exact owner-scoped duplicates instead of requiring unavailable UPDATE. Production RLS/grants unchanged. Native/browser and web root CI must pass on new exact head.

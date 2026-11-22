@@ -40,6 +40,11 @@ const viewer = read("app/reels/ReelsViewer.tsx");
 for (const marker of ['reportReel=', 'user_blocks', 'hideCreator', 'blockCreator']) {
   assert.ok(viewer.includes(marker), "Reels must retain report, hide and block: " + marker);
 }
+assert.match(viewer, /supabase\.from\("user_blocks"\)\.insert\(/, "Web Reels blocking must use production INSERT-only RLS");
+assert.doesNotMatch(viewer, /supabase\.from\("user_blocks"\)\.upsert\(/, "Do not require a forbidden UPDATE privilege");
+assert.ok(viewer.includes('error.code !== "23505"') &&
+  viewer.includes('.eq("blocker_id", viewerId).eq("blocked_id", authorId).maybeSingle()'),
+  "Duplicate Reel blocks must be verified through owner-scoped SELECT before success");
 const gate = read("app/reels/page.tsx");
 assert.ok(gate.includes('NEXT_PUBLIC_HOOPCHECK_REELS_ENABLED !== "true"'), "Do not bypass public Reels release gate");
 
