@@ -36,3 +36,7 @@ The imported `Verify scoped Build8 owner profile RPC` step duplicated the existi
 ## Website membership + test reconciliation
 
 The six failing imported test expectations were tied to an older website page. The Build9 source retains provider-isolated Apple/Stripe management, authentication-epoch guards and disabled Fan purchase flow. Adapted the six tests to assert actual source contracts without dropping eligibility, downgrade, cancellation or privacy safeguards. Added an owner billing-support link for manual grants and gated purchase cards behind a verified nonloading account. Public trial-status endpoint is explicitly disabled to mirror the currently hard-off checkout; still checks the canonical production gate, so no environment flag can advertise an unavailable trial. No live Stripe or Supabase setting was changed. Exact-head CI required.
+
+## Native feed browser fixture contract — reconciliation repair
+
+The production native `parseNativeAccount` requires boolean `canUseLiveGameChat` and `canSwitchBasketballSide` fields alongside the other entitlements. The latest-main native Feed/Reels browser fixture replaced Build 9's entitlement mock and omitted those two fields. The real parser correctly denied account access, so protected posts were never fetched; mobile CI correctly failed. Restored the two required boolean fields to the **isolated fixture only**. Preserved main's cross-account Reel hide/block tests and production fail-closed parsing. No real authorization check or membership tier was weakened. New exact-head CI required.
