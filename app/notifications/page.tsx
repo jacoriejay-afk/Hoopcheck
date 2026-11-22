@@ -5,7 +5,6 @@ import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import WatchButton from "../../components/WatchButton";
-import ActivityWire from "../../components/ActivityWire";
 import { HoopIcon } from "../../components/HoopCheckUI";
 import HoopChatInbox from "../../components/HoopChatInbox";
 import "./notifications-threads.css";
@@ -59,20 +58,23 @@ export default function NotificationsPage(){
     }catch(error){console.error("Unable to mark HoopCheck alerts as read:",error);setErrorMessage("Could not mark alerts as read. Please retry.");}
     finally{setMarking(false);}
   }
+  const unreadCount=items.filter(n=>!n.read_at).length;
   const filtered=items.filter(n=>filter==="all" || (filter==="unread"&&!n.read_at) || (filter==="games"&&n.target_type==="game") || (filter==="clubs"&&n.target_type!=="game"&&!["review","rating","trust_score","pay_warning"].includes(n.notification_type)) || (filter==="reviews"&&["review","rating","trust_score","pay_warning"].includes(n.notification_type)));
   if(loading)return <main className="page-shell hc-notifications-page"><div className="page-container"><HoopLoading label="Loading notifications..." /></div></main>;
   return <main className="page-shell hc-notifications-page"><div className="page-container">
-    <section className="hero-card" style={{marginTop:20}}><p className="eyebrow">NOTIFICATIONS</p><h1>Alerts</h1><p className="muted">Track your followed basketball alerts and private HoopChat conversations in one inbox.</p><button className="btn dark" type="button" onClick={markAll} disabled={marking||loadFailed||!items.some(n=>!n.read_at)}>{marking?"Updating…":"Mark all as read"}</button></section>
+    <header className="hc-alerts-heading">
+      <div className="hc-alerts-heading__title"><HoopIcon name="bell" size={21} /><h1>Alerts</h1>{unreadCount>0&&<span className="hc-alerts-heading__count" aria-label="Unread alerts">{unreadCount}</span>}</div>
+      {section==="alerts"&&unreadCount>0&&<button className="hc-alerts-heading__read" type="button" onClick={markAll} disabled={marking||loadFailed}>{marking?"Updating…":"Mark all read"}</button>}
+    </header>
     <nav className="hc-notifications-main-tabs" aria-label="Inbox sections">
       {(["alerts","messages"] as const).map(tab=><button key={tab} type="button" aria-pressed={section===tab} onClick={()=>{
         setSection(tab);const next=new URL(window.location.href);next.searchParams.set("tab",tab);window.history.replaceState(null,"",next.pathname+next.search+next.hash);
-      }}>{tab==="alerts"?"Basketball alerts":"Messages & requests"}</button>)}
+      }}>{tab==="alerts"?"Alerts":"Messages"}</button>)}
     </nav>
     {section==="messages"&&<HoopChatInbox />}
     {section==="alerts"&&errorMessage&&<div role="alert" className="hc-smooth-inbox-error"><span>{errorMessage}</span> {loadFailed&&<button type="button" onClick={()=>setRetryKey(v=>v+1)}>Retry loading alerts</button>}</div>}
-    {section==="alerts"&&!loadFailed&&<ActivityWire items={items}/>}
-    {section==="alerts"&&!loadFailed&&<nav className="hc-smooth-inbox-tabs hc-liquid-glass-filter" aria-label="Filter alerts">{([["all","All"],["unread","Unread"],["games","Games"],["clubs","Clubs"],["reviews","Reviews"]] as const).map(([key,label])=><button key={key} type="button" aria-pressed={filter===key} className={filter===key?"is-active":""} onClick={()=>setFilter(key)}>{label}<span>{items.filter(n=>key==="all" || (key==="unread"&&!n.read_at) || (key==="games"&&n.target_type==="game") || (key==="clubs"&&n.target_type!=="game"&&!["review","rating","trust_score","pay_warning"].includes(n.notification_type)) || (key==="reviews"&&["review","rating","trust_score","pay_warning"].includes(n.notification_type))).length}</span></button>)}</nav>}
-    {section==="alerts"&&!loadFailed&&<section style={{marginTop:12,display:"grid",gap:10}}>
+    {section==="alerts"&&!loadFailed&&<nav className="hc-smooth-inbox-tabs hc-alerts-filters" aria-label="Filter alerts">{([["all","All"],["unread","Unread"],["games","Games"],["clubs","Clubs"],["reviews","Reviews"]] as const).map(([key,label])=><button key={key} type="button" aria-pressed={filter===key} className={filter===key?"is-active":""} onClick={()=>setFilter(key)}>{label}<span>{items.filter(n=>key==="all" || (key==="unread"&&!n.read_at) || (key==="games"&&n.target_type==="game") || (key==="clubs"&&n.target_type!=="game"&&!["review","rating","trust_score","pay_warning"].includes(n.notification_type)) || (key==="reviews"&&["review","rating","trust_score","pay_warning"].includes(n.notification_type))).length}</span></button>)}</nav>}
+    {section==="alerts"&&!loadFailed&&<section className="hc-alert-list" aria-label="Basketball notifications">
       {filtered.length ? filtered.map(n => {
         const path = n.target_type === "team" ? "teams" : n.target_type === "coach" ? "coaches" : n.target_type === "game" ? "fan-live?gameId=" + n.target_id : "leagues";
         const href = n.target_type === "game" ? "/" + path : "/" + path + "/" + n.target_id;
@@ -93,7 +95,7 @@ export default function NotificationsPage(){
           </Link>
           {n.target_type !== "game" && <div className="hc-alert-card__controls"><WatchButton targetType={n.target_type} targetId={n.target_id} targetName={n.title} /></div>}
         </article>;
-      }) : <div className="card"><h2>{items.length ? "Nothing in this category" : "No notifications yet"}</h2><p className="muted">{items.length ? "Choose another filter to see more alerts." : "Follow a team and choose the alerts you want to receive."}</p>{!items.length&&<Link href="/teams" className="btn">Find Teams</Link>}</div>}
+      }) : <div className="hc-alerts-empty" role="status"><strong>{items.length?"No alerts in this category":"No notifications yet"}</strong><p>{items.length?"Try a different filter.":"Follow a team to get updates here."}</p>{!items.length&&<Link href="/teams">Explore teams</Link>}</div>}
     </section>}
   </div></main>;
 }
