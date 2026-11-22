@@ -105,6 +105,9 @@ const subscription = {
   current_period_end: null,
   cancel_at_period_end: false,
 };
+// The integrated app does not authorize HoopFeed from raw subscriptions. Its
+// owner-scoped resolver requires a signed bearer request and provider metadata.
+const effectiveSubscription = { ...subscription, billing_interval: "month", provider: "stripe" };
 
 let serverReady = false;
 for (let attempt = 0; attempt < 60; attempt += 1) {
@@ -284,6 +287,17 @@ try {
         localStorage.setItem("sb-ci-auth-token", JSON.stringify(authSession));
       }, { themePreference: theme, authSession: session, language: testLanguage });
 
+      let signedMembershipRequests = 0;
+      await page.route("**/api/membership", async (route) => {
+        const request = route.request();
+        const authorized = request.method() === "GET" && request.headers().authorization === `Bearer ${session.access_token}`;
+        if (!authorized) {
+          await route.fulfill({ status: 401, contentType: "application/json", headers: { "cache-control": "no-store" }, body: JSON.stringify({ error: "Unauthorized" }) });
+          return;
+        }
+        signedMembershipRequests++;
+        await route.fulfill({ status: 200, contentType: "application/json", headers: { "cache-control": "no-store" }, body: JSON.stringify({ owner: userId, subscription: effectiveSubscription }) });
+      });
       await page.route("https://ci.invalid/**", async (route) => {
         const request = route.request();
         const url = new URL(request.url());
@@ -344,6 +358,7 @@ try {
       }
       if (routeName === "feed") {
         await page.locator(".hc-feed-slim-composer").waitFor({ state: "visible", timeout: 30000 });
+        assert.ok(signedMembershipRequests > 0, "HoopFeed paid surface must be unlocked by owner-bound provider-aware membership API proof");
         await page.locator(".hf5-type-chip").first().waitFor({ state: "visible", timeout: 30000 });
       }
 
