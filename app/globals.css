@@ -1370,7 +1370,7 @@ html.theme-light .watch-menu button,html.theme-light .notification-button{color:
   .signed-in-bar{min-height:56px}
   .signed-in-bar .mini-brand{max-width:92px;overflow:hidden;text-overflow:ellipsis}
   .page-container{padding-left:14px;padding-right:14px}
-  .page-container input,.page-container textarea,.page-container select,.dashboard-card input,.dashboard-card textarea,.dashboard-card select{max-width:100%;width:100%;min-width:0}
+  .page-container input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]),.page-container textarea,.page-container select,.dashboard-card input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]),.dashboard-card textarea,.dashboard-card select{max-width:100%;width:100%;min-width:0}
   .hero-card{padding:20px 16px!important}
   .hero-card h1{font-size:clamp(30px,10vw,52px)!important;line-height:.98}
   .topbar{min-width:0}
@@ -2793,7 +2793,7 @@ body { background-color: var(--hc-page-bg); }
   background: radial-gradient(circle at center, #ff6a0016, transparent 54%), repeating-linear-gradient(0deg, transparent 0 39px, #ffffff08 40px), repeating-linear-gradient(90deg, transparent 0 39px, #ffffff08 40px);
 }
 .hc-hero-art::before { content: ""; position: absolute; inset: 12px; border: 1px solid #ff6a0040; pointer-events: none; }
-.hc-court {
+.hc-hero-art > .hc-court {
   width: min(82%, 470px); aspect-ratio: 1 / 1.04; position: relative; overflow: hidden;
   border: 2px solid #ff6a00b0; border-radius: var(--hc-radius-control);
   background: linear-gradient(90deg, transparent 49.7%, #ff6a0080 49.8% 50.2%, transparent 50.3%), linear-gradient(0deg, transparent 49.7%, #ff6a0080 49.8% 50.2%, transparent 50.3%), #ff6a0008;
@@ -2888,7 +2888,7 @@ body { background-color: var(--hc-page-bg); }
   .hc-hero-actions { align-items: stretch; flex-direction: column; }
   .hc-primary-cta, .hc-secondary-cta { width: 100%; }
   .hc-hero-art { min-height: 330px; }
-  .hc-court { width: 78%; }
+  .hc-hero-art > .hc-court { width: 78%; }
   .hc-art-label-top { top: 20px; left: 18px; }
   .hc-art-label-bottom { bottom: 19px; left: 18px; right: 18px; font-size: 8px; }
   .hc-value-strip { padding: 0 12px; }
