@@ -140,7 +140,7 @@ const createStyles = (_theme: EntryTheme) => StyleSheet.create({
   container: { borderRadius:22, borderWidth:1, borderColor:"rgba(132,176,239,.48)",
     paddingHorizontal:17, paddingVertical:20, overflow:"hidden" },
   edge: { position:"absolute",left:19,right:19,top:0,height:3,borderRadius:4,backgroundColor:"#FF762D" },
-  title: { color:"#FFFFFF", fontSize:26, lineHeight:32, fontWeight:"700", fontFamily:"AvenirNext-DemiBold" },
+  title: { color:"#FFFFFF", fontSize:26, lineHeight:32, fontWeight:"700", fontFamily:Platform.select({ios:"AvenirNext-DemiBold",android:"sans-serif-medium",default:"Arial"}) },
   subtitle: { color:"#BFD1E6", fontSize:13, lineHeight:19, marginTop:3, marginBottom:10 },
   label: { color:"#EFF4FC", fontSize:13, fontWeight:"700", marginBottom:7, marginTop:13 },
   field: { minHeight:50, borderWidth:1, borderColor:"rgba(157,189,229,.36)",
