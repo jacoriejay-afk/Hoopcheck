@@ -763,7 +763,15 @@ try {
         const routeRoot = document.body;
         const color = (element) => element ? getComputedStyle(element).backgroundColor : null;
         const scaffoldTerms = ["KICKER", "TITLE", "Subtitle", "TEAM FIRST", "Fan Only Note", "Composer Placeholder", "EMPTY TITLE", "EMPTY KICKER", "Empty Body", "Lorem", "TODO", "Placeholder"];
-        const renderedCopy = routeRoot?.innerText || "";
+        const walker = document.createTreeWalker(routeRoot, NodeFilter.SHOW_TEXT);
+        const copy = [];
+        while (walker.nextNode()) {
+          const node = walker.currentNode;
+          if (node.parentElement?.checkVisibility()) copy.push(node.textContent || "");
+        }
+        // Inspect authored visible text. CSS uppercase must not turn Spanish
+        // "Todo" (All) into a false developer TODO placeholder.
+        const renderedCopy = copy.join("\n");
         const renderedAttributes = Array.from(routeRoot?.querySelectorAll("*") || []).flatMap((element) =>
           ["placeholder", "aria-label", "title", "alt"].map((name) => element.getAttribute(name) || "")
         ).join("\\n");
