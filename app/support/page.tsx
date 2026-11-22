@@ -1,6 +1,7 @@
 "use client";
 
 import HoopLoading from "../../components/HoopLoading";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 
@@ -38,7 +39,7 @@ export default function SupportPage() {
 
     const user = session?.user;
     if (!user) {
-      window.location.href = "/login";
+      window.location.href = `/login?${new URLSearchParams({ returnTo: window.location.pathname + window.location.search })}`;
       return;
     }
 
@@ -57,6 +58,33 @@ export default function SupportPage() {
   }
 
   useEffect(() => {
+    // Existing support queue handles member-submitted Reel reports until a
+    // dedicated moderation table/queue is reviewed and safely released.
+    const reelId = new URLSearchParams(window.location.search).get("reportReel");
+    if (reelId && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(reelId)) {
+      setSubject("Report a HoopFeed Reel");
+      setCategory("security");
+      setPriority("high");
+      setDescription(`Reel: https://hoopcheck.online/feed#post-${reelId}\nReason: `);
+    }
+    if (new URLSearchParams(window.location.search).get("membershipCancellation") === "1") {
+      setSubject("Cancel or review my HoopCheck membership");
+      setCategory("billing");
+      setPriority("normal");
+      setDescription("Please review my membership and help cancel or remove access. My membership page does not show a linked Stripe subscription. Please confirm whether there is recurring billing and what action is required.\n");
+    }
+    if (new URLSearchParams(window.location.search).get("scamAlert") === "1") {
+      setSubject("Report a suspicious basketball offer");
+      setCategory("security");
+      setPriority("high");
+      setDescription("Type of offer (agent, tryout, team or other):\nWhat happened (include dates and any non-sensitive evidence links):\nWhat action, if any, have you taken?\n");
+    }
+    if (new URLSearchParams(window.location.search).get("agentVerification") === "1") {
+      setSubject("Request professional agent or scout review");
+      setCategory("verification");
+      setPriority("normal");
+      setDescription("My published professional showcase: https://hoopcheck.online/agents/\nAgency or organization (self-reported):\nIndependently checkable official website or contact channel:\nDescription of my affiliation and representation authority:\nPlease do not attach private identity records or banking details here.\n");
+    }
     void load();
   }, []);
 
@@ -93,7 +121,7 @@ export default function SupportPage() {
 
       const user = session?.user;
       if (!user) {
-        window.location.href = "/login";
+        window.location.href = `/login?${new URLSearchParams({ returnTo: window.location.pathname + window.location.search })}`;
         return;
       }
 
@@ -141,6 +169,7 @@ export default function SupportPage() {
               Tickets create a trackable record for account, billing, verification,
               review, privacy, security, technical and team-directory issues.
             </p>
+            <p><Link href="/scam-alerts">Recognize and privately report suspicious basketball offers</Link></p>
           </div>
         </section>
 

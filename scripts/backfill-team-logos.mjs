@@ -4,16 +4,23 @@
  *
  * Dry-run is the default. It downloads candidates only to validate source/type/dimensions
  * and prints a report; it never writes to Storage or Postgres. Production writes require
- * --apply --approved-sample AND HOOPCHECK_LOGO_BACKFILL_APPROVED=YES.
+ * --apply --approved-sample, an exact reviewed manifest with usage-rights evidence,
+ * AND HOOPCHECK_LOGO_BACKFILL_APPROVED=YES. Scraped matches are review candidates only.
  */
 import { createClient } from "@supabase/supabase-js";
 import fs from "node:fs/promises";
+import { reviewedEntryFor } from "./team-logo-review-policy.mjs";
 
 const APPLY = process.argv.includes("--apply");
 const APPROVED_SAMPLE = process.argv.includes("--approved-sample");
 const LIMIT = Math.max(1, Number(process.argv.find((arg) => arg.startsWith("--limit="))?.split("=")[1] || 10));
 const OFFSET = Math.max(0, Number(process.argv.find((arg) => arg.startsWith("--offset="))?.split("=")[1] || 0));
 const SAMPLE = process.argv.includes("--sample");
+const TABLE_ARG = process.argv.find(arg => arg.startsWith("--table="))?.split("=")[1] || "all";
+const COUNTRY = process.argv.find(arg => arg.startsWith("--country="))?.slice("--country=".length) || "";
+const MANIFEST_PATH = process.argv.find(arg => arg.startsWith("--manifest="))?.slice("--manifest=".length);
+if (!["all", "teams", "womens_teams", "leagues"].includes(TABLE_ARG)) throw new Error("Invalid --table. Use all, teams, womens_teams, or leagues.");
+if (APPLY && !MANIFEST_PATH) throw new Error("Publishing requires --manifest=<reviewed JSON>. Scraped matches are never automatically published.");
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const BUCKET = process.env.HOOPCHECK_TEAM_LOGO_BUCKET || "team-logos";
@@ -35,6 +42,10 @@ if (APPLY && (!APPROVED_SAMPLE || process.env.HOOPCHECK_LOGO_BACKFILL_APPROVED !
 }
 const supabase = createClient(SUPABASE_URL, SERVICE_KEY || process.env.SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
 const report = [];
+const approvedManifest = MANIFEST_PATH
+  ? JSON.parse(await fs.readFile(MANIFEST_PATH, "utf8"))
+  : { entries: [] };
+if (!Array.isArray(approvedManifest.entries)) throw new Error("Reviewed manifest requires an entries array.");
 
 function normalize(value = "") { return value.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(); }
 const hints = Object.fromEntries(Object.entries(JSON.parse(await fs.readFile(HINTS_PATH, "utf8"))).map(([name, url]) => [normalize(name), url]));
@@ -131,14 +142,18 @@ async function findOnWikimedia(teamName) {
 async function getRows(table) {
   const fields = table === "leagues"
     ? "id,name,country,logo_url,website"
-    : "id,name,country,city,league_id,league_name,logo_url" + (table === "teams" ? ",website" : "");
-  let query = supabase.from(table).select(fields).or("logo_url.is.null,logo_url.eq.").order("name").range(OFFSET, OFFSET + LIMIT - 1);
+    : "id,name,country,city,league_id,league_name,logo_url" + (table === "teams" ? ",website,source" : "");
+  let query = supabase.from(table).select(fields).or("logo_url.is.null,logo_url.eq.").order("name").order("id").range(OFFSET, OFFSET + LIMIT - 1);
+  if (COUNTRY) query = query.eq("country", COUNTRY);
   const { data, error } = await query;
   if (error) throw new Error(table + ": " + error.message);
-  return (data || []).map((row) => ({ ...row, __table: table }));
+  return (data || []).filter(row => table !== "teams" || row.source !== "womens_teams_mirror")
+    .map((row) => ({ ...row, __table: table }));
 }
 async function main() {
-  const tables = SAMPLE ? ["teams"] : ["teams", "womens_teams", "leagues"];
+  const tables = TABLE_ARG === "all"
+    ? (SAMPLE ? ["teams"] : ["teams", "womens_teams", "leagues"])
+    : [TABLE_ARG];
   const rows = [];
   for (const table of tables) rows.push(...await getRows(table));
   const chosen = rows;
@@ -146,8 +161,24 @@ async function main() {
     const key = normalize(row.name);
     let candidate = null;
     const sources = [];
+    const reviewed = reviewedEntryFor(row, approvedManifest);
+    if (APPLY && !reviewed) {
+      report.push({ table: row.__table, team: row.name, teamId: row.id, status: "SKIP", reason: "No exact human-reviewed source and usage-rights entry in the approved manifest" });
+      continue;
+    }
+    if (reviewed) {
+      try {
+        const asset = await fetchBytes(reviewed.imageUrl);
+        if (!["image/png", "image/jpeg", "image/webp"].includes(asset.mime)) throw new Error("Reviewed bulk assets must be PNG, JPG, or WebP");
+        if (asset.finalUrl !== reviewed.imageUrl) throw new Error("Reviewed URL unexpectedly redirected");
+        candidate = { ...asset, source: "Reviewed image + usage rights", pageUrl: reviewed.sourcePage, candidateLabel: reviewed.rightsEvidenceUrl };
+      } catch (error) {
+        report.push({ table: row.__table, team: row.name, teamId: row.id, status: "SKIP", reason: "Reviewed image failed verification: " + String(error) });
+        continue;
+      }
+    }
     const officialUrl = row.website || hints[key];
-    if (officialUrl) {
+    if (!candidate && officialUrl) {
       sources.push({ url: officialUrl, type: "Official team site" });
       try { candidate = await findOnSite(officialUrl, row.name, "Official team site"); } catch { /* skip this source */ }
     }
@@ -164,13 +195,16 @@ async function main() {
       try { candidate = await findOnWikimedia(row.name); } catch { /* fail closed */ }
     }
     if (!candidate) {
-      report.push({ table: row.__table, team: row.name, source: sources.map((s)=>s.type).join(" → ") || "Wikimedia Commons", status: "SKIP", reason: "No confident logo match with verified image dimensions" });
+      report.push({ table: row.__table, team: row.name, teamId: row.id, source: sources.map((s)=>s.type).join(" → ") || "Wikimedia Commons", status: "SKIP", reason: "No plausible asset found; keep initials placeholder" });
       continue;
     }
     const extension = candidate.mime.includes("svg") ? "svg" : candidate.mime.includes("png") ? "png" : candidate.mime.includes("gif") ? "gif" : "jpg";
     const sourceLabel = candidate.source + " — " + candidate.pageUrl;
     if (!APPLY) {
-      report.push({ table: row.__table, team: row.name, source: sourceLabel, status: "READY (dry-run)", dimensions: candidate.width + "×" + candidate.height, bytes: candidate.buffer.length, reason: "Validated candidate; no upload or database write performed" });
+      report.push({ table: row.__table, team: row.name, teamId: row.id, source: sourceLabel,
+        status: reviewed ? "REVIEWED (dry-run)" : "NEEDS MANUAL RIGHTS AND IDENTITY REVIEW",
+        dimensions: candidate.width + "×" + candidate.height, bytes: candidate.buffer.length,
+        reason: "Image dimensions alone never authorize publishing. No upload or database write performed." });
       continue;
     }
     const objectPath = row.__table + "/" + row.id + "." + extension;
@@ -185,7 +219,7 @@ async function main() {
       report.push({ table: row.__table, team: row.name, source: sourceLabel, status: "ERROR", reason: "Uploaded but database update failed; object path: " + objectPath + "; " + updateError.message });
       continue;
     }
-    report.push({ table: row.__table, team: row.name, source: sourceLabel, status: "SUCCESS", dimensions: candidate.width + "×" + candidate.height, storedUrl: publicData.publicUrl });
+    report.push({ table: row.__table, team: row.name, teamId: row.id, source: sourceLabel, status: "SUCCESS", dimensions: candidate.width + "×" + candidate.height, storedUrl: publicData.publicUrl });
   }
   console.log(JSON.stringify({ mode: APPLY ? "APPLY" : "DRY RUN", writesEnabled: APPLY, report }, null, 2));
 }
