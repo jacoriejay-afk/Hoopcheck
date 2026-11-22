@@ -100,7 +100,7 @@ function MembershipContent() {
     void billingAction("checkout", "/api/stripe/webhook/create-checkout", { plan, interval, ...(code?.trim() ? { promoCode: code.trim() } : {}) });
   };
   return <main className="hc-membership-page">
-    <section className="hero membership-hero"><div className="eyebrow">HoopCheck Membership</div><h1>Research deeper.<br />Decide smarter.</h1><p>Research teams, coaches and leagues through first-hand basketball experiences. Existing role, verification and moderation rules apply to every membership.</p><div className="hero-links"><Link href="/search">Global Research Search →</Link></div></section>
+    <section className="hero membership-hero"><div className="eyebrow">HoopCheck Membership</div><h1>Research deeper.<br />Decide smarter.</h1><p>Research teams, coaches and leagues through first-hand basketball experiences. Existing role, verification and moderation rules apply to every membership.</p><p className="legal-note">The one-time seven-day free trial for all supported HoopCheck account types is not currently available at public checkout. Any trial offer must first pass the approved checkout eligibility and tax checks.</p><div className="hero-links"><Link href="/search">Global Research Search →</Link></div></section>
     {loading ? <HoopLoading label="Verifying membership and billing…" /> : null}
     {error ? <div className="status error" role="alert">{error}</div> : null}
     {message ? <div className="status success" role="status">{message}</div> : null}
