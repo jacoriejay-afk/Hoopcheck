@@ -63,6 +63,10 @@ create table if not exists public.hoop_group_moderation_events (
   created_at timestamptz not null default now()
 );
 create index if not exists hoop_group_moderation_events_post_idx on public.hoop_group_moderation_events(post_id,created_at desc);
+create index if not exists hoop_group_members_user_idx on public.hoop_group_members(user_id);
+create index if not exists hoop_group_blocks_blocked_idx on public.hoop_group_blocks(blocked_id);
+create index if not exists hoop_group_reports_reporter_idx on public.hoop_group_reports(reporter_id);
+create index if not exists hoop_group_moderation_events_actor_idx on public.hoop_group_moderation_events(actor_id);
 alter table public.hoop_group_moderation_events enable row level security;
 revoke all on public.hoop_group_moderation_events from public,anon,authenticated;
 
