@@ -3,7 +3,7 @@ import { useRouter } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { BrandLogo } from "../components/BrandLogo";
+import { ArenaBrand } from "../components/ArenaBrand";
 import { ExploreLinks } from "../components/ExploreLinks";
 import { Button, Input, SectionHeader } from "../src/primitives";
 import { useEntryTheme } from "../src/theme";
@@ -13,7 +13,11 @@ export default function WelcomeScreen() {
   const searchDirectory = () => router.push({ pathname: "/search", params: { q: search } });
   return <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.md }}>
-      <View style={{ padding: theme.spacing.md, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, borderRadius: theme.radius.hero }}><BrandLogo /></View>
+      <LinearGradient colors={["#081427","#183C5D","#2C1C2A"]}
+        start={{x:0,y:0}} end={{x:1,y:1}}
+        style={{borderRadius:18,paddingVertical:16,borderWidth:1,borderColor:"#FF7C36"}}>
+        <ArenaBrand size={84} compact />
+      </LinearGradient>
       <View style={{ gap: theme.spacing.sm, padding: theme.spacing.sm, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, borderRadius: theme.radius.control }}>
         <Input accessibilityLabel="Search basketball directory" placeholder="Search teams, leagues, coaches or players" value={search} maxLength={100} onChangeText={setSearch} returnKeyType="search" onSubmitEditing={searchDirectory} />
         <Button onPress={searchDirectory}>Search</Button>

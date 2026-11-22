@@ -13,6 +13,7 @@ import { DevicePreferences } from "../src/native/preferences";
 import { NetworkProvider } from "../src/native/network";
 import { MotionProvider } from "../src/motion/Provider";
 import { AppLock } from "../components/AppLock";
+import { AppOpening } from "../components/AppOpening";
 import { TabBar } from "../components/TabBar";
 import { RouteFade } from "../components/RouteFade";
 import { motion } from "../src/motion/config";
@@ -118,9 +119,9 @@ function RootLayout() {
         <Stack.Screen name="settings" options={{ title: "Settings" }} />
         <Stack.Screen name="web" options={{ title: "HoopCheck" }} />
         <Stack.Screen name="index" options={{ title: "HoopCheck™", headerShown: false }} />
-        <Stack.Screen name="sign-in" options={{ title: "Sign in" }} />
+        <Stack.Screen name="sign-in" options={{ headerShown: false }} />
         <Stack.Screen name="auth/callback" options={{ title: "Signing in" }} />
-        <Stack.Screen name="sign-up" options={{ title: "Create account" }} />
+        <Stack.Screen name="sign-up" options={{ headerShown: false }} />
         <Stack.Screen name="choose-username" options={{ title: "Choose username" }} />
         <Stack.Screen name="forgot-password" options={{ title: "Reset password" }} />
         <Stack.Screen name="reset-password" options={{ title: "Choose new password" }} />
@@ -139,6 +140,8 @@ function RootLayout() {
         <Stack.Screen name="leagues/[id]" options={{ title: "League profile" }} />
       </Stack></RouteFade>
       {signedIn ? <TabBar /> : null}<AppLock authReady={sessionReady} userId={session.userId} startupError={session.error} retryStartup={() => { void bootstrap.current?.retry(); }} protectedScreen={signedIn && !["sign-in", "sign-up", "reset-password", "auth"].includes(segments[0] ?? "")} />
+      <AppOpening ready={sessionReady && (fontsLoaded || Boolean(fontError))}
+        disabled={["auth", "reset-password"].includes(segments[0] ?? "")} />
     </BottomSheetModalProvider></NativeDraftProvider></StoreKitProvider></NativeAccountProvider></MfaSessionProvider></NetworkProvider></DevicePreferences></MotionProvider></SafeAreaProvider></GestureHandlerRootView>
 
 

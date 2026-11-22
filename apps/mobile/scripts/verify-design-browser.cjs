@@ -39,10 +39,19 @@ const uid='11111111-1111-4111-8111-111111111111', team='22222222-2222-4222-8222-
   await page.goto(base);await page.getByRole('button',{name:'Skip',exact:true}).click();
   await page.getByRole('button',{name:'Create an account',exact:true}).waitFor();
   await page.getByRole('img',{name:'HoopCheck™',exact:true}).waitFor();
+  await require("./compact-layout.cjs").capture(page, {path:`${output}/welcome-arena-${theme}.png`,fullPage:true});
   await page.getByRole('link',{name:'About HoopCheck™ →',exact:true}).click();await page.getByText('Our mission',{exact:true}).waitFor();
   await require("./compact-layout.cjs").capture(page, {path:`${output}/about-${theme}.png`,fullPage:true});
   await page.goto(base);await page.getByRole('textbox',{name:'Search basketball directory'}).fill('Olympia');await page.getByRole('button',{name:'Search',exact:true}).click();
   await page.getByRole('textbox',{name:'Email',exact:true}).waitFor();assert.equal(new URL(page.url()).pathname,'/sign-in');
+  await page.getByRole('button',{name:'Show password',exact:true}).waitFor();
+  await page.getByRole('button',{name:'Show password',exact:true}).click();
+  await page.getByRole('button',{name:'Hide password',exact:true}).waitFor();
+  await page.getByRole('button',{name:'Hide password',exact:true}).click();
+  await page.getByRole('button',{name:'Continue with Google',exact:true}).waitFor();
+  // Capture only after the Reanimated entrance settles.
+  await page.waitForTimeout(850);
+  await require("./compact-layout.cjs").capture(page, {path:`${output}/sign-in-arena-${theme}.png`,fullPage:true});
   const token=Buffer.from('{"alg":"HS256"}').toString('base64url')+'.'+Buffer.from(JSON.stringify({sub:uid,aud:'authenticated',exp:Math.floor(Date.now()/1000)+3600,role:'authenticated'})).toString('base64url')+'.fixture';
   await page.addInitScript(({token,user})=>localStorage.setItem('sb-fixture-auth-token',JSON.stringify({access_token:token,refresh_token:'fixture',token_type:'bearer',expires_at:Math.floor(Date.now()/1000)+3600,user})),{token,user});
   // Restored auth with unfinished onboarding reproduces the reported startup

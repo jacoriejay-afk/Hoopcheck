@@ -16,7 +16,8 @@
       "design/build9-liquid-courtside-v3-20261122": false,
       "design/build9-v3-compact-motion-20261122": false,
       "design/build9-arena-home-20261122": false,
-      "integration/build9-arena-ui-20261122": false
+      "integration/build9-arena-ui-20261122": false,
+      "feature/build9-opening-login-motion-20261122": false
     }
   }
 }

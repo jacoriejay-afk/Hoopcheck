@@ -1,4 +1,5 @@
 import { GlassCard, Input, Button } from "../src/primitives";
+import { ArenaBrand } from "../components/ArenaBrand";
 import { useEntryTheme, type EntryTheme } from "../src/theme";
 import { useEffect, useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from "react-native";
@@ -67,6 +68,7 @@ export default function ResetPasswordScreen() {
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}>
         <GlassCard style={styles.container}>
+          <ArenaBrand size={62} compact dark={theme.dark}/>
           <Text style={[styles.title, { fontFamily: "HoopCheckDisplay", fontWeight: "400" }]}>Choose a new password</Text>
           <Text style={styles.subtitle}>Use at least 8 characters. This updates the password for your HoopCheck account.</Text>
           <Text style={styles.label}>New password</Text>
