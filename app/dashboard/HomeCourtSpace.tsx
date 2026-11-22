@@ -48,19 +48,20 @@ function restore(raw: string | null): CourtPrefs {
 export default function HomeCourtSpace({ profileId, hasFeedAccess, language }: { profileId: string; hasFeedAccess: boolean; language: string }) {
   const spanish = language === "es";
   const [prefs, setPrefs] = useState<CourtPrefs>(DEFAULT);
-  const [ready, setReady] = useState(false);
+  const [loadedProfileId, setLoadedProfileId] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   useEffect(() => {
     if (!profileId) return;
     try { setPrefs(restore(window.localStorage.getItem("hc-court-v1:" + profileId))); }
     catch { setPrefs(DEFAULT); }
-    setReady(true);
+    setLoadedProfileId(profileId);
   }, [profileId]);
   useEffect(() => {
-    if (!ready || !profileId) return;
+    // A login change must never write previous-user preferences to the new account.
+    if (!profileId || loadedProfileId !== profileId) return;
     try { window.localStorage.setItem("hc-court-v1:" + profileId, JSON.stringify(prefs)); }
     catch { /* Private browsing can disable storage; keep the session usable. */ }
-  }, [ready, profileId, prefs]);
+  }, [loadedProfileId, profileId, prefs]);
 
   function toggle(id: ActionId) {
     setPrefs(current => {
@@ -82,6 +83,8 @@ export default function HomeCourtSpace({ profileId, hasFeedAccess, language }: {
   }
 
   const selected = prefs.actions.map(id => ACTIONS.find(action => action.id === id)).filter((action): action is Action => Boolean(action));
+  // Hide the prior user\'s shortcuts until this account has loaded.
+  if (!profileId || loadedProfileId !== profileId) return null;
   return <section className="hc-court" style={{ "--hc-court-accent": prefs.accent === "blue" ? "#2563eb" : prefs.accent === "purple" ? "#7c3aed" : "#f65b21" } as CSSProperties} aria-label="Personalized Home Court Space">
     <header className="hc-court-head">
       <div><span className="hc-court-kicker">COURT SPACE</span><h2>{prefs.name.trim() || "My Court"}</h2></div>
