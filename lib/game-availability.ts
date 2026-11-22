@@ -22,7 +22,7 @@ export type GameAvailability = {
 
 const MINUTE = 60_000;
 export const GAME_CHAT_OPEN_EARLY_MINUTES = 60;
-const POST_GAME_MINUTES = 60;
+export const GAME_CHAT_POST_GAME_MINUTES = 120;
 const MAX_GAME_WINDOW_HOURS = 4;
 
 /**
@@ -68,9 +68,18 @@ export function getGameAvailability({
     };
   }
 
+  // Without a provider-confirmed finish timestamp, do not manufacture a
+  // two-hour post-game window from the scheduled start time.
+  if (finalStatus && !Number.isFinite(ended)) {
+    return {
+      state: "CLOSED", phase: "closed", chatOpen: false, opensAt: null, closesAt: null,
+      minutesUntilOpen: null, reason: "Waiting for a verified final timestamp.",
+    };
+  }
+
   const opensMs = tipoffMs - GAME_CHAT_OPEN_EARLY_MINUTES * MINUTE;
   const closesMs = Number.isFinite(ended)
-    ? ended + POST_GAME_MINUTES * MINUTE
+    ? ended + GAME_CHAT_POST_GAME_MINUTES * MINUTE
     : tipoffMs + MAX_GAME_WINDOW_HOURS * 60 * MINUTE;
   const opensAt = new Date(opensMs);
   const closesAt = new Date(closesMs);
