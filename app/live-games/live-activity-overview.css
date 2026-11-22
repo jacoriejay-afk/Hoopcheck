@@ -15,3 +15,10 @@
 .hc-live-view-all{width:100%;min-height:44px;margin-top:12px;padding:10px;border-radius:14px;background:transparent;color:var(--hc-foreground);border:1px solid var(--hc-card-border,var(--border));font:inherit;font-weight:750;cursor:pointer}
 @media(max-width:780px){.hc-live-activity-panel__top>div{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:480px){.hc-live-activity-panel__pickers{grid-template-columns:minmax(0,1fr)}.hc-live-activity-panel__top>div{grid-template-columns:minmax(0,1fr)}}
+
+/* Country/league discovery must not reintroduce LIVECHAT-2 dropdown selects. */
+.hc-live-activity-panel__pickers details{min-width:0;border:1px solid var(--hc-card-border,var(--border));border-radius:14px;background:var(--hc-page-bg);color:var(--hc-foreground)}
+.hc-live-activity-panel__pickers summary{list-style-position:inside;padding:11px 13px;min-height:44px;cursor:pointer;overflow-wrap:anywhere;font-size:13px;font-weight:750}
+.hc-live-activity-panel__choices{display:flex;flex-wrap:wrap;gap:7px;padding:6px 12px 12px;max-height:230px;overflow:auto}
+.hc-live-activity-panel__choices button{min-height:40px;text-align:start;padding:8px 11px;border-radius:12px;border:1px solid var(--hc-card-border,var(--border));background:var(--hc-card-surface,var(--surface));color:var(--hc-on-card,var(--hc-foreground));font:inherit;font-size:12px;cursor:pointer}
+.hc-live-activity-panel__choices button[aria-pressed=true]{border-color:var(--orange);background:color-mix(in srgb,var(--orange) 15%,var(--hc-card-surface,var(--surface)))}
