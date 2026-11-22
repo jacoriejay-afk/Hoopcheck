@@ -8,7 +8,6 @@ import { getActiveMembershipTier, canStartNewMembershipCheckout } from "../../..
 import { isEligibleForSevenDayTrial, isSupportedSubscriptionAccountType } from "../../../../../lib/stripe-trial-eligibility";
 import { canReuseOpenTrialSession, isTrustedStripeCheckoutUrl } from "../../../../../lib/stripe-trial-recovery";
 import { canEnableProductionSevenDayTrial } from "../../../../../lib/stripe-trial-production-rollout";
-import { canEnableProductionSevenDayTrial } from "../../../../../lib/stripe-trial-production-rollout";
 
 function getAdminSupabase() {
   const supabaseUrl =
