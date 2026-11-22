@@ -1,5 +1,7 @@
 import { HomeCourtside } from "../components/HomeCourtside";
 import { GlassSurface } from "../components/GlassSurface";
+import { BrandLogo } from "../components/BrandLogo";
+import { LinearGradient } from "expo-linear-gradient";
 import { ExploreLinks } from "../components/ExploreLinks";
 import { Input, Chip, SectionHeader } from "../src/primitives";
 import { useEffect, useState } from "react";
@@ -65,30 +67,38 @@ export default function DashboardScreen() {
     <SafeAreaView edges={["left", "right", "bottom"]} style={[styles.safe, { backgroundColor: theme.background }]}>
       <ScrollView keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled" testID="dashboard-scroll" contentContainerStyle={styles.scroll}>
         <View style={styles.content}>
-          <View style={{ flexDirection: "row", alignItems: "center",
-            justifyContent: "space-between", paddingVertical: 6, gap: 8 }}>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text accessibilityRole="header" style={{ fontFamily: theme.type.ui.fontFamily,
-                fontSize: 25, lineHeight: 31, color: theme.foreground }}>Home</Text>
+          <View style={{borderRadius:19,overflow:"hidden",borderWidth:1,borderColor:theme.dark?"#FF7C38":"#EA7138",
+            backgroundColor:"#0F1C30",marginBottom:11}}>
+            <LinearGradient colors={["#121E33","#182D49","#2D2335"]}
+              start={{x:0,y:0}} end={{x:1,y:1}} style={StyleSheet.absoluteFill}/>
+            <View style={{minHeight:62,paddingHorizontal:13,paddingVertical:9,
+              flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:8}}>
+              <BrandLogo onHero />
+              <Pressable accessibilityRole="button" accessibilityLabel="Open account menu"
+                onPress={()=>router.push("/account")}
+                style={({pressed})=>({width:44,height:44,borderRadius:14,borderWidth:1,
+                  borderColor:"rgba(255,255,255,.32)",backgroundColor:"rgba(255,255,255,.09)",
+                  alignItems:"center",justifyContent:"center",opacity:pressed?.72:1})}>
+                <Ionicons name="menu" size={27} color="#FFFFFF" />
+              </Pressable>
             </View>
-            <GlassSurface style={{ width: 40, height: 40, borderRadius: 14, alignItems: "center", justifyContent: "center" }}>
-              <Ionicons name="basketball" size={23} color={theme.accent} />
-            </GlassSurface>
           </View>
-          <GlassSurface style={{ flexDirection: "row", alignItems: "center", marginTop: 4,
-            marginBottom: 12, borderRadius: 15, paddingLeft: 12, paddingRight: 5 }}>
+          <GlassSurface style={{ flexDirection:"row",alignItems:"center",marginBottom:14,
+            borderRadius:17,paddingLeft:12,paddingRight:5,minHeight:50,
+            backgroundColor:theme.dark?"#1A2940":"#FFFFFF",
+            borderColor:theme.dark?"rgba(113,173,236,.42)":theme.border }}>
             <Ionicons name="search-outline" size={21} color={theme.accent} />
-            <Input style={{ flex: 1, minWidth: 0, backgroundColor: "transparent", borderWidth: 0,
-              fontSize: 15 }} accessibilityLabel="Search basketball directory" placeholder="Search players, teams, leagues…" value={search}
+            <Input style={{ flex:1,minWidth:0,backgroundColor:"transparent",
+              borderWidth:0,fontSize:14,color:theme.foreground }}
+              accessibilityLabel="Search basketball directory"
+              placeholder="Search players, coaches, teams, or leagues…" value={search}
               maxLength={100} onChangeText={setSearch} returnKeyType="search"
-              onSubmitEditing={() => router.push({ pathname: "/search", params: { q: search } })} />
+              onSubmitEditing={()=>router.push({pathname:"/search",params:{q:search}})} />
             <Pressable accessibilityRole="button" accessibilityLabel="Search"
-              onPress={() => router.push({ pathname: "/search", params: { q: search } })}
-              style={({ pressed }) => ({
-                minHeight: 44, minWidth: 44, borderRadius: 15,
-                backgroundColor: theme.accentSurface, justifyContent: "center", alignItems: "center",
-                opacity: pressed ? .72 : 1,
-              })}>
+              onPress={()=>router.push({pathname:"/search",params:{q:search}})}
+              style={({pressed})=>({minHeight:44,minWidth:44,borderRadius:13,
+                backgroundColor:theme.accentSurface,justifyContent:"center",alignItems:"center",
+                opacity:pressed?.72:1})}>
               <Ionicons name="arrow-forward" size={20} color={theme.accent} />
             </Pressable>
           </GlassSurface>
