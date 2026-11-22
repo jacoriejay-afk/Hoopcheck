@@ -45,6 +45,9 @@ try {
   });
   await page.goto(`${baseURL}/account`);
   await page.locator('#profile-editor').waitFor();
+  // The iOS compact account keeps secondary profile options behind an accessible disclosure.
+  const appearanceSummary=page.locator('.hc-account-tools > summary').filter({hasText:'Profile appearance and social links'});
+  await appearanceSummary.click();
   await page.getByRole('radio',{name:'Violet'}).check();
   await page.getByRole('radio',{name:/Showcase/}).check();
   await page.getByRole('textbox',{name:'Instagram'}).fill('https://instagram.com/qa_player');
@@ -53,7 +56,8 @@ try {
   assert.equal(user.user_metadata.hoopcheck_profile_cover,'violet');
   assert.equal(user.user_metadata.hoopcheck_profile_layout,'showcase');
   assert.equal(user.user_metadata.hoopcheck_social_links?.instagram,'https://instagram.com/qa_player');
-  assert.equal(await page.locator('.hc-social-profile').getAttribute('data-profile-cover'),'violet');
+  assert.equal(await page.locator('.hc-account-minimal-header').count(),1,'Account uses the compact identity header');
+  assert.equal(await page.getByRole('radio',{name:'Violet'}).isChecked(),true,'Saved cover choice stays selected');
   await page.locator('#position').selectOption('PG');
   await page.locator('#player-height').fill('193 cm');
   await page.locator('#current-team .hc-shared-picker-trigger').click();
