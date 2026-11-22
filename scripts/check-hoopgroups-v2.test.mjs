@@ -60,3 +60,25 @@ test("Invites require login and preserve the selected server slug",()=>{
   assert.match(page,/get\("group"\)/);
   assert.match(page,/encodeURIComponent\(returnTo\)/);
 });
+
+test("Community owner moderation never exposes service keys or grants client UPDATE",()=>{
+  const page=read("app/hoopgroups/page.tsx");
+  const owner=read("components/HoopGroupsOwnerModeration.tsx");
+  const route=read("app/api/hoopgroups/moderate/route.ts");
+  const sql=read("supabase/candidates/hoopgroups_owner_spaces_v2_review_only.sql");
+  assert.match(page,/HoopGroupsOwnerModeration/);
+  assert.match(owner,/supabase\.auth\.getSession/);
+  assert.match(owner,/Authorization/);
+  assert.match(route,/authenticateModerationRequest/);
+  assert.match(route,/HOOPGROUPS_CHANNELS_SERVER_ENABLED/);
+  assert.match(route,/ownerChannels\(db,auth\.user\.id\)/);
+  assert.match(route,/channels\.some\(channel=>channel\.id===post\.channel_id\)/);
+  assert.match(route,/p_actor_id:auth\.user\.id/);
+  assert.match(route,/moderate_hoop_group_post/);
+  assert.match(sql,/join public\.hoop_group_spaces s on s\.id=c\.space_id/);
+  assert.match(sql,/s\.owner_id=p_actor_id/);
+  assert.match(sql,/revoke all on function public\.moderate_hoop_group_post/);
+  assert.match(sql,/grant execute on function public\.moderate_hoop_group_post\(uuid,uuid,text\) to service_role/);
+  assert.doesNotMatch(owner,/SUPABASE_SERVICE_ROLE_KEY|service_role/);
+  assert.doesNotMatch(page,/SUPABASE_SERVICE_ROLE_KEY/);
+});
