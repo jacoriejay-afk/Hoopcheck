@@ -85,6 +85,29 @@ export default function HoopGroupsPage() {
     else setMemberships(items => [...new Set([...items, selected.id])]);
     setBusy(false);
   }
+  async function leave() {
+    if (!selected || !userId || busy || !joined) return;
+    setBusy(true); setFeedback("");
+    const { error } = await supabase.from("hoop_group_members")
+      .delete().eq("space_id",selected.id).eq("user_id",userId);
+    if (error) setFeedback("Could not leave this community. Please try again.");
+    else {
+      setMemberships(items=>items.filter(id=>id!==selected.id));
+      setPosts([]); setDraft(""); setFeedback("You left this community.");
+    }
+    setBusy(false);
+  }
+  async function refresh() {
+    if (!channel || !joined || busy || !backendReady) return;
+    setBusy(true); setFeedback("");
+    const activeChannel=channel.id;
+    const {data,error}=await supabase.from("hoop_group_posts")
+      .select("id,author_id,body,moderation_status,created_at")
+      .eq("channel_id",activeChannel).order("created_at",{ascending:false}).limit(100);
+    if (error) setFeedback("Could not refresh channel messages.");
+    else if (channel.id===activeChannel) setPosts(((data||[]) as Post[]).reverse());
+    setBusy(false);
+  }
   async function send() {
     if (!channel || !userId || !joined || !draft.trim() || busy || !backendReady) return;
     setBusy(true);setFeedback("");
@@ -124,9 +147,10 @@ export default function HoopGroupsPage() {
       <aside className="hc-hoopgroups-channels"><h2>{selected?.name || "Choose a server"}</h2><p>{selected?.description}</p><strong>TEXT CHANNELS</strong>
         <nav aria-label="Community channels">{availableChannels.map(item=><button key={item.id} type="button" aria-pressed={channel?.id===item.id} onClick={()=>setChannelId(item.id)}># {item.name}</button>)}</nav>
         {selected && !joined && <button type="button" className="btn" disabled={busy} onClick={()=>void join()}>Join community</button>}
+        {selected && joined && <button type="button" className="hc-hoopgroups-leave" disabled={busy} onClick={()=>void leave()}>Leave community</button>}
         <Link href="/team-hub/groups">Looking for your club? Open Fan Groups</Link>
       </aside>
-      <section className="hc-hoopgroups-chat" aria-label="Community channel"><header><strong># {channel?.name || "general"}</strong><small>{joined ? "You're a member" : "Join to read and post"} · moderated channel</small></header>
+      <section className="hc-hoopgroups-chat" aria-label="Community channel"><header><div className="hc-hoopgroups-channel-title"><strong># {channel?.name || "general"}</strong><small>{joined ? "You're a member" : "Join to read and post"} · moderated channel</small></div><button type="button" className="hc-hoopgroups-refresh" onClick={()=>void refresh()} disabled={!joined || !channel || busy}>Refresh messages</button></header>
         <div className="hc-hoopgroups-messages" role="log">{joined ? posts.length ? posts.map(post => <article key={post.id}><div><strong>{post.author_id===userId?"You":"Community member"}</strong><small>{new Date(post.created_at).toLocaleString()}</small></div><p>{post.body}</p>{post.moderation_status!=="approved" ? <small>Pending moderation · visible to you</small> : post.author_id!==userId && <div className="actions"><button type="button" onClick={()=>void report(post)}>Report</button><button type="button" onClick={()=>void block(post)}>Block member</button></div>}</article>) : <p>No approved channel messages yet.</p> : <p>Join this server to see its discussion channels.</p>}</div>
         {feedback && <p role="status">{feedback}</p>}
         {joined && channel && <form className="hc-hoopgroups-compose" onSubmit={event=>{event.preventDefault();void send();}}><label htmlFor="hc-group-post">Message in # {channel.name}</label><textarea id="hc-group-post" value={draft} maxLength={1200} rows={3} onChange={event=>setDraft(event.target.value)} placeholder="Share a basketball discussion… (review required)" /><button type="submit" className="btn" disabled={busy || !draft.trim()}>Submit for review</button></form>}
