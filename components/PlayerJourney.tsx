@@ -89,14 +89,17 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage, playe
 
   useEffect(() => {
     let active = true;
-    void supabase.from("player_career_stops")
-      .select("id,player_id,team_id,team_name,league_name,country,seasons,position,stop_order,is_public")
-      .eq("player_id",playerId).order("stop_order",{ascending:true}).order("created_at",{ascending:true})
-      .then(({data,error}) => {
+    void (async () => {
+      try {
+        const {data,error} = await supabase.from("player_career_stops")
+          .select("id,player_id,team_id,team_name,league_name,country,seasons,position,stop_order,is_public")
+          .eq("player_id",playerId).order("stop_order",{ascending:true}).order("created_at",{ascending:true});
         if(!active) return;
         if(!error) setStops((data||[]) as CareerStop[]);
-        setLoading(false);
-      }).catch(()=>{if(active) setLoading(false);});
+      } finally {
+        if(active) setLoading(false);
+      }
+    })().catch(()=>{if(active) setLoading(false);});
     return ()=>{active=false;};
   },[playerId]);
 
