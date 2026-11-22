@@ -191,3 +191,10 @@ html body main.hc-live-room.hc-live-room--directory .hc-live-room-game:focus-vis
   html body main.hc-live-room.hc-live-room--directory .hc-live-room-game-status {grid-column:2;grid-row:1;align-self:start}
   html body main.hc-live-room.hc-live-room--directory .hc-live-room-game-join {grid-column:2;grid-row:1;align-self:end;padding-top:22px}
 }
+
+html body main.hc-live-room .hc-live-chat-readonly {
+  padding:8px 10px;margin:7px 0;
+  border-top:1px solid var(--hc-card-border,var(--border));
+  color:var(--hc-foreground-muted,var(--gray-500));
+  font-size:11px;
+}
