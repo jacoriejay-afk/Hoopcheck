@@ -47,7 +47,14 @@ try {
   for (const path of ["/dashboard", "/account", "/profile", `/players/${uid}`]) {
     await navigate(path);
     const progress = page.getByRole("progressbar", { name: "Player profile completion" });
-    await progress.waitFor();
+    try {
+      await progress.waitFor({ timeout: 12000 });
+    } catch (error) {
+      // Synthetic browser fixture only: show which route dropped the expected
+      // completion surface, without masking failures or logging real user data.
+      const content = await page.locator("main").first().innerText().catch(() => "No main content");
+      throw new Error(`Player completion missing on ${path}; rendered: ${content.slice(0, 900)}`, { cause: error });
+    }
     assert.equal(await progress.getAttribute("aria-valuenow"), "86", path);
   }
   await navigate("/complete-profile");
