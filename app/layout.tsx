@@ -67,6 +67,7 @@ import "./hoopcheck-page-shell.css";
 import "./hoopcheck-visual-final.css";
 import "./hoopcheck-ui-video-consistency.css";
 import "./hoopcheck-discovery-profile.css";
+import "./hoopcheck-profile-light-unification.css";
 import { SITE_URL } from "../lib/site-url";
 
 const displayFont = localFont({
