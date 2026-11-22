@@ -297,8 +297,8 @@ export default function HoopChatCourtside(){
     "hc-courtside--"+appearance.density,"hc-courtside--"+appearance.scale,
     "hc-courtside--"+appearance.accent].join(" ")} aria-label="HoopChat Courtside messaging">
     <div className="hc-courtside-top">
-      <div><p className="eyebrow">HOOPCHAT · COURTSIDE</p><h2>Your basketball conversations<span>.</span></h2>
-        <p>Private messaging opens only after a contact accepts your request. Group channels live in HoopGroups.</p></div>
+      <div><p className="eyebrow">HOOPCHAT · COURTSIDE</p><h2>HoopChat<span>.</span></h2>
+        <p>Private messages and requests. Contacts must accept before chatting.</p></div>
       <div className="hc-courtside-top-actions">
         {totalUnread>0&&<span className="hc-courtside-unread" aria-label={totalUnread+" unread on this device"}>{totalUnread} new</span>}
         <button type="button" onClick={()=>void load()} disabled={syncing||sending}>{syncing?"Syncing…":"Refresh"}</button>
