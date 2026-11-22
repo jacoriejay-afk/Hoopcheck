@@ -19,7 +19,7 @@ export function Button({ children, secondary = false, style, ...props }: Pressab
     if (parts.every(part => typeof part === "string" || typeof part === "number")) return <Text style={labelStyle}>{value}</Text>;
     return parts.map((part, index) => typeof part === "string" || typeof part === "number" ? <Text key={index} style={labelStyle}>{part}</Text> : part);
   };
-  return <Pressable accessibilityRole="button" accessibilityState={{ disabled: Boolean(props.disabled) }} {...props} style={state => [{ minHeight: 44, padding: t.spacing.sm, borderRadius: 12, borderCurve: "continuous", borderWidth: 1, borderColor: secondary ? t.glassBorder : t.button, backgroundColor: secondary ? t.elevatedSurface : t.button, alignItems: "center", justifyContent: "center", opacity: props.disabled ? .65 : state.pressed ? .75 : 1 }, typeof style === "function" ? style(state) : style]}>
+  return <Pressable accessibilityRole="button" accessibilityState={{ disabled: Boolean(props.disabled) }} {...props} style={state => [{ minHeight: 48, padding: t.spacing.sm, borderRadius: 12, borderCurve: "continuous", borderWidth: 1, borderColor: secondary ? t.glassBorder : t.button, backgroundColor: secondary ? t.elevatedSurface : t.button, alignItems: "center", justifyContent: "center", opacity: props.disabled ? .65 : state.pressed ? .75 : 1 }, typeof style === "function" ? style(state) : style]}>
     {state => content(typeof children === "function" ? children(state) : children)}
   </Pressable>;
 }
