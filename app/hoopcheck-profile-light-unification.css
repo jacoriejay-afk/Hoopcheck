@@ -8,7 +8,8 @@ html.theme-light :is(.hc-member-profile-page,.player-profile-page,.hc-coach-enti
 html.theme-light :is(.hc-member-profile-page,.player-profile-page,.hc-coach-entity-profile,.hc-team-entity-profile,.hc-womens-profile-page,.hc-league-entity-profile) :is(.hc-social-profile-header,.hero-card.compact-hero,.player-profile-hero,.hc-coach-profile-hero,.hc-team-profile-hero,.hc-team-look-hero,.hc-league-look-hero,.hc-profile-info-card,.hc-social-stats > *,.hc-team-social-stats > span){
   box-sizing:border-box;max-width:100%;min-width:0;overflow-wrap:anywhere;
   border:1px solid var(--hc-profile-light-line)!important;
-  background:var(--hc-profile-light-surface)!important;
+  /* Keep branded arena background images while repairing light-mode card contrast. */
+  background-color:var(--hc-profile-light-surface)!important;
   color:var(--hc-profile-light-text)!important;
   box-shadow:0 6px 24px rgba(30,36,48,.055)!important;
 }
