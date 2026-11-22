@@ -383,3 +383,16 @@ html.theme-dark body main section.hc-team-look-hero.hc-womens-branded-hero p.hc-
   color: #ffe2cf !important;
   -webkit-text-fill-color: #ffe2cf !important;
 }
+
+/* Contrast regression: the light-theme generic span color wins in the women's
+   kicker. Give that small label an opaque cream chip so its actual computed
+   dark foreground is legible, while dark mode retains its dark hero. */
+html.theme-light body main section.hc-team-look-hero.hc-womens-branded-hero p.hc-team-hero-kicker {
+  display: table;
+  width: fit-content;
+  padding: 3px 7px;
+  border-radius: 5px;
+  background-color: #fff4e9 !important;
+  color: #171717 !important;
+  -webkit-text-fill-color: #171717 !important;
+}
