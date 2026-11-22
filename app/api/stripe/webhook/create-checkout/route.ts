@@ -339,7 +339,7 @@ export async function POST(
     // Hard stop: do not allow a flag alone to bypass the missing atomic reservation.
     // Replace this only after the reservation RPC and webhook lifecycle are verified.
     const trialRolloutEnabled = false;
-    let trialEligible = trialRolloutEnabled && checkoutProfile.account_type === "player" && interval === "month" && !promoCodeId && !existingSubscription?.stripe_subscription_id && Boolean(user.email_confirmed_at);
+    let trialEligible = trialRolloutEnabled && isSupportedSubscriptionAccountType(checkoutProfile.account_type) && interval === "month" && !promoCodeId && !existingSubscription?.stripe_subscription_id && Boolean(user.email_confirmed_at);
     if (trialEligible) {
       // Check every customer under this email, even when a customer is already
       // linked to the account. A linked ID alone can miss older Stripe history.
@@ -389,7 +389,7 @@ export async function POST(
     // Recheck the final policy after all history lookups. This remains disabled
     // in production until atomic one-time reservation is implemented.
     trialEligible = isEligibleForSevenDayTrial({
-      rolloutEnabled: trialRolloutEnabled && checkoutProfile.account_type === "player",
+      rolloutEnabled: trialRolloutEnabled,
       interval,
       accountType: checkoutProfile.account_type,
       hasPromoCode: Boolean(promoCodeId),
