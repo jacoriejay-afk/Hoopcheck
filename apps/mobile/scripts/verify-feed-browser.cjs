@@ -46,6 +46,14 @@ async function fixture(browser,theme,allowed=true){
     }
     if(url.hostname==='fixture.supabase.co'){
       if(url.pathname==='/auth/v1/user')return json(user);
+      if(url.pathname==='/rest/v1/rpc/get_public_follow_list'){
+        assert.equal(method,'POST','Only the expected read-only follow-list RPC is mocked');
+        assert.ok(request.headers().authorization?.startsWith('Bearer '),'Follow-list request needs authenticated owner');
+        const params=JSON.parse(body);
+        assert.ok(params && ['followers','following'].includes(params.p_mode),'Follow-list mode must be explicit');
+        if(params.p_user_id)assert.equal(params.p_user_id,uid,'Follow-list fixture cannot query another owner');
+        return json([]);
+      }
       if(url.pathname.startsWith('/storage/v1/object/sign/'))return route.fulfill({status:200,contentType:url.pathname.endsWith('.webm')?'video/webm':'image/png',headers:{'access-control-allow-origin':'*'},body:url.pathname.endsWith('.webm')?fs.readFileSync(videoPath):png});
       const table=url.pathname.split('/').pop();
       if(table==='feed_posts'){

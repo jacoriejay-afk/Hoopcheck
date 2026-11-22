@@ -56,3 +56,7 @@ The expanded native browser fixture reached a blank Reel view after switching `F
 ## Directory hydration acceptance — CI timing fix
 
 Root CI at `bde22fbe` compiled and reached `scripts/check-team-discovery-browser.mjs`; first-frame Coaches grid link count returned zero before the client directory navigation was mounted. `DirectoryLayout` source still declares four public guest categories (Men, Women, Coaches, Leagues) plus conditional player category. The browser test now waits for four DOM links in the mounted grid before asserting **four accessible links**, selected route and dimensions, preserving every existing visual/layout/route assertion. An actually missing link remains a timeout failure. No server route, page visibility, or permissions changed.
+
+## Isolated follow-list fixture contract
+
+Native CI at `bde22fbe` passed MFA, profile editor, chat, fan groups and media permissions, then encountered `/rest/v1/rpc/get_public_follow_list` not mocked by the newly imported Feed/Reels browser fixture. The installed function is a read-only, privacy-filtered follower-discovery RPC. The synthetic fixture now permits only this exact RPC path, signed POST and explicit `followers`/`following` modes, and rejects any cross-owner `p_user_id`; it returns an empty synthetic list, never real private follower data. Unknown requests still fail. No native auth, RLS, or production code was weakened. Full head CI required.
