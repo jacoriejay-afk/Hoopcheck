@@ -238,12 +238,3 @@ test("membership loading does not flash purchase choices during subscription ref
     assert.ok(css.includes(".hc-membership-page .hc-membership-loading {"), "Loading state must use shared card styling");
   }
 });
-
-  const page = read("app/membership/page.tsx");
-  const css = read("app/globals.css");
-  assert.ok(page.includes("async function loadSubscription(silent = false)"), "Polling must support a quiet refresh");
-  assert.ok(page.includes("await loadSubscription(true)"), "Checkout return polling must not hide cancellation controls");
-  assert.ok(page.includes("{loading ? ("), "Initial membership state must not show purchase cards before loading");
-  assert.ok(page.includes('className="hc-membership-loading"'), "Loading state must have stable layout");
-  assert.ok(css.includes(".hc-membership-page .hc-membership-loading {"), "Loading state must use shared card styling");
-});
