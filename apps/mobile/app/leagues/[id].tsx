@@ -1,6 +1,6 @@
 import { LeagueClubs } from "../../components/EntityCompetition";
 import { EntityHero } from "../../components/EntityHero";
-import { DirectoryCrest } from "../../components/DirectoryIdentity";
+import { EntityArtwork } from "../../components/EntityArtwork";
 import { GlassCard, Button } from "../../src/primitives";
 import { useCachedRead, useNetwork } from "../../src/native/network";
 import { OfflineBanner } from "../../components/OfflineBanner";
@@ -86,7 +86,7 @@ export default function LeagueDetailScreen() {
           <>
             <EntityHero name={league.name} country={league.country} kind="leagues" label="LEAGUE PROFILE" path={`/leagues/${league.id}`} />
             <View style={{marginTop:12,flexDirection:"row",alignItems:"center",gap:12}}>
-              <DirectoryCrest name={league.name} kind="leagues" logoUrl={league.logo_url} size={70}/>
+              <EntityArtwork name={league.name} kind="leagues" logoUrl={league.logo_url} size={70}/>
               <View style={{flex:1}}><Text style={{color:theme.foreground,fontWeight:"800"}}>{league.logo_url?"League logo URL on record":"League badge placeholder"}</Text>
                 <Text style={{color:theme.muted,fontSize:12}}>Official crest identity and usage rights require verification.</Text></View>
             </View>
