@@ -23,7 +23,12 @@ try {
     else if (url.pathname.endsWith("/rpc/get_own_profile")) data = profile;
     else if (url.pathname.endsWith("/profiles")) {
       if (request.method() === "PATCH") profile = { ...profile, ...request.postDataJSON() };
-      data = profile;
+      // PostgREST maybeSingle() GET uses the JSON array representation,
+      // while single() explicitly requests a vendor object media type.
+      // Return the correct shape so profile completion tests exercise the
+      // actual owner reader, rather than a synthetic transport mismatch.
+      const wantsObject = /application\\/vnd\\.pgrst\\.object\\+json/i.test(request.headers().accept || "");
+      data = request.method() === "GET" && !wantsObject ? [profile] : profile;
     } else if (url.pathname.includes("/rpc/get_public_player_profile")) data = [{ ...profile, player_position: profile.position }];
     else if (url.pathname.includes("/rpc/get_current_user_admin_role")) data = null;
     else if (url.pathname.includes("/rpc/is_current_user_admin_or_moderator")) data = false;
