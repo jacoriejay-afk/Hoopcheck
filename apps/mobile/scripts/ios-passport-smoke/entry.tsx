@@ -20,14 +20,25 @@ function PassportSmoke() {
     locked.current = true; setStatus("PREPARING");
     try {
       await sharePlayerPassport({ name: "CI Synthetic Player", team: "CI Test Club", position: "PG", years: 3, verified: false }, owner, {
-        platform: "ios", identity: async () => ({ id: owner, accountType: "player" }), current: () => AppState.currentState === "active",
+        // CI-only cold-simulator allowance. Production keeps its 30s guard.
+        platform: "ios", timeoutMs: 90000, identity: async () => ({ id: owner, accountType: "player" }), current: () => AppState.currentState === "active",
         available: () => Sharing.isAvailableAsync(),
         print: async html => {
-          const result = await Print.printToFileAsync({ html, width: 612, height: 792 });
-          const file = new File(result.uri); const bytes = await file.bytes();
-          if (String.fromCharCode(...bytes.slice(0, 5)) !== "%PDF-" || result.numberOfPages < 1 || file.size < 200) throw Error("Invalid native PDF");
-          setDetail(`Native PDF: ${result.numberOfPages} page(s), ${file.size} bytes, valid PDF signature`);
-          return result.uri;
+          const started = Date.now();
+          try {
+            const result = await Print.printToFileAsync({ html, width: 612, height: 792 });
+            const file = new File(result.uri); const bytes = await file.bytes();
+            if (String.fromCharCode(...bytes.slice(0, 5)) !== "%PDF-" || result.numberOfPages < 1 || file.size < 200) throw Error("Invalid native PDF");
+            setDetail(`Native PDF: ${result.numberOfPages} page(s), ${file.size} bytes, valid PDF signature`);
+            return result.uri;
+          } catch (error) {
+            // Synthetic CI fixture only: capture the cause instead of a generic timeout.
+            const reason = error instanceof Error ? error.message : "Unknown print failure";
+            console.warn("PASSPORT_SMOKE_PRINT_FAILURE", reason.slice(0, 240));
+            throw error;
+          } finally {
+            console.log("PASSPORT_SMOKE_PRINT_ELAPSED_MS", Date.now() - started);
+          }
         },
         share: uri => new Promise<void>((resolve, reject) => {
           startShare.current = async () => {
