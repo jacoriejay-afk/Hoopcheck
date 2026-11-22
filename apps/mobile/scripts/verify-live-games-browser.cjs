@@ -43,6 +43,7 @@ async function verify(browser,theme,role='fan',paid=true){
     return json([{id:other,display_name:'Other member'},{id:uid,display_name:'Fixture Member'}]);
    }
    if(table==='fan_live_games'){assert.equal(paid,true);return json(games);}
+   if(table==='fan_live_chat_presence'){assert.equal(paid,true);return json([{game_id:id(1)}]);}
    if(table==='teams')return json(url.searchParams.get('basketball_type')==='eq.mens'?[{id:id(10),name:'Home Men'},{id:id(11),name:'Away Men'}]:[]);
    if(table==='womens_teams')return json([{id:id(13),name:'Away Women'}]);
    if(table==='fan_live_chat_room_open'){assert.equal(paid,true);return json(true);}
