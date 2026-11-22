@@ -58,9 +58,9 @@ test("Dashboard Court Space does not inherit illustration aspect ratio or perspe
   const global=read("app/globals.css");
   const court=read("app/dashboard/home-court-space.css");
   const role=read("components/role-quick-links.css");
-  assert.match(global,/\.hc-hero-art > \.hc-my-court \{\s*width: min\(82%, 470px\); aspect-ratio: 1 \/ 1\.04/);
-  assert.doesNotMatch(global,/(?:^|\n)\.hc-my-court \{\s*width: min\(82%, 470px\)/);
-  assert.doesNotMatch(global,/\n\s*\.hc-my-court \{ width: 78%; \}/);
+  assert.match(global,/\.hc-hero-art > \.hc-court \{\s*width: min\(82%, 470px\); aspect-ratio: 1 \/ 1\.04/);
+  assert.doesNotMatch(global,/(?:^|\n)\.hc-court \{\s*width: min\(82%, 470px\)/);
+  assert.doesNotMatch(global,/\n\s*\.hc-court \{ width: 78%; \}/);
   assert.match(court,/section\.hc-my-court \{[\s\S]*?aspect-ratio: auto !important;[\s\S]*?transform: none !important;/);
   assert.match(read("app/dashboard/HomeCourtSpace.tsx"),/className="hc-my-court"/);
   assert.doesNotMatch(read("app/dashboard/HomeCourtSpace.tsx"),/className="hc-court"/);
