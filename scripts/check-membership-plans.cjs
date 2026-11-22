@@ -31,14 +31,17 @@ test("coach and manager comparison offers Premium, not Pro", () => {
   assert.match(html, /coaches and team managers/i);
 });
 
-test("other audiences keep both paid choices and current prices", () => {
-  for (const audience of ["player", "fan"]) {
-    const html = render({ audience, billingTerm: "year" });
-    assert.match(html, /Choose Pro/);
-    assert.match(html, /Choose Premium/);
-    assert.match(html, /\$50\.90/);
-    assert.match(html, /\$101\.90/);
-  }
+test("priced Player choices retain approved prices while unpriced Fan tiers cannot be purchased", () => {
+  const player = render({ audience: "player", billingTerm: "year" });
+  assert.match(player, /Choose Pro/);
+  assert.match(player, /Choose Premium/);
+  assert.match(player, /\$50\.90/);
+  assert.match(player, /\$101\.90/);
+  const fan = render({ audience: "fan", billingTerm: "year" });
+  assert.match(fan, /Not yet priced/);
+  assert.match(fan, /Fan membership comparison/);
+  assert.doesNotMatch(fan, /\$50\.90|\$101\.90|\$4\.99|\$9\.99/);
+  assert.doesNotMatch(fan, /Choose Pro|Choose Premium/);
 });
 
 test("checkout choices are disabled during loading", () => {
