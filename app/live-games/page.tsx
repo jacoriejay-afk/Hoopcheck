@@ -357,7 +357,7 @@ export default function LiveGamesPage() {
         <input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search teams, leagues, countries…" aria-label="Search games" className="hc-live-hub-search" />
       </div>
       {(countryFocus || leagueFocus || query) && <button type="button" className="hc-live-clear-filters" onClick={() => { setCountryFocus(""); setLeagueFocus(""); setQuery(""); }}>Clear all filters</button>}
-      <div className="hc-live-discovery" aria-label="Browse games by activity and region">
+      <details className="hc-live-discovery-toggle"><summary>Browse countries &amp; leagues</summary><div className="hc-live-discovery" aria-label="Browse games by activity and region">
         {discoveryShortcuts.countries.length > 1 && <div className="hc-live-shortcut-section">
           <strong>Countries with fixtures</strong>
           <div className="hc-live-shortcut-chips">
@@ -376,7 +376,7 @@ export default function LiveGamesPage() {
             </button>)}
           </div>
         </div>}
-      </div>
+      </div></details>
     </section>
     {message && <p className="hc-live-hub-message" role="status">{message}</p>}
 
