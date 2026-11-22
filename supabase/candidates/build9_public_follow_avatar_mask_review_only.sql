@@ -74,8 +74,7 @@ AS $function$
     ))
   )
   ORDER BY fr.created_at DESC;
-$function$
-
+$function$;
 
 DO $postcheck$
 DECLARE p pg_proc%ROWTYPE;

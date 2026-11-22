@@ -9,6 +9,8 @@ for(const re of [/^BEGIN;$/m,/^ROLLBACK;\s*$/m,/557d85a6abf873e47ffc1f4ae283debd
  /WHEN fr\.target_type='team' THEN coalesce\(team\.logo_url,womens_team\.logo_url\)/,
  /auth\.uid\(\)/,/p_mode='followers' AND follower\.profile_visibility='public'/,
  /requested\.profile_visibility='public'/,/ORDER BY fr\.created_at DESC/]) assert.match(sql,re);
+assert.match(sql,/^\$function\$;$/m,'function must terminate with semicolon');
+assert.equal((sql.match(/^\$function\$;$/gm)||[]).length,1,'one complete function body');
 assert.doesNotMatch(sql,/^COMMIT;$/m);
 assert.equal((sql.match(/^ROLLBACK;$/gm)||[]).length,1);
 console.log("PASS: review-only follow avatar mask preserves visibility, legacy-null behavior, team crests, owner and ROLLBACK");
