@@ -1,5 +1,5 @@
 export type GameStatus = "scheduled" | "live" | "final" | "cancelled" | string;
-export type GameAvailabilityState = "LIVE" | "OPENS SOON" | "UPCOMING" | "CLOSED";
+export type GameAvailabilityState = "LIVE" | "POST GAME" | "OPENS SOON" | "UPCOMING" | "CLOSED";
 export type GameAvailabilityPhase = "pre-game" | "in-game" | "post-game" | "closed" | "schedule-unknown";
 
 export type GameAvailabilityInput = {
@@ -107,7 +107,7 @@ export function getGameAvailability({
   }
 
   return {
-    state: "LIVE",
+    state: finalStatus ? "POST GAME" : "LIVE",
     phase: finalStatus ? "post-game" : "in-game",
     chatOpen: true,
     opensAt,
