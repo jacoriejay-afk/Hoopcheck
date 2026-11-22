@@ -12,6 +12,7 @@ import { ProfileAvatar } from "../components/ProfileAvatar";
 import { FeedMedia } from "../components/FeedMedia";
 import { MediaPostComposer } from "../components/MediaPostComposer";
 import { FeedPoll } from "../components/FeedPoll";
+import { FeedCheckAction } from "../components/FeedCheckAction";
 import { supabase } from "../src/lib/supabase";
 import { useEntryTheme } from "../src/theme";
 import { useNativeAccount } from "../src/native/useNativeAccount";
@@ -44,6 +45,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
   const [message, setMessage] = useState("");
   const [loadError, setLoadError] = useState("");
   const [checks, setChecks] = useState<Record<string, { count: number; mine: boolean }>>({});
+  const [checkPulses, setCheckPulses] = useState<{ scope: string; values: Record<string, number> }>({ scope: "", values: {} });
   const [saved, setSaved] = useState<Record<string, boolean | undefined>>({});
   const requests = useRef(new Set<string>());
   const [pending, setPending] = useState<Record<string, boolean>>({});
@@ -135,7 +137,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
     finally { if (current === generation.current) setLoading(false); }
   }, [uid, canRead, reels, linkedId, scope]);
   useEffect(() => {
-    setRows({ scope, posts: [] }); setNext(null); setChecks({}); setSaved({}); setOpenComments({}); setMessage("");
+    setRows({ scope, posts: [] }); setNext(null); setChecks({}); setCheckPulses({ scope, values: {} }); setSaved({}); setOpenComments({}); setMessage("");
     if (canRead) void load(); else setLoading(false);
     // This is an async request generation counter, not a mounted node reference.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -298,18 +300,33 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
           {post.video_url ? <FeedMedia userId={uid!} postId={post.id} reference={post.video_url} video enabled={focused && visible.has(post.id)} loop={reels} height={reels ? Math.max(120, height - 280) : 280} /> : photos.map(reference => <FeedMedia userId={uid!} key={reference} postId={post.id} reference={reference} enabled={focused && visible.has(post.id)} />)}
           {post.post_kind === "poll" && options.length ? <FeedPoll userId={uid!} postId={post.id} options={options} enabled={canWrite && focused} /> : null}
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, paddingTop: 12, borderTopWidth: 1, borderColor: theme.border }}>
-            <Pressable accessibilityRole="button" aria-pressed={checks[post.id]?.mine === true} disabled={!canWrite || !checks[post.id] || Boolean(pending[`check:${post.id}`])} onPress={() => void action(`check:${post.id}`, async () => {
+            <FeedCheckAction checked={checks[post.id]?.mine} count={checks[post.id]?.count}
+              pulseKey={checkPulses.scope === scope ? checkPulses.values[post.id] ?? 0 : 0}
+              disabled={!canWrite || !checks[post.id]} busy={Boolean(pending[`check:${post.id}`])}
+              onPress={() => void action(`check:${post.id}`, async () => {
               await token();
+              const wasChecked = checks[post.id]?.mine;
               let activity;
-              try { activity = await toggleFeedCheck(supabase, uid!, post.id, checks[post.id]?.mine === true); }
+              try { activity = await toggleFeedCheck(supabase, uid!, post.id, wasChecked === true); }
               catch {
                 if (viewer.current.uid === uid) setChecks(previous => { const result = { ...previous }; delete result[post.id]; return result; });
                 throw new Error("Check status could not be confirmed. Refresh the feed before trying again.");
               }
-              if (viewer.current.uid !== uid || !viewer.current.canRead) return;
+              if (viewer.current.uid !== uid || viewer.current.scope !== scope || !viewer.current.canRead) return;
               const total = activity.find(row => row.post_id === post.id);
-              if (total && Number.isSafeInteger(Number(total.checks_count)) && Number(total.checks_count) >= 0) setChecks(previous => ({ ...previous, [post.id]: { count: Number(total.checks_count), mine: total.checked_by_me === true } }));
-            })} style={[touch, { backgroundColor: checks[post.id]?.mine ? theme.accentSurface : theme.chip, borderRadius: theme.radius.pill }]}><Text style={{ ...linkStyle, fontSize: 14 }}>{!checks[post.id] ? "Checks unavailable" : checks[post.id].mine ? "Checked" : "Check"}{checks[post.id] ? ` · ${checks[post.id].count}` : ""}</Text></Pressable>
+              if (total && Number.isSafeInteger(Number(total.checks_count)) && Number(total.checks_count) >= 0) {
+                setChecks(previous => ({ ...previous, [post.id]: { count: Number(total.checks_count), mine: total.checked_by_me === true } }));
+                if (wasChecked === false && total.checked_by_me === true) {
+                  setCheckPulses(previous => ({
+                    scope,
+                    values: {
+                      ...(previous.scope === scope ? previous.values : {}),
+                      [post.id]: ((previous.scope === scope ? previous.values[post.id] : 0) ?? 0) + 1,
+                    },
+                  }));
+                }
+              }
+            })} />
             <Pressable accessibilityRole="button" onPress={() => { if (reels) { router.push({ pathname: "/feed", params: { post: post.id, comments: "1" } }); return; } setOpenComments(previous => ({ ...previous, [post.id]: !previous[post.id] })); if (!page || page.error) void loadComments(post.id); }} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Comments</Text></Pressable>
             <Pressable accessibilityRole="button" onPress={() => void action(`share:${post.id}`, async () => { await Share.share({ title: "HoopFeed", message: `https://hoopcheck.online/feed#post-${post.id}` }); })} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Share</Text></Pressable>
             {reels && <Pressable accessibilityRole="button" accessibilityLabel="Report this Reel" onPress={() => void action(`report:${post.id}`, async () => { await Linking.openURL(`https://hoopcheck.online/support?reportReel=${post.id}`); })} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Report</Text></Pressable>}

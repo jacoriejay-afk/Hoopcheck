@@ -117,9 +117,9 @@
   .hc-journey-add { width:100%; }
   .hc-journey-form { padding:13px; }
   .hc-journey-stop__footer > div { flex-wrap:wrap; }
-  /* Keep the final form controls clear of HoopCheck's floating bottom tabs. */
+  /* The page shell already clears floating tabs; this extra 100px created a giant blank card. */
   .hc-member-profile-page .hc-journey-editor,
-  .player-profile-page .hc-journey-editor { padding-bottom:calc(100px + env(safe-area-inset-bottom,0px)); }
+  .player-profile-page .hc-journey-editor { padding-bottom:0; }
   .hc-settings-organized-nav { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
 @media(max-width:380px) { .hc-settings-organized-nav { grid-template-columns:1fr; } }
@@ -130,5 +130,43 @@
 .hc-journey-match-panel p { margin:0;font-size:12px;line-height:1.45; }
 .hc-journey-match-panel button:not(.hc-shared-picker-trigger):not(.hc-shared-picker-row) { justify-self:start;min-height:36px; }
 .theme-dark .hc-journey-review-status { background:#193a2d;border-color:#448d66;color:#baf4d1; }
+
+/* Career Stops regression repair: compact records and safe wrapping on narrow screens. */
+.hc-journey-section,
+.hc-journey-timeline,
+.hc-passport-countries,
+.hc-journey-editor,
+.hc-journey-stop__card,
+.hc-journey-stop__team > div { min-width:0; max-width:100%; }
+.hc-journey-stop__team h3,
+.hc-journey-stop__team p,
+.hc-journey-stop__team small,
+.hc-journey-stop__season { overflow-wrap:anywhere; }
+.hc-journey-stop__footer,
+.hc-journey-stop__footer > div { flex-wrap:wrap; min-width:0; }
+.hc-journey-editor__intro { padding:10px 12px; }
+.hc-journey-feedback button { margin-left:8px; min-height:38px; padding:6px 10px; border:1px solid currentColor; border-radius:9px; background:transparent; color:inherit; font-weight:800; cursor:pointer; }
+@media(max-width:767px) {
+  .hc-member-profile-page .hc-journey-section,
+  .player-profile-page .hc-journey-section { padding:12px; }
+  .hc-passport-stamp-grid { grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr)); }
+  .hc-passport-country-stamp { min-height:96px; padding:10px; gap:4px; transform:none; }
+  .hc-passport-country-stamp__country { font-size:19px; }
+  .hc-journey-editor { margin-top:10px; }
+  .hc-journey-editor__intro { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:8px; }
+  .hc-journey-editor__intro > div { min-width:0; }
+  .hc-journey-editor__intro strong { font-size:13px; }
+  .hc-journey-editor__intro p { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; margin-top:2px; font-size:11px; }
+  .hc-journey-add { width:auto; min-height:40px; padding:7px 10px; font-size:12px; white-space:nowrap; }
+  .hc-journey-stop__card { margin-bottom:9px; padding:10px; }
+  .hc-journey-stop__top { margin-bottom:7px; }
+  .hc-journey-stop__team { gap:8px; }
+  .hc-journey-stop__crest { flex-basis:40px; width:40px; height:40px; }
+  .hc-journey-stop__footer { margin-top:9px; padding-top:8px; }
+}
+@media(max-width:380px) {
+  .hc-journey-editor__intro { grid-template-columns:minmax(0,1fr); }
+  .hc-journey-add { justify-self:stretch; }
+}
 
 #team-review-checklist { scroll-margin-top:calc(120px + env(safe-area-inset-top,0px)); }

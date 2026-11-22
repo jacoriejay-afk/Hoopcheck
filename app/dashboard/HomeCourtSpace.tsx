@@ -19,7 +19,7 @@ const ACTIONS:Action[] = [
   {id:"fans",label:"Fan Groups",detail:"Follow your club communities",href:"/team-hub/groups",icon:"users"},
   {id:"alerts",label:"Alerts",detail:"See your updates",href:"/notifications",icon:"bell"},
   {id:"account",label:"My Account",detail:"Manage your profile",href:"/account",icon:"settings"},
-  {id:"messages",label:"HoopChat",detail:"Your messages and requests",href:"/notifications?tab=messages",icon:"message-square"},
+  {id:"messages",label:"HoopChat Courtside",detail:"Messages & requests",href:"/messages",icon:"message-square"},
   {id:"leagues",label:"Leagues",detail:"Browse worldwide leagues",href:"/leagues",icon:"basketball"},
   {id:"coaches",label:"Coaches",detail:"Connect with coaches",href:"/coaches",icon:"users"},
   {id:"team_hq",label:"Team HQ",detail:"Manage your club",href:"/team-dashboard",icon:"shield-check"},

@@ -4,6 +4,8 @@ import { sharePlayerPassport } from "../src/native/passportSharing";
 import { requestNativeAccount } from "../src/native/accountClient";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState, Platform, Text, View } from "react-native";
+import Animated, { FadeIn } from "react-native-reanimated";
+import { useMotionSetting } from "../src/motion/Provider";
 import { BrandLogo } from "./BrandLogo";
 import { Sheet } from "./Sheet";
 import { Button } from "../src/primitives";
@@ -16,6 +18,7 @@ import type { PlayerProfile } from "../src/native/playerProfiles";
 
 export function PlayerPassport({ player }: { player: PlayerProfile }) {
   const t = useEntryTheme(); const haptic = useHaptics();
+  const reducedMotion = useMotionSetting();
   const { account } = useNativeAccount();
   const [open, setOpen] = useState(false); const [busy, setBusy] = useState(false); const [error, setError] = useState("");
   const locked = useRef(false);
@@ -68,14 +71,31 @@ export function PlayerPassport({ player }: { player: PlayerProfile }) {
   return <>
     <Button secondary onPress={() => { setError(""); setOpen(true); }}>Preview Player Passport</Button>
     <Sheet dismissible={!busy} open={open} onClose={() => { if (!busy) setOpen(false); }} title="Your Player Passport">
-      <View style={{ backgroundColor: t.entityHero.background, borderRadius: t.radius.hero, borderCurve: "continuous", padding: t.spacing.xl, gap: t.spacing.lg, borderTopWidth: 4, borderTopColor: t.button }}>
-        <BrandLogo onHero />
-        <Text style={{ color: t.entityHero.muted, ...t.type.caption }}>PLAYER PASSPORT</Text>
-        <Text style={{ color: t.entityHero.ink, ...t.type.title }}>{pass.name}</Text>
-        <Text style={{ color: t.entityHero.muted, ...t.type.body }}>{[pass.position, pass.team].filter(Boolean).join(" · ") || "Player profile"}</Text>
-        {pass.years !== null ? <Text style={{ color: t.entityHero.muted }}>{pass.years} years pro · profile reported</Text> : null}
-        <Text style={{ color: t.entityHero.ink }}>{pass.verified ? "Verified professional player" : "HoopCheck player"}</Text>
-      </View>
+      {open ? <Animated.View entering={reducedMotion ? undefined : FadeIn.duration(180)} style={{
+        backgroundColor: t.entityHero.background, borderRadius: 18, borderCurve: "continuous",
+        padding: 16, gap: 12, borderWidth: 1, borderColor: t.glassBorder, borderTopWidth: 3, borderTopColor: t.button,
+      }}>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+          <BrandLogo onHero />
+          <Text style={{ color: t.entityHero.muted, fontSize: 10, fontWeight: "800", letterSpacing: 1 }}>PLAYER PASSPORT</Text>
+        </View>
+        <Text accessibilityRole="header" style={{ color: t.entityHero.ink, fontSize: 24, fontWeight: "800" }}>{pass.name}</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          <View accessible={false} style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: t.button }} />
+          <Text style={{ color: t.entityHero.ink, fontSize: 12, fontWeight: "700" }}>
+            {pass.verified ? "HoopCheck verified player" : "HoopCheck player profile"}
+          </Text>
+        </View>
+        <View style={{ height: 1, backgroundColor: t.glassBorder }} />
+        {([
+          ["Position", pass.position || "Not listed"],
+          ["Current team", pass.team || "Not listed"],
+          ["Pro experience", pass.years === null ? "Not listed" : `${pass.years} ${pass.years === 1 ? "year" : "years"} · profile reported`],
+        ] as const).map(([label, value]) => <View key={label} style={{ flexDirection: "row", gap: 12, alignItems: "flex-start" }}>
+          <Text style={{ color: t.entityHero.muted, width: 104, fontSize: 12 }}>{label}</Text>
+          <Text style={{ color: t.entityHero.ink, flex: 1, minWidth: 0, fontSize: 13, fontWeight: "700" }}>{value}</Text>
+        </View>)}
+      </Animated.View> : null}
       <Text style={{ color: t.muted, ...t.type.caption }}>Sharing exports the name, position, team, experience and verification shown above as a PDF. It excludes your location, contact information and private career stops. Share only with people you choose.</Text>
       <Button disabled={busy} accessibilityState={{ busy, disabled: busy }} onPress={() => void share()}>{busy ? "Preparing Passport…" : "Export & share PDF"}</Button>
       {error ? <Text accessibilityRole="alert" style={{ color: t.muted }}>{error}</Text> : null}

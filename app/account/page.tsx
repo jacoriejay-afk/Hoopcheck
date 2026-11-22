@@ -1,22 +1,20 @@
 "use client";
 
-import { readOwnProfile } from "../../lib/read-own-profile";
-import { getEffectiveMembership } from "../../lib/billing/client-membership";
-import RoleQuickLinks from "../../components/RoleQuickLinks";
-import "../../components/role-quick-links.css";
-
-
 import { useEffect, useState } from "react";
 import { isAuthSessionMissingError } from "@supabase/supabase-js";
 import { HoopIcon, VerifiedBadge } from "../../components/HoopCheckUI";
 import Link from "next/link";
 import HoopLoading from "../../components/HoopLoading";
 import { supabase } from "../../lib/supabase";
+import { readOwnProfile } from "../../lib/read-own-profile";
+import { getEffectiveMembership } from "../../lib/billing/client-membership";
 import ThemeToast from "../../components/ThemeToast";
 import Surface from "../../components/Surface";
-import SocialProfileHeader, { profileCover } from "../../components/SocialProfileHeader";
+import { profileCover } from "../../components/SocialProfileHeader";
 import ProfileAppearance from "../../components/ProfileAppearance";
 import AccountWorkspaces from "./AccountWorkspaces";
+import RoleQuickLinks from "../../components/RoleQuickLinks";
+import "../../components/role-quick-links.css";
 import { GroupCard, Row } from "../../components/LayoutSystem";
 import { useTheme } from "../../components/ThemeProvider";
 import { useLanguage, type Language } from "../../components/LanguageProvider";
@@ -93,11 +91,20 @@ export default function AccountPage() {
   const { t, setLanguage: applyLanguage } = useLanguage();
   const [email, setEmail] = useState("");
   const [cover, setCover] = useState(profileCover(null));
+  const [membershipError, setMembershipError] = useState("");
+  const [appearanceOpen, setAppearanceOpen] = useState(false);
+  useEffect(() => {
+    const reveal = () => {
+      if (window.location.hash === "#profile-appearance") setAppearanceOpen(true);
+    };
+    reveal();
+    window.addEventListener("hashchange", reveal);
+    return () => window.removeEventListener("hashchange", reveal);
+  }, []);
   const [userId, setUserId] = useState("");
   const [reviews, setReviews] = useState<Review[]>([]);
   const [targets, setTargets] = useState<Record<string, Target>>({});
   const [profile, setProfile] = useState<Profile>(emptyProfile);
-  const [membershipError, setMembershipError] = useState("");
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [verified, setVerified] = useState(false);
   const [displayName, setDisplayName] = useState("");
@@ -139,18 +146,16 @@ export default function AccountPage() {
   const [deleteModal, setDeleteModal] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [adminRole, setAdminRole] = useState<"admin"|"moderator"|null>(null);
-
-  // A career stop can lead here, but never bypasses the existing verification checklist.
+  // Saved career stops navigate here without changing team-review eligibility.
   useEffect(() => {
-    const teamId = new URLSearchParams(window.location.search).get("reviewTeam");
-    if (teamId && /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(teamId)) setReviewTeamId(teamId);
+    const value = new URLSearchParams(window.location.search).get("reviewTeam");
+    if (value && /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(value)) setReviewTeamId(value);
   }, []);
-
-  // Account data and its review checklist arrive after the hash navigation.
   useEffect(() => {
     if (loading || window.location.hash !== "#team-review-checklist") return;
     document.getElementById("team-review-checklist")?.scrollIntoView({block:"start"});
   }, [loading, reviewTeamId]);
+
 
   useEffect(() => {
     let active = true;
@@ -348,13 +353,12 @@ export default function AccountPage() {
   }
 
   useEffect(() => {
-    const ownerId = userId;
-    if (!ownerId) return;
+    if (!userId) return;
     let alive = true;
     (async () => {
-      const { data } = await readOwnProfile<{ theme_preference: string | null; preferred_language: string | null; notification_preferences: Record<string, unknown> | null; profile_visibility: string | null; current_country_public: boolean | null }>(ownerId, "theme_preference,preferred_language,notification_preferences,profile_visibility,current_country_public");
+      const { data } = await readOwnProfile<{ theme_preference: string | null; preferred_language: string | null; notification_preferences: Record<string, unknown> | null; profile_visibility: string | null; current_country_public: boolean | null }>(userId, "theme_preference,preferred_language,notification_preferences,profile_visibility,current_country_public");
       if (!alive || !data) return;
-      const theme = typeof data.theme_preference === "string" && ["system","light","dark"].includes(data.theme_preference) ? data.theme_preference as "system"|"light"|"dark" : "system";
+      const theme = typeof data.theme_preference === "string" && ["system","light","dark"].includes(data.theme_preference ?? "") ? data.theme_preference as "system"|"light"|"dark" : "system";
       const localTheme = localStorage.getItem("hoopcheck-theme");
       const cookieHasTheme = document.cookie.split(";").some((item) => item.trim().startsWith("hoopcheck-theme="));
       setThemePreference(localTheme && ["system","light","dark"].includes(localTheme) ? localTheme as "system"|"light"|"dark" : theme);
@@ -455,25 +459,28 @@ export default function AccountPage() {
 
   return (
     <main className="page-shell hc-account-page"><div className="page-container">
-      <SocialProfileHeader name={displayName || profile.username || t("yourAccount")} handle={profile.username}
-        avatarUrl={avatarUrl} cover={cover}
-        badge={(profile.player_verified || profile.coach_verified) && <VerifiedBadge label={t("verifiedProfessional")} />}
-        actions={<a href="#profile-editor" className="btn">{t("editProfile")}</a>}>
-        <p className="hc-social-handle">{t("accountPreferences")}</p>
-      </SocialProfileHeader>
-      <nav className="hc-social-profile-nav" aria-label={t("accountSettings")}>
-        <a href="#profile-appearance">Customize</a>
-        <a href="#account-settings">{t("settings")}</a>
+      <header className="hc-account-minimal-header">
+        <div className="hc-account-minimal-header__identity">
+          <span className="hc-account-minimal-header__avatar">{avatarUrl?<img src={avatarUrl} alt="" />:(displayName||profile.username||"HC").slice(0,1).toUpperCase()}</span>
+          <span className="hc-account-minimal-header__copy"><h1>Account</h1><small>{t("accountPreferences")} · {displayName||profile.username||t("yourAccount")}{profile.username?" · @"+profile.username:""}</small></span>
+        </div>
+        <Link href="/profile" className="hc-account-minimal-header__link">View profile</Link>
+      </header>
+      <nav className="hc-account-simple-nav" aria-label={t("accountSettings")}>
+        <a href="#account-settings">Settings</a>
         <a href="#profile-editor">Edit details</a>
-        <Link href="/notifications?tab=messages">Messages</Link>
-        <Link href="/settings">Appearance & language</Link>
-        <Link href="/profile">{t("yourProfile")}</Link>
-        {profile.account_type === "player" && settingsVisibility === "public" &&
-          <Link href={`/players/${encodeURIComponent(userId)}`}>{t("profilePublic")}</Link>}
+        <Link href="/messages">Messages</Link>
+        <button type="button" onClick={()=>{setAppearanceOpen(v=>!v);if(!appearanceOpen)window.location.hash="profile-appearance";}}>Customize</button>
       </nav>
-      <AccountWorkspaces key={userId} userId={userId} />
-      <RoleQuickLinks role={profile.account_type} />
-      <ProfileAppearance key={userId} current={cover} onSave={setCover} />
+      <details className="hc-account-tools">
+        <summary>My tools and workspaces</summary>
+        <AccountWorkspaces key={userId} userId={userId} />
+        <RoleQuickLinks role={profile.account_type} />
+      </details>
+      <details className="hc-account-tools" open={appearanceOpen} onToggle={event=>setAppearanceOpen(event.currentTarget.open)}>
+        <summary>Profile appearance and social links</summary>
+        <ProfileAppearance key={userId} current={cover} onSave={setCover} />
+      </details>
       {profile.account_type === "player" ? <PlayerProfileCompletionCard key={JSON.stringify(profile)} profile={{ ...profile, id: userId }} onPublished={() => { setSettingsVisibility("public"); setProfile(current => ({ ...current, profile_visibility: "public" })); }} /> : (() => { const completion = calculateProfileCompletion({ ...profile, display_name: displayName, bio, avatar_url: avatarUrl, hometown, nationality, interests, favorite_leagues: favoriteLeagues }); const next = completion.nextMissing; return completion.percentage < 100 && next ? <section className="dashboard-card hc-account-profile-completion" style={{marginTop:12}}><strong>Profile {completion.percentage}% complete</strong><p className="muted">Add your {next.label} next.</p><a className="btn" href={"/account#" + (next.key === "avatar_url" ? "profile-editor-field-avatar_url" : "profile-editor-field-" + next.key)}>{next.key === "avatar_url" ? "Add photo" : "Complete profile"}</a></section> : null; })()}
       {(profile as any).moderation_status === "warned" || (profile as any).moderation_status === "flagged" ? <section className="dashboard-card" style={{marginBottom:16,border:"1px solid var(--orange)"}}><strong>{(profile as any).moderation_status === "warned" ? t("accountWarning") : t("profileFlagged")}</strong><p className="muted">{(profile as any).moderation_note || t("supportGuidance")}</p><Link href="/support" className="btn dark">{t("contactSupport")}</Link></section> : null}
       <section id="account-settings" className="hc-settings" aria-label={t("accountSettings")}>
@@ -482,8 +489,8 @@ export default function AccountPage() {
           <SettingsRow icon="mail" label={t("email")} value={email || t("notSelected")} onClick={changeEmail} />
         </SettingsGroup>
         {profile.account_type === "player" && <SettingsGroup title="Career & team reviews">
-          {profile.account_type === "player" && <SettingsRow icon="file" label="Career Passport" value="Add teams, seasons and countries" href="/profile#career-passport" />}
-          <SettingsRow icon="star" label="Team reviews" value="Finish eligibility checklist when ready" href="#team-review-checklist" />
+          {profile.account_type === "player" && <SettingsRow icon="file" label="Career Passport" value="Add teams, seasons, and countries" href="/profile#career-passport" />}
+          <SettingsRow icon="star" label="Team reviews" value="Check eligibility when ready" href="#team-review-checklist" />
         </SettingsGroup>}
         <SettingsGroup title="Security & membership">
           <SettingsRow icon="shield" label="Two-factor authentication" value="Authenticator and recovery" href="/account/security" />
@@ -494,10 +501,10 @@ export default function AccountPage() {
           <div className="hc-setting-row"><SettingsGlyph name="moon"/><div className="hc-setting-copy"><strong>{t("darkMode")}</strong><small>{themePreference === "system" ? t("followsDevice") : themePreference === "dark" ? t("on") : t("off")}</small></div><button type="button" role="switch" aria-checked={themePreference === "dark" || (themePreference === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches)} className={"hc-switch "+((themePreference === "dark" || (themePreference === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches)) ? "is-on" : "")} onClick={() => changeTheme((themePreference === "system" ? (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches) : themePreference === "dark") ? "light" : "dark")}><span/></button></div>
           {themePreference !== "system" && <div className="hc-setting-subrow"><button type="button" className="hc-text-button" onClick={() => changeTheme("system")}>{t("useDeviceSetting")}</button></div>}
           <div className="hc-setting-row"><SettingsGlyph name="globe"/><div className="hc-setting-copy"><strong>{t("language")}</strong><small>{t("chooseAppLanguage")}</small></div><select aria-label={t("language")} className="hc-setting-select" value={preferredLanguage} onChange={e=>changeLanguage(e.target.value)}><option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="tr">Türkçe</option><option value="pt">Português</option><option value="it">Italiano</option><option value="el">Ελληνικά</option><option value="ar">العربية</option><option value="ru">Русский</option><option value="az">Azərbaycanca</option><option value="pl">Polski</option><option value="zh">中文</option><option value="ja">日本語</option><option value="sr">Српски</option><option value="fi">Suomi</option><option value="he">עברית</option><option value="lt">Lietuvių</option><option value="uk">Українська</option></select></div>
-        </SettingsGroup>
+          </SettingsGroup>
         <SettingsGroup title="Notifications & messages">
-          <SettingsRow icon="activity" label="Alerts center" value="Game, team and activity alerts" href="/notifications" />
-          <SettingsRow icon="message" label="Messages" value="Senders and conversations" href="/notifications?tab=messages" />
+          <SettingsRow icon="message" label="Messages / HoopChat" value="Your conversations and contact requests" href="/messages" />
+          <SettingsRow icon="activity" label="Alerts center" value="Activity and game notifications" href="/notifications" />
           <SettingsToggle icon="message" label={t("gameChatAlerts")} checked={notificationPreferences.game_chat_alerts} onChange={v=>changeNotification("game_chat_alerts",v)} />
           <SettingsToggle icon="user-plus" label={t("newFollower")} checked={notificationPreferences.new_follower} onChange={v=>changeNotification("new_follower",v)} />
           <SettingsToggle icon="star" label={t("teamFollowReview")} checked={notificationPreferences.team_reviews} onChange={v=>changeNotification("team_reviews",v)} />

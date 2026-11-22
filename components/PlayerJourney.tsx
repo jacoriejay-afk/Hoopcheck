@@ -45,6 +45,11 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage, playe
   const [loading,setLoading] = useState(true);
   const [saving,setSaving] = useState(false);
   const [message,setMessage] = useState("");
+  const [loadError,setLoadError] = useState("");
+  const describeLoadError = (error: { code?: string; message?: string }) =>
+    error.code === "42P01" || error.code === "PGRST205" || /player_career_stops.*(schema cache|does not exist)/i.test(error.message || "")
+      ? "Career Passport is not available yet. Its secure career-history database must be activated before stops can load or save."
+      : "Career stops could not load. Check your connection and retry.";
   const [teamId,setTeamId] = useState("");
   const [editingStop,setEditingStop] = useState(false);
   const [manualTeam,setManualTeam] = useState(false);
@@ -80,26 +85,40 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage, playe
   },[visibleStops]);
 
   async function load() {
-    const {data,error} = await supabase.from("player_career_stops")
-      .select("id,player_id,team_id,team_name,league_name,country,seasons,position,stop_order,is_public")
-      .eq("player_id",playerId).order("stop_order",{ascending:true}).order("created_at",{ascending:true});
-    if(!error) setStops((data||[]) as CareerStop[]);
-    setLoading(false);
+    setLoading(true);
+    setLoadError("");
+    try {
+      const {data,error} = await supabase.from("player_career_stops")
+        .select("id,player_id,team_id,team_name,league_name,country,seasons,position,stop_order,is_public")
+        .eq("player_id",playerId).order("stop_order",{ascending:true}).order("created_at",{ascending:true});
+      if (error) { setLoadError(describeLoadError(error)); return; }
+      setStops((data||[]) as CareerStop[]);
+    } catch {
+      setLoadError("Career stops could not load. Check your connection and retry.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
     let active = true;
+    setStops([]);
+    setLoading(true);
+    setLoadError("");
     void (async () => {
       try {
         const {data,error} = await supabase.from("player_career_stops")
           .select("id,player_id,team_id,team_name,league_name,country,seasons,position,stop_order,is_public")
           .eq("player_id",playerId).order("stop_order",{ascending:true}).order("created_at",{ascending:true});
         if(!active) return;
-        if(!error) setStops((data||[]) as CareerStop[]);
+        if(error) setLoadError(describeLoadError(error));
+        else setStops((data||[]) as CareerStop[]);
+      } catch {
+        if(active) setLoadError("Career stops could not load. Check your connection and retry.");
       } finally {
         if(active) setLoading(false);
       }
-    })().catch(()=>{if(active) setLoading(false);});
+    })();
     return ()=>{active=false;};
   },[playerId]);
 
@@ -145,20 +164,25 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage, playe
     const name = teamName.trim();
     if(!name || !country.trim() || !seasons.trim()) { setMessage("Team, country, and seasons are required."); return; }
     setSaving(true); setMessage("");
-    const {data:{user}} = await supabase.auth.getUser();
-    if(!user || user.id!==playerId) { setMessage("Sign in to your own player account to update your journey."); setSaving(false); return; }
-    const {error} = await supabase.from("player_career_stops").insert({
-      player_id:playerId,team_id:teamId||null,team_name:name,league_name:leagueName.trim()||null,
-      country:country.trim(),seasons:seasons.trim(),position:position.trim()||null,
-      stop_order:stops.length,is_public:isPublic
-    });
-    if(error) setMessage(error.message.includes("row-level security") ? "My Journey requires an active Premium Player membership." : "Couldn't save this career stop. Please try again.");
-    else {
+    try {
+      const {data:{user}} = await supabase.auth.getUser();
+      if(!user || user.id!==playerId) { setMessage("Sign in to your own player account to update your journey."); return; }
+      const {error} = await supabase.from("player_career_stops").insert({
+        player_id:playerId,team_id:teamId||null,team_name:name,league_name:leagueName.trim()||null,
+        country:country.trim(),seasons:seasons.trim(),position:position.trim()||null,
+        stop_order:stops.length,is_public:isPublic
+      });
+      if(error) {setMessage(error.message.includes("row-level security") ? "This action is restricted to eligible Premium Player accounts." : "Couldn't save this career stop. Please try again.");return;}
+      const savedPublic = isPublic;
       setTeamId("");setTeamName("");setLeagueName("");setCountry("");setSeasons("");setPosition("");setIsPublic(false);
       setManualTeam(false);setEditingStop(false);
-      setMessage("Career stop saved privately. You can review this team later after completing the review checklist.");await load();
+      await load();
+      setMessage(savedPublic ? "Career stop saved publicly. Reviews and team verification remain separate." : "Career stop saved privately. You can review this team later after completing the review checklist.");
+    } catch {
+      setMessage("Couldn't save this career stop. Check your connection and try again.");
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   }
 
   async function toggleVisibility(stop:CareerStop) {
@@ -178,7 +202,8 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage, playe
 
   return <section id="career-passport" className="hc-journey-section">
     <div className="hc-journey-heading"><div><p className="eyebrow">CAREER PASSPORT</p><h2>My Journey<span>.</span></h2><p>Every stop tells part of the story.</p></div><span className="hc-journey-stamp">PLAYER<br/>HISTORY</span></div>
-    {loading ? <p className="muted">Loading career stops…</p> : stamps.length > 0 && <div className="hc-passport-countries" aria-label="Countries played">
+    {!loading && loadError && <div role="alert" className="hc-journey-feedback">{loadError}<button type="button" onClick={()=>void load()}>Retry loading career stops</button></div>}
+    {loading ? <p className="muted">Loading career stops…</p> : !loadError && stamps.length > 0 && <div className="hc-passport-countries" aria-label="Countries played">
       <div className="hc-passport-countries__top"><strong>Countries played</strong><span>{stamps.length} {stamps.length === 1 ? "country" : "countries"}</span></div>
       <ul className="hc-passport-stamp-grid" aria-label="Career country stamps">
         {stamps.map((stamp,index) => <li className="hc-passport-country-stamp" key={stamp.country.toLocaleLowerCase("en")}
@@ -193,7 +218,7 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage, playe
       </ul>
       <p className="hc-passport-countries__note">Career entries are player-reported, not independently verified.{isOwnProfile ? " Private entries are visible only to you." : ""}</p>
     </div>}
-    {!loading && visibleStops.length > 0 ? <div className="hc-journey-timeline">
+    {!loading && !loadError && visibleStops.length > 0 ? <div className="hc-journey-timeline">
       {visibleStops.map((stop,index) => <article className="hc-journey-stop" key={stop.id}>
         <div className="hc-journey-stop__rail"><span className="hc-journey-stop__dot">{String(index+1).padStart(2,"0")}</span>{index<visibleStops.length-1&&<span className="hc-journey-stop__line"/>}</div>
         <div className="hc-journey-stop__card">
@@ -210,10 +235,10 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage, playe
           </div>}
         </div>
       </article>)}
-    </div> : !loading && <div className="hc-journey-empty"><span>01 / CAREER PASSPORT</span><h3>No career stops added yet</h3><p>Build a timeline of the teams, leagues, countries, seasons, and positions that shaped your career.</p></div>}
-    {isOwnProfile && canManage && !loading && <PlayerPassportExport playerName={playerName} verifiedPlayer={verifiedPlayer} stops={stops} />}
-    {isOwnProfile&&!canManage&&<div className="hc-journey-upgrade"><strong>Premium Players · My Journey</strong><p>Add career stops and create your professional basketball passport. Public sharing is always optional.</p><Link href="/membership" className="btn">Unlock My Journey</Link></div>}
-    {isOwnProfile&&canManage&&<div className="hc-journey-editor">
+    </div> : !loading && !loadError && <div className="hc-journey-empty"><span>01 / CAREER PASSPORT</span><h3>No career stops added yet</h3><p>Build a timeline of the teams, leagues, countries, seasons, and positions that shaped your career.</p></div>}
+    {isOwnProfile && canManage && !loading && !loadError && <PlayerPassportExport playerName={playerName} verifiedPlayer={verifiedPlayer} stops={stops} />}
+    {isOwnProfile&&!canManage&&!loadError&&<div className="hc-journey-upgrade"><strong>Premium Players · My Journey</strong><p>Add career stops and create your professional basketball passport. Public sharing is always optional.</p><Link href="/membership" className="btn">Unlock My Journey</Link></div>}
+    {isOwnProfile&&canManage&&!loading&&!loadError&&<div className="hc-journey-editor">
       <div className="hc-journey-editor__intro">
         <div><strong>Career history & team reviews</strong><p>Find your club, save the season, and review it separately when you're ready. Adding a career stop does not publish a review or verify team affiliation.</p></div>
         <button type="button" className="btn hc-journey-add" aria-expanded={editingStop} aria-controls="career-stop-form" onClick={()=>{setEditingStop(value=>!value);setMessage("");}}>{editingStop?"Close form":"+ Add a career stop"}</button>

@@ -1,7 +1,6 @@
 "use client";
 import { getEffectiveMembership } from "../../lib/billing/client-membership";
 
-
 import { useCallback, useEffect, useMemo, useState } from "react";
 import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
 import { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
@@ -10,6 +9,7 @@ import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import CourtLines from "../../components/CourtLines";
 import { getGameAvailability, formatViewerLocalTime } from "../../lib/game-availability";
+import { getLiveGameStatusPresentation } from "../../lib/live-game-status";
 import { HoopIcon } from "../../components/HoopCheckUI";
 import TeamLogo from "../../components/TeamLogo";
 import GameWinnerPrediction from "../../components/GameWinnerPrediction";
@@ -174,6 +174,7 @@ export default function LiveGamesPage() {
 
   const prepared = useMemo(() => games.map(game => ({
     game,
+    presentation: getLiveGameStatusPresentation(game, clock),
     availability: getGameAvailability({
       status: game.status,
       scheduledAt: game.scheduled_at,
@@ -190,10 +191,10 @@ export default function LiveGamesPage() {
   const discoveryShortcuts = useMemo(() => {
     const countries = new Map<string, { games: number; activity: number }>();
     const leagues = new Map<string, { games: number; activity: number }>();
-    for (const { game, home } of prepared) {
+    for (const { game, home, presentation } of prepared) {
       const country = game.country || home?.country || "";
       const league = game.league_name || home?.league_name || "";
-      const activity = (presenceCounts[game.id] || 0) * 4 + (game.status.toLowerCase() === "live" ? 8 : 0);
+      const activity = (presenceCounts[game.id] || 0) * 4 + (presentation.isVerifiedLive ? 8 : 0);
       for (const [name, map] of [[country, countries], [league, leagues]] as const) {
         if (!name) continue;
         const existing = map.get(name) || { games: 0, activity: 0 };
@@ -219,8 +220,8 @@ export default function LiveGamesPage() {
 
   const nowMs = clock.getTime();
   // Chat availability is not proof that a match has started. Only provider LIVE status earns the badge.
-  const live = filtered.filter(({game,availability}) =>
-    game.status.toLowerCase() === "live" && availability.state === "LIVE" &&
+  const live = filtered.filter(({game,availability,presentation}) =>
+    game.status.toLowerCase() === "live" && presentation.isVerifiedLive && availability.state === "LIVE" &&
     availability.phase !== "post-game" && availability.phase !== "closed");
   const upcoming = filtered.filter(({availability,game}) => {
     if (!(availability.state === "UPCOMING" || availability.state === "OPENS SOON")) return false;
@@ -239,6 +240,9 @@ export default function LiveGamesPage() {
   }).sort((a,b) => Date.parse(b.game.ends_at || b.game.started_at || b.game.scheduled_at || "") - Date.parse(a.game.ends_at || a.game.started_at || a.game.scheduled_at || ""));
 
   const postGameOpen = filtered.filter(({availability,game}) => availability.phase === "post-game" && availability.chatOpen && !["final","finished","cancelled","canceled","postponed","abandoned"].includes(game.status.toLowerCase()));
+  // Retain overdue provider records for inspection without calling them LIVE or FINAL.
+  const delayedLive = filtered.filter(({game,presentation}) =>
+    game.status.toLowerCase() === "live" && presentation.isUnverified);
   const nextUpcoming = upcoming[0] || null;
 
   async function refreshNow() {
@@ -261,20 +265,21 @@ export default function LiveGamesPage() {
     setReminding(null);
   }
 
-  function GameCard({ entry, variant, allowPredictions = true }: { entry: typeof prepared[number]; variant: "live" | "upcoming" | "recent" | "postgame"; allowPredictions?: boolean }) {
-    const {game,availability,home,away} = entry;
+  function GameCard({ entry, variant, allowPredictions = true }: { entry: typeof prepared[number]; variant: "live" | "upcoming" | "recent" | "postgame" | "delayed"; allowPredictions?: boolean }) {
+    const {game,availability,home,away,presentation} = entry;
     const leagueName = game.league_name || teams[game.team_id]?.league_name || "League not listed";
     const country = game.country || teams[game.team_id]?.country || "";
-    const isLive = variant === "live";
+    const isLive = variant === "live" && presentation.isVerifiedLive;
     const isUpcoming = variant === "upcoming";
     const isRecent = variant === "recent";
-    const canJoin = availability.chatOpen && !["cancelled","canceled","postponed","abandoned"].includes(game.status.toLowerCase());
+    const canJoin = availability.chatOpen && !presentation.isUnverified && !["cancelled","canceled","postponed","abandoned"].includes(game.status.toLowerCase());
     const score = scoreText(game);
     const tip = game.scheduled_at || game.started_at;
     return (
       <article className={`hc-live-hub-card ${isLive ? "is-live" : ""} ${isRecent ? "is-recent" : ""}`}>
         <div className="hc-live-hub-card__top">
-          {isLive ? <span className="hc-live-badge hc-live-badge--visible"><span aria-hidden="true">●</span> LIVE</span>
+          {presentation.isUnverified ? <span className="hc-live-state">{presentation.label}</span>
+            : isLive ? <span className="hc-live-badge hc-live-badge--visible"><span aria-hidden="true">●</span> LIVE</span>
             : variant === "postgame" ? <span className="hc-live-state hc-live-state--post">POST-GAME CHAT</span>
             : isRecent ? <span className="hc-live-state">FINAL</span>
             : availability.state === "OPENS SOON" ? <span className="hc-live-state hc-live-state--soon">OPENS SOON</span>
@@ -288,7 +293,7 @@ export default function LiveGamesPage() {
           </div>
           <div className="hc-live-card__middle">
             {score ? <strong className="hc-live-card__score">{score}</strong> : <span className="hc-live-card__vs">VS</span>}
-            {game.period_label && <small>{game.period_label}</small>}
+            {presentation.showPeriod && game.period_label && <small>{game.period_label}</small>}
           </div>
           <div className="hc-live-card__side hc-live-card__side--away">
             <TeamLogo name={away?.name || game.opponent_name} logoUrl={away?.logo_url} logoBg={away?.logo_bg} size={44} className="hc-live-card__crest hc-live-team-logo" />
@@ -298,17 +303,18 @@ export default function LiveGamesPage() {
         <div className="hc-live-card__meta">
           {availability.chatOpen && allowed && presenceCounts[game.id] > 0 && <span><HoopIcon name="users" size={15} /> {presenceCounts[game.id]} {presenceCounts[game.id] === 1 ? "member chatting" : "members chatting"}</span>}
           {isUpcoming && <span><HoopIcon name="calendar" size={15} /> {formatViewerLocalTime(tip)}</span>}
-          {isRecent && <span><HoopIcon name="check" size={15} /> {availability.chatOpen ? "Post-game conversation" : "Final score"}</span>}
+          {isRecent && <span><HoopIcon name="check" size={15} /> {presentation.isUnverified ? "Waiting for provider-confirmed result" : availability.chatOpen ? "Post-game conversation" : "Final score"}</span>}
           {variant === "postgame" && <span><HoopIcon name="message-square" size={15} /> Post-game chat remains open</span>}
           {isLive && <span aria-label="Score source">Provider-reported live score</span>}
         </div>
+        {presentation.isUnverified && <p className="hc-live-card__muted">Last reported score · Result/status not verified</p>}
         {isUpcoming && availability.opensAt && <p className="hc-live-card__muted">{availability.minutesUntilOpen && availability.minutesUntilOpen > 0 ? `Chat opens in ${availability.minutesUntilOpen} min` : "Chat open"} · {formatViewerLocalTime(availability.opensAt.toISOString(), { weekday: undefined })}</p>}
         <div className="hc-live-card__actions">
-          {canJoin && <Link href={`/fan-live?gameId=${encodeURIComponent(game.id)}`} className="btn hc-live-join">{joinedGameIds.has(game.id) ? "IN CHAT ✓" : "JOIN CHAT"} <span aria-hidden="true">→</span></Link>}
+          {canJoin && <Link href={`/fan-live/room/${encodeURIComponent(game.id)}`} className="btn hc-live-join">{joinedGameIds.has(game.id) ? "IN CHAT ✓" : "JOIN CHAT"} <span aria-hidden="true">→</span></Link>}
           {isUpcoming && <button type="button" className={`hc-remind-button ${reminders.includes(game.id) ? "is-set" : ""}`} disabled={reminding === game.id} onClick={() => void toggleReminder(game.id)}>
             <HoopIcon name="bell" size={16} /> {reminding === game.id ? "Saving…" : reminders.includes(game.id) ? "REMINDER SET" : "REMIND ME"}
           </button>}
-          {isRecent && !canJoin && <span className="hc-live-card__muted">Final score {score || "not available"}</span>}
+          {isRecent && !canJoin && <span className="hc-live-card__muted">{presentation.isUnverified ? "Last reported score" : "Final score"} {score || "not available"}</span>}
           {allowPredictions && game.opponent_team_id && !["cancelled", "canceled", "postponed", "abandoned"].includes(game.status.toLowerCase()) &&
             <button type="button" className="hc-remind-button"
               aria-expanded={expandedPredictionId === game.id}
@@ -336,15 +342,19 @@ export default function LiveGamesPage() {
         <button type="button" className="btn dark" disabled={refreshing} onClick={() => void refreshNow()}>{refreshing ? "Checking…" : "Refresh games"}</button></div>
       <p className="muted" role="status">{lastCheckedAt ? "Scores last checked " + lastCheckedAt.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }) + " · Individual score freshness depends on the provider." : "Score source not checked yet."}</p>
     </section>
-    <section aria-label="Happening Now" className="hc-live-hub-section">
-      <div className="hc-live-section-heading"><div><p className="eyebrow">THE CONVERSATION</p><h1>Happening Now</h1></div></div>
-      {filtered.filter(({game,availability}) => availability.chatOpen && (presenceCounts[game.id] || 0) > 0)
-        .sort((a,b) => (presenceCounts[b.game.id] || 0) - (presenceCounts[a.game.id] || 0))
-        .slice(0,8).length > 0
-        ? <div className="hc-live-hub-grid">{filtered.filter(({game,availability}) => availability.chatOpen && (presenceCounts[game.id] || 0) > 0)
+    <section aria-label="Happening Now" className="hc-live-hub-section hc-live-active-rooms">
+      <div className="hc-live-section-heading"><div><p className="eyebrow">ACTIVE CHAT ROOMS</p><h2>Happening now</h2></div><Link href="/fan-live" className="hc-live-directory-link">Browse rooms →</Link></div>
+      <div className="hc-live-conversations-rail">
+        {filtered.filter(({game,availability,presentation}) => !presentation.isUnverified && availability.chatOpen && (presenceCounts[game.id] || 0) > 0)
           .sort((a,b) => (presenceCounts[b.game.id] || 0) - (presenceCounts[a.game.id] || 0))
-          .slice(0,8).map(entry => <GameCard allowPredictions={false} key={entry.game.id} entry={entry} variant={live.some(item => item.game.id === entry.game.id) ? "live" : ["final", "finished"].includes(entry.game.status.toLowerCase()) || entry.availability.phase === "post-game" ? "postgame" : "upcoming"} />)}</div>
-        : <p className="muted">Active conversations will appear here when people join a game chat.</p>}
+          .slice(0,8).map(({game,home,away}) =>
+            <Link key={game.id} href={`/fan-live/room/${encodeURIComponent(game.id)}`} className="hc-live-conversation-link">
+              <span>{home?.name||"Home"} vs {away?.name||game.opponent_name}</span>
+              <small>{presenceCounts[game.id]} chatting · Open →</small>
+            </Link>)}
+        {!filtered.some(({game,availability,presentation}) => !presentation.isUnverified && availability.chatOpen && (presenceCounts[game.id] || 0)>0) &&
+          <p className="muted">No active rooms yet. Start the conversation from a matchup below.</p>}
+      </div>
     </section>
     <section className="hc-live-hub-filters" aria-label="Browse game conversations">
       <div className="hc-live-hub-filter-tabs">
@@ -356,7 +366,7 @@ export default function LiveGamesPage() {
         <input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search teams, leagues, countries…" aria-label="Search games" className="hc-live-hub-search" />
       </div>
       {(countryFocus || leagueFocus || query) && <button type="button" className="hc-live-clear-filters" onClick={() => { setCountryFocus(""); setLeagueFocus(""); setQuery(""); }}>Clear all filters</button>}
-      <div className="hc-live-discovery" aria-label="Browse games by activity and region">
+      <details className="hc-live-discovery-toggle"><summary>Browse countries &amp; leagues</summary><div className="hc-live-discovery" aria-label="Browse games by activity and region">
         {discoveryShortcuts.countries.length > 1 && <div className="hc-live-shortcut-section">
           <strong>Countries with fixtures</strong>
           <div className="hc-live-shortcut-chips">
@@ -375,14 +385,14 @@ export default function LiveGamesPage() {
             </button>)}
           </div>
         </div>}
-      </div>
+      </div></details>
     </section>
     {message && <p className="hc-live-hub-message" role="status">{message}</p>}
 
     {(() => {
       const selected = filter === "upcoming" ? upcoming : filter === "my-teams"
         ? filtered.filter(({game}) => followedIds.includes(game.team_id) || Boolean(game.opponent_team_id && followedIds.includes(game.opponent_team_id)))
-        : [...live, ...postGameOpen, ...recent];
+        : [...live, ...delayedLive, ...postGameOpen, ...recent];
       const ordered = [...selected].sort((a,b) => {
         const mineA = followedIds.includes(a.game.team_id) || Boolean(a.game.opponent_team_id && followedIds.includes(a.game.opponent_team_id));
         const mineB = followedIds.includes(b.game.team_id) || Boolean(b.game.opponent_team_id && followedIds.includes(b.game.opponent_team_id));
@@ -406,7 +416,7 @@ export default function LiveGamesPage() {
             <strong>{key}</strong><span>{entries.length} games {collapsedLeagues.includes(key) ? "＋" : "−"}</span>
           </button>
           {!collapsedLeagues.includes(key) && <div className="hc-live-hub-grid">{entries.map(entry =>
-            <GameCard key={entry.game.id} entry={entry} variant={live.some(item => item.game.id === entry.game.id) ? "live" : ["final","finished"].includes(entry.game.status.toLowerCase()) ? "recent" : entry.availability.phase === "post-game" ? "postgame" : "upcoming"} />)}</div>}
+            <GameCard key={entry.game.id} entry={entry} variant={entry.presentation.isUnverified ? "delayed" : live.some(item => item.game.id === entry.game.id) ? "live" : ["final","finished"].includes(entry.game.status.toLowerCase()) ? "recent" : entry.availability.phase === "post-game" ? "postgame" : "upcoming"} />)}</div>}
         </section>)}
       </section>;
     })()}

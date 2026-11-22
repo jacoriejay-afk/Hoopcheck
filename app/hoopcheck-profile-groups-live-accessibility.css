@@ -1,0 +1,212 @@
+/* Targeted accessibility repairs, Nov 22: no global text-color override.
+   Keep dark hero typography paired to its own dark surface in both themes. */
+html.theme-light body main .hc-team-look-hero,
+html.theme-dark body main .hc-team-look-hero {
+  color:#fff !important;
+  background-color:#111827 !important;
+}
+html body main .hc-team-look-hero :is(
+  #hc-team-profile-title, .hc-team-hero-location, .hc-team-hero-chip,
+  .hc-team-hero-chip *, .hc-team-profile-heading__copy h1
+) {
+  color:#fff !important;
+  -webkit-text-fill-color:#fff !important;
+  opacity:1 !important;
+  text-shadow:0 1px 2px rgba(0,0,0,.38);
+}
+html body main .hc-team-look-hero .hc-team-hero-kicker {
+  color:#ffdac3 !important;
+  -webkit-text-fill-color:#ffdac3 !important;
+  opacity:1 !important;
+}
+html body main .hc-team-look-hero .hc-team-hero-fan-link {
+  color:#101010 !important;
+  -webkit-text-fill-color:#101010 !important;
+  text-shadow:none !important;
+}
+html body main .hc-team-look-hero .hc-team-hero-chip {
+  background:rgba(255,255,255,.13) !important;
+  border-color:rgba(255,255,255,.4) !important;
+}
+html body main .hc-team-look-hero :is(a,button):focus-visible,
+html body main .hc-live-room :is(a,button,input,textarea,summary):focus-visible,
+html body main .hc-live-hub-page :is(a,button,input,select):focus-visible {
+  outline:3px solid #ff9b65 !important;
+  outline-offset:3px;
+}
+html body main .hc-player-dossier-hero :is(h1,.hc-social-stats strong),
+html body main .hc-member-profile-page .hero-card.compact-hero :is(h1,.hc-member-profile-copy h1) {
+  color:#fff !important;
+  -webkit-text-fill-color:#fff !important;
+}
+html body main .hc-player-dossier-hero :is(.hc-social-handle,.hc-social-profile-bio),
+html body main .hc-member-profile-page .hero-card.compact-hero :is(.hc-profile-email,.muted) {
+  color:#e2e6ee !important;
+  -webkit-text-fill-color:#e2e6ee !important;
+}
+
+/* HoopGroups are independent topic communities: discovery cards + discussion.
+   The separate team fan group interface is intentionally not embedded here. */
+.hc-hoopgroups-page .hc-hoopgroups-header {
+  align-items:flex-start;
+  padding:clamp(16px,3vw,26px);
+  border:1px solid var(--hc-card-border,var(--border));
+  border-radius:22px;
+  background:linear-gradient(115deg,color-mix(in srgb,var(--hc-orange,#ff642a) 14%,var(--hc-card-surface,var(--surface))),var(--hc-card-surface,var(--surface)) 70%);
+  color:var(--hc-on-card,var(--hc-foreground));
+}
+.hc-hoopgroups-page .hc-hoopgroups-header h1 {font-size:clamp(30px,5vw,44px);line-height:1.08}
+.hc-hoopgroups-page .hc-hoopgroups-header .muted {color:var(--hc-on-card-muted,var(--hc-foreground-muted));font-size:14px;line-height:1.5}
+.hc-hoopgroups-page .hc-hoopgroups-coming-soon {border-radius:18px}
+.hc-hoopgroups-page .hc-hoopgroups-shell {
+  min-height:0;
+  grid-template-columns:minmax(220px,290px) minmax(0,1fr);
+  grid-template-areas:"groups groups" "channels discussion";
+  border-radius:18px;
+}
+.hc-hoopgroups-page .hc-hoopgroups-servers {
+  grid-area:groups;display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(min(100%,190px),1fr));
+  gap:10px;padding:14px;border-bottom:1px solid var(--hc-card-border,var(--border));
+  background:color-mix(in srgb,var(--hc-group-accent) 6%,var(--hc-card-surface,var(--surface)));
+}
+.hc-hoopgroups-page .hc-hoopgroups-servers button {
+  min-width:0;min-height:78px;display:flex;flex-direction:row;align-items:center;
+  justify-items:initial;gap:9px;text-align:start;padding:10px;
+  background:var(--hc-card-surface,var(--surface));
+  color:var(--hc-on-card,var(--hc-foreground));
+  border:1px solid var(--hc-card-border,var(--border));border-radius:13px;
+}
+.hc-hoopgroups-page .hc-hoopgroups-servers button[aria-pressed="true"] {
+  border-color:var(--hc-group-accent);box-shadow:inset 0 0 0 1px var(--hc-group-accent);
+}
+.hc-hoopgroups-page .hc-hoopgroups-servers button strong {flex:0 0 44px;width:44px;height:44px;border-radius:12px}
+.hc-hoopgroups-page .hc-hoopgroups-servers button span {
+  font-size:13px;font-weight:800;max-width:none;line-height:1.3;min-width:0;
+}
+.hc-hoopgroups-page .hc-hoopgroups-servers button small {
+  display:block;margin-top:3px;font-size:10px;font-weight:600;
+  color:var(--hc-on-card-muted,var(--hc-foreground-muted));
+}
+.hc-hoopgroups-page .hc-hoopgroups-channels {grid-area:channels}
+.hc-hoopgroups-page .hc-hoopgroups-chat {grid-area:discussion}
+.hc-hoopgroups-page .hc-hoopgroups-messages article {
+  border:1px solid var(--hc-card-border,var(--border));
+  border-radius:15px;padding:14px;
+  background:var(--hc-card-surface,var(--surface));
+  color:var(--hc-on-card,var(--hc-foreground));
+}
+.hc-hoopgroups-page .hc-hoopgroups-messages {gap:12px;background:color-mix(in srgb,var(--hc-page-bg) 50%,var(--hc-card-surface,var(--surface)))}
+.hc-hoopgroups-page .hc-hoopgroups-messages article p {font-size:14px;line-height:1.55}
+.hc-hoopgroups-page :is(.hc-hoopgroups-servers button,.hc-hoopgroups-channels button):focus-visible {
+  outline:3px solid var(--hc-orange,#ff642a);outline-offset:2px;
+}
+
+/* Basketball broadcast visual language for directory and each live chat room.
+   Scoping to these surfaces avoids changing message privacy or room lifecycle. */
+html body main.hc-live-hub-page .hc-live-hub-filters {
+  border:1px solid var(--hc-card-border,var(--border));
+  border-top:4px solid var(--hc-orange,#ff642a);
+  border-radius:18px;
+  background:var(--hc-card-surface,var(--surface));
+  color:var(--hc-on-card,var(--hc-foreground));
+}
+html body main.hc-live-hub-page .hc-live-hub-filter-tabs {
+  display:flex;gap:6px;max-width:100%;overflow-x:auto;
+  scrollbar-width:thin;scroll-padding-inline:10px;
+}
+html body main.hc-live-hub-page .hc-live-hub-filter-tabs button {
+  min-height:44px;flex-shrink:0;
+}
+html body main.hc-live-hub-page .hc-live-hub-card {
+  position:relative;border:1px solid var(--hc-card-border,var(--border));
+  border-radius:17px;overflow:hidden;
+}
+html body main.hc-live-hub-page .hc-live-hub-card.is-live {
+  border-inline-start:4px solid #e53935;
+}
+html body main.hc-live-room .hc-live-room-hero {
+  border-radius:19px;
+  border-top:4px solid #ff6c30;
+  background:linear-gradient(120deg,#111827,#22283a) !important;
+  color:#fff !important;
+}
+html body main.hc-live-room .hc-live-room-hero :is(h1,h2,p,.muted) {
+  color:#fff !important;-webkit-text-fill-color:#fff !important;
+}
+html body main.hc-live-room .hc-live-room-list {
+  border-radius:17px;background:var(--hc-card-surface,var(--surface));
+  color:var(--hc-on-card,var(--hc-foreground));
+}
+html body main.hc-live-room .hc-live-room-game {
+  width:100%;min-width:0;min-height:68px;
+  border:1px solid var(--hc-card-border,var(--border));
+  border-inline-start:4px solid transparent;
+  border-radius:12px;margin-bottom:8px;
+  background:var(--hc-card-surface,var(--surface));color:inherit;
+  text-align:start;
+}
+html body main.hc-live-room .hc-live-room-game.is-selected {
+  border-inline-start-color:var(--hc-orange,#ff642a);
+  background:color-mix(in srgb,var(--hc-orange,#ff642a) 10%,var(--hc-card-surface,var(--surface)));
+}
+html body main.hc-live-room .hc-live-room-panel {min-width:0;border-radius:17px}
+html body main.hc-live-room .hc-live-room-scoreboard {
+  border-radius:13px;padding:12px;
+  background:linear-gradient(115deg,#121827,#232b40);
+}
+html body main.hc-live-room .hc-live-room-scoreboard :is(strong,small) {
+  color:#fff !important;-webkit-text-fill-color:#fff !important;
+}
+html body main.hc-live-room .hc-live-chat-shell {
+  min-width:0;overflow:hidden;border:1px solid var(--hc-card-border,var(--border));
+  border-radius:14px;
+}
+html body main.hc-live-room .hc-live-chat-toolbar {
+  border-bottom:1px solid var(--hc-card-border,var(--border));
+  background:var(--hc-card-surface,var(--surface));
+  color:var(--hc-on-card,var(--hc-foreground));padding:10px 12px;
+}
+html body main.hc-live-room .hc-live-chat-messages {
+  overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;
+}
+html body main.hc-live-room .hc-live-chat-compose {
+  padding:10px;gap:8px;
+  background:var(--hc-card-surface,var(--surface));
+  color:var(--hc-on-card,var(--hc-foreground));
+}
+html body main.hc-live-room .hc-live-chat-compose input {
+  min-height:44px;min-width:0;border-radius:11px;
+}
+html body main.hc-live-room .hc-live-room-list-heading {display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+html body main.hc-live-room .hc-live-room-list-heading .hc-live-room-search {
+  width:100%;min-height:44px;padding:10px 12px;
+  font-size:16px;border-radius:11px;
+  background:var(--hc-card-surface,var(--surface));
+  color:var(--hc-on-card,var(--hc-foreground));
+  border:1px solid var(--hc-card-border,var(--border));
+}
+html body main.hc-live-room :is(.hc-live-room-game,.hc-live-chat-compose .btn,.hc-live-message-menu summary) {
+  touch-action:manipulation;
+}
+@media(max-width:800px) {
+  .hc-hoopgroups-page .hc-hoopgroups-shell {
+    grid-template-columns:minmax(0,1fr);
+    grid-template-areas:"groups" "channels" "discussion";
+  }
+  .hc-hoopgroups-page .hc-hoopgroups-servers {display:flex;overflow-x:auto;gap:9px}
+  .hc-hoopgroups-page .hc-hoopgroups-servers button {flex:0 0 min(76vw,210px);min-width:0}
+  .hc-hoopgroups-page .hc-hoopgroups-channels {border-inline-end:0;border-bottom:1px solid var(--hc-card-border,var(--border))}
+  html body main.hc-live-room .hc-live-room-list {order:1}
+  html body main.hc-live-room .hc-live-room-panel {order:2}
+}
+@media(max-width:480px) {
+  html body main.hc-live-room .hc-live-room-scoreboard {padding:9px}
+  html body main.hc-live-room .hc-live-chat-compose {display:grid;grid-template-columns:minmax(0,1fr) auto}
+  html body main.hc-live-room .hc-live-chat-compose input {grid-column:1/-1}
+  html body main.hc-live-room .hc-live-chat-compose>span {display:none}
+  html body main.hc-live-room .hc-live-chat-compose .btn {min-height:44px}
+}
+@media(prefers-reduced-motion:reduce) {
+  html body main.hc-live-room *,html body main.hc-live-hub-page * {animation-duration:.01ms !important;transition-duration:.01ms !important}
+}

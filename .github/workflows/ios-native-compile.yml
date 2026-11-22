@@ -9,8 +9,10 @@ on:
       - ".github/workflows/ios-native-compile.yml"
 permissions:
   contents: read
+# PR updates may cancel older attempts for the same PR; integration pushes must
+# keep each commit's native evidence rather than sharing the empty PR-number key.
 concurrency:
-  group: ios-native-${{ github.event.pull_request.number }}
+  group: ios-native-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true
 jobs:
   simulator-compile:

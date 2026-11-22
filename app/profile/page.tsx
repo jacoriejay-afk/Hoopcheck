@@ -1,13 +1,13 @@
 "use client";
 
-import { readOwnProfile } from "../../lib/read-own-profile";
-
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import SocialProfileHeader, { profileCover } from "../../components/SocialProfileHeader";
 import OwnProfilePostsGrid from "../../components/OwnProfilePostsGrid";
 import ProfileLatestPost from "../../components/ProfileLatestPost";
 import { getCachedSession, supabase } from "../../lib/supabase";
+import { readOwnProfile } from "../../lib/read-own-profile";
+import { getEffectiveMembership } from "../../lib/billing/client-membership";
 import HoopLoading from "../../components/HoopLoading";
 import { HoopIcon, VerifiedBadge } from "../../components/HoopCheckUI";
 import Surface from "../../components/Surface";
@@ -17,7 +17,6 @@ import { calculateProfileCompletion } from "../../lib/profile-completion";
 import PlayerProfileCompletionCard from "../../components/PlayerProfileCompletionCard";
 import PlayerJourney from "../../components/PlayerJourney";
 import { getHoopCheckEntitlements } from "../../lib/membership-tier";
-import { getEffectiveMembership } from "../../lib/billing/client-membership";
 
 function calculatePostingStreak(rows: { activity_date: string }[]) {
   const dates = new Set(rows.map(row => String(row.activity_date).slice(0, 10)));
@@ -151,38 +150,24 @@ export default function ProfilePage() {
         </SocialProfileHeader>
         <nav className="hc-social-profile-nav" aria-label="Profile sections">
           <a href="#profile-about">About</a>
-          <a href="#profile-latest-post">Latest Post</a>
           {p.account_type === "player" && <a href="#profile-posts">Posts</a>}
-          <a href="#career-passport">Career Passport</a>
-          <Link href="/account#profile-appearance">Customize</Link>
-          {p.account_type === "player" && (p.profile_visibility === "public"
-            ? <Link href={"/players/" + encodeURIComponent(p.id)}>{t("profilePublic")}</Link>
-            : <Link href="/account#visibility">{t("editVisibility")}</Link>)}
-          {p.account_type === "player" && <Link href="/account#team-review-checklist">Team review checklist</Link>}
+          <a href="#career-passport">Career</a>
+          <details className="hc-profile-nav-more">
+            <summary>More</summary>
+            <div className="hc-profile-nav-more__links">
+              <a href="#profile-latest-post">Latest Post</a>
+              <Link href="/account#profile-appearance">Customize</Link>
+              {p.account_type === "player" && (p.profile_visibility === "public"
+                ? <Link href={"/players/" + encodeURIComponent(p.id)}>{t("profilePublic")}</Link>
+                : <Link href="/account#visibility">{t("editVisibility")}</Link>)}
+              {p.account_type === "player" && <Link href="/account#team-review-checklist">Team review checklist</Link>}
+            </div>
+          </details>
         </nav>
-        {p.account_type === "player" && <div className="hc-profile-passport-anchor">
-          <PlayerJourney playerId={p.id} isOwnProfile={true} canManage={canManageJourney}
-            playerName={name} verifiedPlayer={p.player_verified === true} />
-        </div>}
           {p.account_type === "player" ? <PlayerProfileCompletionCard profile={p} onPublished={() => setP((current: any) => ({ ...current, profile_visibility: "public" }))} /> : profileCompletion < 100 && <div className="hc-profile-completion">
             <div className="hc-profile-completion-copy"><strong>Profile {profileCompletion}% complete</strong><span>— add your {firstMissingField}</span><Link href={"/account#profile-editor-field-" + nextFieldAnchor}>Complete profile <span aria-hidden="true">→</span></Link></div>
             <div className="hc-profile-completion-track" role="progressbar" aria-label={t("profileCompleteness")} aria-valuemin={0} aria-valuemax={100} aria-valuenow={profileCompletion}><span style={{width: profileCompletion + "%"}} /></div>
           </div>}
-        <div id={p.account_type === "player" ? "identity-passport" : "career-passport"} className="hc-profile-identity-passport">
-          <HoopPassport name={name} accountType={p.account_type||"member"} username={p.username}
-            verified={Boolean(p.player_verified||p.coach_verified)} country={p.current_country}
-            position={p.account_type==="player"?p.position:null} team={p.account_type==="player"?p.current_team:null}/>
-        </div>
-        <nav className="hc-profile-action-hub" aria-label="Profile quick links">
-          <Link href="/membership" className="hc-profile-membership-link"><HoopIcon name="star" size={20} /><span>Membership &amp; Perks</span><HoopIcon name="chevron-right" size={18} /></Link>
-          <div className="hc-profile-quick-grid">
-            <Link href="/settings" className="hc-profile-quick-link"><HoopIcon name="settings" size={22} /><span>Settings</span></Link>
-            <Link href="/notifications" className="hc-profile-quick-link"><HoopIcon name="bell" size={22} /><span>Alerts</span></Link>
-            <Link href="/search" className="hc-profile-quick-link"><HoopIcon name="search" size={22} /><span>Search</span></Link>
-            <Link href={p.account_type === "fan" ? "/fan-feed" : p.account_type === "agent" || p.account_type === "scout" ? "/agents-hq" : p.account_type === "coach" ? "/coach-placement" : p.account_type === "manager" || p.account_type === "club_admin" ? "/team-dashboard" : "/pre-sign"} className="hc-profile-quick-link"><HoopIcon name={p.account_type === "player" ? "clipboard-check" : "users"} size={22} /><span>{p.account_type === "fan" ? "Fan HQ" : p.account_type === "agent" || p.account_type === "scout" ? "Agents HQ" : p.account_type === "coach" ? "Coach Placement" : p.account_type === "manager" || p.account_type === "club_admin" ? "Team HQ" : "Pre-Sign"}</span></Link>
-          </div>
-        </nav>
-
         <Surface as="section" className="hc-profile-summary" id="profile-about" aria-label={t("profileOverview")}>
           <dl>
             <div><dt>{t("basketball")}</dt><dd>{p.basketball_type === "womens" ? t("womensBasketball") : p.basketball_type === "mens" ? t("mensBasketball") : t(p.account_type)}</dd></div>
@@ -197,6 +182,28 @@ export default function ProfilePage() {
 
         <div id="profile-latest-post" style={{ scrollMarginTop: 96 }}><ProfileLatestPost userId={p.id} /></div>
         {p.account_type === "player" && <div id="profile-posts"><OwnProfilePostsGrid userId={p.id} /></div>}
+
+        {p.account_type === "player" && <div className="hc-profile-passport-anchor">
+          <PlayerJourney playerId={p.id} isOwnProfile={true} canManage={canManageJourney}
+            playerName={name} verifiedPlayer={p.player_verified === true} />
+        </div>}
+        <div id={p.account_type === "player" ? "identity-passport" : "career-passport"} className="hc-profile-identity-passport">
+          <HoopPassport name={name} accountType={p.account_type||"member"} username={p.username}
+            verified={Boolean(p.player_verified||p.coach_verified)} country={p.current_country}
+            position={p.account_type==="player"?p.position:null} team={p.account_type==="player"?p.current_team:null}/>
+        </div>
+        <nav className="hc-profile-action-hub" aria-label="Profile quick links">
+          <Link href="/membership" className="hc-profile-membership-link"><HoopIcon name="star" size={20} /><span>Membership &amp; Perks</span><HoopIcon name="chevron-right" size={18} /></Link>
+          <div className="hc-profile-quick-grid">
+            <Link href="/settings" className="hc-profile-quick-link"><HoopIcon name="settings" size={22} /><span>Settings</span></Link>
+            <Link href="/notifications" className="hc-profile-quick-link"><HoopIcon name="bell" size={22} /><span>Alerts</span></Link>
+            <Link href="/search" className="hc-profile-quick-link"><HoopIcon name="search" size={22} /><span>Search</span></Link>
+            <Link href="/creator-studio" className="hc-profile-quick-link"><HoopIcon name="users" size={22} /><span>Creator Studio</span></Link>
+            {(p.account_type === "agent" || p.account_type === "scout") && <Link href="/agent-studio" className="hc-profile-quick-link"><HoopIcon name="users" size={22} /><span>Professional Studio</span></Link>}
+            <Link href={p.account_type === "fan" ? "/fan-feed" : p.account_type === "agent" || p.account_type === "scout" ? "/agents-hq" : p.account_type === "coach" ? "/coach-placement" : p.account_type === "manager" || p.account_type === "club_admin" ? "/team-dashboard" : "/pre-sign"} className="hc-profile-quick-link"><HoopIcon name={p.account_type === "player" ? "clipboard-check" : "users"} size={22} /><span>{p.account_type === "fan" ? "Fan HQ" : p.account_type === "agent" || p.account_type === "scout" ? "Agents HQ" : p.account_type === "coach" ? "Coach Placement" : p.account_type === "manager" || p.account_type === "club_admin" ? "Team HQ" : "Pre-Sign"}</span></Link>
+          </div>
+        </nav>
+
 
         <section className="dashboard-card compact-section">
           <p className="eyebrow">{t("account")}</p>

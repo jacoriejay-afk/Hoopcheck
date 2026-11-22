@@ -16,7 +16,7 @@ export async function GET(request:Request){
   try{
     const db=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
     let query=db.from("agent_showcases").select(
-      "profile_id,public_name,agency_name,headline,description,country,website_url,is_published,review_status,reviewed_at,profiles!inner(id,account_type,moderation_status,identity_verification_status)"
+      "profile_id,public_name,agency_name,headline,description,country,website_url,is_published,review_status,reviewed_at,profiles!agent_showcases_profile_id_fkey!inner(id,account_type,moderation_status,identity_verification_status)"
     ).eq("is_published",true).in("profiles.account_type",["agent","scout"])
      .eq("profiles.moderation_status","normal");
     if(id)query=query.eq("profile_id",id);
