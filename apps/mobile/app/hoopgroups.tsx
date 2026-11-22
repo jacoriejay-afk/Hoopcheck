@@ -26,7 +26,7 @@ export default function HoopGroups() {
       </GlassCard>
       {spaces.map(space=><GlassCard key={space.name}>
         <Text style={{color:theme.accent,fontWeight:"800",fontSize:12}}>{space.category.toUpperCase()}</Text>
-        <Text style={{color:theme.foreground,fontSize:19,fontWeight:"850",marginTop:5}}>{space.name}</Text>
+        <Text style={{color:theme.foreground,fontSize:19,fontWeight:"800",marginTop:5}}>{space.name}</Text>
         <Text style={{color:theme.muted,marginTop:5}}>{space.description}</Text>
         <View style={{flexDirection:"row",gap:6,flexWrap:"wrap",marginTop:8}}>{["#welcome","#general","#game-talk"].map(channel=><Text key={channel} style={{fontSize:12,color:theme.foreground,backgroundColor:theme.chip,borderRadius:12,padding:7}}>{channel}</Text>)}</View>
       </GlassCard>)}
