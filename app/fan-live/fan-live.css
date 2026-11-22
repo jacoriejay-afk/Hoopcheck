@@ -85,3 +85,69 @@ html.theme-dark .hc-live-room .hc-live-message-menu>div{background:#151515;borde
 html.theme-dark .hc-live-room .hc-live-message-menu button{color:#f8f8f8}
 @media(max-width:800px){.hc-live-room-grid{grid-template-columns:minmax(0,1fr)}.hc-live-room-list{order:2}.hc-live-room-panel{order:1}.hc-live-room-hero{align-items:flex-start;flex-direction:column}.hc-live-room-scoreboard{grid-template-columns:minmax(0,1fr) minmax(100px,140px) minmax(0,1fr)}}
 @media(max-width:480px){.hc-live-room{padding-top:12px}.hc-live-room .page-container{padding-left:12px;padding-right:12px}.hc-live-room-list,.hc-live-room-panel{padding:12px;border-radius:12px}.hc-live-room-scoreboard{gap:5px}.hc-live-team-logo{width:42px;height:42px;flex-basis:42px}.hc-live-room-team strong{font-size:10px}.hc-live-room-score>strong{font-size:26px}.hc-live-room-score small{font-size:9px}.hc-live-chat-messages{min-height:250px;height:46vh}.hc-live-chat-compose{gap:6px}.hc-live-chat-compose input{padding:12px 10px}.hc-live-chat-compose>span{display:none}.hc-live-chat-compose .btn{padding:10px 12px;min-width:66px}.hc-live-presence-chip{font-size:11px}.hc-live-room-game{align-items:flex-start}.hc-live-room-game-status{font-size:8px}.hc-live-room-footnote{font-size:11px}}
+
+/* Courtside rooms: compact directory and dedicated, distraction-free matchup chat. */
+html body main.hc-live-room.hc-live-room--directory,
+html body main.hc-live-room.hc-live-room--chat {padding-top:12px}
+html body main.hc-live-room.hc-live-room--chat .page-container {max-width:940px}
+html body main.hc-live-room.hc-live-room--directory .page-container {max-width:980px}
+html body main.hc-live-room .hc-live-room-nav {display:flex;align-items:center;gap:16px;margin:0 0 12px;font-size:12px;font-weight:800}
+html body main.hc-live-room .hc-live-room-nav a {color:var(--hc-on-card,var(--ink));text-decoration:none}
+html body main.hc-live-room .hc-live-room-nav a:hover {color:var(--hc-orange,var(--orange))}
+html body main.hc-live-room .hc-live-room-heading {display:flex;align-items:center;justify-content:space-between;gap:12px;padding:3px 0 13px;border-bottom:1px solid var(--hc-card-border,var(--border));margin-bottom:12px}
+html body main.hc-live-room .hc-live-room-heading .eyebrow {margin:0 0 3px;font-size:10px;letter-spacing:.12em}
+html body main.hc-live-room .hc-live-room-heading h1 {font-size:clamp(22px,4vw,30px);font-weight:950;letter-spacing:-.045em;line-height:1.15;margin:0}
+html body main.hc-live-room .hc-live-room-heading p:last-child {font-size:12px;color:var(--gray-500);margin:4px 0 0}
+html body main.hc-live-room .hc-live-room-heading .hc-live-presence-chip {padding:6px 10px;font-size:11px}
+html body main.hc-live-room .hc-live-room-grid--directory,
+html body main.hc-live-room .hc-live-room-grid--solo {display:block;grid-template-columns:none}
+html body main.hc-live-room.hc-live-room--directory .hc-live-room-list {border:0;border-radius:0;background:transparent;padding:0;box-shadow:none}
+html body main.hc-live-room.hc-live-room--directory .hc-live-room-list-heading {display:grid;grid-template-columns:1fr auto;gap:6px;margin-bottom:8px}
+html body main.hc-live-room.hc-live-room--directory .hc-live-room-list-heading .hc-live-room-search {grid-column:1/-1;margin:4px 0 6px;width:100%;height:42px}
+html body main.hc-live-room.hc-live-room--directory .hc-live-room-game {display:grid;grid-template-columns:minmax(0,1fr) auto 16px;gap:8px;align-items:center;min-height:64px;padding:9px 6px;margin:0;border:0;border-bottom:1px solid var(--hc-card-border,var(--border));border-radius:0;background:transparent;color:var(--hc-on-card,var(--ink));text-decoration:none}
+html body main.hc-live-room.hc-live-room--directory .hc-live-room-game:hover,
+html body main.hc-live-room.hc-live-room--directory .hc-live-room-game:focus-visible {background:color-mix(in srgb,var(--hc-orange,#ff642a) 7%,transparent)}
+html body main.hc-live-room.hc-live-room--directory .hc-live-room-game-teams {gap:9px}
+html body main.hc-live-room.hc-live-room--directory .hc-live-room-game-teams strong {font-size:13px}
+html body main.hc-live-room.hc-live-room--directory .hc-live-team-logo {flex-basis:34px;width:34px;height:34px;min-width:34px}
+html body main.hc-live-room.hc-live-room--directory .hc-live-room-game-arrow {font-size:16px;color:var(--hc-orange,var(--orange))}
+html body main.hc-live-room.hc-live-room--chat .hc-live-room-panel {padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+html body main.hc-live-room.hc-live-room--chat .hc-live-room-scoreboard {display:grid;grid-template-columns:minmax(0,1fr) minmax(112px,175px) minmax(0,1fr);padding:10px 12px;border:1px solid #30425b;border-radius:13px;background:linear-gradient(125deg,#131b2b,#1c3550)}
+html body main.hc-live-room.hc-live-room--chat .hc-live-room-scoreboard .hc-live-room-team {gap:4px}
+html body main.hc-live-room.hc-live-room--chat .hc-live-room-scoreboard .hc-live-room-team strong {font-size:11px;color:#fff}
+html body main.hc-live-room.hc-live-room--chat .hc-live-room-scoreboard .hc-live-room-score>strong {font-size:clamp(24px,5vw,37px);margin:3px 0;color:#fff}
+html body main.hc-live-room.hc-live-room--chat .hc-live-room-scoreboard .hc-live-badge:not(.is-live) {background:#34435a;color:#fff!important}
+html body main.hc-live-room.hc-live-room--chat .hc-live-chat-shell {border:0;border-radius:0;background:transparent;overflow:visible;min-height:0}
+html body main.hc-live-room.hc-live-room--chat .hc-live-chat-toolbar {padding:9px 2px;background:transparent;border:0;font-size:11px}
+html body main.hc-live-room.hc-live-room--chat .hc-live-chat-messages {height:min(55dvh,620px);min-height:300px;gap:8px;padding:10px 2px;scrollbar-gutter:stable}
+html body main.hc-live-room.hc-live-room--chat .hc-live-chat-message-body {padding:9px 12px;border-radius:15px;border:1px solid var(--hc-card-border,var(--border));background:var(--hc-card-surface,var(--surface))}
+html body main.hc-live-room.hc-live-room--chat .hc-live-chat-message.is-own .hc-live-chat-message-body {border-color:color-mix(in srgb,var(--hc-orange,#ff642a) 35%,var(--hc-card-border,var(--border)));background:color-mix(in srgb,var(--hc-orange,#ff642a) 11%,var(--hc-card-surface,var(--surface)))}
+html body main.hc-live-room.hc-live-room--chat .hc-live-chat-message-meta {padding-right:25px}
+html body main.hc-live-room.hc-live-room--chat .hc-live-reaction-rail {display:flex;align-items:center;gap:6px;padding:5px 0 9px}
+html body main.hc-live-room.hc-live-room--chat .hc-live-reaction-rail span {font-size:11px;font-weight:800;color:var(--gray-500);margin-right:5px}
+html body main.hc-live-room.hc-live-room--chat .hc-live-reaction-rail button {border:1px solid var(--hc-card-border,var(--border));border-radius:999px;background:var(--hc-card-surface,var(--surface));min-width:37px;min-height:35px;cursor:pointer;font-size:17px;transition:transform .15s ease}
+html body main.hc-live-room.hc-live-room--chat .hc-live-reaction-rail button:active {transform:scale(.94)}
+html body main.hc-live-room.hc-live-room--chat .hc-live-chat-compose {border-top:1px solid var(--hc-card-border,var(--border));padding:8px 0 2px;background:var(--hc-card-surface,var(--surface))}
+html body main.hc-live-room.hc-live-room--chat .hc-live-chat-compose input {border-radius:999px}
+html body main.hc-live-room .hc-live-room-state {padding:26px 8px;text-align:center}
+html body main.hc-live-room .hc-live-room-state h2 {font-size:20px;margin-bottom:7px}
+html body main.hc-live-room .hc-live-room-state a {color:var(--hc-orange,var(--orange));font-weight:800}
+html body main.hc-live-room .hc-live-room-footnote {font-size:10px;margin-top:13px}
+@media(max-width:600px){
+  html body main.hc-live-room.hc-live-room--chat .page-container,
+  html body main.hc-live-room.hc-live-room--directory .page-container {padding-left:10px;padding-right:10px}
+  html body main.hc-live-room.hc-live-room--chat .hc-live-room-scoreboard {gap:5px;padding:9px 5px}
+  html body main.hc-live-room.hc-live-room--chat .hc-live-chat-messages {height:48dvh;min-height:240px}
+  html body main.hc-live-room.hc-live-room--chat .hc-live-chat-compose {display:flex;position:sticky;bottom:calc(65px + env(safe-area-inset-bottom));z-index:2;padding:8px 0;background:var(--hc-card-surface,var(--surface))}
+  html body main.hc-live-room.hc-live-room--chat .hc-live-chat-compose input {grid-column:auto;min-height:43px;font-size:16px}
+  html body main.hc-live-room.hc-live-room--chat .hc-live-room-heading {margin-bottom:9px}
+  html body main.hc-live-room.hc-live-room--chat .hc-live-room-team strong {font-size:10px}
+}
+@media(prefers-reduced-motion:reduce){
+  html body main.hc-live-room .hc-live-reaction-rail button {transition:none}
+}
+
+html body main.hc-live-room.hc-live-room--chat .hc-live-room-predictions {margin:7px 0}
+html body main.hc-live-room.hc-live-room--chat .hc-live-room-predictions>summary {cursor:pointer;min-height:38px;padding:8px 3px;font-size:12px;font-weight:850;color:var(--hc-on-card,var(--ink));list-style-position:inside}
+html body main.hc-live-room.hc-live-room--chat .hc-live-room-predictions>summary::marker {color:var(--hc-orange,#ff642a)}
+html body main.hc-live-room.hc-live-room--chat .hc-live-room-predictions .hc-prediction {margin:0 0 9px}
