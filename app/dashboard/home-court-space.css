@@ -34,3 +34,5 @@
 .hc-court :is(a,button,input):focus-visible{outline:3px solid var(--hc-court-accent);outline-offset:2px}
 @media(max-width:370px){.hc-court-actions{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(prefers-reduced-motion:no-preference){.hc-court-feature,.hc-court-actions a{transition:transform .15s ease,border-color .15s ease}.hc-court-feature:active,.hc-court-actions a:active{transform:scale(.98)}}
+
+.hc-court-quick-heading h2{margin:0;font-size:11px;line-height:1.3;font-weight:850;letter-spacing:.09em}
