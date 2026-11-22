@@ -1,6 +1,6 @@
 "use client";
 
-import { getOwnProfile } from "../../lib/auth/own-profile";
+import { readOwnProfile } from "../../lib/read-own-profile";
 import { getEffectiveMembership } from "../../lib/billing/client-membership";
 
 
@@ -108,7 +108,7 @@ export default function DashboardPage() {
       setEmail(user.email||"");
 
       const [profileResult, subscriptionResult, followsResult] = await Promise.allSettled([
-        withTimeout(getOwnProfile(supabase, user.id), 8000),
+        withTimeout(readOwnProfile<Profile>(user.id, "id,display_name,first_name,last_name,bio,position,current_team,current_country,height,free_agent,profile_visibility,nationality,hometown,avatar_url,interests,favorite_leagues,player_verified,account_type"), 8000),
         withTimeout(getEffectiveMembership(user.id), 8000),
         withTimeout(supabase.from("follow_relationships").select("target_id").eq("follower_id",user.id).eq("target_type","team").order("created_at",{ascending:false}).limit(100), 8000)
       ] as const);
