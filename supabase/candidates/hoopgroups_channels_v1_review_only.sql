@@ -32,7 +32,10 @@ create table if not exists public.hoop_group_posts (
   author_id uuid not null references auth.users(id) on delete cascade,
   body text not null check (char_length(btrim(body)) between 1 and 1200),
   moderation_status text not null default 'pending' check (moderation_status in ('pending','approved','rejected','removed')),
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  -- Immutable author/time slot identity: one new post per 20-second bucket.
+  posting_slot bigint not null default floor(extract(epoch from now()) / 20)::bigint,
+  unique(author_id,posting_slot)
 );
 create index if not exists hoop_group_posts_channel_time_idx on public.hoop_group_posts(channel_id,created_at desc);
 create table if not exists public.hoop_group_reports (
@@ -129,7 +132,10 @@ create policy hoop_group_posts_read_visible on public.hoop_group_posts for selec
     where b.blocker_id=(select auth.uid()) and b.blocked_id=author_id)
 );
 create policy hoop_group_posts_insert_pending on public.hoop_group_posts for insert to authenticated with check (
-  author_id=(select auth.uid()) and moderation_status='pending' and
+  author_id=(select auth.uid()) and moderation_status='pending'
+  and posting_slot = floor(extract(epoch from now()) / 20)::bigint
+  and created_at between now() - interval '10 seconds' and now() + interval '10 seconds'
+  and
   exists(select 1 from public.hoop_group_channels c
     join public.hoop_group_members m on m.space_id=c.space_id
     where c.id=channel_id and m.user_id=(select auth.uid()))
