@@ -7,7 +7,7 @@ const compiled = ts.transpileModule(read("lib/game-availability.ts"), {
   compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext },
 }).outputText;
 const availability = await import("data:text/javascript;base64," + Buffer.from(compiled).toString("base64"));
-const { getGameAvailability, GAME_CHAT_OPEN_EARLY_MINUTES, GAME_CHAT_POST_GAME_MINUTES } = availability;
+const { getGameAvailability, isGameChatOpen, GAME_CHAT_OPEN_EARLY_MINUTES, GAME_CHAT_POST_GAME_MINUTES } = availability;
 const game = {
   status:"scheduled",
   scheduledAt:"2026-11-22T12:00:00Z",
@@ -24,6 +24,17 @@ assert.equal(getGameAvailability({...final,now:new Date("2026-11-22T15:00:00Z")}
 assert.equal(getGameAvailability({...final,now:new Date("2026-11-22T15:00:00Z")}).state,"POST GAME","A final result must never appear as a live game");
 assert.equal(getGameAvailability({...final,now:new Date("2026-11-22T16:04:59Z")}).chatOpen,true);
 assert.equal(getGameAvailability({...final,now:new Date("2026-11-22T16:05:00Z")}).chatOpen,false);
+assert.equal(isGameChatOpen({...game,status:"live",now:new Date("2026-11-22T12:20:00Z")},false),true,
+  "Live game chat must remain available before the postgame rollout");
+assert.equal(isGameChatOpen({...final,now:new Date("2026-11-22T15:00:00Z")},false),false,
+  "Verified final must stay read-only when postgame SQL is review-only and the feature flag is OFF");
+assert.equal(isGameChatOpen({...final,now:new Date("2026-11-22T15:00:00Z")},true),true,
+  "Explicit flag may open postgame phase only after separate SQL/RLS approval");
+assert.equal(isGameChatOpen({...game,status:"final",now:new Date("2026-11-22T15:00:00Z")},true),false,
+  "A final without provider-confirmed end timestamp must never open");
+assert.equal(isGameChatOpen({...final,now:new Date("2026-11-22T16:05:00Z")},true),false,
+  "Approved postgame chat still closes exactly two hours after final");
+
 assert.equal(getGameAvailability({...game,status:"final",now:new Date("2026-11-22T14:20:00Z")}).chatOpen,false,"Never fabricate a final timestamp");
 assert.equal(getGameAvailability({...final,status:"cancelled",now:new Date("2026-11-22T15:00:00Z")}).chatOpen,false);
 
@@ -36,6 +47,11 @@ assert.match(chat,/fan_live_chat_presence/,"Directory occupancy must be read fro
 assert.match(chat,/roomPresenceCounts\[game.id\]/,"Directory must show actual room occupancy");
 assert.match(chat,/serverRoomOpen\?\.gameId!==selected.id/,"Postgres authorization guard must decide whether users can send");
 assert.match(chat,/NEXT_PUBLIC_LIVE_POSTGAME_CHAT_ENABLED==="true"/,"Postgame JOIN must stay off until reviewed database rollout");
+assert.match(chat,/const isClosed=availability\?\.state==="CLOSED" \|\| \(availability\?\.phase==="post-game" && !POSTGAME_CHAT_ENABLED\)/,
+  "Finished rooms must display a closed state while postgame flag is off");
+assert.match(chat,/!roomOpen\(selected,clock\)\)\{setServerRoomOpen\(null\)/,
+  "Disabled postgame rooms must not probe the server for writable chat access");
+
 assert.match(chat,/JOIN CHAT/,"Directory must clearly offer join action");
 
 const hub=read("app/live-games/page.tsx");
