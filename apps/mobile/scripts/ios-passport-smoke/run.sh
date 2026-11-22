@@ -63,7 +63,17 @@ for theme in light dark; do
     echo "Simulator JS bundle location was not persisted; refusing to run an unconfigured smoke test" >&2
     exit 1
   fi
-  if ! xcodebuild test -workspace ios/HoopCheck.xcworkspace -scheme HoopCheck -configuration Debug -sdk iphonesimulator -destination "id=$simulator_id" -derivedDataPath /tmp/hoopcheck-ios-derived -resultBundlePath "$artifact_root/$theme.xcresult" -only-testing:PassportSmokeUITests CODE_SIGNING_ALLOWED=NO > "$artifact_root/$theme-test.log" 2>&1; then
+  echo "PASSPORT_SMOKE_THEME=$theme: executing real unsigned Passport PDF/share XCTest"
+  # Cold simulator runs can hang indefinitely inside UIKit/Expo Print.
+  # Fail closed with a useful log and xcresult instead of hitting the outer
+  # workflow timeout without diagnostic evidence. Never skip either theme.
+  if ! python3 scripts/ios-passport-smoke/run-bounded-xctest.py \
+    --log "$artifact_root/$theme-test.log" --timeout-seconds 900 -- \
+    xcodebuild test -workspace ios/HoopCheck.xcworkspace -scheme HoopCheck \
+    -configuration Debug -sdk iphonesimulator -destination "id=$simulator_id" \
+    -derivedDataPath /tmp/hoopcheck-ios-derived \
+    -resultBundlePath "$artifact_root/$theme.xcresult" \
+    -only-testing:PassportSmokeUITests CODE_SIGNING_ALLOWED=NO; then
     tail -n 140 "$artifact_root/$theme-test.log"
     echo "=== Tail of synthetic local Metro log (no production auth) ==="
     tail -n 100 "$artifact_root/metro.log" || true
