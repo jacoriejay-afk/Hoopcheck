@@ -39,7 +39,7 @@
 
 
 /* UNIVERSAL-COURTSIDE: canonical mobile geometry, stronger than later PWA overrides. */
-.hc-home3 .hc-court {min-width:0;overflow:visible;}
+.hc-home3 .hc-court {min-width:0;width:100%!important;max-width:100%!important;align-self:stretch;box-sizing:border-box;overflow:visible;}
 .hc-home3 .hc-court .hc-court-head {min-width:0;}
 .hc-home3 .hc-court .hc-court-head > div {min-width:0;flex:1;}
 .hc-home3 .hc-court .hc-court-head h2 {overflow-wrap:break-word;word-break:normal;font-size:clamp(20px,4.5vw,25px);line-height:1.14;}
