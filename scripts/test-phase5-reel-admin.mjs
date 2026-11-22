@@ -124,7 +124,7 @@ test("oversized request is rejected before JWT and database work", async () => {
 test("verified staff can request one atomic, audited hide with exact actor and ticket", async () => {
   const app = fixture();
   const response = await app.submit();
-  assert.equal(response.status, 200);
+  assert.equal(response.status, 200, await response.clone().text());
   assert.equal(response.headers.get("cache-control"), "private, no-store");
   assert.equal((await response.json()).hidden, true);
   const calls = app.events.filter(event => event[0] === "service");
