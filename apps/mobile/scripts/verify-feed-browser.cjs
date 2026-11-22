@@ -56,6 +56,11 @@ async function fixture(browser,theme,allowed=true){
       }
       if(url.pathname.startsWith('/storage/v1/object/sign/'))return route.fulfill({status:200,contentType:url.pathname.endsWith('.webm')?'video/webm':'image/png',headers:{'access-control-allow-origin':'*'},body:url.pathname.endsWith('.webm')?fs.readFileSync(videoPath):png});
       const table=url.pathname.split('/').pop();
+      if(table==='fan_live_games'){
+        assert.equal(method,'GET','Background game discovery fixture must stay read-only');
+        assert.ok(request.headers().authorization?.startsWith('Bearer '),'Live-game read requires signed fixture');
+        return json([]);
+      }
       if(table==='feed_posts'){
         assert.ok(allowed,'Denied viewer must never query protected posts');
         return json(url.searchParams.has('video_url')?posts.filter(p=>p.video_url):posts);

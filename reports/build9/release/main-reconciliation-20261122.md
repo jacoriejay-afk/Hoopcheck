@@ -60,3 +60,7 @@ Root CI at `bde22fbe` compiled and reached `scripts/check-team-discovery-browser
 ## Isolated follow-list fixture contract
 
 Native CI at `bde22fbe` passed MFA, profile editor, chat, fan groups and media permissions, then encountered `/rest/v1/rpc/get_public_follow_list` not mocked by the newly imported Feed/Reels browser fixture. The installed function is a read-only, privacy-filtered follower-discovery RPC. The synthetic fixture now permits only this exact RPC path, signed POST and explicit `followers`/`following` modes, and rejects any cross-owner `p_user_id`; it returns an empty synthetic list, never real private follower data. Unknown requests still fail. No native auth, RLS, or production code was weakened. Full head CI required.
+
+## Live Games background read fixture
+
+The signed native app shell may issue a read-only `fan_live_games` request while the isolated HoopFeed screen is under test. In exact-head native run `44989994321`, all prior MFA, profile, media, Fan Groups and game/chat regressions passed before fixture route rejected this otherwise supported request as `Unexpected external request`. The fake Supabase API now returns empty synthetic live-game data only for `GET` with a bearer header; all writes and all unknown endpoints still throw. Protected Feed/entitlement/blocked-account conditions remain enforced. New exact-head CI required.
