@@ -155,3 +155,11 @@
 @media(prefers-reduced-motion:no-preference){
  .hc-courtside-thread,.hc-courtside-starters button{transition:background .15s ease,border-color .15s ease}
 }
+
+.hc-courtside-breadcrumb{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:20px 0 12px;font-size:12px;font-weight:800;color:var(--hc-foreground-muted)}
+.hc-courtside-breadcrumb a:hover{color:var(--orange)}
+.hc-courtside-footer{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:flex-end;padding:14px 0 88px;font-size:12px;color:var(--hc-foreground-muted)}
+.hc-courtside-footer a{font-weight:850;color:var(--orange)}
+.hc-notifications-messages-link{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin:12px 0;padding:12px 14px;border-radius:12px;background:var(--hc-card-surface,var(--surface));border:1px solid var(--hc-card-border,var(--border));color:var(--hc-on-card,var(--hc-foreground))}
+.hc-notifications-messages-link span{font-size:11px;font-weight:950;letter-spacing:.05em}
+.hc-notifications-messages-link a{padding:9px 12px;min-height:42px;display:inline-flex;align-items:center;border-radius:11px;background:var(--orange);color:#171717;font-size:12px;font-weight:850}
