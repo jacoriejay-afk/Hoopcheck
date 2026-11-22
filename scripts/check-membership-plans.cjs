@@ -87,7 +87,7 @@ test("active non-Stripe memberships remain managed by their verified provider, n
   assert.match(page, /isActive && subscription &&/);
   assert.match(page, /subscription\.provider === "manual"/);
   assert.match(page, /subscription\.provider === "apple"/);
-  assert.match(page, /!isActive && accountType !== "fan"/);
+  assert.match(page, /!loading && !isActive && accountType && accountType !== "fan"/);
   assert.match(page, /!stripeOngoing && !appleOngoing/);
 });
 
