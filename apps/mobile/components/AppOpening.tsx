@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { cancelAnimation, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { useMotionSetting } from "../src/motion/Provider";
 import { ArenaBrand } from "./ArenaBrand";
@@ -10,6 +11,7 @@ let hasPlayedColdOpen = false;
 /** Short native-only opening. Never delays auth, deep links, or native splash deadlines. */
 export function AppOpening({ ready, disabled = false }: { ready: boolean; disabled?: boolean }) {
   const reduced = useMotionSetting();
+  const insets = useSafeAreaInsets();
   const [finished, setFinished] = useState(hasPlayedColdOpen || Platform.OS === "web");
   const progress = useSharedValue(0);
   const exitOpacity = useSharedValue(1);
@@ -59,7 +61,7 @@ export function AppOpening({ ready, disabled = false }: { ready: boolean; disabl
         letterSpacing:2.2,textAlign:"center"}}>THE COURT IS OPEN</Text>
     </View>
     <Pressable accessibilityRole="button" accessibilityLabel="Skip opening animation"
-      onPress={finish} style={{position:"absolute",top:44,right:15,minHeight:44,minWidth:60,
+      onPress={finish} style={{position:"absolute",top:insets.top+8,right:15,minHeight:44,minWidth:60,
         justifyContent:"center",alignItems:"center"}}>
       <Text style={{color:"#FFFFFF",fontWeight:"700",fontSize:12}}>Skip</Text>
     </Pressable>
