@@ -1,10 +1,6 @@
 -- Applied to HoopCheck production on 2026-11-22; Supabase migration history version matches this filename.
 -- Additive migration reconciled with separately rehearsed review candidate; do not rewrite applied history.
--- REVIEW-ONLY CANDIDATE. Do not apply to HoopCheck production or mark Passport active
--- until schema-equivalent rehearsal, real owner/non-owner authenticated tests,
--- protected migration authorization and an approved versioned rollout are complete.
--- Isolated additive replacement for ONLY the career table portion of
--- 20261019140000_trust_journey_claims_live_hub.sql; never replay that broad file.
+-- Isolated career history repair; do not replay the older broad journey/review migration.
 create table if not exists public.player_career_stops (
   id uuid primary key default gen_random_uuid(),
   player_id uuid not null references public.profiles(id) on delete cascade,
