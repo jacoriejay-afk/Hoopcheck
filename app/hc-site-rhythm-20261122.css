@@ -279,3 +279,21 @@ html:is(.theme-light,.theme-dark) body main.hc-member-profile-page .hc-journey-h
 @media(prefers-reduced-motion:reduce) {
   html body .hc-global-page-shell main :where(.hc-feed-shared-card,.hc-profile-quick-link) { transition:none!important; }
 }
+
+/* Desktop readability: keep the overall site close to viewport edges without
+   stretching a single conversation or profile identity across a 1440px canvas.
+   Scoped above laptop width; mobile/tablet density and safe areas are unchanged. */
+@media (min-width: 1024px) {
+  html:is(.theme-light,.theme-dark) body .hc-global-page-shell > .hc-route-transition main.hc-feed-page > .page-container {
+    width: min(100%, 780px) !important;
+    max-width: 780px !important;
+    margin-inline: auto !important;
+    padding-inline: 0 !important;
+  }
+  html:is(.theme-light,.theme-dark) body .hc-global-page-shell > .hc-route-transition main.hc-member-profile-page > .page-container {
+    width: min(100%, 1080px) !important;
+    max-width: 1080px !important;
+    margin-inline: auto !important;
+    padding-inline: 0 !important;
+  }
+}
