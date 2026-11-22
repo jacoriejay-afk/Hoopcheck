@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getCachedSession, supabase } from "../../lib/supabase";
+import { readOwnProfile } from "../../lib/read-own-profile";
 import HoopLoading from "../../components/HoopLoading";
 import { useLanguage } from "../../components/LanguageProvider";
 import { getHoopCheckEntitlements } from "../../lib/membership-tier";
@@ -106,7 +107,7 @@ export default function DashboardPage() {
       setEmail(user.email||"");
 
       const [profileResult, subscriptionResult, followsResult] = await Promise.allSettled([
-        withTimeout(supabase.from("profiles").select("id,display_name,first_name,last_name,bio,position,current_team,current_country,height,free_agent,profile_visibility,nationality,hometown,avatar_url,interests,favorite_leagues,player_verified,account_type").eq("id",user.id).maybeSingle(), 8000),
+        withTimeout(readOwnProfile<Profile>(user.id, "id,display_name,first_name,last_name,bio,position,current_team,current_country,height,free_agent,profile_visibility,nationality,hometown,avatar_url,interests,favorite_leagues,player_verified,account_type"), 8000),
         withTimeout(supabase.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id",user.id).maybeSingle(), 8000),
         withTimeout(supabase.from("follow_relationships").select("target_id").eq("follower_id",user.id).eq("target_type","team").order("created_at",{ascending:false}).limit(100), 8000)
       ] as const);
