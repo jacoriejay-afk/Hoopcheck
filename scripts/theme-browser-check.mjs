@@ -360,11 +360,11 @@ try {
       }
 
       if (routeName === "dashboard") {
-        const court = page.locator(".hc-home3 section.hc-court");
+        const court = page.locator(".hc-home3 section.hc-my-court");
         await court.waitFor({ state: "visible", timeout: 30000 });
         await court.locator(".hc-court-head > button").click();
         const courtLayout = await page.evaluate(() => {
-          const panel = document.querySelector("main.hc-home3 section.hc-court");
+          const panel = document.querySelector("main.hc-home3 section.hc-my-court");
           const editor = panel.querySelector(".hc-court-editor");
           const radio = editor.querySelector('input[type="radio"]');
           const checkbox = editor.querySelector('input[type="checkbox"]');
@@ -376,7 +376,13 @@ try {
             aspectRatio: style.aspectRatio,
             transform: style.transform,
             panelBottom: panelRect.bottom,
+            panelLeft: panelRect.left,
+            panelRight: panelRect.right,
             editorBottom: editorRect.bottom,
+            editorLeft: editorRect.left,
+            editorRight: editorRect.right,
+            editorHeight: editorRect.height,
+            featuredWidth: editor.querySelector("select").getBoundingClientRect().width,
             nextTop: nextSection?.getBoundingClientRect().top ?? Infinity,
             radioWidth: radio.getBoundingClientRect().width,
             checkboxWidth: checkbox.getBoundingClientRect().width,
@@ -386,6 +392,10 @@ try {
         });
         assert.equal(courtLayout.transform, "none", "My Court must not inherit rotated illustration styling");
         assert.equal(courtLayout.aspectRatio, "auto", "My Court must grow with editor contents");
+        assert.ok(courtLayout.editorLeft >= courtLayout.panelLeft - 2 &&
+          courtLayout.editorRight <= courtLayout.panelRight + 2 && courtLayout.editorHeight > 0 &&
+          courtLayout.featuredWidth <= courtLayout.panelRight - courtLayout.panelLeft + 2,
+          `My Court options and dropdown must fit inside the card: ${JSON.stringify(courtLayout)}`);
         assert.ok(courtLayout.editorBottom <= courtLayout.panelBottom + 2,
           `My Court editor must remain inside its parent: ${JSON.stringify(courtLayout)}`);
         assert.ok(courtLayout.panelBottom <= courtLayout.nextTop + 2,
