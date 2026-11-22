@@ -16,7 +16,7 @@ export default function HoopGroupsOwnerModeration({userId,spaceId,isOwner}:{
   if(!isOwner||!userId||!spaceId) return null;
   async function token() {
     const {data:{session}}=await supabase.auth.getSession();
-    if(session?.user?.id!==userId || !session.access_token) throw new Error("Sign in as the server owner.");
+    if(session?.user?.id!==userId || !session.access_token) throw new Error("Sign in as the group owner.");
     return session.access_token;
   }
   async function load() {
@@ -45,23 +45,23 @@ export default function HoopGroupsOwnerModeration({userId,spaceId,isOwner}:{
         method:"PATCH",headers:{"Authorization":"Bearer "+bearer,"Content-Type":"application/json"},
         body:JSON.stringify({id:postId,status}),cache:"no-store"
       });
-      if(!response.ok) throw new Error(response.status===403?"You cannot moderate this community.":"Unable to save moderation.");
+      if(!response.ok) throw new Error(response.status===403?"You cannot moderate this group.":"Unable to save moderation.");
       if(revision!==generation.current) return;
       setPosts(items=>items.filter(post=>post.id!==postId));
-      setFeedback(status==="approved"?"Message approved. It will appear in the channel.":"Message rejected.");
+      setFeedback(status==="approved"?"Post approved. It will appear in the discussion.":"Post rejected.");
     } catch(error) {if(revision===generation.current) setFeedback(error instanceof Error?error.message:"Unable to moderate.");}
     finally {if(revision===generation.current) setBusy(false);}
   }
   return <section className="hc-hoopgroups-owner-queue">
     <button type="button" className="hc-hoopgroups-queue-toggle" aria-expanded={open}
-      onClick={()=>{setOpen(value=>!value);if(!open)void load();}}>Review pending messages</button>
+      onClick={()=>{setOpen(value=>!value);if(!open)void load();}}>Review pending posts</button>
     {open&&<div className="hc-hoopgroups-queue-panel">
-      <div><strong>Server moderation</strong><button type="button" disabled={busy} onClick={()=>void load()}>Refresh queue</button></div>
-      <p>Messages require review before other members can read them. You can approve or reject posts only in your own server. HoopCheck moderators retain oversight.</p>
+      <div><strong>Group moderation</strong><button type="button" disabled={busy} onClick={()=>void load()}>Refresh queue</button></div>
+      <p>Posts require review before other members can read them. You can approve or reject posts only in groups you own. HoopCheck moderators retain oversight.</p>
       {posts.length?posts.map(post=><article key={post.id}>
         <p>{post.body}</p><small>{new Date(post.created_at).toLocaleString()}</small>
         <div><button type="button" disabled={busy} onClick={()=>void decide(post.id,"approved")}>Approve</button><button type="button" disabled={busy} onClick={()=>void decide(post.id,"rejected")}>Reject</button></div>
-      </article>):<p>No pending messages in this server.</p>}
+      </article>):<p>No posts awaiting review in this group.</p>}
       {feedback&&<p role="status">{feedback}</p>}
     </div>}
   </section>;
