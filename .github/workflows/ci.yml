@@ -68,6 +68,14 @@ jobs:
           PGPASSWORD: postgres
         run: psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_rls_test -f supabase/tests/smoke_feed_rls_isolated.sql
 
+      - name: Rehearse live game chat RLS and room windows in disposable PostgreSQL
+        env:
+          PGPASSWORD: postgres
+        run: |
+          set -euo pipefail
+          createdb -h 127.0.0.1 -U postgres hoopcheck_livechat_test
+          psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_livechat_test -f supabase/tests/live_chat_realtime_isolated.sql
+
       - name: Verify HoopFeed organization visibility and real totals
         env:
           PGPASSWORD: postgres
