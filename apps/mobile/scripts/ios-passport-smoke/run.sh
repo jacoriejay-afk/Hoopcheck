@@ -53,6 +53,16 @@ for theme in light dark; do
     xcrun simctl bootstatus "$simulator_id" -b
   fi
   xcrun simctl ui "$simulator_id" appearance "$theme"
+  # RN 0.81 Debug can resolve a nil bundle URL on headless CI simulators even
+  # when host Metro's /status is healthy. The app is a synthetic test fixture
+  # without expo-dev-client, so pin the Debug-only packager address explicitly
+  # on THIS simulator; no production app config, provisioning or credentials.
+  xcrun simctl spawn "$simulator_id" defaults write online.hoopcheck.app RCT_jsLocation -string "127.0.0.1:8081"
+  metro_location=$(xcrun simctl spawn "$simulator_id" defaults read online.hoopcheck.app RCT_jsLocation)
+  if [[ "$metro_location" != "127.0.0.1:8081" ]]; then
+    echo "Simulator JS bundle location was not persisted; refusing to run an unconfigured smoke test" >&2
+    exit 1
+  fi
   if ! xcodebuild test -workspace ios/HoopCheck.xcworkspace -scheme HoopCheck -configuration Debug -sdk iphonesimulator -destination "id=$simulator_id" -derivedDataPath /tmp/hoopcheck-ios-derived -resultBundlePath "$artifact_root/$theme.xcresult" -only-testing:PassportSmokeUITests CODE_SIGNING_ALLOWED=NO > "$artifact_root/$theme-test.log" 2>&1; then
     tail -n 140 "$artifact_root/$theme-test.log"
     echo "=== Tail of synthetic local Metro log (no production auth) ==="
