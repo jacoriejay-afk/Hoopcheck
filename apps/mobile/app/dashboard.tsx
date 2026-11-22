@@ -10,6 +10,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../src/lib/supabase";
 import { useEntryTheme } from "../src/theme";
 
+const roleShortcuts: Record<string, {title:string;description:string;links:{path: "/account"|"/teams"|"/players"|"/fan-live"|"/messages"|"/feed"|"/leagues"|"/team-hub/groups";label:string}[]}> = {
+  player: {title:"Player courtside",description:"Your career and basketball network",links:[{path:"/account",label:"My profile"},{path:"/teams",label:"Research clubs"},{path:"/messages",label:"HoopChat"},{path:"/fan-live",label:"Live games"}]},
+  fan: {title:"Fan courtside",description:"Your clubs and game-day conversations",links:[{path:"/fan-live",label:"Live games"},{path:"/team-hub/groups",label:"Team Fan Groups"},{path:"/teams",label:"Discover teams"},{path:"/feed",label:"HoopFeed"}]},
+  coach: {title:"Coach courtside",description:"Professional basketball network",links:[{path:"/players",label:"Discover players"},{path:"/leagues",label:"Leagues"},{path:"/teams",label:"Clubs"},{path:"/messages",label:"Messages"}]},
+  agent: {title:"Agent courtside",description:"Find talent and research opportunities",links:[{path:"/players",label:"Find talent"},{path:"/leagues",label:"Leagues"},{path:"/messages",label:"Contacts"},{path:"/account",label:"My account"}]},
+  manager: {title:"Team manager courtside",description:"Your club and supporters",links:[{path:"/teams",label:"Team directory"},{path:"/team-hub/groups",label:"Fan Groups"},{path:"/messages",label:"Messages"},{path:"/account",label:"My account"}]},
+};
+roleShortcuts.scout = {...roleShortcuts.agent,title:"Scout courtside"};
+roleShortcuts.club_admin = roleShortcuts.manager;
+
 const accountLinks = [
   { path: "/about", label: "About HoopCheck" },
   { path: "/account", label: "Account settings" },
@@ -30,12 +40,13 @@ export default function DashboardScreen() {
 
   useEffect(() => {
     let alive = true;
-    supabase.auth.getUser().then(({ data, error }) => {
-      if (!alive || error) return;
-      setEmail(data.user?.email ?? "");
-      const role = data.user?.user_metadata?.account_type;
-      if (typeof role === "string") setAccountType(role.replaceAll("_", " "));
-    });
+    supabase.auth.getUser().then(async ({ data, error }) => {
+      if (!alive || error || !data.user) return;
+      setEmail(data.user.email ?? "");
+      // Profile role is authoritative for presentation; editable auth metadata is not.
+      const profile = await supabase.from("profiles").select("account_type").eq("id",data.user.id).maybeSingle();
+      if (alive && !profile.error && typeof profile.data?.account_type === "string") setAccountType(profile.data.account_type);
+    }).catch(() => {});
     return () => { alive = false; };
   }, []);
 
@@ -66,18 +77,17 @@ export default function DashboardScreen() {
       <ScrollView keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled" testID="dashboard-scroll" contentContainerStyle={styles.scroll}>
         <View style={styles.content}>
           <View style={{ flexDirection: "row", alignItems: "center",
-            justifyContent: "space-between", paddingVertical: 13, gap: 12 }}>
-            <View style={{ flex: 1, gap: 4 }}>
-              <Text style={{ color: theme.accent, fontSize: 11, fontWeight: "900", letterSpacing: 2.2 }}>THE COURTSIDE</Text>
-              <Text accessibilityRole="header" style={{ fontFamily: "HoopCheckDisplay",
-                fontSize: 34, lineHeight: 36, color: theme.foreground }}>Your game. Your world.</Text>
+            justifyContent: "space-between", paddingVertical: 6, gap: 8 }}>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text accessibilityRole="header" style={{ fontFamily: theme.type.ui.fontFamily,
+                fontSize: 25, lineHeight: 31, color: theme.foreground }}>Home</Text>
             </View>
-            <GlassSurface style={{ width: 48, height: 48, borderRadius: 20, alignItems: "center", justifyContent: "center" }}>
+            <GlassSurface style={{ width: 40, height: 40, borderRadius: 14, alignItems: "center", justifyContent: "center" }}>
               <Ionicons name="basketball" size={23} color={theme.accent} />
             </GlassSurface>
           </View>
           <GlassSurface style={{ flexDirection: "row", alignItems: "center", marginTop: 4,
-            marginBottom: 23, borderRadius: 20, paddingLeft: 15, paddingRight: 5 }}>
+            marginBottom: 12, borderRadius: 15, paddingLeft: 12, paddingRight: 5 }}>
             <Ionicons name="search-outline" size={21} color={theme.accent} />
             <Input style={{ flex: 1, minWidth: 0, backgroundColor: "transparent", borderWidth: 0,
               fontSize: 15 }} accessibilityLabel="Search basketball directory" placeholder="Search players, teams, leagues…" value={search}
@@ -94,6 +104,15 @@ export default function DashboardScreen() {
             </Pressable>
           </GlassSurface>
           <HomeCourtside />
+          <GlassSurface style={{padding:14,marginBottom:16,borderRadius:20,gap:10}}>
+            <Text style={{color:theme.foreground,fontWeight:"900",fontSize:19}}>{(roleShortcuts[accountType]||roleShortcuts.fan).title}</Text>
+            <Text style={{color:theme.muted,fontSize:13}}>{(roleShortcuts[accountType]||roleShortcuts.fan).description}</Text>
+            <View style={{flexDirection:"row",flexWrap:"wrap",gap:8}}>
+              {(roleShortcuts[accountType]||roleShortcuts.fan).links.map(item=><Pressable key={item.path} accessibilityRole="button" onPress={()=>router.push(item.path)} style={{minHeight:44,justifyContent:"center",paddingVertical:10,paddingHorizontal:12,borderRadius:14,backgroundColor:theme.accentSurface,borderWidth:1,borderColor:theme.border}}>
+                <Text style={{color:theme.foreground,fontWeight:"700",fontSize:13}}>{item.label}</Text>
+              </Pressable>)}
+            </View>
+          </GlassSurface>
           <SectionHeader>Explore basketball</SectionHeader>
           <View style={styles.directories}><ExploreLinks /></View>
 
@@ -129,7 +148,7 @@ export default function DashboardScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  scroll: { flexGrow: 1, padding: 16 },
+  scroll: { flexGrow: 1, padding: 12 },
   content: { width: "100%", maxWidth: 640, alignSelf: "center" },
   title: { fontSize: 32, fontWeight: "900", letterSpacing: -0.7, marginBottom: 16 },
   directories: { gap: 8, marginTop: 12 },
@@ -138,7 +157,7 @@ const styles = StyleSheet.create({
   directoryCopy: { flex: 1 },
   rowLabel: { fontSize: 16, fontWeight: "800" },
   detail: { fontSize: 14, lineHeight: 19, marginTop: 2 },
-  sectionTitle: { fontSize: 21, fontWeight: "800", marginTop: 28, marginBottom: 10 },
+  sectionTitle: { fontSize: 18, fontWeight: "700", marginTop: 18, marginBottom: 8 },
   account: { borderWidth: 1, overflow: "hidden" },
   identity: { padding: 14, gap: 4 },
   role: { fontSize: 14, textTransform: "capitalize" },

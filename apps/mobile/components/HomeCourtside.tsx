@@ -62,25 +62,22 @@ export function HomeCourtside() {
     <Reveal><CourtsideBanner eyebrow="YOUR COURTSIDE" title={account.user.displayName ? `Welcome, ${account.user.displayName}` : "Welcome to courtside"}>Your teams. Your game. Your community.</CourtsideBanner></Reveal>
     <View style={{ flexDirection: "row", gap: 9 }}>
       {([
-        { route: "/fan-live", label: "Game Center", subtitle: "LIVE & NEXT", icon: "flash" },
-        { route: "/team-hub/groups", label: "HoopGroups", subtitle: "YOUR PEOPLE", icon: "people" },
-        { route: "/reels", label: "Highlight Hub", subtitle: "WATCH & SHARE", icon: "play" },
+        { route: "/fan-live", label: "Games", icon: "flash" },
+        { route: "/team-hub/groups", label: "Groups", icon: "people" },
+        { route: "/reels", label: "Reels", icon: "play" },
       ] as const).map(item => <Pressable key={item.route} accessibilityRole="link"
         accessibilityLabel={item.label} onPress={() => router.push(item.route as "/feed")}
         style={({ pressed }) => ({ flex: 1, minWidth: 0, opacity: pressed ? .72 : 1 })}>
         <GlassSurface native={false} style={{
-          minHeight: 116, borderRadius: 22, padding: 12, gap: 12,
+          minHeight: 74, borderRadius: 15, padding: 9, gap: 5,
           justifyContent: "space-between",
         }} intensity={35}>
-          <View style={{ width: 36, height: 36, borderRadius: 14, backgroundColor: t.accentSurface,
+          <View style={{ width: 29, height: 29, borderRadius: 10, backgroundColor: t.accentSurface,
             justifyContent: "center", alignItems: "center" }}>
-            <Ionicons name={item.icon} color={t.accent} size={19} />
+            <Ionicons name={item.icon} color={t.accent} size={17} />
           </View>
-          <View style={{ gap: 4 }}>
-            <Text numberOfLines={1} style={{ color: t.foreground, fontWeight: "800", fontSize: 12 }}>{item.label}</Text>
-            <Text numberOfLines={1} style={{ color: t.muted, fontWeight: "800", fontSize: 9,
-              letterSpacing: .6 }}>{item.subtitle}</Text>
-          </View>
+          <Text numberOfLines={1} style={{ color: t.foreground, fontFamily: t.type.ui.fontFamily,
+            fontWeight: "700", fontSize: 12 }}>{item.label}</Text>
         </GlassSurface>
       </Pressable>)}
     </View>

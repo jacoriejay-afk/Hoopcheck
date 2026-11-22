@@ -3,67 +3,41 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useEntryTheme } from "../src/theme";
 
-// Bundled decorative court artwork, never a claimed live photo or player image.
+// Bundled decorative court artwork; never a claimed live photo.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const arena = require("../assets/courtside-arena.webp");
 
-/**
- * Liquid Courtside hero: high-contrast editorial typography with restrained
- * glass and orange light. Data, membership and navigation are owned by screens.
- */
-export function CourtsideBanner({ eyebrow, title, children }: { eyebrow: string; title: string; children: string }) {
+/** Small sport masthead. Deliberately omits promotional captions and footer slogans. */
+export function CourtsideBanner({ eyebrow, title }: { eyebrow: string; title: string; children: string }) {
   const t = useEntryTheme();
-  const c = t.courtside.court;
-  const compact = eyebrow === "HOOPFEED" || eyebrow === "HOOPGROUPS";
   const shades: [string, string, string] = eyebrow === "HOOPFEED"
-    ? ["#19182F", "#32203B", "#52231F"] : eyebrow === "HOOPGROUPS"
-    ? ["#0D2430", "#12353E", "#1C3E37"] : eyebrow === "GAME CENTER"
-    ? ["#0C1C3C", "#28294A", "#4B232B"] : ["#101E35", "#182A3E", "#352123"];
+    ? ["#19182F", "#29243A", "#332229"] : eyebrow === "HOOPGROUPS"
+    ? ["#10272D", "#15363A", "#1C3839"] : eyebrow === "GAME CENTER"
+    ? ["#11223C", "#263048", "#332938"] : ["#152339", "#1D2D43", "#33272F"];
   return <View style={{
-    borderRadius: 30, borderCurve: "continuous", overflow: "hidden",
-    minHeight: t.courtside.hero.minHeight, borderWidth: 1,
-    borderColor: t.dark ? "rgba(255,255,255,.26)" : "rgba(25,42,64,.14)",
-    backgroundColor: c.background,
-    shadowColor: t.dark ? "#FF7332" : "#172C49", shadowOpacity: t.dark ? .22 : .14,
-    shadowRadius: 24, shadowOffset: { width: 0, height: 10 },
+    borderRadius: t.courtside.hero.radius, borderCurve: "continuous",
+    overflow: "hidden", minHeight: t.courtside.hero.minHeight,
+    borderWidth: 1, borderColor: t.dark ? "rgba(255,255,255,.18)" : "rgba(25,42,64,.12)",
+    backgroundColor: t.courtside.court.background,
   }}>
-    <LinearGradient colors={shades}
-      locations={[0, .55, 1]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-      style={StyleSheet.absoluteFill} />
-    <Image accessible={false} alt="" source={arena}
-      resizeMode="cover" style={[StyleSheet.absoluteFill, { opacity: .24 }]} />
-    <LinearGradient pointerEvents="none"
-      colors={["rgba(255,139,66,.23)", "rgba(255,124,53,.03)", "rgba(8,18,30,.40)"]}
-      start={{ x: .05, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-    <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
-      style={{ position: "absolute", width: 228, height: 228, borderWidth: 1, borderColor: "rgba(255,255,255,.15)",
-        borderRadius: 114, right: -110, top: -48 }} />
-    <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
-      style={{ position: "absolute", width: 160, height: 160, borderWidth: 1, borderColor: "rgba(255,255,255,.18)",
-        borderRadius: 80, right: -74, top: 0 }} />
-    <View style={{ padding: compact ? 18 : 22, gap: compact ? 12 : 15 }}>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
-          <View style={{ height: 3, width: 18, borderRadius: 4, backgroundColor: c.orange }} />
-          <Text style={{ color: c.orange, fontSize: 11, fontWeight: "900", letterSpacing: 2 }}>{eyebrow}</Text>
-        </View>
-        <View style={{ borderColor: "rgba(255,255,255,.24)", borderWidth: 1,
-          borderRadius: 100, backgroundColor: "rgba(255,255,255,.12)",
-          paddingHorizontal: 10, paddingVertical: 7,
-          flexDirection: "row", alignItems: "center", gap: 5 }}>
-          <Ionicons name="basketball-outline" size={13} color="#FFFFFF" />
-          <Text style={{ color: "#FFFFFF", fontSize: 9, letterSpacing: 1.4, fontWeight: "800" }}>HOOPCHECK</Text>
-        </View>
+    <LinearGradient colors={shades} locations={[0, .55, 1]}
+      start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+    <Image accessible={false} alt="" source={arena} resizeMode="cover"
+      style={[StyleSheet.absoluteFill, { opacity: .12 }]} />
+    <View style={{ minHeight: t.courtside.hero.minHeight, flexDirection: "row",
+      alignItems: "center", gap: 11, paddingHorizontal: 14, paddingVertical: 12 }}>
+      <View pointerEvents="none" style={{ backgroundColor: "#FF9855", width: 3,
+        height: 42, borderRadius: 3 }} />
+      <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+        <Text numberOfLines={1} style={{ fontFamily: "HoopCheckDisplay", fontSize: 11,
+          letterSpacing: .8, color: "#FFAC72" }}>{eyebrow}</Text>
+        <Text accessibilityRole="header" numberOfLines={2} style={{ fontFamily: t.type.ui.fontFamily,
+          fontWeight: "700", fontSize: 21, lineHeight: 26, color: "#FFFFFF" }}>{title}</Text>
       </View>
-      <View style={{ gap: 8, paddingRight: 22 }}>
-        <Text accessibilityRole="header" style={{ fontFamily: "HoopCheckDisplay",
-          textTransform: "uppercase", fontSize: compact ? 32 : 39, lineHeight: compact ? 36 : 42,
-          color: "#FFFFFF", letterSpacing: -.6 }}>{title}</Text>
-        <Text style={{ color: "#E3EBF4", fontSize: 14, lineHeight: 21, maxWidth: 290 }}>{children}</Text>
-      </View>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingTop: 3 }}>
-        <View style={{ height: 1, flex: 1, backgroundColor: "rgba(255,255,255,.3)" }} />
-        <Text style={{ color: "#F4DFCD", fontSize: 10, fontWeight: "700", letterSpacing: 1.7 }}>THE GAME IS YOURS</Text>
+      <View pointerEvents="none" accessible={false} style={{ alignItems: "center", gap: 3 }}>
+        <Ionicons name="basketball-outline" size={20} color="#FADAC9" />
+        <Text style={{ fontFamily: "HoopCheckDisplay", color: "#FADAC9",
+          fontSize: 8, letterSpacing: .6 }}>HOOPCHECK</Text>
       </View>
     </View>
   </View>;

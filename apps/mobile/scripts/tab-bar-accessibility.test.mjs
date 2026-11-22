@@ -18,19 +18,19 @@ async function render(accountType, path, platform = "ios") {
     'expo-blur': { BlurView: 'BlurView' },
     'expo-linear-gradient': { LinearGradient: 'LinearGradient' },
     'expo-glass-effect': { GlassView: 'GlassView', isGlassEffectAPIAvailable: () => false, isLiquidGlassAvailable: () => false },
-    'react-native': { Platform: { OS: platform }, StyleSheet: { absoluteFill: {} }, AccessibilityInfo: { isReduceTransparencyEnabled: platform === "ios" ? async () => true : undefined, addEventListener: () => ({ remove() {} }) }, Keyboard: { addListener: () => ({ remove() {} }) }, Pressable: 'Pressable', Text: 'Text', View: 'View' },
+    'react-native': { Platform: { OS: platform }, StyleSheet: { absoluteFill: {} }, AccessibilityInfo: { isReduceTransparencyEnabled: platform === "ios" ? async () => true : undefined, addEventListener: () => ({ remove() {} }) }, Keyboard: { addListener: () => ({ remove() {} }) }, Pressable: ({ children, ...props }) => React.createElement('Pressable', props, typeof children === 'function' ? children({ pressed: false }) : children), Text: 'Text', View: 'View' },
     'expo-router': { usePathname: () => path, useRouter: () => ({ navigate: route => navigations.push(route) }) },
     '@expo/vector-icons': { Ionicons: 'Ionicons' },
     'react-native-safe-area-context': { useSafeAreaInsets: () => ({ left: 0, right: 0, bottom: 0 }) },
     'react-native-reanimated': {
       __esModule: true, default: { View: 'AnimatedView' },
       useAnimatedStyle: fn => fn(), useSharedValue: value => ({ get: () => value, set() {} }),
-      withSpring: value => value, withTiming: value => value,
+      withSpring: value => value, withTiming: value => value, withSequence: (...values) => values[values.length - 1],
     },
     '../src/motion/Provider': { useMotionSetting: () => true },
     '../src/motion/config': { motion: { shortFade: 0, spring: {} } },
     '../src/native/haptics': { useHaptics: () => () => {} },
-    '../src/theme': { useEntryTheme: () => ({ courtside: { navigation: { radius: 24, height: 56, iconSize: 22 } }, surface: '#fff', background: '#fff', border: '#ddd', muted: '#333', foreground: '#000', accent: '#f60', accentSurface: '#fee', glassFill: 'rgba(255,255,255,.6)', glassBorder: '#eee', dark: false }) },
+    '../src/theme': { useEntryTheme: () => ({ courtside: { navigation: { radius: 24, height: 56, iconSize: 22 } }, surface: '#fff', background: '#fff', border: '#ddd', muted: '#333', foreground: '#000', accent: '#f60', accentSurface: '#fee', glassFill: 'rgba(255,255,255,.6)', glassBorder: '#eee', dark: false, type: { ui: { fontFamily: 'System' } } }) },
     '../src/native/useNativeAccount': { useNativeAccount: () => ({ account: accountType ? { user: { accountType } } : null }) },
   };
   const code = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } }).outputText;
