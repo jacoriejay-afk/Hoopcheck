@@ -11,7 +11,7 @@ const experiences:Record<string,Experience>={
   player:{title:"Player Courtside",subtitle:"Your career, teams, and connections.",links:[
     {href:"/profile",label:"My Profile",description:"Career Passport"},
     {href:"/teams",label:"Team Research",description:"Teams & reviews"},
-    {href:"/notifications?tab=messages",label:"HoopChat",description:"Conversations"},
+    {href:"/messages",label:"HoopChat",description:"Conversations"},
     {href:"/live-games",label:"Live Games",description:"Games & chat"},
     {href:"/players",label:"Players",description:"Find athletes"},
     {href:"/leagues",label:"Leagues",description:"Explore leagues"},
@@ -31,7 +31,7 @@ const experiences:Record<string,Experience>={
     {href:"/players",label:"Players",description:"Discover talent"},
     {href:"/coaches",label:"Coaches",description:"Connect"},
     {href:"/leagues",label:"Leagues",description:"Research"},
-    {href:"/notifications?tab=messages",label:"Messages",description:"Conversations"},
+    {href:"/messages",label:"Messages",description:"Conversations"},
     {href:"/teams",label:"Teams",description:"Club research"},
     {href:"/hoopgroups",label:"HoopGroups",description:"Communities"},
   ]},
@@ -39,7 +39,7 @@ const experiences:Record<string,Experience>={
     {href:"/agents-hq",label:"Agent HQ",description:"Workspace"},
     {href:"/players",label:"Players",description:"Talent research"},
     {href:"/leagues",label:"Leagues",description:"Global leagues"},
-    {href:"/notifications?tab=messages",label:"HoopChat",description:"Requests"},
+    {href:"/messages",label:"HoopChat",description:"Requests"},
     {href:"/teams",label:"Teams",description:"Club research"},
     {href:"/hoopgroups",label:"HoopGroups",description:"Communities"},
   ]},
@@ -63,7 +63,7 @@ const experiences:Record<string,Experience>={
     {href:"/feed",label:"HoopFeed",description:"Community feed"},
     {href:"/hoopgroups",label:"HoopGroups",description:"Communities"},
     {href:"/live-games",label:"Live Games",description:"Game discussions"},
-    {href:"/notifications?tab=messages",label:"HoopChat",description:"Messages"},
+    {href:"/messages",label:"HoopChat",description:"Messages"},
     {href:"/players",label:"Players",description:"Profiles"},
     {href:"/teams",label:"Teams",description:"Club pages"},
   ]},
@@ -97,7 +97,7 @@ function restore(raw:string|null,role:string):CourtsidePrefs {
   try{
     const value=JSON.parse(raw) as Partial<CourtsidePrefs>;
     const choices=Array.isArray(value.links)
-      ? [...new Set(value.links.filter((href):href is string=>typeof href==="string"&&items.some(item=>item.href===href)))].slice(0,4)
+      ? [...new Set(value.links.map(href=>href==="/notifications?tab=messages"?"/messages":href).filter((href):href is string=>typeof href==="string"&&items.some(item=>item.href===href)))].slice(0,4)
       : standard.links;
     return {
       title:typeof value.title==="string"?value.title.slice(0,34):standard.title,

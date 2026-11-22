@@ -114,3 +114,6 @@
 .hc-hoopgroups-queue-panel article button:first-child{background:color-mix(in srgb,#21a87a 15%,transparent)}
 .hc-hoopgroups-queue-panel article button:last-child{background:color-mix(in srgb,#ef5b60 14%,transparent)}
 .hc-hoopgroups-queue-panel button:disabled{opacity:.6;cursor:default}
+
+.hc-hoopgroups-header-links{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.hc-hoopgroups-header-links a{min-height:44px;display:inline-flex;align-items:center;justify-content:center}
