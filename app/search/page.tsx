@@ -245,7 +245,7 @@ function SearchContent() {
         const rawUsernameMatch = usernameResult.data;
         const usernameMatch: Player | null = rawUsernameMatch ? {
           ...rawUsernameMatch,
-          avatar_url: rawUsernameMatch.avatar_moderation_status === "approved" ? rawUsernameMatch.avatar_url : null,
+          avatar_url: (rawUsernameMatch.avatar_moderation_status === null || rawUsernameMatch.avatar_moderation_status === "approved") ? rawUsernameMatch.avatar_url : null,
           current_country: null,
         } : null;
         const exactPlayer = usernameMatch && (!verifiedOnly || usernameMatch.player_verified) ? usernameMatch : null;
