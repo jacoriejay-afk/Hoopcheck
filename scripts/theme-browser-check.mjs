@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { makeThemeColorMath } from "./lib/theme-color-math.mjs";
 import { mkdir } from "node:fs/promises";
 import { chromium } from "playwright";
 
@@ -274,6 +275,7 @@ try {
         isMobile: true,
         hasTouch: true,
       });
+      await context.addInitScript({ content: `globalThis.__hoopcheckThemeColorMath = (${makeThemeColorMath.toString()})();` });
       const page = await context.newPage();
       const encodedSession = "base64-" + btoa(unescape(encodeURIComponent(JSON.stringify(session))))
         .replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
@@ -565,6 +567,7 @@ try {
       { name: "hoopcheck-theme", value: theme, url: baseURL },
       { name: "sb-ci-auth-token", value: encodedSession, url: baseURL },
     ]);
+    await context.addInitScript({ content: `globalThis.__hoopcheckThemeColorMath = (${makeThemeColorMath.toString()})();` });
     const page = await context.newPage();
     let activeRoutePath = "";
     let moderatorViewingGroup = false;
@@ -814,24 +817,10 @@ try {
               if (/(logo|avatar|photo|portrait|image)/i.test(cls) || element.closest("[aria-hidden='true']")) return false;
               const style = getComputedStyle(element);
               if (style.display === "none" || style.visibility === "hidden" || Number(style.opacity) < 0.6) return false;
-              const rgb = (value) => {
-                const m = value.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([\d.]+))?\s*\)/);
-                return m ? [Number(m[1]), Number(m[2]), Number(m[3]), m[4] == null ? 1 : Number(m[4])] : null;
-              };
-              const luminance = (c) => c.slice(0, 3).map(v => { const x=v/255; return x<=0.04045?x/12.92:((x+0.055)/1.055)**2.4; }).reduce((a,v,i)=>a+v*[0.2126,0.7152,0.0722][i],0);
-              const foreground = rgb(style.color);
+              const colors = globalThis.__hoopcheckThemeColorMath;
+              const foreground = colors.parse(style.color);
               if (!foreground) return false;
-              let node = element;
-              let background = null;
-              while (node && node !== document.documentElement) {
-                const candidate = rgb(getComputedStyle(node).backgroundColor);
-                if (candidate && candidate[3] >= 0.95) { background = candidate; break; }
-                node = node.parentElement;
-              }
-              if (!background) background = rgb(getComputedStyle(document.body).backgroundColor);
-              if (!background) return false;
-              const l1=luminance(foreground), l2=luminance(background);
-              const ratio=(Math.max(l1,l2)+0.05)/(Math.min(l1,l2)+0.05);
+              const ratio = colors.contrast(foreground, colors.background(element));
               const fontSize=parseFloat(style.fontSize)||14;
               const large=fontSize>=24 || (fontSize>=18 && Number(style.fontWeight)>=700);
               return ratio < (large ? 3 : 4.5);
@@ -954,7 +943,6 @@ try {
           await page.getByRole("tab", { name: "Reviews", exact: true }).click();
           await page.locator("#team-reviews-panel").waitFor({ state: "visible" });
         }
-        const visibleText = await page.locator("body").innerText();
         const expectedText = testLanguage === "es"
           ? requestedPath === "/dashboard" ? ["ACCIONES RÁPIDAS", "CONSULTAR UN EQUIPO"]
             : requestedPath === "/search" ? ["Explorar directorios"]
@@ -963,6 +951,7 @@ try {
             : requestedPath === "/search" ? ["Browse directories"]
             : ["ROSTER BOARD", "No approved reviews yet"];
         await page.waitForFunction(expected => expected.every(text => document.body.innerText.toLocaleUpperCase().includes(text.toLocaleUpperCase())), expectedText, { timeout: 15000 });
+        const visibleText = await page.locator("body").innerText();
         const missingText = expectedText.filter((expected) => !visibleText.toLocaleUpperCase().includes(expected.toLocaleUpperCase()));
         if (missingText.length) errors.push("language assertions missing: " + missingText.join(", "));
       }
