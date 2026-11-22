@@ -86,3 +86,72 @@
     pointer-events:none!important;
   }
 }
+
+/* iPhone My Court regression: the old landing illustration used .hc-court too.
+   Keep this real editor in normal document flow, regardless of art styles. */
+.hc-home3 section.hc-court {
+  aspect-ratio: auto !important;
+  transform: none !important;
+  height: auto !important;
+  min-height: 0;
+  max-height: none !important;
+  background: var(--hc-surface-raised) !important;
+  box-shadow: none;
+  isolation: isolate;
+}
+.hc-home3 .hc-court .hc-court-editor {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: normal;
+}
+.hc-home3 .hc-court .hc-court-editor fieldset,
+.hc-home3 .hc-court .hc-court-color-choices,
+.hc-home3 .hc-court .hc-court-option {
+  min-width: 0;
+  max-width: 100%;
+}
+.hc-home3 .hc-court .hc-court-editor input[type="radio"],
+.hc-home3 .hc-court .hc-court-editor input[type="checkbox"] {
+  box-sizing: border-box;
+  appearance: auto;
+  flex: 0 0 18px;
+  width: 18px !important;
+  min-width: 18px !important;
+  max-width: 18px !important;
+  height: 18px !important;
+  min-height: 18px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 3px;
+  accent-color: var(--hc-court-accent);
+}
+.hc-home3 .hc-court .hc-court-color-choices {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.hc-home3 .hc-court .hc-court-color-choices label {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 0;
+  gap: 7px;
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+.hc-home3 .hc-court .hc-court-option > label { overflow-wrap: break-word; }
+.hc-home3 .hc-court .hc-court-editor > label input,
+.hc-home3 .hc-court .hc-court-feature-select { width: 100%; min-width: 0; box-sizing: border-box; }
+@media (max-width: 767px) {
+  .hc-home3 .hc-court .hc-court-editor {
+    gap: 15px;
+    padding-bottom: 12px;
+  }
+  .hc-home3 .hc-court .hc-court-editor-footer { gap: 12px; }
+  /* Do not let the fixed bottom tabs swallow the last editor control. */
+  .hc-home3 .page-container { padding-bottom: calc(155px + env(safe-area-inset-bottom, 0px)) !important; }
+}
