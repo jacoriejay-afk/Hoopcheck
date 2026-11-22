@@ -358,6 +358,46 @@ try {
         await page.locator(".hc-home3-greeting").waitFor({ state: "visible", timeout: 30000 });
         await page.locator(".hc-home3-search").first().waitFor({ state: "visible", timeout: 30000 });
       }
+
+      if (routeName === "dashboard") {
+        const court = page.locator(".hc-home3 section.hc-court");
+        await court.waitFor({ state: "visible", timeout: 30000 });
+        await court.locator(".hc-court-head > button").click();
+        const courtLayout = await page.evaluate(() => {
+          const panel = document.querySelector("main.hc-home3 section.hc-court");
+          const editor = panel.querySelector(".hc-court-editor");
+          const radio = editor.querySelector('input[type="radio"]');
+          const checkbox = editor.querySelector('input[type="checkbox"]');
+          const nextSection = panel.nextElementSibling;
+          const panelRect = panel.getBoundingClientRect();
+          const editorRect = editor.getBoundingClientRect();
+          const style = getComputedStyle(panel);
+          return {
+            aspectRatio: style.aspectRatio,
+            transform: style.transform,
+            panelBottom: panelRect.bottom,
+            editorBottom: editorRect.bottom,
+            nextTop: nextSection?.getBoundingClientRect().top ?? Infinity,
+            radioWidth: radio.getBoundingClientRect().width,
+            checkboxWidth: checkbox.getBoundingClientRect().width,
+            scrollWidth: document.documentElement.scrollWidth,
+            viewportWidth: document.documentElement.clientWidth,
+          };
+        });
+        assert.equal(courtLayout.transform, "none", "My Court must not inherit rotated illustration styling");
+        assert.equal(courtLayout.aspectRatio, "auto", "My Court must grow with editor contents");
+        assert.ok(courtLayout.editorBottom <= courtLayout.panelBottom + 2,
+          `My Court editor must remain inside its parent: ${JSON.stringify(courtLayout)}`);
+        assert.ok(courtLayout.panelBottom <= courtLayout.nextTop + 2,
+          `My Court must not overlap the following dashboard section: ${JSON.stringify(courtLayout)}`);
+        assert.ok(courtLayout.radioWidth <= 24 && courtLayout.checkboxWidth <= 24,
+          `My Court radio and checkbox must remain compact: ${JSON.stringify(courtLayout)}`);
+        assert.ok(courtLayout.scrollWidth <= courtLayout.viewportWidth + 2,
+          `My Court must not create horizontal scrolling: ${JSON.stringify(courtLayout)}`);
+        await page.screenshot({ path: `${artifactsDir}/routes/dashboard-court-editor-${theme}.png`, fullPage: true, animations: "disabled" });
+        await court.locator(".hc-court-head > button").click();
+      }
+
       const computed = await page.evaluate(({ wrapperSelector, routeName }) => {
         const color = (selector) => {
           const element = document.querySelector(selector);
