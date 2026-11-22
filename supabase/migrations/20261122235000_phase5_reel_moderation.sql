@@ -35,9 +35,9 @@ begin
   then
     raise exception 'Invalid moderation request';
   end if;
-  if not exists (select 1 from auth.users u where u.id = p_moderator_id) then
-    raise exception 'Invalid moderator';
-  end if;
+  -- The server verified this JWT actor with auth.getUser; the FK on
+  -- moderation_actions.moderator_id checks existence without granting
+  -- service_role direct SELECT on protected auth.users.
   if p_support_ticket_id is not null and not exists (
     select 1 from public.support_tickets t
     where t.id = p_support_ticket_id and t.category = 'security'
