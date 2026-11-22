@@ -182,3 +182,10 @@
   .hc-settings-organized-nav { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
 @media(max-width:380px) { .hc-settings-organized-nav { grid-template-columns:1fr; } }
+
+
+.hc-journey-review-status { display:inline-flex;align-items:center;min-height:34px;padding:6px 9px;border-radius:10px;border:1px solid #67957d;background:#e9f8ef;color:#185b3c;font-size:11px;font-weight:850; }
+.hc-journey-match-panel { display:grid;gap:9px;margin-top:12px;padding:12px;border:1px solid var(--hc-card-border,#dadada);border-radius:12px;background:var(--hc-card-surface,var(--surface));color:var(--hc-on-card,var(--hc-foreground)); }
+.hc-journey-match-panel p { margin:0;font-size:12px;line-height:1.45; }
+.hc-journey-match-panel button:not(.hc-shared-picker-trigger):not(.hc-shared-picker-row) { justify-self:start;min-height:36px; }
+.theme-dark .hc-journey-review-status { background:#193a2d;border-color:#448d66;color:#baf4d1; }
