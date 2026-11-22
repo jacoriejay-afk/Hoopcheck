@@ -74,3 +74,15 @@
   .hc-home3 .hc-court .hc-court-actions > a {gap:7px!important;padding:8px!important;}
   .hc-home3 .hc-court .hc-court-actions > a > span {font-size:11px!important;}
 }
+
+
+/* On iPhone PWA, keep scrolling cards from bleeding behind the clock/island.
+   The existing body status-bar cover was too short when safe-area env resolves to 0. */
+@media(max-width:767px) {
+  html body:has(.hc-home3)::before {
+    height:max(50px,calc(env(safe-area-inset-top,0px) + 8px))!important;
+    min-height:50px!important;
+    background:var(--hc-tab-bg,var(--hc-page-bg,#f7f7f5))!important;
+    pointer-events:none!important;
+  }
+}
