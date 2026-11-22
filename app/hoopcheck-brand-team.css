@@ -404,3 +404,16 @@ html.theme-dark body main.hc-team-entity-profile section.hc-team-look-hero:not(.
   color:#ffe2cf!important;
   -webkit-text-fill-color:#ffe2cf!important;
 }
+
+/* BUILD9-MENS-KICKER-LIGHT-SURFACE: light-mode generic span text stays dark
+   despite inherited cream. Give the compact label an opaque cream surface,
+   as already verified for the women's club hero, so real contrast is safe. */
+html.theme-light body main section.hc-team-look-hero:not(.hc-womens-branded-hero) p.hc-team-hero-kicker {
+  display:table;
+  width:fit-content;
+  padding:3px 7px;
+  border-radius:5px;
+  background-color:#fff4e9!important;
+  color:#171717!important;
+  -webkit-text-fill-color:#171717!important;
+}
