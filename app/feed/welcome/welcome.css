@@ -1,0 +1,10 @@
+.hc-feed-welcome-page .page-container{max-width:1020px}
+.hc-feed-welcome-hero{margin:16px 0;padding:clamp(22px,4vw,42px)!important;position:relative;overflow:hidden}
+.hc-feed-welcome-hero h1{font-size:clamp(28px,5vw,44px);line-height:1.12}
+.hc-feed-welcome-hero>p{max-width:67ch}
+.hc-feed-welcome-avatar{display:grid;place-items:center;width:72px;height:72px;border:2px solid var(--orange);background:color-mix(in srgb,var(--orange) 22%,var(--hc-card-surface,var(--surface)));color:var(--hc-foreground);border-radius:22px;font-family:var(--hc-heading-font,sans-serif);font-weight:950;font-size:27px;transform:rotate(-4deg);margin:15px 0}
+.hc-feed-welcome-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:30px}
+.hc-feed-welcome-cards .dashboard-card{min-width:0;padding:20px;border-radius:18px;overflow-wrap:anywhere}
+.hc-feed-welcome-cards h2{font-size:19px}
+.hc-feed-welcome-cards .actions{display:flex;flex-wrap:wrap;gap:12px}
+@media(max-width:700px){.hc-feed-welcome-cards{grid-template-columns:minmax(0,1fr)}}

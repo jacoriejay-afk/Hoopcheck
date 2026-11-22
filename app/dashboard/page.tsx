@@ -14,6 +14,8 @@ import { getPlayerProfileCompletion } from "../../lib/player-profile-completion"
 import TeamLogo from "../../components/TeamLogo";
 import { getGameAvailability } from "../../lib/game-availability";
 import "./home-3.css";
+import RoleQuickLinks, { getRoleExperience } from "../../components/RoleQuickLinks";
+import "../../components/role-quick-links.css";
 
 type Profile = {
   id?: string;
@@ -247,9 +249,10 @@ export default function DashboardPage() {
         <Link href="/search" className="hc-home3-search"><HoopIcon name="search" size={17}/> <span>Search players, coaches, teams, or leagues…</span></Link>
         <section className="hc-home3-greeting">
           <div className="hc-home3-greeting-line"><strong>Welcome back, {displayName}</strong><span className="hc-home3-tier">{membershipTier.toUpperCase()}</span></div>
-          <p>Know who you’re signing with.</p>
+          <p>{getRoleExperience(profile?.account_type).subtitle}</p>
           {<><div className="hc-home3-completion" role="progressbar" aria-label="Player profile completion" aria-valuemin={0} aria-valuemax={100} aria-valuenow={completion}><span style={{width:`${completion}%`}}/></div><div className="hc-home3-progress-label"><span>{completion === 100 ? "Profile complete" : `Profile ${completion}% — finish for full visibility`}</span>{completion < 100 && <Link href="/account#edit-profile">Finish</Link>}</div></>}
         </section>
+        <RoleQuickLinks role={profile?.account_type} compact />
         {homeGames.length > 0 && <section className="hc-home3-section"><div className="hc-home3-heading"><h2>YOUR TEAMS — LIVE & NEXT</h2><Link href="/live-games">All games →</Link></div><div className="hc-home3-game-strip">{homeGames.map(game => { const isLive = game.status === "live" || game.status === "in_progress"; const team = teams.find(t => t.id === game.team_id || t.id === game.opponent_team_id); const availability = getGameAvailability({status:game.status,scheduledAt:game.scheduled_at,startedAt:game.started_at,endsAt:game.ends_at}); return <Link key={game.id} href={availability.chatOpen ? `/fan-live?gameId=${encodeURIComponent(game.id)}` : "/live-games"} className="hc-home3-game"><small>{game.league_name || team?.league_name || "Basketball"} · {isLive ? "LIVE" : "UPCOMING"}</small><strong>{team?.name || "Your team"} vs {game.opponent_name || "Opponent"}</strong><span>{isLive ? [game.home_score,game.away_score].every(v => v !== null) ? `${game.home_score} – ${game.away_score}` : "Live now" : game.scheduled_at ? new Date(game.scheduled_at).toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}) : "Time TBD"}</span><small>{availability.chatOpen ? "Join game chat →" : availability.opensAt ? `Chat opens ${availability.opensAt.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"})}` : availability.state === "UPCOMING" ? "Chat opens before tip-off" : availability.state}</small></Link>; })}</div></section>}
         <section className="hc-home3-section"><h2>{language === "es" ? "ACCIONES RÁPIDAS" : "QUICK ACTIONS"}</h2><div className="hc-home3-actions">
           <Link href="/teams"><HoopIcon name="shield-check" size={22}/><span>{language === "es" ? "Consultar un equipo" : "Check a Team"}</span></Link>
