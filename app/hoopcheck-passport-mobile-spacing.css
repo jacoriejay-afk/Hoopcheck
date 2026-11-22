@@ -1,0 +1,137 @@
+/* Build 9 web/PWA: notch clearance, compact Home Court and career country stamps.
+   Loaded after the original site styles to prevent competing layout overrides. */
+.hc-profile-passport-anchor,.hc-profile-identity-passport {
+  min-width:0;scroll-margin-top:calc(110px + env(safe-area-inset-top,0px));
+}
+.hc-member-profile-page .hc-journey-section {
+  margin:12px 0 14px;padding:clamp(14px,3.5vw,22px);min-width:0;overflow:hidden;
+}
+.hc-member-profile-page .hc-journey-heading {margin-bottom:12px}
+.hc-member-profile-page .hc-journey-heading h2 {font-size:clamp(23px,5.5vw,30px)}
+.hc-passport-countries {margin:12px 0 16px}
+.hc-passport-countries__top {
+  display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;
+}
+.hc-passport-countries__top strong {
+  font-family:var(--font-display),Impact,sans-serif;font-size:18px;letter-spacing:.025em;
+}
+.hc-passport-countries__top span {font-size:12px;font-weight:800;color:#b95121}
+.hc-passport-stamp-grid {
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));
+  gap:10px;list-style:none;margin:0;padding:2px;
+}
+.hc-passport-country-stamp {
+  display:flex;flex-direction:column;justify-content:center;gap:7px;
+  min-width:0;min-height:140px;padding:14px;border:2px dashed #b86743;border-radius:17px;
+  background:linear-gradient(145deg,#fff9ee,#f4e7d5);
+  box-shadow:inset 0 0 0 4px rgba(183,92,48,.09);color:#542a20;
+  transform:rotate(var(--hc-stamp-tilt,0deg));
+}
+.hc-passport-country-stamp__top {
+  display:flex;align-items:center;gap:7px;font-size:9px;font-weight:900;letter-spacing:.1em;
+}
+.hc-passport-country-stamp__top span:first-child {font-size:22px;line-height:1}
+.hc-passport-country-stamp__country {
+  display:block;font-family:var(--font-display),Impact,sans-serif;
+  font-size:clamp(20px,5vw,27px);line-height:1.1;overflow-wrap:anywhere;
+}
+.hc-passport-country-stamp__clubs {
+  font-size:12px;font-weight:700;line-height:1.3;overflow-wrap:break-word;
+}
+.hc-passport-country-stamp__bottom {
+  display:flex;align-items:flex-start;flex-wrap:wrap;gap:5px 8px;
+  margin-top:auto;font-size:10px;font-weight:850;
+}
+.hc-passport-country-stamp__bottom em {
+  font-size:9px;font-style:normal;color:#8a391c;border:1px solid #cf8b6c;
+  padding:2px 5px;border-radius:9px;
+}
+.hc-passport-countries__note {
+  margin:9px 0 0;font-size:11px;line-height:1.45;color:#645b56;
+}
+.theme-dark .hc-member-profile-page .hc-journey-section,
+.theme-dark .player-profile-page .hc-journey-section {
+  background:#181c2a;color:#f2f4fa;border-color:#3d4660;
+}
+.theme-dark .hc-passport-country-stamp {
+  background:linear-gradient(145deg,#2e3046,#262539);
+  border-color:#ff995b;color:#fff1e7;
+  box-shadow:inset 0 0 0 4px rgba(255,128,73,.09);
+}
+.theme-dark .hc-passport-countries__top span,
+.theme-dark .hc-passport-countries__note {color:#f2b895}
+.theme-dark .hc-passport-country-stamp__bottom em {color:#ffc6a9;border-color:#b8643b}
+@media(prefers-reduced-motion:reduce) {
+  .hc-passport-country-stamp {transform:none}
+}
+@media(max-width:767px) {
+  /* The former black-translucent PWA status bar allowed text behind the clock.
+     Mask that strip even for iOS versions retaining overlay behavior. */
+  html body:has(header.site-header-global.hc-liquid-glass-header)::before {
+    content:"";position:fixed;inset:0 0 auto;min-height:8px;
+    height:calc(env(safe-area-inset-top,0px) + 8px);
+    background:var(--hc-tab-bg,#f7f7f5);z-index:1199;pointer-events:none;
+  }
+  html body header.site-header-global.hc-template-header.hc-liquid-glass-header {
+    inset-block-start:calc(var(--hc-safe-area-top, env(safe-area-inset-top, 0px)) + 8px)!important;
+    margin-block-start:8px!important;
+    max-width:calc(100% - 20px)!important;
+  }
+  html body .hc-global-page-shell > .hc-route-transition {
+    padding-block-end:calc(114px + env(safe-area-inset-bottom,0px))!important;
+    scroll-padding-block-end:calc(114px + env(safe-area-inset-bottom,0px));
+  }
+  .hc-home3 .hc-home3-stack {gap:14px}
+  .hc-home3 .hc-role-quick-links {padding:12px!important;margin:0 0 4px}
+  .hc-home3 .hc-role-quick-links__heading h2 {font-size:18px;line-height:1.2}
+  .hc-home3 .hc-role-quick-links__heading .muted {font-size:12px;line-height:1.35;margin:4px 0 0}
+  .hc-home3 .hc-role-quick-links__grid {gap:7px;margin-top:9px}
+  .hc-home3 .hc-role-quick-links__grid a {min-height:64px;padding:9px}
+  .hc-home3 .hc-role-quick-links__grid strong {font-size:13px;line-height:1.2}
+  .hc-home3 .hc-role-quick-links__grid small {font-size:11px;line-height:1.25}
+  .hc-home3 .hc-my-court {padding:12px;margin-top:2px;border-radius:17px}
+  .hc-home3 .hc-court-head {margin-bottom:10px}
+  .hc-home3 .hc-court-actions {grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .hc-home3 .hc-court-actions a {
+    min-height:62px;flex-direction:row;gap:8px;padding:8px 10px;
+    justify-content:flex-start;text-align:left;
+  }
+  .hc-home3 .hc-court-actions a span {
+    font-size:12px;overflow-wrap:normal;word-break:normal;hyphens:none;
+  }
+  .hc-home3 .hc-court-actions a svg {flex:0 0 21px;width:21px;height:21px}
+  .hc-home3 .hc-home3-heading {align-items:flex-start;gap:8px}
+  .hc-home3 .hc-home3-heading h2 {font-size:17px;line-height:1.2;overflow-wrap:normal;min-width:0}
+  .hc-home3 .hc-home3-heading a {flex:0 0 auto;padding-top:4px}
+  .hc-member-profile-page .hc-social-profile-nav {
+    display:flex;flex-wrap:nowrap;align-items:center;gap:7px;overflow-x:auto;
+    scroll-snap-type:x proximity;padding:7px 0 10px;margin:9px 0 10px;
+    overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;
+  }
+  .hc-member-profile-page .hc-social-profile-nav a {
+    flex:0 0 auto;display:inline-flex;align-items:center;min-height:40px;padding:8px 12px;
+    white-space:nowrap;font-size:12px;font-weight:700;scroll-snap-align:start;
+    border:1px solid var(--hc-card-border,var(--border));border-radius:999px;
+    text-decoration:none;background:var(--hc-card-surface,var(--surface));
+    color:var(--hc-on-card,var(--hc-foreground));
+  }
+  .hc-member-profile-page .hc-social-profile-nav a:focus-visible {
+    outline:2px solid #ff6a25;outline-offset:2px;
+  }
+  .hc-member-profile-page .hc-ux2b-completion-card {margin:10px 0 14px;padding:14px!important}
+  .hc-member-profile-page .hc-journey-section {margin:4px 0 12px}
+  .hc-member-profile-page .hc-journey-heading .hc-journey-stamp {
+    width:52px;height:52px;flex:0 0 52px;
+  }
+}
+@media(max-width:420px) {
+  .hc-passport-stamp-grid {grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .hc-passport-country-stamp {min-height:136px;padding:10px;transform:none}
+  .hc-passport-country-stamp__country {font-size:20px}
+  .hc-passport-country-stamp__clubs {font-size:11px}
+}
+
+/* PlayerJourney owns the #career-passport hash target; do not duplicate the ID. */
+.hc-member-profile-page #career-passport {
+  scroll-margin-top:calc(110px + env(safe-area-inset-top,0px));
+}
