@@ -144,6 +144,12 @@ export default function AccountPage() {
     if (teamId && /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(teamId)) setReviewTeamId(teamId);
   }, []);
 
+  // Account data and its review checklist arrive after the hash navigation.
+  useEffect(() => {
+    if (loading || window.location.hash !== "#team-review-checklist") return;
+    document.getElementById("team-review-checklist")?.scrollIntoView({block:"start"});
+  }, [loading, reviewTeamId]);
+
   useEffect(() => {
     let active = true;
     async function load() {
