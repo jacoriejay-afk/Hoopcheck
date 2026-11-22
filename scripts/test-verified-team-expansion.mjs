@@ -26,10 +26,10 @@ const clubPattern = /\('((?:[^']|'')+)','((?:[^']|'')+)','((?:[^']|'')+)'\)/g;
 const parse = s => [...s.matchAll(clubPattern)].map(m => ({ name: m[1], city: m[2], league: m[3] }));
 const men = parse(mensText);
 const women = parse(womenText);
-assert.equal(men.length, 23, "Expected 23 men’s club entries");
+assert.equal(men.length, 40, "Expected 40 men’s club entries");
 assert.equal(women.length, 14, "Expected 14 women’s club entries");
 assert.equal(men.filter(x => x.league === "Liga Nacional de Básquet").length, 6);
-assert.equal(men.filter(x => x.league === "La Liga Argentina").length, 17);
+assert.equal(men.filter(x => x.league === "La Liga Argentina").length, 34);
 assert.equal(women.filter(x => x.league === "LNBP Femenil").length, 8);
 assert.equal(women.filter(x => x.league === "Liga de México (LMBPF)").length, 6);
 for (const set of [men, women]) {
@@ -45,4 +45,4 @@ assert.match(admin, /queueGender/);
 assert.match(admin, /queueCoverage/);
 assert.match(admin, /rightsReviewed/);
 assert.match(admin, /\!rightsReviewed/);
-console.log("PASS: 23 missing men + 14 missing women, two source-reviewed crests, idempotent mirror-safe seed, guarded logo review queue.");
+console.log("PASS: 40 missing men + 14 missing women, two source-reviewed crests, idempotent mirror-safe seed, guarded logo review queue.");
