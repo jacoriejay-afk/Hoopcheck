@@ -21,6 +21,7 @@ assert.equal(getGameAvailability({...game,now:new Date("2026-11-22T11:00:00Z")})
 assert.equal(getGameAvailability({...game,status:"live",now:new Date("2026-11-22T12:20:00Z")}).chatOpen,true);
 const final={...game,status:"final",endsAt:"2026-11-22T14:05:00Z"};
 assert.equal(getGameAvailability({...final,now:new Date("2026-11-22T15:00:00Z")}).phase,"post-game");
+assert.equal(getGameAvailability({...final,now:new Date("2026-11-22T15:00:00Z")}).state,"POST GAME","A final result must never appear as a live game");
 assert.equal(getGameAvailability({...final,now:new Date("2026-11-22T16:04:59Z")}).chatOpen,true);
 assert.equal(getGameAvailability({...final,now:new Date("2026-11-22T16:05:00Z")}).chatOpen,false);
 assert.equal(getGameAvailability({...game,status:"final",now:new Date("2026-11-22T14:20:00Z")}).chatOpen,false,"Never fabricate a final timestamp");
