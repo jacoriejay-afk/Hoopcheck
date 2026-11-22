@@ -12,6 +12,7 @@ import { readBasketballSide, readLiveGames } from "../src/native/liveGames";
 import { readFeedPage, type FeedPost } from "../src/native/feedClient";
 import { Skeleton } from "./Motion";
 import { Scoreboard } from "./Scoreboard";
+import { MyCourtActions } from "./MyCourtActions";
 import { EntityArtwork } from "./EntityArtwork";
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
 // Existing bundled court art: no real player photograph, team crest, or sponsored asset.
@@ -19,13 +20,6 @@ const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoo
 const arena = require("../assets/courtside-arena.webp");
 type Games = Awaited<ReturnType<typeof readLiveGames>>;
 type HomeData = { scope: string; teams: PublicConnection[] | null; games: Games | null; posts: FeedPost[] | null };
-type HomeRoute = "/teams" | "/fan-live" | "/team-hub/groups" | "/reels";
-const palette = {
-  orange: { colors: ["#A33C16", "#602715", "#2A1928"] as [string,string,string], accent: "#FF973D" },
-  violet: { colors: ["#6833BA", "#422478", "#201B40"] as [string,string,string], accent: "#D5A7FF" },
-  blue: { colors: ["#0F65BD", "#123D7F", "#13243B"] as [string,string,string], accent: "#6CCBFF" },
-  green: { colors: ["#167A51", "#165438", "#102E2C"] as [string,string,string], accent: "#75F5B6" },
-};
 function ArenaHeading({title,cta,onPress}: {title:string;cta?:string;onPress?:()=>void}) {
   const theme=useEntryTheme();
   return <View style={{ flexDirection:"row",alignItems:"center",gap:8,minHeight:30 }}>
@@ -37,29 +31,6 @@ function ArenaHeading({title,cta,onPress}: {title:string;cta?:string;onPress?:()
       <Text style={{color:theme.accent,fontSize:12,fontWeight:"700"}}>{cta} →</Text>
     </Pressable>:null}
   </View>;
-}
-function ArenaAction({ title, route, icon, tone }: {
-  title:string; route:HomeRoute; icon:"shield-checkmark-outline"|"create-outline"|"radio-outline"|"people-outline"; tone:keyof typeof palette;
-}) {
-  const t=useEntryTheme();const router=useRouter();const paint=palette[tone];
-  return <Pressable accessibilityRole="link" accessibilityLabel={title} onPress={()=>router.push(route)}
-    style={({pressed})=>({flex:1,minWidth:0,opacity:pressed?.82:1,transform:[{scale:pressed?.97:1}]})}>
-    <View style={{minHeight:99,borderRadius:17,overflow:"hidden",borderWidth:1,
-      borderColor:t.dark?paint.accent:paint.colors[0],backgroundColor:paint.colors[1]}}>
-      <LinearGradient colors={paint.colors} start={{x:0,y:0}} end={{x:1,y:1}}
-        style={StyleSheet.absoluteFill} />
-      <View pointerEvents="none" style={{position:"absolute",bottom:-22,right:-18,width:58,height:58,
-        borderRadius:30,borderWidth:1,borderColor:"rgba(255,255,255,.20)"}}/>
-      <View style={{minHeight:99,paddingHorizontal:5,paddingVertical:11,alignItems:"center",
-        justifyContent:"center",gap:6}}>
-        <Ionicons name={icon} size={25} color="#FFFFFF" />
-        <Text numberOfLines={2} style={{textAlign:"center",fontFamily:t.type.ui.fontFamily,
-          color:"#FFFFFF",fontSize:12,lineHeight:16,fontWeight:"700"}}>{title}</Text>
-      </View>
-      <View pointerEvents="none" style={{position:"absolute",height:2,bottom:0,left:18,right:18,
-        borderRadius:3,backgroundColor:paint.accent}}/>
-    </View>
-  </Pressable>;
 }
 export function HomeCourtside() {
   const t=useEntryTheme();const router=useRouter();
@@ -107,12 +78,6 @@ export function HomeCourtside() {
   </View>;
   const tier=account.tier==="premium"?"PREMIUM":account.tier==="pro"?"PRO":"FREE";
   const followTeams=data?.teams??[];
-  const actions = [
-    {route:"/teams",title:"Check a Team",icon:"shield-checkmark-outline",tone:"orange"},
-    {route:"/teams",title:role==="player"?"Review a Team":"Explore Teams",icon:"create-outline",tone:"violet"},
-    {route:"/fan-live",title:"Live Games",icon:"radio-outline",tone:"blue"},
-    {route:"/team-hub/groups",title:"Fan Groups",icon:"people-outline",tone:"green"},
-  ] as const;
   return <View style={{gap:14,marginBottom:t.spacing.lg}}>
     <View style={{borderRadius:19,overflow:"hidden",borderWidth:1,
         borderColor:t.dark?"rgba(255,150,74,.70)":"rgba(211,93,29,.58)",
@@ -145,11 +110,7 @@ export function HomeCourtside() {
           </Pressable>
         </View>
     </View>
-    <ArenaHeading title="QUICK ACTIONS"/>
-    <View style={{flexDirection:"row",gap:6}}>
-      {actions.map(item=><ArenaAction key={item.title} route={item.route as HomeRoute} title={item.title}
-        icon={item.icon} tone={item.tone}/>)}
-    </View>
+    <MyCourtActions key={`${uid}:${role}`} userId={uid!} role={role!} feedEnabled={feedAccess} />
     <ArenaHeading title="TEAMS YOU FOLLOW" cta="Explore teams" onPress={()=>router.push("/teams")}/>
     {!data?<Skeleton review/>:data.teams===null?<Text accessibilityRole="alert"
       style={{color:t.muted}}>Your teams could not load.</Text>:followTeams.length===0?
