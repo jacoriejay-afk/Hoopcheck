@@ -120,6 +120,6 @@ async function fixture(browser,theme,allowed=true){
     await page.getByRole('tab',{name:'Home',exact:true}).click();await page.getByText('Explore basketball',{exact:true}).waitFor();
     assert.deepEqual(errors,[]);await page.screenshot({path:`/tmp/hoopcheck-native-ui/feed-${theme}.png`,fullPage:true});
     console.log(`PASS ${theme}: native feed moderation/draft/reply/check/save/poll/Reels playback/alerts/account/search/home`);
-  }catch(error){console.log('Fixture failure URL:',page.url());console.log(await page.locator('body').innerText());throw error;}finally{await context.close();}
+  }catch(error){console.log('Fixture failure URL:',page.url());console.log('Fixture JS errors:',errors.slice(-8));console.log('Fixture request paths:',calls.slice(-16).map(({path,method,query})=>({path,method,query})));console.log(await page.locator('body').innerText());throw error;}finally{await context.close();}
 }
 (async()=>{png=await require('sharp')({create:{width:640,height:360,channels:3,background:'#FF5A1F'}}).png().toBuffer();fs.mkdirSync('/tmp/hoopcheck-native-ui',{recursive:true});const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});try{for(const theme of ['light','dark'])await fixture(browser,theme);await fixture(browser,'light',false);console.log('PASS denied membership: protected feed queries never started');}finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});

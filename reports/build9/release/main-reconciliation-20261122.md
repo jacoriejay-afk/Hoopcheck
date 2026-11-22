@@ -48,3 +48,7 @@ Read-only production PostgreSQL confirmed `public.user_blocks` has RLS on and au
 ## Web Reels block RLS hotfix parity
 
 Exact reviewed Git blobs for `app/reels/ReelsViewer.tsx` and its Phase 5 safety guard were carried from independent website hotfix [#825](https://github.com/jacoriejay-afk/Hoopcheck/pull/825) to this Build9 isolated source candidate, to preserve web/native parity. Both files were byte-identical to latest main before the copy; no conflicting Build9 edits were overwritten. Both web and native now INSERT owner-only block rows and verify exact owner-scoped duplicates instead of requiring unavailable UPDATE. Production RLS/grants unchanged. Native/browser and web root CI must pass on new exact head.
+
+## Posts/Reels scope transition native-list fix
+
+The expanded native browser fixture reached a blank Reel view after switching `FlatList` from Posts to Reels while its `viewabilityConfig` and `onViewableItemsChanged` callbacks change. React Native VirtualizedList should not have those props changed on the same mounted list. Keyed `FlatList` by the existing owner+tab `scope` so a tab or account switch creates a fresh list instance and the correct 30%/75% viewability rules are established at mount; also clear stale visible IDs on scope changes. No auth, Reel account block, subscription, RLS, or media access check was relaxed. The fixture now logs only sanitized request paths and JS exceptions on failures, not tokens or post bodies. Exact-head native tests remain required.

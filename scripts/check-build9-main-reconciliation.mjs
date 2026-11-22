@@ -51,6 +51,7 @@ for(const required of [
 ]) assert.ok(feed.includes(required),"Arena HoopFeed lost UI/moderation feature: "+required);
 assert.match(feed,/blockedCreators\.owner === uid && blockedCreators\.ready && !blockedCreators\.failed/,
   "Blocked-account lookup must fail closed before Reels appear");
+assert.ok(feed.includes('<FlatList key={scope}'), "Posts/Reels and user scope changes must remount the VirtualizedList before its dynamic viewability rules change");
 assert.match(feed, /supabase\.from\("user_blocks"\)\.insert\(/, "Native Reel blocking must use INSERT-only RLS privilege");
 assert.doesNotMatch(feed, /supabase\.from\("user_blocks"\)\.upsert\(/, "Do not require UPDATE on owner-only block rows");
 assert.match(feed, /error\.code !== "23505"/, "Repeated block attempts must verify the owner-scoped existing row");
