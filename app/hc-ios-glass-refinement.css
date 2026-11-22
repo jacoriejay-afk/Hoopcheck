@@ -453,3 +453,14 @@ html:is(.theme-light,.theme-dark) body main .hc-team-look-hero .hc-team-hero-kic
   -webkit-text-fill-color:#ffdac3!important;
   background-color:transparent!important;
 }
+
+/* BUILD9-LOGO-QUEUE-CONTRAST: imported logo-review pills were white-on-white
+   under Build 9 light-mode card unification. Give the compact action a real
+   opaque surface and guaranteed readable text without changing permissions. */
+html.theme-light body main.admin-team-logo-studio button.hc-admin-logo-queue-select,
+html.theme-dark body main.admin-team-logo-studio button.hc-admin-logo-queue-select {
+  background-color:#182334!important;
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  border-color:#64748b!important;
+}
