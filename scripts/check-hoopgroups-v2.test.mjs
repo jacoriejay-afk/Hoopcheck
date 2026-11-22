@@ -19,7 +19,8 @@ test("Members can discover, create and join user-owned communities without openi
   assert.match(manager,/\.from\("hoop_group_channels"\)/);
   assert.match(manager,/channels\.length>=12/);
   assert.match(page,/NEXT_PUBLIC_HOOPGROUPS_CHANNELS_ENABLED/);
-  assert.match(page,/Team Fan Groups/);
+  assert.doesNotMatch(page,/href="\/team-hub\/groups"/, "Independent communities must not display official Fan Groups");
+  assert.match(page,/DISCUSSION TOPICS/);
 });
 test("Group and channel ownership requires database row policies and column-specific grants",()=>{
   const v1=read("supabase/candidates/hoopgroups_channels_v1_review_only.sql");
