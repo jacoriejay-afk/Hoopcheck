@@ -1,0 +1,43 @@
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+const read = file => readFileSync(file,"utf8");
+const css=read("app/hc-ios-glass-refinement.css");
+const layout=read("app/layout.tsx");
+const feed=read("app/feed/page.tsx");
+const account=read("app/account/page.tsx");
+const connections=read("app/connections/page.tsx");
+const messages=read("app/messages/page.tsx");
+const notice=read("app/notifications/page.tsx");
+const chat=read("components/HoopChatCourtside.tsx");
+assert.ok(layout.indexOf('import "./hc-ios-glass-refinement.css";')>layout.indexOf('import "./hc-site-rhythm-20261122.css";'),"New iOS refinements must be loaded last");
+for(const text of ["hc-feed-editor-surface","hc-feed-extra-options","hc-feed-media-picker","hc-feed-post-more","hc-account-minimal-header","hc-simple-page-heading","hc-people-search-bar","prefers-reduced-motion","forced-colors:active","hc-courtside-top"]){
+ assert.ok(css.includes(text),"Missing UI contract: "+text);
+}
+assert.match(feed,/\<details className="hc-feed-extra-options"/);
+assert.match(feed,/className="hc-feed-post-more"/);
+assert.match(feed,/scrollIntoView\(\{ block: "start" \}\)/);
+assert.match(feed,/Media<\/button>/);
+assert.match(feed,/toggleCheck\(p\)/);
+assert.match(feed,/toggleSave\(p\)/);
+assert.match(feed,/sharePost\(p\)/);
+assert.match(feed,/HoopFeedCommentsDialog/);
+assert.match(feed,/HoopFeedEntityTag value=\{tag\}/);
+assert.match(account,/className="hc-account-minimal-header"/);
+assert.match(account,/href="\/messages"/);
+assert.match(account,/<AccountWorkspaces key=\{userId\}/);
+assert.match(account,/<RoleQuickLinks role=\{profile.account_type\}/);
+assert.match(account,/<ProfileAppearance key=\{userId\}/);
+assert.match(account,/id="profile-editor"/);
+assert.match(account,/getHoopCheckEntitlements/);
+assert.match(connections,/search_public_players_page/);
+assert.match(connections,/get_public_follow_list/);
+assert.match(connections,/accountType==="fan"/);
+assert.match(connections,/href="\/messages"/);
+assert.match(messages,/HoopChatCourtside/);
+assert.match(notice,/HoopChatInbox/);
+assert.match(chat,/selected.status!=="accepted"/);
+let level=0;
+for(const char of css){if(char==="{")level++;if(char==="}")level--;assert.ok(level>=0,"Unmatched CSS brace");}
+assert.equal(level,0,"Unclosed CSS block");
+assert.ok(!/border-radius\s*:\s*[23]px\b/.test(css),"Disallowed tiny card radius");
+console.log("PASS: compact iOS HoopFeed, account, user search, shared HoopChat and simple page-header contracts");

@@ -9,7 +9,7 @@ import { supabase } from "../../lib/supabase";
 import { readOwnProfile } from "../../lib/read-own-profile";
 import ThemeToast from "../../components/ThemeToast";
 import Surface from "../../components/Surface";
-import SocialProfileHeader, { profileCover } from "../../components/SocialProfileHeader";
+import { profileCover } from "../../components/SocialProfileHeader";
 import ProfileAppearance from "../../components/ProfileAppearance";
 import AccountWorkspaces from "./AccountWorkspaces";
 import RoleQuickLinks from "../../components/RoleQuickLinks";
@@ -90,6 +90,15 @@ export default function AccountPage() {
   const { t, setLanguage: applyLanguage } = useLanguage();
   const [email, setEmail] = useState("");
   const [cover, setCover] = useState(profileCover(null));
+  const [appearanceOpen, setAppearanceOpen] = useState(false);
+  useEffect(() => {
+    const reveal = () => {
+      if (window.location.hash === "#profile-appearance") setAppearanceOpen(true);
+    };
+    reveal();
+    window.addEventListener("hashchange", reveal);
+    return () => window.removeEventListener("hashchange", reveal);
+  }, []);
   const [userId, setUserId] = useState("");
   const [reviews, setReviews] = useState<Review[]>([]);
   const [targets, setTargets] = useState<Record<string, Target>>({});
@@ -447,25 +456,28 @@ export default function AccountPage() {
 
   return (
     <main className="page-shell hc-account-page"><div className="page-container">
-      <SocialProfileHeader name={displayName || profile.username || t("yourAccount")} handle={profile.username}
-        avatarUrl={avatarUrl} cover={cover}
-        badge={(profile.player_verified || profile.coach_verified) && <VerifiedBadge label={t("verifiedProfessional")} />}
-        actions={<a href="#profile-editor" className="btn">{t("editProfile")}</a>}>
-        <p className="hc-social-handle">{t("accountPreferences")}</p>
-      </SocialProfileHeader>
-      <nav className="hc-social-profile-nav" aria-label={t("accountSettings")}>
-        <a href="#profile-appearance">Customize</a>
-        <a href="#account-settings">{t("settings")}</a>
+      <header className="hc-account-minimal-header">
+        <div className="hc-account-minimal-header__identity">
+          <span className="hc-account-minimal-header__avatar">{avatarUrl?<img src={avatarUrl} alt="" />:(displayName||profile.username||"HC").slice(0,1).toUpperCase()}</span>
+          <span className="hc-account-minimal-header__copy"><h1>Account</h1><small>{t("accountPreferences")} · {displayName||profile.username||t("yourAccount")}{profile.username?" · @"+profile.username:""}</small></span>
+        </div>
+        <Link href="/profile" className="hc-account-minimal-header__link">View profile</Link>
+      </header>
+      <nav className="hc-account-simple-nav" aria-label={t("accountSettings")}>
+        <a href="#account-settings">Settings</a>
         <a href="#profile-editor">Edit details</a>
-        <Link href="/notifications?tab=messages">Messages</Link>
-        <Link href="/settings">Appearance & language</Link>
-        <Link href="/profile">{t("yourProfile")}</Link>
-        {profile.account_type === "player" && settingsVisibility === "public" &&
-          <Link href={`/players/${encodeURIComponent(userId)}`}>{t("profilePublic")}</Link>}
+        <Link href="/messages">Messages</Link>
+        <button type="button" onClick={()=>{setAppearanceOpen(v=>!v);if(!appearanceOpen)window.location.hash="profile-appearance";}}>Customize</button>
       </nav>
-      <AccountWorkspaces key={userId} userId={userId} />
-      <RoleQuickLinks role={profile.account_type} />
-      <ProfileAppearance key={userId} current={cover} onSave={setCover} />
+      <details className="hc-account-tools">
+        <summary>My tools and workspaces</summary>
+        <AccountWorkspaces key={userId} userId={userId} />
+        <RoleQuickLinks role={profile.account_type} />
+      </details>
+      <details className="hc-account-tools" open={appearanceOpen} onToggle={event=>setAppearanceOpen(event.currentTarget.open)}>
+        <summary>Profile appearance and social links</summary>
+        <ProfileAppearance key={userId} current={cover} onSave={setCover} />
+      </details>
       {profile.account_type === "player" ? <PlayerProfileCompletionCard key={JSON.stringify(profile)} profile={{ ...profile, id: userId }} onPublished={() => { setSettingsVisibility("public"); setProfile(current => ({ ...current, profile_visibility: "public" })); }} /> : (() => { const completion = calculateProfileCompletion({ ...profile, display_name: displayName, bio, avatar_url: avatarUrl, hometown, nationality, interests, favorite_leagues: favoriteLeagues }); const next = completion.nextMissing; return completion.percentage < 100 && next ? <section className="dashboard-card hc-account-profile-completion" style={{marginTop:12}}><strong>Profile {completion.percentage}% complete</strong><p className="muted">Add your {next.label} next.</p><a className="btn" href={"/account#" + (next.key === "avatar_url" ? "profile-editor-field-avatar_url" : "profile-editor-field-" + next.key)}>{next.key === "avatar_url" ? "Add photo" : "Complete profile"}</a></section> : null; })()}
       {(profile as any).moderation_status === "warned" || (profile as any).moderation_status === "flagged" ? <section className="dashboard-card" style={{marginBottom:16,border:"1px solid var(--orange)"}}><strong>{(profile as any).moderation_status === "warned" ? t("accountWarning") : t("profileFlagged")}</strong><p className="muted">{(profile as any).moderation_note || t("supportGuidance")}</p><Link href="/support" className="btn dark">{t("contactSupport")}</Link></section> : null}
       <section id="account-settings" className="hc-settings" aria-label={t("accountSettings")}>
@@ -487,7 +499,7 @@ export default function AccountPage() {
           <div className="hc-setting-row"><SettingsGlyph name="globe"/><div className="hc-setting-copy"><strong>{t("language")}</strong><small>{t("chooseAppLanguage")}</small></div><select aria-label={t("language")} className="hc-setting-select" value={preferredLanguage} onChange={e=>changeLanguage(e.target.value)}><option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="tr">Türkçe</option><option value="pt">Português</option><option value="it">Italiano</option><option value="el">Ελληνικά</option><option value="ar">العربية</option><option value="ru">Русский</option><option value="az">Azərbaycanca</option><option value="pl">Polski</option><option value="zh">中文</option><option value="ja">日本語</option><option value="sr">Српски</option><option value="fi">Suomi</option><option value="he">עברית</option><option value="lt">Lietuvių</option><option value="uk">Українська</option></select></div>
           </SettingsGroup>
         <SettingsGroup title="Notifications & messages">
-          <SettingsRow icon="message" label="Messages" value="Senders and conversations" href="/notifications?tab=messages" />
+          <SettingsRow icon="message" label="Messages / HoopChat" value="Your conversations and contact requests" href="/messages" />
           <SettingsRow icon="activity" label="Alerts center" value="Activity and game notifications" href="/notifications" />
           <SettingsToggle icon="message" label={t("gameChatAlerts")} checked={notificationPreferences.game_chat_alerts} onChange={v=>changeNotification("game_chat_alerts",v)} />
           <SettingsToggle icon="user-plus" label={t("newFollower")} checked={notificationPreferences.new_follower} onChange={v=>changeNotification("new_follower",v)} />
