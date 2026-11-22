@@ -365,3 +365,55 @@ html body main .hc-team-look-hero .hc-team-follow-pill.is-following {
   }
   .hc-team-profile-overview-grid > * { overflow-wrap: anywhere; }
 }
+
+
+/* BUILD9-TEAM-GRADIENT-CONTRAST
+   The hero uses a dark background image/gradient, but the CSS background-color
+   fallback was transparent. Browser contrast checks correctly treated white
+   hero text over a white ancestor as unsafe in light mode. Give the hero a
+   real dark solid fallback, retaining its existing cover/gradient layer. */
+html.theme-light body main section.hc-team-look-hero,
+html.theme-dark body main section.hc-team-look-hero {
+  background-color: #111827 !important;
+}
+/* The women's hero kicker must remain legible against the dark hero in both
+   themes, independent of generic page copy/theme defaults. */
+html.theme-light body main section.hc-team-look-hero.hc-womens-branded-hero p.hc-team-hero-kicker,
+html.theme-dark body main section.hc-team-look-hero.hc-womens-branded-hero p.hc-team-hero-kicker {
+  color: #ffe2cf !important;
+  -webkit-text-fill-color: #ffe2cf !important;
+}
+
+/* Contrast regression: the light-theme generic span color wins in the women's
+   kicker. Give that small label an opaque cream chip so its actual computed
+   dark foreground is legible, while dark mode retains its dark hero. */
+html.theme-light body main section.hc-team-look-hero.hc-womens-branded-hero p.hc-team-hero-kicker {
+  display: table;
+  width: fit-content;
+  padding: 3px 7px;
+  border-radius: 5px;
+  background-color: #fff4e9 !important;
+  color: #171717 !important;
+  -webkit-text-fill-color: #171717 !important;
+}
+
+/* BUILD9-MENS-KICKER-CONTRAST: light-mode copy resets can darken the nested
+   label. Keep the visible text cream against the verified dark hero surface. */
+html.theme-light body main.hc-team-entity-profile section.hc-team-look-hero:not(.hc-womens-branded-hero) p.hc-team-hero-kicker > span,
+html.theme-dark body main.hc-team-entity-profile section.hc-team-look-hero:not(.hc-womens-branded-hero) p.hc-team-hero-kicker > span {
+  color:#ffe2cf!important;
+  -webkit-text-fill-color:#ffe2cf!important;
+}
+
+/* BUILD9-MENS-KICKER-LIGHT-SURFACE: light-mode generic span text stays dark
+   despite inherited cream. Give the compact label an opaque cream surface,
+   as already verified for the women's club hero, so real contrast is safe. */
+html.theme-light body main section.hc-team-look-hero:not(.hc-womens-branded-hero) p.hc-team-hero-kicker {
+  display:table;
+  width:fit-content;
+  padding:3px 7px;
+  border-radius:5px;
+  background-color:#fff4e9!important;
+  color:#171717!important;
+  -webkit-text-fill-color:#171717!important;
+}

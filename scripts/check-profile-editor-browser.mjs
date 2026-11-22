@@ -47,6 +47,9 @@ try {
   await page.route('**/api/membership', route => route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({owner:uid,subscription:{...subscription,cancel_at_period_end:false,billing_interval:'month',provider:'stripe'}})}));
   await page.goto(`${baseURL}/account`);
   await page.locator('#profile-editor').waitFor();
+  // The compact Account UI stores styling controls within an accessible disclosure.
+  const appearanceSummary=page.locator('.hc-account-tools > summary').filter({hasText:'Profile appearance and social links'});
+  await appearanceSummary.click();
   await page.getByRole('radio',{name:'Violet'}).check();
   await page.getByRole('radio',{name:/Showcase/}).check();
   await page.getByRole('textbox',{name:'Instagram'}).fill('https://instagram.com/qa_player');
@@ -55,7 +58,8 @@ try {
   assert.equal(user.user_metadata.hoopcheck_profile_cover,'violet');
   assert.equal(user.user_metadata.hoopcheck_profile_layout,'showcase');
   assert.equal(user.user_metadata.hoopcheck_social_links?.instagram,'https://instagram.com/qa_player');
-  assert.equal(await page.locator('.hc-social-profile').getAttribute('data-profile-cover'),'violet');
+  assert.equal(await page.locator('.hc-account-minimal-header').count(),1,'Account uses a compact identity header');
+  assert.equal(await page.getByRole('radio',{name:'Violet'}).isChecked(),true,'Saved cover is still selected');
   await page.locator('#position').selectOption('PG');
   await page.locator('#player-height').fill('193 cm');
   await page.locator('#current-team .hc-shared-picker-trigger').click();

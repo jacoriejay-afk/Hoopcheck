@@ -840,6 +840,7 @@ try {
               text: (element.textContent || "").trim().slice(0, 60),
               color: getComputedStyle(element).color,
               background: (() => { let n=element; while(n && n!==document.documentElement){const c=getComputedStyle(n).backgroundColor;if(c!=="rgba(0, 0, 0, 0)")return c;n=n.parentElement;} return getComputedStyle(document.body).backgroundColor; })(),
+              ancestry: (() => { const chain=[]; let n=element; for(let i=0;n && i<7;i++,n=n.parentElement){const st=getComputedStyle(n);chain.push({tag:n.tagName.toLowerCase(),className:typeof n.className==="string"?n.className:"",background:st.backgroundColor,backgroundImage:st.backgroundImage.slice(0,130),color:st.color});}return chain; })(),
             })),
           navigationError,
         };

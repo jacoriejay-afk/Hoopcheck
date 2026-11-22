@@ -110,7 +110,7 @@ async function fixture(browser,theme,allowed=true){
     await page.getByText('Original fixture comment',{exact:true}).waitFor();await page.getByRole('button',{name:'Reply to Fixture Member',exact:true}).first().click();
     await page.getByRole('textbox',{name:'Write a comment'}).fill('Fixture reply');await page.getByRole('button',{name:'Comment',exact:true}).click();
     await page.getByText('Fixture reply',{exact:true}).waitFor();
-    await page.getByRole('button',{name:'Check · 0',exact:true}).first().click();await page.getByRole('button',{name:'Checked · 1',exact:true}).first().waitFor();
+    await page.getByRole('button',{name:'Check post, 0 Checks',exact:true}).first().click();await page.getByRole('button',{name:'Remove Check, 1 Checks',exact:true}).first().waitFor();
     await page.getByRole('button',{name:'Save',exact:true}).first().click();await page.getByRole('button',{name:'Saved',exact:true}).first().waitFor();
     await page.getByRole('button',{name:'Share',exact:true}).first().click();
     assert.ok((await page.evaluate(()=>window.__sharedFeed))?.text?.includes('hoopcheck.online/feed#post-'),'Share uses canonical post link');

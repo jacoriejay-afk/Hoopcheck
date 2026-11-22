@@ -9,13 +9,15 @@ import { act, create } from 'react-test-renderer';
 globalThis.IS_REACT_ACT_ENVIRONMENT=true;
 const require=createRequire(import.meta.url);
 test('navigating away closes the real Passport sheet and invalidates an in-flight export',async()=>{
- let blur,resolveExport,io;const haptics=[];
+ let blur,resolveExport,io;const haptics=[];let reducedMotion=false;
  const pending=new Promise(resolve=>{resolveExport=resolve;});
  const owner='11111111-1111-4111-8111-111111111111';
  const theme={spacing:{xs:4,sm:8,md:12,lg:16,xl:24},radius:{hero:20},type:{caption:{},title:{},body:{}},entityHero:{}};
  const exports={};const stubs={
   'expo-router':{useFocusEffect:callback=>React.useEffect(()=>{blur=callback();return blur;},[callback])},
   'react-native':{Platform:{OS:'ios'},AppState:{currentState:'active',addEventListener:()=>({remove(){}})},Text:'Text',View:'View'},
+  'react-native-reanimated':{__esModule:true,default:{View:'AnimatedView'},FadeIn:{duration:ms=>`fade-${ms}`}},
+  '../src/motion/Provider':{useMotionSetting:()=>reducedMotion},
   './BrandLogo':{BrandLogo:'BrandLogo'},'./Sheet':{Sheet:({open,children})=>open?React.createElement('Sheet',null,children):null},
   '../src/primitives':{Button:'Button'},'../src/theme':{useEntryTheme:()=>theme},'../src/native/haptics':{useHaptics:()=>value=>haptics.push(value)},
   '../src/lib/supabase':{supabase:{}},'../src/native/useNativeAccount':{useNativeAccount:()=>({account:{user:{id:owner,accountType:'player'}}})},
@@ -28,7 +30,14 @@ test('navigating away closes the real Passport sheet and invalidates an in-fligh
  vm.runInNewContext(code,{exports,require:id=>stubs[id]||require(id)});
  let tree;await act(async()=>{tree=create(React.createElement(exports.PlayerPassport,{player:{id:owner}}));});
  const click=async label=>{const button=tree.root.findAllByType('Button').find(node=>node.props.children===label);assert.ok(button);await act(async()=>button.props.onPress());};
- await click('Preview Player Passport');await click('Export & share PDF');
+ await click('Preview Player Passport');
+ let preview=tree.root.findAllByType('AnimatedView');assert.equal(preview.length,1);
+ assert.equal(preview[0].props.entering,'fade-180','Passport preview animates when allowed');
+ reducedMotion=true;
+ await act(async()=>tree.update(React.createElement(exports.PlayerPassport,{player:{id:owner}})));
+ preview=tree.root.findAllByType('AnimatedView');assert.equal(preview.length,1);
+ assert.equal(preview[0].props.entering,undefined,'Reduce Motion disables preview entrance');
+ await click('Export & share PDF');
  assert.equal(io.current(),true);assert.equal(tree.root.findAllByType('Sheet').length,1);
  await act(async()=>blur());assert.equal(io.current(),false);assert.equal(tree.root.findAllByType('Sheet').length,0);
  await act(async()=>resolveExport());assert.deepEqual(haptics,[]);

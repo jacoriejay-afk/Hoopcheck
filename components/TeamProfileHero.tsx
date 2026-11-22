@@ -39,19 +39,19 @@ export default function TeamProfileHero({
       style={{
         position: "relative", overflow: "hidden", isolation: "isolate",
         borderRadius: 20, padding: "clamp(16px, 3vw, 36px)",
-        color: "#fff", background: `linear-gradient(125deg, #111827, ${gender === "womens" ? "#4b1538" : "#54240e"} 65%, #10131a)`,
+        color: "#fff", background: `linear-gradient(125deg, #111827, ${gender === "womens" ? "#4b1538" : "#54240e"} 65%, #10131a)`, backgroundColor: "#111827",
         minHeight: 220,
       }}
     >
       {coverUrl ? <div aria-hidden="true" style={{position:"absolute",inset:0,zIndex:-2,backgroundImage:`url("${coverUrl.replace(/"/g, "%22")}")`,backgroundSize:"cover",backgroundPosition:"center"}} /> : null}
       <div aria-hidden="true" style={{position:"absolute",inset:0,zIndex:-1,background:"linear-gradient(90deg,rgba(4,8,16,.94),rgba(4,8,16,.72) 65%,rgba(4,8,16,.58))"}} />
-      {!coverUrl ? <span aria-hidden="true" style={{position:"absolute",right:-18,bottom:-75,fontSize:"clamp(150px,30vw,320px)",fontWeight:900,opacity:.07,lineHeight:1,pointerEvents:"none"}}>{initials}</span> : null}
+      {!coverUrl ? <span aria-hidden="true" style={{position:"absolute",right:0,bottom:-75,maxWidth:"100%",overflow:"hidden",whiteSpace:"nowrap",textAlign:"right",fontSize:"clamp(150px,30vw,320px)",fontWeight:900,opacity:.07,lineHeight:1,pointerEvents:"none"}}>{initials}</span> : null}
       <div style={{display:"flex",alignItems:"center",gap:"clamp(12px, 2vw, 20px)",flexWrap:"wrap"}}>
         <div style={{padding:12,borderRadius:20,background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.2)"}}>
           <TeamLogo name={name} logoUrl={logoUrl} logoBg={logoBg} size={88} className="hc-team-profile-logo" />
         </div>
-        <div style={{flex:"1 1 180px",minWidth:0}}>
-          <p className="hc-team-hero-kicker" style={{fontSize:11,fontWeight:800,letterSpacing:2,color:"#f9d2b5",marginBottom:8}}>{claimed ? "OFFICIAL CLUB PROFILE" : "CLUB PROFILE"}</p>
+        <div style={{flex:"1 1 180px",minWidth:0,backgroundColor:gender==="mens"?"#111827":undefined}}>
+          <p className="hc-team-hero-kicker" style={{fontSize:11,fontWeight:800,letterSpacing:2,color:"#f9d2b5",marginBottom:8}}><span style={{color:"#ffe2cf"}}>{claimed ? "OFFICIAL CLUB PROFILE" : "CLUB PROFILE"}</span></p>
           <h1 id="hc-team-profile-title" style={{fontSize:"clamp(26px,4.5vw,52px)",fontWeight:900,lineHeight:1.1,letterSpacing:"-.035em",overflowWrap:"anywhere",color:"#fff",margin:"0 0 12px"}}>{name}{claimed ? <span aria-label="Verified club" title="Verified club" style={{color:accent,marginLeft:10}}>✓</span> : null}</h1>
           <p className="hc-team-hero-location" style={{color:"#e5e7eb",margin:0}}>{countryFlag(country)} {[city,country].filter(Boolean).join(", ") || "Location not listed"}</p>
           <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:16}}>
@@ -61,7 +61,7 @@ export default function TeamProfileHero({
       </div>
       <div className="hc-team-hero-actions" style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap",marginTop:16}}>
         <FollowButton targetType="team" targetId={teamId} variant="club" showCount={false} showNotifications={false} onCountChange={onFollowerCountChange} />
-        <a className="btn hc-team-hero-fan-link" href="#fan-hq" onClick={onOpenFanGroup} style={{display:"inline-flex",alignItems:"center",justifyContent:"center",minHeight:44,padding:"11px 18px",borderRadius:12,background:accent,color:"var(--hc-button-primary-fg)",fontWeight:800,textDecoration:"none"}} aria-label={"Explore " + name + " HoopGroup"}>Explore HoopGroup</a>
+        <a className="btn hc-team-hero-fan-link" href="#fan-hq" onClick={onOpenFanGroup} style={{display:"inline-flex",alignItems:"center",justifyContent:"center",minHeight:44,padding:"11px 18px",borderRadius:12,background:accent,color:"var(--hc-button-primary-fg)",fontWeight:800,textDecoration:"none"}} aria-label={"Open " + name + " official club fan group"}>Club Fan Group</a>
       </div>
     </section>
   );
