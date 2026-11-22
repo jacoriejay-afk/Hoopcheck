@@ -42,6 +42,7 @@ begin
     select 1 from public.support_tickets t
     where t.id = p_support_ticket_id and t.category = 'security'
       and t.subject = 'Report a HoopFeed Reel'
+      and position(p_reel_id::text in t.description) > 0
   ) then
     raise exception 'Reel report ticket not found';
   end if;
