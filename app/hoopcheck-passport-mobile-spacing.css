@@ -189,3 +189,5 @@
 .hc-journey-match-panel p { margin:0;font-size:12px;line-height:1.45; }
 .hc-journey-match-panel button:not(.hc-shared-picker-trigger):not(.hc-shared-picker-row) { justify-self:start;min-height:36px; }
 .theme-dark .hc-journey-review-status { background:#193a2d;border-color:#448d66;color:#baf4d1; }
+
+#team-review-checklist { scroll-margin-top:calc(120px + env(safe-area-inset-top,0px)); }
