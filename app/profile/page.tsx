@@ -151,23 +151,43 @@ export default function ProfilePage() {
         </SocialProfileHeader>
         <nav className="hc-social-profile-nav" aria-label="Profile sections">
           <a href="#profile-about">About</a>
-          <a href="#profile-latest-post">Latest Post</a>
           {p.account_type === "player" && <a href="#profile-posts">Posts</a>}
-          <a href="#career-passport">Career Passport</a>
-          <Link href="/account#profile-appearance">Customize</Link>
-          {p.account_type === "player" && (p.profile_visibility === "public"
-            ? <Link href={"/players/" + encodeURIComponent(p.id)}>{t("profilePublic")}</Link>
-            : <Link href="/account#visibility">{t("editVisibility")}</Link>)}
-          {p.account_type === "player" && <Link href="/account#team-review-checklist">Team review checklist</Link>}
+          <a href="#career-passport">Career</a>
+          <details className="hc-profile-nav-more">
+            <summary>More</summary>
+            <div className="hc-profile-nav-more__links">
+              <a href="#profile-latest-post">Latest Post</a>
+              <Link href="/account#profile-appearance">Customize</Link>
+              {p.account_type === "player" && (p.profile_visibility === "public"
+                ? <Link href={"/players/" + encodeURIComponent(p.id)}>{t("profilePublic")}</Link>
+                : <Link href="/account#visibility">{t("editVisibility")}</Link>)}
+              {p.account_type === "player" && <Link href="/account#team-review-checklist">Team review checklist</Link>}
+            </div>
+          </details>
         </nav>
-        {p.account_type === "player" && <div className="hc-profile-passport-anchor">
-          <PlayerJourney playerId={p.id} isOwnProfile={true} canManage={canManageJourney}
-            playerName={name} verifiedPlayer={p.player_verified === true} />
-        </div>}
           {p.account_type === "player" ? <PlayerProfileCompletionCard profile={p} onPublished={() => setP((current: any) => ({ ...current, profile_visibility: "public" }))} /> : profileCompletion < 100 && <div className="hc-profile-completion">
             <div className="hc-profile-completion-copy"><strong>Profile {profileCompletion}% complete</strong><span>— add your {firstMissingField}</span><Link href={"/account#profile-editor-field-" + nextFieldAnchor}>Complete profile <span aria-hidden="true">→</span></Link></div>
             <div className="hc-profile-completion-track" role="progressbar" aria-label={t("profileCompleteness")} aria-valuemin={0} aria-valuemax={100} aria-valuenow={profileCompletion}><span style={{width: profileCompletion + "%"}} /></div>
           </div>}
+        <Surface as="section" className="hc-profile-summary" id="profile-about" aria-label={t("profileOverview")}>
+          <dl>
+            <div><dt>{t("basketball")}</dt><dd>{p.basketball_type === "womens" ? t("womensBasketball") : p.basketball_type === "mens" ? t("mensBasketball") : t(p.account_type)}</dd></div>
+            {p.account_type === "player" && (p.position || p.current_team || p.free_agent) &&
+              <div><dt>{t("career")}</dt><dd>{[p.position, p.free_agent ? t("freeAgent") : p.current_team].filter(Boolean).join(" · ")}</dd></div>}
+            <div><dt>{t("location")}</dt><dd>{[p.hometown, p.current_country || p.nationality].filter(Boolean).join(", ") ||
+              <Link href="/account#profile-editor">{t("add")}</Link>}</dd></div>
+          </dl>
+          {p.interests && <p><strong>{t("interests")}</strong> {p.interests}</p>}
+          {p.favorite_leagues && <p><strong>{t("favoriteLeagues")}</strong> {p.favorite_leagues}</p>}
+        </Surface>
+
+        <div id="profile-latest-post" style={{ scrollMarginTop: 96 }}><ProfileLatestPost userId={p.id} /></div>
+        {p.account_type === "player" && <div id="profile-posts"><OwnProfilePostsGrid userId={p.id} /></div>}
+
+        {p.account_type === "player" && <div className="hc-profile-passport-anchor">
+          <PlayerJourney playerId={p.id} isOwnProfile={true} canManage={canManageJourney}
+            playerName={name} verifiedPlayer={p.player_verified === true} />
+        </div>}
         <div id={p.account_type === "player" ? "identity-passport" : "career-passport"} className="hc-profile-identity-passport">
           <HoopPassport name={name} accountType={p.account_type||"member"} username={p.username}
             verified={Boolean(p.player_verified||p.coach_verified)} country={p.current_country}
@@ -185,20 +205,6 @@ export default function ProfilePage() {
           </div>
         </nav>
 
-        <Surface as="section" className="hc-profile-summary" id="profile-about" aria-label={t("profileOverview")}>
-          <dl>
-            <div><dt>{t("basketball")}</dt><dd>{p.basketball_type === "womens" ? t("womensBasketball") : p.basketball_type === "mens" ? t("mensBasketball") : t(p.account_type)}</dd></div>
-            {p.account_type === "player" && (p.position || p.current_team || p.free_agent) &&
-              <div><dt>{t("career")}</dt><dd>{[p.position, p.free_agent ? t("freeAgent") : p.current_team].filter(Boolean).join(" · ")}</dd></div>}
-            <div><dt>{t("location")}</dt><dd>{[p.hometown, p.current_country || p.nationality].filter(Boolean).join(", ") ||
-              <Link href="/account#profile-editor">{t("add")}</Link>}</dd></div>
-          </dl>
-          {p.interests && <p><strong>{t("interests")}</strong> {p.interests}</p>}
-          {p.favorite_leagues && <p><strong>{t("favoriteLeagues")}</strong> {p.favorite_leagues}</p>}
-        </Surface>
-
-        <div id="profile-latest-post" style={{ scrollMarginTop: 96 }}><ProfileLatestPost userId={p.id} /></div>
-        {p.account_type === "player" && <div id="profile-posts"><OwnProfilePostsGrid userId={p.id} /></div>}
 
         <section className="dashboard-card compact-section">
           <p className="eyebrow">{t("account")}</p>
