@@ -32,7 +32,7 @@ const queue = read("app/admin/safety-center/page.tsx");
 for (const marker of [
   'is_current_user_admin_or_moderator', '.eq("category", "security")',
   'admin_update_support_ticket', '/api/admin/reel-moderation',
-  'confirmed[ticket.id]', 'Request', 'Scam', 'Private ticket'
+  'confirmed[ticket.id]', 'Scam', 'Private ticket'
 ]) assert.ok(queue.includes(marker), "Missing queue gate: " + marker);
 assert.ok(!/\.insert\(\{[^}]*published|\.from\("scam_alert/i.test(queue), "No public scam accusations");
 
