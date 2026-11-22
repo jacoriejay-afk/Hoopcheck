@@ -433,5 +433,5 @@ html.theme-light body main.hc-live-hub-page .hc-live-directory-link {
    opaque backdrop even when global glass/card resets are active. */
 html:is(.theme-light,.theme-dark) body main .hc-team-look-hero {
   background-color:#111827!important;
-  background-image:linear-gradient(125deg,#111827 0%,#3f2130 66%,#10131a 100%)!important;
+  /* Preserve team-specific arena artwork / gradient; pair the white title with an opaque fallback. */
 }
