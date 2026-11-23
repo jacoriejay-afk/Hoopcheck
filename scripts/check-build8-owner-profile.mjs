@@ -30,7 +30,7 @@ assert.match(source,/has_column_privilege\('authenticated','public\.profiles',a\
 assert.doesNotMatch(source,/GRANT SELECT ON public\.profiles|DISABLE ROW LEVEL SECURITY|ALTER ROLE/);
 // Exercise the unmodified migration preflight under synthetic ACL/RLS drift
 // instead of merely asserting that its SQL text contains guard keywords.
-const guardStart=source.indexOf(" IF NOT EXISTS (\\n   SELECT 1 FROM pg_policies pol");
+const guardStart=source.indexOf(" IF NOT EXISTS (\n   SELECT 1 FROM pg_policies pol");
 const guardEnd=source.indexOf(" SELECT count(*) INTO n",guardStart);
 assert.ok(guardStart>0 && guardEnd>guardStart,"Cannot isolate owner RPC installation preflight");
 const syntheticGuard=source.slice(guardStart,guardEnd)
