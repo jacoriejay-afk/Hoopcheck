@@ -9,7 +9,11 @@
     "app_id": "6835366982",
     "bundle_id": "online.hoopcheck.app",
     "version": "0.2.0",
-    "last_verified_store_build": 8
+    "last_verified_store_build": 9,
+    "signed_ios_commit": "cf29f4190e42dcbcd86ddbcac4547415fe0227f1",
+    "signed_ios_build_id": "4b902ebf-58e8-4c4b-acad-d1874e9ce08e",
+    "signed_ios_archive_url": "https://expo.dev/artifacts/eas/RsKD-wJyluOFcbq0gN3vEWpxt5hcCA7S9ECkc1OAa5U.ipa",
+    "app_store_submission_id": "b9d4afaa-0a4d-49d1-8305-204c51ddb75d"
   },
   "gates": [
     {
@@ -39,7 +43,7 @@
     {
       "id": "exact_head_all_ci",
       "status": "HOLD",
-      "details": "Need exact release commit green web/native/security/entitlements, unsigned macOS iOS compile, iOS Passport smoke and screenshots in both themes.",
+      "details": "Seven exact-source SHA workflows passed at frozen signed Build 9 commit cf29f4190e42dcbcd86ddbcac4547415fe0227f1 (root CI, mobile, unsigned iOS simulator/XCTest, launch, native security, entitlements, PG17 privacy). This manifest and release-prep guard will change Git HEAD: rerun exact-head CI after any change, and do not equate the earlier signed binary with a newly modified commit.",
       "evidence": null
     },
     {
@@ -80,9 +84,9 @@
     },
     {
       "id": "apple_bundle_signing",
-      "status": "HOLD",
-      "details": "Confirm approved bundle identifier in Apple Developer/ASC, live signing/profile capabilities, entitlements and remote next build number. No automatic signing prompts.",
-      "evidence": null
+      "status": "PASS",
+      "details": "Signed iOS Store archive 0.2.0 (9) successfully produced under online.hoopcheck.app for the frozen source SHA cf29f4190e42dcbcd86ddbcac4547415fe0227f1; Expo build 4b902ebf-58e8-4c4b-acad-d1874e9ce08e reports FINISHED and signed IPA. App Store Connect submission b9d4afaa-0a4d-49d1-8305-204c51ddb75d was queued; owner reports seeing Build 9 in TestFlight. This PASS certifies signed archive creation only, NOT physical-device, Sandbox billing, Apple processing state, backend privacy or any subsequent code commit; changes require a new signed build.",
+      "evidence": "https://expo.dev/artifacts/eas/RsKD-wJyluOFcbq0gN3vEWpxt5hcCA7S9ECkc1OAa5U.ipa"
     },
     {
       "id": "physical_iphone",
