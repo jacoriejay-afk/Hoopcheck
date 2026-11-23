@@ -32,6 +32,14 @@ for (const gate of gates) {
     need(/risk|unverified/i.test(gate.details), "Waiver must disclose unverified risk: " + gate.id);
   }
 }
+// A signed IPA only certifies the exact source SHA it was built from. Release
+// notes and later code edits must not silently reuse that older signed artifact.
+const signedBuildCommit = snapshot.build?.signed_ios_commit;
+need(typeof signedBuildCommit === "string" && /^[a-f0-9]{40}$/i.test(signedBuildCommit), "Missing pinned signed iOS source SHA");
+need(Number.isInteger(snapshot.build?.last_verified_store_build) && snapshot.build.last_verified_store_build >= 9, "Signed Build 9 app build number missing");
+need(typeof snapshot.build?.signed_ios_build_id === "string" && /^[0-9a-f-]{36}$/i.test(snapshot.build.signed_ios_build_id), "Signed EAS build ID missing");
+need(typeof snapshot.build?.signed_ios_archive_url === "string" && /^https:\/\/expo\.dev\/artifacts\/eas\/[^\s]+\.ipa$/.test(snapshot.build.signed_ios_archive_url), "Signed IPA evidence URL missing");
+need(typeof snapshot.build?.app_store_submission_id === "string" && /^[0-9a-f-]{36}$/i.test(snapshot.build.app_store_submission_id), "App Store upload queue evidence missing");
 need(app.extra?.eas?.projectId === snapshot.build.expo_project_id, "Expo project ID drift");
 need(app.ios?.bundleIdentifier === snapshot.build.bundle_id, "iOS bundle ID drift");
 need(app.ios?.associatedDomains?.includes("applinks:hoopcheck.online"), "Apple universal link drift");
@@ -54,6 +62,7 @@ if (enforce) {
   need(Boolean(approved) && approved === app.ios.bundleIdentifier, "Apple-approved bundle ID missing or does not match");
   const commit = (process.env.BUILD9_RELEASE_COMMIT || "").trim();
   need(/^[a-f0-9]{40}$/i.test(commit) && commit === snapshot.release_commit, "Reviewed release SHA missing or mismatched");
+  need(commit === signedBuildCommit, "Release commit is not the source SHA of the signed iOS IPA; rebuild and retest before submission");
 }
 console.log("Build 9 identity and native source:", failures.length ? "INVALID" : "VERIFIED LOCALLY");
 console.log("Gates:", gates.length - holds.length - waived.length, "PASS /", waived.length, "WAIVED /", holds.length, "HOLD");

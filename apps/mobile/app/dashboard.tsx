@@ -1,5 +1,5 @@
 import { HomeCourtside, HomeStagger } from "../components/HomeCourtside";
-import { PressableScale } from "../components/PressableScale";
+import { ExploreLinks } from "../components/ExploreLinks";
 import { RoleHub } from "../components/RoleHub";
 import { useNativeAccount } from "../src/native/useNativeAccount";
 import { GlassSurface } from "../components/GlassSurface";
@@ -10,7 +10,7 @@ import { Input, Chip, SectionHeader } from "../src/primitives";
 import { useEffect, useState } from "react";
 import { Alert, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import Svg, { Circle, Path } from "react-native-svg";
 import { supabase } from "../src/lib/supabase";
@@ -33,7 +33,6 @@ export default function DashboardScreen() {
   const [busy, setBusy] = useState(false);
   const [email, setEmail] = useState("");
   const { account: currentAccount, loading: accountLoading } = useNativeAccount();
-  const insets = useSafeAreaInsets();
   const reduced = useMotionSetting();
   const scrollY = useSharedValue(0);
   // Only a worklet handles scrolling. Reserve the full header footprint below.
@@ -41,8 +40,8 @@ export default function DashboardScreen() {
     onScroll: event => { scrollY.set(event.contentOffset.y); },
   });
   const headerStyle = useAnimatedStyle(() => ({
-    height: insets.top + (reduced ? (scrollY.get() > 55 ? 54 : 86) :
-      interpolate(scrollY.get(), [0, 100], [86, 54], Extrapolation.CLAMP)),
+    height: reduced ? (scrollY.get() > 55 ? 54 : 86) :
+      interpolate(scrollY.get(), [0, 100], [86, 54], Extrapolation.CLAMP),
   }));
   const expandedStyle = useAnimatedStyle(() => ({
     opacity: reduced ? (scrollY.get() > 55 ? 0 : 1) :
@@ -90,10 +89,36 @@ export default function DashboardScreen() {
   const panel = { backgroundColor: theme.surface, borderColor: theme.border, borderRadius: theme.cardRadius };
 
   return (
-    <SafeAreaView edges={["left", "right", "bottom"]} style={[styles.safe, { backgroundColor: theme.background }]}>
+    <SafeAreaView edges={["top", "left", "right", "bottom"]} style={[styles.safe, { backgroundColor: theme.background }]}>
+      <View style={styles.pinnedHeader}>
+      <Animated.View testID="home-sticky-header" style={[styles.stickyHeader,
+        { backgroundColor: "#111E34", borderBottomColor: theme.dark ? "#30455C" : "#263A54" }, headerStyle]}>
+        <Animated.View pointerEvents="none" style={[styles.expandedBrand, { top: 17 }, expandedStyle]}>
+          <BrandLogo onHero />
+        </Animated.View>
+        <Animated.View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
+          style={[styles.compactBrand, { top: 10 }, compactStyle]}>
+          <Svg width={32} height={32} viewBox="0 0 100 100" fill="none"
+            stroke="#FFFFFF" strokeLinecap="square" strokeLinejoin="miter" accessible={false}>
+            <Path d="M50 5 88 27v35L97 51 78 82 50 96 12 74V27Z" strokeWidth={5.2} />
+            <Circle cx={49} cy={49} r={25} strokeWidth={3.4} />
+            <Path d="M25 46c15-13 34-13 49-4M27 32c12 17 26 15 44 5M50 24c-13 19-14 41-3 50M49 24c-4 18-2 39 10 49M26 58c14-15 30-12 47 8" strokeWidth={2.8} />
+            <Path d="m47 60 14 11 34-42" strokeWidth={7} />
+          </Svg>
+          <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "800" }}>HoopCheck</Text>
+        </Animated.View>
+        <Pressable accessibilityRole="button" accessibilityLabel="Open account menu"
+          onPress={() => router.push("/account")}
+          style={({ pressed }) => [styles.headerMenu, { top: 8,
+            borderColor: "#43546D", backgroundColor: "#263852",
+            opacity: pressed ? .75 : 1 }]}>
+          <Ionicons name="menu" size={24} color="#FFFFFF" />
+        </Pressable>
+      </Animated.View>
+      </View>
       <Animated.ScrollView keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled"
         testID="dashboard-scroll" onScroll={onHomeScroll} scrollEventThrottle={16}
-        contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 86 + 12 }]}>
+        contentContainerStyle={[styles.scroll, { paddingTop: 86 + 12 }]}>
         <View style={styles.content}>
           <GlassSurface style={{ flexDirection:"row",alignItems:"center",marginBottom:14,
             borderRadius:17,paddingLeft:12,paddingRight:5,minHeight:50,
@@ -120,7 +145,7 @@ export default function DashboardScreen() {
             <HomeStagger index={8}>
               <View style={{ gap: 10 }}>
                 <SectionHeader>Explore basketball</SectionHeader>
-                <View style={styles.directories}><HomeExploreLinks /></View>
+                <View style={styles.directories}><ExploreLinks compact /></View>
               </View>
             </HomeStagger>
           </> : null}
@@ -151,30 +176,7 @@ export default function DashboardScreen() {
           </Pressable>
         </View>
       </Animated.ScrollView>
-      <Animated.View testID="home-sticky-header" style={[styles.stickyHeader,
-        { backgroundColor: "#111E34", borderBottomColor: theme.dark ? "#30455C" : "#263A54" }, headerStyle]}>
-        <Animated.View pointerEvents="none" style={[styles.expandedBrand, { top: insets.top + 17 }, expandedStyle]}>
-          <BrandLogo onHero />
-        </Animated.View>
-        <Animated.View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
-          style={[styles.compactBrand, { top: insets.top + 10 }, compactStyle]}>
-          <Svg width={32} height={32} viewBox="0 0 100 100" fill="none"
-            stroke="#FFFFFF" strokeLinecap="square" strokeLinejoin="miter" accessible={false}>
-            <Path d="M50 5 88 27v35L97 51 78 82 50 96 12 74V27Z" strokeWidth={5.2} />
-            <Circle cx={49} cy={49} r={25} strokeWidth={3.4} />
-            <Path d="M25 46c15-13 34-13 49-4M27 32c12 17 26 15 44 5M50 24c-13 19-14 41-3 50M49 24c-4 18-2 39 10 49M26 58c14-15 30-12 47 8" strokeWidth={2.8} />
-            <Path d="m47 60 14 11 34-42" strokeWidth={7} />
-          </Svg>
-          <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "800" }}>HoopCheck</Text>
-        </Animated.View>
-        <Pressable accessibilityRole="button" accessibilityLabel="Open account menu"
-          onPress={() => router.push("/account")}
-          style={({ pressed }) => [styles.headerMenu, { top: insets.top + 8,
-            borderColor: "#43546D", backgroundColor: "#263852",
-            opacity: pressed ? .75 : 1 }]}>
-          <Ionicons name="menu" size={24} color="#FFFFFF" />
-        </Pressable>
-      </Animated.View>
+
     </SafeAreaView>
   );
 }
@@ -182,8 +184,8 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   scroll: { flexGrow: 1, padding: 12 },
-  stickyHeader: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 20,
-    borderBottomWidth: 1, overflow: "hidden", elevation: 5 },
+  pinnedHeader: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 20 },
+  stickyHeader: { width: "100%", borderBottomWidth: 1, overflow: "hidden", elevation: 5 },
   expandedBrand: { position: "absolute", left: 12, height: 46, justifyContent: "center",
     alignItems: "flex-start" },
   compactBrand: { position: "absolute", left: 12, height: 34,
@@ -192,7 +194,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, alignItems: "center", justifyContent: "center" },
   content: { width: "100%", maxWidth: 640, alignSelf: "center" },
   title: { fontSize: 32, fontWeight: "900", letterSpacing: -0.7, marginBottom: 16 },
-  directories: { gap: 8, marginTop: 12 },
+  directories: { gap: 8, marginTop: 6 },
   directory: { minHeight: 70, flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1, padding: 12 },
   icon: { width: 42, height: 42, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   directoryCopy: { flex: 1 },
@@ -207,38 +209,3 @@ const styles = StyleSheet.create({
   signOut: { minHeight: 48, alignItems: "center", justifyContent: "center", marginTop: 12 },
 });
 
-const homeExplore = [
-  { href: "/teams", title: "Teams", detail: "Research teams before you sign", icon: "basketball-outline" },
-  { href: "/womens", title: "Women’s teams", detail: "Explore women’s basketball", icon: "people-outline" },
-  { href: "/coaches", title: "Coaches", detail: "Check coaching reputations", icon: "school-outline" },
-  { href: "/leagues", title: "Leagues", detail: "Compare competitions", icon: "trophy-outline" },
-  { href: "/players", title: "Players", detail: "Discover basketball players", icon: "person-outline" },
-  { href: "/team-hub/groups", title: "HoopGroups", detail: "Find your club’s fan community", icon: "people-outline" },
-  { href: "/fan-live", title: "Live Games", detail: "Games, chat and predictions", icon: "radio-outline" },
-  { href: "/feed", title: "HoopFeed", detail: "Community, comments and Reels", icon: "basketball-outline" },
-] as const;
-
-/** Home-only rows; public/shared ExploreLinks remains untouched. */
-function HomeExploreLinks() {
-  const theme = useEntryTheme();
-  const router = useRouter();
-  return <View style={{ gap: theme.spacing.sm }}>{homeExplore.map(item =>
-    <PressableScale key={item.href} accessibilityRole="link"
-      testID={`directory-${item.title.toLowerCase()}`}
-      accessibilityLabel={item.title} onPress={() => router.push(item.href)}
-      style={{ flexDirection: "row", alignItems: "center", minHeight: 70,
-        padding: theme.spacing.md, gap: theme.spacing.md, borderRadius: theme.radius.control,
-        borderCurve: "continuous", borderWidth: 1, borderColor: theme.border,
-        backgroundColor: theme.surface }}>
-      <View style={{ width: 44, height: 44, borderRadius: theme.radius.control,
-        alignItems: "center", justifyContent: "center", backgroundColor: theme.accentSurface }}>
-        <Ionicons name={item.icon} size={22} color={theme.accent} />
-      </View>
-      <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
-        <Text style={{ color: theme.foreground, ...theme.type.section }}>{item.title}</Text>
-        <Text style={{ color: theme.muted, fontSize: 12, lineHeight: 17 }}>{item.detail}</Text>
-      </View>
-      <Ionicons name="chevron-forward" size={17} color={theme.foreground} />
-    </PressableScale>
-  )}</View>;
-}
