@@ -55,6 +55,7 @@ export function GlassHeader({
   const pillGrow = useAnimatedStyle(() => ({
     transform: [{ scaleX: 1 + searchProgress.get() * 0.015 }],
   }));
+  const chromeStyle = useAnimatedStyle(() => ({ opacity: 1 - searchProgress.get() }));
   const headerStyle = useAnimatedStyle(() => {
     const offset = searchOpen ? 0 : homeScrollY?.get() ?? 0;
     const short = reduced ? (offset > 55 ? 4 : 8) :
@@ -109,15 +110,15 @@ export function GlassHeader({
           </Svg>
           <Text style={{ color: glass.foreground, fontSize: 15, fontWeight: "800" }}>HoopCheck</Text>
         </Animated.View> : null}
-        {onSearchOpen ? <Animated.View style={{ marginLeft: "auto", opacity: searchOpen ? 0 : 1 }}
+        {onSearchOpen ? <Animated.View style={[{ marginLeft: "auto" }, chromeStyle]}
           pointerEvents={searchOpen ? "none" : "auto"}><Pressable accessibilityRole="button"
             accessibilityLabel="Search" onPress={onSearchOpen}
             style={{ width: 44, height: 44, borderRadius: 22,
               alignItems: "center", justifyContent: "center" }}>
             <Ionicons name="search-outline" size={23} color={glass.foreground} />
           </Pressable></Animated.View> : null}
+        <Animated.View style={chromeStyle} pointerEvents={searchOpen ? "none" : "auto"}>
         <Pressable accessibilityRole="button" accessibilityLabel="Alerts"
-          pointerEvents={searchOpen ? "none" : "auto"}
           accessibilityState={{ disabled: searchOpen }}
           onPress={() => router.push("/notifications")}
           style={{ width: 44, height: 44, borderRadius: 22, marginLeft: "auto",
@@ -126,7 +127,7 @@ export function GlassHeader({
           <View pointerEvents="none" accessible={false}
             style={{ position: "absolute", right: 9, top: 8, width: 7, height: 7,
               borderRadius: 4, backgroundColor: glass.orange }} />
-        </Pressable>
+        </Pressable></Animated.View>
         <Animated.View pointerEvents={searchOpen ? "auto" : "none"}
           accessibilityElementsHidden={!searchOpen}
           importantForAccessibility={searchOpen ? "auto" : "no-hide-descendants"}
