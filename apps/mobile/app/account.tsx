@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -30,7 +30,7 @@ function AccountRow({ icon, title, detail, onPress, last = false }: {
     <Ionicons name="chevron-forward" size={17} color={t.muted} />
   </Pressable>;
 }
-function AccountGroup({ children }: { children: React.ReactNode }) {
+function AccountGroup({ children }: { children: ReactNode }) {
   const t = useEntryTheme();
   return <View style={{borderRadius:17,borderCurve:"continuous",borderWidth:1,
     borderColor:t.glassBorder,backgroundColor:t.surface,overflow:"hidden"}}>{children}</View>;
@@ -94,7 +94,7 @@ export default function AccountScreen() {
                 disabled={account.user.accountType!=="player"}
                 style={({pressed})=>({flex:1,minHeight:44,borderRadius:13,alignItems:"center",justifyContent:"center",
                   flexDirection:"row",gap:7,borderWidth:1,borderColor:theme.glassBorder,
-                  opacity:account.user.accountType!=="player"?.4:pressed?.76:1})}>
+                  opacity:account.user.accountType !== "player" ? .4 : pressed ? .76 : 1})}>
                 <Ionicons name="person-outline" size={17} color={theme.foreground}/>
                 <Text style={{color:theme.foreground,fontSize:13,fontWeight:"800"}}>My profile</Text>
               </Pressable>
@@ -106,9 +106,9 @@ export default function AccountScreen() {
           <AccountRow icon="chatbubble-ellipses-outline" title="HoopChat · messages and requests" detail="Conversations and connections" onPress={()=>router.push("/messages")}/>
           <AccountRow icon="notifications-outline" title="Basketball alerts" onPress={()=>router.push("/notifications")}/>
           <AccountRow icon="people-outline" title="Connections" onPress={()=>router.push("/connections")}/>
-          <AccountRow icon="person-circle-outline" title="View public player profile"
+          {account.user.accountType==="player" ? <AccountRow icon="person-circle-outline" title="View public player profile"
             detail="Open your basketball passport" onPress={()=>router.push({pathname:"/players/[id]",params:{id:account.user.id}})}
-            last={true}/>
+            last/> : null}
         </AccountGroup>
         <GroupLabel>Membership status</GroupLabel>
         <AccountGroup>
