@@ -35,9 +35,11 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'Verified authenticated owner-SELECT policy is required';
   END IF;
-  IF NOT has_table_privilege('authenticated','public.profiles','SELECT') THEN
-    RAISE EXCEPTION 'Current authenticated SELECT grants required; no widening is permitted';
-  END IF;
+  -- Production grants SELECT by column rather than at the table level.
+  -- Table-wide has_table_privilege('SELECT') is false even though the
+  -- individual allowlisted columns are readable; never broaden privileges
+  -- just to satisfy this preflight. The following exact-column check enforces
+  -- all required grants, including id, under the installed RLS policy.
   IF EXISTS (
     SELECT 1 FROM unnest(ARRAY['id','account_type','display_name','bio','hometown','nationality','favorite_teams','favorite_leagues','interests','experience_summary','position','height','current_country','current_team','free_agent','current_country_public','profile_visibility','first_name','last_name','years_pro','username','avatar_url','avatar_moderation_status','player_verified','player_verified_at','basketball_type','theme_preference','preferred_language','notification_preferences']::text[]) AS required(column_name)
     WHERE NOT EXISTS (
