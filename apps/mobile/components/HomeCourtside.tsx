@@ -273,7 +273,7 @@ export function HomeCourtside() {
     <HomeStagger index={5}>
       <View style={{ gap: 8 }}>
         <ArenaHeading title="LIVE GAMES" cta="All games" onPress={()=>router.push("/fan-live")}/>
-        <HomeCrossfade loading={!data} minHeight={205}>
+        <HomeCrossfade loading={!data} minHeight={320}>
           {!gameAccess?<Text style={{color:t.muted,fontSize:12}}>Game Center requires an eligible membership.</Text>:
             data?.games===null?<Text accessibilityRole="alert" style={{color:t.muted}}>Scores could not load.</Text>:
             !data?.games?.games.length?<Text style={{color:t.muted,fontSize:12}}>No current games. Check upcoming tip-offs.</Text>:
@@ -291,7 +291,7 @@ export function HomeCourtside() {
     <HomeStagger index={6}>
       <View style={{ gap: 8 }}>
         <ArenaHeading title="FROM HOOPFEED" cta="Open" onPress={()=>router.push("/feed")}/>
-        <HomeCrossfade loading={!data} minHeight={190}>
+        <HomeCrossfade loading={!data} minHeight={260}>
           {!feedAccess?<Text style={{color:t.muted,fontSize:12}}>Community posts require an eligible membership.</Text>:
             data?.posts===null?<Text accessibilityRole="alert" style={{color:t.muted}}>HoopFeed preview could not load.</Text>:
             !data?.posts?.length?<Text style={{color:t.muted,fontSize:12}}>No community posts yet.</Text>:
