@@ -90,6 +90,16 @@ test("Build 11 shows stored approved team logos on Home and Live game scores wit
   assert.match(artwork,/value\.protocol === "https:"/);
 });
 
+test("Build 11 does not flash Account loading on harmless token refresh",()=>{
+  const provider=read("../src/native/useNativeAccount.ts");
+  assert.match(provider, /event === "SIGNED_OUT"/);
+  assert.match(provider, /event === "USER_UPDATED"/);
+  assert.match(provider, /event === "SIGNED_IN" && nextId !== security\.owner/);
+  assert.doesNotMatch(provider, /onAuthStateChange\(retry\)/);
+  assert.match(provider, /result\.user\.id !== data\.session\.user\.id/);
+  assert.match(provider, /security\.phase !== "ready"/);
+});
+
 test("Build 11 loading animations resolve statically with reduced motion enabled",()=>{
   const loading=read("../components/HoopCheckLoading.tsx");
   assert.match(loading,/useMotionSetting\(\)/);
