@@ -75,7 +75,6 @@ function DashboardContent() {
         <View style={styles.content}>
           <GlassSurface style={{ flexDirection:"row",alignItems:"center",marginBottom:14,
             borderRadius:17,paddingLeft:12,paddingRight:5,minHeight:50,
-            backgroundColor:theme.glassFill,
             borderColor:theme.glassBorder }}>
             <Ionicons name="search-outline" size={21} color={theme.accent} />
             <Input style={{ flex:1,minWidth:0,backgroundColor:"transparent",
