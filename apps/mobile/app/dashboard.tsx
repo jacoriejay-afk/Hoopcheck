@@ -12,6 +12,7 @@ import { Alert, Linking, Pressable, StyleSheet, Text, View } from "react-native"
 import { useRouter } from "expo-router";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import Svg, { Circle, Path } from "react-native-svg";
 import { supabase } from "../src/lib/supabase";
 import { useEntryTheme } from "../src/theme";
 
@@ -157,7 +158,13 @@ export default function DashboardScreen() {
         </Animated.View>
         <Animated.View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
           style={[styles.compactBrand, { top: insets.top + 10 }, compactStyle]}>
-          <BrandLogo compact onHero />
+          <Svg width={32} height={32} viewBox="0 0 100 100" fill="none"
+            stroke="#FFFFFF" strokeLinecap="square" strokeLinejoin="miter" accessible={false}>
+            <Path d="M50 5 88 27v35L97 51 78 82 50 96 12 74V27Z" strokeWidth={5.2} />
+            <Circle cx={49} cy={49} r={25} strokeWidth={3.4} />
+            <Path d="M25 46c15-13 34-13 49-4M27 32c12 17 26 15 44 5M50 24c-13 19-14 41-3 50M49 24c-4 18-2 39 10 49M26 58c14-15 30-12 47 8" strokeWidth={2.8} />
+            <Path d="m47 60 14 11 34-42" strokeWidth={7} />
+          </Svg>
           <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "800" }}>HoopCheck</Text>
         </Animated.View>
         <Pressable accessibilityRole="button" accessibilityLabel="Open account menu"
