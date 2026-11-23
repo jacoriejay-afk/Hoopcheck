@@ -13,11 +13,30 @@ const links = [
   { href: "/fan-live", title: "Live Games", detail: "Games, chat and predictions", icon: "radio-outline", color: "button" },
   { href: "/feed", title: "HoopFeed", detail: "Community, comments and Reels", icon: "basketball-outline", color: "button" },
 ] as const;
-export function ExploreLinks({ publicOnly = false }: { publicOnly?: boolean }) {
+export function ExploreLinks({ publicOnly = false, compact = false }: { publicOnly?: boolean; compact?: boolean }) {
   const theme = useEntryTheme(); const router = useRouter();
-  return <View style={{ gap: theme.spacing.sm }}>{links.filter((_, index) => !publicOnly || index < 5).map(item => <Pressable key={item.href} accessibilityRole="link" testID={`directory-${item.title.toLowerCase()}`} onPress={() => router.push(item.href)} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", minHeight: 70, padding: theme.spacing.md, gap: theme.spacing.md, borderRadius: theme.radius.control, borderCurve: "continuous", borderWidth: 1, borderColor: theme.border, backgroundColor: pressed ? theme.accentSurface : theme.surface })}>
-    <View style={{ width: 44, height: 44, borderRadius: theme.radius.control, borderCurve: "continuous", alignItems: "center", justifyContent: "center", backgroundColor: theme.accentSurface }}><Ionicons name={item.icon} size={22} color={theme.accent} /></View>
-    <View style={{ flex: 1, minWidth: 0, gap: 4 }}><Text style={{ color: theme.foreground, ...theme.type.section }}>{item.title}</Text><Text style={{ color: theme.muted, fontSize: 12, lineHeight: 17 }}>{item.detail}</Text></View>
-    <Ionicons name="chevron-forward" size={17} color={theme.foreground} />
-  </Pressable>)}</View>;
+  return <View style={compact ? { flexDirection: "row", flexWrap: "wrap", gap: 8 } : { gap: theme.spacing.sm }}>
+    {links.filter((_, index) => !publicOnly || index < 5).map(item =>
+      <Pressable key={item.href} accessibilityRole="link" accessibilityLabel={item.title}
+        testID={`directory-${item.title.toLowerCase()}`} onPress={() => router.push(item.href)}
+        style={({ pressed }) => ({
+          flexDirection: "row", alignItems: "center",
+          ...(compact ? { width: "48%" as const, flexGrow: 1, minHeight: 56, paddingHorizontal: 9, paddingVertical: 6, gap: 8 }
+            : { minHeight: 70, padding: theme.spacing.md, gap: theme.spacing.md }),
+          borderRadius: theme.radius.control, borderCurve: "continuous" as const,
+          borderWidth: 1, borderColor: theme.border,
+          backgroundColor: pressed ? theme.accentSurface : theme.surface,
+        })}>
+        <View style={{ width: compact ? 32 : 44, height: compact ? 32 : 44, borderRadius: 11,
+          alignItems: "center", justifyContent: "center", backgroundColor: theme.accentSurface }}>
+          <Ionicons name={item.icon} size={compact ? 18 : 22} color={theme.accent} />
+        </View>
+        <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
+          <Text numberOfLines={compact ? 2 : undefined} style={{ color: theme.foreground, fontSize: compact ? 12 : undefined,
+            fontWeight: compact ? "700" : undefined, ...(!compact ? theme.type.section : {}) }}>{item.title}</Text>
+          {!compact ? <Text style={{ color: theme.muted, fontSize: 12, lineHeight: 17 }}>{item.detail}</Text> : null}
+        </View>
+        {!compact ? <Ionicons name="chevron-forward" size={17} color={theme.foreground} /> : null}
+      </Pressable>)}
+  </View>;
 }
