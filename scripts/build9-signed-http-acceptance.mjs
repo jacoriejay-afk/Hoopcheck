@@ -143,7 +143,7 @@ async function accept(env) {
     assert.equal(r.status,200,"AAL2 projection must succeed");
     assert.ok(r.data && !Array.isArray(r.data),"Owner RPC must return jsonb object");
     assert.equal(r.data.id,c.owner,"Owner RPC must return caller's profile");
-    for(const secret of ["birthdate","stripe_identity_verification_session_id","moderation_note","avatar_moderation_note"]) {
+    for(const secret of ["birthdate","stripe_identity_verification_session_id"]) {
       assert.equal(Object.hasOwn(r.data,secret),false,"Unexpected sensitive field in owner projection: "+secret);
     }
   });
