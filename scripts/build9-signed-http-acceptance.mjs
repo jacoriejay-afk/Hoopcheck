@@ -10,7 +10,7 @@ const TARGET = "https://vcprqpjkyubzzcjatdpx.supabase.co";
 const UUID = /^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i;
 const envNames = [
   "BUILD9_ACCEPTANCE_URL", "BUILD9_ACCEPTANCE_ANON_KEY",
-  "BUILD9_ACCEPTANCE_OWNER_AAL1_TOKEN", "BUILD9_ACCEPTANCE_OWNER_AAL2_TOKEN",
+  "BUILD9_ACCEPTANCE_OWNER_AAL1_TOKEN", "BUILD9_ACCEPTANCE_OWNER_AAL2_TOKEN", "BUILD9_ACCEPTANCE_ANON_AUTH_TOKEN",
   "BUILD9_ACCEPTANCE_NONOWNER_TOKEN", "BUILD9_ACCEPTANCE_PUBLIC_PLAYER_ID",
   "BUILD9_ACCEPTANCE_PRIVATE_PLAYER_ID", "BUILD9_ACCEPTANCE_OPTOUT_PLAYER_ID"
 ];
@@ -39,16 +39,27 @@ function config(env) {
   const a1=env.BUILD9_ACCEPTANCE_OWNER_AAL1_TOKEN;
   const a2=env.BUILD9_ACCEPTANCE_OWNER_AAL2_TOKEN;
   const other=env.BUILD9_ACCEPTANCE_NONOWNER_TOKEN;
+  const anonAuth=env.BUILD9_ACCEPTANCE_ANON_AUTH_TOKEN;
   const owner=claim(a1,"sub");
   assert.match(owner, UUID, "Owner must be an Auth user");
   assert.equal(claim(a1,"role"), "authenticated");
   assert.equal(claim(a1,"aal"), "aal1", "Enrolled owner's AAL1 token required");
   assert.equal(claim(a2,"aal"), "aal2", "Verified AAL2 token required");
+  assert.equal(claim(a2,"role"), "authenticated", "AAL2 owner must be authenticated");
   assert.equal(claim(a2,"sub"), owner, "Owner AAL1/AAL2 must be same user");
+  for(const token of [a1,a2,other]) {
+    assert.notEqual(claim(token,"is_anonymous"),true,"Ordinary test users must not be anonymous Auth");
+  }
+  assert.equal(claim(anonAuth,"role"),"authenticated","Anonymous Auth carries authenticated DB role");
+  assert.equal(claim(anonAuth,"is_anonymous"),true,"Real anonymous Auth session required");
+  assert.match(claim(anonAuth,"sub"),UUID,"Anonymous Auth subject must be a UUID");
+  assert.notEqual(claim(anonAuth,"sub"),owner,"Anonymous Auth must differ from owner");
   assert.notEqual(claim(other,"sub"), owner, "Nonowner must be a different user");
+  assert.match(claim(other,"sub"),UUID,"Nonowner must have a user ID");
+  assert.notEqual(claim(other,"sub"),claim(anonAuth,"sub"),"Nonowner and anonymous Auth must differ");
   assert.equal(claim(other,"role"), "authenticated");
   assert.notEqual(env.BUILD9_ACCEPTANCE_PUBLIC_PLAYER_ID, env.BUILD9_ACCEPTANCE_PRIVATE_PLAYER_ID);
-  return {base,key:env.BUILD9_ACCEPTANCE_ANON_KEY,a1,a2,other,owner,
+  return {base,key:env.BUILD9_ACCEPTANCE_ANON_KEY,a1,a2,other,anonAuth,owner,
     publicPlayer:env.BUILD9_ACCEPTANCE_PUBLIC_PLAYER_ID,
     privatePlayer:env.BUILD9_ACCEPTANCE_PRIVATE_PLAYER_ID,
     optoutPlayer:env.BUILD9_ACCEPTANCE_OPTOUT_PLAYER_ID};
@@ -82,14 +93,14 @@ async function check(label,run) {
 async function accept(env) {
   const c=config(env);
   console.log("HoopCheck Build 9: PR17-only signed HTTP test; no test data or JWTs printed");
-  for(const [name,token] of [["owner AAL1",c.a1],["owner AAL2",c.a2],["nonowner",c.other]]) {
+  for(const [name,token] of [["owner AAL1",c.a1],["owner AAL2",c.a2],["nonowner",c.other],["anonymous Auth",c.anonAuth]]) {
     await check("Auth verified "+name,async()=>{
       const r=await call(c,"/auth/v1/user",token);
       assert.equal(r.status,200,"Auth /user must validate session");
       assert.equal(r.data?.id,claim(token,"sub"),"Authenticated user must match token");
     });
   }
-  for(const [name,token] of [["anonymous",undefined],["nonowner",c.other]]) {
+  for(const [name,token] of [["anonymous",undefined],["anonymous Auth",c.anonAuth],["nonowner",c.other],["owner AAL2",c.a2]]) {
     await check(name+" raw protected columns denied",async()=>{
       const r=await call(c,"/rest/v1/profiles?select=id%2Ccurrent_country%2Cmoderation_note&limit=1",token);
       assert.ok(denied(r),"Raw protected column access must fail, not return zero rows");
@@ -110,6 +121,19 @@ async function accept(env) {
     assert.equal(a.length,1,"Opt-out fixture must be publicly visible");
     assert.equal(a[0].current_country,null,"Private country must not be returned");
   });
+  await check("anonymous callers cannot read owner projection",async()=>{
+    for(const token of [undefined,c.anonAuth]) {
+      const r=await call(c,"/rest/v1/rpc/get_own_profile",token,{});
+      assert.ok(denied(r),"Both public and anonymous Auth must be denied owner profile");
+    }
+  });
+  await check("nonowner owner-profile RPC returns only its own identity",async()=>{
+    const r=await call(c,"/rest/v1/rpc/get_own_profile",c.other,{});
+    assert.equal(r.status,200,"Nonowner must be able to read its own profile");
+    assert.ok(r.data && !Array.isArray(r.data),"Nonowner own profile must be an object");
+    assert.equal(r.data.id,claim(c.other,"sub"),"Nonowner must receive its own profile");
+    assert.notEqual(r.data.id,c.owner,"Cross-account owner data exposed");
+  });
   await check("enrolled AAL1 owner projection blocked",async()=>{
     const r=await call(c,"/rest/v1/rpc/get_own_profile",c.a1,{});
     assert.ok(denied(r),"Enrolled AAL1 must be denied by MFA policy");
@@ -119,6 +143,9 @@ async function accept(env) {
     assert.equal(r.status,200,"AAL2 projection must succeed");
     assert.ok(r.data && !Array.isArray(r.data),"Owner RPC must return jsonb object");
     assert.equal(r.data.id,c.owner,"Owner RPC must return caller's profile");
+    for(const secret of ["birthdate","stripe_identity_verification_session_id"]) {
+      assert.equal(Object.hasOwn(r.data,secret),false,"Unexpected sensitive field in owner projection: "+secret);
+    }
   });
   await check("public follower RPC is installed",async()=>{
     rows(await call(c,"/rest/v1/rpc/get_public_follow_list",undefined,{
@@ -136,7 +163,27 @@ if(process.argv.includes("--self-test")) {
   assert.equal(denied({status:403}),true);
   assert.equal(denied({status:200}),false);
   assert.throws(()=>config({}),/Missing test-only/);
-  console.log("PASS test-only URL guard, MFA denial expectations and credential preflight");
+  // Dummy JWTs are decoded only for LOCAL validation tests, never used for HTTP.
+  const dummy=(sub,aal="aal1",anonymous=false)=>
+    "header."+Buffer.from(JSON.stringify({sub,role:"authenticated",aal,is_anonymous:anonymous})).toString("base64url")+".signature";
+  const owner="11111111-1111-4111-8111-111111111111";
+  const other="22222222-2222-4222-8222-222222222222";
+  const anon="33333333-3333-4333-8333-333333333333";
+  const local={
+    BUILD9_ACCEPTANCE_URL:TARGET, BUILD9_ACCEPTANCE_ANON_KEY:"fake-public-key",
+    BUILD9_ACCEPTANCE_OWNER_AAL1_TOKEN:dummy(owner),
+    BUILD9_ACCEPTANCE_OWNER_AAL2_TOKEN:dummy(owner,"aal2"),
+    BUILD9_ACCEPTANCE_NONOWNER_TOKEN:dummy(other),
+    BUILD9_ACCEPTANCE_ANON_AUTH_TOKEN:dummy(anon,"aal1",true),
+    BUILD9_ACCEPTANCE_PUBLIC_PLAYER_ID:owner,
+    BUILD9_ACCEPTANCE_PRIVATE_PLAYER_ID:other,
+    BUILD9_ACCEPTANCE_OPTOUT_PLAYER_ID:anon
+  };
+  assert.equal(config(local).owner,owner,"Valid synthetic role matrix must pass");
+  assert.throws(()=>config({...local,BUILD9_ACCEPTANCE_ANON_AUTH_TOKEN:dummy(anon)}),/anonymous Auth session/);
+  assert.throws(()=>config({...local,BUILD9_ACCEPTANCE_OWNER_AAL2_TOKEN:dummy(other,"aal2")}),/same user/);
+  assert.throws(()=>config({...local,BUILD9_ACCEPTANCE_OWNER_AAL1_TOKEN:dummy(owner,"aal1",true)}),/must not be anonymous Auth/);
+  console.log("PASS test-only URL guard, role-matrix, MFA denial expectations and credential preflight");
 } else {
   try {await accept(process.env);}
   catch (e) {
