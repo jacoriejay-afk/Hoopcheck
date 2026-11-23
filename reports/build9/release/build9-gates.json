@@ -67,6 +67,12 @@
       "evidence": null
     },
     {
+      "id": "privileged_profile_update_acl",
+      "status": "HOLD",
+      "details": "Production authenticated has table-wide UPDATE on all 59 public.profiles columns at the ACL layer. Seven BEFORE UPDATE triggers and owner RLS remain present; no exploit was demonstrated. Require reviewed least-privilege ACL/rollback on production-equivalent PG17, genuine signed owner/nonowner AAL1/AAL2, and installed Build 7/8 editor compatibility before enabling the Build 9 native editor.",
+      "evidence": null
+    },
+    {
       "id": "build7_8_compatibility",
       "status": "HOLD",
       "details": "Exact shipped Store Build 8 source c0b77ba3 is recovered and its native editor requires get_own_profile(), which a read-only production catalog still reports MISSING (PR #876). Store Build 7 exact source is unresolved; real installed-client API/read/write/startup tests and compatible server RPC before production privacy changes remain required.",
