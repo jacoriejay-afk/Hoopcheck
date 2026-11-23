@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Reveal } from "./Motion";
+import { PressableScale } from "./PressableScale";
 import { useEntryTheme } from "../src/theme";
 import {
   courtChoices, defaultCourtActions, normalizeCourtActions, toggleCourtAction,
@@ -90,12 +91,12 @@ export function MyCourtActions({ userId, role, feedEnabled }: {
       {cards.map(action => {
         const accent = colors[action.tone][theme.dark ? "dark" : "light"];
         return <View key={action.id} style={{ width: "48%", flexGrow: 1 }}>
-          <Pressable accessibilityRole="link" accessibilityLabel={action.label} onPress={() => router.push(action.href)}
-            style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", minHeight: 58,
+          <PressableScale accessibilityRole="link" accessibilityLabel={action.label}
+            onPress={() => router.push(action.href)}
+            style={{ flexDirection: "row", alignItems: "center", minHeight: 58,
               paddingHorizontal: 9, paddingVertical: 7, gap: 8, borderRadius: 14,
               borderWidth: 1, borderColor: theme.dark ? theme.glassBorder : theme.border,
-              backgroundColor: theme.elevatedSurface, opacity: pressed ? .76 : 1,
-              transform: [{ scale: pressed ? .98 : 1 }] })}>
+              backgroundColor: theme.elevatedSurface }}>
             <View style={{ width: 33, height: 33, borderRadius: 11, backgroundColor: theme.accentSurface,
               alignItems: "center", justifyContent: "center" }}>
               <Ionicons name={action.icon} size={19} color={accent} />
@@ -103,7 +104,7 @@ export function MyCourtActions({ userId, role, feedEnabled }: {
             <Text numberOfLines={2} style={{ flex: 1, color: theme.foreground, fontSize: 12,
               lineHeight: 16, fontFamily: theme.type.ui.fontFamily, fontWeight: "700" }}>{action.label}</Text>
             <Ionicons name="chevron-forward" size={13} color={theme.muted} />
-          </Pressable>
+          </PressableScale>
         </View>;
       })}
     </View>
