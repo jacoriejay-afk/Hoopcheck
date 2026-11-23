@@ -50,9 +50,9 @@
     },
     {
       "id": "production_schema_rehearsal",
-      "status": "HOLD",
-      "details": "Production schema/owner/ACL-equivalent PostgreSQL 17 migration rehearsal and verified rollback are missing.",
-      "evidence": null
+      "status": "WAIVED",
+      "details": "Owner explicitly waived the production-equivalent PostgreSQL 17 rehearsal on 2026-11-23. Migration safety, role/ACL/owner compatibility and rollback remain UNVERIFIED RISKS; this procedural waiver is NOT a security PASS and authorizes NO PRODUCTION SQL or privacy-permission changes. Real signed Auth/MFA, Build 7/8, Apple Sandbox, physical iPhone and other HOLD gates remain mandatory.",
+      "evidence": "https://github.com/jacoriejay-afk/Hoopcheck/issues/882#issuecomment-7102438249"
     },
     {
       "id": "owner_mfa_signed_http",

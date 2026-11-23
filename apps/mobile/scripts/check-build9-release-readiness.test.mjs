@@ -29,6 +29,8 @@ test("Build 9 release requires distinct status evidence and pinned source commit
   assert.ok(manifest.gates.some(g=>g.id==="exact_head_all_ci" && g.status==="HOLD"), "Old simulator PASS must not certify a newer release head");
   assert.ok(manifest.gates.some(g=>g.id==="apple_bundle_signing" && g.status==="HOLD"));
   assert.ok(manifest.gates.some(g=>g.id==="build7_8_compatibility" && g.status==="HOLD"));
-  assert.ok(manifest.gates.some(g=>g.id==="production_schema_rehearsal" && g.status==="HOLD"));
+  assert.ok(manifest.gates.some(g=>g.id==="production_schema_rehearsal"
+    && g.status==="WAIVED" && /unverified/i.test(g.details) && /^https:\/\//.test(g.evidence)),
+    "Explicit schema waiver must disclose residual risk and link owner's decision");
   assert.ok(manifest.gates.some(g=>g.id==="owner_mfa_signed_http" && g.status==="HOLD"));
 });

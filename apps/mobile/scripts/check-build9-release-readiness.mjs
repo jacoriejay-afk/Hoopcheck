@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
-import { REQUIRED_GATE_IDS, missingRequiredGateIds } from "./build9-required-gates.mjs";
+import { REQUIRED_GATE_IDS, missingRequiredGateIds, nonWaivableWaivers } from "./build9-required-gates.mjs";
 
 const mobile = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const root = resolve(mobile, "../..");
@@ -17,13 +17,20 @@ const gates = Array.isArray(snapshot.gates) ? snapshot.gates : [];
 need(Array.isArray(snapshot.gates) && gates.length >= REQUIRED_GATE_IDS.length, "Incomplete release gate checklist");
 const missing = missingRequiredGateIds(gates);
 need(missing.length === 0, "Missing mandatory Build 9 release gates: " + missing.join(", "));
+const forbiddenWaivers = nonWaivableWaivers(gates);
+need(forbiddenWaivers.length === 0, "Cannot waive security, compatibility, Apple or owner approval gates: " + forbiddenWaivers.join(", "));
 const ids = new Set();
 for (const gate of gates) {
   need(typeof gate.id === "string" && !ids.has(gate.id), "Duplicate/invalid gate ID");
   ids.add(gate.id);
-  need(["PASS", "HOLD"].includes(gate.status), "Unknown release status for " + gate.id);
+  need(["PASS", "HOLD", "WAIVED"].includes(gate.status), "Unknown release status for " + gate.id);
   need(typeof gate.details === "string" && gate.details.length > 10, "Missing gate explanation: " + gate.id);
-  if (gate.status === "PASS") need(typeof gate.evidence === "string" && /^https:\/\//.test(gate.evidence), "Missing evidence URL: " + gate.id);
+  if (gate.status === "PASS" || gate.status === "WAIVED") {
+    need(typeof gate.evidence === "string" && /^https:\/\//.test(gate.evidence), "Missing evidence URL: " + gate.id);
+  }
+  if (gate.status === "WAIVED") {
+    need(/risk|unverified/i.test(gate.details), "Waiver must disclose unverified risk: " + gate.id);
+  }
 }
 need(app.extra?.eas?.projectId === snapshot.build.expo_project_id, "Expo project ID drift");
 need(app.ios?.bundleIdentifier === snapshot.build.bundle_id, "iOS bundle ID drift");
@@ -39,7 +46,8 @@ for (const path of [
   "scripts/build9-role-chat-reconciliation.test.mjs",
   "scripts/check-ios-release-identity.cjs"
 ]) need(existsSync(resolve(mobile, path)), "Missing Build 9 native feature/guard: " + path);
-const holds = gates.filter(g => g.status !== "PASS");
+const holds = gates.filter(g => g.status === "HOLD");
+const waived = gates.filter(g => g.status === "WAIVED");
 if (enforce) {
   need(holds.length === 0, holds.map(g => "Gate HOLD: " + g.id).join("; "));
   const approved = (process.env.HOOPCHECK_APPROVED_IOS_BUNDLE_ID || "").trim();
@@ -48,8 +56,9 @@ if (enforce) {
   need(/^[a-f0-9]{40}$/i.test(commit) && commit === snapshot.release_commit, "Reviewed release SHA missing or mismatched");
 }
 console.log("Build 9 identity and native source:", failures.length ? "INVALID" : "VERIFIED LOCALLY");
-console.log("Gates:", gates.length - holds.length, "PASS /", holds.length, "HOLD");
+console.log("Gates:", gates.length - holds.length - waived.length, "PASS /", waived.length, "WAIVED /", holds.length, "HOLD");
 for (const gate of holds) console.log("HOLD:", gate.id, "-", gate.details);
+for (const gate of waived) console.log("WAIVED (NOT PASSED):", gate.id, "-", gate.details);
 console.log("This is a local snapshot, NOT real Auth, Apple, production schema or physical iPhone verification.");
 if (failures.length) {
   for (const reason of failures) console.error("BUILD 9 RELEASE HOLD:", reason);
