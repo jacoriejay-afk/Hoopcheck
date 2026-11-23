@@ -5,9 +5,13 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "../../../lib/supabase";
+import { readOwnProfile } from "../../../lib/read-own-profile";
 import TeamLeaguePicker from "../../../components/TeamLeaguePicker";
 
 type AccountType="player"|"coach"|"fan"|"scout"|"agent"|"manager";
+const validAccountTypes: ReadonlySet<string> = new Set(["player","coach","fan","scout","agent","manager"]);
+const isAccountType = (value: unknown): value is AccountType =>
+ typeof value === "string" && validAccountTypes.has(value);
 
 const roleCopy:Record<AccountType,{title:string;description:string;goals:string[]}> = {
  player:{title:"Player Experience",description:"Research teams and coaches, manage your professional profile, verify your career, share first-hand experiences and connect with the basketball community.",goals:["Research a team before signing","Share professional experiences","Build a verified player profile","Connect with scouts and agents"]},
@@ -20,13 +24,38 @@ const roleCopy:Record<AccountType,{title:string;description:string;goals:string[
 
 function Complete(){
  const params=useSearchParams(); const router=useRouter(); const email=params.get("email");
- const [authChecked,setAuthChecked]=useState(false); const [hasAuthenticatedUser,setHasAuthenticatedUser]=useState(false);
+ const [authChecked,setAuthChecked]=useState(false); const [hasAuthenticatedUser,setHasAuthenticatedUser]=useState(false); const [profileVerified,setProfileVerified]=useState(false);
  const [resendLoading,setResendLoading]=useState(false); const [authMessage,setAuthMessage]=useState("");
  const [accountType,setAccountType]=useState<AccountType>("player"); const [basketballType,setBasketballType]=useState<"mens"|"womens">("mens"); const [womenPlayer,setWomenPlayer]=useState(false);
  const [favoriteTeamName,setFavoriteTeamName]=useState("");
  const [goal,setGoal]=useState(""); const [preferences,setPreferences]=useState(""); const [saved,setSaved]=useState(false); const [saving,setSaving]=useState(false); const [saveError,setSaveError]=useState("");
 
- useEffect(()=>{let mounted=true;void(async()=>{try{const {data:{user}}=await supabase.auth.getUser();if(!mounted)return;if(!user){setAuthChecked(true);return;}setHasAuthenticatedUser(true);const metadata=(user.user_metadata?.account_type||"player") as AccountType;setAccountType(metadata);const femalePlayer=metadata==="player"&&(user.user_metadata?.gender==="female"||user.user_metadata?.basketball_type==="womens");setWomenPlayer(femalePlayer);setBasketballType(femalePlayer?"womens":(user.user_metadata?.basketball_type==="womens"?"womens":"mens"));setGoal(metadata==="player"?"research":metadata==="fan"?"follow_teams":"research");}catch(error){console.error("Signup completion setup failed:",error);}finally{if(mounted)setAuthChecked(true);}})();return()=>{mounted=false};},[]);
+ useEffect(()=>{let mounted=true;void(async()=>{try{
+  const {data:{user},error:authError}=await supabase.auth.getUser();
+  if(!mounted)return;
+  if(authError||!user)return;
+  setHasAuthenticatedUser(true);
+  // Signup metadata is editable by the user. The database profile, verified
+  // through a pinned owner session, is the sole source of account roles.
+  const {data:profile,error:profileError}=await readOwnProfile<{
+   id:string; account_type:unknown; basketball_type:unknown
+  }>(user.id,"id,account_type,basketball_type");
+  if(!mounted)return;
+  if(profileError||!profile||!isAccountType(profile.account_type)){
+   setSaveError("Your account profile could not be verified. Sign in again or contact support.");
+   return;
+  }
+  const verifiedRole=profile.account_type;
+  setAccountType(verifiedRole);
+  const femalePlayer=verifiedRole==="player"&&(
+    user.user_metadata?.gender==="female"||profile.basketball_type==="womens"
+  );
+  setWomenPlayer(femalePlayer);
+  setBasketballType(profile.basketball_type==="womens"?"womens":"mens");
+  setGoal(verifiedRole==="player"?"research":verifiedRole==="fan"?"follow_teams":"research");
+  setProfileVerified(true);
+ }catch(error){console.error("Signup completion setup failed:",error);if(mounted)setSaveError("Could not verify your account profile. Please retry.");}
+ finally{if(mounted)setAuthChecked(true);}})();return()=>{mounted=false};},[]);
 
  async function resendConfirmation(){if(!email){setAuthMessage("Enter the email address you used to sign up, then try logging in or creating your account again.");return;}setResendLoading(true);setAuthMessage("");try{const {error}=await supabase.auth.resend({type:"signup",email,options:{emailRedirectTo:new URL("/auth/confirm",window.location.origin).href}});if(error)throw error;setAuthMessage("If this email needs confirmation, a fresh confirmation link has been sent. Check your inbox and spam folder.");}catch(error){setAuthMessage(error instanceof Error?error.message:"We couldn't resend the confirmation email. Please try again.");}finally{setResendLoading(false);}}
  const copy=roleCopy[accountType];
@@ -38,7 +67,19 @@ function Complete(){
    const {data:{user},error:authError}=await supabase.auth.getUser();
    if(authError)throw authError;
    if(!user){router.push("/login?returnTo=/signup/complete");return;}
-   const {data,error}=await supabase.from("profiles").update({account_type:accountType,basketball_type:accountType==="fan"||accountType==="player"?basketballType:null,favorite_teams:favoriteTeamName||null,experience_goal:goal,research_preferences:preferences.trim().slice(0,1000)||null}).eq("id",user.id).select("id").maybeSingle();
+   // Never attempt a role change during personalization. A user can edit
+   // Auth metadata, but only the authenticated owner projection confirms role.
+   const {data:owner,error:ownerError}=await readOwnProfile<{
+    id:string; account_type:unknown
+   }>(user.id,"id,account_type");
+   if(ownerError||!owner||owner.id!==user.id||owner.account_type!==accountType)
+    throw new Error("Your account role could not be verified. Refresh and sign in again.");
+   const {data,error}=await supabase.from("profiles").update({
+    basketball_type:accountType==="fan"||accountType==="player"?basketballType:null,
+    favorite_teams:favoriteTeamName||null,
+    experience_goal:goal,
+    research_preferences:preferences.trim().slice(0,1000)||null
+   }).eq("id",user.id).select("id").maybeSingle();
    if(error)throw error;
    if(!data)throw new Error("Your profile could not be updated. Please try again.");
    localStorage.setItem("hoopcheck_profile_setup","complete");
@@ -50,6 +91,7 @@ function Complete(){
   }finally{setSaving(false);}
  }
  if(!authChecked)return <main className="page-shell"><div className="page-container"><section className="hero-card"><p className="eyebrow">WELCOME TO HOOPCHECK</p><h1>Checking your account…</h1><p className="muted">We’re verifying your sign-in before continuing.</p></section></div></main>;
+ if(hasAuthenticatedUser&&!profileVerified)return <main className="page-shell"><div className="page-container"><section className="hero-card"><p className="eyebrow">ACCOUNT VERIFICATION</p><h1>Your profile needs verification.</h1><p role="alert" className="muted">{saveError||"Your account profile could not be loaded. Try signing in again."}</p><div className="actions"><Link className="btn" href="/login">Sign In</Link><Link className="btn dark" href="/support">Contact Support</Link></div></section></div></main>;
  if(!hasAuthenticatedUser)return <main className="page-shell"><div className="page-container"><section className="hero-card"><p className="eyebrow">ONE LAST STEP</p><h1>Check your email or sign in.</h1><p className="muted">We processed your signup request{email?<> for <strong>{email}</strong></>:null}. If this is a new account, check for a confirmation email and follow its link before signing in. If you already registered with this address, sign in or reset your password instead. For privacy, a signup response does not confirm that a new account was created.</p><div style={{display:"flex",gap:10,flexWrap:"wrap",marginTop:18}}><button className="btn" onClick={resendConfirmation} disabled={resendLoading}>{resendLoading?"Sending…":"Resend Confirmation Email"}</button><Link href="/login" className="btn dark">Go to Login</Link><Link href="/signup" className="btn dark">Back to Sign Up</Link></div>{authMessage&&<p className="muted" role="status" aria-live="polite" style={{marginTop:16}}>{authMessage}</p>}<p className="muted" style={{marginTop:18}}>Already signed up with this email? Try logging in or use “Forgot password?” to recover access. You won’t be considered signed in until HoopCheck accepts your login.</p></section></div></main>;
  if(saved)return <main className="page-shell"><div className="page-container"><section className="hero-card"><p className="eyebrow">WELCOME TO HOOPCHECK</p><h1>Your experience is ready.</h1><p className="muted">Your {copy.title.toLowerCase()} has been personalized.</p><div style={{display:"flex",gap:10,flexWrap:"wrap",marginTop:18}}><Link href="/onboarding/teams" className="btn">Continue to team setup</Link><Link href="/teams" className="btn dark">Explore Teams</Link></div></section></div></main>;
  return <main className="page-shell"><div className="page-container signup-complete-shell">
