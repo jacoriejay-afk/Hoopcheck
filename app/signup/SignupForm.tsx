@@ -23,7 +23,7 @@ const ACCOUNT_TYPES: {value:AccountType; title:string; description:string; icon:
   {value:"fan",title:"Fan",description:"Follow teams, track leagues, and join fan groups.",icon:"star"},
 ];
 
-export default function SignupForm({ googleEmail, referralToken }: { googleEmail?: string; referralToken?: string }) {
+export default function SignupForm({ googleEmail, referralToken, referralUnavailable = false }: { googleEmail?: string; referralToken?: string; referralUnavailable?: boolean }) {
   const isGoogleSignup = googleEmail !== undefined;
   const router = useRouter();
   const { language, setLanguage } = useLanguage();
@@ -129,6 +129,7 @@ export default function SignupForm({ googleEmail, referralToken }: { googleEmail
     <section className="auth-page signup-page">
       <div className="auth-card signup-card">
         <h1>Create your account</h1>
+        {referralUnavailable && <p className="hc-auth-feedback" role="alert">This ambassador referral is currently unavailable. You can create a regular HoopCheck account, but it will not be credited to the ambassador. If you want your signup to count toward the ambassador, please return when the referral campaign is active before creating your account.</p>}
         {isGoogleSignup
           ? <p className="intro">Finish setting up HoopCheck with {googleEmail || "your Google account"}.</p>
           : <><GoogleSignInButton disabled={loading} /><div className="hc-auth-divider">or</div></>}
