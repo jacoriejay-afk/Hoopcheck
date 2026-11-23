@@ -29,6 +29,7 @@ export default function DashboardScreen() {
   const theme = useEntryTheme();
   const [search, setSearch] = useState("");
   const [busy, setBusy] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [email, setEmail] = useState("");
   const { account: currentAccount } = useNativeAccount();
   // Display the verified profile role, not editable auth metadata.
@@ -71,24 +72,46 @@ export default function DashboardScreen() {
       {/* Pinned outside the scroll view: the logo and menu must never slide under
           the iPhone status bar / Dynamic Island as the Home feed scrolls. */}
       <View style={styles.pinnedHeader}>
-          <View style={{borderRadius:19,overflow:"hidden",borderWidth:1,borderColor:theme.dark?"#FF7C38":"#EA7138",
-            backgroundColor:"#0F1C30",marginBottom:11}}>
-            <LinearGradient colors={["#121E33","#182D49","#2D2335"]}
+          <GlassSurface style={{borderRadius:24,borderWidth:1,
+            borderColor:theme.dark?"rgba(255,135,67,.65)":"rgba(234,113,56,.7)",
+            marginBottom:9,shadowColor:"#000",shadowOpacity:theme.dark?.35:.12,shadowRadius:16,
+            shadowOffset:{width:0,height:8}}}>
+            <LinearGradient colors={theme.dark?["rgba(18,30,51,.65)","rgba(24,45,73,.55)","rgba(45,35,53,.45)"]:["rgba(255,255,255,.75)","rgba(255,245,235,.5)"]}
               start={{x:0,y:0}} end={{x:1,y:1}} style={StyleSheet.absoluteFill}/>
             <View style={{minHeight:62,paddingHorizontal:13,paddingVertical:9,
               flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:8}}>
               <BrandLogo onHero />
               <Pressable accessibilityRole="button" accessibilityLabel="Open account menu"
-                onPress={()=>router.push("/account")}
-                style={({pressed})=>({width:44,height:44,borderRadius:14,borderWidth:1,
-                  borderColor:"rgba(255,255,255,.32)",backgroundColor:"rgba(255,255,255,.09)",
+                accessibilityState={{expanded:menuOpen}} onPress={()=>setMenuOpen(open=>!open)}
+                style={({pressed})=>({width:44,height:44,borderRadius:19,
+                  borderWidth:menuOpen?1:0,borderColor:theme.accent,
+                  backgroundColor:menuOpen?theme.accentSurface:"rgba(255,255,255,.09)",
                   alignItems:"center",justifyContent:"center",opacity:pressed?.72:1})}>
-                <Ionicons name="menu" size={27} color="#FFFFFF" />
+                <Ionicons name={menuOpen?"close":"menu"} size={25} color={theme.dark?"#FFFFFF":theme.foreground} />
               </Pressable>
             </View>
-          </View>
+          </GlassSurface>
+          {menuOpen ? <GlassSurface style={{
+            position:"absolute",right:12,top:78,width:232,zIndex:30,
+            padding:6,borderRadius:18,borderColor:theme.glassBorder,
+            shadowColor:"#000",shadowOpacity:.3,shadowRadius:14,shadowOffset:{width:0,height:8},
+          }}>
+            {([
+              {label:"My account",path:"/account",icon:"person-circle-outline"},
+              {label:"HoopChat",path:"/messages",icon:"chatbubbles-outline"},
+              {label:"HoopGroups",path:"/hoopgroups",icon:"people-outline"},
+              {label:"Settings",path:"/settings",icon:"settings-outline"},
+              {label:"Support",path:"/support",icon:"help-circle-outline"},
+            ] as const).map(item=><Pressable key={item.path} accessibilityRole="menuitem"
+              accessibilityLabel={item.label} onPress={()=>{setMenuOpen(false);router.push(item.path);}}
+              style={({pressed})=>({flexDirection:"row",alignItems:"center",gap:10,minHeight:47,
+                paddingHorizontal:12,borderRadius:12,backgroundColor:pressed?theme.accentSurface:"transparent"})}>
+              <Ionicons name={item.icon} size={19} color={theme.accent}/>
+              <Text style={{color:theme.foreground,fontWeight:"700",fontSize:14}}>{item.label}</Text>
+            </Pressable>)}
+          </GlassSurface> : null}
       </View>
-      <ScrollView keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled" testID="dashboard-scroll" contentContainerStyle={styles.scroll}>
+      <ScrollView keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled" onScrollBeginDrag={()=>setMenuOpen(false)} testID="dashboard-scroll" contentContainerStyle={styles.scroll}>
         <View style={styles.content}>
           <GlassSurface style={{ flexDirection:"row",alignItems:"center",marginBottom:14,
             borderRadius:17,paddingLeft:12,paddingRight:5,minHeight:50,
@@ -146,7 +169,7 @@ export default function DashboardScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  pinnedHeader: { width: "100%", maxWidth: 664, alignSelf: "center", paddingHorizontal: 12, paddingTop: 6 },
+  pinnedHeader: { width: "100%", maxWidth: 664, alignSelf: "center", paddingHorizontal: 17, paddingTop: 9, zIndex: 20 },
   scroll: { flexGrow: 1, padding: 12 },
   content: { width: "100%", maxWidth: 640, alignSelf: "center" },
   title: { fontSize: 32, fontWeight: "900", letterSpacing: -0.7, marginBottom: 16 },
