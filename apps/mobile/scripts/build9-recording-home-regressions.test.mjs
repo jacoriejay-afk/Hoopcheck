@@ -5,6 +5,7 @@ import { selectHomePreviewGames } from "../src/native/homeGamePreview.ts";
 
 const dash = readFileSync(new URL("../app/dashboard.tsx", import.meta.url), "utf8");
 const home = readFileSync(new URL("../components/HomeCourtside.tsx", import.meta.url), "utf8");
+const explore = readFileSync(new URL("../components/ExploreLinks.tsx", import.meta.url), "utf8");
 const now = Date.parse("2026-11-23T18:30:00Z");
 const fixture = (id, status, scheduled_at) => ({ id, status, scheduled_at });
 
@@ -54,4 +55,22 @@ test("Home excludes unknown kickoffs and avoids old score panels when no active 
   ], now), []);
   assert.match(home, /No live or upcoming games/);
   assert.match(home, /Scoreboard game=\{game\}/);
+});
+
+test("Home directory is compact without changing public directory navigation", () => {
+  assert.match(dash, /<ExploreLinks compact \/>/);
+  assert.match(explore, /compact = false/);
+  assert.match(explore, /flexWrap: "wrap"/);
+  assert.match(explore, /width: "48%"/);
+  assert.match(explore, /!publicOnly \|\| index < 5/);
+  for (const route of ['"/teams"', '"/womens"', '"/coaches"', '"/leagues"', '"/players"']) {
+    assert.ok(explore.includes(route), "Kept directory entry: " + route);
+  }
+});
+
+test("Eligible HoopFeed empty state is actionable and preserves membership gating", () => {
+  assert.match(home, /No community posts yet\. Start a discussion in HoopFeed/);
+  assert.match(home, /accessibilityLabel="Open HoopFeed to start a discussion"/);
+  assert.match(home, /!feedAccess\?<Text/);
+  assert.match(home, /onPress=\{\(\)=>router\.push\("\/feed"\)\}/);
 });
