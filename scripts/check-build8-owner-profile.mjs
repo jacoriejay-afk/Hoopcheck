@@ -12,7 +12,22 @@ assert.match(body,/SECURITY DEFINER/);
 assert.match(body,/WHERE p.id = auth.uid\(\)/);
 assert.match(body,/auth\.mfa_factors/);
 assert.doesNotMatch(body,/GRANT SELECT ON public\.profiles|REVOKE SELECT|ALTER ROLE|DISABLE ROW LEVEL SECURITY/);
-const fields=[...body.matchAll(/'([a-z_]+)',p\.([a-z_]+)/g)].map(m=>{assert.equal(m[1],m[2]);return m[1];});
+// Extract ONLY the actual JSONB projection, never unrelated SQL strings.
+// The previous whole-function regex also captured 'authenticated', creating
+// a synthetic column that does not exist in the installed profiles table.
+const projection=body.match(/SELECT jsonb_build_object\(([\s\S]*?)\) INTO result/);
+assert.ok(projection,"Missing scoped owner profile projection");
+const fields=[...projection[1].matchAll(/'([a-z_]+)',p\.([a-z_]+)/g)].map(m=>{assert.equal(m[1],m[2]);return m[1];});
+assert.equal(fields.length,31,"Owner projection field count drifted");
+assert.equal(new Set(fields).size,31,"Duplicate owner projection field");
+const guard=source.match(/SELECT 1 FROM \(VALUES ([^\n]+)\) AS required\(column_name\)/);
+assert.ok(guard,"Missing fail-closed owner SELECT ACL preflight");
+const guardedFields=[...guard[1].matchAll(/\('([a-z_]+)'\)/g)].map(m=>m[1]);
+assert.deepEqual(guardedFields.slice().sort(),fields.slice().sort(),"Every owner output must be protected by exact column/ACL preflight");
+assert.match(source,/pol\.permissive='PERMISSIVE' AND pol\.cmd IN \('SELECT','ALL'\)/);
+assert.match(source,/pol\.qual ILIKE '%auth\.uid%'/);
+assert.match(source,/has_column_privilege\('authenticated','public\.profiles',a\.attname,'SELECT'\)/);
+assert.doesNotMatch(source,/GRANT SELECT ON public\.profiles|DISABLE ROW LEVEL SECURITY|ALTER ROLE/);
 assert.ok(fields.length>=25,"Owner profile projection fields missing");
 const types={id:"uuid",years_pro:"integer",current_country_public:"boolean",free_agent:"boolean",player_verified:"boolean",is_adult:"boolean",agreed_to_terms:"boolean",created_at:"timestamptz",updated_at:"timestamptz",player_verified_at:"timestamptz",notification_preferences:"jsonb"};
 for(const [a,b] of [["hoopcheck_security.owner_profile_factor_satisfied","hc_b8owner.owner_profile_factor_satisfied"],["public.get_own_profile","hc_b8owner.get_own_profile"],["public.profiles","hc_b8owner.profiles"],["auth.mfa_factors","hc_b8owner.mfa_factors"],["auth.uid()","hc_b8owner.uid()"],["auth.jwt()","hc_b8owner.jwt()"],["hoopcheck_security","hc_b8owner"]]) body=body.replaceAll(a,b);
