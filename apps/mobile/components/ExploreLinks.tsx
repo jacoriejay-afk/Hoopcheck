@@ -1,4 +1,5 @@
 import { Pressable, Text, View } from "react-native";
+import { PressableScale } from "./PressableScale";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useEntryTheme } from "../src/theme";
@@ -15,9 +16,11 @@ const links = [
 ] as const;
 export function ExploreLinks({ publicOnly = false, compact = false }: { publicOnly?: boolean; compact?: boolean }) {
   const theme = useEntryTheme(); const router = useRouter();
+  // Motion is Home-only: public and full-size directory links remain unchanged.
+  const ItemPressable = compact ? PressableScale : Pressable;
   return <View style={compact ? { flexDirection: "row", flexWrap: "wrap", gap: 8 } : { gap: theme.spacing.sm }}>
     {links.filter((_, index) => !publicOnly || index < 5).map(item =>
-      <Pressable key={item.href} accessibilityRole="link" accessibilityLabel={item.title}
+      <ItemPressable key={item.href} accessibilityRole="link" accessibilityLabel={item.title}
         testID={`directory-${item.title.toLowerCase()}`} onPress={() => router.push(item.href)}
         style={({ pressed }) => ({
           flexDirection: "row", alignItems: "center",
@@ -37,6 +40,6 @@ export function ExploreLinks({ publicOnly = false, compact = false }: { publicOn
           {!compact ? <Text style={{ color: theme.muted, fontSize: 12, lineHeight: 17 }}>{item.detail}</Text> : null}
         </View>
         {!compact ? <Ionicons name="chevron-forward" size={17} color={theme.foreground} /> : null}
-      </Pressable>)}
+      </ItemPressable>)}
   </View>;
 }
