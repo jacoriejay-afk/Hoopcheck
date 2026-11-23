@@ -47,7 +47,7 @@ test("HoopReels preauthorizes only the virtualized window and plays one active v
     post, userId: "44444444-4444-4444-8444-444444444444", height: 620,
     active: true, ready: true, canWrite: true, check: { count: 7, mine: false },
     saved: false, checkBusy: false, saveBusy: false, blockBusy: false,
-    onBack: () => {}, onCreate: () => received.push("create"), onCheck: () => received.push("check"),
+    onBack: () => {}, onCreate: () => received.push("create"), onViewPlayer: () => received.push("player"), onCheck: () => received.push("check"),
     onComments: () => {}, onShare: () => {}, onSave: () => {},
     onReport: () => received.push("report"), onHide: () => {},
     onHideCreator: () => {}, onBlockCreator: () => received.push("block"),
@@ -65,13 +65,14 @@ test("HoopReels preauthorizes only the virtualized window and plays one active v
   assert.equal(media().playing, false);
   await act(async () => { button("Unmute Reel").props.onPress(); });
   assert.equal(media().muted, false);
+  await act(async () => { button("View player profile").props.onPress(); });
   await act(async () => { button("Create video post for HoopReels").props.onPress(); });
   await act(async () => { button("Check this Reel").props.onPress(); });
-  assert.deepEqual(received, ["create", "check"]);
+  assert.deepEqual(received, ["player", "create", "check"]);
   await act(async () => { button("Reel options").props.onPress(); });
   assert.equal(media().playing, false, "opening moderation controls pauses playback");
   await act(async () => { button("Report Reel").props.onPress(); });
-  assert.deepEqual(received, ["create", "check", "report"]);
+  assert.deepEqual(received, ["player", "create", "check", "report"]);
   await act(async () => { tree.update(React.createElement(Card, { ...props, active: false, ready: true })); });
   assert.equal(media().enabled, true, "the next virtualized clip can be loaded ahead of time");
   assert.equal(media().playing, false, "offscreen videos cannot autoplay");
