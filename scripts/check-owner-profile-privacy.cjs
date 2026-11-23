@@ -2,9 +2,13 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const helper = fs.readFileSync("lib/read-own-profile.ts", "utf8");
-assert.match(helper, /legacy\.error\.code !== "42501"/, "Only permission errors should trigger owner RPC fallback");
-assert.match(helper, /supabase\.rpc\("get_own_profile"\)/, "Fallback must use protected owner RPC");
-assert.match(helper, /\.id !== userId/, "Never trust a projection for another account");
+assert.ok(helper.includes('legacy.error?.code === "42501"'), "Only permission errors may trigger owner RPC fallback");
+assert.equal(helper.split("supabase.auth.getSession()").length - 1, 2, "Owner reads must capture and recheck the session");
+assert.ok(helper.includes('const projection = columns.split(",")'), "Owner identity must be included in all legacy projections");
+assert.equal(helper.split('.setHeader("Authorization", `Bearer ${token}`)').length - 1, 2, "Both legacy and RPC requests must pin the captured JWT");
+assert.ok(helper.includes("current.data.session.access_token !== token"), "Account switch or token refresh must fail closed");
+assert.ok(helper.includes("result.data.id !== userId"), "Owner identity must match the returned projection");
+assert.ok(helper.includes('supabase.rpc("get_own_profile")'), "Only the protected owner RPC can handle permission-denied fallback");
 for (const filename of [
   "app/account/page.tsx",
   "app/dashboard/page.tsx",
