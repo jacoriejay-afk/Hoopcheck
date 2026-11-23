@@ -39,12 +39,22 @@ final class PassportUITests: XCTestCase {
     pdf.lifetime = .keepAlways
     add(pdf)
     share.tap()
-    // Observed iOS 18 hierarchy: UIActivityViewController choices are Cells,
-    // with a remote ActivityListView and header.closeButton, not app Buttons.
+    // On iOS 18 the system share sheet exposes unlabeled actionGroupCell cells:
+    // their nested titleLabel StaticText contains "Copy", "Print", or "Save to Files".
+    // Checking the Cell.label incorrectly fails even when the real PDF activity
+    // sheet is present (observed in exact-head CI #45120221921).
+    // Scope all queries to the UIKit ActivityListView to avoid matching fixture
+    // text or unrelated app content. Keep the real action-cell check mandatory.
     let sheetRoot = app.otherElements.matching(identifier: "ActivityListView").firstMatch
-    let activity = app.cells.matching(NSPredicate(format: "label == 'Copy' OR label == 'Save to Files' OR label == 'Print'")).firstMatch
-    guard sheetRoot.waitForExistence(timeout: 20), activity.waitForExistence(timeout: 20) else {
-      XCTFail("Real UIKit activity container and PDF action cells must appear"); return
+    guard sheetRoot.waitForExistence(timeout: 20) else {
+      XCTFail("Real UIKit activity container did not appear"); return
+    }
+    let actionCell = sheetRoot.cells.matching(identifier: "actionGroupCell").firstMatch
+    let actionTitle = sheetRoot.staticTexts.matching(
+      NSPredicate(format: "label == 'Copy' OR label == 'Save to Files' OR label == 'Print'")
+    ).firstMatch
+    guard actionCell.waitForExistence(timeout: 20), actionTitle.waitForExistence(timeout: 20) else {
+      XCTFail("Real UIKit PDF action cell and nested action title must appear"); return
     }
     let sheet = XCTAttachment(screenshot: app.screenshot())
     sheet.name = "native-share-sheet"
