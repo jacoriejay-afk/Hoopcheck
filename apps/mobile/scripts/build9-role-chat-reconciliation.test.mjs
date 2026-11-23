@@ -17,7 +17,7 @@ test("owner-approved Arena UI and secure opening survive role + chat reconciliat
     assert.ok(layout.includes('"'+route+'"'),route+" protected by sign-in redirect");
   }
   assert.match(layout,/name="sign-in" options=\{\{ headerShown: false \}\}/);
-  assert.match(layout,/name="dashboard" options=\{\{ headerShown: false/);
+  assert.match(layout,/name="dashboard" options=\{\{ title: "Home", headerShown: false/);
 });
 
 test("role is server-backed, chat is request-scoped, community channels default off",()=>{
