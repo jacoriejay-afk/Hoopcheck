@@ -1,9 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
-import { Button, PressableCard } from "../src/primitives";
+import { Button, GlassCard } from "../src/primitives";
 import { useEntryTheme } from "../src/theme";
 import { useNativeAccount } from "../src/native/useNativeAccount";
 import { supabase } from "../src/lib/supabase";
@@ -14,6 +14,9 @@ import { Skeleton } from "./Motion";
 import { Scoreboard } from "./Scoreboard";
 import { MyCourtActions } from "./MyCourtActions";
 import { EntityArtwork } from "./EntityArtwork";
+import { PressableScale } from "./PressableScale";
+import { useMotionSetting } from "../src/motion/Provider";
+import Animated, { Easing, ReduceMotion, useAnimatedStyle, useSharedValue, withDelay, withTiming } from "react-native-reanimated";
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
 // Existing bundled court art: no real player photograph, team crest, or sponsored asset.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -32,6 +35,67 @@ function ArenaHeading({title,cta,onPress}: {title:string;cta?:string;onPress?:()
     </Pressable>:null}
   </View>;
 }
+/** A section animates on its first render only; its skeleton stays within it. */
+export function HomeStagger({ index, children }: { index: number; children: ReactNode }) {
+  const reduced = useMotionSetting();
+  const progress = useSharedValue(reduced ? 1 : 0);
+  const started = useRef(false);
+  useEffect(() => {
+    if (!started.current) {
+      started.current = true;
+      progress.value = reduced ? 1 : withDelay(index * 80, withTiming(1, {
+        duration: 350, easing: Easing.out(Easing.cubic), reduceMotion: ReduceMotion.System,
+      }));
+    } else if (reduced) {
+      progress.value = 1;
+    }
+  }, [index, reduced, progress]);
+  const style = useAnimatedStyle(() => ({
+    opacity: progress.value,
+    transform: [{ translateY: (1 - progress.value) * 12 }],
+  }));
+  return <Animated.View style={style}>{children}</Animated.View>;
+}
+
+/**
+ * Both layers own the same reserved min-height. Their opacity changes on the
+ * UI thread; no data-fetch or refresh behavior is touched.
+ */
+function HomeCrossfade({ loading, minHeight, children }: {
+  loading: boolean; minHeight: number; children: ReactNode;
+}) {
+  const theme = useEntryTheme();
+  const reduced = useMotionSetting();
+  const opacity = useSharedValue(loading ? 0 : 1);
+  const [showSkeleton, setShowSkeleton] = useState(loading);
+  useEffect(() => {
+    if (loading) setShowSkeleton(true);
+    opacity.value = reduced ? (loading ? 0 : 1) : withTiming(loading ? 0 : 1, {
+      duration: 250, easing: Easing.out(Easing.cubic), reduceMotion: ReduceMotion.System,
+    });
+    if (!loading) {
+      const timeout = setTimeout(() => setShowSkeleton(false), reduced ? 0 : 260);
+      return () => clearTimeout(timeout);
+    }
+  }, [loading, reduced, opacity]);
+  const contentStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+  const skeletonStyle = useAnimatedStyle(() => ({ opacity: 1 - opacity.value }));
+  return <View style={{ minHeight }}>
+    <Animated.View style={[{ minHeight }, contentStyle]}>{children}</Animated.View>
+    {showSkeleton ? <Animated.View pointerEvents="none"
+      accessibilityElementsHidden={!loading} importantForAccessibility={loading ? "yes" : "no-hide-descendants"}
+      style={[StyleSheet.absoluteFillObject, { minHeight, overflow: "hidden", justifyContent: "center",
+        borderRadius: 14, backgroundColor: theme.surface }, skeletonStyle]}>
+      <View accessible={loading} accessibilityRole="progressbar" accessibilityLabel="Loading section"
+        accessibilityState={{ busy: loading }} style={{ gap: 12, padding: 14 }}>
+        <View style={{ height: 17, width: "55%", borderRadius: 7, backgroundColor: theme.border }} />
+        <View style={{ height: 12, width: "85%", borderRadius: 7, backgroundColor: theme.border }} />
+        <View style={{ height: 12, width: "62%", borderRadius: 7, backgroundColor: theme.border }} />
+      </View>
+    </Animated.View> : null}
+  </View>;
+}
+
 export function HomeCourtside() {
   const t=useEntryTheme();const router=useRouter();
   const { account, loading, error, retry }=useNativeAccount();
@@ -78,10 +142,11 @@ export function HomeCourtside() {
   </View>;
   const tier=account.tier==="premium"?"PREMIUM":account.tier==="pro"?"PRO":"FREE";
   const followTeams=data?.teams??[];
-  return <View style={{gap:14,marginBottom:t.spacing.lg}}>
-    <View style={{borderRadius:19,overflow:"hidden",borderWidth:1,
-        borderColor:t.dark?"rgba(255,150,74,.70)":"rgba(211,93,29,.58)",
-        backgroundColor:"#101F35"}}>
+  return <View style={{ gap: 14, marginBottom: t.spacing.lg }}>
+    <HomeStagger index={0}>
+      <View style={{ borderRadius: 19, overflow: "hidden", borderWidth: 1,
+        borderColor: t.dark ? "rgba(255,150,74,.70)" : "rgba(211,93,29,.58)",
+        backgroundColor: "#101F35" }}>
         <LinearGradient colors={["#0D203B","#153A62","#351B25"]} start={{x:0,y:0}}
           end={{x:1,y:1}} style={StyleSheet.absoluteFill}/>
         <Image source={arena} resizeMode="cover" accessible={false} alt=""
@@ -95,108 +160,153 @@ export function HomeCourtside() {
               </Text>
               <Text style={{color:"#C7D8ED",fontSize:12,lineHeight:17}}>Know who you're signing with.</Text>
             </View>
-            <View accessible accessibilityLabel={`${tier} membership`} style={{backgroundColor:account.tier==="free"?"rgba(255,255,255,.12)":"#FF8E37",
+            <View accessible accessibilityLabel={`${tier} membership`} style={{
+              backgroundColor:account.tier==="free"?"rgba(255,255,255,.12)":"#FF8E37",
               borderRadius:9,paddingHorizontal:9,paddingVertical:5,borderWidth:1,
               borderColor:account.tier==="free"?"rgba(255,255,255,.28)":"#FFD07A"}}>
               <Text style={{fontSize:10,fontWeight:"800",color:account.tier==="free"?"#FFFFFF":"#1C1B23"}}>{tier}</Text>
             </View>
           </View>
-          <Pressable accessibilityRole="link" onPress={()=>router.push("/account/edit")}
+          <PressableScale accessibilityRole="link" onPress={()=>router.push("/account/edit")}
             style={{flexDirection:"row",alignItems:"center",minHeight:44,gap:8,
               borderTopWidth:1,borderColor:"rgba(255,255,255,.19)",paddingTop:8}}>
             <Ionicons name="person-circle-outline" color="#FFAD73" size={18} />
             <Text style={{flex:1,color:"#E7EFF9",fontSize:12}}>Complete your profile</Text>
             <Text style={{color:"#FFA362",fontWeight:"700",fontSize:12}}>Edit profile →</Text>
-          </Pressable>
-        </View>
-    </View>
-    <MyCourtActions key={`${uid}:${role}`} userId={uid!} role={role!} feedEnabled={feedAccess} />
-    <ArenaHeading title="TEAMS YOU FOLLOW" cta="Explore teams" onPress={()=>router.push("/teams")}/>
-    {!data?<Skeleton review/>:data.teams===null?<Text accessibilityRole="alert"
-      style={{color:t.muted}}>Your teams could not load.</Text>:followTeams.length===0?
-      <Pressable accessibilityRole="link" onPress={()=>router.push("/teams")} style={{minHeight:55,
-        borderRadius:16,backgroundColor:t.surface,borderWidth:1,borderColor:t.border,
-        padding:12,justifyContent:"center"}}>
-        <Text style={{color:t.muted}}>Follow a team to see it here.</Text>
-      </Pressable>:
-      followTeams.slice(0,2).map(team=><Pressable key={team.target_id}
-        accessibilityRole="link" accessibilityLabel={team.display_name||"View team"}
-        onPress={()=>router.push({pathname:"/teams/[id]",params:{id:team.target_id}})}
-        style={({pressed})=>({opacity:pressed?.8:1,borderRadius:16,overflow:"hidden",borderWidth:1,
-          borderColor:t.dark?"rgba(94,171,255,.36)":t.border,backgroundColor:t.elevatedSurface})}>
-        <View style={{flexDirection:"row",alignItems:"center",gap:10,padding:10,minHeight:67}}>
-          <EntityArtwork name={team.display_name||"Team"} kind="teams" size={46}/>
-          <View style={{flex:1,minWidth:0}}>
-            <Text numberOfLines={1} style={{fontFamily:t.type.ui.fontFamily,color:t.foreground,
-              fontSize:15,fontWeight:"700"}}>{team.display_name||"Team"}</Text>
-            <Text style={{color:t.muted,fontSize:12}}>Following</Text>
-          </View>
-          <Ionicons name="chevron-forward" color={t.accent} size={20}/>
-        </View>
-      </Pressable>)}
-    {role==="player"&&reviewPromptVisible?<View style={{borderRadius:17,overflow:"hidden",
-      borderWidth:1,borderColor:t.dark?"rgba(255,136,66,.65)":t.border,backgroundColor:t.surface}}>
-      <LinearGradient colors={t.dark?["#252C46","#1B2C41","#34242B"]:["#FFF6EF","#FAF4FF","#F4F8FD"]}
-        start={{x:0,y:0}} end={{x:1,y:1}} style={StyleSheet.absoluteFill}/>
-      <View style={{padding:12,gap:9}}>
-        <View style={{flexDirection:"row",gap:10,alignItems:"flex-start"}}>
-          <Ionicons name="clipboard-outline" color={t.dark?"#FFA66A":"#C4501C"} size={24}/>
-          <View style={{flex:1,minWidth:0,gap:4}}>
-            <Text style={{color:t.foreground,fontSize:15,fontFamily:t.type.ui.fontFamily,fontWeight:"700"}}>Played for a team recently?</Text>
-            <Text style={{color:t.muted,fontSize:12,lineHeight:18}}>Share your experience to help the next player.</Text>
-          </View>
-        </View>
-        <View style={{flexDirection:"row",gap:10,alignItems:"center"}}>
-          <Pressable accessibilityRole="link" onPress={()=>router.push("/teams")}
-            style={{flex:1,minHeight:44,backgroundColor:"#F66B25",borderRadius:13,
-              justifyContent:"center",alignItems:"center",paddingHorizontal:8}}>
-            <Text numberOfLines={1} style={{color:"#FFFFFF",fontWeight:"800",fontSize:12}}>Choose a team to review →</Text>
-          </Pressable>
-          <Pressable accessibilityRole="button" accessibilityLabel="Dismiss review prompt"
-            onPress={()=>setReviewPromptVisible(false)} style={{minHeight:44,paddingHorizontal:7,
-              justifyContent:"center"}}>
-            <Text style={{color:t.muted,fontSize:12,fontWeight:"700"}}>Dismiss</Text>
-          </Pressable>
+          </PressableScale>
         </View>
       </View>
-    </View>:null}
-    <ArenaHeading title="My Teams" cta="See all" onPress={()=>router.push("/teams")}/>
-    <View style={{borderRadius:16,backgroundColor:t.elevatedSurface,borderWidth:1,
-      borderColor:t.dark?"rgba(74,147,234,.35)":t.border,padding:10,flexDirection:"row",
-      alignItems:"center",gap:10,minHeight:66}}>
-      {followTeams.length?followTeams.slice(0,3).map(team=><Pressable key={team.target_id}
-        accessibilityRole="link" accessibilityLabel={team.display_name||"Open team"} 
-        onPress={()=>router.push({pathname:"/teams/[id]",params:{id:team.target_id}})}
-        style={{minHeight:46,minWidth:46,alignItems:"center",justifyContent:"center",
-          borderRadius:23,borderWidth:1,borderColor:t.accent}}>
-        <EntityArtwork name={team.display_name||"Team"} kind="teams" size={38}/>
-      </Pressable>):
-        <Text style={{flex:1,color:t.muted,fontSize:13}}>Your followed clubs appear here.</Text>}
-      <Pressable accessibilityRole="link" accessibilityLabel="Find more teams"
-        onPress={()=>router.push("/teams")} style={{marginLeft:"auto",width:44,height:44,
-        borderRadius:22,alignItems:"center",justifyContent:"center",
-        backgroundColor:t.accentSurface}}>
-        <Ionicons name="add" size={23} color={t.accent}/>
-      </Pressable>
-    </View>
-    {!data?null:<>
-      <ArenaHeading title="LIVE GAMES" cta="All games" onPress={()=>router.push("/fan-live")}/>
-      {!gameAccess?<Text style={{color:t.muted,fontSize:12}}>Game Center requires an eligible membership.</Text>:
-        data.games===null?<Text accessibilityRole="alert" style={{color:t.muted}}>Scores could not load.</Text>:
-        !data.games.games.length?<Text style={{color:t.muted,fontSize:12}}>No current games. Check upcoming tip-offs.</Text>:
-        [...data.games.games].sort((a,b)=>Number(b.status==="live")-Number(a.status==="live")).slice(0,2)
-        .map(game=><PressableCard key={game.id} onPress={()=>router.push({pathname:"/fan-live",params:{gameId:game.id}})}>
-          <Scoreboard game={game} teams={data.games!.teams}/>
-        </PressableCard>)}
-      <ArenaHeading title="FROM HOOPFEED" cta="Open" onPress={()=>router.push("/feed")}/>
-      {!feedAccess?<Text style={{color:t.muted,fontSize:12}}>Community posts require an eligible membership.</Text>:
-        data.posts===null?<Text accessibilityRole="alert" style={{color:t.muted}}>HoopFeed preview could not load.</Text>:
-        !data.posts.length?<Text style={{color:t.muted,fontSize:12}}>No community posts yet.</Text>:
-        data.posts.map(post=><PressableCard key={post.id} onPress={()=>router.push({pathname:"/feed",params:{post:post.id}})}>
-          <Text style={{color:t.muted,...t.type.caption}}>{post.profiles?.display_name||"HoopCheck member"} · {new Date(post.created_at).toLocaleDateString()}</Text>
-          <Text numberOfLines={3} style={{color:t.foreground,...t.type.body}}>{post.body||(post.video_url?"Watch a community highlight":"View community media")}</Text>
-        </PressableCard>)}
-      <Button secondary onPress={()=>setRevision(v=>v+1)}>Refresh courtside</Button>
-    </>}
+    </HomeStagger>
+
+    <HomeStagger index={1}>
+      <MyCourtActions key={`${uid}:${role}`} userId={uid!} role={role!} feedEnabled={feedAccess} />
+    </HomeStagger>
+
+    <HomeStagger index={2}>
+      <View style={{ gap: 8 }}>
+        <ArenaHeading title="TEAMS YOU FOLLOW" cta="Explore teams" onPress={()=>router.push("/teams")}/>
+        <HomeCrossfade loading={!data} minHeight={164}>
+          {data?.teams===null?<Text accessibilityRole="alert" style={{color:t.muted}}>Your teams could not load.</Text>:
+            followTeams.length===0?
+            <PressableScale accessibilityRole="link" onPress={()=>router.push("/teams")}
+              style={{minHeight:55,borderRadius:16,backgroundColor:t.surface,borderWidth:1,
+                borderColor:t.border,padding:12,justifyContent:"center"}}>
+              <Text style={{color:t.muted}}>Follow a team to see it here.</Text>
+            </PressableScale>:
+            <View style={{ gap: 8 }}>{followTeams.slice(0,2).map(team=>
+              <PressableScale key={team.target_id} accessibilityRole="link"
+                accessibilityLabel={team.display_name||"View team"}
+                onPress={()=>router.push({pathname:"/teams/[id]",params:{id:team.target_id}})}
+                style={{borderRadius:16,overflow:"hidden",borderWidth:1,
+                  borderColor:t.dark?"rgba(94,171,255,.36)":t.border,
+                  backgroundColor:t.elevatedSurface}}>
+                <View style={{flexDirection:"row",alignItems:"center",gap:10,padding:10,minHeight:67}}>
+                  <EntityArtwork name={team.display_name||"Team"} kind="teams" size={46}/>
+                  <View style={{flex:1,minWidth:0}}>
+                    <Text numberOfLines={1} style={{fontFamily:t.type.ui.fontFamily,color:t.foreground,
+                      fontSize:15,fontWeight:"700"}}>{team.display_name||"Team"}</Text>
+                    <Text style={{color:t.muted,fontSize:12}}>Following</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" color={t.accent} size={20}/>
+                </View>
+              </PressableScale>
+            )}</View>}
+        </HomeCrossfade>
+      </View>
+    </HomeStagger>
+
+    {role==="player"&&reviewPromptVisible?<HomeStagger index={3}>
+      <View style={{borderRadius:17,overflow:"hidden",borderWidth:1,
+        borderColor:t.dark?"rgba(255,136,66,.65)":t.border,backgroundColor:t.surface}}>
+        <LinearGradient colors={t.dark?["#252C46","#1B2C41","#34242B"]:["#FFF6EF","#FAF4FF","#F4F8FD"]}
+          start={{x:0,y:0}} end={{x:1,y:1}} style={StyleSheet.absoluteFill}/>
+        <PressableScale accessibilityRole="link" accessibilityLabel="Choose a team to review"
+          onPress={()=>router.push("/teams")} style={{padding:12,gap:9}}>
+          <View style={{flexDirection:"row",gap:10,alignItems:"flex-start"}}>
+            <Ionicons name="clipboard-outline" color={t.dark?"#FFA66A":"#C4501C"} size={24}/>
+            <View style={{flex:1,minWidth:0,gap:4}}>
+              <Text style={{color:t.foreground,fontSize:15,fontFamily:t.type.ui.fontFamily,
+                fontWeight:"700"}}>Played for a team recently?</Text>
+              <Text style={{color:t.muted,fontSize:12,lineHeight:18}}>Share your experience to help the next player.</Text>
+            </View>
+          </View>
+          <View style={{minHeight:44,backgroundColor:"#F66B25",borderRadius:13,
+            justifyContent:"center",alignItems:"center",paddingHorizontal:8}}>
+            <Text numberOfLines={1} style={{color:"#FFFFFF",fontWeight:"800",fontSize:12}}>Choose a team to review →</Text>
+          </View>
+        </PressableScale>
+        <Pressable accessibilityRole="button" accessibilityLabel="Dismiss review prompt"
+          onPress={()=>setReviewPromptVisible(false)} style={{minHeight:44,paddingHorizontal:12,
+            justifyContent:"center",alignItems:"flex-end"}}>
+          <Text style={{color:t.muted,fontSize:12,fontWeight:"700"}}>Dismiss</Text>
+        </Pressable>
+      </View>
+    </HomeStagger>:null}
+
+    <HomeStagger index={4}>
+      <View style={{ gap: 8 }}>
+        <ArenaHeading title="MY TEAMS" cta="See all" onPress={()=>router.push("/teams")}/>
+        <HomeCrossfade loading={!data} minHeight={88}>
+          <View style={{borderRadius:16,backgroundColor:t.elevatedSurface,borderWidth:1,
+            borderColor:t.dark?"rgba(74,147,234,.35)":t.border,padding:10,flexDirection:"row",
+            alignItems:"center",gap:10,minHeight:66}}>
+            {followTeams.length?followTeams.slice(0,3).map(team=>
+              <PressableScale key={team.target_id} accessibilityRole="link"
+                accessibilityLabel={team.display_name||"Open team"}
+                onPress={()=>router.push({pathname:"/teams/[id]",params:{id:team.target_id}})}
+                style={{minHeight:46,minWidth:46,alignItems:"center",justifyContent:"center",
+                  borderRadius:23,borderWidth:1,borderColor:t.accent}}>
+                <EntityArtwork name={team.display_name||"Team"} kind="teams" size={38}/>
+              </PressableScale>):
+              <Text style={{flex:1,color:t.muted,fontSize:13}}>Your followed clubs appear here.</Text>}
+            <PressableScale accessibilityRole="link" accessibilityLabel="Find more teams"
+              onPress={()=>router.push("/teams")} containerStyle={{marginLeft:"auto"}}
+              style={{width:44,height:44,borderRadius:22,alignItems:"center",
+                justifyContent:"center",backgroundColor:t.accentSurface}}>
+              <Ionicons name="add" size={23} color={t.accent}/>
+            </PressableScale>
+          </View>
+        </HomeCrossfade>
+      </View>
+    </HomeStagger>
+
+    <HomeStagger index={5}>
+      <View style={{ gap: 8 }}>
+        <ArenaHeading title="LIVE GAMES" cta="All games" onPress={()=>router.push("/fan-live")}/>
+        <HomeCrossfade loading={!data} minHeight={205}>
+          {!gameAccess?<Text style={{color:t.muted,fontSize:12}}>Game Center requires an eligible membership.</Text>:
+            data?.games===null?<Text accessibilityRole="alert" style={{color:t.muted}}>Scores could not load.</Text>:
+            !data?.games?.games.length?<Text style={{color:t.muted,fontSize:12}}>No current games. Check upcoming tip-offs.</Text>:
+            <View style={{gap:8}}>{[...data.games.games].sort((a,b)=>Number(b.status==="live")-Number(a.status==="live")).slice(0,2)
+              .map(game=><PressableScale key={game.id} accessibilityRole="button"
+                onPress={()=>router.push({pathname:"/fan-live",params:{gameId:game.id}})}>
+                <GlassCard style={{padding:t.spacing.md,gap:t.spacing.sm}}>
+                  <Scoreboard game={game} teams={data.games!.teams}/>
+                </GlassCard>
+              </PressableScale>)}</View>}
+        </HomeCrossfade>
+      </View>
+    </HomeStagger>
+
+    <HomeStagger index={6}>
+      <View style={{ gap: 8 }}>
+        <ArenaHeading title="FROM HOOPFEED" cta="Open" onPress={()=>router.push("/feed")}/>
+        <HomeCrossfade loading={!data} minHeight={190}>
+          {!feedAccess?<Text style={{color:t.muted,fontSize:12}}>Community posts require an eligible membership.</Text>:
+            data?.posts===null?<Text accessibilityRole="alert" style={{color:t.muted}}>HoopFeed preview could not load.</Text>:
+            !data?.posts?.length?<Text style={{color:t.muted,fontSize:12}}>No community posts yet.</Text>:
+            <View style={{gap:8}}>{data.posts.map(post=>
+              <PressableScale key={post.id} accessibilityRole="button"
+                onPress={()=>router.push({pathname:"/feed",params:{post:post.id}})}>
+                <GlassCard style={{padding:t.spacing.md,gap:t.spacing.sm}}>
+                  <Text style={{color:t.muted,...t.type.caption}}>{post.profiles?.display_name||"HoopCheck member"} · {new Date(post.created_at).toLocaleDateString()}</Text>
+                  <Text numberOfLines={3} style={{color:t.foreground,...t.type.body}}>{post.body||(post.video_url?"Watch a community highlight":"View community media")}</Text>
+                </GlassCard>
+              </PressableScale>
+            )}</View>}
+        </HomeCrossfade>
+      </View>
+    </HomeStagger>
+    {data ? <Button secondary onPress={()=>setRevision(v=>v+1)}>Refresh courtside</Button> : null}
   </View>;
 }
