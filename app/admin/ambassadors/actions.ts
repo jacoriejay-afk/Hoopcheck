@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { referralCodePattern, uuidPattern } from "../../../lib/ambassador/identifiers";
 import { ambassadorDb, requireAmbassadorSession } from "../../../lib/ambassador/server";
+import { createAuthClient } from "../../../lib/server/supabase-auth";
 
 const path = "/admin/ambassadors";
 
@@ -63,4 +64,41 @@ export async function changePayout(form: FormData) {
   });
   revalidatePath(path);
   redirect(`${path}?result=${error ? "payout-rejected" : "saved"}`);
+}
+
+/**
+ * Explicitly guarded owner-only resumption of an already signed term.
+ * Fail closed until the reviewed, isolated-rehearsed RPC is installed.
+ * Existing commissions and payment history are never modified here.
+ */
+export async function resumeCampaign(form: FormData) {
+  const actor = await requireAmbassadorSession(path, true);
+  if (process.env.AMBASSADOR_RESUME_ENABLED !== "true") {
+    redirect(`${path}?result=resume-disabled`);
+  }
+
+  const code = field(form, "code");
+  const confirmedEndDate = field(form, "confirmedOriginalEndDate");
+  const reason = field(form, "resumeReason");
+  if (code !== "CHRISLYKES" || !/^\d{4}-\d{2}-\d{2}$/.test(confirmedEndDate)
+    || reason.length < 15 || reason.length > 500) {
+    redirect(`${path}?result=invalid`);
+  }
+
+  // A signed-in account and approved owner status alone are not enough
+  // to reactivate a financially material campaign.
+  const auth = await createAuthClient();
+  const { data: assurance, error: assuranceError } = await auth.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (assuranceError || assurance?.currentLevel !== "aal2") {
+    redirect(`${path}?result=resume-mfa-required`);
+  }
+
+  const { error } = await ambassadorDb().rpc("ambassador_resume_signed_term", {
+    p_actor: actor.id,
+    p_code: code,
+    p_confirmed_original_end_date: confirmedEndDate,
+    p_reason: reason,
+  });
+  revalidatePath(path);
+  redirect(`${path}?result=${error ? "resume-rejected" : "saved"}`);
 }
