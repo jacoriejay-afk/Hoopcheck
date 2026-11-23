@@ -21,9 +21,15 @@ function useAccountRequest() {
     return () => { listener.remove(); clearInterval(refreshTimer); };
   }, [retry]);
   useEffect(() => {
-    const { data } = supabase.auth.onAuthStateChange(retry);
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      // Token refreshes and initial session broadcasts are not account changes.
+      // They previously invalidated the verified account and flashed skeletons.
+      const nextId = session?.user.id ?? null;
+      if (event === "SIGNED_OUT" || event === "USER_UPDATED"
+        || (event === "SIGNED_IN" && nextId !== security.owner)) retry();
+    });
     return () => data.subscription.unsubscribe();
-  }, [retry]);
+  }, [retry, security.owner]);
   useEffect(() => {
     let active = true;
     const current = generation.current;
