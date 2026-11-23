@@ -174,7 +174,14 @@ export function HomeCourtside() {
       <ArenaHeading title="FROM HOOPFEED" cta="Open" onPress={()=>router.push("/feed")}/>
       {!feedAccess?<Text style={{color:t.muted,fontSize:12}}>Community posts require an eligible membership.</Text>:
         data.posts===null?<Text accessibilityRole="alert" style={{color:t.muted}}>HoopFeed preview could not load.</Text>:
-        !data.posts.length?<Text style={{color:t.muted,fontSize:12}}>No community posts yet.</Text>:
+        !data.posts.length?<Pressable accessibilityRole="link" accessibilityLabel="Open HoopFeed to start a discussion"
+          onPress={()=>router.push("/feed")} style={{minHeight:48,justifyContent:"center",
+            borderRadius:12,borderWidth:1,borderColor:t.border,backgroundColor:t.surface,
+            paddingHorizontal:12,paddingVertical:8}}>
+          <Text style={{color:t.foreground,fontSize:12,fontWeight:"600"}}>
+            No community posts yet. Start a discussion in HoopFeed →
+          </Text>
+        </Pressable>:
         data.posts.map(post=><PressableCard key={post.id} onPress={()=>router.push({pathname:"/feed",params:{post:post.id}})}>
           <Text style={{color:t.muted,...t.type.caption}}>{post.profiles?.display_name||"HoopCheck member"} · {new Date(post.created_at).toLocaleDateString()}</Text>
           <Text numberOfLines={3} style={{color:t.foreground,...t.type.body}}>{post.body||(post.video_url?"Watch a community highlight":"View community media")}</Text>
