@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -49,6 +49,21 @@ export default function AccountScreen() {
   const { account, loading, error, retry } = useNativeAccount();
   const [showBenefits, setShowBenefits] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [avatar,setAvatar] = useState<{owner:string;url:string|null}>({owner:"",url:null});
+  useEffect(()=>{
+    const uid=account?.user.id;
+    if(!uid){setAvatar({owner:"",url:null});return;}
+    let active=true;
+    const controller=new AbortController();
+    void supabase.from("profiles").select("avatar_url,avatar_moderation_status")
+      .eq("id",uid).abortSignal(controller.signal).maybeSingle()
+      .then(({data,error})=>{
+        if(!active)return;
+        setAvatar({owner:uid,url:!error && data?.avatar_moderation_status==="approved"
+          && typeof data.avatar_url==="string"?data.avatar_url:null});
+      }).catch(()=>{if(active)setAvatar({owner:uid,url:null});});
+    return()=>{active=false;controller.abort();};
+  },[account?.user.id]);
   const [signOutError, setSignOutError] = useState("");
   async function signOut() {
     if (signingOut) return;
@@ -76,7 +91,7 @@ export default function AccountScreen() {
           <LinearGradient colors={theme.dark?["#1D2B45","#111D31","#362333"]:["#FFFFFF","#FFF4EC","#F6F4FD"]}
             start={{x:0,y:0}} end={{x:1,y:1}} style={{padding:16,gap:13}}>
             <View style={{flexDirection:"row",alignItems:"center",gap:13}}>
-              <ProfileAvatar size={62} name={account.user.displayName || "HoopCheck member"} url={null}/>
+              <ProfileAvatar size={62} name={account.user.displayName || "HoopCheck member"} url={avatar.owner===account.user.id?avatar.url:null}/>
               <View style={{flex:1,minWidth:0,gap:5}}>
                 <Text numberOfLines={1} style={{color:theme.foreground,fontSize:22,fontWeight:"900"}}>{account.user.displayName || "HoopCheck member"}</Text>
                 <Text style={{color:theme.muted,fontSize:13,textTransform:"capitalize"}}>{role} account</Text>
