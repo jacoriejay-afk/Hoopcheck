@@ -49,7 +49,7 @@ export function Scoreboard({ game, teams }: { game: LiveGame; teams: Record<stri
   const away = teams[game.opponent_team_id || ""]?.name || game.opponent_name || "Opponent";
   return <View style={{ gap: t.spacing.sm, borderLeftWidth: live ? 3 : 0, borderLeftColor: t.button, paddingLeft: live ? t.spacing.md : 0 }}>
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: t.spacing.sm, alignItems: "center" }}>
-      <GlassBadge live={live} label={live ? "● LIVE" : game.status === "scheduled" ? "SCHEDULED" : "FINAL"} />
+      <GlassBadge live={live} label={live ? "● LIVE" : game.status === "scheduled" ? "SCHEDULED" : ["live", "final", "finished"].includes(game.status) ? "FINAL" : game.status.toUpperCase()} />
       <Text style={{ color: t.muted, ...t.type.caption }}>{game.scheduled_at && Number.isFinite(Date.parse(game.scheduled_at)) ? new Date(game.scheduled_at).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "Tip-off not confirmed"}</Text>
     </View>
     {([{ name: home, score: game.home_score }, { name: away, score: game.away_score }]).map((team, index) => <View key={index} style={{ flexDirection: "row", gap: t.spacing.md, alignItems: "center" }}>
