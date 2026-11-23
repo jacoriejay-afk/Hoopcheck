@@ -27,6 +27,8 @@ const ownerRpc = fs.readFileSync("supabase/candidates/build8_additive_owner_prof
 assert.match(ownerRpc, /CREATE FUNCTION public\.get_own_profile\(\)/, "Candidate must install exact no-argument owner RPC");
 assert.match(ownerRpc, /RETURNS jsonb/, "Candidate must keep the existing native JSON contract");
 assert.match(ownerRpc, /SECURITY INVOKER/, "Candidate must use caller's existing RLS and column grants");
+assert.ok(ownerRpc.includes("has_column_privilege('authenticated'"), "Every projected field must retain explicit column-level SELECT preflight");
+assert.doesNotMatch(ownerRpc, /IF NOT has_table_privilege\('authenticated','public\.profiles','SELECT'\)/, "A table-wide SELECT preflight would reject production's least-privilege column grants");
 assert.match(ownerRpc, /SET search_path = ''/, "Candidate function must have a fixed search path");
 assert.match(ownerRpc, /WHERE p\.id = \(SELECT auth\.uid\(\)\)/, "Owner predicate must be based only on signed JWT");
 assert.match(ownerRpc, /to_regprocedure\('public\.get_own_profile\(\)'\) IS NOT NULL/, "Never overwrite an already installed owner RPC");
