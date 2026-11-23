@@ -2,7 +2,7 @@
 
 **Disposition: READ-ONLY DEVELOPMENT EVIDENCE — PRODUCTION RELEASE HOLD.**
 
-Protected source base at creation: `c63a7ce156a34a1565c6be1a6982faea871d0adb`. The exact committed blob `2a20fb65dd1a52618a27b987862ffd3623360883` of [`supabase/tests/build9_legacy_rpc_compatibility_readonly.sql`](../../../../supabase/tests/build9_legacy_rpc_compatibility_readonly.sql) was fetched back and successfully executed **unchanged** against both existing PostgreSQL 17.11 projects. It begins `BEGIN TRANSACTION READ ONLY`, selects only `pg_proc` / ACL metadata, and rolls back. It does not query user records or JWTs.
+Protected source base at creation: `c63a7ce156a34a1565c6be1a6982faea871d0adb`. The exact committed blob `2a20fb65dd1a52618a27b987862ffd3623360883` of [`supabase/tests/build9_legacy_rpc_compatibility_readonly.sql`](../../../supabase/tests/build9_legacy_rpc_compatibility_readonly.sql) was fetched back and successfully executed **unchanged** against both existing PostgreSQL 17.11 projects. It begins `BEGIN TRANSACTION READ ONLY`, selects only `pg_proc` / ACL metadata, and rolls back. It does not query user records or JWTs.
 
 ## Reproducible inventory
 
@@ -19,7 +19,7 @@ Protected source base at creation: `c63a7ce156a34a1565c6be1a6982faea871d0adb`. T
 
 Production's five legacy/Build8 player functions are SECURITY INVOKER and executable by `anon` and `authenticated` (not by PUBLIC through an explicit PUBLIC ACL grant). This confirms **catalog presence, signatures, grants and default arguments only**. It is **NOT proof** that an installed Build 7/8 app can use every response, or that RLS/privacy is safe for real users.
 
-In particular, the PR17-Test fixture is **not** an acceptable substitute for a production-equivalent rehearsal. The separate, previously checked [full parity inventory](../../../../supabase/tests/build9_pg17_schema_parity_readonly.sql) found **203 vs 48 migrations, 211 vs 66 public policies, and a missing `fan_live_chat_messages` table** in the test fixture. Production has raw direct-country SELECT grants that require a compatible, reviewed privacy transition. Do not change ownership or enable postgame chat to mask this mismatch.
+In particular, the PR17-Test fixture is **not** an acceptable substitute for a production-equivalent rehearsal. The separate, previously checked [full parity inventory](../../../supabase/tests/build9_pg17_schema_parity_readonly.sql) found **203 vs 48 migrations, 211 vs 66 public policies, and a missing `fan_live_chat_messages` table** in the test fixture. Production has raw direct-country SELECT grants that require a compatible, reviewed privacy transition. Do not change ownership or enable postgame chat to mask this mismatch.
 
 ## Exact next acceptance handoff
 
