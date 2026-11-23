@@ -11,6 +11,7 @@ type ReelProps = {
   userId: string;
   height: number;
   active: boolean;
+  ready: boolean;
   canWrite: boolean;
   check?: { count: number; mine: boolean };
   saved?: boolean;
@@ -52,7 +53,7 @@ function ReelAction({ icon, label, detail, onPress, disabled = false, selected =
 /** Presentation only: access, queries, checks, block RLS, and share/report actions
  * remain owned by the existing HoopFeed screen and its authorized data clients. */
 export function HoopReelCard({
-  post, userId, height, active, canWrite, check, saved, checkBusy, saveBusy, blockBusy,
+  post, userId, height, active, ready, canWrite, check, saved, checkBusy, saveBusy, blockBusy,
   onBack, onCheck, onComments, onShare, onSave, onReport, onHide, onHideCreator, onBlockCreator,
 }: ReelProps) {
   const [paused, setPaused] = useState(false);
@@ -66,9 +67,9 @@ export function HoopReelCard({
   return <View testID="hoopreels-immersive-card" style={{ height, backgroundColor: "#05080E", overflow: "hidden" }}>
     {post.video_url ? <View style={StyleSheet.absoluteFill}>
       <FeedMedia userId={userId} postId={post.id} reference={post.video_url} video
-        height={height} enabled={active} loop playing={playing} muted={muted} immersive />
+        height={height} enabled={ready} loop playing={playing} muted={muted} immersive />
     </View> : null}
-    <Pressable accessible={false} accessibilityLabel="Pause or play Reel"
+    <Pressable accessibilityRole="button" accessibilityLabel={paused ? "Play Reel" : "Pause Reel"}
       onPress={() => setPaused(value => !value)} style={StyleSheet.absoluteFill} />
     <LinearGradient pointerEvents="none" accessible={false}
       colors={["rgba(4,7,13,0.66)", "rgba(4,7,13,0.03)", "rgba(4,7,13,0.06)", "rgba(4,7,13,0.92)"]}
