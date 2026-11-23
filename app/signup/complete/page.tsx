@@ -72,7 +72,7 @@ function Complete(){
    const {data:owner,error:ownerError}=await readOwnProfile<{
     id:string; account_type:unknown
    }>(user.id,"id,account_type");
-   if(ownerError||!owner||owner.id!==user.id||owner.account_type!==accountType)
+   if(ownerError||!owner||owner.id!==user.id||owner.account_type !== accountType)
     throw new Error("Your account role could not be verified. Refresh and sign in again.");
    const {data,error}=await supabase.from("profiles").update({
     basketball_type:accountType==="fan"||accountType==="player"?basketballType:null,
