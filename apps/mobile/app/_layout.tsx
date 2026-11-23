@@ -115,7 +115,7 @@ function RootLayout() {
         <Stack.Screen name="feed" options={{ headerShown: false }} />
         <Stack.Screen name="fan-feed" options={{ headerShown: false }} />
         <Stack.Screen name="reels" options={{ headerShown: false }} />
-        <Stack.Screen name="account" options={{ title: "Account" }} />
+        <Stack.Screen name="account" options={{ headerShown: false }} />
         <Stack.Screen name="membership" options={{ title: "Membership" }} />
         <Stack.Screen name="account/edit" options={{ title: "Edit profile" }} />
         <Stack.Screen name="account/security" options={{ title: "Account security" }} />
