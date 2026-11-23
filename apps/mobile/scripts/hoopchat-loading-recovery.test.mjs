@@ -4,6 +4,7 @@ import { test } from "node:test";
 import { hoopChatAuthAction, withHoopChatDeadline } from "../src/native/hoopChatLoad.ts";
 
 const screen = readFileSync(new URL("../app/messages.tsx", import.meta.url), "utf8");
+const layout = readFileSync(new URL("../app/_layout.tsx", import.meta.url), "utf8");
 
 test("HoopChat must ignore harmless initial-session and token-refresh auth events", () => {
   for (const event of ["INITIAL_SESSION", "TOKEN_REFRESHED", "USER_UPDATED", "MFA_CHALLENGE_VERIFIED"]) {
@@ -56,4 +57,9 @@ test("The private HoopChat UI is generation guarded and aborts all PostgREST rea
   assert.match(screen, /selected\.status!=="accepted"/, "Message send remains accepted-connection-only");
   assert.equal((screen.match(/\.abortSignal\(signal\)/g) ?? []).length, 3,
     "Contact requests, accepted conversation history and profile labels all support abort");
+});
+
+
+test("Native navigation names the previous dashboard screen Home", () => {
+  assert.match(layout, /name="dashboard" options=\{\{ title: "Home", headerShown: false/);
 });
