@@ -8,17 +8,22 @@ const home = read("../components/HomeCourtside.tsx");
 const press = read("../components/PressableScale.tsx");
 const explore = read("../components/ExploreLinks.tsx");
 
-test("Home sticky header lives below iPhone top safe area, stays opaque, and shrinks on UI thread", () => {
-  assert.match(dashboard, /edges=\{\["top", "left", "right", "bottom"\]\}/);
-  const pinned = dashboard.indexOf("<View style={styles.pinnedHeader}>");
-  const logo = dashboard.indexOf("<BrandLogo onHero />", pinned);
-  const menu = dashboard.indexOf('accessibilityLabel="Open account menu"', pinned);
+test("Build 11 GlassHeader is safe-area pinned, glass-backed and worklet-collapsible on Home", () => {
+  const header = read("../components/glass/GlassHeader.tsx");
+  assert.match(dashboard, /edges=\{\["left", "right", "bottom"\]\}/);
+  assert.match(dashboard, /<GlassBackdrop screen="home" \/>/);
+  const pinned = dashboard.indexOf("<GlassHeader homeScrollY={scrollY} />");
   const scroll = dashboard.indexOf('testID="dashboard-scroll"');
-  assert.ok(pinned >= 0 && pinned < logo && logo < scroll && pinned < menu && menu < scroll);
+  assert.ok(pinned >= 0 && scroll > pinned, "Home glass header precedes the scroll content");
   assert.match(dashboard, /useAnimatedScrollHandler/);
-  assert.match(dashboard, /interpolate\(scrollY\.get\(\), \[0, 100\], \[86, 54\]/);
-  assert.match(dashboard, /backgroundColor: "#111E34"/);
-  assert.match(dashboard, /accessibilityElementsHidden importantForAccessibility="no-hide-descendants"/);
+  assert.match(dashboard, /paddingTop: insets.top \+ 94/);
+  assert.match(header, /homeScrollY\?\.get\(\)/);
+  assert.match(header, /interpolate\(offset, \[0, 100\], \[46, 40\]/);
+  assert.match(header, /<GlassCard radius=\{999\} padding=\{8\}>/);
+  assert.match(header, /<BrandLogo \/>/);
+  assert.match(header, /accessibilityLabel="Alerts"/);
+  assert.match(header, /accessibilityElementsHidden/);
+  assert.doesNotMatch(dashboard, /#111E34/, "The obsolete flat header must not replace the glass design");
 });
 
 test("Home section entrance is one-shot, staggered, and motion-accessible", () => {

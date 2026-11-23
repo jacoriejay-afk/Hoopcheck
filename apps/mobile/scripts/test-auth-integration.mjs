@@ -30,7 +30,9 @@ function screen(path, { state = [], params = {}, segments = [], pathname = "/", 
     if (name === "expo-font") return { useFonts: () => [fontsLoaded, null] };
     if (name === "expo-status-bar") return { StatusBar: "StatusBar" };
     if (name === "react-native-safe-area-context") return { SafeAreaView: "SafeAreaView", SafeAreaProvider: "SafeAreaProvider" };
-    if (name.endsWith("/theme")) return { useEntryTheme: () => theme };
+    if (name.endsWith("/theme")) return { useEntryTheme: () => theme, GlassThemeScope: "GlassThemeScope" };
+    if (name.endsWith("/glassTheme")) return { glassTokens: { background: "#07070A" } };
+    if (name === "expo-system-ui") return { setBackgroundColorAsync: async () => {} };
     if (name === "expo-linear-gradient") return { LinearGradient: "LinearGradient" };
     if (name.endsWith("/BrandLogo")) return { BrandLogo: "BrandLogo" };
     if (name.endsWith("/ArenaBrand")) return { ArenaBrand: "ArenaBrand" };

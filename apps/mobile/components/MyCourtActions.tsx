@@ -6,6 +6,7 @@ import { useRouter } from "expo-router";
 import { Reveal } from "./Motion";
 import { PressableScale } from "./PressableScale";
 import { useEntryTheme } from "../src/theme";
+import { glassTokens as glass } from "../src/glassTheme";
 import {
   courtChoices, defaultCourtActions, normalizeCourtActions, toggleCourtAction,
   type CourtActionId, type CourtFeatures,
@@ -89,15 +90,14 @@ export function MyCourtActions({ userId, role, feedEnabled }: {
     </View>
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7 }}>
       {cards.map(action => {
-        const accent = colors[action.tone][theme.dark ? "dark" : "light"];
+        const accent = action.href.includes("fan-live") ? glass.pink : action.href.includes("messages") ? glass.teal : action.href.includes("feed") ? glass.violet : action.href.includes("teams") ? glass.orange : colors[action.tone][theme.dark ? "dark" : "light"];
         return <View key={action.id} style={{ width: "48%", flexGrow: 1 }}>
-          <PressableScale accessibilityRole="link" accessibilityLabel={action.label}
-            onPress={() => router.push(action.href)}
-            style={{ flexDirection: "row", alignItems: "center", minHeight: 58,
-              paddingHorizontal: 9, paddingVertical: 7, gap: 8, borderRadius: 14,
-              borderWidth: 1, borderColor: theme.dark ? theme.glassBorder : theme.border,
-              backgroundColor: theme.elevatedSurface }}>
-            <View style={{ width: 33, height: 33, borderRadius: 11, backgroundColor: theme.accentSurface,
+          <PressableScale accessibilityRole="link" accessibilityLabel={action.label} onPress={() => router.push(action.href)}
+            style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", minHeight: 58,
+              paddingHorizontal: 9, paddingVertical: 9, gap: 8, borderRadius: glass.radii.row,
+              borderWidth: 1, borderColor: glass.border,
+              backgroundColor: glass.solid, opacity: pressed ? .76 : 1 })}>
+            <View style={{ width: 33, height: 33, borderRadius: 17, backgroundColor: `${accent}20`,
               alignItems: "center", justifyContent: "center" }}>
               <Ionicons name={action.icon} size={19} color={accent} />
             </View>

@@ -3,7 +3,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
-import { Button, GlassCard } from "../src/primitives";
+import { Button } from "../src/primitives";
 import { useEntryTheme } from "../src/theme";
 import { useNativeAccount } from "../src/native/useNativeAccount";
 import { supabase } from "../src/lib/supabase";
@@ -18,6 +18,8 @@ import { EntityArtwork } from "./EntityArtwork";
 import { PressableScale } from "./PressableScale";
 import { useMotionSetting } from "../src/motion/Provider";
 import Animated, { Easing, ReduceMotion, useAnimatedStyle, useSharedValue, withDelay, withTiming } from "react-native-reanimated";
+import { GlassCard } from "./glass/GlassCard";
+import { glassTokens as glass } from "../src/glassTheme";
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
 // Existing bundled court art: no real player photograph, team crest, or sponsored asset.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -117,7 +119,8 @@ export function HomeCourtside() {
     void revision; // A user refresh starts a new focused request.
     let active = true; const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
-    // Preserve the verified scope-matched snapshot during refresh; do not flash loading.
+    // Keep the last verified snapshot while refreshing this same user and tier.
+    // The scope check below prevents old account or membership data from leaking.
     async function load() {
       if (!uid || !role) return;
       try {
@@ -149,12 +152,10 @@ export function HomeCourtside() {
   const followTeams=data?.teams??[];
   const previewGames=selectHomePreviewGames(data?.games?.games??[]);
   const previewTeams=data?.games?.teams??{};
-  return <View style={{ gap: 14, marginBottom: t.spacing.lg }}>
+  return <View style={{gap:14,marginBottom:t.spacing.lg}}>
     <HomeStagger index={0}>
-      <View style={{ borderRadius: 19, overflow: "hidden", borderWidth: 1,
-        borderColor: t.dark ? "rgba(255,150,74,.70)" : "rgba(211,93,29,.58)",
-        backgroundColor: "#101F35" }}>
-        <LinearGradient colors={["#0D203B","#153A62","#351B25"]} start={{x:0,y:0}}
+    <GlassCard radius={glass.radii.card} padding={0}>
+        <LinearGradient colors={["#131019","#191320","#23151B"]} start={{x:0,y:0}}
           end={{x:1,y:1}} style={StyleSheet.absoluteFill}/>
         <Image source={arena} resizeMode="cover" accessible={false} alt=""
           style={[StyleSheet.absoluteFill,{opacity:.14}]}/>
@@ -167,64 +168,56 @@ export function HomeCourtside() {
               </Text>
               <Text style={{color:"#C7D8ED",fontSize:12,lineHeight:17}}>Know who you're signing with.</Text>
             </View>
-            <View accessible accessibilityLabel={`${tier} membership`} style={{
-              backgroundColor:account.tier==="free"?"rgba(255,255,255,.12)":"#FF8E37",
-              borderRadius:9,paddingHorizontal:9,paddingVertical:5,borderWidth:1,
+            <View accessible accessibilityLabel={`${tier} membership`} style={{backgroundColor:account.tier==="free"?glass.solid:glass.orange,
+              borderRadius:999,paddingHorizontal:9,paddingVertical:5,borderWidth:1,
               borderColor:account.tier==="free"?"rgba(255,255,255,.28)":"#FFD07A"}}>
               <Text style={{fontSize:10,fontWeight:"800",color:account.tier==="free"?"#FFFFFF":"#1C1B23"}}>{tier}</Text>
             </View>
           </View>
-          <PressableScale accessibilityRole="link" onPress={()=>router.push("/account/edit")}
+          <Pressable accessibilityRole="link" onPress={()=>router.push("/account/edit")}
             style={{flexDirection:"row",alignItems:"center",minHeight:44,gap:8,
               borderTopWidth:1,borderColor:"rgba(255,255,255,.19)",paddingTop:8}}>
             <Ionicons name="person-circle-outline" color="#FFAD73" size={18} />
             <Text style={{flex:1,color:"#E7EFF9",fontSize:12}}>Complete your profile</Text>
             <Text style={{color:"#FFA362",fontWeight:"700",fontSize:12}}>Edit profile →</Text>
-          </PressableScale>
+          </Pressable>
         </View>
-      </View>
+    </GlassCard>
     </HomeStagger>
-
-    <HomeStagger index={1}>
-      <MyCourtActions key={`${uid}:${role}`} userId={uid!} role={role!} feedEnabled={feedAccess} />
-    </HomeStagger>
-
+    <HomeStagger index={1}><MyCourtActions key={`${uid}:${role}`} userId={uid!} role={role!} feedEnabled={feedAccess} /></HomeStagger>
     <HomeStagger index={2}>
       <View style={{ gap: 8 }}>
-        <ArenaHeading title="My Teams" cta="Find teams" onPress={()=>router.push("/teams")}/>
+    <ArenaHeading title="My Teams" cta="Find teams" onPress={()=>router.push("/teams")}/>
         <HomeCrossfade loading={!data} minHeight={164} loadingLabel="Loading followed teams…">
-          {data?.teams===null?<Text accessibilityRole="alert" style={{color:t.muted}}>Your teams could not load.</Text>:
-            followTeams.length===0?
-            <PressableScale accessibilityRole="link" onPress={()=>router.push("/teams")}
-              style={{minHeight:55,borderRadius:16,backgroundColor:t.surface,borderWidth:1,
-                borderColor:t.border,padding:12,justifyContent:"center"}}>
-              <Text style={{color:t.muted}}>Follow a team to see it here.</Text>
-            </PressableScale>:
-            <View style={{ gap: 8 }}>{followTeams.slice(0,2).map(team=>
-              <PressableScale key={team.target_id} accessibilityRole="link"
-                accessibilityLabel={team.display_name||"View team"}
-                onPress={()=>router.push({pathname:"/teams/[id]",params:{id:team.target_id}})}
-                style={{borderRadius:16,overflow:"hidden",borderWidth:1,
-                  borderColor:t.dark?"rgba(94,171,255,.36)":t.border,
-                  backgroundColor:t.elevatedSurface}}>
-                <View style={{flexDirection:"row",alignItems:"center",gap:10,padding:10,minHeight:67}}>
-                  <EntityArtwork name={team.display_name||"Team"} kind="teams" size={46}/>
-                  <View style={{flex:1,minWidth:0}}>
-                    <Text numberOfLines={1} style={{fontFamily:t.type.ui.fontFamily,color:t.foreground,
-                      fontSize:15,fontWeight:"700"}}>{team.display_name||"Team"}</Text>
-                    <Text style={{color:t.muted,fontSize:12}}>Following</Text>
-                  </View>
-                  <Ionicons name="chevron-forward" color={t.accent} size={20}/>
-                </View>
-              </PressableScale>
-            )}</View>}
+
+    {data?.teams===null?<Text accessibilityRole="alert"
+      style={{color:t.muted}}>Your teams could not load.</Text>:followTeams.length===0?
+      <PressableScale accessibilityRole="link" onPress={()=>router.push("/teams")} style={{minHeight:55,
+        borderRadius:16,backgroundColor:t.surface,borderWidth:1,borderColor:t.border,
+        padding:12,justifyContent:"center"}}>
+        <Text style={{color:t.muted}}>Follow a team to see it here.</Text>
+      </PressableScale>:
+      followTeams.slice(0,2).map(team=><PressableScale key={team.target_id}
+        accessibilityRole="link" accessibilityLabel={team.display_name||"View team"}
+        onPress={()=>router.push({pathname:"/teams/[id]",params:{id:team.target_id}})}
+        style={({pressed})=>({opacity:pressed?.8:1,borderRadius:glass.radii.row,overflow:"hidden",borderWidth:1,
+          borderColor:glass.border,backgroundColor:glass.solid})}>
+        <View style={{flexDirection:"row",alignItems:"center",gap:10,padding:10,minHeight:67}}>
+          <EntityArtwork name={team.display_name||"Team"} kind="teams" size={46}/>
+          <View style={{flex:1,minWidth:0}}>
+            <Text numberOfLines={1} style={{fontFamily:t.type.ui.fontFamily,color:t.foreground,
+              fontSize:15,fontWeight:"700"}}>{team.display_name||"Team"}</Text>
+            <Text style={{color:t.muted,fontSize:12}}>Following</Text>
+          </View>
+          <Ionicons name="chevron-forward" color={t.accent} size={20}/>
+        </View>
+      </PressableScale>)}
         </HomeCrossfade>
       </View>
     </HomeStagger>
-
-    {role==="player"&&reviewPromptVisible?<HomeStagger index={3}><View style={{borderRadius:17,overflow:"hidden",
-      borderWidth:1,borderColor:t.dark?"rgba(255,136,66,.65)":t.border,backgroundColor:t.surface}}>
-      <LinearGradient colors={t.dark?["#252C46","#1B2C41","#34242B"]:["#FFF6EF","#FAF4FF","#F4F8FD"]}
+    {role==="player"&&reviewPromptVisible?<HomeStagger index={3}><View style={{borderRadius:glass.radii.card,overflow:"hidden",
+      borderWidth:1,borderColor:glass.border,backgroundColor:glass.solid}}>
+      <LinearGradient colors={["#1A161C","#171821","#241417"]}
         start={{x:0,y:0}} end={{x:1,y:1}} style={StyleSheet.absoluteFill}/>
       <View style={{padding:12,gap:9}}>
         <View style={{flexDirection:"row",gap:10,alignItems:"flex-start"}}>
@@ -250,45 +243,40 @@ export function HomeCourtside() {
     </View></HomeStagger>:null}
     <HomeStagger index={4}>
       <View style={{ gap: 8 }}>
-        <ArenaHeading title="LIVE & UPCOMING" cta="All games" onPress={()=>router.push("/fan-live")}/>
+      <ArenaHeading title="LIVE & UPCOMING" cta="All games" onPress={()=>router.push("/fan-live")}/>
         <HomeCrossfade loading={!data} minHeight={320}>
-          {!gameAccess?<Text style={{color:t.muted,fontSize:12}}>Game Center requires an eligible membership.</Text>:
-            data?.games===null?<Text accessibilityRole="alert" style={{color:t.muted}}>Scores could not load.</Text>:
-            !previewGames.length?<Text style={{color:t.muted,fontSize:12}}>No live or upcoming games. See Game Center for past results.</Text>:
-            <View style={{gap:8}}>{previewGames
-              .map(game=><PressableScale key={game.id} accessibilityRole="button"
-                onPress={()=>router.push({pathname:"/fan-live",params:{gameId:game.id}})}>
-                <GlassCard style={{padding:t.spacing.md,gap:t.spacing.sm}}>
-                  <Scoreboard game={game} teams={previewTeams}/>
-                </GlassCard>
-              </PressableScale>)}</View>}
+
+      {!gameAccess?<Text style={{color:t.muted,fontSize:12}}>Game Center requires an eligible membership.</Text>:
+        data?.games===null?<Text accessibilityRole="alert" style={{color:t.muted}}>Scores could not load.</Text>:
+        !previewGames.length?<Text style={{color:t.muted,fontSize:12}}>No live or upcoming games. See Game Center for past results.</Text>:
+        previewGames.map(game=><PressableScale key={game.id} onPress={()=>router.push({pathname:"/fan-live",params:{gameId:game.id}})}>
+          <GlassCard radius={glass.radii.card} padding={12}>
+            <Scoreboard game={game} teams={previewTeams}/>
+          </GlassCard>
+        </PressableScale>)}
         </HomeCrossfade>
       </View>
     </HomeStagger>
-
     <HomeStagger index={5}>
       <View style={{ gap: 8 }}>
-        <ArenaHeading title="FROM HOOPFEED" cta="Open" onPress={()=>router.push("/feed")}/>
+      <ArenaHeading title="FROM HOOPFEED" cta="Open" onPress={()=>router.push("/feed")}/>
         <HomeCrossfade loading={!data} minHeight={260}>
-          {!feedAccess?<Text style={{color:t.muted,fontSize:12}}>Community posts require an eligible membership.</Text>:
-            data?.posts===null?<Text accessibilityRole="alert" style={{color:t.muted}}>HoopFeed preview could not load.</Text>:
-            !data?.posts?.length?<PressableScale accessibilityRole="link" accessibilityLabel="Open HoopFeed to start a discussion"
-              onPress={()=>router.push("/feed")} style={{minHeight:48,justifyContent:"center",
-                borderRadius:12,borderWidth:1,borderColor:t.border,backgroundColor:t.surface,
-                paddingHorizontal:12,paddingVertical:8}}>
-              <Text style={{color:t.foreground,fontSize:12,fontWeight:"600"}}>
-                No community posts yet. Start a discussion in HoopFeed →
-              </Text>
-            </PressableScale>:
-            <View style={{gap:8}}>{data.posts.map(post=>
-              <PressableScale key={post.id} accessibilityRole="button"
-                onPress={()=>router.push({pathname:"/feed",params:{post:post.id}})}>
-                <GlassCard style={{padding:t.spacing.md,gap:t.spacing.sm}}>
-                  <Text style={{color:t.muted,...t.type.caption}}>{post.profiles?.display_name||"HoopCheck member"} · {new Date(post.created_at).toLocaleDateString()}</Text>
-                  <Text numberOfLines={3} style={{color:t.foreground,...t.type.body}}>{post.body||(post.video_url?"Watch a community highlight":"View community media")}</Text>
-                </GlassCard>
-              </PressableScale>
-            )}</View>}
+
+      {!feedAccess?<Text style={{color:t.muted,fontSize:12}}>Community posts require an eligible membership.</Text>:
+        data?.posts===null?<Text accessibilityRole="alert" style={{color:t.muted}}>HoopFeed preview could not load.</Text>:
+        !data?.posts?.length?<PressableScale accessibilityRole="link" accessibilityLabel="Open HoopFeed to start a discussion"
+          onPress={()=>router.push("/feed")} style={{minHeight:48,justifyContent:"center",
+            borderRadius:12,borderWidth:1,borderColor:t.border,backgroundColor:t.surface,
+            paddingHorizontal:12,paddingVertical:8}}>
+          <Text style={{color:t.foreground,fontSize:12,fontWeight:"600"}}>
+            No community posts yet. Start a discussion in HoopFeed →
+          </Text>
+        </PressableScale>:
+        data?.posts?.map(post=><PressableScale key={post.id} onPress={()=>router.push({pathname:"/feed",params:{post:post.id}})}>
+          <GlassCard radius={glass.radii.card} padding={12}>
+            <Text style={{color:t.muted,...t.type.caption}}>{post.profiles?.display_name||"HoopCheck member"} · {new Date(post.created_at).toLocaleDateString()}</Text>
+          <Text numberOfLines={3} style={{color:t.foreground,...t.type.body}}>{post.body||(post.video_url?"Watch a community highlight":"View community media")}</Text>
+        </GlassCard></PressableScale>)}
         </HomeCrossfade>
       </View>
     </HomeStagger>

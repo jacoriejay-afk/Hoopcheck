@@ -1,4 +1,5 @@
-import { useSyncExternalStore } from "react";
+import { createContext, createElement, useContext, useSyncExternalStore, type ReactNode } from "react";
+import { glassTokens as glass } from "./glassTheme";
 import { getThemePreference, getServerThemePreference, subscribeThemePreference, themeIsDark } from "./native/themePreference";
 import { Platform, useColorScheme } from "react-native";
 
@@ -33,7 +34,11 @@ export const tokens = {
     fontFamily: Platform.select({ ios: "System", android: "sans-serif", default: "Arial" }),
   },
 };
-export function getEntryTheme(dark: boolean) {
+const GlassScope = createContext(false);
+export function GlassThemeScope({ children }: { children: ReactNode }) {
+  return createElement(GlassScope.Provider, { value: true }, children);
+}
+export function getEntryTheme(dark: boolean, glassScope = false) {
   return {
     ...tokens, dark,
     background: dark ? "#080D16" : "#F5F7FB",
@@ -55,10 +60,18 @@ export function getEntryTheme(dark: boolean) {
     glassFill: dark ? "rgba(19,30,47,0.65)" : "rgba(255,255,255,0.64)",
     glassBorder: dark ? "rgba(225,235,255,0.23)" : "rgba(255,255,255,0.94)",
     shadow: { shadowColor: "#000000", shadowOffset: { width: 0, height: 12 }, shadowRadius: 32, shadowOpacity: dark ? .32 : .12, elevation: 8 },
+    ...(glassScope ? { dark: true, background: glass.background, surface: glass.solid, elevatedSurface: glass.solid,
+      foreground: glass.foreground, muted: glass.secondary, border: glass.border, glassBorder: glass.border,
+      glassFill: glass.fill, input: glass.fill, chip: glass.solid, onChip: glass.secondary,
+      accent: glass.orange, accentSurface: "rgba(255,90,31,0.16)", cardRadius: glass.radii.card,
+      radius: { control: glass.radii.button, card: glass.radii.card, hero: glass.radii.card, pill: glass.radii.pill },
+      courtside: { ...tokens.courtside, card: { ...tokens.courtside.card, radius: glass.radii.card },
+        hero: { ...tokens.courtside.hero, radius: glass.radii.card }, navigation: { ...tokens.courtside.navigation, radius: glass.radii.pill } },
+    } : {}),
   };
 }
 export function useEntryTheme() {
   const preference = useSyncExternalStore(subscribeThemePreference, getThemePreference, getServerThemePreference);
-  return getEntryTheme(themeIsDark(preference, useColorScheme()));
+  return getEntryTheme(themeIsDark(preference, useColorScheme()), useContext(GlassScope));
 }
 export type EntryTheme = ReturnType<typeof getEntryTheme>;

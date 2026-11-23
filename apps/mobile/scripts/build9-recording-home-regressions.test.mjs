@@ -9,15 +9,20 @@ const explore = readFileSync(new URL("../components/ExploreLinks.tsx", import.me
 const now = Date.parse("2026-11-23T18:30:00Z");
 const fixture = (id, status, scheduled_at) => ({ id, status, scheduled_at });
 
-test("Home header stays pinned below iPhone's top safe area", () => {
-  assert.match(dash, /edges=\{\["top", "left", "right", "bottom"\]\}/);
-  const pinned = dash.indexOf("<View style={styles.pinnedHeader}>");
+test("Home GlassHeader stays pinned and owns the iPhone top safe area once", () => {
+  const header = readFileSync(new URL("../components/glass/GlassHeader.tsx", import.meta.url), "utf8");
+  assert.match(dash, /edges=\{\["left", "right", "bottom"\]\}/);
+  const pinned = dash.indexOf("<GlassHeader homeScrollY={scrollY} />");
   const scroll = dash.indexOf('testID="dashboard-scroll"');
-  const brand = dash.indexOf("<BrandLogo onHero />", pinned);
-  const menu = dash.indexOf('accessibilityLabel="Open account menu"', pinned);
-  assert.ok(pinned > 0 && brand > pinned && menu > pinned && brand < scroll && menu < scroll,
-    "Header and account menu must remain outside scrolling content");
-  assert.ok(scroll > pinned && dash.includes("pinnedHeader:"), "The pinned header requires layout styles");
+  assert.ok(pinned > 0 && scroll > pinned, "Glass header must remain outside scrolling content");
+  assert.doesNotMatch(dash, /pinnedHeader:/);
+  assert.match(header, /useSafeAreaInsets/);
+  assert.match(dash, /useAnimatedScrollHandler/);
+  assert.match(header, /homeScrollY\?\.get\(\)/);
+  assert.match(header, /GlassCard radius=\{999\}/);
+  assert.match(header, /paddingTop: insets\.top \+ 8/);
+  assert.match(header, /<BrandLogo \/>/);
+  assert.match(header, /accessibilityLabel="Alerts"/);
 });
 
 test("Home shows followed teams once, labels loading, and does not lose account scope checks", () => {
