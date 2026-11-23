@@ -81,4 +81,10 @@ assert.doesNotMatch(dashboard, /supabase\.from\("profiles"\)\.select\("id,displa
 const completion = fs.readFileSync("components/PlayerProfileCompletionCard.tsx", "utf8");
 assert.match(completion, /\.update\(\{ profile_visibility: "public" \}\)/);
 assert.match(completion, /\.select\("id"\)/, "UPDATE RETURNING should not ask for private data");
+const signupCompletion = fs.readFileSync("app/signup/complete/page.tsx", "utf8");
+assert.match(signupCompletion, /readOwnProfile/, "Signup completion must use owner-bound role projection");
+assert.match(signupCompletion, /profile\.account_type/, "Signup display role must come from the stored profile");
+assert.match(signupCompletion, /owner\.account_type !== accountType/, "Signup personalization must reject a mismatched role");
+assert.doesNotMatch(signupCompletion, /\.update\(\{account_type:/, "Personalization must not write the privileged account_type field");
+assert.match(signupCompletion, /hasAuthenticatedUser&&!profileVerified/, "Failed profile lookups must not advertise completed signup");
 console.log("PASS owner-bound profile reads and UPDATE RETURNING are compatible with privacy rollout");
