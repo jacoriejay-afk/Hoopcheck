@@ -20,7 +20,8 @@ const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoo
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const arena = require("../assets/courtside-arena.webp");
 type Games = Awaited<ReturnType<typeof readLiveGames>>;
-type HomeData = { scope: string; teams: PublicConnection[] | null; games: Games | null; posts: FeedPost[] | null };
+type HomeData = { scope: string; teams: PublicConnection[] | null; games: Games | null; posts: FeedPost[] | null;
+  logos: Record<string, { url: string | null; bg: string | null }>; };
 function ArenaHeading({title,cta,onPress}: {title:string;cta?:string;onPress?:()=>void}) {
   const theme=useEntryTheme();
   return <View style={{ flexDirection:"row",alignItems:"center",gap:8,minHeight:30 }}>
@@ -62,11 +63,25 @@ export function HomeCourtside() {
           gameAccess ? readBasketballSide(supabase, uid).then(side => readLiveGames(supabase, side, fullGames ? null : { origin, token })) : Promise.resolve(null),
           feedAccess ? readFeedPage(supabase, uid).then(page => page.posts.slice(0, 2)) : Promise.resolve(null),
         ]);
+        const teams = results[0].status === "fulfilled" ? results[0].value : null;
+        const ids = teams?.slice(0, 2).map(item => item.target_id) ?? [];
+        const logos: HomeData["logos"] = {};
+        if (ids.length) {
+          const [men, women] = await Promise.all([
+            supabase.from("teams").select("id,logo_url,logo_bg").in("id", ids).abortSignal(controller.signal),
+            supabase.from("womens_teams").select("id,logo_url,logo_bg").in("id", ids).abortSignal(controller.signal),
+          ]);
+          for (const response of [men, women]) if (!response.error) {
+            for (const team of response.data ?? []) if (ids.includes(team.id)) {
+              logos[team.id] = { url: team.logo_url, bg: team.logo_bg };
+            }
+          }
+        }
         const after = await supabase.auth.getSession();
         if (!active) return;
         if (controller.signal.aborted || after.error || after.data.session?.user.id !== uid) throw Error("Home could not be verified");
-        setSnapshot({ scope, teams: results[0].status === "fulfilled" ? results[0].value : null, games: results[1].status === "fulfilled" ? results[1].value : null, posts: results[2].status === "fulfilled" ? results[2].value : null });
-      } catch { if (active) setSnapshot({ scope, teams: null, games: null, posts: null }); }
+        setSnapshot({ scope, teams, logos, games: results[1].status === "fulfilled" ? results[1].value : null, posts: results[2].status === "fulfilled" ? results[2].value : null });
+      } catch { if (active) setSnapshot({ scope, teams: null, logos: {}, games: null, posts: null }); }
       finally { clearTimeout(timeout); }
     }
     void load();
@@ -128,7 +143,7 @@ export function HomeCourtside() {
         style={({pressed})=>({opacity:pressed?.8:1,borderRadius:16,overflow:"hidden",borderWidth:1,
           borderColor:t.dark?"rgba(94,171,255,.36)":t.border,backgroundColor:t.elevatedSurface})}>
         <View style={{flexDirection:"row",alignItems:"center",gap:10,padding:10,minHeight:67}}>
-          <EntityArtwork name={team.display_name||"Team"} kind="teams" size={46}/>
+          <EntityArtwork name={team.display_name||"Team"} kind="teams" size={46} logoUrl={data.logos[team.target_id]?.url} logoBg={data.logos[team.target_id]?.bg}/>
           <View style={{flex:1,minWidth:0}}>
             <Text numberOfLines={1} style={{fontFamily:t.type.ui.fontFamily,color:t.foreground,
               fontSize:15,fontWeight:"700"}}>{team.display_name||"Team"}</Text>
