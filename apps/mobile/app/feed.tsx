@@ -349,7 +349,7 @@ function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
       ListEmptyComponent={loading || (reels && blockedCreators.owner === uid && !blockedCreators.ready) ? <Skeleton /> : <View style={{ padding: 24, gap: 12 }}><Text style={textStyle}>{loadError || (reels && blockedCreators.failed ? "Blocked accounts could not be verified. Retry before viewing Reels." : reels ? "No video posts are available in this page." : "No posts are available in this page.")}</Text><Button secondary onPress={() => { setBlocksVersion(version => version + 1); void load(); }}>Refresh</Button></View>}
       renderItem={({ item: post }) => {
         if (reels) return <HoopReelCard post={post} userId={uid!}
-          height={height} active={focused && visible.has(post.id)} canWrite={canWrite}
+          height={height} active={focused && visible.has(post.id)} ready={focused} canWrite={canWrite}
           check={checks[post.id]} saved={saved[post.id]}
           checkBusy={Boolean(pending["check:" + post.id])}
           saveBusy={Boolean(pending["save:" + post.id])}
