@@ -8,7 +8,7 @@ import Animated, { Extrapolation, interpolate, useAnimatedScrollHandler, useAnim
 import { useMotionSetting } from "../src/motion/Provider";
 import { Input, Chip, SectionHeader } from "../src/primitives";
 import { useEffect, useState } from "react";
-import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
