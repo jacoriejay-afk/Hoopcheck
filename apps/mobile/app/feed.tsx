@@ -358,6 +358,7 @@ function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
           saveBusy={Boolean(pending["save:" + post.id])}
           blockBusy={Boolean(pending["block:" + post.author_id])}
           onBack={() => { setReels(false); if (initialReels) router.navigate("/feed"); }}
+          onViewPlayer={() => router.push({ pathname: "/players/[id]", params: { id: post.author_id } })}
           onCreate={() => {
             if (!canWrite) return;
             setReels(false); setComposerExpanded(true); setMediaMode(true);
