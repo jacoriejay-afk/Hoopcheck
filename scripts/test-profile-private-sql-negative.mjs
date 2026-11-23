@@ -23,13 +23,13 @@ const variants = [
    /private column still readable: current_country/],
   ['invoker-owner-helper',
    repaired.replace(acl, 'ALTER FUNCTION hoopcheck_security.own_profile() SECURITY INVOKER;\\n' + acl),
-   /Private-column phase 2 requires protected owner\\/MFA projection/],
+   new RegExp("Private-column phase 2 requires protected owner/MFA projection")],
   ['privileged-public-wrapper',
    repaired.replace(acl, 'ALTER FUNCTION public.get_own_profile() SECURITY DEFINER;\\n' + acl),
-   /Private-column phase 2 requires protected owner\\/MFA projection/],
+   new RegExp("Private-column phase 2 requires protected owner/MFA projection")],
   ['missing-owner-helper-execute',
    repaired.replace(acl, 'REVOKE EXECUTE ON FUNCTION hoopcheck_security.own_profile() FROM authenticated;\\n' + acl),
-   /Private-column phase 2 requires protected owner\\/MFA projection/],
+   new RegExp("Private-column phase 2 requires protected owner/MFA projection")],
 ];
 for (const [name, sql, expected] of variants) {
  const database = `hc_private_negative_${name.replaceAll('-', '_')}_${process.pid}`;
