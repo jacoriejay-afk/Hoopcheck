@@ -18,6 +18,22 @@ BEGIN
  OR EXISTS(SELECT 1 FROM pg_proc p WHERE p.pronamespace='hoopcheck_security'::regnamespace
            AND has_function_privilege('authenticated',p.oid,'EXECUTE'))
  THEN RAISE EXCEPTION 'Owner profile compatibility preflight failed: protected boundary, MFA, schema/ACL drift'; END IF;
+ -- The endpoint is SECURITY INVOKER, so the owner's existing RLS
+ -- policy and every projected column's SELECT grant must already work.
+ -- Abort instead of widening grants, weakening RLS or deploying a dead RPC.
+ IF NOT EXISTS (
+   SELECT 1 FROM pg_policies pol
+   WHERE pol.schemaname='public' AND pol.tablename='profiles'
+     AND pol.permissive='PERMISSIVE' AND pol.cmd IN ('SELECT','ALL')
+     AND 'authenticated'=ANY(pol.roles) AND pol.qual ILIKE '%auth.uid%'
+ ) THEN RAISE EXCEPTION 'Authenticated owner SELECT policy drifted; abort owner RPC'; END IF;
+ IF EXISTS (
+   SELECT 1 FROM (VALUES ('id'), ('account_type'), ('display_name'), ('bio'), ('username'), ('first_name'), ('last_name'), ('years_pro'), ('current_country'), ('current_country_public'), ('position'), ('height'), ('free_agent'), ('current_team'), ('profile_visibility'), ('hometown'), ('nationality'), ('interests'), ('favorite_leagues'), ('favorite_teams'), ('experience_summary'), ('avatar_url'), ('avatar_moderation_status'), ('player_verified'), ('player_verified_at'), ('created_at'), ('updated_at'), ('is_adult'), ('agreed_to_terms'), ('moderation_status'), ('notification_preferences')) AS required(column_name)
+   LEFT JOIN pg_attribute a ON a.attrelid='public.profiles'::regclass
+     AND a.attname=required.column_name AND a.attnum>0 AND NOT a.attisdropped
+   WHERE a.attname IS NULL
+      OR NOT coalesce(has_column_privilege('authenticated','public.profiles',a.attname,'SELECT'),false)
+ ) THEN RAISE EXCEPTION 'Owner RPC projected column or SELECT grant drifted'; END IF;
  SELECT count(*) INTO n
  FROM (VALUES
  ('public.get_public_player_profile(uuid)','d9cd27d5b6e426397674d48184530b24'),
