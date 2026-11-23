@@ -20,6 +20,31 @@ for (const filename of [
   const source = fs.readFileSync(filename, "utf8");
   assert.match(source, /readOwnProfile/, filename + " must support restricted owner reads");
 }
+// The installed Store Build 8 requires this missing server RPC. Keep its
+// additive, review-only compatibility candidate narrowly RLS-scoped, without
+// accidentally rolling it into production migrations or granting raw reads.
+const ownerRpc = fs.readFileSync("supabase/candidates/build8_additive_owner_profile_invoker.sql", "utf8");
+assert.match(ownerRpc, /CREATE FUNCTION public\\.get_own_profile\\(\\)/, "Candidate must install exact no-argument owner RPC");
+assert.match(ownerRpc, /RETURNS jsonb/, "Candidate must keep the existing native JSON contract");
+assert.match(ownerRpc, /SECURITY INVOKER/, "Candidate must use caller's existing RLS and column grants");
+assert.match(ownerRpc, /SET search_path = ''/, "Candidate function must have a fixed search path");
+assert.match(ownerRpc, /WHERE p\\.id = \\(SELECT auth\\.uid\\(\\)\\)/, "Owner predicate must be based only on signed JWT");
+assert.match(ownerRpc, /to_regprocedure\\('public\\.get_own_profile\\(\\)'\\) IS NOT NULL/, "Never overwrite an already installed owner RPC");
+assert.match(ownerRpc, /REVOKE ALL ON FUNCTION public\\.get_own_profile\\(\\) FROM PUBLIC, anon/, "Anonymous owner-RPC execute must be denied");
+assert.match(ownerRpc, /GRANT EXECUTE ON FUNCTION public\\.get_own_profile\\(\\) TO authenticated/, "Authenticated-only owner RPC");
+assert.ok(ownerRpc.includes("coalesce(auth.jwt() ->> 'is_anonymous', 'false') = 'false'"), "Anonymous Auth sessions must fail closed");
+for (const name of [
+  "id", "account_type", "display_name", "bio", "hometown", "nationality",
+  "favorite_teams", "favorite_leagues", "interests", "experience_summary",
+  "position", "height", "current_country", "current_team", "free_agent",
+  "current_country_public", "profile_visibility", "first_name", "last_name",
+  "years_pro", "username", "avatar_url", "avatar_moderation_status",
+  "player_verified", "player_verified_at", "basketball_type",
+  "theme_preference", "preferred_language", "notification_preferences",
+]) assert.ok(ownerRpc.includes("'"+name+"', p."+name), "Missing explicit installed-client projection: "+name);
+assert.doesNotMatch(ownerRpc, /\\b(?:DROP TABLE|ALTER TABLE|GRANT SELECT|REVOKE SELECT|SECURITY DEFINER)\\b/i, "Candidate cannot modify profile grants, RLS or bypass callers");
+assert.ok(!ownerRpc.includes("p.*"), "Never return all profile fields or unrestricted billing identity");
+
 const settings = fs.readFileSync("app/settings/page.tsx", "utf8");
 assert.doesNotMatch(settings, /getOwnProfile\(supabase/, "Settings must not call the unavailable owner RPC directly");
 assert.match(settings, /readOwnProfile<\{account_type:/, "Settings must use scoped legacy/RPC-compatible owner projection");
