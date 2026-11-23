@@ -10,7 +10,7 @@ const TARGET = "https://vcprqpjkyubzzcjatdpx.supabase.co";
 const UUID = /^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i;
 const envNames = [
   "BUILD9_ACCEPTANCE_URL", "BUILD9_ACCEPTANCE_ANON_KEY",
-  "BUILD9_ACCEPTANCE_OWNER_AAL1_TOKEN", "BUILD9_ACCEPTANCE_OWNER_AAL2_TOKEN",
+  "BUILD9_ACCEPTANCE_OWNER_AAL1_TOKEN", "BUILD9_ACCEPTANCE_OWNER_AAL2_TOKEN", "BUILD9_ACCEPTANCE_ANON_AUTH_TOKEN",
   "BUILD9_ACCEPTANCE_NONOWNER_TOKEN", "BUILD9_ACCEPTANCE_PUBLIC_PLAYER_ID",
   "BUILD9_ACCEPTANCE_PRIVATE_PLAYER_ID", "BUILD9_ACCEPTANCE_OPTOUT_PLAYER_ID"
 ];
@@ -39,16 +39,27 @@ function config(env) {
   const a1=env.BUILD9_ACCEPTANCE_OWNER_AAL1_TOKEN;
   const a2=env.BUILD9_ACCEPTANCE_OWNER_AAL2_TOKEN;
   const other=env.BUILD9_ACCEPTANCE_NONOWNER_TOKEN;
+  const anonAuth=env.BUILD9_ACCEPTANCE_ANON_AUTH_TOKEN;
   const owner=claim(a1,"sub");
   assert.match(owner, UUID, "Owner must be an Auth user");
   assert.equal(claim(a1,"role"), "authenticated");
   assert.equal(claim(a1,"aal"), "aal1", "Enrolled owner's AAL1 token required");
   assert.equal(claim(a2,"aal"), "aal2", "Verified AAL2 token required");
+  assert.equal(claim(a2,"role"), "authenticated", "AAL2 owner must be authenticated");
   assert.equal(claim(a2,"sub"), owner, "Owner AAL1/AAL2 must be same user");
+  for(const token of [a1,a2,other]) {
+    assert.notEqual(claim(token,"is_anonymous"),true,"Ordinary test users must not be anonymous Auth");
+  }
+  assert.equal(claim(anonAuth,"role"),"authenticated","Anonymous Auth carries authenticated DB role");
+  assert.equal(claim(anonAuth,"is_anonymous"),true,"Real anonymous Auth session required");
+  assert.match(claim(anonAuth,"sub"),UUID,"Anonymous Auth subject must be a UUID");
+  assert.notEqual(claim(anonAuth,"sub"),owner,"Anonymous Auth must differ from owner");
   assert.notEqual(claim(other,"sub"), owner, "Nonowner must be a different user");
+  assert.match(claim(other,"sub"),UUID,"Nonowner must have a user ID");
+  assert.notEqual(claim(other,"sub"),claim(anonAuth,"sub"),"Nonowner and anonymous Auth must differ");
   assert.equal(claim(other,"role"), "authenticated");
   assert.notEqual(env.BUILD9_ACCEPTANCE_PUBLIC_PLAYER_ID, env.BUILD9_ACCEPTANCE_PRIVATE_PLAYER_ID);
-  return {base,key:env.BUILD9_ACCEPTANCE_ANON_KEY,a1,a2,other,owner,
+  return {base,key:env.BUILD9_ACCEPTANCE_ANON_KEY,a1,a2,other,anonAuth,owner,
     publicPlayer:env.BUILD9_ACCEPTANCE_PUBLIC_PLAYER_ID,
     privatePlayer:env.BUILD9_ACCEPTANCE_PRIVATE_PLAYER_ID,
     optoutPlayer:env.BUILD9_ACCEPTANCE_OPTOUT_PLAYER_ID};
@@ -82,14 +93,14 @@ async function check(label,run) {
 async function accept(env) {
   const c=config(env);
   console.log("HoopCheck Build 9: PR17-only signed HTTP test; no test data or JWTs printed");
-  for(const [name,token] of [["owner AAL1",c.a1],["owner AAL2",c.a2],["nonowner",c.other]]) {
+  for(const [name,token] of [["owner AAL1",c.a1],["owner AAL2",c.a2],["nonowner",c.other],["anonymous Auth",c.anonAuth]]) {
     await check("Auth verified "+name,async()=>{
       const r=await call(c,"/auth/v1/user",token);
       assert.equal(r.status,200,"Auth /user must validate session");
       assert.equal(r.data?.id,claim(token,"sub"),"Authenticated user must match token");
     });
   }
-  for(const [name,token] of [["anonymous",undefined],["nonowner",c.other]]) {
+  for(const [name,token] of [["anonymous",undefined],["anonymous Auth",c.anonAuth],["nonowner",c.other],["owner AAL2",c.a2]]) {
     await check(name+" raw protected columns denied",async()=>{
       const r=await call(c,"/rest/v1/profiles?select=id%2Ccurrent_country%2Cmoderation_note&limit=1",token);
       assert.ok(denied(r),"Raw protected column access must fail, not return zero rows");
