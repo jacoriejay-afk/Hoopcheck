@@ -1,0 +1,74 @@
+name: Build 9 Build 7 IPA static compatibility inspection (one time)
+
+on:
+  pull_request:
+    branches: ["integration/build9-backend-completion-20261121"]
+
+permissions:
+  contents: read
+
+jobs:
+  inspect-shipped-build-7:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      BUILD7_IPA_URL: "https://expo.dev/artifacts/eas/UJrGy9g_tz7yf19gJVA8s0Qs7vHrNvNNsc07aNTAzm4.ipa"
+    steps:
+      - name: Download only the recorded 2026-11-19 Store Build 7 archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error --retry 2 --max-time 240 \
+            --output "$RUNNER_TEMP/build7.ipa" "$BUILD7_IPA_URL"
+          test "$(wc -c < "$RUNNER_TEMP/build7.ipa")" -gt 100000
+          test "$(wc -c < "$RUNNER_TEMP/build7.ipa")" -lt 500000000
+
+      - name: Inspect package metadata and compiled JS symbol presence only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - "$RUNNER_TEMP/build7.ipa" <<'PY'
+          import sys, zipfile, plistlib, re, hashlib, json, pathlib
+          package = pathlib.Path(sys.argv[1])
+          digest = hashlib.sha256(package.read_bytes()).hexdigest()
+          with zipfile.ZipFile(package) as archive:
+              infofiles = [n for n in archive.namelist() if re.fullmatch(r'Payload/[^/]+\.app/Info\.plist', n)]
+              if len(infofiles) != 1:
+                  raise SystemExit('FAIL: expected one top-level signed app Info.plist')
+              info = plistlib.loads(archive.read(infofiles[0]))
+              bundle_id = info.get('CFBundleIdentifier')
+              version = str(info.get('CFBundleShortVersionString', ''))
+              build = str(info.get('CFBundleVersion', ''))
+              if (bundle_id, version, build) != ('online.hoopcheck.app', '0.2.0', '7'):
+                  raise SystemExit('FAIL: downloaded archive differs from recorded Build 7 identity')
+              bundle_candidates = [z for z in archive.infolist() if z.filename.startswith('Payload/') and
+                  (z.filename.endswith('.jsbundle') or z.filename.endswith('.hbc') or z.filename.endswith('.bundle')) and z.file_size <= 250_000_000]
+              tokens = (
+                  'get_own_profile', 'get_public_player_profile', 'search_public_players',
+                  'search_public_players_by_username', 'is_player_country_public',
+                  'profiles', 'current_country', 'current_country_public',
+                  'preferred_basketball_side', 'fan_live_chat_messages',
+                  'fan_live_games', 'profile_visibility'
+              )
+              found = {token: False for token in tokens}
+              scanned = 0
+              for entry in bundle_candidates:
+                  if scanned + entry.file_size > 350_000_000:
+                      raise SystemExit('FAIL: bundle-size safety bound exceeded')
+                  data = archive.read(entry)
+                  scanned += len(data)
+                  for token in tokens:
+                      found[token] = found[token] or token.encode('ascii') in data or token.encode('utf-16le') in data
+              print('Build 7 shipped IPA static binary inspection; no binary was executed or published')
+              print(json.dumps({'bundle_id': bundle_id, 'app_version': version, 'build': build,
+                'archive_sha256': digest, 'candidate_bundles': len(bundle_candidates),
+                'bytes_examined': scanned, 'literal_tokens_present': found}, sort_keys=True))
+              if not bundle_candidates:
+                  raise SystemExit('INCOMPLETE: no unencrypted JS bundle recognized; do not infer API compatibility')
+              print('LIMITATION: string occurrence is not a request trace, and absence may be a Hermes encoding artifact.')
+              print('LIMITATION: cannot establish exact old-client app behavior, authenticated HTTP, private-country safety or device UX.')
+          PY
+
+      - name: Confirm no release or artifact publication
+        run: |
+          echo "One-time read-only shipped IPA inspection; no install, execution, signing, publication or Supabase activity."
