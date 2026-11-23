@@ -7,8 +7,8 @@ import { VideoView, useVideoPlayer } from "expo-video";
  * Replacing it on every viewability change caused a visible black flash and
  * rewound the stream when scrolling between reels.
  */
-export function FeedVideo({ uri, enabled, loop, onFailure, height }: { height: number; uri: string | null; enabled: boolean; loop: boolean; onFailure: () => void }) {
-  const player = useVideoPlayer(null, value => { value.loop = loop; value.muted = loop; });
+export function FeedVideo({ uri, enabled, loop, onFailure, height, muted = loop, controls = true }: { height: number; uri: string | null; enabled: boolean; loop: boolean; onFailure: () => void; muted?: boolean; controls?: boolean }) {
+  const player = useVideoPlayer(null, value => { value.loop = loop; value.muted = muted; });
   const playback = useRef({ enabled, loop, uri });
   useEffect(() => { playback.current = { enabled, loop, uri }; }, [enabled, loop, uri]);
 
@@ -28,7 +28,7 @@ export function FeedVideo({ uri, enabled, loop, onFailure, height }: { height: n
     player.loop = loop;
     // Reels always autoplay silently. Ordinary HoopFeed posts keep native controls.
     // eslint-disable-next-line react-hooks/immutability -- expo-video player is an imperative native object.
-    player.muted = loop;
+    player.muted = muted;
     const synchronize = () => {
       if (enabled && loop && uri && AppState.currentState === "active") player.play();
       else player.pause();
@@ -39,7 +39,7 @@ export function FeedVideo({ uri, enabled, loop, onFailure, height }: { height: n
       if (event.status === "error") onFailure();
     });
     return () => { appState.remove(); status.remove(); player.pause(); };
-  }, [enabled, loop, uri, player, onFailure]);
+  }, [enabled, loop, muted, uri, player, onFailure]);
 
-  return <VideoView accessibilityLabel={loop ? "HoopFeed Reel" : "HoopFeed video"} player={player} style={{ width: "100%", height }} contentFit="contain" nativeControls allowsFullscreen allowsPictureInPicture={false} />;
+  return <VideoView accessibilityLabel={loop ? "HoopFeed Reel" : "HoopFeed video"} player={player} style={{ width: "100%", height }} contentFit="contain" nativeControls={controls} allowsFullscreen allowsPictureInPicture={false} />;
 }
