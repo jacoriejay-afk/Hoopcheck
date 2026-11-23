@@ -37,21 +37,21 @@ export default function DashboardScreen() {
   const scrollY = useSharedValue(0);
   // Only a worklet handles scrolling. Reserve the full header footprint below.
   const onHomeScroll = useAnimatedScrollHandler({
-    onScroll: event => { scrollY.value = event.contentOffset.y; },
+    onScroll: event => { scrollY.set(event.contentOffset.y); },
   });
   const headerStyle = useAnimatedStyle(() => ({
-    height: insets.top + (reduced ? (scrollY.value > 55 ? 54 : 86) :
-      interpolate(scrollY.value, [0, 100], [86, 54], Extrapolation.CLAMP)),
+    height: insets.top + (reduced ? (scrollY.get() > 55 ? 54 : 86) :
+      interpolate(scrollY.get(), [0, 100], [86, 54], Extrapolation.CLAMP)),
   }));
   const expandedStyle = useAnimatedStyle(() => ({
-    opacity: reduced ? (scrollY.value > 55 ? 0 : 1) :
-      interpolate(scrollY.value, [0, 65], [1, 0], Extrapolation.CLAMP),
+    opacity: reduced ? (scrollY.get() > 55 ? 0 : 1) :
+      interpolate(scrollY.get(), [0, 65], [1, 0], Extrapolation.CLAMP),
     transform: [{ scale: reduced ? 1 :
-      interpolate(scrollY.value, [0, 100], [1, 0.83], Extrapolation.CLAMP) }],
+      interpolate(scrollY.get(), [0, 100], [1, 0.83], Extrapolation.CLAMP) }],
   }));
   const compactStyle = useAnimatedStyle(() => ({
-    opacity: reduced ? (scrollY.value > 55 ? 1 : 0) :
-      interpolate(scrollY.value, [35, 90], [0, 1], Extrapolation.CLAMP),
+    opacity: reduced ? (scrollY.get() > 55 ? 1 : 0) :
+      interpolate(scrollY.get(), [35, 90], [0, 1], Extrapolation.CLAMP),
   }));
   // Display the verified profile role, not editable auth metadata.
   const accountType = currentAccount?.user.accountType.replaceAll("_", " ") || "";
