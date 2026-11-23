@@ -12,7 +12,8 @@ test("Build 11 GlassHeader is safe-area pinned, glass-backed and worklet-collaps
   const header = read("../components/glass/GlassHeader.tsx");
   assert.match(dashboard, /edges=\{\["left", "right", "bottom"\]\}/);
   assert.match(dashboard, /<GlassBackdrop screen="home" \/>/);
-  const pinned = dashboard.indexOf("<GlassHeader homeScrollY={scrollY} />");
+  const pinned = dashboard.indexOf("<GlassHeader homeScrollY={scrollY} ");
+  assert.match(dashboard, /searchOpen=\{searchExpanded\}/);
   const scroll = dashboard.indexOf('testID="dashboard-scroll"');
   assert.ok(pinned >= 0 && scroll > pinned, "Home glass header precedes the scroll content");
   assert.match(dashboard, /useAnimatedScrollHandler/);
