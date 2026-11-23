@@ -101,6 +101,66 @@ export default function HoopGroupsChannels() {
     }catch(failure){setError(failure instanceof Error?failure.message:"Join failed.");}
     finally{setBusy(false);}
   }
+  async function createGroup() {
+    const name=newName.trim();
+    const description=newDescription.trim();
+    if(!userId || offline || busy || name.length<3 || name.length>80 || description.length>300)return;
+    if(!["global","players","fans","coaches","agents","womens"].includes(newCategory))return;
+    setBusy(true);setError("");
+    try{
+      await requireOnline();
+      const {data:{user}}=await supabase.auth.getUser();
+      if(user?.id!==userId)throw Error("Your account changed. Sign in again.");
+      const base=name.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"")
+        .replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,40).replace(/-+$/g,"")||"court";
+      const slug=(base+"-"+Math.random().toString(36).slice(2,10)).slice(0,60);
+      const {data,error:createError}=await supabase.from("hoop_group_spaces")
+        .insert({slug,name,description,category:newCategory,owner_id:userId,accent_color:"orange",icon_key:"basketball"})
+        .select("id,slug,name,category,description,owner_id,accent_color,icon_key").single();
+      if(createError||!data)throw Error("Group creation was not confirmed. You can own up to three groups.");
+      setSpaces(current=>[...current,data as Space]);setSpaceId(data.id);
+      setFilter("discover");setQuery("");setCreating(false);setNewName("");setNewDescription("");
+      setRevision(value=>value+1);
+    }catch(failure){setError(failure instanceof Error?failure.message:"Could not create group.");}
+    finally{setBusy(false);}
+  }
+  async function leaveGroup() {
+    if(!selected||!userId||offline||busy||!member)return;
+    setBusy(true);setError("");
+    try{
+      await requireOnline();
+      const {data:{user}}=await supabase.auth.getUser();
+      if(user?.id!==userId)throw Error("Sign in again.");
+      const {error:leaveError}=await supabase.from("hoop_group_members")
+        .delete().eq("space_id",selected.id).eq("user_id",userId);
+      if(leaveError)throw Error("Could not leave this group.");
+      setJoined(current=>current.filter(id=>id!==selected.id));setPosts([]);setDraft("");
+    }catch(failure){setError(failure instanceof Error?failure.message:"Could not leave group.");}
+    finally{setBusy(false);}
+  }
+  async function createChannel() {
+    const name=newChannel.trim();
+    if(!selected||selected.owner_id!==userId||!userId||offline||busy||name.length<2||name.length>50||availableChannels.length>=12)return;
+    setBusy(true);setError("");
+    try{
+      await requireOnline();
+      const {data:{user}}=await supabase.auth.getUser();
+      if(user?.id!==userId)throw Error("Sign in again.");
+      const slug=name.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"")
+        .replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,40)||"discussion";
+      const {data,error:channelError}=await supabase.from("hoop_group_channels")
+        .insert({space_id:selected.id,slug,name,sort_index:availableChannels.length})
+        .select("id,space_id,name,slug,sort_index").single();
+      if(channelError||!data)throw Error("Could not create a new discussion topic.");
+      setChannels(current=>[...current,data as Channel]);setChannelId(data.id);setNewChannel("");
+    }catch(failure){setError(failure instanceof Error?failure.message:"Topic creation failed.");}
+    finally{setBusy(false);}
+  }
+  async function shareGroup() {
+    if(!selected)return;
+    await Share.share({message:`Join ${selected.name} on HoopGroups: https://hoopcheck.online/hoopgroups?group=${encodeURIComponent(selected.slug)}`});
+  }
+
   async function send() {
     if(!channel||!member||!userId||offline||busy||!draft.trim())return;
     setBusy(true);setError("");
