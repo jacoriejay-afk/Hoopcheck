@@ -15,6 +15,8 @@ import { Skeleton } from "./Motion";
 import { Scoreboard } from "./Scoreboard";
 import { MyCourtActions } from "./MyCourtActions";
 import { EntityArtwork } from "./EntityArtwork";
+import { GlassCard } from "./glass/GlassCard";
+import { glassTokens as glass } from "../src/glassTheme";
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
 // Existing bundled court art: no real player photograph, team crest, or sponsored asset.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -82,10 +84,8 @@ export function HomeCourtside() {
   const followTeams=data?.teams??[];
   const previewGames=selectHomePreviewGames(data?.games?.games??[]);
   return <View style={{gap:14,marginBottom:t.spacing.lg}}>
-    <View style={{borderRadius:19,overflow:"hidden",borderWidth:1,
-        borderColor:t.dark?"rgba(255,150,74,.70)":"rgba(211,93,29,.58)",
-        backgroundColor:"#101F35"}}>
-        <LinearGradient colors={["#0D203B","#153A62","#351B25"]} start={{x:0,y:0}}
+    <GlassCard radius={glass.radii.card} padding={0}>
+        <LinearGradient colors={["#131019","#191320","#23151B"]} start={{x:0,y:0}}
           end={{x:1,y:1}} style={StyleSheet.absoluteFill}/>
         <Image source={arena} resizeMode="cover" accessible={false} alt=""
           style={[StyleSheet.absoluteFill,{opacity:.14}]}/>
@@ -98,8 +98,8 @@ export function HomeCourtside() {
               </Text>
               <Text style={{color:"#C7D8ED",fontSize:12,lineHeight:17}}>Know who you're signing with.</Text>
             </View>
-            <View accessible accessibilityLabel={`${tier} membership`} style={{backgroundColor:account.tier==="free"?"rgba(255,255,255,.12)":"#FF8E37",
-              borderRadius:9,paddingHorizontal:9,paddingVertical:5,borderWidth:1,
+            <View accessible accessibilityLabel={`${tier} membership`} style={{backgroundColor:account.tier==="free"?glass.solid:glass.orange,
+              borderRadius:999,paddingHorizontal:9,paddingVertical:5,borderWidth:1,
               borderColor:account.tier==="free"?"rgba(255,255,255,.28)":"#FFD07A"}}>
               <Text style={{fontSize:10,fontWeight:"800",color:account.tier==="free"?"#FFFFFF":"#1C1B23"}}>{tier}</Text>
             </View>
@@ -112,7 +112,7 @@ export function HomeCourtside() {
             <Text style={{color:"#FFA362",fontWeight:"700",fontSize:12}}>Edit profile →</Text>
           </Pressable>
         </View>
-    </View>
+    </GlassCard>
     <MyCourtActions key={`${uid}:${role}`} userId={uid!} role={role!} feedEnabled={feedAccess} />
     <ArenaHeading title="My Teams" cta="Find teams" onPress={()=>router.push("/teams")}/>
     {!data?<Text accessibilityRole="text" style={{color:t.muted,fontSize:12,paddingVertical:8}}>Loading followed teams…</Text>:data.teams===null?<Text accessibilityRole="alert"
@@ -125,8 +125,8 @@ export function HomeCourtside() {
       followTeams.slice(0,2).map(team=><Pressable key={team.target_id}
         accessibilityRole="link" accessibilityLabel={team.display_name||"View team"}
         onPress={()=>router.push({pathname:"/teams/[id]",params:{id:team.target_id}})}
-        style={({pressed})=>({opacity:pressed?.8:1,borderRadius:16,overflow:"hidden",borderWidth:1,
-          borderColor:t.dark?"rgba(94,171,255,.36)":t.border,backgroundColor:t.elevatedSurface})}>
+        style={({pressed})=>({opacity:pressed?.8:1,borderRadius:glass.radii.row,overflow:"hidden",borderWidth:1,
+          borderColor:glass.border,backgroundColor:glass.solid})}>
         <View style={{flexDirection:"row",alignItems:"center",gap:10,padding:10,minHeight:67}}>
           <EntityArtwork name={team.display_name||"Team"} kind="teams" size={46}/>
           <View style={{flex:1,minWidth:0}}>
@@ -137,9 +137,9 @@ export function HomeCourtside() {
           <Ionicons name="chevron-forward" color={t.accent} size={20}/>
         </View>
       </Pressable>)}
-    {role==="player"&&reviewPromptVisible?<View style={{borderRadius:17,overflow:"hidden",
-      borderWidth:1,borderColor:t.dark?"rgba(255,136,66,.65)":t.border,backgroundColor:t.surface}}>
-      <LinearGradient colors={t.dark?["#252C46","#1B2C41","#34242B"]:["#FFF6EF","#FAF4FF","#F4F8FD"]}
+    {role==="player"&&reviewPromptVisible?<View style={{borderRadius:glass.radii.card,overflow:"hidden",
+      borderWidth:1,borderColor:glass.border,backgroundColor:glass.solid}}>
+      <LinearGradient colors={["#1A161C","#171821","#241417"]}
         start={{x:0,y:0}} end={{x:1,y:1}} style={StyleSheet.absoluteFill}/>
       <View style={{padding:12,gap:9}}>
         <View style={{flexDirection:"row",gap:10,alignItems:"flex-start"}}>

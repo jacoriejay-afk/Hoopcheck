@@ -77,3 +77,15 @@ test('web navigation does not call iOS-only transparency APIs', async () => {
   try { assert.equal(tree.root.findAllByType('Pressable').length, 5); }
   finally { await act(async () => tree.unmount()); }
 });
+
+test('glass routes float while other Build 9 screens retain their navigation footprint', async () => {
+  const floated = await render('player', '/dashboard');
+  const ordinary = await render('player', '/search');
+  try {
+    assert.equal(floated.tree.root.findByProps({ testID: 'glass-floating-tab-bar' }).props.style.position, 'absolute');
+    assert.equal(ordinary.tree.root.findByProps({ testID: 'glass-floating-tab-bar' }).props.style.position, 'relative');
+  } finally {
+    await act(async () => floated.tree.unmount());
+    await act(async () => ordinary.tree.unmount());
+  }
+});

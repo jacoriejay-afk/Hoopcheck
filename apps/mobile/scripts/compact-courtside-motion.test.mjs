@@ -16,7 +16,8 @@ test("compact V3 removes oversized editorial captions without dropping data feat
   assert.match(home, /ArenaHeading/);
   assert.match(home, /account\.tier/);
   assert.match(home, /get_public_follow_list/);
-  for (const screen of [feed, live, groups]) assert.match(screen, /CourtsideBanner/);
+  for (const screen of [feed, live]) assert.match(screen, /GlassHeader/);
+  assert.match(groups, /CourtsideBanner/);
   assert.match(feed, /canReadHoopFeed/);
   assert.match(live, /canUseLiveGameChat/);
   assert.match(groups, /readClubGroups/);

@@ -6,7 +6,9 @@ const read=p=>readFileSync(new URL(p,import.meta.url),"utf8");
 test("owner-approved Arena UI and secure opening survive role + chat reconciliation",()=>{
   const dash=read("../app/dashboard.tsx"),opening=read("../components/AppOpening.tsx");
   const layout=read("../app/_layout.tsx"),home=read("../components/HomeCourtside.tsx");
-  assert.match(dash,/BrandLogo onHero/);
+  assert.match(dash,/GlassHeader/);
+  assert.match(read("../components/glass/GlassHeader.tsx"),/BrandLogo/);
+  assert.match(read("../components/glass/GlassHeader.tsx"),/useSafeAreaInsets/);
   assert.match(dash,/<HomeCourtside \/>/);
   assert.match(dash,/<RoleHub \/>/);
   assert.match(home,/ArenaHeading/);

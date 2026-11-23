@@ -43,8 +43,11 @@ for(const required of [
 ]) assert.ok(membership.includes(required),"Membership lost provider/role protection: "+required);
 
 const feed=read("apps/mobile/app/feed.tsx");
+const glassHeader=read("apps/mobile/components/glass/GlassHeader.tsx");
+assert.match(glassHeader,/BrandLogo/, "Glass header must retain the official brand");
+assert.match(glassHeader,/useSafeAreaInsets/, "Glass header must own the device safe-area inset");
 for(const required of [
-  "CourtsideBanner","BrandLogo","MediaPostComposer","publishFeedPoll",
+  "GlassHeader","MediaPostComposer","publishFeedPoll",
   "blockAccount(","hideCreator(","hideReel(","blockedCreators.failed",
   "hoopcheck:reels:hidden:","hoopcheck:reels:muted-creators:",
   "Report this Reel","Block this HoopCheck account"

@@ -45,7 +45,9 @@ test("all five requested screens use the shared design language", () => {
   const player = read("../app/players/[id].tsx");
   assert.match(home, /ArenaHeading/);
   assert.match(home, /LinearGradient/);
-  for (const src of [feed, live, groups]) assert.match(src, /CourtsideBanner/);
+  for (const src of [feed, live]) assert.match(src, /GlassHeader/);
+  assert.match(groups, /CourtsideBanner/);
+  assert.match(read("../components/glass/GlassCard.tsx"), /GlassSurface/);
   assert.match(banner, /HOOPCHECK/);
   assert.match(banner, /HoopCheckDisplay/);
   assert.match(player, /LinearGradient/);

@@ -29,7 +29,10 @@ import { Stack, useGlobalSearchParams, usePathname, useRouter, useSegments } fro
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { supabase } from "../src/lib/supabase";
-import { useEntryTheme } from "../src/theme";
+import { GlassThemeScope, useEntryTheme } from "../src/theme";
+import { glassTokens as glass } from "../src/glassTheme";
+import * as SystemUI from "expo-system-ui";
+void SystemUI.setBackgroundColorAsync(glass.background).catch(() => {});
 
 function RootLayout() {
   // Metro statically resolves the upstream display font.
@@ -88,11 +91,12 @@ function RootLayout() {
     }
   }, [sessionReady, signedIn, segments, router, pathname, routeParams.post, routeParams.q, routeParams.gameId]);
 
+  const glassRoute = ["/dashboard", "/fan-live", "/feed", "/fan-feed", "/reels"].includes(pathname) || (pathname.startsWith("/teams/") && pathname.split("/").length === 3);
   // Mount the navigator on the first render. Font loading must never prevent
   // Router from mounting or leave a blank screen after the splash deadline.
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.background }}><SafeAreaProvider><MotionProvider><DevicePreferences><NetworkProvider><MfaSessionProvider userId={session.userId}><NativeAccountProvider><StoreKitProvider><NativeDraftProvider><BottomSheetModalProvider>
-      <StatusBar style={theme.dark ? "light" : "dark"} /><RouteFade>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: glass.background }}><SafeAreaProvider><MotionProvider><DevicePreferences><NetworkProvider><MfaSessionProvider userId={session.userId}><NativeAccountProvider><StoreKitProvider><NativeDraftProvider><BottomSheetModalProvider>
+      <StatusBar style={glassRoute ? "light" : theme.dark ? "light" : "dark"} /><RouteFade>
       <Stack
         screenOptions={{
           animation: "none",
@@ -100,14 +104,14 @@ function RootLayout() {
           headerTintColor: theme.accent,
           headerShadowVisible: false,
           headerTitleStyle: { fontWeight: "600", fontSize: 17, color: theme.foreground },
-          contentStyle: { backgroundColor: theme.background },
+          contentStyle: { backgroundColor: glass.background },
         }}
       >
         <Stack.Screen name="connections" options={{ title: "Connections" }} />
         <Stack.Screen name="about" options={{ title: "About HoopCheck" }} />
         <Stack.Screen name="team-hub/groups/index" options={{ title: "HoopGroups" }} />
         <Stack.Screen name="team-hub/groups/[teamId]" options={{ title: "Club group" }} />
-        <Stack.Screen name="fan-live" options={{ title: "Live Games" }} />
+        <Stack.Screen name="fan-live" options={{ title: "Live Games", headerShown: false }} />
         <Stack.Screen name="notifications" options={{ title: "Activity Center" }} />
         <Stack.Screen name="messages" options={{ title: "HoopChat" }} />
         <Stack.Screen name="feed-welcome" options={{ title: "HoopFeed Welcome" }} />
@@ -128,7 +132,7 @@ function RootLayout() {
         <Stack.Screen name="choose-username" options={{ title: "Choose username" }} />
         <Stack.Screen name="forgot-password" options={{ title: "Reset password" }} />
         <Stack.Screen name="reset-password" options={{ title: "Choose new password" }} />
-        <Stack.Screen name="dashboard" options={{ headerShown: false, contentStyle: { backgroundColor: theme.background } }} />
+        <Stack.Screen name="dashboard" options={{ headerShown: false, contentStyle: { backgroundColor: glass.background } }} />
         <Stack.Screen name="players" options={{ title: "Find players" }} />
         <Stack.Screen name="players/[id]" options={{ title: "Player profile" }} />
         <Stack.Screen name="coaches" options={{ title: "Find a coach" }} />
@@ -137,12 +141,12 @@ function RootLayout() {
         <Stack.Screen name="womens/[id]" options={{ title: "Team profile" }} />
         <Stack.Screen name="search" options={{ title: "Search basketball" }} />
         <Stack.Screen name="teams" options={{ title: "Teams" }} />
-        <Stack.Screen name="teams/[id]" options={{ title: "Team profile" }} />
+        <Stack.Screen name="teams/[id]" options={{ title: "Team profile", headerShown: false }} />
         <Stack.Screen name="teams/[id]/review" options={{ title: "Write a review" }} />
         <Stack.Screen name="leagues" options={{ title: "Leagues" }} />
         <Stack.Screen name="leagues/[id]" options={{ title: "League profile" }} />
       </Stack></RouteFade>
-      {signedIn ? <TabBar /> : null}<AppLock authReady={sessionReady} userId={session.userId} startupError={session.error} retryStartup={() => { void bootstrap.current?.retry(); }} protectedScreen={signedIn && !["sign-in", "sign-up", "reset-password", "auth"].includes(segments[0] ?? "")} />
+      {signedIn ? glassRoute ? <GlassThemeScope><TabBar /></GlassThemeScope> : <TabBar /> : null}<AppLock authReady={sessionReady} userId={session.userId} startupError={session.error} retryStartup={() => { void bootstrap.current?.retry(); }} protectedScreen={signedIn && !["sign-in", "sign-up", "reset-password", "auth"].includes(segments[0] ?? "")} />
       <AppOpening ready={sessionReady && (fontsLoaded || Boolean(fontError))}
         disabled={["auth", "reset-password"].includes(segments[0] ?? "")} />
     </BottomSheetModalProvider></NativeDraftProvider></StoreKitProvider></NativeAccountProvider></MfaSessionProvider></NetworkProvider></DevicePreferences></MotionProvider></SafeAreaProvider></GestureHandlerRootView>

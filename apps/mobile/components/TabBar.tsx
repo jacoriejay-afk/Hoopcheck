@@ -78,27 +78,32 @@ export function TabBar() {
   const translucent = Platform.OS === "ios" && !reduceTransparency;
   const nativeGlass = translucent && isGlassEffectAPIAvailable() && isLiquidGlassAvailable();
   const activeWidth = width > 0 ? width / tabs.length : 0;
-  return <View onLayout={event => setWidth(event.nativeEvent.layout.width)} style={{
-      marginHorizontal: 9 + Math.max(insets.left, insets.right),
-      marginBottom: Math.max(6, insets.bottom), borderRadius: 25,
+  // Only the four glass screens reserve scroll-bottom space for an overlay.
+  // Other existing Build 9 routes keep the tab bar in the normal layout.
+  const floating = ["/dashboard", "/fan-live", "/feed", "/fan-feed", "/reels"].includes(path)
+    || (path.startsWith("/teams/") && path.split("/").length === 3);
+  return <View testID="glass-floating-tab-bar" onLayout={event => setWidth(event.nativeEvent.layout.width)} style={{
+      position: floating ? "absolute" : "relative", left: 0, right: 0, bottom: 0, zIndex: 20,
+      marginHorizontal: 16 + Math.max(insets.left, insets.right),
+      marginBottom: Math.max(8, insets.bottom + 6), borderRadius: 999,
       borderCurve: "continuous", overflow: "hidden",
-      backgroundColor: translucent ? theme.glassFill : (theme.dark ? "#101F33" : theme.surface),
-      borderWidth: 1, borderColor: theme.dark ? "rgba(126,171,229,.50)" : "#D8D5D5",
+      backgroundColor: translucent ? theme.glassFill : theme.surface,
+      borderWidth: 1, borderColor: theme.glassBorder,
       shadowColor: "#000", shadowOffset: { width: 0, height: 12 },
       shadowOpacity: theme.dark ? .3 : .12, shadowRadius: 18, elevation: 8,
     }}>
     {nativeGlass ? <GlassView pointerEvents="none" accessible={false} glassEffectStyle="regular"
-      tintColor={theme.dark ? "#20334A" : "#EAF1FB"} style={[StyleSheet.absoluteFill, { borderRadius: 25 }]} /> :
-      translucent ? <BlurView pointerEvents="none" accessible={false} intensity={65}
+      tintColor={theme.dark ? "#20334A" : "#EAF1FB"} style={[StyleSheet.absoluteFill, { borderRadius: 999 }]} /> :
+      translucent ? <BlurView pointerEvents="none" accessible={false} intensity={55}
         tint={theme.dark ? "dark" : "light"} style={StyleSheet.absoluteFill} /> : null}
     <LinearGradient pointerEvents="none" accessible={false} style={StyleSheet.absoluteFill}
-      colors={theme.dark ? ["rgba(83,137,212,.18)", "rgba(255,111,41,.08)"] : ["rgba(255,255,255,.90)", "rgba(255,223,193,.25)"]}
+      colors={["rgba(255,255,255,.10)", "rgba(255,255,255,0.01)"]}
       start={{ x: 0, y: 0 }} end={{ x: .2, y: 1 }} />
     {index >= 0 && activeWidth > 0 ? <Animated.View pointerEvents="none" style={[{
-      position: "absolute", left: 4, top: 4, bottom: 4,
-      width: Math.max(0, activeWidth - 8), borderRadius: 19, borderCurve: "continuous",
-      backgroundColor: theme.dark ? "rgba(255,112,39,.22)" : "rgba(255,121,43,.13)",
-      borderWidth: 1, borderColor: theme.dark ? "#FC8E43" : "rgba(206,83,28,.40)",
+      position: "absolute", left: Math.max(0, (activeWidth - 38) / 2), top: 5,
+      width: 38, height: 38, borderRadius: 19, borderCurve: "continuous",
+      backgroundColor: theme.button,
+      borderWidth: 0, borderColor: theme.button,
       shadowColor: "#FF712E", shadowOpacity: theme.dark ? .4 : .13,
       shadowRadius: 9, shadowOffset: { width: 0, height: 2 },
     }, indicator]} /> : null}
@@ -117,15 +122,13 @@ export function TabBar() {
           {({ pressed }) => <>
             <AnimatedTabIcon selected={selected} pressed={pressed} reduced={reduced}
               icon={tab.icon} active={tab.active} size={theme.courtside.navigation.iconSize}
-              color={selected ? theme.accent : theme.muted} />
+              color={selected ? "#FFFFFF" : theme.muted} />
             <Text numberOfLines={1} style={{
               fontFamily: theme.type.ui.fontFamily, fontSize: 10,
               fontWeight: selected ? "700" : "500",
-              color: selected ? theme.accent : theme.dark ? "#E7EFFA" : theme.muted,
+              color: selected ? "#FFFFFF" : theme.muted,
             }}>{label}</Text>
-            {selected ? <View pointerEvents="none" accessible={false}
-              style={{position:"absolute",bottom:1,height:3,width:24,borderRadius:3,
-                backgroundColor:theme.accent}}/> : null}
+            
           </>}
         </Pressable>;
       })}
