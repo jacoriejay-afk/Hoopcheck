@@ -240,7 +240,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
   }
   const textStyle = { color: theme.foreground };
   const linkStyle = { color: theme.accent };
-  const touch = { minHeight: 44, paddingHorizontal: 10, borderWidth: 1, borderColor: theme.border, borderRadius: 13, backgroundColor: theme.chip, justifyContent: "center" as const };
+  const touch = { minHeight: 44, paddingHorizontal: 6, borderWidth: 0, borderRadius: 9, backgroundColor: "transparent", justifyContent: "center" as const };
   if (accountLoading) return <View style={{ flex: 1, justifyContent: "center", backgroundColor: theme.background }}><HoopCheckLoading label="Checking HoopFeed access…" /></View>;
   if (!account || !canRead) return <View style={{ flex: 1, padding: 24, gap: 20, justifyContent: "center", backgroundColor: theme.background }}>
     <Text accessibilityRole="header" style={{ ...textStyle, fontSize: 28, fontWeight: "900" }}>HoopFeed</Text>
