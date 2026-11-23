@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && npm run audit:bundle && npm run check:hub-theme-pairing && npm run check:nextgen-phase1 && npm run check:username-privacy && npm run check:owner-profile-privacy && npm run check:phase5-safety && npm run test:phase5-reel-admin && node scripts/check-follow-avatar-mask-candidate.mjs && npm run check:hoopchat-contact-privileges && node --test scripts/check-home-court-account-isolation.test.mjs && npm run test:hoopgroups-controls && node scripts/check-apple-certificate-tracing.mjs && npm run check:build9-passport-layout && npm run test:hoopgroups-v2 && npm run check:profiles-groups-live && npm run test:hoopchat-courtside && npm run check:hoopgroups-activation && node scripts/check-compact-social-layout.mjs && node scripts/check-site-rhythm.mjs && npm run check:ios-glass-ui && npm run check:desktop-experience && npm run test:live-game-status && npm run test:verified-team-expansion && npm run test:live-chat-realtime",
+    "build": "next build && npm run audit:bundle && npm run check:hub-theme-pairing && npm run check:nextgen-phase1 && npm run check:username-privacy && npm run check:owner-profile-privacy && npm run check:phase5-safety && npm run test:phase5-reel-admin && node scripts/check-follow-avatar-mask-candidate.mjs && npm run check:hoopchat-contact-privileges && node --test scripts/check-home-court-account-isolation.test.mjs && npm run test:hoopgroups-controls && node scripts/check-apple-certificate-tracing.mjs && npm run check:build9-passport-layout && npm run test:hoopgroups-v2 && npm run check:profiles-groups-live && npm run test:hoopchat-courtside && npm run check:hoopgroups-activation && node scripts/check-compact-social-layout.mjs && node scripts/check-site-rhythm.mjs && npm run check:ios-glass-ui && npm run check:desktop-experience && npm run test:live-game-status && npm run test:verified-team-expansion && npm run test:live-chat-realtime && npm run test:ambassador-referral",
     "start": "next start",
     "lint": "eslint .",
     "audit:surfaces": "node scripts/audit-hardcoded-surfaces.mjs",
@@ -35,7 +35,8 @@
     "check:desktop-experience": "node scripts/check-desktop-experience.mjs",
     "test:live-game-status": "node scripts/test-live-game-status.mjs",
     "test:verified-team-expansion": "node scripts/test-verified-team-expansion.mjs",
-    "test:live-chat-realtime": "node scripts/test-live-chat-realtime.mjs"
+    "test:live-chat-realtime": "node scripts/test-live-chat-realtime.mjs",
+    "test:ambassador-referral": "node --test scripts/test-ambassador-referral-unavailable.mjs"
   },
   "dependencies": {
     "@apple/app-store-server-library": "3.1.0",
