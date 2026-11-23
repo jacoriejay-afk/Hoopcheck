@@ -24,11 +24,7 @@
           "image": "./assets/hoopcheck-mark.png",
           "imageWidth": 120,
           "resizeMode": "contain",
-          "backgroundColor": "#07070A",
-          "dark": {
-            "image": "./assets/hoopcheck-mark.png",
-            "backgroundColor": "#07070A"
-          }
+          "backgroundColor": "#07070A"
         }
       ],
       [
