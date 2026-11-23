@@ -6,7 +6,7 @@
     "version": "0.2.0",
     "orientation": "portrait",
     "scheme": "hoopcheck",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "plugins": [
       "expo-router",
@@ -24,10 +24,10 @@
           "image": "./assets/hoopcheck-mark.png",
           "imageWidth": 120,
           "resizeMode": "contain",
-          "backgroundColor": "#F4F4F1",
+          "backgroundColor": "#07070A",
           "dark": {
             "image": "./assets/hoopcheck-mark.png",
-            "backgroundColor": "#000000"
+            "backgroundColor": "#07070A"
           }
         }
       ],
