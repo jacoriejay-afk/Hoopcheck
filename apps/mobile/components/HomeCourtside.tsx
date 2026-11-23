@@ -148,6 +148,7 @@ export function HomeCourtside() {
   const tier=account.tier==="premium"?"PREMIUM":account.tier==="pro"?"PRO":"FREE";
   const followTeams=data?.teams??[];
   const previewGames=selectHomePreviewGames(data?.games?.games??[]);
+  const previewTeams=data?.games?.teams??{};
   return <View style={{ gap: 14, marginBottom: t.spacing.lg }}>
     <HomeStagger index={0}>
       <View style={{ borderRadius: 19, overflow: "hidden", borderWidth: 1,
@@ -258,7 +259,7 @@ export function HomeCourtside() {
               .map(game=><PressableScale key={game.id} accessibilityRole="button"
                 onPress={()=>router.push({pathname:"/fan-live",params:{gameId:game.id}})}>
                 <GlassCard style={{padding:t.spacing.md,gap:t.spacing.sm}}>
-                  <Scoreboard game={game} teams={data.games!.teams}/>
+                  <Scoreboard game={game} teams={previewTeams}/>
                 </GlassCard>
               </PressableScale>)}</View>}
         </HomeCrossfade>
