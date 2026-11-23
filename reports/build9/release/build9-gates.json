@@ -44,9 +44,9 @@
     },
     {
       "id": "startup_passport_fixes",
-      "status": "HOLD",
-      "details": "PRs #813/#814/#815 contain overlapping intro/Passport fixes; await real unsigned iOS simulator evidence and merge only a conflict-free choice.",
-      "evidence": null
+      "status": "PASS",
+      "details": "Startup interruption/recovery and the real native Career Passport PDF/share/cleanup fixture were merged through PR #813; PR #836 exact-head (1fbad23a) passed unsigned iOS simulator compilation and real Passport light/dark theme XCTest in workflow 45005943667. This closes the feature implementation/review gate only; latest exact-head CI, installed Build7/8, real physical iPhone, Apple signing and Apple Sandbox remain independent HOLD gates.",
+      "evidence": "https://github.com/jacoriejay-afk/Hoopcheck/actions/runs/45005943667"
     },
     {
       "id": "production_schema_rehearsal",
