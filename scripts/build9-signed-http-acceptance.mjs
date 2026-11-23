@@ -81,6 +81,24 @@ function denied(r) {
   return r.status===401 || r.status===403 ||
     (r.status===400 && (r.data?.code==="42501" || r.data?.hint==="mfa_required"));
 }
+// Test each raw private field separately, so a denied moderation_note does
+// not disguise an accessible current_country, birthdate or Stripe identity.
+const RAW_PRIVATE_PROFILE_COLUMNS = Object.freeze([
+  "current_country",
+  "moderation_note",
+  "birthdate",
+  "stripe_identity_verification_session_id"
+]);
+function rawPrivateColumnRoute(column) {
+  assert.ok(RAW_PRIVATE_PROFILE_COLUMNS.includes(column),"Unreviewed private profile field");
+  return "/rest/v1/profiles?select=id%2C"+column+"&limit=1";
+}
+async function assertRawPrivateColumnDenial(c,actor,token,request=call) {
+  for(const field of RAW_PRIVATE_PROFILE_COLUMNS) {
+    const result=await request(c,rawPrivateColumnRoute(field),token);
+    assert.ok(denied(result),actor+": raw "+field+" access must fail independently, not return an empty or successful result");
+  }
+}
 function rows(r,desc) {
   assert.equal(r.status,200,desc+" must return HTTP 200");
   assert.ok(Array.isArray(r.data),desc+" must return a JSON array");
@@ -101,9 +119,9 @@ async function accept(env) {
     });
   }
   for(const [name,token] of [["anonymous",undefined],["anonymous Auth",c.anonAuth],["nonowner",c.other],["owner AAL2",c.a2]]) {
-    await check(name+" raw protected columns denied",async()=>{
-      const r=await call(c,"/rest/v1/profiles?select=id%2Ccurrent_country%2Cmoderation_note&limit=1",token);
-      assert.ok(denied(r),"Raw protected column access must fail, not return zero rows");
+    // A combined column request can be denied for just one of its columns.
+    await check(name+" each raw protected column denied",async()=>{
+      await assertRawPrivateColumnDenial(c,name,token);
     });
   }
   await check("public player discoverable anonymously",async()=>{
@@ -162,6 +180,25 @@ if(process.argv.includes("--self-test")) {
     "https://vcprqpjkyubzzcjatdpx.supabase.co/rest/v1"]) assert.throws(()=>safeOrigin(wrong));
   assert.equal(denied({status:403}),true);
   assert.equal(denied({status:200}),false);
+  assert.deepEqual(RAW_PRIVATE_PROFILE_COLUMNS,[
+    "current_country","moderation_note","birthdate","stripe_identity_verification_session_id"
+  ]);
+  for (const field of RAW_PRIVATE_PROFILE_COLUMNS) {
+    assert.match(rawPrivateColumnRoute(field),/\?select=id%2C/);
+    assert.ok(rawPrivateColumnRoute(field).includes(field));
+  }
+  assert.throws(()=>rawPrivateColumnRoute("public_profile"),/Unreviewed/);
+  // Prove that even if every other private field is denied, any one
+  // readable field makes the complete matrix fail. No real HTTP requests.
+  for (const leaked of RAW_PRIVATE_PROFILE_COLUMNS) {
+    await assert.rejects(
+      ()=>assertRawPrivateColumnDenial({},"synthetic no-credentials",undefined,
+        async (_c,route)=>({status:route===rawPrivateColumnRoute(leaked)?200:403})),
+      new RegExp(leaked)
+    );
+  }
+  await assertRawPrivateColumnDenial({},"synthetic all denied",undefined,
+    async ()=>({status:403}));
   assert.throws(()=>config({}),/Missing test-only/);
   // Dummy JWTs are decoded only for LOCAL validation tests, never used for HTTP.
   const dummy=(sub,aal="aal1",anonymous=false)=>
