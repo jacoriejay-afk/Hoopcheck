@@ -25,6 +25,9 @@ test("Build 9 release requires distinct status evidence and pinned source commit
   assert.ok(manifest.gates.some(g=>g.id==="physical_iphone" && g.status==="HOLD"));
   assert.ok(manifest.gates.some(g=>g.id==="apple_sandbox_subscriptions" && g.status==="HOLD"));
   assert.ok(manifest.gates.some(g=>g.id==="source_main_reconciliation" && g.status==="PASS" && g.evidence?.endsWith("/pull/875")));
+  assert.ok(manifest.gates.some(g=>g.id==="startup_passport_fixes" && g.status==="PASS" && g.evidence?.endsWith("/runs/45005943667")));
+  assert.ok(manifest.gates.some(g=>g.id==="exact_head_all_ci" && g.status==="HOLD"), "Old simulator PASS must not certify a newer release head");
+  assert.ok(manifest.gates.some(g=>g.id==="apple_bundle_signing" && g.status==="HOLD"));
   assert.ok(manifest.gates.some(g=>g.id==="build7_8_compatibility" && g.status==="HOLD"));
   assert.ok(manifest.gates.some(g=>g.id==="production_schema_rehearsal" && g.status==="HOLD"));
   assert.ok(manifest.gates.some(g=>g.id==="owner_mfa_signed_http" && g.status==="HOLD"));
