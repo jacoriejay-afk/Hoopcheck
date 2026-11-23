@@ -12,7 +12,9 @@ const fixture = (id, status, scheduled_at) => ({ id, status, scheduled_at });
 test("Home GlassHeader stays pinned and owns the iPhone top safe area once", () => {
   const header = readFileSync(new URL("../components/glass/GlassHeader.tsx", import.meta.url), "utf8");
   assert.match(dash, /edges=\{\["left", "right", "bottom"\]\}/);
-  const pinned = dash.indexOf("<GlassHeader homeScrollY={scrollY} />");
+  const pinned = dash.indexOf("<GlassHeader homeScrollY={scrollY} ");
+  assert.match(dash, /searchOpen=\{searchExpanded\}/, "Search morph must share the existing pinned header");
+  assert.match(dash, /scrollEnabled=\{!searchExpanded\}/, "Home scroll stays mounted while searching");
   const scroll = dash.indexOf('testID="dashboard-scroll"');
   assert.ok(pinned > 0 && scroll > pinned, "Glass header must remain outside scrolling content");
   assert.doesNotMatch(dash, /pinnedHeader:/);
