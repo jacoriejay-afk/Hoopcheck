@@ -67,9 +67,10 @@ export default function DashboardScreen() {
   const panel = { backgroundColor: theme.surface, borderColor: theme.border, borderRadius: theme.cardRadius };
 
   return (
-    <SafeAreaView edges={["left", "right", "bottom"]} style={[styles.safe, { backgroundColor: theme.background }]}>
-      <ScrollView keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled" testID="dashboard-scroll" contentContainerStyle={styles.scroll}>
-        <View style={styles.content}>
+    <SafeAreaView edges={["top", "left", "right", "bottom"]} style={[styles.safe, { backgroundColor: theme.background }]}>
+      {/* Pinned outside the scroll view: the logo and menu must never slide under
+          the iPhone status bar / Dynamic Island as the Home feed scrolls. */}
+      <View style={styles.pinnedHeader}>
           <View style={{borderRadius:19,overflow:"hidden",borderWidth:1,borderColor:theme.dark?"#FF7C38":"#EA7138",
             backgroundColor:"#0F1C30",marginBottom:11}}>
             <LinearGradient colors={["#121E33","#182D49","#2D2335"]}
@@ -86,6 +87,9 @@ export default function DashboardScreen() {
               </Pressable>
             </View>
           </View>
+      </View>
+      <ScrollView keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled" testID="dashboard-scroll" contentContainerStyle={styles.scroll}>
+        <View style={styles.content}>
           <GlassSurface style={{ flexDirection:"row",alignItems:"center",marginBottom:14,
             borderRadius:17,paddingLeft:12,paddingRight:5,minHeight:50,
             backgroundColor:theme.dark?"#1A2940":"#FFFFFF",
@@ -142,6 +146,7 @@ export default function DashboardScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
+  pinnedHeader: { width: "100%", maxWidth: 664, alignSelf: "center", paddingHorizontal: 12, paddingTop: 6 },
   scroll: { flexGrow: 1, padding: 12 },
   content: { width: "100%", maxWidth: 640, alignSelf: "center" },
   title: { fontSize: 32, fontWeight: "900", letterSpacing: -0.7, marginBottom: 16 },
