@@ -43,16 +43,16 @@ export function HomeStagger({ index, children }: { index: number; children: Reac
   useEffect(() => {
     if (!started.current) {
       started.current = true;
-      progress.value = reduced ? 1 : withDelay(index * 80, withTiming(1, {
+      progress.set(reduced ? 1 : withDelay(index * 80, withTiming(1, {
         duration: 350, easing: Easing.out(Easing.cubic), reduceMotion: ReduceMotion.System,
-      }));
+      })));
     } else if (reduced) {
-      progress.value = 1;
+      progress.set(1);
     }
   }, [index, reduced, progress]);
   const style = useAnimatedStyle(() => ({
-    opacity: progress.value,
-    transform: [{ translateY: (1 - progress.value) * 12 }],
+    opacity: progress.get(),
+    transform: [{ translateY: (1 - progress.get()) * 12 }],
   }));
   return <Animated.View style={style}>{children}</Animated.View>;
 }
@@ -70,16 +70,16 @@ function HomeCrossfade({ loading, minHeight, children }: {
   const [showSkeleton, setShowSkeleton] = useState(loading);
   useEffect(() => {
     if (loading) setShowSkeleton(true);
-    opacity.value = reduced ? (loading ? 0 : 1) : withTiming(loading ? 0 : 1, {
+    opacity.set(reduced ? (loading ? 0 : 1) : withTiming(loading ? 0 : 1, {
       duration: 250, easing: Easing.out(Easing.cubic), reduceMotion: ReduceMotion.System,
-    });
+    }));
     if (!loading) {
       const timeout = setTimeout(() => setShowSkeleton(false), reduced ? 0 : 260);
       return () => clearTimeout(timeout);
     }
   }, [loading, reduced, opacity]);
-  const contentStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
-  const skeletonStyle = useAnimatedStyle(() => ({ opacity: 1 - opacity.value }));
+  const contentStyle = useAnimatedStyle(() => ({ opacity: opacity.get() }));
+  const skeletonStyle = useAnimatedStyle(() => ({ opacity: 1 - opacity.get() }));
   return <View style={{ minHeight }}>
     <Animated.View style={[{ minHeight }, contentStyle]}>{children}</Animated.View>
     {showSkeleton ? <Animated.View pointerEvents="none"
