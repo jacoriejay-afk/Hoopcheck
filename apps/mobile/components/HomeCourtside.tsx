@@ -9,6 +9,7 @@ import { useNativeAccount } from "../src/native/useNativeAccount";
 import { supabase } from "../src/lib/supabase";
 import { visibleConnections, type PublicConnection } from "../src/native/connectionPresentation";
 import { readBasketballSide, readLiveGames } from "../src/native/liveGames";
+import { selectHomePreviewGames } from "../src/native/homeGamePreview";
 import { readFeedPage, type FeedPost } from "../src/native/feedClient";
 import { Skeleton } from "./Motion";
 import { Scoreboard } from "./Scoreboard";
@@ -48,7 +49,8 @@ export function HomeCourtside() {
     void revision; // A user refresh starts a new focused request.
     let active = true; const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
-    setSnapshot(null);
+    // Keep the last verified snapshot while refreshing this same user and tier.
+    // The scope check below prevents old account or membership data from leaking.
     async function load() {
       if (!uid || !role) return;
       try {
@@ -78,6 +80,7 @@ export function HomeCourtside() {
   </View>;
   const tier=account.tier==="premium"?"PREMIUM":account.tier==="pro"?"PRO":"FREE";
   const followTeams=data?.teams??[];
+  const previewGames=selectHomePreviewGames(data?.games?.games??[]);
   return <View style={{gap:14,marginBottom:t.spacing.lg}}>
     <View style={{borderRadius:19,overflow:"hidden",borderWidth:1,
         borderColor:t.dark?"rgba(255,150,74,.70)":"rgba(211,93,29,.58)",
@@ -111,8 +114,8 @@ export function HomeCourtside() {
         </View>
     </View>
     <MyCourtActions key={`${uid}:${role}`} userId={uid!} role={role!} feedEnabled={feedAccess} />
-    <ArenaHeading title="TEAMS YOU FOLLOW" cta="Explore teams" onPress={()=>router.push("/teams")}/>
-    {!data?<Skeleton review/>:data.teams===null?<Text accessibilityRole="alert"
+    <ArenaHeading title="MY TEAMS" cta="Find teams" onPress={()=>router.push("/teams")}/>
+    {!data?<Text accessibilityRole="text" style={{color:t.muted,fontSize:12,paddingVertical:8}}>Loading followed teams…</Text>:data.teams===null?<Text accessibilityRole="alert"
       style={{color:t.muted}}>Your teams could not load.</Text>:followTeams.length===0?
       <Pressable accessibilityRole="link" onPress={()=>router.push("/teams")} style={{minHeight:55,
         borderRadius:16,backgroundColor:t.surface,borderWidth:1,borderColor:t.border,
@@ -160,32 +163,12 @@ export function HomeCourtside() {
         </View>
       </View>
     </View>:null}
-    <ArenaHeading title="My Teams" cta="See all" onPress={()=>router.push("/teams")}/>
-    <View style={{borderRadius:16,backgroundColor:t.elevatedSurface,borderWidth:1,
-      borderColor:t.dark?"rgba(74,147,234,.35)":t.border,padding:10,flexDirection:"row",
-      alignItems:"center",gap:10,minHeight:66}}>
-      {followTeams.length?followTeams.slice(0,3).map(team=><Pressable key={team.target_id}
-        accessibilityRole="link" accessibilityLabel={team.display_name||"Open team"} 
-        onPress={()=>router.push({pathname:"/teams/[id]",params:{id:team.target_id}})}
-        style={{minHeight:46,minWidth:46,alignItems:"center",justifyContent:"center",
-          borderRadius:23,borderWidth:1,borderColor:t.accent}}>
-        <EntityArtwork name={team.display_name||"Team"} kind="teams" size={38}/>
-      </Pressable>):
-        <Text style={{flex:1,color:t.muted,fontSize:13}}>Your followed clubs appear here.</Text>}
-      <Pressable accessibilityRole="link" accessibilityLabel="Find more teams"
-        onPress={()=>router.push("/teams")} style={{marginLeft:"auto",width:44,height:44,
-        borderRadius:22,alignItems:"center",justifyContent:"center",
-        backgroundColor:t.accentSurface}}>
-        <Ionicons name="add" size={23} color={t.accent}/>
-      </Pressable>
-    </View>
     {!data?null:<>
-      <ArenaHeading title="LIVE GAMES" cta="All games" onPress={()=>router.push("/fan-live")}/>
+      <ArenaHeading title="LIVE & UPCOMING" cta="All games" onPress={()=>router.push("/fan-live")}/>
       {!gameAccess?<Text style={{color:t.muted,fontSize:12}}>Game Center requires an eligible membership.</Text>:
         data.games===null?<Text accessibilityRole="alert" style={{color:t.muted}}>Scores could not load.</Text>:
-        !data.games.games.length?<Text style={{color:t.muted,fontSize:12}}>No current games. Check upcoming tip-offs.</Text>:
-        [...data.games.games].sort((a,b)=>Number(b.status==="live")-Number(a.status==="live")).slice(0,2)
-        .map(game=><PressableCard key={game.id} onPress={()=>router.push({pathname:"/fan-live",params:{gameId:game.id}})}>
+        !previewGames.length?<Text style={{color:t.muted,fontSize:12}}>No live or upcoming games. See Game Center for past results.</Text>:
+        previewGames.map(game=><PressableCard key={game.id} onPress={()=>router.push({pathname:"/fan-live",params:{gameId:game.id}})}>
           <Scoreboard game={game} teams={data.games!.teams}/>
         </PressableCard>)}
       <ArenaHeading title="FROM HOOPFEED" cta="Open" onPress={()=>router.push("/feed")}/>
