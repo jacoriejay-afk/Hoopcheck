@@ -20,6 +20,7 @@ type ReelProps = {
   blockBusy: boolean;
   onBack: () => void;
   onCreate: () => void;
+  onViewPlayer: () => void;
   onCheck: () => void;
   onComments: () => void;
   onShare: () => void;
@@ -55,7 +56,7 @@ function ReelAction({ icon, label, detail, onPress, disabled = false, selected =
  * remain owned by the existing HoopFeed screen and its authorized data clients. */
 export function HoopReelCard({
   post, userId, height, active, ready, canWrite, check, saved, checkBusy, saveBusy, blockBusy,
-  onBack, onCreate, onCheck, onComments, onShare, onSave, onReport, onHide, onHideCreator, onBlockCreator,
+  onBack, onCreate, onViewPlayer, onCheck, onComments, onShare, onSave, onReport, onHide, onHideCreator, onBlockCreator,
 }: ReelProps) {
   const [paused, setPaused] = useState(false);
   const [muted, setMuted] = useState(true);
@@ -142,6 +143,11 @@ export function HoopReelCard({
           {post.profiles?.account_type || "Community"} · {new Date(post.created_at).toLocaleDateString()}
         </Text>
         {post.body ? <Text style={{ color: ink, fontSize: 14, lineHeight: 20 }} numberOfLines={3}>{post.body}</Text> : null}
+        {post.profiles?.account_type?.toLowerCase() === "player" ? <Pressable accessibilityRole="button"
+          accessibilityLabel="View player profile" onPress={onViewPlayer}
+          style={{ alignSelf: "flex-start", minHeight: 44, justifyContent: "center" }}>
+          <Text style={{ color: orange, fontSize: 13, fontWeight: "800" }}>View player profile</Text>
+        </Pressable> : null}
         <Pressable accessibilityRole="button" accessibilityLabel="Open Reel comments in HoopFeed"
           onPress={onComments} style={{ alignSelf: "flex-start", minHeight: 44, justifyContent: "center" }}>
           <Text style={{ color: orange, fontSize: 13, fontWeight: "800" }}>View discussion</Text>
