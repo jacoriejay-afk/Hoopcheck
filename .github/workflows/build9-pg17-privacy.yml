@@ -1,0 +1,86 @@
+name: Build 9 PostgreSQL 17 Privacy Rehearsal (Synthetic)
+
+on:
+  push:
+    branches: ["integration/build9-backend-completion-20261121"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Never connect this job to Supabase or give it hosted database credentials.
+# This tests synthetic fixtures on the same PostgreSQL major version as
+# production, NOT production schema/roles/ownership parity or real JWT HTTP.
+jobs:
+  privacy-pg17:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hoopcheck_pg17_fixture
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d hoopcheck_pg17_fixture"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: hoopcheck_pg17_fixture
+    steps:
+      - name: Checkout exact PR or push commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Node for synthetic SQL fixture generator
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Assert isolated PostgreSQL 17 target
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = "127.0.0.1"
+          version_num="$(psql -X -Atqc 'SHOW server_version_num')"
+          test "${version_num:0:2}" = "17"
+          echo "PASS: synthetic PostgreSQL 17 service, local-only."
+
+      - name: Rehearse Build 8 owner RPC and opted-in MFA, including negative ACL tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          createdb hoopcheck_pg17_owner
+          node scripts/check-build8-owner-profile.mjs | psql -X -v ON_ERROR_STOP=1 -d hoopcheck_pg17_owner
+
+      - name: Rehearse private-country phase 1 and phase 2 against synthetic legacy callers
+        shell: bash
+        run: |
+          set -euo pipefail
+          createdb hoopcheck_pg17_profiles
+          psql -X -v ON_ERROR_STOP=1 -d hoopcheck_pg17_profiles -f supabase/tests/profile_private_fields.sql
+          psql -X -v ON_ERROR_STOP=1 -d hoopcheck_pg17_profiles -f supabase/tests/build9_legacy_projection_design.sql
+
+      - name: Reject deliberately broken private-column and legacy projection migrations
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/test-profile-private-sql-negative.mjs
+          node scripts/test-profile-compatibility-sql-negative.mjs
+
+      - name: Record scope and remaining external HOLDs
+        run: |
+          echo "PASS: PostgreSQL 17 synthetic owner/MFA/privacy/legacy SQL fixture tests."
+          echo "NOT VERIFIED: production-equivalent restore, exact function owners/grants/RLS and rollback."
+          echo "NOT VERIFIED: real signed anon/owner/nonowner AAL1/AAL2 HTTP, installed Build 7/8 clients."
+          echo "NOT VERIFIED: physical iPhone, Apple Sandbox, production migration or Build 9 release."
