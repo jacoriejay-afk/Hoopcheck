@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Input, GlassCard } from "../src/primitives";
+import { GlassCard } from "../src/primitives";
+import { GlassHeader } from "../components/glass/GlassHeader";
+import { useMotionSetting } from "../src/motion/Provider";
 import { supabase } from "../src/lib/supabase";
 import { useEntryTheme } from "../src/theme";
 import { motion } from "../src/motion/config";
@@ -19,7 +21,11 @@ export default function SearchScreen() {
   const { account } = useNativeAccount();
   const includePlayers = canBrowsePlayers(account?.user.accountType);
   const scope = `${account?.user.id ?? ""}:${account?.user.accountType ?? ""}`;
-  const { q } = useLocalSearchParams<{ q?: string }>();
+  const { q, fromHome } = useLocalSearchParams<{ q?: string; fromHome?: string }>();
+  const reduced = useMotionSetting();
+  const [searchExpanded, setSearchExpanded] = useState(true);
+  const cancelTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (cancelTimer.current) clearTimeout(cancelTimer.current); }, []);
   const [term, setTerm] = useState(typeof q === "string" ? q : "");
   const [result, setResult] = useState<{ term: string; scope: string; groups: SearchGroup[] } | null>(null);
   const [loading, setLoading] = useState(false);
@@ -40,9 +46,18 @@ export default function SearchScreen() {
   }, [term, offline, revision, includePlayers, scope]);
   const groups = result?.term === term && result.scope === scope && !offline ? result.groups : [];
   return <SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: theme.background }}>
+    <GlassHeader searchOpen={searchExpanded} searchTerm={term}
+      onSearchTermChange={setTerm} onSearchSubmit={() => remember(term)}
+      onSearchBlur={() => remember(term)}
+      onSearchCancel={() => {
+        setSearchExpanded(false);
+        cancelTimer.current = setTimeout(() => {
+          if (fromHome === "1" && router.canGoBack()) router.back();
+          else router.replace("/dashboard");
+        }, reduced ? 0 : 150);
+      }} />
     <ScrollView keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 20, gap: 16 }}>
       <Text style={{ color: theme.muted, ...theme.type.body }}>Find your next basketball connection.</Text>
-      <Input accessibilityLabel="Search basketball directory" placeholder="Team, country, league, coach or @username" value={term} maxLength={100} onChangeText={setTerm} returnKeyType="search" onSubmitEditing={() => remember(term)} onBlur={() => remember(term)} />
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm }}>
         {(["all", ...Object.keys(labels).filter(value => value !== "players" || includePlayers)] as (SearchKind | "all")[]).map(value => <Pressable key={value} accessibilityRole="button" accessibilityState={{ selected: kind === value }} onPress={() => setKind(value)} style={({ pressed }) => ({ minHeight: theme.courtside.navigation.touchTarget, paddingHorizontal: theme.spacing.md, justifyContent: "center", borderRadius: theme.radius.pill, backgroundColor: kind === value ? theme.accentSurface : theme.chip, opacity: pressed ? .7 : 1 })}><Text style={{ color: kind === value ? theme.accent : theme.onChip, ...theme.type.caption }}>{value === "all" ? "All" : labels[value]}</Text></Pressable>)}
       </View>

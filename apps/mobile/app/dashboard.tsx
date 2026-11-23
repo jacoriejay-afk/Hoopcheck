@@ -1,11 +1,10 @@
 import { HomeCourtside, HomeStagger } from "../components/HomeCourtside";
 import { RoleHub } from "../components/RoleHub";
 import { useNativeAccount } from "../src/native/useNativeAccount";
-import { GlassSurface } from "../components/GlassSurface";
 import { GlassHeader } from "../components/glass/GlassHeader";
 import { GlassBackdrop } from "../components/glass/GlassBackdrop";
 import { ExploreLinks } from "../components/ExploreLinks";
-import { Input, Chip, SectionHeader } from "../src/primitives";
+import { Chip, SectionHeader } from "../src/primitives";
 import { useEffect, useState } from "react";
 import { Alert, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, { useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated";
@@ -30,6 +29,7 @@ function DashboardContent() {
   const router = useRouter();
   const theme = useEntryTheme();
   const [search, setSearch] = useState("");
+  const [searchExpanded, setSearchExpanded] = useState(false);
   const [busy, setBusy] = useState(false);
   const [email, setEmail] = useState("");
   const { account: currentAccount, loading: accountLoading } = useNativeAccount();
@@ -76,29 +76,17 @@ function DashboardContent() {
   return (
     <SafeAreaView edges={["left", "right", "bottom"]} style={[styles.safe, { backgroundColor: theme.background }]}>
       <GlassBackdrop screen="home" />
-      <GlassHeader homeScrollY={scrollY} />
+      <GlassHeader homeScrollY={scrollY} searchOpen={searchExpanded}
+        onSearchOpen={() => setSearchExpanded(true)}
+        onSearchCancel={() => setSearchExpanded(false)}
+        searchTerm={search} onSearchTermChange={setSearch}
+        onSearchSubmit={() => router.push({ pathname: "/search",
+          params: { q: search, fromHome: "1" } })} />
       <Animated.ScrollView keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled"
         testID="dashboard-scroll" onScroll={onHomeScroll} scrollEventThrottle={16}
+        scrollEnabled={!searchExpanded}
         contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 94, paddingBottom: 138 }]}>
         <View style={styles.content}>
-          <GlassSurface style={{ flexDirection:"row",alignItems:"center",marginBottom:14,
-            borderRadius:17,paddingLeft:12,paddingRight:5,minHeight:50,
-            borderColor:theme.glassBorder }}>
-            <Ionicons name="search-outline" size={21} color={theme.accent} />
-            <Input style={{ flex:1,minWidth:0,backgroundColor:"transparent",
-              borderWidth:0,fontSize:14,color:theme.foreground }}
-              accessibilityLabel="Search basketball directory"
-              placeholder="Search players, coaches, teams, or leagues…" value={search}
-              maxLength={100} onChangeText={setSearch} returnKeyType="search"
-              onSubmitEditing={()=>router.push({pathname:"/search",params:{q:search}})} />
-            <Pressable accessibilityRole="button" accessibilityLabel="Search"
-              onPress={()=>router.push({pathname:"/search",params:{q:search}})}
-              style={({pressed})=>({minHeight:44,minWidth:44,borderRadius:13,
-                backgroundColor:theme.accentSurface,justifyContent:"center",alignItems:"center",
-                opacity:pressed?.72:1})}>
-              <Ionicons name="arrow-forward" size={20} color={theme.accent} />
-            </Pressable>
-          </GlassSurface>
           <HomeCourtside />
           {!accountLoading && currentAccount ? <>
             <HomeStagger index={6}><RoleHub /></HomeStagger>
