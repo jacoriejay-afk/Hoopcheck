@@ -28,7 +28,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
 function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
   const theme = useEntryTheme();
   const router = useRouter();
-  const params = useLocalSearchParams<{ post?: string; comments?: string }>();
+  const params = useLocalSearchParams<{ post?: string; comments?: string; compose?: string }>();
   const linkedId = typeof params.post === "string" && isFeedId(params.post) ? params.post : undefined;
   const { account, loading: accountLoading, error: accountError, retry } = useNativeAccount();
   const { offline } = useNetwork();
@@ -38,6 +38,9 @@ function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
   const [composerExpanded, setComposerExpanded] = useState(false);
   const [mediaMode, setMediaMode] = useState(false);
   const [reels, setReels] = useState(initialReels);
+  useEffect(() => {
+    if (params.compose === "media" && !reels && canWrite) { setComposerExpanded(true); setMediaMode(true); }
+  }, [params.compose, reels, canWrite]);
   const [viewedHighlights, setViewedHighlights] = useState<Set<string>>(new Set());
   const scope = `${uid ?? ""}:${reels}`;
   const viewer = useRef({ uid, canRead, scope });
@@ -354,7 +357,12 @@ function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
           checkBusy={Boolean(pending["check:" + post.id])}
           saveBusy={Boolean(pending["save:" + post.id])}
           blockBusy={Boolean(pending["block:" + post.author_id])}
-          onBack={() => router.navigate("/feed")}
+          onBack={() => { setReels(false); if (initialReels) router.navigate("/feed"); }}
+          onCreate={() => {
+            if (!canWrite) return;
+            setReels(false); setComposerExpanded(true); setMediaMode(true);
+            if (initialReels) router.push({ pathname: "/feed", params: { compose: "media" } });
+          }}
           onCheck={() => void checkPost(post)}
           onComments={() => router.push({ pathname: "/feed", params: { post: post.id, comments: "1" } })}
           onShare={() => void action("share:" + post.id, async () => {
