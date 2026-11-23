@@ -184,7 +184,7 @@ if(process.argv.includes("--self-test")) {
     "current_country","moderation_note","birthdate","stripe_identity_verification_session_id"
   ]);
   for (const field of RAW_PRIVATE_PROFILE_COLUMNS) {
-    assert.match(rawPrivateColumnRoute(field),/\\?select=id%2C/);
+    assert.match(rawPrivateColumnRoute(field),/\?select=id%2C/);
     assert.ok(rawPrivateColumnRoute(field).includes(field));
   }
   assert.throws(()=>rawPrivateColumnRoute("public_profile"),/Unreviewed/);
