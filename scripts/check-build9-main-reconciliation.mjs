@@ -7,7 +7,7 @@ const read = path => readFileSync(path,"utf8");
 // reader while keeping Build 9's provider-aware membership authorization.
 for (const path of [
   "app/account/page.tsx","app/dashboard/page.tsx","app/profile/page.tsx",
-  "app/players/[id]/page.tsx"
+  "app/players/[id]/page.tsx","app/settings/page.tsx"
 ]) {
   const source=read(path);
   assert.match(source,/readOwnProfile/,path+": missing safe owner adapter");
