@@ -24,7 +24,7 @@ test("Home shows followed teams once, labels loading, and does not lose account 
   assert.equal((home.match(/title="My Teams"/g) || []).length, 1);
   assert.doesNotMatch(home, /title="TEAMS YOU FOLLOW"/);
   assert.doesNotMatch(home, /accessibilityLabel="Find more teams"/);
-  assert.match(home, /Loading followed teams/);
+  assert.match(home, /HoopCheckLoading compact label="Loading your teams/);
   assert.match(home, /snapshot\?\.scope===scope/);
   assert.match(home, /visibleConnections\(result\.data, role\)/);
 });
