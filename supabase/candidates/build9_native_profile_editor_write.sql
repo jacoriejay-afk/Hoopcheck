@@ -11,8 +11,20 @@ DO $$ BEGIN
  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='profiles' AND cmd IN ('UPDATE','ALL') AND permissive='PERMISSIVE' AND ('authenticated'=ANY(roles) OR 'public'=ANY(roles))) THEN
    RAISE EXCEPTION 'Existing permissive owner UPDATE policy required';
  END IF;
- IF has_column_privilege('authenticated','public.profiles','moderation_note','UPDATE') THEN
-   RAISE EXCEPTION 'Reconcile unsafe existing moderation UPDATE privileges first';
+ -- Existing production column UPDATE grants are broader than profile-editor
+ -- fields. Owner-only RLS and triggers provide additional defense, but cannot
+ -- substitute for a reviewed column ACL boundary. Never expand permissions or
+ -- silently revoke grants used by older/administrator workflows here.
+ IF has_table_privilege('authenticated','public.profiles','UPDATE') THEN
+   RAISE EXCEPTION 'Table-wide authenticated UPDATE must be reconciled before editor rollout';
+ END IF;
+ IF EXISTS (
+   SELECT 1 FROM pg_attribute a
+   WHERE a.attrelid='public.profiles'::regclass AND a.attnum>0 AND NOT a.attisdropped
+     AND a.attname=ANY(ARRAY['id','account_type','birthdate','stripe_identity_verification_session_id','identity_verification_status','player_verified','player_verified_at','coach_verified','coach_verified_at','profile_claimed','claimed_at','moderation_status','moderation_note','moderation_updated_at','moderation_updated_by','avatar_moderation_status','avatar_moderation_note','selected_team_verified']::text[])
+     AND has_column_privilege('authenticated','public.profiles',a.attname,'UPDATE')
+ ) THEN
+   RAISE EXCEPTION 'Privileged authenticated profile UPDATE columns require reviewed ACL cleanup and signed role tests';
  END IF;
 END $$;
 -- AND with all existing permissive policies, including on a drifted staging schema.

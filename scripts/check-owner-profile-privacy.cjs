@@ -47,6 +47,31 @@ for (const name of [
 assert.doesNotMatch(ownerRpc, /\b(?:DROP TABLE|ALTER TABLE|GRANT SELECT|REVOKE SELECT|SECURITY DEFINER)\b/i, "Candidate cannot modify profile grants, RLS or bypass callers");
 assert.ok(!ownerRpc.includes("p.*"), "Never return all profile fields or unrestricted billing identity");
 
+// Build 9 profile editor must not be enabled over existing broad privileged
+// UPDATE column grants. These are reviewed staging candidates, not an
+// instruction to revoke production/admin/old-client permissions blindly.
+const editorCandidate = fs.readFileSync("supabase/candidates/build9_native_profile_editor_write.sql", "utf8");
+const editorAclTest = fs.readFileSync("supabase/tests/build9_profile_editor_write_preflight.sql", "utf8");
+for (const field of [
+  "id", "account_type", "birthdate", "stripe_identity_verification_session_id",
+  "identity_verification_status", "player_verified", "player_verified_at",
+  "coach_verified", "coach_verified_at", "profile_claimed", "claimed_at",
+  "moderation_status", "moderation_note", "moderation_updated_at",
+  "moderation_updated_by", "avatar_moderation_status",
+  "avatar_moderation_note", "selected_team_verified",
+]) {
+  for (const [name, text] of [["migration candidate", editorCandidate], ["staging preflight", editorAclTest]]) {
+    assert.ok(text.includes("'"+field+"'"), name+" must guard direct authenticated UPDATE on "+field);
+  }
+}
+for (const [name, text] of [["migration candidate", editorCandidate], ["staging preflight", editorAclTest]]) {
+  assert.ok(text.includes("has_table_privilege('authenticated','public.profiles','UPDATE')"), name+" must reject table-wide UPDATE grants");
+  assert.ok(text.includes("has_column_privilege('authenticated','public.profiles',a.attname,'UPDATE')"), name+" must reject protected-column UPDATE grants");
+  assert.ok(text.includes("pg_attribute"), name+" must check only installed protected columns");
+}
+assert.ok(editorCandidate.includes("AS RESTRICTIVE"), "Editor policy must AND owner/MFA against all existing policies");
+assert.ok(editorCandidate.includes("hoopcheck_security.mfa_satisfied()"), "Do not activate editor without verified MFA helper");
+
 const settings = fs.readFileSync("app/settings/page.tsx", "utf8");
 assert.doesNotMatch(settings, /getOwnProfile\(supabase/, "Settings must not call the unavailable owner RPC directly");
 assert.match(settings, /readOwnProfile<\{account_type:/, "Settings must use scoped legacy/RPC-compatible owner projection");
