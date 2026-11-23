@@ -121,6 +121,19 @@ async function accept(env) {
     assert.equal(a.length,1,"Opt-out fixture must be publicly visible");
     assert.equal(a[0].current_country,null,"Private country must not be returned");
   });
+  await check("anonymous callers cannot read owner projection",async()=>{
+    for(const token of [undefined,c.anonAuth]) {
+      const r=await call(c,"/rest/v1/rpc/get_own_profile",token,{});
+      assert.ok(denied(r),"Both public and anonymous Auth must be denied owner profile");
+    }
+  });
+  await check("nonowner owner-profile RPC returns only its own identity",async()=>{
+    const r=await call(c,"/rest/v1/rpc/get_own_profile",c.other,{});
+    assert.equal(r.status,200,"Nonowner must be able to read its own profile");
+    assert.ok(r.data && !Array.isArray(r.data),"Nonowner own profile must be an object");
+    assert.equal(r.data.id,claim(c.other,"sub"),"Nonowner must receive its own profile");
+    assert.notEqual(r.data.id,c.owner,"Cross-account owner data exposed");
+  });
   await check("enrolled AAL1 owner projection blocked",async()=>{
     const r=await call(c,"/rest/v1/rpc/get_own_profile",c.a1,{});
     assert.ok(denied(r),"Enrolled AAL1 must be denied by MFA policy");
@@ -130,6 +143,9 @@ async function accept(env) {
     assert.equal(r.status,200,"AAL2 projection must succeed");
     assert.ok(r.data && !Array.isArray(r.data),"Owner RPC must return jsonb object");
     assert.equal(r.data.id,c.owner,"Owner RPC must return caller's profile");
+    for(const secret of ["birthdate","stripe_identity_verification_session_id","moderation_note","avatar_moderation_note"]) {
+      assert.equal(Object.hasOwn(r.data,secret),false,"Unexpected sensitive field in owner projection: "+secret);
+    }
   });
   await check("public follower RPC is installed",async()=>{
     rows(await call(c,"/rest/v1/rpc/get_public_follow_list",undefined,{
