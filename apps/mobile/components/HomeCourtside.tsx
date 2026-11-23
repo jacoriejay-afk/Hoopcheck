@@ -12,6 +12,7 @@ import { readBasketballSide, readLiveGames } from "../src/native/liveGames";
 import { selectHomePreviewGames } from "../src/native/homeGamePreview";
 import { readFeedPage, type FeedPost } from "../src/native/feedClient";
 import { Skeleton } from "./Motion";
+import { HoopCheckLoading } from "./HoopCheckLoading";
 import { Scoreboard } from "./Scoreboard";
 import { MyCourtActions } from "./MyCourtActions";
 import { EntityArtwork } from "./EntityArtwork";
@@ -136,7 +137,7 @@ export function HomeCourtside() {
     </View>
     <MyCourtActions key={`${uid}:${role}`} userId={uid!} role={role!} feedEnabled={feedAccess} />
     <ArenaHeading title="My Teams" cta="Find teams" onPress={()=>router.push("/teams")}/>
-    {!data?<Text accessibilityRole="text" style={{color:t.muted,fontSize:12,paddingVertical:8}}>Loading followed teams…</Text>:data.teams===null?<Text accessibilityRole="alert"
+    {!data?<HoopCheckLoading compact label="Loading your teams…" />:data.teams===null?<Text accessibilityRole="alert"
       style={{color:t.muted}}>Your teams could not load.</Text>:followTeams.length===0?
       <Pressable accessibilityRole="link" onPress={()=>router.push("/teams")} style={{minHeight:55,
         borderRadius:16,backgroundColor:t.surface,borderWidth:1,borderColor:t.border,
