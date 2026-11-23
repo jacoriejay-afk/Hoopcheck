@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ambassadorDb, requireAmbassadorSession } from "../../../lib/ambassador/server";
 import styles from "../../ambassador-hq/ambassador.module.css";
-import { changeCampaign, changePayout } from "./actions";
+import { changeCampaign, changePayout, resumeCampaign } from "./actions";
 
 export const metadata: Metadata = {
   title: "Ambassador administration | HoopCheck™",
@@ -38,14 +38,19 @@ export default async function AmbassadorAdmin({ searchParams }: { searchParams: 
         {result === "invalid" && <p role="alert">Check the form fields and try again.</p>}
         {result === "campaign-rejected" && <p role="alert">Campaign change refused. Check the verified account and signed terms.</p>}
         {result === "payout-rejected" && <p role="alert">Payout change refused. Check the payable balance, existing approval and transfer reference.</p>}
+        {result === "resume-disabled" && <p role="alert">Campaign resumption is not yet enabled. Finish the reviewed database and acceptance gates first.</p>}
+        {result === "resume-rejected" && <p role="alert">Resumption rejected. Confirm the signed tracking date, original 90-day term, prior pause, and agreement records.</p>}
+        {result === "resume-mfa-required" && <p role="alert">Two-factor authentication at AAL2 is required before reopening the campaign.</p>}
         {campaigns.data.map(campaign => {
           const grant = grants.data.find(item => item.code === campaign.code);
           const approved = approvedPayouts.data.find(item => item.ambassador_id === grant?.id);
           return <section key={campaign.code} className={`dashboard-card ${styles.stack}`}>
             <div>
               <h2>{campaign.display_name}</h2>
-              <p>{campaign.code} · {grant?.activated_at && grant.ends_at <= new Date().toISOString()
-                ? "Closed" : grant?.status ?? "Awaiting verified HoopCheck account"}</p>
+              <p>{campaign.code} · {grant?.status === "suspended"
+                ? "Suspended — new referrals disabled"
+                : grant?.activated_at && grant.ends_at <= new Date().toISOString()
+                  ? "Closed" : grant?.status ?? "Awaiting verified HoopCheck account"}</p>
             </div>
             {!grant ? <form className={styles.fields} action={changeCampaign}>
               <input type="hidden" name="code" value={campaign.code} />
@@ -62,6 +67,13 @@ export default async function AmbassadorAdmin({ searchParams }: { searchParams: 
                 {!grant.activated_at && <label>Campaign length (days)<input name="days" type="number" min="1" max="366" defaultValue="90" required /></label>}
                 <button className="btn" name="action" value={grant.activated_at ? "amend" : "activate"}>{grant.activated_at ? "Record signed amendment" : "Confirm terms and activate"}</button>
               </form>
+              {grant.status === "suspended" && campaign.code === "CHRISLYKES" && process.env.AMBASSADOR_RESUME_ENABLED === "true" && <form className={styles.fields} action={resumeCampaign}>
+                <input type="hidden" name="code" value={campaign.code} />
+                <p>Reopen only the original signed 90-day term. This does not restart the term or alter existing commissions, captured rates, or referrals.</p>
+                <label>Confirm original end date in the signed agreement<input name="confirmedOriginalEndDate" type="date" required /></label>
+                <label>Reason and documented approval for resuming<input name="resumeReason" minLength={15} maxLength={500} required /></label>
+                <button className="btn" type="submit">Resume original signed term (requires 2FA)</button>
+              </form>}
               {grant.status === "active" && <form action={changeCampaign}>
                 <input type="hidden" name="code" value={campaign.code} />
                 <button className="btn dark" name="action" value="pause">Close campaign to new referrals</button>
