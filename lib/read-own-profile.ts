@@ -19,7 +19,10 @@ export async function readOwnProfile<T = Record<string, unknown>>(userId: string
     const token = initial.data.session.access_token;
     if (!token) return fail("Your account changed. Sign in again.");
 
-    const legacy = await supabase.from("profiles").select(columns).eq("id", userId)
+    // Some existing callers request preferences without id. Add the owner ID
+    // to the projection so the response can always be verified.
+    const projection = columns.split(",").some(field => field.trim() === "id") ? columns : `id,${columns}`;
+    const legacy = await supabase.from("profiles").select(projection).eq("id", userId)
       .setHeader("Authorization", `Bearer ${token}`).maybeSingle();
     const result = legacy.error?.code === "42501"
       ? await supabase.rpc("get_own_profile").setHeader("Authorization", `Bearer ${token}`)
