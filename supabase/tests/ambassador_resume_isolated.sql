@@ -15,6 +15,7 @@ create or replace function auth.role() returns text language sql stable as
 $$ select nullif(current_setting('request.jwt.claim.role',true),'') $$;
 create table if not exists public.profiles (id uuid primary key);
 create table if not exists public.subscriptions (user_id uuid, stripe_customer_id text);
+alter table public.subscriptions add column if not exists stripe_customer_id text;
 \ir ../migrations/20261114072000_ambassador_hq_foundation.sql
 \ir ../migrations/20261114072854_ambassador_hq_workflows.sql
 \ir ../candidates/ambassador_resume_signed_term.sql
