@@ -52,7 +52,7 @@ test('tab accessible names match visible labels for fans, other accounts and loa
         assert.equal(tab.props.accessibilityLabel, tab.findByType('Text').props.children);
       }
       const feed = tree.root.findByProps({ testID: 'tab-hoopfeed' });
-      assert.equal(feed.props.accessibilityLabel, accountType === 'fan' ? 'FAN HQ' : 'HoopFeed');
+      assert.equal(feed.props.accessibilityLabel, 'HoopFeed');
       assert.equal(feed.props.accessibilityState.selected, false);
       await act(async () => { feed.props.onPress(); });
       assert.deepEqual(navigations, ['/feed']);
@@ -65,7 +65,7 @@ test('fan feed tab retains selected semantics on feed and fan-feed routes', asyn
     const { tree } = await render('fan', path);
     try {
       const feed = tree.root.findByProps({ testID: 'tab-hoopfeed' });
-      assert.equal(feed.props.accessibilityLabel, 'FAN HQ');
+      assert.equal(feed.props.accessibilityLabel, 'HoopFeed');
       assert.equal(feed.props.accessibilityState.selected, true);
       assert.equal(tree.root.findAllByType('Pressable').filter(tab => tab.props.accessibilityState.selected).length, 1);
     } finally { await act(async () => tree.unmount()); }
