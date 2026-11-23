@@ -49,7 +49,7 @@ export function nativeDestination(path: string): string {
       // No client-side attribution claim or user_metadata authorization is introduced.
       return `/web?path=${encodeURIComponent(`/referral/${parts[1].toUpperCase()}`)}`;
     }
-    // No pretend native post/group route: keep the actual canonical web path.
+    // Unimplemented routes retain their canonical website paths.
     return `/web?path=${encodeURIComponent(url.pathname + url.search + url.hash)}`;
   } catch { return "/"; }
 }

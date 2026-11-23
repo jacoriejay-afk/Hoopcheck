@@ -193,3 +193,9 @@ test("protected native links preserve bounded post/search destinations without r
     assert.deepEqual(f.calls.replace, ["/sign-in"]);
   }
 });
+
+
+test("protected search retains a bounded query across sign-in without extra URL fields", () => {
+  const f = screen("app/_layout.tsx", { state: [true, false], segments: ["search"], pathname: "/search", params: { q: "x".repeat(200), token: "discard" } });
+  f.effects[2](); assert.deepEqual(f.calls.remembered, ["/search?q=" + "x".repeat(100)]);
+});
