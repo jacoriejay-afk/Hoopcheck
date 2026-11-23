@@ -14,6 +14,7 @@ test("Build 11 Home hamburger opens a real owner menu in an isolated header isla
   }
   assert.match(dashboard,/edges=\{\["top", "left", "right", "bottom"\]\}/);
   assert.match(dashboard,/onScrollBeginDrag=\{\(\)=>setMenuOpen\(false\)\}/);
+  assert.match(dashboard,/if\(item\.path==="\/support"\) router\.push\(\{pathname:"\/web",params:\{path:"\/support"\}\}\)/);
 });
 
 test("Build 11 HoopFeed is compact, keeps Posts/Reels and owner-only confirmed deletion", () => {
