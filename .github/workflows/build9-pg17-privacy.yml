@@ -79,9 +79,26 @@ jobs:
           node scripts/test-profile-private-sql-negative.mjs
           node scripts/test-profile-compatibility-sql-negative.mjs
 
+      - name: Verify avatar-moderated public follow-list RPC and unsafe bypass rejection
+        shell: bash
+        run: |
+          set -euo pipefail
+          createdb hoopcheck_pg17_follow_avatar
+          node scripts/check-build9-follow-avatar-pg17.mjs | psql -X -v ON_ERROR_STOP=1 -d hoopcheck_pg17_follow_avatar
+
+          # Prove tests would detect the original insecure behavior. Only
+          # fixture data is used; no production function is replaced.
+          createdb hoopcheck_pg17_follow_avatar_unsafe
+          if node scripts/check-build9-follow-avatar-pg17.mjs --unsafe-avatar-bypass | psql -X -v ON_ERROR_STOP=1 -d hoopcheck_pg17_follow_avatar_unsafe > "$RUNNER_TEMP/unsafe-follow.log" 2>&1; then
+            echo "FAIL: unmasked pending avatar passed negative regression"
+            exit 1
+          fi
+          grep -F "FOLLOWERS pending avatar exposed" "$RUNNER_TEMP/unsafe-follow.log"
+          echo "PASS: synthetic PG17 hides unapproved avatars, retains team logos and detects an unsafe bypass"
+
       - name: Record scope and remaining external HOLDs
         run: |
           echo "PASS: PostgreSQL 17 synthetic owner/MFA/privacy/legacy SQL fixture tests."
           echo "NOT VERIFIED: production-equivalent restore, exact function owners/grants/RLS and rollback."
-          echo "NOT VERIFIED: real signed anon/owner/nonowner AAL1/AAL2 HTTP, installed Build 7/8 clients."
+          echo "NOT VERIFIED: actual follow-list production patch or real signed HTTP, installed Build 7/8 clients."
           echo "NOT VERIFIED: physical iPhone, Apple Sandbox, production migration or Build 9 release."
