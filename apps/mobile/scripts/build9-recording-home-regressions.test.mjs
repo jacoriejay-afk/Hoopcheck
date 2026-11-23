@@ -12,11 +12,14 @@ const fixture = (id, status, scheduled_at) => ({ id, status, scheduled_at });
 test("Home GlassHeader stays pinned and owns the iPhone top safe area once", () => {
   const header = readFileSync(new URL("../components/glass/GlassHeader.tsx", import.meta.url), "utf8");
   assert.match(dash, /edges=\{\["left", "right", "bottom"\]\}/);
-  const pinned = dash.indexOf("<GlassHeader />");
+  const pinned = dash.indexOf("<GlassHeader homeScrollY={scrollY} />");
   const scroll = dash.indexOf('testID="dashboard-scroll"');
   assert.ok(pinned > 0 && scroll > pinned, "Glass header must remain outside scrolling content");
   assert.doesNotMatch(dash, /pinnedHeader:/);
   assert.match(header, /useSafeAreaInsets/);
+  assert.match(dash, /useAnimatedScrollHandler/);
+  assert.match(header, /homeScrollY\?\.get\(\)/);
+  assert.match(header, /GlassCard radius=\{999\}/);
   assert.match(header, /paddingTop: insets\.top \+ 8/);
   assert.match(header, /<BrandLogo \/>/);
   assert.match(header, /accessibilityLabel="Alerts"/);

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Reveal } from "./Motion";
+import { PressableScale } from "./PressableScale";
 import { useEntryTheme } from "../src/theme";
 import { glassTokens as glass } from "../src/glassTheme";
 import {
@@ -91,12 +92,11 @@ export function MyCourtActions({ userId, role, feedEnabled }: {
       {cards.map(action => {
         const accent = action.href.includes("fan-live") ? glass.pink : action.href.includes("messages") ? glass.teal : action.href.includes("feed") ? glass.violet : action.href.includes("teams") ? glass.orange : colors[action.tone][theme.dark ? "dark" : "light"];
         return <View key={action.id} style={{ width: "48%", flexGrow: 1 }}>
-          <Pressable accessibilityRole="link" accessibilityLabel={action.label} onPress={() => router.push(action.href)}
+          <PressableScale accessibilityRole="link" accessibilityLabel={action.label} onPress={() => router.push(action.href)}
             style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", minHeight: 58,
               paddingHorizontal: 9, paddingVertical: 9, gap: 8, borderRadius: glass.radii.row,
               borderWidth: 1, borderColor: glass.border,
-              backgroundColor: glass.solid, opacity: pressed ? .76 : 1,
-              transform: [{ scale: pressed ? .98 : 1 }] })}>
+              backgroundColor: glass.solid, opacity: pressed ? .76 : 1 })}>
             <View style={{ width: 33, height: 33, borderRadius: 17, backgroundColor: `${accent}20`,
               alignItems: "center", justifyContent: "center" }}>
               <Ionicons name={action.icon} size={19} color={accent} />
@@ -104,7 +104,7 @@ export function MyCourtActions({ userId, role, feedEnabled }: {
             <Text numberOfLines={2} style={{ flex: 1, color: theme.foreground, fontSize: 12,
               lineHeight: 16, fontFamily: theme.type.ui.fontFamily, fontWeight: "700" }}>{action.label}</Text>
             <Ionicons name="chevron-forward" size={13} color={theme.muted} />
-          </Pressable>
+          </PressableScale>
         </View>;
       })}
     </View>

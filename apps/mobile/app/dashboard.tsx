@@ -1,4 +1,4 @@
-import { HomeCourtside } from "../components/HomeCourtside";
+import { HomeCourtside, HomeStagger } from "../components/HomeCourtside";
 import { RoleHub } from "../components/RoleHub";
 import { useNativeAccount } from "../src/native/useNativeAccount";
 import { GlassSurface } from "../components/GlassSurface";
@@ -7,9 +7,10 @@ import { GlassBackdrop } from "../components/glass/GlassBackdrop";
 import { ExploreLinks } from "../components/ExploreLinks";
 import { Input, Chip, SectionHeader } from "../src/primitives";
 import { useEffect, useState } from "react";
-import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import Animated, { useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated";
 import { useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../src/lib/supabase";
 import { GlassThemeScope, useEntryTheme } from "../src/theme";
@@ -31,7 +32,12 @@ function DashboardContent() {
   const [search, setSearch] = useState("");
   const [busy, setBusy] = useState(false);
   const [email, setEmail] = useState("");
-  const { account: currentAccount } = useNativeAccount();
+  const { account: currentAccount, loading: accountLoading } = useNativeAccount();
+  const insets = useSafeAreaInsets();
+  const scrollY = useSharedValue(0);
+  const onHomeScroll = useAnimatedScrollHandler({ onScroll: event => {
+    scrollY.set(event.contentOffset.y);
+  }});
   // Display the verified profile role, not editable auth metadata.
   const accountType = currentAccount?.user.accountType.replaceAll("_", " ") || "";
 
@@ -70,8 +76,10 @@ function DashboardContent() {
   return (
     <SafeAreaView edges={["left", "right", "bottom"]} style={[styles.safe, { backgroundColor: theme.background }]}>
       <GlassBackdrop screen="home" />
-      <GlassHeader />
-      <ScrollView keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled" testID="dashboard-scroll" contentContainerStyle={[styles.scroll, { paddingBottom: 138 }]}>
+      <GlassHeader homeScrollY={scrollY} />
+      <Animated.ScrollView keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled"
+        testID="dashboard-scroll" onScroll={onHomeScroll} scrollEventThrottle={16}
+        contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 94, paddingBottom: 138 }]}>
         <View style={styles.content}>
           <GlassSurface style={{ flexDirection:"row",alignItems:"center",marginBottom:14,
             borderRadius:17,paddingLeft:12,paddingRight:5,minHeight:50,
@@ -92,9 +100,13 @@ function DashboardContent() {
             </Pressable>
           </GlassSurface>
           <HomeCourtside />
-          <RoleHub />
-          <SectionHeader>Explore basketball</SectionHeader>
-          <View style={styles.directories}><ExploreLinks compact /></View>
+          {!accountLoading && currentAccount ? <>
+            <HomeStagger index={6}><RoleHub /></HomeStagger>
+            <HomeStagger index={7}><View style={{ gap: 10 }}>
+              <SectionHeader>Explore basketball</SectionHeader>
+              <View style={styles.directories}><ExploreLinks compact /></View>
+            </View></HomeStagger>
+          </> : null}
 
           <View style={styles.sectionTitle}><SectionHeader>Account &amp; support</SectionHeader></View>
           <View style={[styles.account, panel]}>
@@ -121,7 +133,7 @@ function DashboardContent() {
             <Text style={[styles.rowLabel, { color: theme.accent }]}>{busy ? "Signing out…" : "Sign out"}</Text>
           </Pressable>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
     </SafeAreaView>
   );
 }
