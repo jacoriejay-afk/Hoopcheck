@@ -47,7 +47,7 @@ export default function TeamOnboardingPage() {
   },[teams,myTeams,watching,followed]);
 
   const saveFollow = useCallback(async (team:Team, alerts:boolean) => {
-    if(!userId)return;
+    if(!userId)return false;
     setBusy(team.id); setMessage("");
     try {
       const {error}=await supabase.from("follow_relationships").upsert(
@@ -57,13 +57,12 @@ export default function TeamOnboardingPage() {
       if(error)throw error;
       setFollowed(current=>current.includes(team.id)?current:[...current,team.id]);
       setMessage(alerts?"Following team — review alerts enabled.":"Team followed.");
+      return true;
     } catch(e) {
-      // Compatibility fallback for schemas whose follow table stores alerts separately.
-      try {
-        const {error}=await supabase.from("follow_relationships").insert({follower_id:userId,target_id:team.id,target_type:"team"});
-        if(error)throw error; setFollowed(current=>current.includes(team.id)?current:[...current,team.id]);
-        setMessage("Team followed.");
-      } catch(err) { setMessage(err instanceof Error?err.message:(e instanceof Error?e.message:"Could not follow this team. Please try again.")); }
+      // Do not hide a permission/network failure with a second, less specific
+      // INSERT that could create a follow without the requested alerts.
+      setMessage(e instanceof Error?e.message:"Could not follow this team. Please try again.");
+      return false;
     } finally {setBusy(null);}
   },[userId]);
 
@@ -81,7 +80,13 @@ export default function TeamOnboardingPage() {
         team=(womensTeam||mensTeam) as Team|null;
       }
       if(!team)continue;
-      await saveFollow(team,step===2);
+      const saved=await saveFollow(team,step===2);
+      if(!saved){
+        // The picker is optimistic. Restore the real saved selection on error.
+        if(step===1)setMyTeams(current=>current.filter(value=>value!==id));
+        else setWatching(current=>current.filter(value=>value!==id));
+        continue;
+      }
       if(step===1&&accountType==="player"){
         const {error}=await supabase.from("player_team_affiliations").upsert(
           {user_id:userId,team_id:team.id,relationship:"former",verified:false},
@@ -92,11 +97,14 @@ export default function TeamOnboardingPage() {
     }
   }
 
-  async function finish() {
-    try {await supabase.from("profiles").update({onboarding_completed:true}).eq("id",userId);} catch {}
-    localStorage.setItem("hoopcheck_team_onboarding","complete"); router.replace("/dashboard");
+  function finish() {
+    // Team follows and career selections were persisted when chosen. The
+    // production profiles schema has no onboarding_completed column.
+    if(!userId)return;
+    localStorage.setItem(`hoopcheck_team_onboarding:${userId}`,"complete");
+    router.replace("/dashboard");
   }
-  function skip(){void finish();}
+  function skip(){finish();}
   const selected = step===1?myTeams:watching;
   const title=step===1?"Which teams have you played for?":step===2?"Thinking about signing somewhere?":"Suggested for you";
   if(loading)return <main className="page-shell"><HoopLoading label="Loading HoopCheck…" /></main>;
@@ -108,7 +116,7 @@ export default function TeamOnboardingPage() {
       {step===2&&<p className="muted">Follow teams you’re considering. We’ll turn on alerts for new reviews.</p>}
       {step<3&&<><TeamLeaguePicker mode="team" multiple values={selected} onChangeMany={updatePickerSelection} basketballType={basketballType} label={step===1?"Teams you have played for":"Teams you’re watching"} placeholder="Search by team, abbreviation, city or country" /><p className="hc-request-team">Can’t find your team? <Link href="/support?topic=team-request">Request a team</Link></p></>}
       {step===3&&<><p className="muted">Based on your picks and what the HoopCheck community follows and reviews. Following updates here without leaving this step.</p><div className="hc-suggested-grid">{suggested.map(team=><article key={team.id} className="hc-suggested-card"><TeamLogo name={team.name} logoUrl={team.logo_url} logoBg={team.logo_bg} size={44} className="hc-team-logo" /><strong>{team.name}</strong><small>{team.league_name||"Basketball"} · {team.country||"Global"}</small><button type="button" className={followed.includes(team.id)?"btn dark":"btn"} disabled={busy===team.id||followed.includes(team.id)} onClick={()=>void saveFollow(team,false)}>{busy===team.id?"Following…":followed.includes(team.id)?"Following":"Follow"}</button></article>)}</div><p className="hc-request-team">Can’t find your team? <Link href="/support?topic=team-request">Request a team</Link></p></>}
-      <footer className="hc-onboarding-actions"><button type="button" className="btn dark" onClick={skip}>Skip</button>{step>1&&<button type="button" className="btn dark" onClick={()=>setStep(s=>s-1)}>Back</button>}<button type="button" className="btn" onClick={()=>step<3?setStep(s=>s+1):void finish()}>{step===3?"Finish": "Continue"}</button></footer>
+      <footer className="hc-onboarding-actions"><button type="button" className="btn dark" onClick={skip}>Skip</button>{step>1&&<button type="button" className="btn dark" onClick={()=>setStep(s=>s-1)}>Back</button>}<button type="button" className="btn" onClick={()=>step<3?setStep(s=>s+1):finish()}>{step===3?"Finish": "Continue"}</button></footer>
       {message&&<p role="status" aria-live="polite" className="muted hc-onboarding-message">{message}</p>}
     </section>
   </div></main>;
