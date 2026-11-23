@@ -73,13 +73,13 @@ async function verify(browser,theme,role='fan',paid=true){
  try{
   await page.goto(`${base}/fan-live`);
   if(!canUseGames&&role!=='player'){await page.getByText('Live Games chat is available to eligible Pro and Premium members. Free players retain game predictions.',{exact:true}).waitFor();assert.ok(!calls.some(c=>/fan_live_games|fan_live_chat|game-predictions/.test(c.path)));console.log(`PASS ${role} ${paid?'paid':'free'}: game/chat permission gate`);return;}
-  await page.getByText('Home Men',{exact:true}).waitFor();
+  await page.getByTestId('featured-live-game').getByText('Home Men',{exact:true}).waitFor();
   if(paid&&role==='fan'){
-   await page.getByRole('tab',{name:'Women',exact:true}).click();await page.getByText('Away Women',{exact:true}).waitFor();assert.equal(await page.getByText('Home Men',{exact:true}).count(),0);
-   await page.getByRole('tab',{name:'Men',exact:true}).click();await page.getByText('Home Men',{exact:true}).waitFor();
+   await page.getByRole('tab',{name:'Women',exact:true}).click();await page.getByTestId('featured-live-game').getByText('Away Women',{exact:true}).waitFor();assert.equal(await page.getByText('Home Men',{exact:true}).count(),0);
+   await page.getByRole('tab',{name:'Men',exact:true}).click();await page.getByTestId('featured-live-game').getByText('Home Men',{exact:true}).waitFor();
   }else assert.equal(await page.getByRole('tab',{name:'Women',exact:true}).count(),0);
   await require('./compact-layout.cjs').capture(page,{path:`/tmp/hoopcheck-native-ui/live-directory-${theme}.png`,fullPage:true});
-  await page.getByText('Home Men',{exact:true}).click();
+  await page.getByRole('button').filter({hasText:'Home Men'}).first().click();
   if(!paid){
    await page.getByRole('heading',{name:'Pick the winner',exact:true}).waitFor();
    assert.ok(!calls.some(c=>/fan_live_chat/.test(c.path)));
