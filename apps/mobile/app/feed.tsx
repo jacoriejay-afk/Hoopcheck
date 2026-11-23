@@ -1,9 +1,7 @@
-import { CourtsideBanner } from "../components/CourtsideBanner";
 import { GlassSurface } from "../components/GlassSurface";
-import { BrandLogo } from "../components/BrandLogo";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { FlatList, Linking, Pressable, RefreshControl, Share, Text, TextInput, View, type ViewToken } from "react-native";
+import { Alert, FlatList, Linking, Pressable, RefreshControl, Share, Text, TextInput, View, type ViewToken } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Button } from "../src/primitives";
@@ -17,7 +15,7 @@ import { supabase } from "../src/lib/supabase";
 import { useEntryTheme } from "../src/theme";
 import { useNativeAccount } from "../src/native/useNativeAccount";
 import { useNetwork, requireOnline } from "../src/native/network";
-import { feedAction, isFeedId, moderateFeedText, publishFeedPoll, readFeedChecks, readFeedComments, readFeedPage, readFeedSaved, readSharedFeedPost, toggleFeedCheck, validatedPollOptions, type FeedComment, type FeedCursor, type FeedPost } from "../src/native/feedClient";
+import { deleteOwnedFeedPost, feedAction, isFeedId, moderateFeedText, publishFeedPoll, readFeedChecks, readFeedComments, readFeedPage, readFeedSaved, readSharedFeedPost, toggleFeedCheck, validatedPollOptions, type FeedComment, type FeedCursor, type FeedPost } from "../src/native/feedClient";
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
 type CommentPage = { rows: FeedComment[]; more: boolean; offset: number; loading: boolean; error: string };
 export function FeedScreen({ initialReels = false }: { initialReels?: boolean }) {
@@ -226,6 +224,20 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
     try { await AsyncStorage.setItem(`hoopcheck:reels:hidden:${uid}`, JSON.stringify(nextIds)); }
     catch { setMessage("Video hidden for this session. It could not be saved to your device."); }
   }
+  function confirmDelete(post: FeedPost) {
+    if (!uid || post.author_id !== uid) return;
+    Alert.alert("Delete your post?", "This removes the post from HoopFeed. This cannot be undone.", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Delete post", style: "destructive", onPress: () => void action(`delete:${post.id}`, async () => {
+        await token();
+        await deleteOwnedFeedPost(supabase, uid, post.id);
+        if (viewer.current.uid !== uid || viewer.current.scope !== scope) return;
+        setRows(previous => previous.scope === scope
+          ? { scope, posts: previous.posts.filter(item => item.id !== post.id) }
+          : previous);
+      }) },
+    ]);
+  }
   const textStyle = { color: theme.foreground };
   const linkStyle = { color: theme.accent };
   const touch = { minHeight: 44, paddingHorizontal: 10, borderWidth: 1, borderColor: theme.border, borderRadius: 13, backgroundColor: theme.chip, justifyContent: "center" as const };
@@ -237,10 +249,9 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
   </View>;
   return <SafeAreaView edges={["top", "left", "right", "bottom"]} style={{ flex: 1, backgroundColor: theme.background }}>
     <GlassSurface style={{
-      marginHorizontal: 12, marginTop: 5, marginBottom: 5, padding: 5,
-      borderRadius: 17, flexDirection: "row", alignItems: "center", gap: 7,
+      marginHorizontal: 16, marginTop: 6, marginBottom: 2, padding: 3,
+      borderRadius: 20, flexDirection: "row", alignItems: "center", gap: 6,
     }}>
-      <BrandLogo compact />
       <View accessibilityRole="tablist" style={{ flex: 1, flexDirection: "row", gap: 6 }}>
         {[false, true].map(value => <Pressable key={String(value)}
           accessibilityRole="tab" accessibilityLabel={value ? "Reels" : "HoopFeed"}
@@ -254,19 +265,19 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
           })}>
           <Text style={{ color: reels === value ? theme.accent : theme.foreground,
             fontSize: 14, fontFamily: theme.type.ui.fontFamily, fontWeight: "700" }}>
-            {value ? "REELS" : "HOOPFEED"}
+            {value ? "REELS" : "POSTS"}
           </Text>
         </Pressable>)}
       </View>
     </GlassSurface>
     {message || loadError ? <Text accessibilityLiveRegion="polite"
       style={{ color: theme.muted, paddingHorizontal: 18 }}>{loadError || message}</Text> : null}
-    <FlatList key={reels ? "reels" : "posts"} keyboardDismissMode="on-drag" style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 12, gap: reels ? 0 : theme.spacing.md }} keyboardShouldPersistTaps="handled" initialNumToRender={reels ? 2 : 4} maxToRenderPerBatch={reels ? 2 : 4} windowSize={reels ? 3 : 5} pagingEnabled={reels} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
-      ListHeaderComponent={!reels ? <View style={{ marginBottom: theme.spacing.sm, gap: theme.spacing.sm }}><CourtsideBanner eyebrow="HOOPFEED" title="Your basketball community">Stories, perspectives and conversations from around the game.</CourtsideBanner>
+    <FlatList key={reels ? "reels" : "posts"} keyboardDismissMode="on-drag" style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 9, gap: reels ? 0 : 8 }} keyboardShouldPersistTaps="handled" initialNumToRender={reels ? 2 : 4} maxToRenderPerBatch={reels ? 2 : 4} windowSize={reels ? 3 : 5} pagingEnabled={reels} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
+      ListHeaderComponent={!reels ? <View style={{ marginBottom: 2, gap: 7 }}>
         <Pressable accessibilityRole="button" accessibilityLabel="Meet HoopBot welcome guide"
           onPress={()=>router.push("/feed-welcome")}
-          style={{minHeight:44,paddingHorizontal:12,paddingVertical:7,borderWidth:1,borderRadius:14,
-            borderColor:theme.border,backgroundColor:theme.accentSurface,flexDirection:"row",
+          style={{minHeight:38,paddingHorizontal:10,paddingVertical:4,borderWidth:0,borderRadius:12,
+            backgroundColor:"transparent",flexDirection:"row",
             justifyContent:"space-between",alignItems:"center",gap:8}}>
           <Text style={{color:theme.foreground,fontWeight:"700",fontSize:13}}>Meet HoopBot · Welcome guide</Text>
           <Text style={{color:theme.accent,fontWeight:"700",fontSize:12}}>Open →</Text>
@@ -291,15 +302,26 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
         const commentDraft = drafts.owner === uid ? drafts.values[post.id] ?? "" : "";
         const photos = (Array.isArray(post.image_urls) && post.image_urls.length ? post.image_urls : post.image_url ? [post.image_url] : []).filter((value): value is string => typeof value === "string").slice(0, 4);
         const options = Array.isArray(post.poll_options) ? post.poll_options.filter((value): value is string => typeof value === "string").slice(0, 6).map(value => value.slice(0, 120)) : [];
-        return <View style={reels ? { height, padding: 12 } : undefined}><View testID={`feed-post-${post.id}`} style={{ padding: theme.courtside.card.featuredPadding, gap: theme.spacing.sm, backgroundColor: theme.elevatedSurface, borderWidth: 1, borderColor: theme.glassBorder, borderRadius: theme.courtside.card.radius, borderCurve: "continuous", ...(reels ? { flex: 1 } : {}) }}>
+        return <View style={reels ? { height, padding: 9 } : undefined}><View testID={`feed-post-${post.id}`} style={{
+          padding: reels ? theme.spacing.md : 11, gap: reels ? theme.spacing.sm : 7,
+          backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.glassBorder,
+          borderRadius: reels ? theme.courtside.card.radius : 15,
+          borderCurve: "continuous", ...(reels ? { flex: 1 } : {}),
+        }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <ProfileAvatar url={post.profiles?.avatar_moderation_status === "approved" ? post.profiles.avatar_url : null} name={post.profiles?.display_name || "HoopCheck member"} size={36} />
+            <ProfileAvatar url={post.profiles?.avatar_moderation_status === "approved" ? post.profiles.avatar_url : null} name={post.profiles?.display_name || "HoopCheck member"} size={34} />
             <View style={{ flex: 1, gap: 3 }}><Text style={{ ...textStyle, fontFamily: theme.type.ui.fontFamily, fontWeight: "700", fontSize: 14 }}>{post.profiles?.display_name || "HoopCheck member"}</Text><Text style={{ color: theme.muted, ...theme.type.caption }}>{new Date(post.created_at).toLocaleString()}</Text></View>
+            {post.author_id === uid ? <Pressable accessibilityRole="button" accessibilityLabel="More options for your post"
+              disabled={Boolean(pending[`delete:${post.id}`])} onPress={()=>confirmDelete(post)}
+              style={{minWidth:44,minHeight:44,alignItems:"center",justifyContent:"center",
+                borderRadius:14,backgroundColor:"transparent"}}>
+              <Text style={{color:theme.foreground,fontSize:24,fontWeight:"700"}}>···</Text>
+            </Pressable> : null}
           </View>
           {post.body ? <Text numberOfLines={reels ? 3 : undefined} style={{ ...textStyle, fontSize: 14, lineHeight: 20 }}>{post.body}</Text> : null}
           {post.video_url ? <FeedMedia userId={uid!} postId={post.id} reference={post.video_url} video enabled={focused && visible.has(post.id)} loop={reels} height={reels ? Math.max(120, height - 280) : 280} /> : photos.map(reference => <FeedMedia userId={uid!} key={reference} postId={post.id} reference={reference} enabled={focused && visible.has(post.id)} />)}
           {post.post_kind === "poll" && options.length ? <FeedPoll userId={uid!} postId={post.id} options={options} enabled={canWrite && focused} /> : null}
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, paddingTop: 12, borderTopWidth: 1, borderColor: theme.border }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4, paddingTop: 6, borderTopWidth: 1, borderColor: theme.border }}>
             <FeedCheckAction checked={checks[post.id]?.mine} count={checks[post.id]?.count}
               pulseKey={checkPulses.scope === scope ? checkPulses.values[post.id] ?? 0 : 0}
               disabled={!canWrite || !checks[post.id]} busy={Boolean(pending[`check:${post.id}`])}
