@@ -6,6 +6,7 @@ import { Button, GlassCard } from "../src/primitives";
 import { useEntryTheme } from "../src/theme";
 import { supabase } from "../src/lib/supabase";
 import { requireOnline, useNetwork } from "../src/native/network";
+import { hoopChatAuthAction, withHoopChatDeadline } from "../src/native/hoopChatLoad";
 
 type ContactRequest = {
   id: string; requester_id: string; player_id: string; message: string | null;
@@ -28,47 +29,97 @@ export default function MessagesScreen() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
   const generation = useRef(0);
+  const authIdentity = useRef<string | null>(null);
+  const focused = useRef(false);
+  const reloadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = useCallback(async () => {
     const revision = ++generation.current;
-    setLoading(true);setError("");
+    setLoading(true); setError("");
     try {
-      await requireOnline();
-      const {data:{user},error:authError}=await supabase.auth.getUser();
-      if (authError || !user) throw new Error("Sign in to view your messages.");
-      const { data, error:requestError }=await supabase.from("player_contact_requests")
-        .select("id,requester_id,player_id,message,status,created_at")
-        .or(`requester_id.eq.${user.id},player_id.eq.${user.id}`)
-        .order("created_at",{ascending:false}).limit(100);
-      if (requestError) throw new Error("Messages could not be loaded.");
-      const rows=(data||[]) as ContactRequest[];
-      const accepted=rows.filter(item=>item.status==="accepted").map(item=>item.id);
-      const peerIds=[...new Set(rows.map(item=>item.requester_id===user.id?item.player_id:item.requester_id))];
-      const [history,people]=await Promise.all([
-        accepted.length?supabase.from("player_contact_messages")
-          .select("id,request_id,sender_id,body,created_at").in("request_id",accepted)
-          .order("created_at",{ascending:false}).limit(500) : Promise.resolve({data:[] as ContactMessage[],error:null}),
-        peerIds.length?supabase.from("profiles").select("id,display_name,username").in("id",peerIds)
-          : Promise.resolve({data:[] as ContactName[],error:null})
-      ]);
-      if (revision!==generation.current) return;
-      if (history.error) throw new Error("Conversation history could not be loaded.");
-      setUserId(user.id);setRequests(rows);setMessages((history.data||[]) as ContactMessage[]);
-      setContacts(Object.fromEntries(((people.data||[]) as ContactName[]).map(person=>[person.id,person])));
-      setSelectedId(current=>rows.some(item=>item.id===current)?current:(rows[0]?.id||""));
+      // Auth and request fetches can stall independently. Only the winning,
+      // still-current generation is allowed to update the message screen.
+      const result = await withHoopChatDeadline(async signal => {
+        await requireOnline();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) throw new Error("Sign in to view your messages.");
+        const { data, error: requestError } = await supabase.from("player_contact_requests")
+          .select("id,requester_id,player_id,message,status,created_at")
+          .or(`requester_id.eq.${user.id},player_id.eq.${user.id}`)
+          .order("created_at", { ascending: false }).limit(100).abortSignal(signal);
+        if (requestError) throw new Error("Messages could not be loaded.");
+        const rows = (data || []) as ContactRequest[];
+        const accepted = rows.filter(item => item.status === "accepted").map(item => item.id);
+        const peerIds = [...new Set(rows.map(item => item.requester_id === user.id ? item.player_id : item.requester_id))];
+        const [history, people] = await Promise.all([
+          accepted.length ? supabase.from("player_contact_messages")
+            .select("id,request_id,sender_id,body,created_at").in("request_id", accepted)
+            .order("created_at", { ascending: false }).limit(500).abortSignal(signal)
+            : Promise.resolve({ data: [] as ContactMessage[], error: null }),
+          peerIds.length ? supabase.from("profiles")
+            .select("id,display_name,username").in("id", peerIds).abortSignal(signal)
+            : Promise.resolve({ data: [] as ContactName[], error: null }),
+        ]);
+        if (history.error) throw new Error("Conversation history could not be loaded.");
+        return { userId: user.id, rows, messages: (history.data || []) as ContactMessage[],
+          contacts: (people.data || []) as ContactName[] };
+      });
+      if (revision !== generation.current) return;
+      authIdentity.current = result.userId;
+      setUserId(result.userId); setRequests(result.rows); setMessages(result.messages);
+      setContacts(Object.fromEntries(result.contacts.map(person => [person.id, person])));
+      setSelectedId(current => result.rows.some(item => item.id === current) ? current : (result.rows[0]?.id || ""));
     } catch (failure) {
-      if (revision===generation.current) setError(failure instanceof Error?failure.message:"Unable to load messages.");
-    } finally {if(revision===generation.current)setLoading(false);}
+      if (revision === generation.current) setError(failure instanceof Error ? failure.message : "Unable to load messages.");
+    } finally {
+      if (revision === generation.current) setLoading(false);
+    }
   }, []);
 
   useFocusEffect(useCallback(() => {
+    focused.current = true;
     void load();
-    return ()=>{generation.current++;setRequests([]);setMessages([]);setContacts({});setUserId("");setSelectedId("");};
+    return () => {
+      focused.current = false;
+      if (reloadTimer.current !== null) clearTimeout(reloadTimer.current);
+      reloadTimer.current = null;
+      generation.current++;
+      setRequests([]); setMessages([]); setContacts({}); setUserId(""); setSelectedId("");
+    };
   }, [load]));
-  useEffect(()=>{
-    const {data}=supabase.auth.onAuthStateChange(()=>{generation.current++;setRequests([]);setMessages([]);setUserId("");});
-    return ()=>data.subscription.unsubscribe();
-  },[]);
+
+  useEffect(() => {
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      const nextUserId = session?.user.id ?? null;
+      const action = hoopChatAuthAction(event, authIdentity.current, nextUserId);
+      if (action === "ignore") return;
+      if (reloadTimer.current !== null) clearTimeout(reloadTimer.current);
+      reloadTimer.current = null;
+      generation.current++;
+      authIdentity.current = nextUserId;
+      setRequests([]); setMessages([]); setContacts({}); setUserId(""); setSelectedId(""); setDraft("");
+      if (action === "clear") {
+        setLoading(false);
+        setError("Sign in to view your messages.");
+      } else {
+        setError("");
+        if (focused.current) {
+          setLoading(true);
+          // Never start a Supabase request synchronously from its Auth callback.
+          reloadTimer.current = setTimeout(() => {
+            reloadTimer.current = null;
+            if (focused.current && authIdentity.current === nextUserId) void load();
+          }, 0);
+        } else {
+          setLoading(false);
+        }
+      }
+    });
+    return () => {
+      data.subscription.unsubscribe();
+      if (reloadTimer.current !== null) clearTimeout(reloadTimer.current);
+    };
+  }, [load]);
 
   const peerId=(request:ContactRequest)=>request.requester_id===userId?request.player_id:request.requester_id;
   const name=(request:ContactRequest)=>{
