@@ -2,8 +2,8 @@ import { HomeCourtside } from "../components/HomeCourtside";
 import { RoleHub } from "../components/RoleHub";
 import { useNativeAccount } from "../src/native/useNativeAccount";
 import { GlassSurface } from "../components/GlassSurface";
-import { BrandLogo } from "../components/BrandLogo";
-import { LinearGradient } from "expo-linear-gradient";
+import { GlassHeader } from "../components/glass/GlassHeader";
+import { GlassBackdrop } from "../components/glass/GlassBackdrop";
 import { ExploreLinks } from "../components/ExploreLinks";
 import { Input, Chip, SectionHeader } from "../src/primitives";
 import { useEffect, useState } from "react";
@@ -12,7 +12,7 @@ import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../src/lib/supabase";
-import { useEntryTheme } from "../src/theme";
+import { GlassThemeScope, useEntryTheme } from "../src/theme";
 
 const accountLinks = [
   { path: "/about", label: "About HoopCheck" },
@@ -24,7 +24,8 @@ const accountLinks = [
   { path: "/privacy-center", label: "Privacy Request Center" },
 ];
 
-export default function DashboardScreen() {
+export default function DashboardScreen() { return <GlassThemeScope><DashboardContent /></GlassThemeScope>; }
+function DashboardContent() {
   const router = useRouter();
   const theme = useEntryTheme();
   const [search, setSearch] = useState("");
@@ -68,28 +69,14 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView edges={["left", "right", "bottom"]} style={[styles.safe, { backgroundColor: theme.background }]}>
-      <ScrollView keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled" testID="dashboard-scroll" contentContainerStyle={styles.scroll}>
+      <GlassBackdrop screen="home" />
+      <GlassHeader />
+      <ScrollView keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled" testID="dashboard-scroll" contentContainerStyle={[styles.scroll, { paddingBottom: 138 }]}>
         <View style={styles.content}>
-          <View style={{borderRadius:19,overflow:"hidden",borderWidth:1,borderColor:theme.dark?"#FF7C38":"#EA7138",
-            backgroundColor:"#0F1C30",marginBottom:11}}>
-            <LinearGradient colors={["#121E33","#182D49","#2D2335"]}
-              start={{x:0,y:0}} end={{x:1,y:1}} style={StyleSheet.absoluteFill}/>
-            <View style={{minHeight:62,paddingHorizontal:13,paddingVertical:9,
-              flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:8}}>
-              <BrandLogo onHero />
-              <Pressable accessibilityRole="button" accessibilityLabel="Open account menu"
-                onPress={()=>router.push("/account")}
-                style={({pressed})=>({width:44,height:44,borderRadius:14,borderWidth:1,
-                  borderColor:"rgba(255,255,255,.32)",backgroundColor:"rgba(255,255,255,.09)",
-                  alignItems:"center",justifyContent:"center",opacity:pressed?.72:1})}>
-                <Ionicons name="menu" size={27} color="#FFFFFF" />
-              </Pressable>
-            </View>
-          </View>
           <GlassSurface style={{ flexDirection:"row",alignItems:"center",marginBottom:14,
             borderRadius:17,paddingLeft:12,paddingRight:5,minHeight:50,
-            backgroundColor:theme.dark?"#1A2940":"#FFFFFF",
-            borderColor:theme.dark?"rgba(113,173,236,.42)":theme.border }}>
+            backgroundColor:theme.glassFill,
+            borderColor:theme.glassBorder }}>
             <Ionicons name="search-outline" size={21} color={theme.accent} />
             <Input style={{ flex:1,minWidth:0,backgroundColor:"transparent",
               borderWidth:0,fontSize:14,color:theme.foreground }}
