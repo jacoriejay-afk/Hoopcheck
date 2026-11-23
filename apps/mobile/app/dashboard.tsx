@@ -1,15 +1,16 @@
-import { HomeCourtside } from "../components/HomeCourtside";
+import { HomeCourtside, HomeStagger } from "../components/HomeCourtside";
+import { PressableScale } from "../components/PressableScale";
 import { RoleHub } from "../components/RoleHub";
 import { useNativeAccount } from "../src/native/useNativeAccount";
 import { GlassSurface } from "../components/GlassSurface";
 import { BrandLogo } from "../components/BrandLogo";
-import { LinearGradient } from "expo-linear-gradient";
-import { ExploreLinks } from "../components/ExploreLinks";
+import Animated, { Extrapolation, interpolate, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue } from "react-native-reanimated";
+import { useMotionSetting } from "../src/motion/Provider";
 import { Input, Chip, SectionHeader } from "../src/primitives";
 import { useEffect, useState } from "react";
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../src/lib/supabase";
 import { useEntryTheme } from "../src/theme";
@@ -30,7 +31,28 @@ export default function DashboardScreen() {
   const [search, setSearch] = useState("");
   const [busy, setBusy] = useState(false);
   const [email, setEmail] = useState("");
-  const { account: currentAccount } = useNativeAccount();
+  const { account: currentAccount, loading: accountLoading } = useNativeAccount();
+  const insets = useSafeAreaInsets();
+  const reduced = useMotionSetting();
+  const scrollY = useSharedValue(0);
+  // Only a worklet handles scrolling. Reserve the full header footprint below.
+  const onHomeScroll = useAnimatedScrollHandler({
+    onScroll: event => { scrollY.value = event.contentOffset.y; },
+  });
+  const headerStyle = useAnimatedStyle(() => ({
+    height: insets.top + (reduced ? (scrollY.value > 55 ? 54 : 86) :
+      interpolate(scrollY.value, [0, 100], [86, 54], Extrapolation.CLAMP)),
+  }));
+  const expandedStyle = useAnimatedStyle(() => ({
+    opacity: reduced ? (scrollY.value > 55 ? 0 : 1) :
+      interpolate(scrollY.value, [0, 65], [1, 0], Extrapolation.CLAMP),
+    transform: [{ scale: reduced ? 1 :
+      interpolate(scrollY.value, [0, 100], [1, 0.83], Extrapolation.CLAMP) }],
+  }));
+  const compactStyle = useAnimatedStyle(() => ({
+    opacity: reduced ? (scrollY.value > 55 ? 1 : 0) :
+      interpolate(scrollY.value, [35, 90], [0, 1], Extrapolation.CLAMP),
+  }));
   // Display the verified profile role, not editable auth metadata.
   const accountType = currentAccount?.user.accountType.replaceAll("_", " ") || "";
 
@@ -68,24 +90,10 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView edges={["left", "right", "bottom"]} style={[styles.safe, { backgroundColor: theme.background }]}>
-      <ScrollView keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled" testID="dashboard-scroll" contentContainerStyle={styles.scroll}>
+      <Animated.ScrollView keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled"
+        testID="dashboard-scroll" onScroll={onHomeScroll} scrollEventThrottle={16}
+        contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 86 + 12 }]}>
         <View style={styles.content}>
-          <View style={{borderRadius:19,overflow:"hidden",borderWidth:1,borderColor:theme.dark?"#FF7C38":"#EA7138",
-            backgroundColor:"#0F1C30",marginBottom:11}}>
-            <LinearGradient colors={["#121E33","#182D49","#2D2335"]}
-              start={{x:0,y:0}} end={{x:1,y:1}} style={StyleSheet.absoluteFill}/>
-            <View style={{minHeight:62,paddingHorizontal:13,paddingVertical:9,
-              flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:8}}>
-              <BrandLogo onHero />
-              <Pressable accessibilityRole="button" accessibilityLabel="Open account menu"
-                onPress={()=>router.push("/account")}
-                style={({pressed})=>({width:44,height:44,borderRadius:14,borderWidth:1,
-                  borderColor:"rgba(255,255,255,.32)",backgroundColor:"rgba(255,255,255,.09)",
-                  alignItems:"center",justifyContent:"center",opacity:pressed?.72:1})}>
-                <Ionicons name="menu" size={27} color="#FFFFFF" />
-              </Pressable>
-            </View>
-          </View>
           <GlassSurface style={{ flexDirection:"row",alignItems:"center",marginBottom:14,
             borderRadius:17,paddingLeft:12,paddingRight:5,minHeight:50,
             backgroundColor:theme.dark?"#1A2940":"#FFFFFF",
@@ -106,9 +114,15 @@ export default function DashboardScreen() {
             </Pressable>
           </GlassSurface>
           <HomeCourtside />
-          <RoleHub />
-          <SectionHeader>Explore basketball</SectionHeader>
-          <View style={styles.directories}><ExploreLinks /></View>
+          {!accountLoading && currentAccount ? <>
+            <HomeStagger index={7}><RoleHub /></HomeStagger>
+            <HomeStagger index={8}>
+              <View style={{ gap: 10 }}>
+                <SectionHeader>Explore basketball</SectionHeader>
+                <View style={styles.directories}><HomeExploreLinks /></View>
+              </View>
+            </HomeStagger>
+          </> : null}
 
           <View style={styles.sectionTitle}><SectionHeader>Account &amp; support</SectionHeader></View>
           <View style={[styles.account, panel]}>
@@ -135,7 +149,24 @@ export default function DashboardScreen() {
             <Text style={[styles.rowLabel, { color: theme.accent }]}>{busy ? "Signing out…" : "Sign out"}</Text>
           </Pressable>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
+      <Animated.View testID="home-sticky-header" style={[styles.stickyHeader,
+        { backgroundColor: theme.surface, borderBottomColor: theme.border }, headerStyle]}>
+        <Animated.View pointerEvents="none" style={[styles.expandedBrand, { top: insets.top + 17 }, expandedStyle]}>
+          <BrandLogo />
+        </Animated.View>
+        <Animated.View pointerEvents="none" style={[styles.compactBrand, { top: insets.top + 10 }, compactStyle]}>
+          <BrandLogo compact />
+          <Text style={{ color: theme.foreground, fontSize: 16, fontWeight: "800" }}>HoopCheck</Text>
+        </Animated.View>
+        <Pressable accessibilityRole="button" accessibilityLabel="Open account menu"
+          onPress={() => router.push("/account")}
+          style={({ pressed }) => [styles.headerMenu, { top: insets.top + 8,
+            borderColor: theme.border, backgroundColor: theme.elevatedSurface,
+            opacity: pressed ? .75 : 1 }]}>
+          <Ionicons name="menu" size={24} color={theme.foreground} />
+        </Pressable>
+      </Animated.View>
     </SafeAreaView>
   );
 }
@@ -143,6 +174,14 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   scroll: { flexGrow: 1, padding: 12 },
+  stickyHeader: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 20,
+    borderBottomWidth: 1, overflow: "hidden", elevation: 5 },
+  expandedBrand: { position: "absolute", left: 12, height: 46, justifyContent: "center",
+    alignItems: "flex-start" },
+  compactBrand: { position: "absolute", left: 12, height: 34,
+    flexDirection: "row", gap: 7, alignItems: "center" },
+  headerMenu: { position: "absolute", right: 12, width: 44, height: 44, borderRadius: 12,
+    borderWidth: 1, alignItems: "center", justifyContent: "center" },
   content: { width: "100%", maxWidth: 640, alignSelf: "center" },
   title: { fontSize: 32, fontWeight: "900", letterSpacing: -0.7, marginBottom: 16 },
   directories: { gap: 8, marginTop: 12 },
@@ -159,3 +198,39 @@ const styles = StyleSheet.create({
   linkLabel: { flex: 1, fontSize: 15, fontWeight: "600" },
   signOut: { minHeight: 48, alignItems: "center", justifyContent: "center", marginTop: 12 },
 });
+
+const homeExplore = [
+  { href: "/teams", title: "Teams", detail: "Research teams before you sign", icon: "basketball-outline" },
+  { href: "/womens", title: "Women’s teams", detail: "Explore women’s basketball", icon: "people-outline" },
+  { href: "/coaches", title: "Coaches", detail: "Check coaching reputations", icon: "school-outline" },
+  { href: "/leagues", title: "Leagues", detail: "Compare competitions", icon: "trophy-outline" },
+  { href: "/players", title: "Players", detail: "Discover basketball players", icon: "person-outline" },
+  { href: "/team-hub/groups", title: "HoopGroups", detail: "Find your club’s fan community", icon: "people-outline" },
+  { href: "/fan-live", title: "Live Games", detail: "Games, chat and predictions", icon: "radio-outline" },
+  { href: "/feed", title: "HoopFeed", detail: "Community, comments and Reels", icon: "basketball-outline" },
+] as const;
+
+/** Home-only rows; public/shared ExploreLinks remains untouched. */
+function HomeExploreLinks() {
+  const theme = useEntryTheme();
+  const router = useRouter();
+  return <View style={{ gap: theme.spacing.sm }}>{homeExplore.map(item =>
+    <PressableScale key={item.href} accessibilityRole="link"
+      testID={`directory-${item.title.toLowerCase()}`}
+      accessibilityLabel={item.title} onPress={() => router.push(item.href)}
+      style={{ flexDirection: "row", alignItems: "center", minHeight: 70,
+        padding: theme.spacing.md, gap: theme.spacing.md, borderRadius: theme.radius.control,
+        borderCurve: "continuous", borderWidth: 1, borderColor: theme.border,
+        backgroundColor: theme.surface }}>
+      <View style={{ width: 44, height: 44, borderRadius: theme.radius.control,
+        alignItems: "center", justifyContent: "center", backgroundColor: theme.accentSurface }}>
+        <Ionicons name={item.icon} size={22} color={theme.accent} />
+      </View>
+      <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
+        <Text style={{ color: theme.foreground, ...theme.type.section }}>{item.title}</Text>
+        <Text style={{ color: theme.muted, fontSize: 12, lineHeight: 17 }}>{item.detail}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={17} color={theme.foreground} />
+    </PressableScale>
+  )}</View>;
+}
