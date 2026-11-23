@@ -68,10 +68,9 @@ export function HoopReelCard({
   return <View testID="hoopreels-immersive-card" style={{ height, backgroundColor: "#05080E", overflow: "hidden" }}>
     {post.video_url ? <View style={StyleSheet.absoluteFill}>
       <FeedMedia userId={userId} postId={post.id} reference={post.video_url} video
-        height={height} enabled={ready} loop playing={playing} muted={muted} immersive />
+        height={height} enabled={ready} loop playing={playing} muted={muted} immersive
+        videoActionLabel={paused ? "Play Reel" : "Pause Reel"} onVideoPress={() => setPaused(value => !value)} />
     </View> : null}
-    <Pressable accessibilityRole="button" accessibilityLabel={paused ? "Play Reel" : "Pause Reel"}
-      onPress={() => setPaused(value => !value)} style={StyleSheet.absoluteFill} />
     <LinearGradient pointerEvents="none" accessible={false}
       colors={["rgba(4,7,13,0.66)", "rgba(4,7,13,0.03)", "rgba(4,7,13,0.06)", "rgba(4,7,13,0.92)"]}
       locations={[0, .18, .53, 1]} style={StyleSheet.absoluteFill} />
