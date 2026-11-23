@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Image, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { FeedVideo } from "./FeedVideo";
 import { supabase } from "../src/lib/supabase";
 import { authorizedFeedMedia } from "../src/native/feedClient";
 import { useEntryTheme } from "../src/theme";
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
 const project = process.env.EXPO_PUBLIC_SUPABASE_URL || "";
-export function FeedMedia({ userId, postId, reference, video = false, enabled, loop = false, height = 300 }: { userId: string; height?: number; postId: string; reference: string; video?: boolean; enabled: boolean; loop?: boolean }) {
+export function FeedMedia({ userId, postId, reference, video = false, enabled, loop = false, height = 300, playing = true, muted, immersive = false, onVideoPress, videoActionLabel }: { userId: string; height?: number; postId: string; reference: string; video?: boolean; enabled: boolean; loop?: boolean; playing?: boolean; muted?: boolean; immersive?: boolean; onVideoPress?: () => void; videoActionLabel?: string }) {
   const theme = useEntryTheme();
   const [source, setSource] = useState<{ owner: string; reference: string; uri: string } | null>(null);
   const [imageSize, setImageSize] = useState<{ reference: string; ratio: number } | null>(null);
@@ -44,7 +44,7 @@ export function FeedMedia({ userId, postId, reference, video = false, enabled, l
   }, [uri, video, reference, fail]);
   const ratio = imageSize?.reference === reference ? imageSize.ratio : 4 / 3;
   const mediaHeight = video ? height : Math.min(380, Math.max(120, (width || 320) / ratio));
-  return <View onLayout={event => setWidth(event.nativeEvent.layout.width)} style={{ height: mediaHeight, backgroundColor: theme.elevatedSurface, borderRadius: 14, overflow: "hidden", justifyContent: "center" }}>
-    {!enabled ? <Text style={{ color: theme.muted, padding: 16 }}>Media loads when visible.</Text> : error ? <Pressable accessibilityRole="button" onPress={() => setRevision(value => value + 1)} style={{ minHeight: 48, padding: 16 }}><Text style={{ color: theme.accent }}>Media unavailable. Tap to retry.</Text></Pressable> : !uri ? <ActivityIndicator accessibilityLabel="Authorizing media" color={theme.accent} /> : video ? <FeedVideo height={height} uri={uri} enabled={enabled} loop={loop} onFailure={fail} /> : <><Image alt="HoopFeed photo" accessibilityLabel="HoopFeed photo" source={{ uri }} style={{ width: "100%", height: mediaHeight }} resizeMode="contain" onLoad={() => setLoadedUri(uri)} onError={fail} />{loadedUri !== uri ? <ActivityIndicator accessibilityLabel="Loading photo" color={theme.accent} style={{ position: "absolute", alignSelf: "center" }} /> : null}</>}
+  return <View onLayout={event => setWidth(event.nativeEvent.layout.width)} style={{ height: mediaHeight, backgroundColor: immersive ? "#05080E" : theme.elevatedSurface, borderRadius: immersive ? 0 : 14, overflow: "hidden", justifyContent: "center" }}>
+    {!enabled ? <Text style={{ color: theme.muted, padding: 16 }}>Media loads when visible.</Text> : error ? <Pressable accessibilityRole="button" onPress={() => setRevision(value => value + 1)} style={{ minHeight: 48, padding: 16 }}><Text style={{ color: theme.accent }}>Media unavailable. Tap to retry.</Text></Pressable> : !uri ? <ActivityIndicator accessibilityLabel="Authorizing media" color={theme.accent} /> : video ? <><FeedVideo height={height} uri={uri} enabled={enabled && playing} loop={loop} muted={muted} controls={!immersive} onFailure={fail} />{onVideoPress ? <Pressable accessibilityRole="button" accessibilityLabel={videoActionLabel || "Pause or play video"} onPress={onVideoPress} style={StyleSheet.absoluteFill} /> : null}</> : <><Image alt="HoopFeed photo" accessibilityLabel="HoopFeed photo" source={{ uri }} style={{ width: "100%", height: mediaHeight }} resizeMode="contain" onLoad={() => setLoadedUri(uri)} onError={fail} />{loadedUri !== uri ? <ActivityIndicator accessibilityLabel="Loading photo" color={theme.accent} style={{ position: "absolute", alignSelf: "center" }} /> : null}</>}
   </View>;
 }
