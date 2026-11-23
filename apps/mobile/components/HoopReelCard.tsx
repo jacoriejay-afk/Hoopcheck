@@ -19,6 +19,7 @@ type ReelProps = {
   saveBusy: boolean;
   blockBusy: boolean;
   onBack: () => void;
+  onCreate: () => void;
   onCheck: () => void;
   onComments: () => void;
   onShare: () => void;
@@ -54,7 +55,7 @@ function ReelAction({ icon, label, detail, onPress, disabled = false, selected =
  * remain owned by the existing HoopFeed screen and its authorized data clients. */
 export function HoopReelCard({
   post, userId, height, active, ready, canWrite, check, saved, checkBusy, saveBusy, blockBusy,
-  onBack, onCheck, onComments, onShare, onSave, onReport, onHide, onHideCreator, onBlockCreator,
+  onBack, onCreate, onCheck, onComments, onShare, onSave, onReport, onHide, onHideCreator, onBlockCreator,
 }: ReelProps) {
   const [paused, setPaused] = useState(false);
   const [muted, setMuted] = useState(true);
@@ -85,6 +86,12 @@ export function HoopReelCard({
         <Text style={{ color: ink, fontWeight: "900", letterSpacing: .6, fontSize: 14 }}>REELS</Text>
       </Pressable>
       <View style={{ flexDirection: "row", gap: 7 }}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Create video post for HoopReels"
+          accessibilityState={{ disabled: !canWrite }} disabled={!canWrite} onPress={onCreate}
+          style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: glass, borderWidth: 1,
+            opacity: canWrite ? 1 : .4, borderColor: border, alignItems: "center", justifyContent: "center" }}>
+          <Ionicons name="add" size={26} color={ink} />
+        </Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel={muted ? "Unmute Reel" : "Mute Reel"}
           onPress={() => setMuted(value => !value)}
           style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: glass, borderWidth: 1,
