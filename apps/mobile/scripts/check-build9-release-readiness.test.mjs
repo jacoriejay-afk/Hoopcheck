@@ -27,10 +27,30 @@ test("Build 9 release requires distinct status evidence and pinned source commit
   assert.ok(manifest.gates.some(g=>g.id==="source_main_reconciliation" && g.status==="PASS" && g.evidence?.endsWith("/pull/875")));
   assert.ok(manifest.gates.some(g=>g.id==="startup_passport_fixes" && g.status==="PASS" && g.evidence?.endsWith("/runs/45005943667")));
   assert.ok(manifest.gates.some(g=>g.id==="exact_head_all_ci" && g.status==="HOLD"), "Old simulator PASS must not certify a newer release head");
-  assert.ok(manifest.gates.some(g=>g.id==="apple_bundle_signing" && g.status==="HOLD"));
+  assert.ok(manifest.gates.some(g=>g.id==="apple_bundle_signing" && g.status==="PASS"
+    && g.evidence === manifest.build.signed_ios_archive_url));
   assert.ok(manifest.gates.some(g=>g.id==="build7_8_compatibility" && g.status==="HOLD"));
   assert.ok(manifest.gates.some(g=>g.id==="production_schema_rehearsal"
     && g.status==="WAIVED" && /unverified/i.test(g.details) && /^https:\/\//.test(g.evidence)),
     "Explicit schema waiver must disclose residual risk and link owner's decision");
   assert.ok(manifest.gates.some(g=>g.id==="owner_mfa_signed_http" && g.status==="HOLD"));
+});
+
+test("Build 9 keeps signed archive evidence separate from public release clearance", () => {
+  assert.equal(manifest.build.last_verified_store_build, 9);
+  assert.equal(manifest.build.signed_ios_commit, "cf29f4190e42dcbcd86ddbcac4547415fe0227f1");
+  assert.match(manifest.build.signed_ios_build_id, /^[0-9a-f-]{36}$/i);
+  assert.match(manifest.build.signed_ios_archive_url, /^https:\/\/expo\.dev\/artifacts\/eas\/.+\.ipa$/);
+  assert.match(manifest.build.app_store_submission_id, /^[0-9a-f-]{36}$/i);
+  assert.equal(manifest.release_commit, null, "Signing a binary does not approve production release");
+  assert.equal(manifest.gates.find(g => g.id === "exact_head_all_ci").status, "HOLD", "Changing the release manifest requires fresh exact-head CI");
+});
+
+test("Build 9 forbids reusing a signed IPA for a different release SHA", () => {
+  const x = run(["--release"], {
+    HOOPCHECK_APPROVED_IOS_BUNDLE_ID: manifest.build.bundle_id,
+    BUILD9_RELEASE_COMMIT: "a".repeat(40),
+  });
+  assert.equal(x.status, 2);
+  assert.match(x.stderr, /Release commit is not the source SHA of the signed iOS IPA/);
 });
