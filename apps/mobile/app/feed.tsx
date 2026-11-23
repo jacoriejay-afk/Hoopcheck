@@ -1,4 +1,3 @@
-import { CourtsideBanner } from "../components/CourtsideBanner";
 import { GlassSurface } from "../components/GlassSurface";
 import { GlassHeader } from "../components/glass/GlassHeader";
 import { GlassBackdrop } from "../components/glass/GlassBackdrop";
@@ -7,7 +6,7 @@ import { glassTokens as glass } from "../src/glassTheme";
 import { LinearGradient } from "expo-linear-gradient";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { FlatList, Linking, Pressable, RefreshControl, Share, Text, TextInput, View, type ViewToken } from "react-native";
+import { FlatList, ScrollView, Linking, Pressable, RefreshControl, Share, Text, TextInput, View, type ViewToken } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Button } from "../src/primitives";
