@@ -22,13 +22,13 @@ const variants = [
    repaired.replace(acl, '-- Negative control: private-column restriction deliberately omitted.'),
    /private column still readable: current_country/],
   ['invoker-owner-helper',
-   repaired.replace(acl, 'ALTER FUNCTION hoopcheck_security.own_profile() SECURITY INVOKER;\\n' + acl),
+   repaired.replace(acl, 'ALTER FUNCTION hoopcheck_security.own_profile() SECURITY INVOKER;\n' + acl),
    new RegExp("Private-column phase 2 requires protected owner/MFA projection")],
   ['privileged-public-wrapper',
-   repaired.replace(acl, 'ALTER FUNCTION public.get_own_profile() SECURITY DEFINER;\\n' + acl),
+   repaired.replace(acl, 'ALTER FUNCTION public.get_own_profile() SECURITY DEFINER;\n' + acl),
    new RegExp("Private-column phase 2 requires protected owner/MFA projection")],
   ['missing-owner-helper-execute',
-   repaired.replace(acl, 'REVOKE EXECUTE ON FUNCTION hoopcheck_security.own_profile() FROM authenticated;\\n' + acl),
+   repaired.replace(acl, 'REVOKE EXECUTE ON FUNCTION hoopcheck_security.own_profile() FROM authenticated;\n' + acl),
    new RegExp("Private-column phase 2 requires protected owner/MFA projection")],
 ];
 for (const [name, sql, expected] of variants) {
