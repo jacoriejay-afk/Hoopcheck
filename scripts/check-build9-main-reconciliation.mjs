@@ -44,7 +44,7 @@ for(const required of [
 
 const feed=read("apps/mobile/app/feed.tsx");
 for(const required of [
-  "CourtsideBanner","BrandLogo","MediaPostComposer","publishFeedPoll",
+  "GlassSurface","HoopCheckLoading","MediaPostComposer","publishFeedPoll","deleteOwnedFeedPost",
   "blockAccount(","hideCreator(","hideReel(","blockedCreators.failed",
   "hoopcheck:reels:hidden:","hoopcheck:reels:muted-creators:",
   "Report this Reel","Block this HoopCheck account"
