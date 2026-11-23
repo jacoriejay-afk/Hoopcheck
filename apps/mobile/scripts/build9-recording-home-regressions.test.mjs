@@ -21,7 +21,7 @@ test("Home header stays pinned below iPhone's top safe area", () => {
 });
 
 test("Home shows followed teams once, labels loading, and does not lose account scope checks", () => {
-  assert.equal((home.match(/title="MY TEAMS"/g) || []).length, 1);
+  assert.equal((home.match(/title="My Teams"/g) || []).length, 1);
   assert.doesNotMatch(home, /title="TEAMS YOU FOLLOW"/);
   assert.doesNotMatch(home, /accessibilityLabel="Find more teams"/);
   assert.match(home, /Loading followed teams/);
