@@ -29,7 +29,7 @@ import { Stack, useGlobalSearchParams, usePathname, useRouter, useSegments } fro
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { supabase } from "../src/lib/supabase";
-import { useEntryTheme } from "../src/theme";
+import { GlassThemeScope, useEntryTheme } from "../src/theme";
 import { glassTokens as glass } from "../src/glassTheme";
 import * as SystemUI from "expo-system-ui";
 void SystemUI.setBackgroundColorAsync(glass.background).catch(() => {});
@@ -146,7 +146,7 @@ function RootLayout() {
         <Stack.Screen name="leagues" options={{ title: "Leagues" }} />
         <Stack.Screen name="leagues/[id]" options={{ title: "League profile" }} />
       </Stack></RouteFade>
-      {signedIn ? <TabBar /> : null}<AppLock authReady={sessionReady} userId={session.userId} startupError={session.error} retryStartup={() => { void bootstrap.current?.retry(); }} protectedScreen={signedIn && !["sign-in", "sign-up", "reset-password", "auth"].includes(segments[0] ?? "")} />
+      {signedIn ? glassRoute ? <GlassThemeScope><TabBar /></GlassThemeScope> : <TabBar /> : null}<AppLock authReady={sessionReady} userId={session.userId} startupError={session.error} retryStartup={() => { void bootstrap.current?.retry(); }} protectedScreen={signedIn && !["sign-in", "sign-up", "reset-password", "auth"].includes(segments[0] ?? "")} />
       <AppOpening ready={sessionReady && (fontsLoaded || Boolean(fontError))}
         disabled={["auth", "reset-password"].includes(segments[0] ?? "")} />
     </BottomSheetModalProvider></NativeDraftProvider></StoreKitProvider></NativeAccountProvider></MfaSessionProvider></NetworkProvider></DevicePreferences></MotionProvider></SafeAreaProvider></GestureHandlerRootView>
