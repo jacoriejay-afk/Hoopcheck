@@ -11,11 +11,11 @@ type Props = Omit<PressableProps, "children"> & {
 
 /**
  * Home-only tactile target. Press recognition is delayed so a ScrollView can
- * claim a drag before either the spring or the haptic fires.
+ * claim a drag before the spring fires. Haptics occur only on completed taps.
  * This is not a responder on the scroll container.
  */
 export function PressableScale({
-  children, containerStyle, onPressIn, onPressOut, disabled,
+  children, containerStyle, onPress, onPressIn, onPressOut, disabled,
   unstable_pressDelay = 160, ...props
 }: Props) {
   const reduced = useMotionSetting();
@@ -31,10 +31,14 @@ export function PressableScale({
 
   return <Animated.View style={[containerStyle, animatedStyle]}>
     <Pressable {...props} disabled={disabled} unstable_pressDelay={unstable_pressDelay}
+      onPress={event => {
+        // Only a completed tap is recognized: drags cancelled by ScrollView never vibrate.
+        if (!disabled) void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+        onPress?.(event);
+      }}
       onPressIn={event => {
         if (!disabled) {
           scale.set(reduced ? 1 : withSpring(0.97, spring));
-          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
         }
         onPressIn?.(event);
       }}
