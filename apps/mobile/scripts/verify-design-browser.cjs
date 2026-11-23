@@ -98,7 +98,9 @@ const uid='11111111-1111-4111-8111-111111111111', team='22222222-2222-4222-8222-
   await court.getByRole('button',{name:'Customize My Court',exact:true}).click();
   await court.getByRole('checkbox',{name:'Leagues',exact:true}).waitFor();
   await court.getByRole('button',{name:'Finish customizing My Court',exact:true}).click();
-  await page.getByRole('button',{name:'Open account menu',exact:true}).waitFor();
+  await page.getByTestId('glass-safe-header').waitFor();
+  await page.getByTestId('glass-safe-header').getByRole('button',{name:'Alerts',exact:true}).waitFor();
+  await page.getByRole('tab',{name:'Account',exact:true}).waitFor();
   assert.equal(await page.getByText('43%',{exact:false}).count(),0,'Do not show mockup profile metrics');
   assert.equal(await page.getByRole('link',{name:'Review a Team',exact:true}).count(),0,'Fans never receive player-review CTA');
 
