@@ -30,6 +30,9 @@ test("Build 11 HoopFeed is compact, keeps Posts/Reels and owner-only confirmed d
   assert.match(feed,/features\.canWriteHoopFeed/);
   assert.match(feed,/features\.canReadHoopFeed/);
   assert.match(feed,/HoopCheckLoading/);
+  assert.match(feed,/height=\{reels \? Math\.max\(120, height - 280\) : 220\}/);
+  const media=read("../components/FeedMedia.tsx");
+  assert.match(media,/Math\.min\(260, Math\.max\(120,/);
 });
 
 test("Build 11 Account owns its header and groups account, membership, safety, workspaces", () => {
