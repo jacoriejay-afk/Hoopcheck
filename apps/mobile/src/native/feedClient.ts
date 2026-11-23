@@ -150,3 +150,12 @@ export async function readFeedSaved(client: SupabaseClient, userId: string, ids:
   if (result.error) throw new Error("Saved post state unavailable");
   return (result.data ?? []).map(row => row.post_id as string).filter(id => ids.includes(id));
 }
+
+/** Owner-scoped post deletion. A zero-row response is not a confirmed delete. */
+export async function deleteOwnedFeedPost(client: SupabaseClient, userId: string, postId: string) {
+  if (!uuid.test(userId) || !uuid.test(postId)) throw new Error("Invalid post deletion request");
+  const result = await client.from("feed_posts").delete().eq("id", postId)
+    .eq("author_id", userId).select("id");
+  if (result.error || !Array.isArray(result.data) || result.data.length !== 1 || result.data[0]?.id !== postId)
+    throw new Error("This post could not be deleted. Try refreshing the feed.");
+}
