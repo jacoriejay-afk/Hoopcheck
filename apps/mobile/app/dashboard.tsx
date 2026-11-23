@@ -151,20 +151,20 @@ export default function DashboardScreen() {
         </View>
       </Animated.ScrollView>
       <Animated.View testID="home-sticky-header" style={[styles.stickyHeader,
-        { backgroundColor: theme.surface, borderBottomColor: theme.border }, headerStyle]}>
+        { backgroundColor: "#111E34", borderBottomColor: theme.dark ? "#30455C" : "#263A54" }, headerStyle]}>
         <Animated.View pointerEvents="none" style={[styles.expandedBrand, { top: insets.top + 17 }, expandedStyle]}>
-          <BrandLogo />
+          <BrandLogo onHero />
         </Animated.View>
         <Animated.View pointerEvents="none" style={[styles.compactBrand, { top: insets.top + 10 }, compactStyle]}>
-          <BrandLogo compact />
-          <Text style={{ color: theme.foreground, fontSize: 16, fontWeight: "800" }}>HoopCheck</Text>
+          <BrandLogo compact onHero />
+          <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "800" }}>HoopCheck</Text>
         </Animated.View>
         <Pressable accessibilityRole="button" accessibilityLabel="Open account menu"
           onPress={() => router.push("/account")}
           style={({ pressed }) => [styles.headerMenu, { top: insets.top + 8,
-            borderColor: theme.border, backgroundColor: theme.elevatedSurface,
+            borderColor: "#43546D", backgroundColor: "#263852",
             opacity: pressed ? .75 : 1 }]}>
-          <Ionicons name="menu" size={24} color={theme.foreground} />
+          <Ionicons name="menu" size={24} color="#FFFFFF" />
         </Pressable>
       </Animated.View>
     </SafeAreaView>
