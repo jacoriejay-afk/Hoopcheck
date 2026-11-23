@@ -10,7 +10,8 @@ export function GlassCard({ children, style, radius = glass.radii.card, padding 
 }) {
   return <GlassSurface native={false} solid={solid} intensity={52} style={[{
     borderRadius: radius, borderWidth: 1, borderColor: glass.border,
-    backgroundColor: solid ? glass.solid : glass.fill, padding, overflow: "hidden",
+    // GlassSurface owns the background: reduce-transparency must override translucency.
+    padding, overflow: "hidden",
   }, style]}>
     <View pointerEvents="none" accessible={false}
       style={{ position: "absolute", top: 0, left: radius / 2, right: radius / 2,
