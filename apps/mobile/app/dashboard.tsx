@@ -95,7 +95,7 @@ function DashboardContent() {
           <HomeCourtside />
           <RoleHub />
           <SectionHeader>Explore basketball</SectionHeader>
-          <View style={styles.directories}><ExploreLinks /></View>
+          <View style={styles.directories}><ExploreLinks compact /></View>
 
           <View style={styles.sectionTitle}><SectionHeader>Account &amp; support</SectionHeader></View>
           <View style={[styles.account, panel]}>
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   scroll: { flexGrow: 1, padding: 12 },
   content: { width: "100%", maxWidth: 640, alignSelf: "center" },
   title: { fontSize: 32, fontWeight: "900", letterSpacing: -0.7, marginBottom: 16 },
-  directories: { gap: 8, marginTop: 12 },
+  directories: { gap: 8, marginTop: 6 },
   directory: { minHeight: 70, flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1, padding: 12 },
   icon: { width: 42, height: 42, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   directoryCopy: { flex: 1 },
