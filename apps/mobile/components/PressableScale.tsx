@@ -20,7 +20,7 @@ export function PressableScale({
 }: Props) {
   const reduced = useMotionSetting();
   const scale = useSharedValue(1);
-  const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
 
   const spring = {
     damping: 15,
@@ -33,13 +33,13 @@ export function PressableScale({
     <Pressable {...props} disabled={disabled} unstable_pressDelay={unstable_pressDelay}
       onPressIn={event => {
         if (!disabled) {
-          scale.value = reduced ? 1 : withSpring(0.97, spring);
+          scale.set(reduced ? 1 : withSpring(0.97, spring));
           void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
         }
         onPressIn?.(event);
       }}
       onPressOut={event => {
-        scale.value = reduced ? 1 : withSpring(1, spring);
+        scale.set(reduced ? 1 : withSpring(1, spring));
         onPressOut?.(event);
       }}>
       {children}
