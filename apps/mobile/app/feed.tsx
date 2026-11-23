@@ -321,7 +321,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
             </Pressable> : null}
           </View>
           {post.body ? <Text numberOfLines={reels ? 3 : undefined} style={{ ...textStyle, fontSize: 14, lineHeight: 20 }}>{post.body}</Text> : null}
-          {post.video_url ? <FeedMedia userId={uid!} postId={post.id} reference={post.video_url} video enabled={focused && visible.has(post.id)} loop={reels} height={reels ? Math.max(120, height - 280) : 280} /> : photos.map(reference => <FeedMedia userId={uid!} key={reference} postId={post.id} reference={reference} enabled={focused && visible.has(post.id)} />)}
+          {post.video_url ? <FeedMedia userId={uid!} postId={post.id} reference={post.video_url} video enabled={focused && visible.has(post.id)} loop={reels} height={reels ? Math.max(120, height - 280) : 220} /> : photos.map(reference => <FeedMedia userId={uid!} key={reference} postId={post.id} reference={reference} enabled={focused && visible.has(post.id)} />)}
           {post.post_kind === "poll" && options.length ? <FeedPoll userId={uid!} postId={post.id} options={options} enabled={canWrite && focused} /> : null}
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4, paddingTop: 6, borderTopWidth: 1, borderColor: theme.border }}>
             <FeedCheckAction checked={checks[post.id]?.mine} count={checks[post.id]?.count}
