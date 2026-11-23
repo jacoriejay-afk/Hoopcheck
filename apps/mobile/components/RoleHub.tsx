@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useNativeAccount } from "../src/native/useNativeAccount";
 import { useEntryTheme } from "../src/theme";
+import { PressableScale } from "./PressableScale";
 
 type Destination = "/account" | "/teams" | "/players" | "/fan-live" | "/messages" |
   "/feed" | "/leagues" | "/team-hub/groups" | "/hoopgroups";
@@ -50,16 +51,16 @@ export function RoleHub() {
         fontFamily:"HoopCheckDisplay",fontSize:19,lineHeight:23}}>{workspace.heading}</Text>
     </View>
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:7}}>
-      {workspace.links.map(item=><Pressable key={item.href} accessibilityRole="link"
+      {workspace.links.map(item=><PressableScale key={item.href} accessibilityRole="link"
         accessibilityLabel={item.label} onPress={()=>router.push(item.href)}
-        style={({pressed})=>({minHeight:44,paddingHorizontal:12,paddingVertical:8,borderRadius:13,
+        style={{minHeight:44,paddingHorizontal:12,paddingVertical:8,borderRadius:13,
           borderWidth:1,borderColor:theme.dark?"rgba(255,133,65,.40)":theme.border,
           backgroundColor:theme.elevatedSurface,flexDirection:"row",alignItems:"center",
-          gap:6,opacity:pressed?.72:1})}>
+          gap:6}}>
         <Ionicons name={item.icon} size={17} color={theme.accent}/>
         <Text style={{color:theme.foreground,fontFamily:theme.type.ui.fontFamily,
           fontWeight:"700",fontSize:12}}>{item.label}</Text>
-      </Pressable>)}
+      </PressableScale>)}
     </ScrollView>
   </View>;
 }
