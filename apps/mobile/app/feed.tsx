@@ -1,6 +1,10 @@
 import { CourtsideBanner } from "../components/CourtsideBanner";
 import { GlassSurface } from "../components/GlassSurface";
-import { BrandLogo } from "../components/BrandLogo";
+import { GlassHeader } from "../components/glass/GlassHeader";
+import { GlassBackdrop } from "../components/glass/GlassBackdrop";
+import { GlassCard } from "../components/glass/GlassCard";
+import { glassTokens as glass } from "../src/glassTheme";
+import { LinearGradient } from "expo-linear-gradient";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { FlatList, Linking, Pressable, RefreshControl, Share, Text, TextInput, View, type ViewToken } from "react-native";
@@ -14,13 +18,14 @@ import { MediaPostComposer } from "../components/MediaPostComposer";
 import { FeedPoll } from "../components/FeedPoll";
 import { FeedCheckAction } from "../components/FeedCheckAction";
 import { supabase } from "../src/lib/supabase";
-import { useEntryTheme } from "../src/theme";
+import { GlassThemeScope, useEntryTheme } from "../src/theme";
 import { useNativeAccount } from "../src/native/useNativeAccount";
 import { useNetwork, requireOnline } from "../src/native/network";
 import { feedAction, isFeedId, moderateFeedText, publishFeedPoll, readFeedChecks, readFeedComments, readFeedPage, readFeedSaved, readSharedFeedPost, toggleFeedCheck, validatedPollOptions, type FeedComment, type FeedCursor, type FeedPost } from "../src/native/feedClient";
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
 type CommentPage = { rows: FeedComment[]; more: boolean; offset: number; loading: boolean; error: string };
-export function FeedScreen({ initialReels = false }: { initialReels?: boolean }) {
+export function FeedScreen({ initialReels = false }: { initialReels?: boolean }) { return <GlassThemeScope><FeedContent initialReels={initialReels} /></GlassThemeScope>; }
+function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
   const theme = useEntryTheme();
   const router = useRouter();
   const params = useLocalSearchParams<{ post?: string; comments?: string }>();
@@ -33,6 +38,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
   const [composerExpanded, setComposerExpanded] = useState(false);
   const [mediaMode, setMediaMode] = useState(false);
   const [reels, setReels] = useState(initialReels);
+  const [viewedHighlights, setViewedHighlights] = useState<Set<string>>(new Set());
   const scope = `${uid ?? ""}:${reels}`;
   const viewer = useRef({ uid, canRead, scope });
   useLayoutEffect(() => { viewer.current = { uid, canRead, scope }; }, [uid, canRead, scope]);
@@ -235,12 +241,13 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
     <Text style={textStyle}>{offline ? "Reconnect to verify community access." : account ? "An active HoopCheck membership is required to use HoopFeed." : accountError}</Text>
     <Button secondary onPress={retry}>Verify access again</Button><Button secondary onPress={() => router.push("/account")}>Your account</Button>
   </View>;
-  return <SafeAreaView edges={["top", "left", "right", "bottom"]} style={{ flex: 1, backgroundColor: theme.background }}>
+  return <SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: theme.background }}>
+    <GlassBackdrop screen="feed" />
+    <GlassHeader />
     <GlassSurface style={{
       marginHorizontal: 12, marginTop: 5, marginBottom: 5, padding: 5,
-      borderRadius: 17, flexDirection: "row", alignItems: "center", gap: 7,
+      borderRadius: glass.radii.row, flexDirection: "row", alignItems: "center", gap: 7,
     }}>
-      <BrandLogo compact />
       <View accessibilityRole="tablist" style={{ flex: 1, flexDirection: "row", gap: 6 }}>
         {[false, true].map(value => <Pressable key={String(value)}
           accessibilityRole="tab" accessibilityLabel={value ? "Reels" : "HoopFeed"}
@@ -249,10 +256,10 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
           style={({ pressed }) => ({
             flex: 1, minHeight: 44, justifyContent: "center", alignItems: "center",
             borderRadius: 12, borderWidth: 1, opacity: pressed ? .7 : 1,
-            backgroundColor: reels === value ? theme.accentSurface : "transparent",
-            borderColor: reels === value ? theme.accent : "transparent",
+            backgroundColor: reels === value ? glass.orange : "transparent",
+            borderColor: reels === value ? glass.orange : "transparent",
           })}>
-          <Text style={{ color: reels === value ? theme.accent : theme.foreground,
+          <Text style={{ color: reels === value ? "#FFFFFF" : glass.secondary,
             fontSize: 14, fontFamily: theme.type.ui.fontFamily, fontWeight: "700" }}>
             {value ? "REELS" : "HOOPFEED"}
           </Text>
@@ -261,8 +268,27 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
     </GlassSurface>
     {message || loadError ? <Text accessibilityLiveRegion="polite"
       style={{ color: theme.muted, paddingHorizontal: 18 }}>{loadError || message}</Text> : null}
-    <FlatList key={reels ? "reels" : "posts"} keyboardDismissMode="on-drag" style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 12, gap: reels ? 0 : theme.spacing.md }} keyboardShouldPersistTaps="handled" initialNumToRender={reels ? 2 : 4} maxToRenderPerBatch={reels ? 2 : 4} windowSize={reels ? 3 : 5} pagingEnabled={reels} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
-      ListHeaderComponent={!reels ? <View style={{ marginBottom: theme.spacing.sm, gap: theme.spacing.sm }}><CourtsideBanner eyebrow="HOOPFEED" title="Your basketball community">Stories, perspectives and conversations from around the game.</CourtsideBanner>
+    <FlatList key={reels ? "reels" : "posts"} keyboardDismissMode="on-drag" style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 12, gap: reels ? 0 : theme.spacing.md, paddingBottom: reels ? 0 : 144 }} keyboardShouldPersistTaps="handled" initialNumToRender={reels ? 2 : 4} maxToRenderPerBatch={reels ? 2 : 4} windowSize={reels ? 3 : 5} pagingEnabled={reels} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
+      ListHeaderComponent={!reels ? <View style={{ marginBottom: theme.spacing.sm, gap: theme.spacing.sm }}><View style={{ gap: 10 }}>
+          <Text accessibilityRole="header" style={{ fontFamily: "HoopCheckDisplay", color: glass.foreground, fontSize: 28 }}>HOOPFEED</Text>
+          <Text style={{ color: glass.secondary, fontSize: 12 }}>Recent posts from hoopers</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingVertical: 5 }}>
+            {posts.filter((post, index, all) => all.findIndex(row => row.author_id === post.author_id) === index)
+              .slice(0, 8).map(post => <Pressable key={post.id} accessibilityRole="link"
+                accessibilityLabel={`View post by ${post.profiles?.display_name || "HoopCheck member"}`}
+                onPress={() => { setViewedHighlights(current => new Set([...current, post.id])); router.push({ pathname: "/feed", params: { post: post.id } }); }}
+                style={{ width: 70, gap: 5, alignItems: "center" }}>
+                <LinearGradient colors={viewedHighlights.has(post.id) ? ["#777777", "#555555"] : [glass.orange, glass.violet, glass.pink]}
+                  style={{ height: 60, width: 60, borderRadius: 30, padding: 3, alignItems: "center", justifyContent: "center" }}>
+                  <View style={{ height: 54, width: 54, borderRadius: 27, padding: 2, backgroundColor: glass.background, alignItems: "center", justifyContent: "center" }}>
+                    <ProfileAvatar name={post.profiles?.display_name || "HoopCheck member"}
+                      url={post.profiles?.avatar_moderation_status === "approved" ? post.profiles.avatar_url : null} size={48} />
+                  </View>
+                </LinearGradient>
+                <Text numberOfLines={1} style={{ color: glass.secondary, fontSize: 10, textAlign: "center", width: 70 }}>{post.profiles?.display_name || "Hooper"}</Text>
+              </Pressable>)}
+          </ScrollView>
+        </View>
         <Pressable accessibilityRole="button" accessibilityLabel="Meet HoopBot welcome guide"
           onPress={()=>router.push("/feed-welcome")}
           style={{minHeight:44,paddingHorizontal:12,paddingVertical:7,borderWidth:1,borderRadius:14,
@@ -291,7 +317,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
         const commentDraft = drafts.owner === uid ? drafts.values[post.id] ?? "" : "";
         const photos = (Array.isArray(post.image_urls) && post.image_urls.length ? post.image_urls : post.image_url ? [post.image_url] : []).filter((value): value is string => typeof value === "string").slice(0, 4);
         const options = Array.isArray(post.poll_options) ? post.poll_options.filter((value): value is string => typeof value === "string").slice(0, 6).map(value => value.slice(0, 120)) : [];
-        return <View style={reels ? { height, padding: 12 } : undefined}><View testID={`feed-post-${post.id}`} style={{ padding: theme.courtside.card.featuredPadding, gap: theme.spacing.sm, backgroundColor: theme.elevatedSurface, borderWidth: 1, borderColor: theme.glassBorder, borderRadius: theme.courtside.card.radius, borderCurve: "continuous", ...(reels ? { flex: 1 } : {}) }}>
+        return <View style={reels ? { height, padding: 12 } : undefined}><GlassCard testID={`feed-post-${post.id}`} solid radius={glass.radii.card} padding={theme.courtside.card.featuredPadding} style={reels ? { flex: 1 } : undefined} contentStyle={{ gap: theme.spacing.sm, flex: reels ? 1 : undefined }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <ProfileAvatar url={post.profiles?.avatar_moderation_status === "approved" ? post.profiles.avatar_url : null} name={post.profiles?.display_name || "HoopCheck member"} size={36} />
             <View style={{ flex: 1, gap: 3 }}><Text style={{ ...textStyle, fontFamily: theme.type.ui.fontFamily, fontWeight: "700", fontSize: 14 }}>{post.profiles?.display_name || "HoopCheck member"}</Text><Text style={{ color: theme.muted, ...theme.type.caption }}>{new Date(post.created_at).toLocaleString()}</Text></View>
@@ -299,6 +325,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
           {post.body ? <Text numberOfLines={reels ? 3 : undefined} style={{ ...textStyle, fontSize: 14, lineHeight: 20 }}>{post.body}</Text> : null}
           {post.video_url ? <FeedMedia userId={uid!} postId={post.id} reference={post.video_url} video enabled={focused && visible.has(post.id)} loop={reels} height={reels ? Math.max(120, height - 280) : 280} /> : photos.map(reference => <FeedMedia userId={uid!} key={reference} postId={post.id} reference={reference} enabled={focused && visible.has(post.id)} />)}
           {post.post_kind === "poll" && options.length ? <FeedPoll userId={uid!} postId={post.id} options={options} enabled={canWrite && focused} /> : null}
+          {typeof checks[post.id]?.count === "number" ? <Text style={{ color: glass.secondary, fontSize: 12 }}>Checked by {checks[post.id].count} hoopers</Text> : null}
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, paddingTop: 12, borderTopWidth: 1, borderColor: theme.border }}>
             <FeedCheckAction checked={checks[post.id]?.mine} count={checks[post.id]?.count}
               pulseKey={checkPulses.scope === scope ? checkPulses.values[post.id] ?? 0 : 0}
@@ -350,7 +377,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
               setReply(current => current && current.owner === uid && current.id === replyTarget?.id ? null : current);
             } })}>{pending[`comment:${post.id}`] ? "Checking safety…" : "Comment"}</Button>
           </View> : null}
-        </View></View>;
+        </GlassCard></View>;
       }}
       ListFooterComponent={next ? <View style={{ padding: 16 }}><Button secondary disabled={loading} onPress={() => void load(next)}>{loading ? "Loading…" : "Load more"}</Button></View> : null}
     />
