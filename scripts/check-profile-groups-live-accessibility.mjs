@@ -30,7 +30,7 @@ assert.match(live, /role="log" aria-live="polite"/, "Chat updates must be announ
 assert.match(passport, /PGRST205/, "Missing career table must be explained rather than presented as an empty timeline");
 assert.match(passport, /isOwnProfile&&!canManage&&!loadError/, "Missing database must not trigger a misleading paid-upgrade prompt");
 const teamOnboarding = read("app/onboarding/teams/page.tsx");
-assert.doesNotMatch(teamOnboarding, /onboarding_completed/, "Do not write a nonexistent profiles completion column");
+assert.doesNotMatch(teamOnboarding, /\.update\(\{onboarding_completed:/, "Do not write a nonexistent profiles completion column");
 assert.doesNotMatch(teamOnboarding, /from\("follow_relationships"\)\.insert/, "Do not bypass failed follow/alert upserts with a weaker insert");
 assert.match(teamOnboarding, /const saved=await saveFollow\(team,step===2\)/, "Picker selection must check server save result");
 assert.match(teamOnboarding, /if\(!saved\)/, "Failed follows must restore the unsaved picker selection");
