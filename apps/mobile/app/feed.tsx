@@ -322,7 +322,7 @@ function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
             <View style={{ flex: 1, gap: 3 }}><Text style={{ ...textStyle, fontFamily: theme.type.ui.fontFamily, fontWeight: "700", fontSize: 14 }}>{post.profiles?.display_name || "HoopCheck member"}</Text><Text style={{ color: theme.muted, ...theme.type.caption }}>{new Date(post.created_at).toLocaleString()}</Text></View>
           </View>
           {post.body ? <Text numberOfLines={reels ? 3 : undefined} style={{ ...textStyle, fontSize: 14, lineHeight: 20 }}>{post.body}</Text> : null}
-          {post.video_url ? <FeedMedia userId={uid!} postId={post.id} reference={post.video_url} video enabled={focused && visible.has(post.id)} loop={reels} height={reels ? Math.max(120, height - 280) : 280} /> : photos.map(reference => <FeedMedia userId={uid!} key={reference} postId={post.id} reference={reference} enabled={focused && visible.has(post.id)} />)}
+          {post.video_url ? <FeedMedia userId={uid!} postId={post.id} reference={post.video_url} video enabled={focused && visible.has(post.id)} loop={reels} height={reels ? Math.max(120, height - 380) : 280} /> : photos.map(reference => <FeedMedia userId={uid!} key={reference} postId={post.id} reference={reference} enabled={focused && visible.has(post.id)} />)}
           {post.post_kind === "poll" && options.length ? <FeedPoll userId={uid!} postId={post.id} options={options} enabled={canWrite && focused} /> : null}
           {typeof checks[post.id]?.count === "number" ? <Text style={{ color: glass.secondary, fontSize: 12 }}>Checked by {checks[post.id].count} hoopers</Text> : null}
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, paddingTop: 12, borderTopWidth: 1, borderColor: theme.border }}>
