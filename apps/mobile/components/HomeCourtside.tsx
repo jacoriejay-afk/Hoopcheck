@@ -64,23 +64,29 @@ export function HomeCourtside() {
           feedAccess ? readFeedPage(supabase, uid).then(page => page.posts.slice(0, 2)) : Promise.resolve(null),
         ]);
         const teams = results[0].status === "fulfilled" ? results[0].value : null;
-        const ids = teams?.slice(0, 2).map(item => item.target_id) ?? [];
-        const logos: HomeData["logos"] = {};
-        if (ids.length) {
-          const [men, women] = await Promise.all([
-            supabase.from("teams").select("id,logo_url,logo_bg").in("id", ids).abortSignal(controller.signal),
-            supabase.from("womens_teams").select("id,logo_url,logo_bg").in("id", ids).abortSignal(controller.signal),
-          ]);
-          for (const response of [men, women]) if (!response.error) {
-            for (const team of response.data ?? []) if (ids.includes(team.id)) {
-              logos[team.id] = { url: team.logo_url, bg: team.logo_bg };
-            }
-          }
-        }
         const after = await supabase.auth.getSession();
         if (!active) return;
         if (controller.signal.aborted || after.error || after.data.session?.user.id !== uid) throw Error("Home could not be verified");
-        setSnapshot({ scope, teams, logos, games: results[1].status === "fulfilled" ? results[1].value : null, posts: results[2].status === "fulfilled" ? results[2].value : null });
+        // Show the trusted page before fetching optional artwork. A slow or
+        // missing logo may never block the rest of Home content.
+        setSnapshot({ scope, teams, logos: {}, games: results[1].status === "fulfilled" ? results[1].value : null, posts: results[2].status === "fulfilled" ? results[2].value : null });
+        const ids = teams?.slice(0, 2).map(item => item.target_id) ?? [];
+        if (ids.length) {
+          try {
+            const [men, women] = await Promise.all([
+              supabase.from("teams").select("id,logo_url,logo_bg").in("id", ids).abortSignal(controller.signal),
+              supabase.from("womens_teams").select("id,logo_url,logo_bg").in("id", ids).abortSignal(controller.signal),
+            ]);
+            if (!active || controller.signal.aborted) return;
+            const logos: HomeData["logos"] = {};
+            for (const response of [men, women]) if (!response.error) {
+              for (const team of response.data ?? []) if (ids.includes(team.id)) {
+                logos[team.id] = { url: team.logo_url, bg: team.logo_bg };
+              }
+            }
+            setSnapshot(current => current?.scope === scope ? { ...current, logos } : current);
+          } catch { /* Optional logo lookup never downgrades verified Home. */ }
+        }
       } catch { if (active) setSnapshot({ scope, teams: null, logos: {}, games: null, posts: null }); }
       finally { clearTimeout(timeout); }
     }
