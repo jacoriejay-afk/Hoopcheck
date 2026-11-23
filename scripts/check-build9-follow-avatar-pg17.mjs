@@ -11,6 +11,19 @@ const candidate=readFileSync(new URL("../supabase/candidates/build9_public_follo
 assert.match(candidate,/^BEGIN;$/m);
 assert.match(candidate,/^ROLLBACK;$/m);
 assert.match(candidate,/557d85a6abf873e47ffc1f4ae283debd/);
+const blockCandidate=readFileSync(new URL("../supabase/candidates/build9_follow_list_block_filter.sql",import.meta.url),"utf8");
+assert.match(blockCandidate,/^BEGIN;$/m);
+assert.match(blockCandidate,/^ROLLBACK;$/m);
+assert.match(blockCandidate,/md5\(p\.prosrc\)='557d85a6abf873e47ffc1f4ae283debd'/);
+const combined=[...blockCandidate.matchAll(/CREATE OR REPLACE FUNCTION public\.get_public_follow_list\([\s\S]*?\$function\$;/g)];
+assert.equal(combined.length,1,"Exactly one combined block-filter function");
+const blockSql=combined[0][0];
+for(const body of [blockSql]) {
+  assert.match(body,/follower\.avatar_moderation_status IS NULL/,"Follow-list blocked source must mask pending follower avatars");
+  assert.match(body,/target_profile\.avatar_moderation_status IS NULL/,"Follow-list blocked source must mask pending followed-player avatars");
+  assert.match(body,/public\.user_blocks ub/,"Preserve two-way block relationship filtering");
+  assert.match(body,/coalesce\(team\.logo_url,womens_team\.logo_url\)/,"Preserve men's and women's team logos");
+}
 const match=[...candidate.matchAll(/CREATE OR REPLACE FUNCTION public\.get_public_follow_list\([\s\S]*?\$function\$;/g)];
 assert.equal(match.length,1,"Expected exactly one reviewed follow-list function");
 let functionSql=match[0][0];
@@ -30,6 +43,7 @@ const setup=[
  "DO $$ BEGIN IF NOT EXISTS(SELECT FROM pg_roles WHERE rolname='anon') THEN CREATE ROLE anon; END IF; IF NOT EXISTS(SELECT FROM pg_roles WHERE rolname='authenticated') THEN CREATE ROLE authenticated; END IF; END $$;",
  "CREATE TABLE public.profiles(id uuid PRIMARY KEY,profile_visibility text,display_name text,avatar_url text,avatar_moderation_status text,account_type text,player_verified boolean);",
  "CREATE TABLE public.follow_relationships(follower_id uuid,target_type text,target_id uuid,created_at timestamptz DEFAULT now());",
+ "CREATE TABLE public.user_blocks(blocker_id uuid,blocked_id uuid);",
  "CREATE TABLE public.teams(id uuid PRIMARY KEY,name text,logo_url text);",
  "CREATE TABLE public.womens_teams(id uuid PRIMARY KEY,name text,logo_url text);",
  "INSERT INTO public.profiles VALUES",
@@ -95,3 +109,27 @@ const assertions=[
  "SELECT 'PASS: PG17 avatar masking, consent and team logos in synthetic PG fixture' AS result;"
 ];
 process.stdout.write(setup.join("\n")+"\n"+functionSql+"\n"+assertions.join("\n")+"\n");
+// Run the same avatar-moderation checks against the FINAL combined block-filter
+// candidate, not just the separate avatar-only candidate. This catches an
+// otherwise-silent reintroduction of pending/rejected photos in release SQL.
+if(!process.argv.includes("--unsafe-avatar-bypass")){
+ const filteredChecks=[
+  ...assertions.slice(0,-3),  // complete the anonymous caller assertions
+  "RESET ROLE;",
+  "INSERT INTO public.user_blocks VALUES ('22222222-2222-4222-8222-222222222222','11111111-1111-4111-8111-111111111111');",
+  "SELECT set_config('request.jwt.claim.sub','22222222-2222-4222-8222-222222222222',true);",
+  "SET LOCAL ROLE authenticated;",
+  "DO $block$ DECLARE n integer; a text; BEGIN",
+  "  SELECT count(*) INTO n FROM public.get_public_follow_list('followers','player','77777777-7777-4777-8777-777777777777',NULL);",
+  "  IF n<>3 THEN RAISE EXCEPTION 'BLOCKED follower remained visible: %',n; END IF;",
+  "  SELECT count(*) INTO n FROM public.get_public_follow_list('following',NULL,NULL,'22222222-2222-4222-8222-222222222222');",
+  "  IF n<>4 THEN RAISE EXCEPTION 'BLOCKED followed player remained visible: %',n; END IF;",
+  "  SELECT avatar_url INTO a FROM public.get_public_follow_list('following',NULL,NULL,'22222222-2222-4222-8222-222222222222') WHERE target_id='33333333-3333-4333-8333-333333333333';",
+  "  IF NOT FOUND OR a IS NOT NULL THEN RAISE EXCEPTION 'BLOCK FILTER re-exposed rejected avatar'; END IF;",
+  "END $block$;",
+  "RESET ROLE;",
+  "ROLLBACK;",
+  "SELECT 'PASS: combined block and avatar-moderation follow list, synthetic PG17' AS result;"
+ ];
+ process.stdout.write(setup.join("\n")+"\n"+blockSql+"\n"+filteredChecks.join("\n")+"\n");
+}

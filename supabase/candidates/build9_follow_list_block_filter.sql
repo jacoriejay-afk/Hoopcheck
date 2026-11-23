@@ -1,4 +1,8 @@
--- REVIEW CANDIDATE ONLY: follow-list block filtering. Do not auto-apply.
+-- REVIEW CANDIDATE ONLY: combined follow-list block + avatar masking.
+-- Hash-pin the unmodified production baseline so that applying after a different
+-- follow-list migration fails closed instead of overwriting its privacy fix.
+-- Real signed Auth / installed Build 7-8 compatibility still required.
+-- NOT an authorized production migration; always rolled back.
 -- Requires reviewed user_blocks and follow_relationships prerequisites.
 BEGIN;
 DO $guard$
@@ -28,6 +32,10 @@ BEGIN
   WHERE p.oid='public.get_public_follow_list(text,text,uuid,uuid)'::regprocedure
     AND p.prosecdef
     AND p.proconfig @> ARRAY['search_path=""']::text[]
+    AND pg_get_userbyid(p.proowner)='postgres'
+    AND md5(p.prosrc)='557d85a6abf873e47ffc1f4ae283debd'
+    AND has_function_privilege('anon',p.oid,'EXECUTE')
+    AND has_function_privilege('authenticated',p.oid,'EXECUTE')
     AND p.prosrc LIKE '%follower.profile_visibility%'
     AND p.prosrc NOT LIKE '%public.user_blocks%'
  ) THEN
@@ -52,8 +60,17 @@ AS $function$
       WHEN fr.target_type IN ('player','fan') THEN target_profile.display_name
       WHEN fr.target_type = 'team' THEN coalesce(team.name,womens_team.name)
       ELSE NULL END,
-    CASE WHEN p_mode = 'followers' THEN follower.avatar_url
-      ELSE coalesce(target_profile.avatar_url,team.logo_url,womens_team.logo_url) END,
+    CASE
+      WHEN p_mode = 'followers' THEN
+        CASE WHEN follower.avatar_moderation_status IS NULL
+          OR follower.avatar_moderation_status = 'approved'
+          THEN follower.avatar_url ELSE NULL END
+      WHEN fr.target_type IN ('player','fan') THEN
+        CASE WHEN target_profile.avatar_moderation_status IS NULL
+          OR target_profile.avatar_moderation_status = 'approved'
+          THEN target_profile.avatar_url ELSE NULL END
+      WHEN fr.target_type='team' THEN coalesce(team.logo_url,womens_team.logo_url)
+      ELSE NULL END,
     CASE WHEN p_mode = 'followers' THEN follower.account_type ELSE target_profile.account_type END,
     CASE WHEN p_mode = 'followers' THEN coalesce(follower.player_verified,false)
       ELSE coalesce(target_profile.player_verified,false) END
