@@ -121,7 +121,8 @@ async function fixture(browser,theme,allowed=true){
     await page.waitForFunction(()=>{const v=document.querySelector('video');return v&&!v.paused&&v.currentTime>0;});
     await page.screenshot({path:`/tmp/hoopcheck-native-ui/reels-${theme}.png`,fullPage:true});
     assert.ok(calls.some(c=>c.path==='/api/hoopfeed/media'&&c.body.includes('protected/video.webm')));
-    await page.getByRole('button',{name:'Block this HoopCheck account'}).click();
+    await page.getByRole('button',{name:'Reel options',exact:true}).click();
+    await page.getByRole('button',{name:'Block account',exact:true}).click();
     await page.getByText('Creator added to your HoopCheck blocked accounts.',{exact:true}).waitFor();
     assert.ok(blocked.has(id(5)),'Native block saves to shared account block table');
     await page.getByText('No video posts are available in this page.',{exact:true}).waitFor();
