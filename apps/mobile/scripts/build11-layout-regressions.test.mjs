@@ -21,7 +21,7 @@ test("Build 11 HoopFeed is compact, keeps Posts/Reels and owner-only confirmed d
   assert.doesNotMatch(feed,/CourtsideBanner/);
   assert.match(feed,/accessibilityLabel=\{value \? "Reels" : "HoopFeed"\}/);
   assert.match(feed,/\{value \? "REELS" : "POSTS"\}/);
-  assert.match(feed,/accessibilityLabel="More options for your post"/);
+  assert.match(feed,/accessibilityLabel="Delete your HoopFeed post"/);
   assert.match(feed,/if \(!uid \|\| post\.author_id !== uid\) return/);
   assert.match(feed,/Alert\.alert\("Delete your post\?"/);
   assert.match(feed,/await deleteOwnedFeedPost\(supabase, uid, post\.id\)/);
