@@ -19,6 +19,7 @@ import { supabase } from "../src/lib/supabase";
 import { readBasketballSide, readLiveGames, saveBasketballSide } from "../src/native/liveGames";
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
 type Games = Awaited<ReturnType<typeof readLiveGames>>;
+const GAME_VIEWABILITY_CONFIG = { itemVisiblePercentThreshold: 40 };
 export default function LiveGames() { return <GlassThemeScope><LiveGamesContent /></GlassThemeScope>; }
 function LiveGamesContent() {
   const theme = useEntryTheme();
@@ -28,8 +29,7 @@ function LiveGamesContent() {
   const { offline } = useNetwork();
   const active = useActiveScreen();
   const [visibleGames, setVisibleGames] = useState<Set<string>>(() => new Set());
-  const visibilityConfig = useRef({ itemVisiblePercentThreshold: 40 }).current;
-  const onGamesViewable = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
+  const onGamesViewable = useCallback(({ viewableItems }: { viewableItems: ViewToken[] }) => {
     const ids = new Set<string>();
     for (const viewable of viewableItems) {
       const id: unknown = viewable.item?.id;
@@ -39,7 +39,7 @@ function LiveGamesContent() {
       if (previous.size === ids.size && [...previous].every(id => ids.has(id))) return previous;
       return ids;
     });
-  }).current;
+  }, []);
   useFocusEffect(useCallback(() => { retry(); }, [retry]));
   const uid = account?.user.id;
   const [error, setError] = useState("");
@@ -160,7 +160,7 @@ function LiveGamesContent() {
       <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 20 }}>{(["chat", "predictions"] as const).map(value => <Pressable key={value} accessibilityRole="tab" aria-selected={panel === value} accessibilityState={{ selected: panel === value }} onPress={() => setPanel(value)} style={{ minHeight: 44, justifyContent: "center" }}><Text style={{ color: panel === value ? theme.accent : theme.foreground, fontWeight: "800" }}>{value === "chat" ? "Chat" : "Predictions"}</Text></Pressable>)}</View>
       {panel === "chat" ? <GameChat key={`${uid}:${game.id}`} gameId={game.id} userId={uid!} enabled={chatEnabled} active={active} /> : <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 24 }}><GamePrediction key={`${uid}:${game.id}`} game={game} userId={uid!} homeName={data?.teams[game.team_id]?.name || "Home team"} awayName={data?.teams[game.opponent_team_id || ""]?.name || game.opponent_name} active={active} /></ScrollView>}
     </View> : <SectionList sections={sections} stickySectionHeadersEnabled={false}
-    viewabilityConfig={visibilityConfig} onViewableItemsChanged={onGamesViewable} renderSectionHeader={({ section }) => <Text accessibilityRole="header" style={{ ...theme.type.section, color: theme.foreground, paddingVertical: theme.spacing.sm }}>{section.title} · {section.chatting} chatting</Text>}
+    viewabilityConfig={GAME_VIEWABILITY_CONFIG} onViewableItemsChanged={onGamesViewable} renderSectionHeader={({ section }) => <Text accessibilityRole="header" style={{ ...theme.type.section, color: theme.foreground, paddingVertical: theme.spacing.sm }}>{section.title} · {section.chatting} chatting</Text>}
     renderSectionFooter={({section})=>section.total>3?<Pressable accessibilityRole="button" onPress={()=>setExpandedGroups(current=>current.includes(section.title)?current.filter(item=>item!==section.title):[...current,section.title])}
       style={{minHeight:44,justifyContent:"center",alignItems:"center",borderWidth:1,borderColor:theme.border,borderRadius:14,marginTop:8,backgroundColor:theme.surface}}>
       <Text style={{color:theme.accent,fontWeight:"800"}}>{expandedGroups.includes(section.title)?"Show 3 games":`Show all ${section.total} games`}</Text>
