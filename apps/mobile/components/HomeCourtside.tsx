@@ -245,7 +245,7 @@ export function HomeCourtside() {
 
     <HomeStagger index={4}>
       <View style={{ gap: 8 }}>
-        <ArenaHeading title="MY TEAMS" cta="See all" onPress={()=>router.push("/teams")}/>
+        <ArenaHeading title="My Teams" cta="See all" onPress={()=>router.push("/teams")}/>
         <HomeCrossfade loading={!data} minHeight={88}>
           <View style={{borderRadius:16,backgroundColor:t.elevatedSurface,borderWidth:1,
             borderColor:t.dark?"rgba(74,147,234,.35)":t.border,padding:10,flexDirection:"row",
