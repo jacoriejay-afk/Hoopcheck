@@ -55,8 +55,8 @@ export default function AccountScreen() {
     if(!uid){setAvatar({owner:"",url:null});return;}
     let active=true;
     const controller=new AbortController();
-    void supabase.from("profiles").select("avatar_url,avatar_moderation_status")
-      .eq("id",uid).abortSignal(controller.signal).maybeSingle()
+    void Promise.resolve(supabase.from("profiles").select("avatar_url,avatar_moderation_status")
+      .eq("id",uid).abortSignal(controller.signal).maybeSingle())
       .then(({data,error})=>{
         if(!active)return;
         setAvatar({owner:uid,url:!error && data?.avatar_moderation_status==="approved"
