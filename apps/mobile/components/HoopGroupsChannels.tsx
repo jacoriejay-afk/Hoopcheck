@@ -335,4 +335,3 @@ export default function HoopGroupsChannels() {
     </Text>:null}
   </View>;
 }
-}
