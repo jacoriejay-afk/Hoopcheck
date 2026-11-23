@@ -2,7 +2,11 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const helper = fs.readFileSync("lib/read-own-profile.ts", "utf8");
-assert.match(helper, /legacy\.error\.code !== "42501"/, "Only permission errors should trigger owner RPC fallback");
+assert.match(helper, /legacy\\.error\\?\\.code === "42501"/, "Only permission errors may trigger owner RPC fallback");
+assert.match(helper, /supabase\\.auth\\.getSession\\(\\)/, "Legacy owner read must capture and recheck auth session");
+assert.match(helper, /\\.setHeader\\("Authorization", \`Bearer \\$\\{token\\}\\`\\)/, "Legacy and RPC reads must pin the captured JWT");
+assert.match(helper, /current\\.data\\.session\\.access_token !== token/, "Account-switch and token-refresh responses must fail closed");
+assert.match(helper, /result\\.data\\.id !== userId/, "Owner identity must match result; no cross-account response");
 assert.match(helper, /supabase\.rpc\("get_own_profile"\)/, "Fallback must use protected owner RPC");
 assert.match(helper, /\.id !== userId/, "Never trust a projection for another account");
 for (const filename of [
