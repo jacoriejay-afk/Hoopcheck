@@ -136,7 +136,7 @@ export function HomeCourtside() {
       </Pressable>)}
     {role==="player"&&reviewPromptVisible?<View style={{borderRadius:glass.radii.card,overflow:"hidden",
       borderWidth:1,borderColor:glass.border,backgroundColor:glass.solid}}>
-      <LinearGradient colors={["#1A161C","#171821","#241417"]:["#FFF6EF","#FAF4FF","#F4F8FD"]}
+      <LinearGradient colors={["#1A161C","#171821","#241417"]}
         start={{x:0,y:0}} end={{x:1,y:1}} style={StyleSheet.absoluteFill}/>
       <View style={{padding:12,gap:9}}>
         <View style={{flexDirection:"row",gap:10,alignItems:"flex-start"}}>

@@ -91,7 +91,7 @@ function RootLayout() {
     }
   }, [sessionReady, signedIn, segments, router, pathname, routeParams.post, routeParams.q, routeParams.gameId]);
 
-  const glassRoute = pathname === "/dashboard" || pathname === "/fan-live" || pathname === "/feed" || pathname === "/fan-feed" || pathname === "/reels" || /^\\/teams\\/[^/]+$/.test(pathname);
+  const glassRoute = ["/dashboard", "/fan-live", "/feed", "/fan-feed", "/reels"].includes(pathname) || (pathname.startsWith("/teams/") && pathname.split("/").length === 3);
   // Mount the navigator on the first render. Font loading must never prevent
   // Router from mounting or leave a blank screen after the splash deadline.
   return (
