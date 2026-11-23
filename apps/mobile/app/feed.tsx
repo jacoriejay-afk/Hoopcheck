@@ -2,6 +2,7 @@ import { GlassSurface } from "../components/GlassSurface";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Alert, FlatList, Linking, Pressable, RefreshControl, Share, Text, TextInput, View, type ViewToken } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Button } from "../src/primitives";
@@ -311,11 +312,12 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <ProfileAvatar url={post.profiles?.avatar_moderation_status === "approved" ? post.profiles.avatar_url : null} name={post.profiles?.display_name || "HoopCheck member"} size={34} />
             <View style={{ flex: 1, gap: 3 }}><Text style={{ ...textStyle, fontFamily: theme.type.ui.fontFamily, fontWeight: "700", fontSize: 14 }}>{post.profiles?.display_name || "HoopCheck member"}</Text><Text style={{ color: theme.muted, ...theme.type.caption }}>{new Date(post.created_at).toLocaleString()}</Text></View>
-            {post.author_id === uid ? <Pressable accessibilityRole="button" accessibilityLabel="More options for your post"
+            {post.author_id === uid ? <Pressable accessibilityRole="button" accessibilityLabel="Delete your HoopFeed post"
               disabled={Boolean(pending[`delete:${post.id}`])} onPress={()=>confirmDelete(post)}
-              style={{minWidth:44,minHeight:44,alignItems:"center",justifyContent:"center",
-                borderRadius:14,backgroundColor:"transparent"}}>
-              <Text style={{color:theme.foreground,fontSize:24,fontWeight:"700"}}>···</Text>
+              style={{minWidth:56,minHeight:44,alignItems:"center",justifyContent:"center",
+                flexDirection:"row",gap:4,backgroundColor:"transparent"}}>
+              <Ionicons name="trash-outline" size={16} color={theme.accent}/>
+              <Text style={{color:theme.accent,fontSize:11,fontWeight:"800"}}>Delete</Text>
             </Pressable> : null}
           </View>
           {post.body ? <Text numberOfLines={reels ? 3 : undefined} style={{ ...textStyle, fontSize: 14, lineHeight: 20 }}>{post.body}</Text> : null}
