@@ -22,8 +22,20 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'Missing one or more native profile editor column UPDATE grants';
   END IF;
-  IF has_column_privilege('authenticated','public.profiles','moderation_note','UPDATE') THEN
-    RAISE EXCEPTION 'Unsafe authenticated moderation_note UPDATE grant';
+  -- A permissive owner RLS policy and field-lock triggers are not a reason
+  -- to leave arbitrary privilege/identity/moderation columns UPDATE-able.
+  -- This fixture is intentionally red on production until reviewed ACL
+  -- reconciliation; never auto-REVOKE old client/admin paths to pass it.
+  IF has_table_privilege('authenticated','public.profiles','UPDATE') THEN
+    RAISE EXCEPTION 'Unsafe table-wide authenticated profile UPDATE';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM pg_attribute a
+    WHERE a.attrelid='public.profiles'::regclass AND a.attnum>0 AND NOT a.attisdropped
+      AND a.attname=ANY(ARRAY['id','account_type','birthdate','stripe_identity_verification_session_id','identity_verification_status','player_verified','player_verified_at','coach_verified','coach_verified_at','profile_claimed','claimed_at','moderation_status','moderation_note','moderation_updated_at','moderation_updated_by','avatar_moderation_status','avatar_moderation_note','selected_team_verified']::text[])
+      AND has_column_privilege('authenticated','public.profiles',a.attname,'UPDATE')
+  ) THEN
+    RAISE EXCEPTION 'Unsafe direct authenticated privileged-profile UPDATE grant';
   END IF;
   IF NOT (SELECT relrowsecurity FROM pg_class WHERE oid='public.profiles'::regclass) THEN
     RAISE EXCEPTION 'Profile RLS disabled';
