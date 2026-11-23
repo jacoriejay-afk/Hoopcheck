@@ -81,7 +81,10 @@ function HomeCrossfade({ loading, minHeight, children }: {
   const contentStyle = useAnimatedStyle(() => ({ opacity: opacity.get() }));
   const skeletonStyle = useAnimatedStyle(() => ({ opacity: 1 - opacity.get() }));
   return <View style={{ minHeight }}>
-    <Animated.View style={[{ minHeight }, contentStyle]}>{children}</Animated.View>
+    <Animated.View pointerEvents={loading ? "none" : "auto"}
+      accessibilityElementsHidden={loading}
+      importantForAccessibility={loading ? "no-hide-descendants" : "auto"}
+      style={[{ minHeight }, contentStyle]}>{children}</Animated.View>
     {showSkeleton ? <Animated.View pointerEvents="none"
       accessibilityElementsHidden={!loading} importantForAccessibility={loading ? "yes" : "no-hide-descendants"}
       style={[StyleSheet.absoluteFillObject, { minHeight, overflow: "hidden", justifyContent: "center",
