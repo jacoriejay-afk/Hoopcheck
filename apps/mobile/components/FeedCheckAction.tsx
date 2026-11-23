@@ -42,9 +42,9 @@ export function FeedCheckAction({ checked, count, pulseKey, disabled, busy, onPr
     disabled={disabled || !available || busy} onPress={onPress}
     style={({ pressed }) => ({
       flexDirection: "row", alignItems: "center", gap: 5, minHeight: 44,
-      paddingHorizontal: 11, borderRadius: theme.radius.pill,
-      backgroundColor: selected ? theme.accentSurface : theme.chip,
-      borderWidth: selected ? 1 : 0, borderColor: theme.accent,
+      paddingHorizontal: 7, borderRadius: theme.radius.pill,
+      backgroundColor: "transparent",
+      borderWidth: 0, borderColor: "transparent",
       opacity: pressed ? .76 : disabled ? .6 : 1,
     })}>
     <Animated.View pointerEvents="none" style={animated}>
