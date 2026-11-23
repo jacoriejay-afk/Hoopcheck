@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createClient } from '@supabase/supabase-js';
-import { readFeedPage, readSharedFeedPost, readFeedComments, moderateFeedText, publishFeedPoll, validatedPollOptions, authorizedFeedMedia, toggleFeedCheck, readFeedSaved, feedAction } from '../src/native/feedClient.ts';
+import { readFeedPage, readSharedFeedPost, readFeedComments, moderateFeedText, publishFeedPoll, validatedPollOptions, authorizedFeedMedia, toggleFeedCheck, readFeedChecks, readFeedSaved, feedAction } from '../src/native/feedClient.ts';
 const uid = '11111111-1111-4111-8111-111111111111';
 const id = n => `22222222-2222-4222-8222-${String(n).padStart(12, '0')}`;
 const now = new Date('2026-11-18T12:00:00Z');
@@ -106,4 +106,45 @@ test('votes and bookmarks use server permission checks and reject invalid inputs
   for(const [kind,value]of[['vote',-1],['vote',6],['bookmark',1]])await assert.rejects(feedAction('https://api.test','token',kind,id(1),value,request));
   assert.equal(calls.length,2);
   await assert.rejects(feedAction('https://api.test','token','vote',id(1),1,async()=>Response.json({allowed:false},{status:403})));
+});
+
+test('a post with zero Checks remains usable after a successful empty aggregate RPC',async()=>{
+  const calls=[];
+  const db=client(async(input,options)=>{
+    const url=new URL(String(input));calls.push({url,options});
+    return Response.json([]);
+  });
+  assert.deepEqual(await readFeedChecks(db,[id(1),id(2)]),[
+    {post_id:id(1),checks_count:0,checked_by_me:false},
+    {post_id:id(2),checks_count:0,checked_by_me:false},
+  ]);
+  assert.equal(calls.length,1);
+  assert.equal(calls[0].url.pathname,'/rest/v1/rpc/get_hoopfeed_check_totals');
+  assert.deepEqual(JSON.parse(calls[0].options.body),{post_ids:[id(1),id(2)]});
+  assert.deepEqual(await readFeedChecks(db,[]),[]);
+  assert.equal(calls.length,1,'An empty feed does not query Checks');
+});
+
+test('Check totals preserve real RPC counts and fill only omitted zero-count posts',async()=>{
+  const db=client(async()=>Response.json([{post_id:id(2),checks_count:'3',checked_by_me:true}]));
+  assert.deepEqual(await readFeedChecks(db,[id(1),id(2)]),[
+    {post_id:id(1),checks_count:0,checked_by_me:false},
+    {post_id:id(2),checks_count:3,checked_by_me:true},
+  ]);
+});
+
+test('failed or malformed Check totals never become invented zero counts',async()=>{
+  const failed=client(async()=>Response.json({message:'Permission denied'},{status:403}));
+  await assert.rejects(readFeedChecks(failed,[id(1)]),/Checks unavailable/);
+  for(const rows of [
+    null,
+    [{post_id:id(1),checks_count:-1,checked_by_me:false}],
+    [{post_id:id(1),checks_count:'not-a-number',checked_by_me:false}],
+    [{post_id:id(1),checks_count:2,checked_by_me:'true'}],
+    [{post_id:id(2),checks_count:2,checked_by_me:false}],
+    [{post_id:id(1),checks_count:1,checked_by_me:true},{post_id:id(1),checks_count:1,checked_by_me:true}],
+  ]) {
+    const db=client(async()=>Response.json(rows));
+    await assert.rejects(readFeedChecks(db,[id(1)]));
+  }
 });
