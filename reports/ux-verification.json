@@ -1,0 +1,5118 @@
+{
+  "scope": "Fixture UI checks, not production authorization certification",
+  "build": "PASS",
+  "lint": {
+    "errors": 0,
+    "warnings": 143,
+    "baseline_warnings": 144
+  },
+  "entitlements": "PASS: 10 role/tier cells, edge cases, 22 entitlements",
+  "navigation_unit": "PASS",
+  "fan_copy_unit": "PASS",
+  "theme_token_pairs": "PASS",
+  "hardcoded_surfaces": "PASS",
+  "team_discovery_browser": "PASS: mobile/desktop, both themes, reduced motion and partial failure",
+  "profile_editor_browser": "PASS: mens/womens at mobile/desktop, privacy and review eligibility",
+  "focused_ui": [
+    {
+      "name": "visitor-free-390-light",
+      "status": "PASS",
+      "target": "/about",
+      "cards": []
+    },
+    {
+      "name": "visitor-free-390-dark",
+      "status": "PASS",
+      "target": "/about",
+      "cards": []
+    },
+    {
+      "name": "visitor-free-768-light",
+      "status": "PASS",
+      "target": "/about",
+      "cards": []
+    },
+    {
+      "name": "visitor-free-768-dark",
+      "status": "PASS",
+      "target": "/about",
+      "cards": []
+    },
+    {
+      "name": "visitor-free-1440-light",
+      "status": "PASS",
+      "target": "/about",
+      "cards": []
+    },
+    {
+      "name": "visitor-free-1440-dark",
+      "status": "PASS",
+      "target": "/about",
+      "cards": []
+    },
+    {
+      "name": "player-free-390-light",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "player-free-390-dark",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "player-free-768-light",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "player-free-768-dark",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "player-free-1440-light",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "player-free-1440-dark",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "player-pro-390-light",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "player-pro-390-dark",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "player-pro-768-light",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "player-pro-768-dark",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "player-pro-1440-light",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "player-pro-1440-dark",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "player-premium-390-light",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "player-premium-390-dark",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "player-premium-768-light",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "player-premium-768-dark",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "player-premium-1440-light",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "player-premium-1440-dark",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-free-390-light",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-free-390-dark",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-free-768-light",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-free-768-dark",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-free-1440-light",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-free-1440-dark",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-pro-390-light",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-pro-390-dark",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-pro-768-light",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-pro-768-dark",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-pro-1440-light",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-pro-1440-dark",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-premium-390-light",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-premium-390-dark",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-premium-768-light",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-premium-768-dark",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-premium-1440-light",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-premium-1440-dark",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "agent-pro-390-light",
+      "status": "PASS",
+      "target": "/agents-hq",
+      "cards": [
+        {
+          "background": "rgb(255, 255, 255)",
+          "foreground": "rgb(23, 23, 23)",
+          "border": "1px",
+          "radius": "16px"
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "foreground": "rgb(23, 23, 23)",
+          "border": "1px",
+          "radius": "16px"
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "foreground": "rgb(23, 23, 23)",
+          "border": "1px",
+          "radius": "16px"
+        }
+      ]
+    },
+    {
+      "name": "agent-pro-390-dark",
+      "status": "PASS",
+      "target": "/agents-hq",
+      "cards": [
+        {
+          "background": "rgb(23, 23, 23)",
+          "foreground": "rgb(247, 247, 245)",
+          "border": "1px",
+          "radius": "16px"
+        },
+        {
+          "background": "rgb(23, 23, 23)",
+          "foreground": "rgb(247, 247, 245)",
+          "border": "1px",
+          "radius": "16px"
+        },
+        {
+          "background": "rgb(23, 23, 23)",
+          "foreground": "rgb(247, 247, 245)",
+          "border": "1px",
+          "radius": "16px"
+        }
+      ]
+    },
+    {
+      "name": "agent-pro-768-light",
+      "status": "PASS",
+      "target": "/agents-hq",
+      "cards": [
+        {
+          "background": "rgb(255, 255, 255)",
+          "foreground": "rgb(23, 23, 23)",
+          "border": "1px",
+          "radius": "16px"
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "foreground": "rgb(23, 23, 23)",
+          "border": "1px",
+          "radius": "16px"
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "foreground": "rgb(23, 23, 23)",
+          "border": "1px",
+          "radius": "16px"
+        }
+      ]
+    },
+    {
+      "name": "agent-pro-768-dark",
+      "status": "PASS",
+      "target": "/agents-hq",
+      "cards": [
+        {
+          "background": "rgb(23, 23, 23)",
+          "foreground": "rgb(247, 247, 245)",
+          "border": "1px",
+          "radius": "16px"
+        },
+        {
+          "background": "rgb(23, 23, 23)",
+          "foreground": "rgb(247, 247, 245)",
+          "border": "1px",
+          "radius": "16px"
+        },
+        {
+          "background": "rgb(23, 23, 23)",
+          "foreground": "rgb(247, 247, 245)",
+          "border": "1px",
+          "radius": "16px"
+        }
+      ]
+    },
+    {
+      "name": "agent-pro-1440-light",
+      "status": "PASS",
+      "target": "/agents-hq",
+      "cards": [
+        {
+          "background": "rgb(255, 255, 255)",
+          "foreground": "rgb(23, 23, 23)",
+          "border": "1px",
+          "radius": "16px"
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "foreground": "rgb(23, 23, 23)",
+          "border": "1px",
+          "radius": "16px"
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "foreground": "rgb(23, 23, 23)",
+          "border": "1px",
+          "radius": "16px"
+        }
+      ]
+    },
+    {
+      "name": "agent-pro-1440-dark",
+      "status": "PASS",
+      "target": "/agents-hq",
+      "cards": [
+        {
+          "background": "rgb(23, 23, 23)",
+          "foreground": "rgb(247, 247, 245)",
+          "border": "1px",
+          "radius": "16px"
+        },
+        {
+          "background": "rgb(23, 23, 23)",
+          "foreground": "rgb(247, 247, 245)",
+          "border": "1px",
+          "radius": "16px"
+        },
+        {
+          "background": "rgb(23, 23, 23)",
+          "foreground": "rgb(247, 247, 245)",
+          "border": "1px",
+          "radius": "16px"
+        }
+      ]
+    },
+    {
+      "name": "scout-pro-390-light",
+      "status": "PASS",
+      "target": "/agents-hq",
+      "cards": [
+        {
+          "background": "rgb(255, 255, 255)",
+          "foreground": "rgb(23, 23, 23)",
+          "border": "1px",
+          "radius": "16px"
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "foreground": "rgb(23, 23, 23)",
+          "border": "1px",
+          "radius": "16px"
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "foreground": "rgb(23, 23, 23)",
+          "border": "1px",
+          "radius": "16px"
+        }
+      ]
+    },
+    {
+      "name": "scout-pro-390-dark",
+      "status": "PASS",
+      "target": "/agents-hq",
+      "cards": [
+        {
+          "background": "rgb(23, 23, 23)",
+          "foreground": "rgb(247, 247, 245)",
+          "border": "1px",
+          "radius": "16px"
+        },
+        {
+          "background": "rgb(23, 23, 23)",
+          "foreground": "rgb(247, 247, 245)",
+          "border": "1px",
+          "radius": "16px"
+        },
+        {
+          "background": "rgb(23, 23, 23)",
+          "foreground": "rgb(247, 247, 245)",
+          "border": "1px",
+          "radius": "16px"
+        }
+      ]
+    },
+    {
+      "name": "scout-pro-768-light",
+      "status": "PASS",
+      "target": "/agents-hq",
+      "cards": [
+        {
+          "background": "rgb(255, 255, 255)",
+          "foreground": "rgb(23, 23, 23)",
+          "border": "1px",
+          "radius": "16px"
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "foreground": "rgb(23, 23, 23)",
+          "border": "1px",
+          "radius": "16px"
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "foreground": "rgb(23, 23, 23)",
+          "border": "1px",
+          "radius": "16px"
+        }
+      ]
+    },
+    {
+      "name": "scout-pro-768-dark",
+      "status": "PASS",
+      "target": "/agents-hq",
+      "cards": [
+        {
+          "background": "rgb(23, 23, 23)",
+          "foreground": "rgb(247, 247, 245)",
+          "border": "1px",
+          "radius": "16px"
+        },
+        {
+          "background": "rgb(23, 23, 23)",
+          "foreground": "rgb(247, 247, 245)",
+          "border": "1px",
+          "radius": "16px"
+        },
+        {
+          "background": "rgb(23, 23, 23)",
+          "foreground": "rgb(247, 247, 245)",
+          "border": "1px",
+          "radius": "16px"
+        }
+      ]
+    },
+    {
+      "name": "scout-pro-1440-light",
+      "status": "PASS",
+      "target": "/agents-hq",
+      "cards": [
+        {
+          "background": "rgb(255, 255, 255)",
+          "foreground": "rgb(23, 23, 23)",
+          "border": "1px",
+          "radius": "16px"
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "foreground": "rgb(23, 23, 23)",
+          "border": "1px",
+          "radius": "16px"
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "foreground": "rgb(23, 23, 23)",
+          "border": "1px",
+          "radius": "16px"
+        }
+      ]
+    },
+    {
+      "name": "scout-pro-1440-dark",
+      "status": "PASS",
+      "target": "/agents-hq",
+      "cards": [
+        {
+          "background": "rgb(23, 23, 23)",
+          "foreground": "rgb(247, 247, 245)",
+          "border": "1px",
+          "radius": "16px"
+        },
+        {
+          "background": "rgb(23, 23, 23)",
+          "foreground": "rgb(247, 247, 245)",
+          "border": "1px",
+          "radius": "16px"
+        },
+        {
+          "background": "rgb(23, 23, 23)",
+          "foreground": "rgb(247, 247, 245)",
+          "border": "1px",
+          "radius": "16px"
+        }
+      ]
+    },
+    {
+      "name": "manager-free-390-light",
+      "status": "PASS",
+      "target": "/team-dashboard",
+      "cards": [
+        {
+          "background": "rgb(255, 255, 255)",
+          "foreground": "rgb(23, 23, 23)",
+          "border": "1px",
+          "radius": "16px"
+        }
+      ]
+    },
+    {
+      "name": "manager-free-390-dark",
+      "status": "PASS",
+      "target": "/team-dashboard",
+      "cards": [
+        {
+          "background": "rgb(23, 23, 23)",
+          "foreground": "rgb(247, 247, 245)",
+          "border": "1px",
+          "radius": "16px"
+        }
+      ]
+    },
+    {
+      "name": "manager-free-768-light",
+      "status": "PASS",
+      "target": "/team-dashboard",
+      "cards": [
+        {
+          "background": "rgb(255, 255, 255)",
+          "foreground": "rgb(23, 23, 23)",
+          "border": "1px",
+          "radius": "16px"
+        }
+      ]
+    },
+    {
+      "name": "manager-free-768-dark",
+      "status": "PASS",
+      "target": "/team-dashboard",
+      "cards": [
+        {
+          "background": "rgb(23, 23, 23)",
+          "foreground": "rgb(247, 247, 245)",
+          "border": "1px",
+          "radius": "16px"
+        }
+      ]
+    },
+    {
+      "name": "manager-free-1440-light",
+      "status": "PASS",
+      "target": "/team-dashboard",
+      "cards": [
+        {
+          "background": "rgb(255, 255, 255)",
+          "foreground": "rgb(23, 23, 23)",
+          "border": "1px",
+          "radius": "16px"
+        }
+      ]
+    },
+    {
+      "name": "manager-free-1440-dark",
+      "status": "PASS",
+      "target": "/team-dashboard",
+      "cards": [
+        {
+          "background": "rgb(23, 23, 23)",
+          "foreground": "rgb(247, 247, 245)",
+          "border": "1px",
+          "radius": "16px"
+        }
+      ]
+    },
+    {
+      "name": "coach-pro-390-light",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "coach-pro-390-dark",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "coach-pro-768-light",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "coach-pro-768-dark",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "coach-pro-1440-light",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "coach-pro-1440-dark",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    }
+  ],
+  "mobile_boundaries": [
+    {
+      "name": "fan-free-320-light",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-free-320-dark",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-free-700-light",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-free-700-dark",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-free-701-light",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-free-701-dark",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-pro-320-light",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-pro-320-dark",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-pro-700-light",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-pro-700-dark",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-pro-701-light",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-pro-701-dark",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-premium-320-light",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-premium-320-dark",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-premium-700-light",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-premium-700-dark",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-premium-701-light",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "fan-premium-701-dark",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    }
+  ],
+  "final_build_smoke": [
+    {
+      "name": "player-pro-390-light",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "player-pro-390-dark",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "player-pro-1440-light",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    },
+    {
+      "name": "player-pro-1440-dark",
+      "status": "PASS",
+      "target": "/dashboard",
+      "cards": []
+    }
+  ],
+  "broad_route_sweep": [
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/",
+      "resolvedPath": "/",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "hc-template-home hc-home-redesign hc-ia-home hc-ia-public-home",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 56,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/dashboard",
+      "resolvedPath": "/dashboard",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "page-shell hc-ia-home",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/feed",
+      "resolvedPath": "/feed",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "page-shell hc-feed-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/account",
+      "resolvedPath": "/account",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "page-shell hc-account-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/settings",
+      "resolvedPath": "/settings",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "settings-page hc-settings-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [
+        {
+          "tag": "strong",
+          "className": "",
+          "text": "Dark Mode",
+          "color": "rgb(247, 247, 245)",
+          "background": "rgb(255, 90, 31)"
+        },
+        {
+          "tag": "small",
+          "className": "",
+          "text": "Asphalt black",
+          "color": "rgb(247, 247, 245)",
+          "background": "rgb(255, 90, 31)"
+        }
+      ],
+      "navigationError": null,
+      "status": "FAIL",
+      "reason": "low contrast text: [{\"tag\":\"strong\",\"className\":\"\",\"text\":\"Dark Mode\",\"color\":\"rgb(247, 247, 245)\",\"background\":\"rgb(255, 90, 31)\"},{\"tag\":\"small\",\"className\":\"\",\"text\":\"Asphalt black\",\"color\":\"rgb(247, 247, 245)\",\"background\":\"rgb(255, 90, 31)\"}]"
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/profile",
+      "resolvedPath": "/profile",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "page-shell hc-member-profile-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/search",
+      "resolvedPath": "/search",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "search-page hc-global-search-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/search?q=Baku",
+      "resolvedPath": "/search",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "search-page hc-global-search-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/teams",
+      "resolvedPath": "/teams",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "hc-team-directory-page hc-directory-refresh",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/teams/b79a5635-4531-4cc9-981d-103f9b61b9c2",
+      "resolvedPath": "/teams/b79a5635-4531-4cc9-981d-103f9b61b9c2",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "hc-entity-profile-page hc-team-entity-profile",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "FAIL",
+      "reason": "language assertions missing: No approved reviews yet"
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/teams/a2f9b1c4-92a3-4c89-bdd4-1d8e57a7c8f0",
+      "resolvedPath": "/teams/a2f9b1c4-92a3-4c89-bdd4-1d8e57a7c8f0",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "hc-entity-profile-page hc-team-entity-profile",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/womens/b79a5635-4531-4cc9-981d-103f9b61b9c2",
+      "resolvedPath": "/womens/b79a5635-4531-4cc9-981d-103f9b61b9c2",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "page-shell hc-womens-profile-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "FAIL",
+      "reason": "women team profile: Fan Group entry is missing or not joined: FAN HQ \u00b7 OFFICIAL COMMUNITY\n\nA.B.B EGO SPOR FAN GROUP\n\n12 members \u00b7 Open to join\n\nJOINED \u00b7 OPEN GROUP\nLEAVE GROUP\nMODERATOR \u00b7 OPEN GROUP"
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/admin/team-logos",
+      "resolvedPath": "/admin/team-logos",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "admin-team-logo-studio",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": null,
+      "mainTop": 46,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": null,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/coaches",
+      "resolvedPath": "/coaches",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "hc-coaches-directory-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/coaches/11111111-1111-4111-8111-111111111111",
+      "resolvedPath": "/coaches/11111111-1111-4111-8111-111111111111",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "hc-entity-profile-page hc-coach-entity-profile",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/leagues",
+      "resolvedPath": "/leagues",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "hc-leagues-directory-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/players",
+      "resolvedPath": "/players",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "page-shell hc-player-directory-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/womens",
+      "resolvedPath": "/womens",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "page-shell hc-womens-directory-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/directory",
+      "resolvedPath": "/directory",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "hc-directory-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/reviews",
+      "resolvedPath": "/reviews",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "hc-reviews-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/membership",
+      "resolvedPath": "/membership",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "hc-membership-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [
+        {
+          "tag": "span",
+          "className": "",
+          "text": "Monthly",
+          "color": "rgb(247, 247, 245)",
+          "background": "rgb(255, 90, 31)"
+        },
+        {
+          "tag": "small",
+          "className": "",
+          "text": "Flexible billing",
+          "color": "rgb(247, 247, 245)",
+          "background": "rgb(255, 90, 31)"
+        }
+      ],
+      "navigationError": null,
+      "status": "FAIL",
+      "reason": "low contrast text: [{\"tag\":\"span\",\"className\":\"\",\"text\":\"Monthly\",\"color\":\"rgb(247, 247, 245)\",\"background\":\"rgb(255, 90, 31)\"},{\"tag\":\"small\",\"className\":\"\",\"text\":\"Flexible billing\",\"color\":\"rgb(247, 247, 245)\",\"background\":\"rgb(255, 90, 31)\"}]"
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/notifications",
+      "resolvedPath": "/notifications",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "page-shell hc-notifications-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/support",
+      "resolvedPath": "/support",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "page-shell hc-support-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/verification",
+      "resolvedPath": "/verification",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "page-shell",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/privacy-center",
+      "resolvedPath": "/privacy-center",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "hc-legal-page hc-privacy-center-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/privacy",
+      "resolvedPath": "/privacy",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "hc-legal-page hc-privacy-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/terms",
+      "resolvedPath": "/terms",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "hc-legal-page hc-terms-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/community-guidelines",
+      "resolvedPath": "/community-guidelines",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "hc-legal-page hc-community-guidelines-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/login",
+      "resolvedPath": "/login",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "hc-auth-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/signup",
+      "resolvedPath": "/signup",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "auth-page-shell",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/onboarding",
+      "resolvedPath": "/onboarding",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "page-shell hc-onboarding-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/fan-live",
+      "resolvedPath": "/fan-live",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "page-shell hc-live-room",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/fan-feed",
+      "resolvedPath": "/fan-feed",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "page-shell hc-feed-page hc-fan-feed-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "FAIL",
+      "reason": "fan-feed: screen title must be Fan HQ: FAN HQ; fan-feed: real club-specific timeline empty state is missing: CLUB FAN GROUPS\nNO POSTS YET \u2014 BE THE FIRST TO POST FOR A.B.B EGO SPOR.\n\nThis club's fan group is quiet right now. Start the conversation for A.B.B Ego Spor.\n\nBE THE FIRST TO POST; fan-feed: timeline empty state action is missing; fan-feed: club-specific EMPTY-1 headline is missing: CLUB FAN GROUPS\nNO POSTS YET \u2014 BE THE FIRST TO POST FOR A.B.B EGO SPOR.\n\nThis group is waiting for its first post. Start the conversation with A.B.B Ego Spor fans.\n\nBE THE FIRST TO POST; fan-feed: EMPTY-1 post action is missing"
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/team-hub",
+      "resolvedPath": "/team-hub",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "page-shell hc-fan-feed-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/team-hub/groups/b79a5635-4531-4cc9-981d-103f9b61b9c2",
+      "resolvedPath": "/team-hub/groups/b79a5635-4531-4cc9-981d-103f9b61b9c2",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "page-shell hc-feed-page hc-team-fan-group-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "FAIL",
+      "reason": "team-hub group: real club-specific empty state is missing; team-hub group: empty-state composer action is missing"
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/live-games",
+      "resolvedPath": "/live-games",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "page-shell hc-live-hub-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "liveHubPairing": {
+        "emptyCards": [],
+        "countBadges": [],
+        "filterCard": null,
+        "recentEmpty": null,
+        "populatedGameCards": 0
+      },
+      "liveHubPopulated": {
+        "cards": [
+          {
+            "background": "rgb(23, 23, 23)",
+            "color": "rgb(247, 247, 245)",
+            "text": "\u25cf LIVEQA League \u00b7 AzerbaijanA.B.B Ego Spor52 \u2013 48Q3BFBaku Falcons QA 0 members chattingJOIN CHAT \u2192"
+          },
+          {
+            "background": "rgb(23, 23, 23)",
+            "color": "rgb(247, 247, 245)",
+            "text": "UPCOMINGQA League \u00b7 AzerbaijanA.B.B Ego SporVSBFBaku Falcons QA Mon, Nov 9, 2:51 PMChat opens Nov 9, 2:21 PM \u00b7 Remind Me sends an in-app reminder. REMIND ME"
+          },
+          {
+            "background": "rgb(23, 23, 23)",
+            "color": "rgb(247, 247, 245)",
+            "text": "FINALQA League \u00b7 AzerbaijanA.B.B Ego Spor80 \u2013 74BFBaku Falcons QA Chat closedFinal score 80 \u2013 74"
+          }
+        ],
+        "counts": [
+          {
+            "background": "rgb(27, 27, 27)",
+            "color": "rgb(247, 247, 245)",
+            "text": "1"
+          },
+          {
+            "background": "rgb(27, 27, 27)",
+            "color": "rgb(247, 247, 245)",
+            "text": "1"
+          },
+          {
+            "background": "rgb(27, 27, 27)",
+            "color": "rgb(247, 247, 245)",
+            "text": "1"
+          }
+        ],
+        "filter": {
+          "background": "rgb(23, 23, 23)",
+          "color": "rgb(247, 247, 245)",
+          "text": "All gamesLive onlyMy teamsSearchLeagueAll leaguesQA League"
+        },
+        "hero": {
+          "background": "rgb(23, 23, 23)",
+          "color": "rgb(247, 247, 245)",
+          "text": "HOOPCHECK \u00b7 LIVE GAME HUBLIVE GAME CHAT.Watch together. Follow live and upcoming games, and join the conversation."
+        },
+        "heroTitle": {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(247, 247, 245)",
+          "text": "LIVE GAME CHAT."
+        },
+        "heroEyebrow": {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(255, 106, 0)",
+          "text": "HOOPCHECK \u00b7 LIVE GAME HUB"
+        },
+        "heroSubtitle": {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(247, 247, 245)",
+          "text": "Watch together. Follow live and upcoming games, and join the conversation."
+        },
+        "crests": [
+          {
+            "background": "rgb(27, 27, 27)",
+            "color": "rgb(247, 247, 245)",
+            "text": ""
+          },
+          {
+            "background": "rgb(27, 27, 27)",
+            "color": "rgb(247, 247, 245)",
+            "text": "BF"
+          },
+          {
+            "background": "rgb(27, 27, 27)",
+            "color": "rgb(247, 247, 245)",
+            "text": ""
+          },
+          {
+            "background": "rgb(27, 27, 27)",
+            "color": "rgb(247, 247, 245)",
+            "text": "BF"
+          },
+          {
+            "background": "rgb(27, 27, 27)",
+            "color": "rgb(247, 247, 245)",
+            "text": ""
+          },
+          {
+            "background": "rgb(27, 27, 27)",
+            "color": "rgb(247, 247, 245)",
+            "text": "BF"
+          }
+        ],
+        "mutedLabels": [
+          {
+            "background": "rgba(0, 0, 0, 0)",
+            "color": "rgb(247, 247, 245)",
+            "text": "QA League \u00b7 Azerbaijan"
+          },
+          {
+            "background": "rgba(0, 0, 0, 0)",
+            "color": "rgb(247, 247, 245)",
+            "text": "Q3"
+          },
+          {
+            "background": "rgba(0, 0, 0, 0)",
+            "color": "rgb(247, 247, 245)",
+            "text": "0 members chatting"
+          },
+          {
+            "background": "rgba(0, 0, 0, 0)",
+            "color": "rgb(247, 247, 245)",
+            "text": "QA League \u00b7 Azerbaijan"
+          },
+          {
+            "background": "rgba(0, 0, 0, 0)",
+            "color": "rgb(247, 247, 245)",
+            "text": "VS"
+          },
+          {
+            "background": "rgba(0, 0, 0, 0)",
+            "color": "rgb(247, 247, 245)",
+            "text": "Mon, Nov 9, 2:51 PM"
+          },
+          {
+            "background": "rgba(0, 0, 0, 0)",
+            "color": "rgb(247, 247, 245)",
+            "text": "Chat opens Nov 9, 2:21 PM \u00b7 Remind Me sends an in-app reminder."
+          },
+          {
+            "background": "rgba(0, 0, 0, 0)",
+            "color": "rgb(247, 247, 245)",
+            "text": "QA League \u00b7 Azerbaijan"
+          },
+          {
+            "background": "rgba(0, 0, 0, 0)",
+            "color": "rgb(247, 247, 245)",
+            "text": "Chat closed"
+          },
+          {
+            "background": "rgba(0, 0, 0, 0)",
+            "color": "rgb(247, 247, 245)",
+            "text": "Final score 80 \u2013 74"
+          }
+        ],
+        "liveChatEntry": {
+          "background": "rgb(255, 90, 31)",
+          "color": "rgb(17, 17, 17)",
+          "text": "JOIN CHAT \u2192"
+        },
+        "liveChatLinks": 1,
+        "renderedText": "HOOPCHECK \u00b7 LIVE GAME HUB\n\nLIVE GAME CHAT.\n\nWatch together. Follow live and upcoming games, and join the conversation.\n\nALL GAMES\nLIVE ONLY\nMY TEAMS\nSEARCH\nLEAGUE\nAll leagues\nQA League\n\nRIGHT NOW\n\nLIVE NOW\n1\n\nReal-time conversations, one game at a time.\n\n\u25cf\nLIVE\nQA League \u00b7 Azerbaijan\nA.B.B Ego Spor\n52 \u2013 48\nQ3\nBF\nBaku Falcons QA\n0 members chatting\nJOIN CHAT\n\u2192\n\nNEXT UP\n\nUPCOMING\n1\n\nTip-off times are shown in your local timezone.\n\nUPCOMING\nQA League \u00b7 Azerbaijan\nA.B.B Ego Spor\nVS\nBF\nBaku Falcons QA\nMon, Nov 9, 2:51 PM\n\nChat opens Nov 9, 2:21 PM \u00b7 Remind Me sends an in-app reminder.\n\nREMIND ME\n\nFINAL WHISTLE\n\nRECENTLY FINISHED\n1\n\nGames from the last 48 hours.\n\nFINAL\nQA League \u00b7 Azerbaijan\nA.B.B Ego Spor\n80 \u2013 74\nBF\nBaku Falcons QA\nChat closed\nFinal score 80 \u2013 74\nGame states refresh automatically every 60 seconds.\nExplore teams \u2192"
+      },
+      "status": "FAIL",
+      "reason": "live-games: expected two empty-state cards; got 0; live-games: expected three section count badges; got 0; live-games: filter card surface regressed: null; live-games: Recently Finished empty state lost its readable dashed treatment: null; live-games: populated GameCard 0 has an unpaired theme: {\"background\":\"rgb(23, 23, 23)\",\"color\":\"rgb(247, 247, 245)\",\"text\":\"\u25cf LIVEQA League \u00b7 AzerbaijanA.B.B Ego Spor52 \u2013 48Q3BFBaku Falcons QA 0 members chattingJOIN CHAT \u2192\"}; live-games: populated GameCard 1 has an unpaired theme: {\"background\":\"rgb(23, 23, 23)\",\"color\":\"rgb(247, 247, 245)\",\"text\":\"UPCOMINGQA League \u00b7 AzerbaijanA.B.B Ego SporVSBFBaku Falcons QA Mon, Nov 9, 2:51 PMChat opens Nov 9, 2:21 PM \u00b7 Remind Me sends an in-app reminder. REMIND ME\"}; live-games: populated GameCard 2 has an unpaired theme: {\"background\":\"rgb(23, 23, 23)\",\"color\":\"rgb(247, 247, 245)\",\"text\":\"FINALQA League \u00b7 AzerbaijanA.B.B Ego Spor80 \u2013 74BFBaku Falcons QA Chat closedFinal score 80 \u2013 74\"}; live-games: populated section badges are not visibly paired: [{\"background\":\"rgb(27, 27, 27)\",\"color\":\"rgb(247, 247, 245)\",\"text\":\"1\"},{\"background\":\"rgb(27, 27, 27)\",\"color\":\"rgb(247, 247, 245)\",\"text\":\"1\"},{\"background\":\"rgb(27, 27, 27)\",\"color\":\"rgb(247, 247, 245)\",\"text\":\"1\"}]; live-games: populated filter card surface/foreground regressed; live-games: hero dark-surface/light-ink pairing regressed: {\"hero\":{\"background\":\"rgb(23, 23, 23)\",\"color\":\"rgb(247, 247, 245)\",\"text\":\"HOOPCHECK \u00b7 LIVE GAME HUBLIVE GAME CHAT.Watch together. Follow live and upcoming games, and join the conversation.\"},\"title\":{\"background\":\"rgba(0, 0, 0, 0)\",\"color\":\"rgb(247, 247, 245)\",\"text\":\"LIVE GAME CHAT.\"},\"eyebrow\":{\"background\":\"rgba(0, 0, 0, 0)\",\"color\":\"rgb(255, 106, 0)\",\"text\":\"HOOPCHECK \u00b7 LIVE GAME HUB\"},\"subtitle\":{\"background\":\"rgba(0, 0, 0, 0)\",\"color\":\"rgb(247, 247, 245)\",\"text\":\"Watch together. Follow live and upcoming games, and join the conversation.\"}}; live-games: team logo chips lost their paired surface/foreground tokens: [{\"background\":\"rgb(27, 27, 27)\",\"color\":\"rgb(247, 247, 245)\",\"text\":\"\"},{\"background\":\"rgb(27, 27, 27)\",\"color\":\"rgb(247, 247, 245)\",\"text\":\"BF\"},{\"background\":\"rgb(27, 27, 27)\",\"color\":\"rgb(247, 247, 245)\",\"text\":\"\"},{\"background\":\"rgb(27, 27, 27)\",\"color\":\"rgb(247, 247, 245)\",\"text\":\"BF\"},{\"background\":\"rgb(27, 27, 27)\",\"color\":\"rgb(247, 247, 245)\",\"text\":\"\"},{\"background\":\"rgb(27, 27, 27)\",\"color\":\"rgb(247, 247, 245)\",\"text\":\"BF\"}]; live-games: populated card metadata is not using readable muted foreground: [{\"background\":\"rgba(0, 0, 0, 0)\",\"color\":\"rgb(247, 247, 245)\",\"text\":\"QA League \u00b7 Azerbaijan\"},{\"background\":\"rgba(0, 0, 0, 0)\",\"color\":\"rgb(247, 247, 245)\",\"text\":\"Q3\"},{\"background\":\"rgba(0, 0, 0, 0)\",\"color\":\"rgb(247, 247, 245)\",\"text\":\"0 members chatting\"},{\"background\":\"rgba(0, 0, 0, 0)\",\"color\":\"rgb(247, 247, 245)\",\"text\":\"QA League \u00b7 Azerbaijan\"},{\"background\":\"rgba(0, 0, 0, 0)\",\"color\":\"rgb(247, 247, 245)\",\"text\":\"VS\"},{\"background\":\"rgba(0, 0, 0, 0)\",\"color\":\"rgb(247, 247, 245)\",\"text\":\"Mon, Nov 9, 2:51 PM\"},{\"background\":\"rgba(0, 0, 0, 0)\",\"color\":\"rgb(247, 247, 245)\",\"text\":\"Chat opens Nov 9, 2:21 PM \u00b7 Remind Me sends an in-app reminder.\"},{\"background\":\"rgba(0, 0, 0, 0)\",\"color\":\"rgb(247, 247, 245)\",\"text\":\"QA League \u00b7 Azerbaijan\"},{\"background\":\"rgba(0, 0, 0, 0)\",\"color\":\"rgb(247, 247, 245)\",\"text\":\"Chat closed\"},{\"background\":\"rgba(0, 0, 0, 0)\",\"color\":\"rgb(247, 247, 245)\",\"text\":\"Final score 80 \u2013 74\"}]"
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/theme-card-audit",
+      "resolvedPath": "/theme-card-audit",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "page-shell hc-card-audit-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [
+        {
+          "tag": "p",
+          "className": "eyebrow",
+          "text": "HOOPCHECK \u00b7 LIVE GAME HUB",
+          "color": "rgb(255, 90, 31)",
+          "background": "rgb(255, 255, 255)"
+        },
+        {
+          "tag": "p",
+          "className": "eyebrow",
+          "text": "ACCOUNT OVERVIEW",
+          "color": "rgb(255, 90, 31)",
+          "background": "rgb(255, 255, 255)"
+        },
+        {
+          "tag": "h3",
+          "className": "",
+          "text": "Report submitted",
+          "color": "rgb(21, 21, 21)",
+          "background": "rgb(23, 23, 23)"
+        },
+        {
+          "tag": "p",
+          "className": "muted",
+          "text": "Your report is queued for moderation.",
+          "color": "rgb(102, 102, 97)",
+          "background": "rgb(23, 23, 23)"
+        },
+        {
+          "tag": "span",
+          "className": "hc-dossier-tag hc-dossier-tag-orange",
+          "text": "\u2713 VERIFIED PLAYER",
+          "color": "rgb(245, 245, 240)",
+          "background": "rgb(255, 90, 31)"
+        },
+        {
+          "tag": "td",
+          "className": "",
+          "text": "2025\u201326",
+          "color": "rgb(37, 40, 44)",
+          "background": "rgb(23, 23, 23)"
+        },
+        {
+          "tag": "td",
+          "className": "hc-number-cell",
+          "text": "18",
+          "color": "rgb(37, 40, 44)",
+          "background": "rgb(23, 23, 23)"
+        },
+        {
+          "tag": "td",
+          "className": "",
+          "text": "Not disclosed",
+          "color": "rgb(37, 40, 44)",
+          "background": "rgb(23, 23, 23)"
+        },
+        {
+          "tag": "td",
+          "className": "",
+          "text": "Verified",
+          "color": "rgb(37, 40, 44)",
+          "background": "rgb(23, 23, 23)"
+        }
+      ],
+      "navigationError": null,
+      "status": "FAIL",
+      "reason": "low contrast text: [{\"tag\":\"p\",\"className\":\"eyebrow\",\"text\":\"HOOPCHECK \u00b7 LIVE GAME HUB\",\"color\":\"rgb(255, 90, 31)\",\"background\":\"rgb(255, 255, 255)\"},{\"tag\":\"p\",\"className\":\"eyebrow\",\"text\":\"ACCOUNT OVERVIEW\",\"color\":\"rgb(255, 90, 31)\",\"background\":\"rgb(255, 255, 255)\"},{\"tag\":\"h3\",\"className\":\"\",\"text\":\"Report submitted\",\"color\":\"rgb(21, 21, 21)\",\"background\":\"rgb(23, 23, 23)\"},{\"tag\":\"p\",\"className\":\"muted\",\"text\":\"Your report is queued for moderation.\",\"color\":\"rgb(102, 102, 97)\",\"background\":\"rgb(23, 23, 23)\"},{\"tag\":\"span\",\"className\":\"hc-dossier-tag hc-dossier-tag-orange\",\"text\":\"\u2713 VERIFIED PLAYER\",\"color\":\"rgb(245, 245, 240)\",\"background\":\"rgb(255, 90, 31)\"},{\"tag\":\"td\",\"className\":\"\",\"text\":\"2025\u201326\",\"color\":\"rgb(37, 40, 44)\",\"background\":\"rgb(23, 23, 23)\"},{\"tag\":\"td\",\"className\":\"hc-number-cell\",\"text\":\"18\",\"color\":\"rgb(37, 40, 44)\",\"background\":\"rgb(23, 23, 23)\"},{\"tag\":\"td\",\"className\":\"\",\"text\":\"Not disclosed\",\"color\":\"rgb(37, 40, 44)\",\"background\":\"rgb(23, 23, 23)\"},{\"tag\":\"td\",\"className\":\"\",\"text\":\"Verified\",\"color\":\"rgb(37, 40, 44)\",\"background\":\"rgb(23, 23, 23)\"}]"
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/partners",
+      "resolvedPath": "/partners",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "page-shell hc-partners-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "dark",
+      "scaffoldMatches": [],
+      "requestedPath": "/copyright",
+      "resolvedPath": "/copyright",
+      "themeClass": "dark",
+      "body": "rgb(10, 10, 10)",
+      "pageWrapper": "rgb(10, 10, 10)",
+      "mainClass": "page-shell hc-copyright-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/",
+      "resolvedPath": "/dashboard",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "page-shell dashboard-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/dashboard",
+      "resolvedPath": "/dashboard",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "page-shell hc-ia-home",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "form",
+          "className": "hc-searchbar hc-ia-search",
+          "text": "Search"
+        },
+        {
+          "tag": "input",
+          "className": "hc-searchbar__input",
+          "text": ""
+        },
+        {
+          "tag": "div",
+          "className": "hc-ia-identity",
+          "text": "TSIGNED IN ASTheme Test Player"
+        },
+        {
+          "tag": "a",
+          "className": "hc-ia-door",
+          "text": "Connections"
+        },
+        {
+          "tag": "a",
+          "className": "hc-ia-door",
+          "text": "Verification"
+        },
+        {
+          "tag": "section",
+          "className": "hc-ux2b-completion-card",
+          "text": "BUILD YOUR PLAYER PROFILE43% complete3 of 7 profil"
+        },
+        {
+          "tag": "a",
+          "className": "hc-smooth-pulse__item hc-smooth-card",
+          "text": "Live games\u2014Open games hub"
+        },
+        {
+          "tag": "a",
+          "className": "hc-smooth-pulse__item hc-smooth-card",
+          "text": "Upcoming\u2014Open schedule"
+        },
+        {
+          "tag": "a",
+          "className": "hc-smooth-pulse__item hc-smooth-card",
+          "text": "Following0Clubs in this directory"
+        },
+        {
+          "tag": "a",
+          "className": "hc-smooth-pulse__item hc-smooth-card",
+          "text": "Recent reviews0From followed clubs"
+        },
+        {
+          "tag": "a",
+          "className": "hc-ia-live-strip",
+          "text": "LIVE GAMESSee live and upcoming gamesOpen hub"
+        },
+        {
+          "tag": "a",
+          "className": "hc-smooth-presign-dashboard-link hc-smooth-card",
+          "text": "PLAYER INTELLIGENCEPre-Sign CheckSix checks to res"
+        },
+        {
+          "tag": "a",
+          "className": "hc-ia-door",
+          "text": "MEN\u2019S TEAMSResearch teams before you sign"
+        },
+        {
+          "tag": "a",
+          "className": "hc-ia-door",
+          "text": "WOMEN\u2019S TEAMSExplore women\u2019s basketball"
+        },
+        {
+          "tag": "a",
+          "className": "hc-ia-door",
+          "text": "COACHESCheck coaching reputations"
+        },
+        {
+          "tag": "a",
+          "className": "hc-ia-door",
+          "text": "LEAGUESCompare competitions"
+        },
+        {
+          "tag": "a",
+          "className": "hc-ia-door",
+          "text": "PLAYERSDiscover basketball players"
+        },
+        {
+          "tag": "a",
+          "className": "hc-ia-feed-card",
+          "text": "Open HoopFeedUpdates from players you follow and y"
+        }
+      ],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/feed",
+      "resolvedPath": "/feed",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "page-shell hc-feed-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "nav",
+          "className": "",
+          "text": "Men\u2019s teams \u2197Women\u2019s teams \u2197Membership & perks \u2197"
+        },
+        {
+          "tag": "textarea",
+          "className": "",
+          "text": ""
+        },
+        {
+          "tag": "input",
+          "className": "visually-hidden",
+          "text": ""
+        },
+        {
+          "tag": "input",
+          "className": "visually-hidden",
+          "text": ""
+        },
+        {
+          "tag": "input",
+          "className": "",
+          "text": ""
+        },
+        {
+          "tag": "div",
+          "className": "hc-feed-sort-toggle",
+          "text": "LatestExpiring soon"
+        },
+        {
+          "tag": "section",
+          "className": "dashboard-card hc-feed-empty hc-feed-shared-empty",
+          "text": "THE FEED IS CLEARNo posts yet \u2014 players you follow"
+        }
+      ],
+      "lowContrastText": [
+        {
+          "tag": "a",
+          "className": "brand",
+          "text": "HOOPCHECK",
+          "color": "rgb(23, 23, 23)",
+          "background": "rgb(8, 8, 8)"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Players",
+          "color": "rgb(23, 23, 23)",
+          "background": "rgba(0, 0, 0, 0.98)"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Profile",
+          "color": "rgb(23, 23, 23)",
+          "background": "rgba(0, 0, 0, 0.98)"
+        }
+      ],
+      "navigationError": null,
+      "status": "FAIL",
+      "reason": "low contrast text: [{\"tag\":\"a\",\"className\":\"brand\",\"text\":\"HOOPCHECK\",\"color\":\"rgb(23, 23, 23)\",\"background\":\"rgb(8, 8, 8)\"},{\"tag\":\"a\",\"className\":\"\",\"text\":\"Players\",\"color\":\"rgb(23, 23, 23)\",\"background\":\"rgba(0, 0, 0, 0.98)\"},{\"tag\":\"a\",\"className\":\"\",\"text\":\"Profile\",\"color\":\"rgb(23, 23, 23)\",\"background\":\"rgba(0, 0, 0, 0.98)\"}]"
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/account",
+      "resolvedPath": "/account",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "page-shell hc-account-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "header",
+          "className": "hc-account-settings-header",
+          "text": "SETTINGSAccount PreferencesTTTheme Test PlayerProt"
+        },
+        {
+          "tag": "a",
+          "className": "btn dark",
+          "text": "View Public Profile"
+        },
+        {
+          "tag": "section",
+          "className": "hc-ux2b-completion-card",
+          "text": "BUILD YOUR PLAYER PROFILE43% complete3 of 7 profil"
+        },
+        {
+          "tag": "section",
+          "className": "hc-layout-group hc-settings-group",
+          "text": "ACCOUNTEdit ProfileEdit details\u203aEmailtheme-test@ho"
+        },
+        {
+          "tag": "div",
+          "className": "hc-layout-group-body hc-settings-list",
+          "text": "Edit ProfileEdit details\u203aEmailtheme-test@hoopcheck"
+        },
+        {
+          "tag": "section",
+          "className": "hc-layout-group hc-settings-group",
+          "text": "PREFERENCESDark ModeFollows your deviceLanguageCho"
+        },
+        {
+          "tag": "div",
+          "className": "hc-layout-group-body hc-settings-list",
+          "text": "Dark ModeFollows your deviceLanguageChoose your ap"
+        },
+        {
+          "tag": "span",
+          "className": "",
+          "text": ""
+        },
+        {
+          "tag": "select",
+          "className": "hc-setting-select",
+          "text": "EnglishEspa\u00f1olFran\u00e7aisDeutschT\u00fcrk\u00e7ePortugu\u00easItalia"
+        },
+        {
+          "tag": "span",
+          "className": "",
+          "text": ""
+        },
+        {
+          "tag": "span",
+          "className": "",
+          "text": ""
+        },
+        {
+          "tag": "span",
+          "className": "",
+          "text": ""
+        },
+        {
+          "tag": "span",
+          "className": "",
+          "text": ""
+        },
+        {
+          "tag": "section",
+          "className": "hc-layout-group hc-settings-group",
+          "text": "PRIVACYShow my country on HoopFeed postsWho can se"
+        },
+        {
+          "tag": "div",
+          "className": "hc-layout-group-body hc-settings-list",
+          "text": "Show my country on HoopFeed postsWho can see my pr"
+        },
+        {
+          "tag": "span",
+          "className": "",
+          "text": ""
+        },
+        {
+          "tag": "select",
+          "className": "hc-setting-select",
+          "text": "PublicPlayers only"
+        },
+        {
+          "tag": "section",
+          "className": "hc-layout-group hc-settings-group",
+          "text": "SUPPORTHelp & FAQGet answers\u203aContact SupportGet in"
+        },
+        {
+          "tag": "div",
+          "className": "hc-layout-group-body hc-settings-list",
+          "text": "Help & FAQGet answers\u203aContact SupportGet in touch\u203a"
+        },
+        {
+          "tag": "section",
+          "className": "hc-layout-group hc-settings-group is-danger",
+          "text": "DANGER ZONESign OutEnd this session\u203aDelete Account"
+        }
+      ],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/settings",
+      "resolvedPath": "/settings",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "settings-page hc-settings-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "section",
+          "className": "settings-shell",
+          "text": "CONTROL CENTERSETTINGSTune the HoopCheck experienc"
+        },
+        {
+          "tag": "section",
+          "className": "settings-card",
+          "text": "LANGUAGEChoose your languageChoose the interface l"
+        },
+        {
+          "tag": "select",
+          "className": "language-select",
+          "text": "EnglishEspa\u00f1olFran\u00e7aisDeutschItalianoPortugu\u00easT\u00fcrk"
+        },
+        {
+          "tag": "section",
+          "className": "settings-card",
+          "text": "VISUAL MODEChoose your atmosphereUse device settin"
+        },
+        {
+          "tag": "section",
+          "className": "settings-card",
+          "text": "NOTIFICATIONSBasketball alertsFollow specific team"
+        },
+        {
+          "tag": "a",
+          "className": "btn dark",
+          "text": "Find something to follow"
+        },
+        {
+          "tag": "section",
+          "className": "settings-card",
+          "text": "MOTIONMobile-smooth interactionsAnimations are sho"
+        },
+        {
+          "tag": "div",
+          "className": "hc-toast hc-toast--success settings-save",
+          "text": "\u2713Settings saved. Other preferences save automatica"
+        }
+      ],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/profile",
+      "resolvedPath": "/profile",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "page-shell hc-member-profile-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "a",
+          "className": "btn dark",
+          "text": "Team review checklist"
+        },
+        {
+          "tag": "a",
+          "className": "btn dark hc-profile-public-button",
+          "text": "View Public ProfileView Public Profile"
+        },
+        {
+          "tag": "section",
+          "className": "hc-ux2b-completion-card",
+          "text": "BUILD YOUR PLAYER PROFILE43% complete3 of 7 profil"
+        },
+        {
+          "tag": "a",
+          "className": "hc-profile-membership-link",
+          "text": "Membership & Perks"
+        },
+        {
+          "tag": "a",
+          "className": "hc-profile-quick-link",
+          "text": "Settings"
+        },
+        {
+          "tag": "a",
+          "className": "hc-profile-quick-link",
+          "text": "Alerts"
+        },
+        {
+          "tag": "a",
+          "className": "hc-profile-quick-link",
+          "text": "Search"
+        },
+        {
+          "tag": "a",
+          "className": "hc-profile-quick-link",
+          "text": "Pre-Sign"
+        },
+        {
+          "tag": "section",
+          "className": "hc-profile-overview",
+          "text": "BASKETBALLBASKETBALLPlayerCAREERGuard1 years pro \u00b7"
+        },
+        {
+          "tag": "article",
+          "className": "hc-surface card hc-profile-info-card",
+          "text": "BASKETBALLBASKETBALLPlayer"
+        },
+        {
+          "tag": "article",
+          "className": "hc-surface card hc-profile-info-card",
+          "text": "CAREERGuard1 years pro \u00b7 Theme Test Club"
+        },
+        {
+          "tag": "article",
+          "className": "hc-surface card hc-profile-info-card",
+          "text": "LOCATIONAzerbaijanLocation details not listed"
+        },
+        {
+          "tag": "section",
+          "className": "hc-pastel-posts",
+          "text": "PostsRecent HoopFeedNo active posts yet. Your appr"
+        },
+        {
+          "tag": "section",
+          "className": "dashboard-card compact-section",
+          "text": "ABOUTProfile detailsAdd a bio from Edit Profile."
+        },
+        {
+          "tag": "section",
+          "className": "dashboard-card compact-section",
+          "text": "ACCOUNTAccount controlsSign out, hide your profile"
+        },
+        {
+          "tag": "button",
+          "className": "btn dark",
+          "text": "Sign Out"
+        }
+      ],
+      "lowContrastText": [
+        {
+          "tag": "p",
+          "className": "eyebrow",
+          "text": "ACCOUNT",
+          "color": "rgb(201, 201, 201)",
+          "background": "rgb(244, 244, 241)"
+        },
+        {
+          "tag": "span",
+          "className": "",
+          "text": "Theme Test Player",
+          "color": "rgb(247, 247, 245)",
+          "background": "rgb(244, 244, 241)"
+        },
+        {
+          "tag": "p",
+          "className": "muted hc-profile-email",
+          "text": "theme-test@hoopcheck.invalid",
+          "color": "rgb(201, 201, 201)",
+          "background": "rgb(244, 244, 241)"
+        },
+        {
+          "tag": "span",
+          "className": "hc-profile-public-short",
+          "text": "View Public Profile",
+          "color": "rgb(247, 247, 245)",
+          "background": "rgb(255, 255, 255)"
+        },
+        {
+          "tag": "p",
+          "className": "eyebrow",
+          "text": "BUILD YOUR PLAYER PROFILE",
+          "color": "rgb(201, 201, 201)",
+          "background": "rgb(255, 255, 255)"
+        },
+        {
+          "tag": "strong",
+          "className": "",
+          "text": "43% complete",
+          "color": "rgb(247, 247, 245)",
+          "background": "rgb(255, 255, 255)"
+        },
+        {
+          "tag": "p",
+          "className": "muted",
+          "text": "3 of 7 profile details completed.",
+          "color": "rgb(201, 201, 201)",
+          "background": "rgb(255, 255, 255)"
+        },
+        {
+          "tag": "span",
+          "className": "hc-ux2b-completion-percent",
+          "text": "43%",
+          "color": "rgb(247, 247, 245)",
+          "background": "rgb(255, 255, 255)"
+        }
+      ],
+      "navigationError": null,
+      "status": "FAIL",
+      "reason": "low contrast text: [{\"tag\":\"p\",\"className\":\"eyebrow\",\"text\":\"ACCOUNT\",\"color\":\"rgb(201, 201, 201)\",\"background\":\"rgb(244, 244, 241)\"},{\"tag\":\"span\",\"className\":\"\",\"text\":\"Theme Test Player\",\"color\":\"rgb(247, 247, 245)\",\"background\":\"rgb(244, 244, 241)\"},{\"tag\":\"p\",\"className\":\"muted hc-profile-email\",\"text\":\"theme-test@hoopcheck.invalid\",\"color\":\"rgb(201, 201, 201)\",\"background\":\"rgb(244, 244, 241)\"},{\"tag\":\"span\",\"className\":\"hc-profile-public-short\",\"text\":\"View Public Profile\",\"color\":\"rgb(247, 247, 245)\",\"background\":\"rgb(255, 255, 255)\"},{\"tag\":\"p\",\"className\":\"eyebrow\",\"text\":\"BUILD YOUR PLAYER PROFILE\",\"color\":\"rgb(201, 201, 201)\",\"background\":\"rgb(255, 255, 255)\"},{\"tag\":\"strong\",\"className\":\"\",\"text\":\"43% complete\",\"color\":\"rgb(247, 247, 245)\",\"background\":\"rgb(255, 255, 255)\"},{\"tag\":\"p\",\"className\":\"muted\",\"text\":\"3 of 7 profile details completed.\",\"color\":\"rgb(201, 201, 201)\",\"background\":\"rgb(255, 255, 255)\"},{\"tag\":\"span\",\"className\":\"hc-ux2b-completion-percent\",\"text\":\"43%\",\"color\":\"rgb(247, 247, 245)\",\"background\":\"rgb(255, 255, 255)\"}]"
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/search",
+      "resolvedPath": "/search",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "search-page hc-global-search-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "section",
+          "className": "hc-search-team-entry",
+          "text": "ONE GAME. BOTH DIRECTORIES.Find your next teamSear"
+        },
+        {
+          "tag": "a",
+          "className": "btn dark",
+          "text": "Browse women\u2019s teams \u2197"
+        },
+        {
+          "tag": "section",
+          "className": "hc-surface dashboard-card hc-player-connect-surface",
+          "text": "PLAYER CONNECTAdd a PlayerEnter the player's HoopC"
+        },
+        {
+          "tag": "form",
+          "className": "",
+          "text": "Player usernameFind Player"
+        },
+        {
+          "tag": "input",
+          "className": "",
+          "text": ""
+        },
+        {
+          "tag": "section",
+          "className": "search-hero",
+          "text": "Global ResearchSearch the basketball world.Find pl"
+        },
+        {
+          "tag": "form",
+          "className": "hc-searchbar search-form",
+          "text": "Search"
+        },
+        {
+          "tag": "input",
+          "className": "hc-searchbar__input",
+          "text": ""
+        },
+        {
+          "tag": "section",
+          "className": "hc-surface empty-section",
+          "text": "Start ResearchingSearch before you sign.01Browse C"
+        },
+        {
+          "tag": "a",
+          "className": "quick-card",
+          "text": "01Browse CoachesResearch player experiences."
+        },
+        {
+          "tag": "a",
+          "className": "quick-card",
+          "text": "02Browse TeamsExplore professional organizations."
+        },
+        {
+          "tag": "a",
+          "className": "quick-card",
+          "text": "03Browse LeaguesExplore leagues worldwide."
+        }
+      ],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/search?q=Baku",
+      "resolvedPath": "/search",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "search-page hc-global-search-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "section",
+          "className": "hc-search-team-entry",
+          "text": "ONE GAME. BOTH DIRECTORIES.Find your next teamSear"
+        },
+        {
+          "tag": "a",
+          "className": "btn dark",
+          "text": "Browse women\u2019s teams \u2197"
+        },
+        {
+          "tag": "section",
+          "className": "hc-surface dashboard-card hc-player-connect-surface",
+          "text": "PLAYER CONNECTAdd a PlayerEnter the player's HoopC"
+        },
+        {
+          "tag": "form",
+          "className": "",
+          "text": "Player usernameFind Player"
+        },
+        {
+          "tag": "input",
+          "className": "",
+          "text": ""
+        },
+        {
+          "tag": "section",
+          "className": "search-hero",
+          "text": "Global ResearchSearch the basketball world.Find pl"
+        },
+        {
+          "tag": "form",
+          "className": "hc-searchbar search-form",
+          "text": "\u00d7Search"
+        },
+        {
+          "tag": "input",
+          "className": "hc-searchbar__input",
+          "text": ""
+        },
+        {
+          "tag": "section",
+          "className": "results-section",
+          "text": "Search ResultsResults for \"Baku\"AllPlayersCoachesM"
+        },
+        {
+          "tag": "button",
+          "className": "btn dark",
+          "text": "All"
+        },
+        {
+          "tag": "button",
+          "className": "btn dark",
+          "text": "Players"
+        },
+        {
+          "tag": "button",
+          "className": "btn dark",
+          "text": "Coaches"
+        },
+        {
+          "tag": "button",
+          "className": "btn dark",
+          "text": "Men\u2019s Teams"
+        },
+        {
+          "tag": "button",
+          "className": "btn dark",
+          "text": "Women\u2019s Teams"
+        },
+        {
+          "tag": "button",
+          "className": "btn dark",
+          "text": "Leagues"
+        },
+        {
+          "tag": "select",
+          "className": "",
+          "text": "All countriesAzerbaijanT\u00fcrkiye"
+        },
+        {
+          "tag": "button",
+          "className": "btn dark",
+          "text": "Verified only"
+        }
+      ],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/teams",
+      "resolvedPath": "/teams",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "hc-team-directory-page hc-directory-refresh",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "div",
+          "className": "hc-surface research-search",
+          "text": "TEAM DIRECTORYSearchAll continentsEuropeAsiaAfrica"
+        },
+        {
+          "tag": "input",
+          "className": "hc-searchbar__input",
+          "text": ""
+        },
+        {
+          "tag": "select",
+          "className": "",
+          "text": "All continentsEuropeAsiaAfricaNorth AmericaSouth A"
+        },
+        {
+          "tag": "select",
+          "className": "",
+          "text": "All countriesAzerbaijanT\u00fcrkiye"
+        },
+        {
+          "tag": "select",
+          "className": "",
+          "text": "All leaguesTurkish Basketball League \u2014 Top divisio"
+        },
+        {
+          "tag": "select",
+          "className": "",
+          "text": "All divisionsTop division"
+        },
+        {
+          "tag": "section",
+          "className": "grid hc-team-directory-list",
+          "text": "HOOPCHECKScanning professional teams..."
+        },
+        {
+          "tag": "div",
+          "className": "card",
+          "text": "HOOPCHECKScanning professional teams..."
+        },
+        {
+          "tag": "section",
+          "className": "hero",
+          "text": "Player IntelligenceThe contractis only partof the "
+        },
+        {
+          "tag": "a",
+          "className": "btn dark",
+          "text": "Unlock Full Access"
+        },
+        {
+          "tag": "section",
+          "className": "hc-directory-request-section",
+          "text": "DIRECTORY REQUESTDon\u2019t see your team?Request a pro"
+        },
+        {
+          "tag": "div",
+          "className": "hc-surface dashboard-card",
+          "text": "DIRECTORY REQUESTDon\u2019t see your team?Request a pro"
+        },
+        {
+          "tag": "input",
+          "className": "",
+          "text": ""
+        },
+        {
+          "tag": "input",
+          "className": "",
+          "text": ""
+        },
+        {
+          "tag": "input",
+          "className": "",
+          "text": ""
+        },
+        {
+          "tag": "input",
+          "className": "",
+          "text": ""
+        }
+      ],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/teams/b79a5635-4531-4cc9-981d-103f9b61b9c2",
+      "resolvedPath": "/teams/b79a5635-4531-4cc9-981d-103f9b61b9c2",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "hc-entity-profile-page hc-team-entity-profile",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "section",
+          "className": "hero",
+          "text": "Approved ReviewsWhat players are saying.MEMBERSHIP"
+        },
+        {
+          "tag": "section",
+          "className": "hero hc-review-membership-gate",
+          "text": "MEMBERSHIP REQUIREDSign in to view full review det"
+        },
+        {
+          "tag": "div",
+          "className": "card hc-team-membership-surface",
+          "text": "MEMBERSHIP REQUIREDSign in to view full review det"
+        },
+        {
+          "tag": "a",
+          "className": "btn dark",
+          "text": "Sign in"
+        },
+        {
+          "tag": "section",
+          "className": "hero hc-team-players-history",
+          "text": "PLAYER DIRECTORYPlayers associated with this teamO"
+        },
+        {
+          "tag": "section",
+          "className": "hero",
+          "text": "ROSTER BOARDOpen roster spotsROSTER BOARDOpen rost"
+        },
+        {
+          "tag": "section",
+          "className": "hc-surface hc-roster-spots",
+          "text": "ROSTER BOARDOpen roster spots.No open roster spots"
+        }
+      ],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "FAIL",
+      "reason": "language assertions missing: No approved reviews yet"
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/teams/a2f9b1c4-92a3-4c89-bdd4-1d8e57a7c8f0",
+      "resolvedPath": "/teams/a2f9b1c4-92a3-4c89-bdd4-1d8e57a7c8f0",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "hc-entity-profile-page hc-team-entity-profile",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "section",
+          "className": "hero",
+          "text": "Approved ReviewsWhat players are saying.MEMBERSHIP"
+        },
+        {
+          "tag": "section",
+          "className": "hero hc-review-membership-gate",
+          "text": "MEMBERSHIP REQUIREDSign in to view full review det"
+        },
+        {
+          "tag": "div",
+          "className": "card hc-team-membership-surface",
+          "text": "MEMBERSHIP REQUIREDSign in to view full review det"
+        },
+        {
+          "tag": "a",
+          "className": "btn dark",
+          "text": "Sign in"
+        },
+        {
+          "tag": "section",
+          "className": "hero hc-team-players-history",
+          "text": "PLAYER DIRECTORYPlayers associated with this teamO"
+        },
+        {
+          "tag": "section",
+          "className": "hero",
+          "text": "ROSTER BOARDOpen roster spotsROSTER BOARDOpen rost"
+        },
+        {
+          "tag": "section",
+          "className": "hc-surface hc-roster-spots",
+          "text": "ROSTER BOARDOpen roster spots.No open roster spots"
+        }
+      ],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/womens/b79a5635-4531-4cc9-981d-103f9b61b9c2",
+      "resolvedPath": "/womens/b79a5635-4531-4cc9-981d-103f9b61b9c2",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "page-shell hc-womens-profile-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "article",
+          "className": "hc-surface card",
+          "text": "LEAGUETurkish Basketball LeagueT\u00fcrkiye"
+        },
+        {
+          "tag": "section",
+          "className": "hc-surface dashboard-card compact-section",
+          "text": "MEMBERSHIP REQUIREDSign in to view full review det"
+        },
+        {
+          "tag": "section",
+          "className": "hero hc-review-membership-gate",
+          "text": "MEMBERSHIP REQUIREDSign in to view full review det"
+        },
+        {
+          "tag": "div",
+          "className": "card hc-team-membership-surface",
+          "text": "MEMBERSHIP REQUIREDSign in to view full review det"
+        },
+        {
+          "tag": "a",
+          "className": "btn dark",
+          "text": "Sign in"
+        },
+        {
+          "tag": "button",
+          "className": "btn dark",
+          "text": "\u2190 Back"
+        }
+      ],
+      "lowContrastText": [
+        {
+          "tag": "h1",
+          "className": "",
+          "text": "A.B.B Ego Spor",
+          "color": "rgb(247, 247, 245)",
+          "background": "rgb(244, 244, 241)"
+        },
+        {
+          "tag": "span",
+          "className": "",
+          "text": "\ud83c\uddf9\ud83c\uddf7 T\u00fcrkiye",
+          "color": "rgb(247, 247, 245)",
+          "background": "rgb(244, 244, 241)"
+        },
+        {
+          "tag": "span",
+          "className": "hc-team-profile-meta__city",
+          "text": "\u00b7 Istanbul",
+          "color": "rgb(247, 247, 245)",
+          "background": "rgb(244, 244, 241)"
+        },
+        {
+          "tag": "span",
+          "className": "hc-team-profile-meta__league",
+          "text": "\u00b7 Turkish Basketball League",
+          "color": "rgb(247, 247, 245)",
+          "background": "rgb(244, 244, 241)"
+        },
+        {
+          "tag": "strong",
+          "className": "",
+          "text": "0",
+          "color": "rgb(247, 247, 245)",
+          "background": "rgb(244, 244, 241)"
+        },
+        {
+          "tag": "small",
+          "className": "",
+          "text": "Reviews",
+          "color": "rgb(247, 247, 245)",
+          "background": "rgb(244, 244, 241)"
+        },
+        {
+          "tag": "strong",
+          "className": "hc-team-profile-stat__missing",
+          "text": "\u2014",
+          "color": "rgb(247, 247, 245)",
+          "background": "rgb(244, 244, 241)"
+        },
+        {
+          "tag": "small",
+          "className": "",
+          "text": "Trust Score",
+          "color": "rgb(247, 247, 245)",
+          "background": "rgb(244, 244, 241)"
+        },
+        {
+          "tag": "strong",
+          "className": "",
+          "text": "0",
+          "color": "rgb(247, 247, 245)",
+          "background": "rgb(244, 244, 241)"
+        },
+        {
+          "tag": "small",
+          "className": "",
+          "text": "Followers",
+          "color": "rgb(247, 247, 245)",
+          "background": "rgb(244, 244, 241)"
+        }
+      ],
+      "navigationError": null,
+      "status": "FAIL",
+      "reason": "women team profile: Fan Group entry is missing or not joined: FAN HQ \u00b7 OFFICIAL COMMUNITY\n\nA.B.B EGO SPOR FAN GROUP\n\n12 members \u00b7 Open to join\n\nJOINED \u00b7 OPEN GROUP\nLEAVE GROUP\nMODERATOR \u00b7 OPEN GROUP; low contrast text: [{\"tag\":\"h1\",\"className\":\"\",\"text\":\"A.B.B Ego Spor\",\"color\":\"rgb(247, 247, 245)\",\"background\":\"rgb(244, 244, 241)\"},{\"tag\":\"span\",\"className\":\"\",\"text\":\"\ud83c\uddf9\ud83c\uddf7 T\u00fcrkiye\",\"color\":\"rgb(247, 247, 245)\",\"background\":\"rgb(244, 244, 241)\"},{\"tag\":\"span\",\"className\":\"hc-team-profile-meta__city\",\"text\":\"\u00b7 Istanbul\",\"color\":\"rgb(247, 247, 245)\",\"background\":\"rgb(244, 244, 241)\"},{\"tag\":\"span\",\"className\":\"hc-team-profile-meta__league\",\"text\":\"\u00b7 Turkish Basketball League\",\"color\":\"rgb(247, 247, 245)\",\"background\":\"rgb(244, 244, 241)\"},{\"tag\":\"strong\",\"className\":\"\",\"text\":\"0\",\"color\":\"rgb(247, 247, 245)\",\"background\":\"rgb(244, 244, 241)\"},{\"tag\":\"small\",\"className\":\"\",\"text\":\"Reviews\",\"color\":\"rgb(247, 247, 245)\",\"background\":\"rgb(244, 244, 241)\"},{\"tag\":\"strong\",\"className\":\"hc-team-profile-stat__missing\",\"text\":\"\u2014\",\"color\":\"rgb(247, 247, 245)\",\"background\":\"rgb(244, 244, 241)\"},{\"tag\":\"small\",\"className\":\"\",\"text\":\"Trust Score\",\"color\":\"rgb(247, 247, 245)\",\"background\":\"rgb(244, 244, 241)\"},{\"tag\":\"strong\",\"className\":\"\",\"text\":\"0\",\"color\":\"rgb(247, 247, 245)\",\"background\":\"rgb(244, 244, 241)\"},{\"tag\":\"small\",\"className\":\"\",\"text\":\"Followers\",\"color\":\"rgb(247, 247, 245)\",\"background\":\"rgb(244, 244, 241)\"}]"
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/admin/team-logos",
+      "resolvedPath": "/admin/team-logos",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "admin-team-logo-studio",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": null,
+      "mainTop": 46,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": null,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "section",
+          "className": "",
+          "text": "1. Choose a teamTeamSearch teams by name, city or "
+        },
+        {
+          "tag": "button",
+          "className": "hc-shared-picker-trigger",
+          "text": "Search teams by name, city or country"
+        },
+        {
+          "tag": "section",
+          "className": "",
+          "text": "2. Upload an approved logoPNG, SVG, JPG, or WebP. "
+        },
+        {
+          "tag": "input",
+          "className": "",
+          "text": ""
+        },
+        {
+          "tag": "select",
+          "className": "",
+          "text": "TransparentLight tileDark tile"
+        },
+        {
+          "tag": "section",
+          "className": "",
+          "text": "3. Fetch candidates from official source pagesPast"
+        },
+        {
+          "tag": "textarea",
+          "className": "",
+          "text": ""
+        }
+      ],
+      "lowContrastText": [
+        {
+          "tag": "button",
+          "className": "hc-shared-picker-trigger",
+          "text": "Search teams by name, city or country",
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(255, 255, 255)"
+        }
+      ],
+      "navigationError": null,
+      "status": "FAIL",
+      "reason": "low contrast text: [{\"tag\":\"button\",\"className\":\"hc-shared-picker-trigger\",\"text\":\"Search teams by name, city or country\",\"color\":\"rgb(255, 255, 255)\",\"background\":\"rgb(255, 255, 255)\"}]"
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/coaches",
+      "resolvedPath": "/coaches",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "hc-coaches-directory-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "section",
+          "className": "hc-shared-directory-hero",
+          "text": "HOOPCHECK DIRECTORYKnow the coach before you sign."
+        },
+        {
+          "tag": "nav",
+          "className": "hc-shared-directory-tiles",
+          "text": "Browse directoriesMen\u2019s TeamsWomen\u2019s TeamsCoachesL"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Men\u2019s Teams"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Women\u2019s Teams"
+        },
+        {
+          "tag": "a",
+          "className": "is-current",
+          "text": "Coaches"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Leagues"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Players"
+        },
+        {
+          "tag": "section",
+          "className": "hc-coach-directory-tools",
+          "text": "Find a coachSearch1 coach"
+        },
+        {
+          "tag": "form",
+          "className": "hc-searchbar",
+          "text": "Search"
+        },
+        {
+          "tag": "input",
+          "className": "hc-searchbar__input",
+          "text": ""
+        },
+        {
+          "tag": "section",
+          "className": "grid hc-team-directory-list",
+          "text": "HoopCheck Scouting ReportDirectory profileCQCoach "
+        },
+        {
+          "tag": "article",
+          "className": "card hc-scout-card hc-team-row",
+          "text": "HoopCheck Scouting ReportDirectory profileCQCoach "
+        },
+        {
+          "tag": "section",
+          "className": "hero",
+          "text": "Coach InsightYour next coachmatters.Learn from fir"
+        },
+        {
+          "tag": "a",
+          "className": "btn dark",
+          "text": "Unlock Full Access"
+        }
+      ],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/coaches/11111111-1111-4111-8111-111111111111",
+      "resolvedPath": "/coaches/11111111-1111-4111-8111-111111111111",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "hc-entity-profile-page hc-coach-entity-profile",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "section",
+          "className": "hero",
+          "text": "Coach ResearchCoach QA Fixture\uff0b FollowBaku, Azerba"
+        },
+        {
+          "tag": "button",
+          "className": "btn dark",
+          "text": "\uff0b Follow"
+        },
+        {
+          "tag": "a",
+          "className": "btn dark",
+          "text": "Back To Coaches"
+        },
+        {
+          "tag": "section",
+          "className": "hero",
+          "text": "Team HistoryCoach assignmentsNo historical team as"
+        },
+        {
+          "tag": "div",
+          "className": "card",
+          "text": "No historical team assignments have been added yet"
+        },
+        {
+          "tag": "section",
+          "className": "grid",
+          "text": "Current TeamA.B.B Ego SporIstanbul, T\u00fcrkiyeTurkish"
+        },
+        {
+          "tag": "div",
+          "className": "card",
+          "text": "Current TeamA.B.B Ego SporIstanbul, T\u00fcrkiyeTurkish"
+        },
+        {
+          "tag": "div",
+          "className": "card",
+          "text": "LeagueTurkish Basketball LeagueT\u00fcrkiye \u2022 Top divis"
+        },
+        {
+          "tag": "section",
+          "className": "grid",
+          "text": "Overall Rating0.0Overall community rating"
+        },
+        {
+          "tag": "div",
+          "className": "card",
+          "text": "Overall Rating0.0Overall community rating"
+        },
+        {
+          "tag": "section",
+          "className": "hero",
+          "text": "Approved ReviewsWhat playersare saying.MEMBERSHIP "
+        },
+        {
+          "tag": "section",
+          "className": "hero hc-review-membership-gate",
+          "text": "MEMBERSHIP REQUIREDPlayer Pro or Premium membershi"
+        },
+        {
+          "tag": "div",
+          "className": "card hc-team-membership-surface",
+          "text": "MEMBERSHIP REQUIREDPlayer Pro or Premium membershi"
+        },
+        {
+          "tag": "a",
+          "className": "btn dark",
+          "text": "Sign in"
+        }
+      ],
+      "lowContrastText": [
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Men\u2019s Teams",
+          "color": "rgb(23, 23, 23)",
+          "background": "rgb(27, 27, 27)"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Women\u2019s Teams",
+          "color": "rgb(23, 23, 23)",
+          "background": "rgb(27, 27, 27)"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Coaches",
+          "color": "rgb(23, 23, 23)",
+          "background": "rgb(27, 27, 27)"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Leagues",
+          "color": "rgb(23, 23, 23)",
+          "background": "rgb(27, 27, 27)"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Players",
+          "color": "rgb(23, 23, 23)",
+          "background": "rgb(27, 27, 27)"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Global Search",
+          "color": "rgb(23, 23, 23)",
+          "background": "rgb(27, 27, 27)"
+        }
+      ],
+      "navigationError": null,
+      "status": "FAIL",
+      "reason": "low contrast text: [{\"tag\":\"a\",\"className\":\"\",\"text\":\"Men\u2019s Teams\",\"color\":\"rgb(23, 23, 23)\",\"background\":\"rgb(27, 27, 27)\"},{\"tag\":\"a\",\"className\":\"\",\"text\":\"Women\u2019s Teams\",\"color\":\"rgb(23, 23, 23)\",\"background\":\"rgb(27, 27, 27)\"},{\"tag\":\"a\",\"className\":\"\",\"text\":\"Coaches\",\"color\":\"rgb(23, 23, 23)\",\"background\":\"rgb(27, 27, 27)\"},{\"tag\":\"a\",\"className\":\"\",\"text\":\"Leagues\",\"color\":\"rgb(23, 23, 23)\",\"background\":\"rgb(27, 27, 27)\"},{\"tag\":\"a\",\"className\":\"\",\"text\":\"Players\",\"color\":\"rgb(23, 23, 23)\",\"background\":\"rgb(27, 27, 27)\"},{\"tag\":\"a\",\"className\":\"\",\"text\":\"Global Search\",\"color\":\"rgb(23, 23, 23)\",\"background\":\"rgb(27, 27, 27)\"}]"
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/leagues",
+      "resolvedPath": "/leagues",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "hc-leagues-directory-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "section",
+          "className": "hc-shared-directory-hero",
+          "text": "HOOPCHECK DIRECTORYKnow the league before you comm"
+        },
+        {
+          "tag": "nav",
+          "className": "hc-shared-directory-tiles",
+          "text": "Browse directoriesMen\u2019s TeamsWomen\u2019s TeamsCoachesL"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Men\u2019s Teams"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Women\u2019s Teams"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Coaches"
+        },
+        {
+          "tag": "a",
+          "className": "is-current",
+          "text": "Leagues"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Players"
+        },
+        {
+          "tag": "section",
+          "className": "hc-league-filter",
+          "text": "Find a leagueSearchLeague countryAll countriesT\u00fcrk"
+        },
+        {
+          "tag": "form",
+          "className": "hc-searchbar",
+          "text": "Search"
+        },
+        {
+          "tag": "input",
+          "className": "hc-searchbar__input",
+          "text": ""
+        },
+        {
+          "tag": "select",
+          "className": "",
+          "text": "All countriesT\u00fcrkiye"
+        },
+        {
+          "tag": "section",
+          "className": "grid hc-team-directory-list",
+          "text": "Professional League\ud83c\uddf9\ud83c\uddf7TRTurkish Basketball League"
+        },
+        {
+          "tag": "div",
+          "className": "card hc-team-row",
+          "text": "Professional League\ud83c\uddf9\ud83c\uddf7TRTurkish Basketball League"
+        },
+        {
+          "tag": "section",
+          "className": "hero",
+          "text": "League InsightEvery leaguehas a story.Explore firs"
+        },
+        {
+          "tag": "a",
+          "className": "btn dark",
+          "text": "Unlock Full Access"
+        }
+      ],
+      "lowContrastText": [
+        {
+          "tag": "b",
+          "className": "",
+          "text": "TR",
+          "color": "rgb(255, 85, 0)",
+          "background": "rgba(255, 255, 255, 0.035)"
+        }
+      ],
+      "navigationError": null,
+      "status": "FAIL",
+      "reason": "low contrast text: [{\"tag\":\"b\",\"className\":\"\",\"text\":\"TR\",\"color\":\"rgb(255, 85, 0)\",\"background\":\"rgba(255, 255, 255, 0.035)\"}]"
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/players",
+      "resolvedPath": "/players",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "page-shell hc-player-directory-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "section",
+          "className": "hc-shared-directory-hero",
+          "text": "HOOPCHECK DIRECTORYFind playersResearch profession"
+        },
+        {
+          "tag": "nav",
+          "className": "hc-shared-directory-tiles",
+          "text": "Browse directoriesMen\u2019s TeamsWomen\u2019s TeamsCoachesL"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Men\u2019s Teams"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Women\u2019s Teams"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Coaches"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Leagues"
+        },
+        {
+          "tag": "a",
+          "className": "is-current",
+          "text": "Players"
+        },
+        {
+          "tag": "section",
+          "className": "dashboard-card",
+          "text": "PLAYER SEARCHSearch"
+        },
+        {
+          "tag": "form",
+          "className": "hc-searchbar",
+          "text": "Search"
+        },
+        {
+          "tag": "input",
+          "className": "hc-searchbar__input",
+          "text": ""
+        },
+        {
+          "tag": "div",
+          "className": "team-filter-row",
+          "text": ""
+        },
+        {
+          "tag": "input",
+          "className": "",
+          "text": ""
+        },
+        {
+          "tag": "div",
+          "className": "dashboard-card",
+          "text": "Search by usernamePlayer profiles stay hidden unti"
+        }
+      ],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/womens",
+      "resolvedPath": "/womens",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "page-shell hc-womens-directory-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "section",
+          "className": "hc-shared-directory-hero",
+          "text": "HOOPCHECK DIRECTORYFind a women\u2019s teamSearch profe"
+        },
+        {
+          "tag": "nav",
+          "className": "hc-shared-directory-tiles",
+          "text": "Browse directoriesMen\u2019s TeamsWomen\u2019s TeamsCoachesL"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Men\u2019s Teams"
+        },
+        {
+          "tag": "a",
+          "className": "is-current",
+          "text": "Women\u2019s Teams"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Coaches"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Leagues"
+        },
+        {
+          "tag": "section",
+          "className": "hc-womens-search-panel",
+          "text": "SearchCOUNTRYAll countriesT\u00fcrkiyeLEAGUEAll leagues"
+        },
+        {
+          "tag": "form",
+          "className": "hc-searchbar",
+          "text": "Search"
+        },
+        {
+          "tag": "input",
+          "className": "hc-searchbar__input",
+          "text": ""
+        },
+        {
+          "tag": "select",
+          "className": "",
+          "text": "All countriesT\u00fcrkiye"
+        },
+        {
+          "tag": "select",
+          "className": "",
+          "text": "All leagues"
+        },
+        {
+          "tag": "button",
+          "className": "btn dark",
+          "text": "Follow"
+        }
+      ],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/directory",
+      "resolvedPath": "/directory",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "hc-directory-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "header",
+          "className": "hc-directory-intro",
+          "text": "Your next move starts hereBrowse categoriesExplore"
+        },
+        {
+          "tag": "form",
+          "className": "hc-searchbar hc-directory-search",
+          "text": "Search"
+        },
+        {
+          "tag": "input",
+          "className": "hc-searchbar__input",
+          "text": ""
+        },
+        {
+          "tag": "section",
+          "className": "hc-directory-list",
+          "text": "TProfessional TeamsFollow your team and explore fi"
+        },
+        {
+          "tag": "a",
+          "className": "hc-directory-row",
+          "text": "TProfessional TeamsFollow your team and explore fi"
+        },
+        {
+          "tag": "a",
+          "className": "hc-directory-row",
+          "text": "WWomen's BasketballFollow women's teams and explor"
+        },
+        {
+          "tag": "a",
+          "className": "hc-directory-row",
+          "text": "CCoachesResearch coaches through first-hand review"
+        },
+        {
+          "tag": "a",
+          "className": "hc-directory-row",
+          "text": "PFind PlayersSearch for players by username and di"
+        },
+        {
+          "tag": "a",
+          "className": "hc-directory-row",
+          "text": "LLeagues & CompetitionsBrowse national and interna"
+        },
+        {
+          "tag": "a",
+          "className": "hc-directory-row",
+          "text": "\u2605Reviews & AnalyticsRead published reviews and tea"
+        },
+        {
+          "tag": "a",
+          "className": "hc-directory-row",
+          "text": "!Alerts & NotificationsKeep up with account and ba"
+        }
+      ],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/reviews",
+      "resolvedPath": "/reviews",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "hc-reviews-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "section",
+          "className": "hc-review-summary",
+          "text": "\u2014\u2605\u2605\u2605\u2605\u26050 published ratings50%40%30%20%10%"
+        },
+        {
+          "tag": "section",
+          "className": "",
+          "text": "Latest feedbackLatest 0 publishedNo published revi"
+        },
+        {
+          "tag": "div",
+          "className": "hc-review-state",
+          "text": "No published reviews are available for this filter"
+        }
+      ],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/membership",
+      "resolvedPath": "/membership",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "hc-membership-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "section",
+          "className": "hero membership-hero",
+          "text": "HoopCheck MembershipResearch deeper.Decide smarter"
+        },
+        {
+          "tag": "section",
+          "className": "membership-section",
+          "text": "Complimentary HoopCheck access is active. You can "
+        },
+        {
+          "tag": "div",
+          "className": "dashboard-card",
+          "text": "Complimentary HoopCheck access is active. You can "
+        },
+        {
+          "tag": "div",
+          "className": "dashboard-card",
+          "text": "PLAYER LAUNCH OFFERHave a first-month code?Eligibl"
+        },
+        {
+          "tag": "input",
+          "className": "",
+          "text": ""
+        },
+        {
+          "tag": "button",
+          "className": "btn dark hc-billing-option",
+          "text": "6 monthsSave 10%"
+        },
+        {
+          "tag": "button",
+          "className": "btn dark hc-billing-option",
+          "text": "AnnualSave 15%"
+        },
+        {
+          "tag": "div",
+          "className": "hc-membership-value",
+          "text": "\u2605Best flexibility, better value.Choose monthly, 6-"
+        },
+        {
+          "tag": "div",
+          "className": "plan-card",
+          "text": "HOOPCHECK PROPro$4.99billed monthlyFull access to "
+        },
+        {
+          "tag": "div",
+          "className": "plan-card featured",
+          "text": "MORE ACCESSHOOPCHECK PREMIUMPremium$9.99billed mon"
+        },
+        {
+          "tag": "section",
+          "className": "hero bottom-cta",
+          "text": "KNOW BEFORE YOU GOYour next contractdeserves resea"
+        },
+        {
+          "tag": "a",
+          "className": "btn dark",
+          "text": "Go to Dashboard"
+        }
+      ],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/notifications",
+      "resolvedPath": "/notifications",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "page-shell hc-notifications-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "section",
+          "className": "hero-card",
+          "text": "NOTIFICATIONSAlertsOnly teams, coaches, and league"
+        },
+        {
+          "tag": "button",
+          "className": "btn dark",
+          "text": "Mark all as read"
+        },
+        {
+          "tag": "section",
+          "className": "hc-smooth-wire",
+          "text": "THE WIREBasketball updatesFrom your HoopCheck aler"
+        },
+        {
+          "tag": "button",
+          "className": "is-active",
+          "text": "All0"
+        },
+        {
+          "tag": "button",
+          "className": "",
+          "text": "Unread0"
+        },
+        {
+          "tag": "button",
+          "className": "",
+          "text": "Games0"
+        },
+        {
+          "tag": "button",
+          "className": "",
+          "text": "Clubs0"
+        },
+        {
+          "tag": "button",
+          "className": "",
+          "text": "Reviews0"
+        },
+        {
+          "tag": "div",
+          "className": "card",
+          "text": "No notifications yetFollow a team and choose the a"
+        }
+      ],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/support",
+      "resolvedPath": "/support",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "page-shell hc-support-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "section",
+          "className": "hero-card",
+          "text": "HOOPCHECK SUPPORTOpen a support ticket.Email: Hoop"
+        },
+        {
+          "tag": "section",
+          "className": "dashboard-card",
+          "text": "NEW TICKETSubjectCategoryaccountbillingverificatio"
+        },
+        {
+          "tag": "form",
+          "className": "signup-form",
+          "text": "SubjectCategoryaccountbillingverificationreviewpri"
+        },
+        {
+          "tag": "input",
+          "className": "",
+          "text": ""
+        },
+        {
+          "tag": "select",
+          "className": "",
+          "text": "accountbillingverificationreviewprivacysecuritytec"
+        },
+        {
+          "tag": "select",
+          "className": "",
+          "text": "LowNormalHighUrgent"
+        },
+        {
+          "tag": "textarea",
+          "className": "",
+          "text": ""
+        },
+        {
+          "tag": "section",
+          "className": "dashboard-card",
+          "text": "MY TICKETSNo tickets yet."
+        }
+      ],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/verification",
+      "resolvedPath": "/verification",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "page-shell",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "section",
+          "className": "hero-card",
+          "text": "PLAYER VERIFICATIONGet your player badge.Verificat"
+        },
+        {
+          "tag": "section",
+          "className": "dashboard-card",
+          "text": "IDENTITY CHECKVerify with ID + face scanHoopCheck "
+        },
+        {
+          "tag": "div",
+          "className": "card",
+          "text": "IDENTITY CHECKVerify with ID + face scanHoopCheck "
+        },
+        {
+          "tag": "form",
+          "className": "",
+          "text": "Basketball typeMen\u2019s BasketballWomen\u2019s BasketballC"
+        },
+        {
+          "tag": "select",
+          "className": "",
+          "text": "Men\u2019s BasketballWomen\u2019s Basketball"
+        },
+        {
+          "tag": "button",
+          "className": "hc-shared-picker-trigger",
+          "text": "Search current team"
+        },
+        {
+          "tag": "input",
+          "className": "",
+          "text": ""
+        },
+        {
+          "tag": "input",
+          "className": "",
+          "text": ""
+        },
+        {
+          "tag": "input",
+          "className": "",
+          "text": ""
+        },
+        {
+          "tag": "input",
+          "className": "",
+          "text": ""
+        },
+        {
+          "tag": "textarea",
+          "className": "",
+          "text": ""
+        }
+      ],
+      "lowContrastText": [
+        {
+          "tag": "a",
+          "className": "brand",
+          "text": "HOOPCHECK",
+          "color": "rgb(23, 23, 23)",
+          "background": "rgb(8, 8, 8)"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Account",
+          "color": "rgb(23, 23, 23)",
+          "background": "rgba(0, 0, 0, 0.98)"
+        }
+      ],
+      "navigationError": null,
+      "status": "FAIL",
+      "reason": "low contrast text: [{\"tag\":\"a\",\"className\":\"brand\",\"text\":\"HOOPCHECK\",\"color\":\"rgb(23, 23, 23)\",\"background\":\"rgb(8, 8, 8)\"},{\"tag\":\"a\",\"className\":\"\",\"text\":\"Account\",\"color\":\"rgb(23, 23, 23)\",\"background\":\"rgba(0, 0, 0, 0.98)\"}]"
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/privacy-center",
+      "resolvedPath": "/privacy-center",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "hc-legal-page hc-privacy-center-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "section",
+          "className": "hero",
+          "text": "HoopCheck PrivacyPrivacyRequest Center.Request acc"
+        },
+        {
+          "tag": "section",
+          "className": "legal-content",
+          "text": "Make a requestChoose the request that best describ"
+        },
+        {
+          "tag": "div",
+          "className": "legal-card",
+          "text": "Make a requestChoose the request that best describ"
+        },
+        {
+          "tag": "select",
+          "className": "",
+          "text": "Access my dataCorrect my dataRequest data deletion"
+        },
+        {
+          "tag": "textarea",
+          "className": "",
+          "text": ""
+        },
+        {
+          "tag": "div",
+          "className": "legal-footer",
+          "text": "Privacy PolicyAccountSupport"
+        }
+      ],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/privacy",
+      "resolvedPath": "/privacy",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "hc-legal-page hc-privacy-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "section",
+          "className": "hero",
+          "text": "HoopCheck LegalPrivacyPolicy.This Privacy Policy e"
+        },
+        {
+          "tag": "section",
+          "className": "legal-content",
+          "text": "Last updated: October 9, 20261. ScopeThis policy a"
+        },
+        {
+          "tag": "div",
+          "className": "legal-card",
+          "text": "Last updated: October 9, 20261. ScopeThis policy a"
+        },
+        {
+          "tag": "div",
+          "className": "legal-footer",
+          "text": "Terms of ServiceCommunity GuidelinesPrivacy Reques"
+        }
+      ],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/terms",
+      "resolvedPath": "/terms",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "hc-legal-page hc-terms-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "section",
+          "className": "hero",
+          "text": "HoopCheck LegalTerms ofService.These Terms govern "
+        },
+        {
+          "tag": "section",
+          "className": "legal-content",
+          "text": "Last updated: October 9, 20261. AgreementBy creati"
+        },
+        {
+          "tag": "div",
+          "className": "legal-card",
+          "text": "Last updated: October 9, 20261. AgreementBy creati"
+        },
+        {
+          "tag": "div",
+          "className": "legal-footer",
+          "text": "Privacy PolicyCommunity GuidelinesCopyrightSupport"
+        }
+      ],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/community-guidelines",
+      "resolvedPath": "/community-guidelines",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "hc-legal-page hc-community-guidelines-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "section",
+          "className": "hero",
+          "text": "HoopCheck CommunityCommunityGuidelines.Honest expe"
+        },
+        {
+          "tag": "section",
+          "className": "legal-content",
+          "text": "Last updated: October 2, 20261. Our PurposeHoopChe"
+        },
+        {
+          "tag": "div",
+          "className": "legal-card",
+          "text": "Last updated: October 2, 20261. Our PurposeHoopChe"
+        },
+        {
+          "tag": "div",
+          "className": "legal-footer",
+          "text": "Terms of ServicePrivacy PolicyMembershipResearch"
+        }
+      ],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/login",
+      "resolvedPath": "/login",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "hc-auth-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "section",
+          "className": "hero hc-auth-hero",
+          "text": "WELCOME BACKWelcome back.Sign in to your HoopCheck"
+        },
+        {
+          "tag": "section",
+          "className": "hc-auth-form-section",
+          "text": "HOOPCHECKLoginSign in to HoopCheckUse the email an"
+        },
+        {
+          "tag": "div",
+          "className": "form hc-auth-card",
+          "text": "HOOPCHECKLoginSign in to HoopCheckUse the email an"
+        },
+        {
+          "tag": "form",
+          "className": "",
+          "text": "EmailPasswordLog In"
+        },
+        {
+          "tag": "input",
+          "className": "input",
+          "text": ""
+        },
+        {
+          "tag": "input",
+          "className": "input",
+          "text": ""
+        }
+      ],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/signup",
+      "resolvedPath": "/signup",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "auth-page-shell",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "section",
+          "className": "auth-page signup-page",
+          "text": "JOIN HOOPCHECKChoose your lane.Then build your exp"
+        },
+        {
+          "tag": "div",
+          "className": "auth-hero",
+          "text": "JOIN HOOPCHECKChoose your lane.Then build your exp"
+        },
+        {
+          "tag": "div",
+          "className": "feature",
+          "text": "01Research global basketball."
+        },
+        {
+          "tag": "div",
+          "className": "feature",
+          "text": "02Follow teams you care about."
+        },
+        {
+          "tag": "div",
+          "className": "feature",
+          "text": "03Connect with the basketball community."
+        },
+        {
+          "tag": "div",
+          "className": "auth-card signup-card",
+          "text": "STEP 01 \u00b7 ACCOUNT TYPEHow will you use HoopCheck?C"
+        },
+        {
+          "tag": "button",
+          "className": "account-type-choice ",
+          "text": "PlayerProfessional basketball player: build a veri"
+        },
+        {
+          "tag": "button",
+          "className": "account-type-choice ",
+          "text": "CoachCoach: build a coaching profile, research org"
+        },
+        {
+          "tag": "button",
+          "className": "account-type-choice ",
+          "text": "Team ManagerTeam manager or club representative: c"
+        },
+        {
+          "tag": "button",
+          "className": "account-type-choice ",
+          "text": "ScoutScout: discover players and research teams, l"
+        },
+        {
+          "tag": "button",
+          "className": "account-type-choice ",
+          "text": "AgentAgent: research players, teams, leagues, mark"
+        },
+        {
+          "tag": "button",
+          "className": "account-type-choice ",
+          "text": "FanFan: follow favorite teams, track leagues, and "
+        },
+        {
+          "tag": "div",
+          "className": "signup-gate",
+          "text": "Select an account type to continue.Your choices ar"
+        }
+      ],
+      "lowContrastText": [
+        {
+          "tag": "label",
+          "className": "sr-only",
+          "text": "Choose language",
+          "color": "rgb(23, 23, 23)",
+          "background": "rgba(0, 0, 0, 0.98)"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Log In",
+          "color": "rgb(23, 23, 23)",
+          "background": "rgba(0, 0, 0, 0.98)"
+        }
+      ],
+      "navigationError": null,
+      "status": "FAIL",
+      "reason": "low contrast text: [{\"tag\":\"label\",\"className\":\"sr-only\",\"text\":\"Choose language\",\"color\":\"rgb(23, 23, 23)\",\"background\":\"rgba(0, 0, 0, 0.98)\"},{\"tag\":\"a\",\"className\":\"\",\"text\":\"Log In\",\"color\":\"rgb(23, 23, 23)\",\"background\":\"rgba(0, 0, 0, 0.98)\"}]"
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/onboarding",
+      "resolvedPath": "/onboarding",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "page-shell hc-onboarding-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "section",
+          "className": "hero-card",
+          "text": "PROFILE SETUP \u00b7 PLAYERMake HoopCheck yours.A profe"
+        },
+        {
+          "tag": "section",
+          "className": "dashboard-card",
+          "text": "Display namePositionPGSGSFPFCYears pro012345678910"
+        },
+        {
+          "tag": "input",
+          "className": "",
+          "text": ""
+        },
+        {
+          "tag": "select",
+          "className": "",
+          "text": "PGSGSFPFC"
+        },
+        {
+          "tag": "select",
+          "className": "",
+          "text": "012345678910111213141516171819202122232425"
+        },
+        {
+          "tag": "select",
+          "className": "",
+          "text": "Select countryAlgeriaAngolaBeninBotswanaBurkina Fa"
+        },
+        {
+          "tag": "button",
+          "className": "hc-shared-picker-trigger",
+          "text": "Search teams by name, city or country"
+        },
+        {
+          "tag": "button",
+          "className": "btn dark",
+          "text": "Women\u2019s"
+        },
+        {
+          "tag": "textarea",
+          "className": "",
+          "text": ""
+        }
+      ],
+      "lowContrastText": [
+        {
+          "tag": "a",
+          "className": "brand",
+          "text": "HOOPCHECK",
+          "color": "rgb(23, 23, 23)",
+          "background": "rgb(8, 8, 8)"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Help",
+          "color": "rgb(23, 23, 23)",
+          "background": "rgba(0, 0, 0, 0.98)"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Sign in",
+          "color": "rgb(23, 23, 23)",
+          "background": "rgba(0, 0, 0, 0.98)"
+        }
+      ],
+      "navigationError": null,
+      "status": "FAIL",
+      "reason": "low contrast text: [{\"tag\":\"a\",\"className\":\"brand\",\"text\":\"HOOPCHECK\",\"color\":\"rgb(23, 23, 23)\",\"background\":\"rgb(8, 8, 8)\"},{\"tag\":\"a\",\"className\":\"\",\"text\":\"Help\",\"color\":\"rgb(23, 23, 23)\",\"background\":\"rgba(0, 0, 0, 0.98)\"},{\"tag\":\"a\",\"className\":\"\",\"text\":\"Sign in\",\"color\":\"rgb(23, 23, 23)\",\"background\":\"rgba(0, 0, 0, 0.98)\"}]"
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/fan-live",
+      "resolvedPath": "/fan-live",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "page-shell hc-live-room",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "section",
+          "className": "hero-card hc-live-room-hero",
+          "text": "HOOPCHECK \u00b7 LIVE GAME HUBLIVE GAME CHAT.Real-time "
+        },
+        {
+          "tag": "section",
+          "className": "dashboard-card",
+          "text": "No games availableCheck back when the game schedul"
+        }
+      ],
+      "lowContrastText": [
+        {
+          "tag": "a",
+          "className": "brand",
+          "text": "HOOPCHECK",
+          "color": "rgb(23, 23, 23)",
+          "background": "rgb(8, 8, 8)"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "All Games",
+          "color": "rgb(23, 23, 23)",
+          "background": "rgba(0, 0, 0, 0.98)"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Teams",
+          "color": "rgb(23, 23, 23)",
+          "background": "rgba(0, 0, 0, 0.98)"
+        }
+      ],
+      "navigationError": null,
+      "status": "FAIL",
+      "reason": "low contrast text: [{\"tag\":\"a\",\"className\":\"brand\",\"text\":\"HOOPCHECK\",\"color\":\"rgb(23, 23, 23)\",\"background\":\"rgb(8, 8, 8)\"},{\"tag\":\"a\",\"className\":\"\",\"text\":\"All Games\",\"color\":\"rgb(23, 23, 23)\",\"background\":\"rgba(0, 0, 0, 0.98)\"},{\"tag\":\"a\",\"className\":\"\",\"text\":\"Teams\",\"color\":\"rgb(23, 23, 23)\",\"background\":\"rgba(0, 0, 0, 0.98)\"}]"
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/fan-feed",
+      "resolvedPath": "/fan-feed",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "page-shell hc-feed-page hc-fan-feed-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "section",
+          "className": "hero-card hc-feed-hero",
+          "text": "FAN HQ \u00b7 CLUB COMMUNITIESFan HQYour clubs, your fa"
+        },
+        {
+          "tag": "section",
+          "className": "hc-fan-feed-explainer",
+          "text": "Posts from the fan groups of the clubs you follow."
+        },
+        {
+          "tag": "div",
+          "className": "dashboard-card hc-feed-composer hc-fan-feed-post-prompt",
+          "text": "Have something to share with your club's fans?Choo"
+        },
+        {
+          "tag": "section",
+          "className": "dashboard-card hc-feed-empty hc-feed-shared-empty",
+          "text": "CLUB FAN GROUPSNo posts yet \u2014 be the first to post"
+        }
+      ],
+      "lowContrastText": [
+        {
+          "tag": "a",
+          "className": "brand",
+          "text": "HOOPCHECK",
+          "color": "rgb(23, 23, 23)",
+          "background": "rgb(8, 8, 8)"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Discover fans",
+          "color": "rgb(23, 23, 23)",
+          "background": "rgba(0, 0, 0, 0.98)"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Team Hub",
+          "color": "rgb(23, 23, 23)",
+          "background": "rgba(0, 0, 0, 0.98)"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Teams",
+          "color": "rgb(23, 23, 23)",
+          "background": "rgba(0, 0, 0, 0.98)"
+        }
+      ],
+      "navigationError": null,
+      "status": "FAIL",
+      "reason": "fan-feed: screen title must be Fan HQ: FAN HQ; fan-feed: real club-specific timeline empty state is missing: CLUB FAN GROUPS\nNO POSTS YET \u2014 BE THE FIRST TO POST FOR A.B.B EGO SPOR.\n\nThis club's fan group is quiet right now. Start the conversation for A.B.B Ego Spor.\n\nBE THE FIRST TO POST; fan-feed: timeline empty state action is missing; fan-feed: club-specific EMPTY-1 headline is missing: CLUB FAN GROUPS\nNO POSTS YET \u2014 BE THE FIRST TO POST FOR A.B.B EGO SPOR.\n\nThis group is waiting for its first post. Start the conversation with A.B.B Ego Spor fans.\n\nBE THE FIRST TO POST; fan-feed: EMPTY-1 post action is missing; low contrast text: [{\"tag\":\"a\",\"className\":\"brand\",\"text\":\"HOOPCHECK\",\"color\":\"rgb(23, 23, 23)\",\"background\":\"rgb(8, 8, 8)\"},{\"tag\":\"a\",\"className\":\"\",\"text\":\"Discover fans\",\"color\":\"rgb(23, 23, 23)\",\"background\":\"rgba(0, 0, 0, 0.98)\"},{\"tag\":\"a\",\"className\":\"\",\"text\":\"Team Hub\",\"color\":\"rgb(23, 23, 23)\",\"background\":\"rgba(0, 0, 0, 0.98)\"},{\"tag\":\"a\",\"className\":\"\",\"text\":\"Teams\",\"color\":\"rgb(23, 23, 23)\",\"background\":\"rgba(0, 0, 0, 0.98)\"}]"
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/team-hub",
+      "resolvedPath": "/team-hub",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "page-shell hc-fan-feed-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "section",
+          "className": "hero-card hc-feed-hero",
+          "text": "FAN HQ \u00b7 PERSONAL DASHBOARDYour Team HubYour favor"
+        },
+        {
+          "tag": "section",
+          "className": "dashboard-card hc-feed-empty",
+          "text": "START FOLLOWINGYour Team Hub starts here.Follow te"
+        }
+      ],
+      "lowContrastText": [
+        {
+          "tag": "a",
+          "className": "brand",
+          "text": "HOOPCHECK",
+          "color": "rgb(23, 23, 23)",
+          "background": "rgb(8, 8, 8)"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Discover teams",
+          "color": "rgb(23, 23, 23)",
+          "background": "rgba(0, 0, 0, 0.98)"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Fan HQ",
+          "color": "rgb(23, 23, 23)",
+          "background": "rgba(0, 0, 0, 0.98)"
+        }
+      ],
+      "navigationError": null,
+      "status": "FAIL",
+      "reason": "low contrast text: [{\"tag\":\"a\",\"className\":\"brand\",\"text\":\"HOOPCHECK\",\"color\":\"rgb(23, 23, 23)\",\"background\":\"rgb(8, 8, 8)\"},{\"tag\":\"a\",\"className\":\"\",\"text\":\"Discover teams\",\"color\":\"rgb(23, 23, 23)\",\"background\":\"rgba(0, 0, 0, 0.98)\"},{\"tag\":\"a\",\"className\":\"\",\"text\":\"Fan HQ\",\"color\":\"rgb(23, 23, 23)\",\"background\":\"rgba(0, 0, 0, 0.98)\"}]"
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/team-hub/groups/b79a5635-4531-4cc9-981d-103f9b61b9c2",
+      "resolvedPath": "/team-hub/groups/b79a5635-4531-4cc9-981d-103f9b61b9c2",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "page-shell hc-feed-page hc-team-fan-group-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "section",
+          "className": "hero-card hc-feed-hero",
+          "text": "FAN HQ \u00b7 OFFICIAL COMMUNITYA.B.B Ego Spor Fan Grou"
+        },
+        {
+          "tag": "textarea",
+          "className": "",
+          "text": ""
+        },
+        {
+          "tag": "input",
+          "className": "visually-hidden",
+          "text": ""
+        },
+        {
+          "tag": "section",
+          "className": "dashboard-card hc-feed-empty hc-feed-shared-empty",
+          "text": "CLUB FAN GROUPSNo posts yet \u2014 be the first to post"
+        }
+      ],
+      "lowContrastText": [
+        {
+          "tag": "a",
+          "className": "brand",
+          "text": "TEAM HUB",
+          "color": "rgb(23, 23, 23)",
+          "background": "rgb(8, 8, 8)"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Team page",
+          "color": "rgb(23, 23, 23)",
+          "background": "rgba(0, 0, 0, 0.98)"
+        },
+        {
+          "tag": "a",
+          "className": "",
+          "text": "Your teams",
+          "color": "rgb(23, 23, 23)",
+          "background": "rgba(0, 0, 0, 0.98)"
+        }
+      ],
+      "navigationError": null,
+      "status": "FAIL",
+      "reason": "team-hub group: real club-specific empty state is missing; team-hub group: empty-state composer action is missing; low contrast text: [{\"tag\":\"a\",\"className\":\"brand\",\"text\":\"TEAM HUB\",\"color\":\"rgb(23, 23, 23)\",\"background\":\"rgb(8, 8, 8)\"},{\"tag\":\"a\",\"className\":\"\",\"text\":\"Team page\",\"color\":\"rgb(23, 23, 23)\",\"background\":\"rgba(0, 0, 0, 0.98)\"},{\"tag\":\"a\",\"className\":\"\",\"text\":\"Your teams\",\"color\":\"rgb(23, 23, 23)\",\"background\":\"rgba(0, 0, 0, 0.98)\"}]"
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/live-games",
+      "resolvedPath": "/live-games",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "page-shell hc-live-hub-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "header",
+          "className": "hc-live-hub-hero",
+          "text": "HOOPCHECK \u00b7 LIVE GAME HUBLIVE GAME CHAT.Watch toge"
+        },
+        {
+          "tag": "section",
+          "className": "hc-live-hub-filters",
+          "text": "All gamesLive onlyMy teamsSearchLeagueAll leagues"
+        },
+        {
+          "tag": "button",
+          "className": "",
+          "text": "Live only"
+        },
+        {
+          "tag": "button",
+          "className": "",
+          "text": "My teams"
+        },
+        {
+          "tag": "form",
+          "className": "hc-searchbar hc-live-hub-search",
+          "text": "Search"
+        },
+        {
+          "tag": "input",
+          "className": "hc-searchbar__input",
+          "text": ""
+        },
+        {
+          "tag": "select",
+          "className": "",
+          "text": "All leagues"
+        },
+        {
+          "tag": "div",
+          "className": "hc-live-empty",
+          "text": "No live games right nowWhen a game is live, its ch"
+        },
+        {
+          "tag": "div",
+          "className": "hc-live-empty",
+          "text": "No confirmed upcoming gamesThere are no scheduled "
+        }
+      ],
+      "lowContrastText": [],
+      "navigationError": null,
+      "liveHubPairing": {
+        "emptyCards": [],
+        "countBadges": [],
+        "filterCard": null,
+        "recentEmpty": null,
+        "populatedGameCards": 0
+      },
+      "liveHubPopulated": {
+        "cards": [
+          {
+            "background": "rgb(255, 255, 255)",
+            "color": "rgb(23, 23, 23)",
+            "text": "\u25cf LIVEQA League \u00b7 AzerbaijanA.B.B Ego Spor52 \u2013 48Q3BFBaku Falcons QA 0 members chattingJOIN CHAT \u2192"
+          },
+          {
+            "background": "rgb(255, 255, 255)",
+            "color": "rgb(23, 23, 23)",
+            "text": "UPCOMINGQA League \u00b7 AzerbaijanA.B.B Ego SporVSBFBaku Falcons QA Mon, Nov 9, 2:51 PMChat opens Nov 9, 2:21 PM \u00b7 Remind Me sends an in-app reminder. REMIND ME"
+          },
+          {
+            "background": "rgb(255, 255, 255)",
+            "color": "rgb(23, 23, 23)",
+            "text": "FINALQA League \u00b7 AzerbaijanA.B.B Ego Spor80 \u2013 74BFBaku Falcons QA Chat closedFinal score 80 \u2013 74"
+          }
+        ],
+        "counts": [
+          {
+            "background": "rgb(248, 248, 246)",
+            "color": "rgb(23, 23, 23)",
+            "text": "1"
+          },
+          {
+            "background": "rgb(248, 248, 246)",
+            "color": "rgb(23, 23, 23)",
+            "text": "1"
+          },
+          {
+            "background": "rgb(248, 248, 246)",
+            "color": "rgb(23, 23, 23)",
+            "text": "1"
+          }
+        ],
+        "filter": {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(23, 23, 23)",
+          "text": "All gamesLive onlyMy teamsSearchLeagueAll leaguesQA League"
+        },
+        "hero": {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(23, 23, 23)",
+          "text": "HOOPCHECK \u00b7 LIVE GAME HUBLIVE GAME CHAT.Watch together. Follow live and upcoming games, and join the conversation."
+        },
+        "heroTitle": {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 23, 23)",
+          "text": "LIVE GAME CHAT."
+        },
+        "heroEyebrow": {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(184, 62, 20)",
+          "text": "HOOPCHECK \u00b7 LIVE GAME HUB"
+        },
+        "heroSubtitle": {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 23, 23)",
+          "text": "Watch together. Follow live and upcoming games, and join the conversation."
+        },
+        "crests": [
+          {
+            "background": "rgb(248, 248, 246)",
+            "color": "rgb(23, 23, 23)",
+            "text": ""
+          },
+          {
+            "background": "rgb(248, 248, 246)",
+            "color": "rgb(23, 23, 23)",
+            "text": "BF"
+          },
+          {
+            "background": "rgb(248, 248, 246)",
+            "color": "rgb(23, 23, 23)",
+            "text": ""
+          },
+          {
+            "background": "rgb(248, 248, 246)",
+            "color": "rgb(23, 23, 23)",
+            "text": "BF"
+          },
+          {
+            "background": "rgb(248, 248, 246)",
+            "color": "rgb(23, 23, 23)",
+            "text": ""
+          },
+          {
+            "background": "rgb(248, 248, 246)",
+            "color": "rgb(23, 23, 23)",
+            "text": "BF"
+          }
+        ],
+        "mutedLabels": [
+          {
+            "background": "rgba(0, 0, 0, 0)",
+            "color": "rgb(23, 23, 23)",
+            "text": "QA League \u00b7 Azerbaijan"
+          },
+          {
+            "background": "rgba(0, 0, 0, 0)",
+            "color": "rgb(23, 23, 23)",
+            "text": "Q3"
+          },
+          {
+            "background": "rgba(0, 0, 0, 0)",
+            "color": "rgb(83, 83, 83)",
+            "text": "0 members chatting"
+          },
+          {
+            "background": "rgba(0, 0, 0, 0)",
+            "color": "rgb(23, 23, 23)",
+            "text": "QA League \u00b7 Azerbaijan"
+          },
+          {
+            "background": "rgba(0, 0, 0, 0)",
+            "color": "rgb(23, 23, 23)",
+            "text": "VS"
+          },
+          {
+            "background": "rgba(0, 0, 0, 0)",
+            "color": "rgb(83, 83, 83)",
+            "text": "Mon, Nov 9, 2:51 PM"
+          },
+          {
+            "background": "rgba(0, 0, 0, 0)",
+            "color": "rgb(23, 23, 23)",
+            "text": "Chat opens Nov 9, 2:21 PM \u00b7 Remind Me sends an in-app reminder."
+          },
+          {
+            "background": "rgba(0, 0, 0, 0)",
+            "color": "rgb(23, 23, 23)",
+            "text": "QA League \u00b7 Azerbaijan"
+          },
+          {
+            "background": "rgba(0, 0, 0, 0)",
+            "color": "rgb(83, 83, 83)",
+            "text": "Chat closed"
+          },
+          {
+            "background": "rgba(0, 0, 0, 0)",
+            "color": "rgb(23, 23, 23)",
+            "text": "Final score 80 \u2013 74"
+          }
+        ],
+        "liveChatEntry": {
+          "background": "rgb(255, 90, 31)",
+          "color": "rgb(17, 17, 17)",
+          "text": "JOIN CHAT \u2192"
+        },
+        "liveChatLinks": 1,
+        "renderedText": "HOOPCHECK \u00b7 LIVE GAME HUB\n\nLIVE GAME CHAT.\n\nWatch together. Follow live and upcoming games, and join the conversation.\n\nALL GAMES\nLIVE ONLY\nMY TEAMS\nSEARCH\nLEAGUE\nAll leagues\nQA League\n\nRIGHT NOW\n\nLIVE NOW\n1\n\nReal-time conversations, one game at a time.\n\n\u25cf\nLIVE\nQA League \u00b7 Azerbaijan\nA.B.B Ego Spor\n52 \u2013 48\nQ3\nBF\nBaku Falcons QA\n0 members chatting\nJOIN CHAT\n\u2192\n\nNEXT UP\n\nUPCOMING\n1\n\nTip-off times are shown in your local timezone.\n\nUPCOMING\nQA League \u00b7 Azerbaijan\nA.B.B Ego Spor\nVS\nBF\nBaku Falcons QA\nMon, Nov 9, 2:51 PM\n\nChat opens Nov 9, 2:21 PM \u00b7 Remind Me sends an in-app reminder.\n\nREMIND ME\n\nFINAL WHISTLE\n\nRECENTLY FINISHED\n1\n\nGames from the last 48 hours.\n\nFINAL\nQA League \u00b7 Azerbaijan\nA.B.B Ego Spor\n80 \u2013 74\nBF\nBaku Falcons QA\nChat closed\nFinal score 80 \u2013 74\nGame states refresh automatically every 60 seconds.\nExplore teams \u2192"
+      },
+      "status": "FAIL",
+      "reason": "live-games: expected two empty-state cards; got 0; live-games: expected three section count badges; got 0; live-games: filter card surface regressed: null; live-games: Recently Finished empty state lost its readable dashed treatment: null; live-games: populated GameCard 0 has an unpaired theme: {\"background\":\"rgb(255, 255, 255)\",\"color\":\"rgb(23, 23, 23)\",\"text\":\"\u25cf LIVEQA League \u00b7 AzerbaijanA.B.B Ego Spor52 \u2013 48Q3BFBaku Falcons QA 0 members chattingJOIN CHAT \u2192\"}; live-games: populated GameCard 1 has an unpaired theme: {\"background\":\"rgb(255, 255, 255)\",\"color\":\"rgb(23, 23, 23)\",\"text\":\"UPCOMINGQA League \u00b7 AzerbaijanA.B.B Ego SporVSBFBaku Falcons QA Mon, Nov 9, 2:51 PMChat opens Nov 9, 2:21 PM \u00b7 Remind Me sends an in-app reminder. REMIND ME\"}; live-games: populated GameCard 2 has an unpaired theme: {\"background\":\"rgb(255, 255, 255)\",\"color\":\"rgb(23, 23, 23)\",\"text\":\"FINALQA League \u00b7 AzerbaijanA.B.B Ego Spor80 \u2013 74BFBaku Falcons QA Chat closedFinal score 80 \u2013 74\"}; live-games: populated section badges are not visibly paired: [{\"background\":\"rgb(248, 248, 246)\",\"color\":\"rgb(23, 23, 23)\",\"text\":\"1\"},{\"background\":\"rgb(248, 248, 246)\",\"color\":\"rgb(23, 23, 23)\",\"text\":\"1\"},{\"background\":\"rgb(248, 248, 246)\",\"color\":\"rgb(23, 23, 23)\",\"text\":\"1\"}]; live-games: populated filter card surface/foreground regressed; live-games: hero dark-surface/light-ink pairing regressed: {\"hero\":{\"background\":\"rgb(255, 255, 255)\",\"color\":\"rgb(23, 23, 23)\",\"text\":\"HOOPCHECK \u00b7 LIVE GAME HUBLIVE GAME CHAT.Watch together. Follow live and upcoming games, and join the conversation.\"},\"title\":{\"background\":\"rgba(0, 0, 0, 0)\",\"color\":\"rgb(23, 23, 23)\",\"text\":\"LIVE GAME CHAT.\"},\"eyebrow\":{\"background\":\"rgba(0, 0, 0, 0)\",\"color\":\"rgb(184, 62, 20)\",\"text\":\"HOOPCHECK \u00b7 LIVE GAME HUB\"},\"subtitle\":{\"background\":\"rgba(0, 0, 0, 0)\",\"color\":\"rgb(23, 23, 23)\",\"text\":\"Watch together. Follow live and upcoming games, and join the conversation.\"}}; live-games: team logo chips lost their paired surface/foreground tokens: [{\"background\":\"rgb(248, 248, 246)\",\"color\":\"rgb(23, 23, 23)\",\"text\":\"\"},{\"background\":\"rgb(248, 248, 246)\",\"color\":\"rgb(23, 23, 23)\",\"text\":\"BF\"},{\"background\":\"rgb(248, 248, 246)\",\"color\":\"rgb(23, 23, 23)\",\"text\":\"\"},{\"background\":\"rgb(248, 248, 246)\",\"color\":\"rgb(23, 23, 23)\",\"text\":\"BF\"},{\"background\":\"rgb(248, 248, 246)\",\"color\":\"rgb(23, 23, 23)\",\"text\":\"\"},{\"background\":\"rgb(248, 248, 246)\",\"color\":\"rgb(23, 23, 23)\",\"text\":\"BF\"}]; live-games: populated card metadata is not using readable muted foreground: [{\"background\":\"rgba(0, 0, 0, 0)\",\"color\":\"rgb(23, 23, 23)\",\"text\":\"QA League \u00b7 Azerbaijan\"},{\"background\":\"rgba(0, 0, 0, 0)\",\"color\":\"rgb(23, 23, 23)\",\"text\":\"Q3\"},{\"background\":\"rgba(0, 0, 0, 0)\",\"color\":\"rgb(83, 83, 83)\",\"text\":\"0 members chatting\"},{\"background\":\"rgba(0, 0, 0, 0)\",\"color\":\"rgb(23, 23, 23)\",\"text\":\"QA League \u00b7 Azerbaijan\"},{\"background\":\"rgba(0, 0, 0, 0)\",\"color\":\"rgb(23, 23, 23)\",\"text\":\"VS\"},{\"background\":\"rgba(0, 0, 0, 0)\",\"color\":\"rgb(83, 83, 83)\",\"text\":\"Mon, Nov 9, 2:51 PM\"},{\"background\":\"rgba(0, 0, 0, 0)\",\"color\":\"rgb(23, 23, 23)\",\"text\":\"Chat opens Nov 9, 2:21 PM \u00b7 Remind Me sends an in-app reminder.\"},{\"background\":\"rgba(0, 0, 0, 0)\",\"color\":\"rgb(23, 23, 23)\",\"text\":\"QA League \u00b7 Azerbaijan\"},{\"background\":\"rgba(0, 0, 0, 0)\",\"color\":\"rgb(83, 83, 83)\",\"text\":\"Chat closed\"},{\"background\":\"rgba(0, 0, 0, 0)\",\"color\":\"rgb(23, 23, 23)\",\"text\":\"Final score 80 \u2013 74\"}]"
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/theme-card-audit",
+      "resolvedPath": "/theme-card-audit",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "page-shell hc-card-audit-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [],
+      "lowContrastText": [
+        {
+          "tag": "p",
+          "className": "eyebrow",
+          "text": "HOOPCHECK CLUB PROFILE",
+          "color": "rgb(184, 62, 20)",
+          "background": "rgb(23, 23, 23)"
+        },
+        {
+          "tag": "span",
+          "className": "hc-dossier-tag hc-dossier-tag-orange",
+          "text": "\u2713 VERIFIED PLAYER",
+          "color": "rgb(245, 245, 240)",
+          "background": "rgb(255, 90, 31)"
+        },
+        {
+          "tag": "td",
+          "className": "",
+          "text": "2025\u201326",
+          "color": "rgb(37, 40, 44)",
+          "background": "rgb(23, 23, 23)"
+        },
+        {
+          "tag": "td",
+          "className": "hc-number-cell",
+          "text": "18",
+          "color": "rgb(37, 40, 44)",
+          "background": "rgb(23, 23, 23)"
+        },
+        {
+          "tag": "td",
+          "className": "",
+          "text": "Not disclosed",
+          "color": "rgb(37, 40, 44)",
+          "background": "rgb(23, 23, 23)"
+        },
+        {
+          "tag": "td",
+          "className": "",
+          "text": "Verified",
+          "color": "rgb(37, 40, 44)",
+          "background": "rgb(23, 23, 23)"
+        },
+        {
+          "tag": "p",
+          "className": "eyebrow",
+          "text": "HOOPCHECK \u00b7 LIVE GAME HUB",
+          "color": "rgb(184, 62, 20)",
+          "background": "rgb(23, 23, 23)"
+        },
+        {
+          "tag": "p",
+          "className": "eyebrow",
+          "text": "ACCOUNT OVERVIEW",
+          "color": "rgb(184, 62, 20)",
+          "background": "rgb(23, 23, 23)"
+        },
+        {
+          "tag": "h3",
+          "className": "",
+          "text": "Report submitted",
+          "color": "rgb(245, 245, 240)",
+          "background": "rgb(255, 255, 255)"
+        },
+        {
+          "tag": "p",
+          "className": "muted",
+          "text": "Your report is queued for moderation.",
+          "color": "rgb(184, 184, 179)",
+          "background": "rgb(255, 255, 255)"
+        },
+        {
+          "tag": "p",
+          "className": "eyebrow",
+          "text": "RIGHT NOW",
+          "color": "rgb(184, 62, 20)",
+          "background": "rgb(10, 10, 10)"
+        },
+        {
+          "tag": "p",
+          "className": "eyebrow",
+          "text": "NEXT UP",
+          "color": "rgb(184, 62, 20)",
+          "background": "rgb(10, 10, 10)"
+        },
+        {
+          "tag": "p",
+          "className": "eyebrow",
+          "text": "FINAL WHISTLE",
+          "color": "rgb(184, 62, 20)",
+          "background": "rgb(10, 10, 10)"
+        }
+      ],
+      "navigationError": null,
+      "status": "FAIL",
+      "reason": "low contrast text: [{\"tag\":\"p\",\"className\":\"eyebrow\",\"text\":\"HOOPCHECK CLUB PROFILE\",\"color\":\"rgb(184, 62, 20)\",\"background\":\"rgb(23, 23, 23)\"},{\"tag\":\"span\",\"className\":\"hc-dossier-tag hc-dossier-tag-orange\",\"text\":\"\u2713 VERIFIED PLAYER\",\"color\":\"rgb(245, 245, 240)\",\"background\":\"rgb(255, 90, 31)\"},{\"tag\":\"td\",\"className\":\"\",\"text\":\"2025\u201326\",\"color\":\"rgb(37, 40, 44)\",\"background\":\"rgb(23, 23, 23)\"},{\"tag\":\"td\",\"className\":\"hc-number-cell\",\"text\":\"18\",\"color\":\"rgb(37, 40, 44)\",\"background\":\"rgb(23, 23, 23)\"},{\"tag\":\"td\",\"className\":\"\",\"text\":\"Not disclosed\",\"color\":\"rgb(37, 40, 44)\",\"background\":\"rgb(23, 23, 23)\"},{\"tag\":\"td\",\"className\":\"\",\"text\":\"Verified\",\"color\":\"rgb(37, 40, 44)\",\"background\":\"rgb(23, 23, 23)\"},{\"tag\":\"p\",\"className\":\"eyebrow\",\"text\":\"HOOPCHECK \u00b7 LIVE GAME HUB\",\"color\":\"rgb(184, 62, 20)\",\"background\":\"rgb(23, 23, 23)\"},{\"tag\":\"p\",\"className\":\"eyebrow\",\"text\":\"ACCOUNT OVERVIEW\",\"color\":\"rgb(184, 62, 20)\",\"background\":\"rgb(23, 23, 23)\"},{\"tag\":\"h3\",\"className\":\"\",\"text\":\"Report submitted\",\"color\":\"rgb(245, 245, 240)\",\"background\":\"rgb(255, 255, 255)\"},{\"tag\":\"p\",\"className\":\"muted\",\"text\":\"Your report is queued for moderation.\",\"color\":\"rgb(184, 184, 179)\",\"background\":\"rgb(255, 255, 255)\"},{\"tag\":\"p\",\"className\":\"eyebrow\",\"text\":\"RIGHT NOW\",\"color\":\"rgb(184, 62, 20)\",\"background\":\"rgb(10, 10, 10)\"},{\"tag\":\"p\",\"className\":\"eyebrow\",\"text\":\"NEXT UP\",\"color\":\"rgb(184, 62, 20)\",\"background\":\"rgb(10, 10, 10)\"},{\"tag\":\"p\",\"className\":\"eyebrow\",\"text\":\"FINAL WHISTLE\",\"color\":\"rgb(184, 62, 20)\",\"background\":\"rgb(10, 10, 10)\"}]"
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/partners",
+      "resolvedPath": "/partners",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "page-shell hc-partners-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "section",
+          "className": "hero-card",
+          "text": "PARTNER WITH HOOPCHECKSponsor, donate, or inquire."
+        },
+        {
+          "tag": "section",
+          "className": "dashboard-card",
+          "text": "Inquiry typeSponsor recommendation / partnershipDo"
+        },
+        {
+          "tag": "select",
+          "className": "",
+          "text": "Sponsor recommendation / partnershipDonate / suppo"
+        },
+        {
+          "tag": "textarea",
+          "className": "",
+          "text": ""
+        }
+      ],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "theme": "light",
+      "scaffoldMatches": [],
+      "requestedPath": "/copyright",
+      "resolvedPath": "/copyright",
+      "themeClass": "light",
+      "body": "rgb(244, 244, 241)",
+      "pageWrapper": "rgb(244, 244, 241)",
+      "mainClass": "page-shell hc-copyright-page",
+      "safeAreaTop": 0,
+      "bodyTopPadding": 0,
+      "headerTop": 0,
+      "mainTop": 102,
+      "safeAreaBottom": 0,
+      "tabBarBottomPadding": 6,
+      "criticalControlContrast": [],
+      "whiteSurfaceOffenders": [
+        {
+          "tag": "section",
+          "className": "hero-card",
+          "text": "HOOPCHECK COPYRIGHTCopyright reporting center.Subm"
+        },
+        {
+          "tag": "section",
+          "className": "dashboard-card",
+          "text": "Before submittingUse this process only for genuine"
+        }
+      ],
+      "lowContrastText": [],
+      "navigationError": null,
+      "status": "PASS",
+      "reason": ""
+    }
+  ],
+  "broad_route_sweep_warning": "Existing script exits zero even when route statuses are FAIL. Do not interpret process success as route success.",
+  "production": "No deployment performed; prior deployment observed READY",
+  "publication": "Implementation published as draft PR https://github.com/jacoriejay-afk/Hoopcheck/pull/372. Companion audit publication explicitly approved. No merge or production deployment."
+}
