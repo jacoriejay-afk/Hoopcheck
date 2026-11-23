@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { Button, GlassCard } from "../src/primitives";
 import { useEntryTheme } from "../src/theme";
 import { supabase } from "../src/lib/supabase";
 import { requireOnline, useNetwork } from "../src/native/network";
 import { useNativeAccount } from "../src/native/useNativeAccount";
+import { HoopCheckLoading } from "./HoopCheckLoading";
 
-type Space = { id:string;slug:string;name:string;category:string;description:string };
+type Space = { id:string;slug:string;name:string;category:string;description:string;owner_id:string|null;accent_color:string;icon_key:string };
 type Channel = { id:string;space_id:string;name:string;slug:string;sort_index:number };
 type Post = { id:string;author_id:string;body:string;moderation_status:string;created_at:string };
 export default function HoopGroupsChannels() {
@@ -26,6 +27,13 @@ export default function HoopGroupsChannels() {
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState("");
   const [revision,setRevision]=useState(0);
+  const [query,setQuery]=useState("");
+  const [filter,setFilter]=useState<"discover"|"joined"|"mine">("discover");
+  const [creating,setCreating]=useState(false);
+  const [newName,setNewName]=useState("");
+  const [newDescription,setNewDescription]=useState("");
+  const [newCategory,setNewCategory]=useState("global");
+  const [newChannel,setNewChannel]=useState("");
   const role=account?.user.accountType||"";
 
   useFocusEffect(useCallback(()=> {
@@ -38,7 +46,7 @@ export default function HoopGroupsChannels() {
         const {data:{user}}=await supabase.auth.getUser();
         if(user?.id!==userId)throw Error("Revalidate your session.");
         const [a,b,c]=await Promise.all([
-          supabase.from("hoop_group_spaces").select("id,slug,name,category,description").order("name"),
+          supabase.from("hoop_group_spaces").select("id,slug,name,category,description,owner_id,accent_color,icon_key").order("name"),
           supabase.from("hoop_group_channels").select("id,space_id,name,slug,sort_index").order("sort_index"),
           supabase.from("hoop_group_members").select("space_id").eq("user_id",userId),
         ]);
@@ -58,7 +66,13 @@ export default function HoopGroupsChannels() {
     const priority=(s:Space)=>Number(s.category===role || (role==="scout"&&s.category==="agents"));
     return priority(b)-priority(a)||a.name.localeCompare(b.name);
   }),[spaces,role]);
-  const selected=spaces.find(item=>item.id===spaceId)||ordered[0];
+  const filtered=ordered.filter(space=>{
+    if(filter==="joined" && !joined.includes(space.id))return false;
+    if(filter==="mine" && space.owner_id!==userId)return false;
+    const needle=query.trim().toLocaleLowerCase();
+    return !needle || [space.name,space.description,space.category].some(value=>value.toLocaleLowerCase().includes(needle));
+  });
+  const selected=filtered.find(item=>item.id===spaceId)||filtered[0];
   const availableChannels=channels.filter(item=>item.space_id===selected?.id);
   const channel=availableChannels.find(item=>item.id===channelId)||availableChannels[0];
   const member=Boolean(selected&&joined.includes(selected.id));
