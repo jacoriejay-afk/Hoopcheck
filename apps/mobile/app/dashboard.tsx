@@ -155,7 +155,8 @@ export default function DashboardScreen() {
         <Animated.View pointerEvents="none" style={[styles.expandedBrand, { top: insets.top + 17 }, expandedStyle]}>
           <BrandLogo onHero />
         </Animated.View>
-        <Animated.View pointerEvents="none" style={[styles.compactBrand, { top: insets.top + 10 }, compactStyle]}>
+        <Animated.View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
+          style={[styles.compactBrand, { top: insets.top + 10 }, compactStyle]}>
           <BrandLogo compact onHero />
           <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "800" }}>HoopCheck</Text>
         </Animated.View>
