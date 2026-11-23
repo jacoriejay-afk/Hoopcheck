@@ -10,11 +10,15 @@ for (const filename of [
   "app/dashboard/page.tsx",
   "app/profile/page.tsx",
   "app/players/[id]/page.tsx",
+  "app/settings/page.tsx",
   "components/PlayerProfileCompletionCard.tsx",
 ]) {
   const source = fs.readFileSync(filename, "utf8");
   assert.match(source, /readOwnProfile/, filename + " must support restricted owner reads");
 }
+const settings = fs.readFileSync("app/settings/page.tsx", "utf8");
+assert.doesNotMatch(settings, /getOwnProfile\(supabase/, "Settings must not call the unavailable owner RPC directly");
+assert.match(settings, /readOwnProfile<\{account_type:/, "Settings must use scoped legacy/RPC-compatible owner projection");
 const dashboard = fs.readFileSync("app/dashboard/page.tsx", "utf8");
 assert.match(dashboard, /withTimeout\(readOwnProfile<Profile>\(user\.id/, "Dashboard must use guarded profile owner projection");
 assert.doesNotMatch(dashboard, /supabase\.from\("profiles"\)\.select\("id,display_name,first_name/, "Dashboard must not directly depend on the protected-column SELECT");
