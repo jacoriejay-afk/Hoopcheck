@@ -163,7 +163,27 @@ if(process.argv.includes("--self-test")) {
   assert.equal(denied({status:403}),true);
   assert.equal(denied({status:200}),false);
   assert.throws(()=>config({}),/Missing test-only/);
-  console.log("PASS test-only URL guard, MFA denial expectations and credential preflight");
+  // Dummy JWTs are decoded only for LOCAL validation tests, never used for HTTP.
+  const dummy=(sub,aal="aal1",anonymous=false)=>
+    "header."+Buffer.from(JSON.stringify({sub,role:"authenticated",aal,is_anonymous:anonymous})).toString("base64url")+".signature";
+  const owner="11111111-1111-4111-8111-111111111111";
+  const other="22222222-2222-4222-8222-222222222222";
+  const anon="33333333-3333-4333-8333-333333333333";
+  const local={
+    BUILD9_ACCEPTANCE_URL:TARGET, BUILD9_ACCEPTANCE_ANON_KEY:"fake-public-key",
+    BUILD9_ACCEPTANCE_OWNER_AAL1_TOKEN:dummy(owner),
+    BUILD9_ACCEPTANCE_OWNER_AAL2_TOKEN:dummy(owner,"aal2"),
+    BUILD9_ACCEPTANCE_NONOWNER_TOKEN:dummy(other),
+    BUILD9_ACCEPTANCE_ANON_AUTH_TOKEN:dummy(anon,"aal1",true),
+    BUILD9_ACCEPTANCE_PUBLIC_PLAYER_ID:owner,
+    BUILD9_ACCEPTANCE_PRIVATE_PLAYER_ID:other,
+    BUILD9_ACCEPTANCE_OPTOUT_PLAYER_ID:anon
+  };
+  assert.equal(config(local).owner,owner,"Valid synthetic role matrix must pass");
+  assert.throws(()=>config({...local,BUILD9_ACCEPTANCE_ANON_AUTH_TOKEN:dummy(anon)}),/anonymous Auth session/);
+  assert.throws(()=>config({...local,BUILD9_ACCEPTANCE_OWNER_AAL2_TOKEN:dummy(other,"aal2")}),/same user/);
+  assert.throws(()=>config({...local,BUILD9_ACCEPTANCE_OWNER_AAL1_TOKEN:dummy(owner,"aal1",true)}),/must not be anonymous Auth/);
+  console.log("PASS test-only URL guard, role-matrix, MFA denial expectations and credential preflight");
 } else {
   try {await accept(process.env);}
   catch (e) {
