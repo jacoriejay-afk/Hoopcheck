@@ -78,8 +78,12 @@ export function TabBar() {
   const translucent = Platform.OS === "ios" && !reduceTransparency;
   const nativeGlass = translucent && isGlassEffectAPIAvailable() && isLiquidGlassAvailable();
   const activeWidth = width > 0 ? width / tabs.length : 0;
+  // Only the four glass screens reserve scroll-bottom space for an overlay.
+  // Other existing Build 9 routes keep the tab bar in the normal layout.
+  const floating = ["/dashboard", "/fan-live", "/feed", "/fan-feed", "/reels"].includes(path)
+    || (path.startsWith("/teams/") && path.split("/").length === 3);
   return <View testID="glass-floating-tab-bar" onLayout={event => setWidth(event.nativeEvent.layout.width)} style={{
-      position: "absolute", left: 0, right: 0, bottom: 0, zIndex: 20,
+      position: floating ? "absolute" : "relative", left: 0, right: 0, bottom: 0, zIndex: 20,
       marginHorizontal: 16 + Math.max(insets.left, insets.right),
       marginBottom: Math.max(8, insets.bottom + 6), borderRadius: 999,
       borderCurve: "continuous", overflow: "hidden",
