@@ -95,7 +95,7 @@ function TeamDetailContent() {
         ) : (
           <>
             <View style={{ height: 190, borderRadius: glass.radii.card, overflow: "hidden", backgroundColor: glass.solid }}>
-              <Image source={arenaArtwork} accessibilityIgnoresInvertColors resizeMode="cover"
+              <Image source={arenaArtwork} alt="" accessibilityIgnoresInvertColors resizeMode="cover"
                 style={{ width: "100%", height: "100%", opacity: .6 }} />
               <View style={{ position: "absolute", left: 0, right: 0, bottom: 0,
                 padding: 16, paddingTop: 30, backgroundColor: "rgba(7,7,10,0.74)" }}>

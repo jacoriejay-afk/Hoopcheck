@@ -3,7 +3,6 @@ import { GlassSegmented } from "../components/glass/GlassSegmented";
 import { GlassHeader } from "../components/glass/GlassHeader";
 import { GlassBackdrop } from "../components/glass/GlassBackdrop";
 import { glassTokens as glass } from "../src/glassTheme";
-import { GlassSurface } from "../components/GlassSurface";
 import { Scoreboard } from "../components/Scoreboard";
 import { Skeleton } from "../components/Motion";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
