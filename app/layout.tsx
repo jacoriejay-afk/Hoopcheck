@@ -83,13 +83,13 @@ const displayFont = localFont({
 });
 const sansFont = Inter({ variable: "--font-sans", subsets: ["latin"], display: "swap" });
 const siteUrl = SITE_URL;
-const defaultTitle = "HoopCheck — Know Who You're Signing With";
-const defaultDescription = "Real reviews of basketball teams, coaches, leagues and agents, written by players. Check the team before you sign.";
+const defaultTitle = "HoopCheck™ | Basketball Teams, Players & Reviews";
+const defaultDescription = "Discover professional basketball teams, leagues, coaches and players worldwide. Explore live games and firsthand player reviews. Join HoopCheck™ for free.";
 const socialImage = "/hoopcheck-logo.svg";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: { default: defaultTitle, template: "%s | HoopCheck" },
+  title: { default: defaultTitle, template: "%s | HoopCheck™" },
   description: defaultDescription,
   applicationName: "HoopCheck",
   keywords: [
@@ -136,16 +136,23 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const organizationJsonLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
+    "@id": `${siteUrl}/#organization`,
     name: "HoopCheck",
+    alternateName: "HoopCheck™",
     url: siteUrl,
-    logo: new URL(socialImage, siteUrl).toString(),
+    description: defaultDescription,
+    logo: new URL("/favicon.svg", siteUrl).toString(),
+    image: new URL(socialImage, siteUrl).toString(),
   };
   const websiteJsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
+    "@id": `${siteUrl}/#website`,
     name: "HoopCheck",
+    alternateName: "HoopCheck™",
     url: siteUrl,
     description: defaultDescription,
+    publisher: { "@id": `${siteUrl}/#organization` },
   };
 
   return (
