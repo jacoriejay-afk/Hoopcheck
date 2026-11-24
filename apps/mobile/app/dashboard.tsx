@@ -80,7 +80,7 @@ export default function DashboardScreen() {
               start={{x:0,y:0}} end={{x:1,y:1}} style={StyleSheet.absoluteFill}/>
             <View style={{minHeight:62,paddingHorizontal:13,paddingVertical:9,
               flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:8}}>
-              <BrandLogo onHero />
+              <BrandLogo onHero={theme.dark} />
               <Pressable accessibilityRole="button" accessibilityLabel="Open account menu"
                 accessibilityState={{expanded:menuOpen}} onPress={()=>setMenuOpen(open=>!open)}
                 style={({pressed})=>({width:44,height:44,borderRadius:19,
