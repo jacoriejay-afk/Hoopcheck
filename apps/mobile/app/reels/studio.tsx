@@ -126,6 +126,7 @@ function HoopReelsStudio() {
     } finally { setDeleting(null); }
   }
 
+  const userId = owner!;
   const caption = draft.owner === owner ? draft.caption : "";
   const topic = draft.owner === owner ? draft.topic : "";
   const textColor = theme.foreground;
@@ -154,7 +155,7 @@ function HoopReelsStudio() {
         <Text style={{ color: textColor, fontSize: 15, fontWeight: "800" }}>1. Caption your highlight</Text>
         <TextInput accessibilityLabel="Reel caption" placeholder="What happened on the court? Add a caption…"
           placeholderTextColor={theme.muted} multiline maxLength={2000}
-          value={caption} onChangeText={value => setDraft({ owner, caption: value, topic })}
+          value={caption} onChangeText={value => setDraft({ owner: userId, caption: value, topic })}
           style={{ minHeight: 84, maxHeight: 180, borderRadius: 12, borderColor: theme.border, borderWidth: 1,
             backgroundColor: theme.input, color: textColor, textAlignVertical: "top", padding: 12, fontSize: 15 }} />
         <Text style={{ color: theme.muted, fontSize: 12, textAlign: "right" }}>{caption.length}/2000</Text>
@@ -162,7 +163,7 @@ function HoopReelsStudio() {
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7 }}>
           {(["", ...REEL_TOPICS] as ReelTopic[]).map(value =>
             <Pressable key={value || "none"} accessibilityRole="button" accessibilityLabel={value ? "Topic " + value : "No topic"}
-              accessibilityState={{ selected: topic === value }} onPress={() => setDraft({ owner, caption, topic: value })}
+              accessibilityState={{ selected: topic === value }} onPress={() => setDraft({ owner: userId, caption, topic: value })}
               style={{ minHeight: 44, borderRadius: 999, justifyContent: "center", paddingHorizontal: 12, borderWidth: 1,
                 borderColor: topic === value ? theme.accent : theme.border, backgroundColor: topic === value ? theme.accentSurface : theme.elevatedSurface }}>
               <Text style={{ color: topic === value ? theme.accent : theme.muted, fontSize: 12, fontWeight: "700" }}>{value || "None"}</Text>
@@ -181,11 +182,11 @@ function HoopReelsStudio() {
 
       <View style={{ gap: 12, padding: 14, borderRadius: 18, borderWidth: 1, borderColor: theme.border, backgroundColor: theme.surface }}>
         <Text style={{ color: textColor, fontSize: 15, fontWeight: "800" }}>2. Select, preview and publish</Text>
-        <MediaPostComposer key={owner} userId={owner} enabled={allowed} caption={caption} topicTag={topic}
+        <MediaPostComposer key={userId} userId={userId} enabled={allowed} caption={caption} topicTag={topic}
           videoOnly token={getToken} onRefresh={refreshMine}
           onPublished={async () => {
-            try { await clearReelCaptionDraft(AsyncStorage, owner); } catch { /* A stale caption draft does not change publication. */ }
-            setDraft({ owner, caption: "", topic: "" });
+            try { await clearReelCaptionDraft(AsyncStorage, userId); } catch { /* A stale caption draft does not change publication. */ }
+            setDraft({ owner: userId, caption: "", topic: "" });
             router.replace("/reels");
           }} />
       </View>
