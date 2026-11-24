@@ -168,7 +168,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
     finally{setSending(false);}
   }
   return <SafeAreaView edges={embedded ? ["left","right"] : ["bottom","left","right"]} style={{flex:1,backgroundColor:theme.background}}>
-    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:embedded?12:16,gap:embedded?8:12,paddingBottom:35}}>
+    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:embedded?12:16,gap:embedded?8:12,paddingBottom:embedded?120:35}}>
       {!embedded ? <Text accessibilityRole="header" style={{fontSize:27,fontWeight:"900",color:theme.foreground}}>HoopChat</Text> : null}
       {!embedded ? <Text style={{color:theme.muted}}>Private player connections and message requests. Players must accept before messaging opens.</Text> : null}
       <View style={{flexDirection:"row",flexWrap:"wrap",gap:8}}>
