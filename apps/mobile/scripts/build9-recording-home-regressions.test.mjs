@@ -11,12 +11,12 @@ const fixture = (id, status, scheduled_at) => ({ id, status, scheduled_at, score
 
 test("Home header stays pinned below iPhone's top safe area", () => {
   assert.match(dash, /edges=\{\["top", "left", "right", "bottom"\]\}/);
-  const pinned = dash.indexOf("<View style={styles.pinnedHeader}>");
+  const pinned = dash.indexOf('<View pointerEvents="box-none" style={[styles.pinnedHeader,');
   const scroll = dash.indexOf('testID="dashboard-scroll"');
   const brand = dash.indexOf("<BrandLogo onHero={theme.dark} />", pinned);
   const menu = dash.indexOf('accessibilityLabel="Open account menu"', pinned);
   assert.ok(pinned > 0 && brand > pinned && menu > pinned && brand < scroll && menu < scroll,
-    "Header and account menu must remain outside scrolling content");
+    "Header and account menu must overlay rather than move with scrolling content");
   assert.ok(scroll > pinned && dash.includes("pinnedHeader:"), "The pinned header requires layout styles");
 });
 
