@@ -117,7 +117,7 @@ export default function AccountScreen() {
         </View>
         <GroupLabel>My account</GroupLabel>
         <AccountGroup>
-          <AccountRow icon="chatbubble-ellipses-outline" title="HoopChat & requests" detail="Conversations and connections" onPress={()=>router.push("/notifications")}/>
+          <AccountRow icon="chatbubble-ellipses-outline" title="HoopChat & requests" detail="Conversations and connections" onPress={()=>router.push({pathname:"/notifications",params:{tab:"chat"}})}/>
           <AccountRow icon="people-outline" title="Connections" onPress={()=>router.push("/connections")}/>
           {account.user.accountType==="player" ? <AccountRow icon="person-circle-outline" title="View public player profile"
             detail="Career history and Player Passport" onPress={()=>router.push({pathname:"/players/[id]",params:{id:account.user.id}})}
