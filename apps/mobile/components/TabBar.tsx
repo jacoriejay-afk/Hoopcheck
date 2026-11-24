@@ -70,12 +70,15 @@ export function TabBar() {
     // Haptic runs only after navigation reaches its target.
   }, [index, path, reduced, width, haptic, x, opacity]);
   const indicator = useAnimatedStyle(() => ({ transform: [{ translateX: x.get() }], opacity: opacity.get() }));
+  // PanResponder registers callbacks; pending.current is written only on gesture release.
+  // eslint-disable-next-line react-hooks/refs
   const slide = useMemo(() => PanResponder.create({
     onMoveShouldSetPanResponderCapture: (_event, gesture) => width > 0 && index >= 0 && Math.abs(gesture.dx) > 12 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.5,
     onPanResponderMove: (_event, gesture) => {
       if (!reduced) x.set(Math.min((tabs.length - 1) * width / tabs.length, Math.max(0, index * width / tabs.length + gesture.dx)));
     },
     onPanResponderRelease: (_event, gesture) => {
+      if (width <= 0 || index < 0) return;
       const segment = width / tabs.length;
       const destination = Math.max(0, Math.min(tabs.length - 1, index + Math.round(gesture.dx / segment)));
       const route = tabs[destination].route;

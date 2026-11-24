@@ -51,7 +51,7 @@ export function Scoreboard({ game, teams }: { game: LiveGame; teams: Record<stri
     game.status === "scheduled" ? "SCHEDULED" : game.status === "live" ? "UPDATE DELAYED" :
     ["final", "finished"].includes(game.status) ? "FINAL" : game.status.toUpperCase();
   const updated = game.score_updated_at ? Date.parse(game.score_updated_at) : NaN;
-  const age = Number.isFinite(updated) && updated <= Date.now() ? Math.floor((Date.now() - updated) / 60000) : null;
+  const refreshTime = Number.isFinite(updated) ? new Date(updated).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : null;
   const home = teams[game.team_id]?.name || "Home team";
   const away = teams[game.opponent_team_id || ""]?.name || game.opponent_name || "Opponent";
   return <View style={{ gap: t.spacing.sm, borderLeftWidth: live ? 3 : 0, borderLeftColor: t.button, paddingLeft: live ? t.spacing.md : 0 }}>
@@ -64,7 +64,7 @@ export function Scoreboard({ game, teams }: { game: LiveGame; teams: Record<stri
       <Text style={{ flex: 1, minWidth: 0, color: t.foreground, ...t.type.section }}>{team.name}</Text>
       <ScoreValue gameId={game.id} name={team.name} score={team.score} live={live} color={game.home_score != null && game.away_score != null && team.score! > (index === 0 ? game.away_score : game.home_score) ? glass.orange : t.foreground} fontSize={t.courtside.typography.score} fontFamily={t.type.ui.fontFamily} />
     </View>)}
-    {game.status === "live" ? <Text style={{ color: t.muted, ...t.type.caption }}>{age === null ? "Score refresh not verified" : age === 0 ? "Provider synced just now" : age < 60 ? "Provider synced " + age + "m ago" : "Provider synced " + Math.floor(age / 60) + "h ago"}</Text> : null}
+    {game.status === "live" ? <Text style={{ color: t.muted, ...t.type.caption }}>{refreshTime === null ? "Score refresh not verified" : "Provider refreshed " + refreshTime}</Text> : null}
     {game.home_score == null || game.away_score == null ? <Text style={{ color: t.muted, ...t.type.caption }}>Score not reported</Text> : null}
   </View>;
 }
