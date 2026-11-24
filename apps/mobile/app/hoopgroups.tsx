@@ -14,16 +14,16 @@ const planned = [
 export default function HoopGroups() {
   const theme = useEntryTheme();
   const enabled = process.env.EXPO_PUBLIC_HOOPGROUPS_CHANNELS_ENABLED === "true";
-  return <SafeAreaView edges={["top","bottom","left","right"]} style={{flex:1,backgroundColor:theme.background}}>
+  return <SafeAreaView edges={["bottom","left","right"]} style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{
-      paddingHorizontal:15,paddingTop:10,gap:12,paddingBottom:40,maxWidth:700,width:"100%",alignSelf:"center"}}>
-      <Text accessibilityRole="header" style={{fontSize:27,fontWeight:"900",color:theme.foreground}}>HoopGroups</Text>
+      paddingHorizontal:12,paddingTop:6,gap:9,paddingBottom:40,maxWidth:700,width:"100%",alignSelf:"center"}}>
+      <Text accessibilityRole="header" style={{fontSize:22,fontFamily:"HoopCheckDisplay",color:theme.foreground}}>COMMUNITIES</Text>
       <Text style={{color:theme.muted,fontSize:13,lineHeight:20}}>
         Find your basketball people. Discover independent communities, create your own group, and join discussion channels.
       </Text>
       {enabled ? <HoopGroupsChannels /> : <>
         <View style={{paddingVertical:9,gap:7,borderTopWidth:1,borderColor:theme.glassBorder}}>
-          <Text accessibilityRole="header" style={{color:theme.foreground,fontWeight:"900",fontSize:17}}>
+          <Text accessibilityRole="header" style={{color:theme.foreground,fontFamily:"HoopCheckDisplay",fontSize:18}}>
             Community spaces are preparing for launch
           </Text>
           <Text style={{color:theme.muted,fontSize:12,lineHeight:19}}>
