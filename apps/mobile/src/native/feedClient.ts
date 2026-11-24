@@ -106,8 +106,21 @@ export async function readFeedChecks(client: SupabaseClient, ids: string[]) {
   if (ids.length > FEED_PAGE_SIZE + 1 || ids.some(id => !uuid.test(id))) throw new Error("Invalid check request");
   if (!ids.length) return [];
   const result = await client.rpc("get_hoopfeed_check_totals", { post_ids: ids });
-  if (result.error) throw new Error("Checks unavailable");
-  return (result.data ?? []) as { post_id: string; checks_count: number; checked_by_me: boolean }[];
+  if (result.error || !Array.isArray(result.data)) throw new Error("Checks unavailable");
+  // The installed SQL aggregates FROM feed_post_checks, so a post with zero
+  // checks produces no GROUP BY row. Missing rows after a successful RPC mean
+  // zero; RPC failures must never be converted to fake counts.
+  const requested = new Set(ids);
+  const totals = new Map<string, { post_id: string; checks_count: number; checked_by_me: boolean }>();
+  for (const row of result.data) {
+    const count = Number(row?.checks_count);
+    if (!row || !requested.has(row.post_id) || totals.has(row.post_id)
+      || !Number.isSafeInteger(count) || count < 0 || typeof row.checked_by_me !== "boolean") {
+      throw new Error("Invalid Check totals response");
+    }
+    totals.set(row.post_id, { post_id: row.post_id, checks_count: count, checked_by_me: row.checked_by_me });
+  }
+  return ids.map(post_id => totals.get(post_id) ?? { post_id, checks_count: 0, checked_by_me: false });
 }
 export async function toggleFeedCheck(client: SupabaseClient, userId: string, postId: string, currentlyChecked: boolean) {
   if (!uuid.test(userId) || !uuid.test(postId)) throw new Error("Invalid check request");

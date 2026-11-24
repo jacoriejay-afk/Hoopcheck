@@ -128,7 +128,7 @@ function RootLayout() {
         <Stack.Screen name="choose-username" options={{ title: "Choose username" }} />
         <Stack.Screen name="forgot-password" options={{ title: "Reset password" }} />
         <Stack.Screen name="reset-password" options={{ title: "Choose new password" }} />
-        <Stack.Screen name="dashboard" options={{ headerShown: false, contentStyle: { backgroundColor: theme.background } }} />
+        <Stack.Screen name="dashboard" options={{ title: "Home", headerShown: false, contentStyle: { backgroundColor: theme.background } }} />
         <Stack.Screen name="players" options={{ title: "Find players" }} />
         <Stack.Screen name="players/[id]" options={{ title: "Player profile" }} />
         <Stack.Screen name="coaches" options={{ title: "Find a coach" }} />
