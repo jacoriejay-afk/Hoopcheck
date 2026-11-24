@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Image, View } from "react-native";
+import { Image, View } from "react-native";
 import { DirectoryCrest } from "./DirectoryIdentity";
 import { useEntryTheme } from "../src/theme";
 
@@ -15,12 +15,12 @@ function RemoteArtwork({ name, kind, size = 72, logoBg, url }: Props & { url: st
   // identity available and release the loading indicator after a bounded wait.
   useEffect(() => {
     if (loaded || failed) return;
-    const timer = setTimeout(() => setFailed(true), 12000);
+    const timer = setTimeout(() => setFailed(true), 8000);
     return () => clearTimeout(timer);
   }, [loaded, failed]);
   if (failed) return <DirectoryCrest name={name} kind={kind} size={size} />;
   return <View style={{ width: size + 14, height: size + 14, borderRadius: 14, borderCurve: "continuous", borderWidth: 1, borderColor: theme.border, padding: 6, backgroundColor: logoBg === "light" ? "#FFFFFF" : logoBg === "dark" ? theme.crest.panel : theme.surface }}>
-    {!loaded ? <ActivityIndicator accessibilityLabel="Loading logo" color={theme.accent} style={{ position: "absolute", inset: 0 }} /> : null}
-    <Image onLoad={() => setLoaded(true)} alt={`${name} logo`} accessibilityLabel={`${name} logo`} source={{ uri: url }} resizeMode="contain" onError={() => setFailed(true)} style={{ width: size, height: size }} />
+    {!loaded ? <View pointerEvents="none" style={{ position: "absolute", alignSelf: "center", top: 6 }}><DirectoryCrest name={name} kind={kind} size={size} /></View> : null}
+    <Image onLoad={() => setLoaded(true)} alt={`${name} logo`} accessibilityLabel={`${name} logo`} source={{ uri: url }} resizeMode="contain" onError={() => setFailed(true)} style={{ width: size, height: size, opacity: loaded ? 1 : 0 }} />
   </View>;
 }
