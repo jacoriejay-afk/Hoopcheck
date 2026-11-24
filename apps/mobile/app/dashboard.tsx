@@ -32,12 +32,12 @@ export default function DashboardScreen() {
   const { width } = useWindowDimensions();
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const reduced = useMotionSetting();
   const closeSearch = useCallback(() => { setSearchOpen(false); Keyboard.dismiss(); }, []);
   useFocusEffect(useCallback(() => () => { closeSearch(); setMenuOpen(false); }, [closeSearch]));
   const submitSearch = () => { closeSearch(); router.push({ pathname: "/search", params: { q: search } }); };
   const [busy, setBusy] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [email, setEmail] = useState("");
   const { account: currentAccount } = useNativeAccount();
   // Display the verified profile role, not editable auth metadata.
