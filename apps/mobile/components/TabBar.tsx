@@ -58,7 +58,8 @@ export function TabBar() {
   const reduced = useMotionSetting();
   const pending = useRef<string | null>(null);
   const [width, setWidth] = useState(0);
-  const index = path === "/reels" || path === "/fan-feed" ? 1 : path === "/messages" ? 3 : tabs.findIndex(tab => path === tab.route || path.startsWith(tab.route + "/"));
+  const directory = /^\/(teams|players|coaches|leagues|womens)(\/|$)/.test(path);
+  const index = path === "/reels" || path === "/fan-feed" ? 1 : path === "/messages" ? 3 : directory ? 2 : tabs.findIndex(tab => path === tab.route || path.startsWith(tab.route + "/"));
   const x = useSharedValue(0);
   const opacity = useSharedValue(1);
   useEffect(() => {
@@ -93,7 +94,7 @@ export function TabBar() {
   const activeWidth = width > 0 ? width / tabs.length : 0;
   // Only screens with explicit scroll clearance use the overlay. Form/chat routes
   // retain in-flow navigation until their input surfaces are migrated.
-  const floating = ["/dashboard", "/feed", "/fan-feed", "/reels", "/search", "/notifications", "/account"].includes(path) || (path !== "/womens/leagues" && /^\/(players|teams|leagues|womens)\/[^/]+$/.test(path)) || /^\/womens\/leagues\/[^/]+$/.test(path);
+  const floating = ["/dashboard", "/feed", "/fan-feed", "/reels", "/search", "/notifications", "/account", "/teams", "/coaches", "/leagues", "/womens"].includes(path) || (path !== "/womens/leagues" && /^\/(players|teams|leagues|womens)\/[^/]+$/.test(path)) || /^\/womens\/leagues\/[^/]+$/.test(path);
   return <View testID="native-tab-bar" onLayout={event => setWidth(event.nativeEvent.layout.width)} style={{
       ...(floating ? { position: "absolute" as const, left: 0, right: 0, bottom: 0, zIndex: 40 } : {}),
       marginHorizontal: 20 + Math.max(insets.left, insets.right),
