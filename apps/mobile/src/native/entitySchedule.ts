@@ -1,4 +1,4 @@
-import type { LiveGame } from "./liveGames";
+import type { LiveGame } from "./liveGames.ts";
 
 export type ScheduleScope = { kind: "team"; id: string } |
   { kind: "league"; name: string; country: string | null };
