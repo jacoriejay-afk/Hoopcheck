@@ -37,11 +37,18 @@ function PredictionSurface({game,userId,homeName,awayName,active}:PredictionProp
   }, [active, game.id, userId, scope, revision]);
   const data = active && snapshot?.scope === scope ? snapshot.data : null;
   const tip = Date.parse(game.scheduled_at || "");
+  useEffect(() => {
+    if (!active || !Number.isFinite(tip)) return;
+    const remaining = tip - Date.now();
+    if (remaining <= 0) return;
+    const timer = setTimeout(() => setNow(Date.now()), Math.min(remaining + 10, 2147483647));
+    return () => clearTimeout(timer);
+  }, [active, tip]);
   const teams = [{ id: game.team_id, name: homeName, side: "Home" }, { id: game.opponent_team_id, name: awayName, side: "Away" }];
   const bothMapped = predictionMatchupReady(game);
   const locked = !active || !data || data.locked || !bothMapped || game.status !== "scheduled" || !Number.isFinite(tip) || now >= tip;
   async function pick(teamId: string) {
-    if (locked || Date.now() >= tip || pending.current || !teams.some(team => team.id === teamId)) return;
+    if (locked || pending.current || !teams.some(team => team.id === teamId)) return;
     pending.current = true; setBusy(true); setMessage("");
     try {
       await requireOnline();
