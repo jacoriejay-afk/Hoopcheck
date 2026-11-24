@@ -64,3 +64,42 @@ test("provider snapshots record actual receipt times and scan the full mapped te
   assert.match(source,/Object.keys\(payload.errors\).length > 0/);
   assert.match(source,/if \(insertMappingsError\) throw insertMappingsError/);
 });
+
+test("production prediction listing bounds dates before the limit and falls back only for missing freshness column", async () => {
+  const src=readFileSync(new URL("../app/api/game-predictions/route.ts",import.meta.url),"utf8");
+  const code=ts.transpileModule(src,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+  const calls=[],fixture={id:"fixture-game"},token="fixture-token";
+  const db={from(table){assert.equal(table,"fan_live_games");const attempt=[];calls.push(attempt);return {
+    select(value){attempt.push(["select",value]);return this;},
+    in(key,value){attempt.push(["in",key,value]);return this;},
+    gte(key,value){attempt.push(["gte",key,value]);return this;},
+    lte(key,value){attempt.push(["lte",key,value]);return this;},
+    order(key,options){attempt.push(["order",key,options]);return this;},
+    limit(value){attempt.push(["limit",value]);return Promise.resolve(attempt[0][1].includes("score_updated_at")?{data:null,error:{code:"42703"}}:{data:[fixture],error:null});}
+  };}};
+  let verified=false;
+  const auth={auth:{getUser:async value=>{assert.equal(value,token);verified=true;return {data:{user:{id:"fixture-user"}}};}}};
+  process.env.NEXT_PUBLIC_SUPABASE_URL="https://fixture.example";
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="fixture-publishable";
+  process.env.SUPABASE_SERVICE_ROLE_KEY="fixture-service";
+  const mod={exports:{}};
+  new Function("require","module","exports",code)(name=>{
+    if(name==="next/server")return {NextResponse:{json:(data,init)=>Response.json(data,init)}};
+    if(name==="@supabase/supabase-js")return {createClient:(_url,key)=>key==="fixture-service"?db:auth};
+    throw Error(name);
+  },mod,mod.exports);
+  const denied=await mod.exports.GET(new Request("https://fixture.example/api/game-predictions?mode=games"));
+  assert.equal(denied.status,401);assert.equal(calls.length,0);
+  const before=Date.now();
+  const result=await mod.exports.GET(new Request("https://fixture.example/api/game-predictions?mode=games",{headers:{Authorization:"Bearer "+token}}));
+  assert.equal(result.status,200);assert.equal(result.headers.get("cache-control"),"private, no-store");
+  assert.deepEqual(await result.json(),{games:[fixture]});assert.equal(verified,true);
+  assert.equal(calls.length,2);assert.ok(!calls[1][0][1].includes("score_updated_at"));
+  for(const attempt of calls){
+    assert.deepEqual(attempt.map(row=>row[0]),["select","in","gte","lte","order","order","limit"]);
+    assert.equal(attempt[2][1],"scheduled_at");assert.equal(attempt[3][1],"scheduled_at");
+    assert.ok(Math.abs(Date.parse(attempt[2][2])-(before-36*3600000))<10000);
+    assert.ok(Math.abs(Date.parse(attempt[3][2])-(before+14*86400000))<10000);
+    assert.equal(attempt[5][1],"id");assert.equal(attempt[6][1],500);
+  }
+});
