@@ -6,8 +6,8 @@ import { useEntryTheme } from "../src/theme";
 import { capturePhoto, captureVideo, choosePhoto, chooseVideo, MediaPermissionError, photoBody, preparePhoto, uploadVideoFile, type Photo, type Video } from "../src/native/mediaSelection";
 import { PublicationUnconfirmed, publishMediaPost } from "../src/native/mediaClient";
 
-type Props = { preferredSource?: "camera" | "library"; userId: string; enabled: boolean; caption: string; token: () => Promise<string>; onPublished: () => void | Promise<void>; onRefresh: () => void | Promise<void> };
-export function MediaPostComposer({ userId, enabled, caption, token, onPublished, onRefresh, preferredSource = "library" }: Props) {
+type Props = { preferredSource?: "camera" | "library"; userId: string; enabled: boolean; caption: string; location?: string; token: () => Promise<string>; onPublished: () => void | Promise<void>; onRefresh: () => void | Promise<void> };
+export function MediaPostComposer({ userId, enabled, caption, location = "", token, onPublished, onRefresh, preferredSource = "library" }: Props) {
   const theme = useEntryTheme(); const [photos, setPhotos] = useState<Photo[]>([]); const [video, setVideo] = useState<Video | null>(null);
   const [busy, setBusy] = useState(false); const [uploading, setUploading] = useState(false); const [message, setMessage] = useState(""); const [permissionDenied, setPermissionDenied] = useState(false); const [unconfirmed, setUnconfirmed] = useState(false);
   const generation = useRef(0); const controller = useRef<AbortController | null>(null); const working = useRef(false);
@@ -32,7 +32,7 @@ export function MediaPostComposer({ userId, enabled, caption, token, onPublished
     try {
       const authorization = await token();
       if (current !== generation.current) return;
-      await publishMediaPost(process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online", process.env.EXPO_PUBLIC_SUPABASE_URL || "", userId, authorization, caption, photos, video, abort.signal, { photoBody, uploadVideo: uploadVideoFile });
+      await publishMediaPost(process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online", process.env.EXPO_PUBLIC_SUPABASE_URL || "", userId, authorization, caption, photos, video, abort.signal, { photoBody, uploadVideo: uploadVideoFile }, location);
       if (current === generation.current) { setPhotos([]); setVideo(null); setMessage("Published after safety checks."); await onPublished(); }
     } catch (error) { if (current === generation.current) { setMessage(error instanceof Error ? error.message : "Upload failed. Your draft is unchanged."); setUnconfirmed(error instanceof PublicationUnconfirmed); } }
     finally { clearTimeout(deadline); if (current === generation.current) { controller.current = null; working.current = false; setBusy(false); setUploading(false); } }
