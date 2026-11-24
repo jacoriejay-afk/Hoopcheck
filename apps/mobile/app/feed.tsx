@@ -284,7 +284,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
       <Button secondary onPress={() => setReels(false)}>Back to HoopFeed</Button>
     </View> : <FlatList key={reels ? "reels" : "posts"} keyboardDismissMode="on-drag" style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 9, paddingTop: message || loadError ? 9 : 60, paddingBottom: 100, gap: reels ? 0 : 8 }} keyboardShouldPersistTaps="handled" initialNumToRender={reels ? 2 : 4} maxToRenderPerBatch={reels ? 2 : 4} windowSize={reels ? 3 : 5} pagingEnabled={reels} getItemLayout={reels && height > 0 ? (_items, index) => ({ length: height, offset: height * index, index }) : undefined} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
       ListHeaderComponent={!reels ? <View style={{ marginBottom: 2, gap: 7 }}>
-        {!composerExpanded ? <Pressable accessibilityRole="button" accessibilityLabel="Create HoopFeed post" disabled={!canWrite} onPress={() => setComposerExpanded(true)} style={{ flexDirection: "row", alignItems: "center", gap: 9, padding: 9, borderWidth: 1, borderColor: theme.border, borderRadius: 15, backgroundColor: theme.elevatedSurface }}>
+        {!composerExpanded ? <Pressable accessibilityRole="button" accessibilityLabel="Create HoopFeed post" disabled={!canWrite} onPress={() => setComposerExpanded(true)} style={{ flexDirection: "row", alignItems: "center", gap: 9, padding: 9, borderBottomWidth: 1, borderColor: theme.border, backgroundColor: "transparent" }}>
           <Ionicons name="create-outline" size={23} color={theme.accent} /><Text style={{ color: theme.muted, fontSize: 14 }}>Share a basketball update…</Text>
         </Pressable> : <View style={{ gap: 12, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 18, backgroundColor: theme.surface }}>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}><Text style={{ ...textStyle, fontFamily: theme.type.ui.fontFamily, fontSize: 18, fontWeight: "700" }}>Create a post</Text><Pressable accessibilityRole="button" onPress={() => setComposerExpanded(false)} style={touch}><Text style={textStyle}>Close</Text></Pressable></View>
@@ -306,7 +306,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
         const options = Array.isArray(post.poll_options) ? post.poll_options.filter((value): value is string => typeof value === "string").slice(0, 6).map(value => value.slice(0, 120)) : [];
         return <View style={reels ? { height, padding: 9 } : undefined}><View testID={`feed-post-${post.id}`} style={{
           padding: reels ? theme.spacing.md : 11, gap: reels ? theme.spacing.sm : 7,
-          backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.glassBorder,
+          backgroundColor: "transparent", borderWidth: 0, borderBottomWidth: 1, borderColor: theme.border,
           borderRadius: reels ? theme.courtside.card.radius : 15,
           borderCurve: "continuous", ...(reels ? { flex: 1 } : {}),
         }}>
