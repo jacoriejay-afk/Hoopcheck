@@ -95,7 +95,7 @@ export function TabBar() {
       marginHorizontal: 20 + Math.max(insets.left, insets.right),
       marginBottom: Math.max(9, insets.bottom), borderRadius: 31,
       borderCurve: "continuous", overflow: "hidden",
-      backgroundColor: nativeGlass ? "transparent" : translucent ? theme.glassFill : theme.surface,
+      backgroundColor: translucent ? "transparent" : theme.surface,
       borderWidth: 1, borderColor: theme.dark ? "rgba(255,255,255,.24)" : "rgba(30,42,70,.16)",
       shadowColor: "#000", shadowOffset: { width: 0, height: 14 },
       shadowOpacity: theme.dark ? .42 : .16, shadowRadius: 24, elevation: 12,
