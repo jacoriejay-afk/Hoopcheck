@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
-import { Button, GlassCard } from "../src/primitives";
+import { Button } from "../src/primitives";
 import { HoopCheckLoading } from "../components/HoopCheckLoading";
 import { useEntryTheme } from "../src/theme";
 import { supabase } from "../src/lib/supabase";
@@ -26,6 +27,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
   const [contacts, setContacts] = useState<Record<string,ContactName>>({});
   const [selectedId, setSelectedId] = useState("");
   const [draft, setDraft] = useState("");
+  const [openedId, setOpenedId] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
@@ -85,7 +87,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       if (reloadTimer.current !== null) clearTimeout(reloadTimer.current);
       reloadTimer.current = null;
       generation.current++;
-      setRequests([]); setMessages([]); setContacts({}); setUserId(""); setSelectedId("");
+      setRequests([]); setMessages([]); setContacts({}); setUserId(""); setSelectedId(""); setOpenedId(""); setDraft("");
     };
   }, [load]));
 
@@ -136,10 +138,12 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
     || (mode === "conversations" && row.status === "accepted")
     || (mode === "requests" && row.status === "pending"));
   const selected = visibleThreads.find(item => item.id === selectedId) || visibleThreads[0];
+  const opened = Boolean(selected && selected.id === openedId);
+  useEffect(() => { setOpenedId(""); setDraft(""); }, [mode]);
   const history=messages.filter(item=>item.request_id===selected?.id).slice().reverse();
 
   async function respond(status:"accepted"|"rejected") {
-    if(!selected || selected.player_id!==userId || selected.status!=="pending" || sending) return;
+    if(!selected || selected.player_id!==userId || selected.status!=="pending" || !opened || sending) return;
     setSending(true);setError("");
     try {
       await requireOnline();
@@ -154,7 +158,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
     finally{setSending(false);}
   }
   async function send(){
-    if(!selected || selected.status!=="accepted" || !draft.trim() || sending) return;
+    if(!selected || selected.status!=="accepted" || !opened || !draft.trim() || sending) return;
     setSending(true);setError("");
     try{
       await requireOnline();
@@ -176,7 +180,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
         <Button secondary disabled={loading || offline} onPress={()=>void load()}>Refresh</Button>
       </View>
       {error?<Text accessibilityRole="alert" style={{color:theme.accent}}>{error}</Text>:null}
-      {loading?<HoopCheckLoading compact label="Loading conversations…" />:null}
+      {loading&&!visibleThreads.length?<HoopCheckLoading compact label="Loading conversations…" />:null}
       {offline?<Text style={{color:theme.muted}}>Reconnect to view or send messages.</Text>:null}
       {!loading&&!visibleThreads.length?<View style={{gap:7,paddingVertical:12}}>
         <Text style={{color:theme.foreground,fontWeight:"800"}}>
@@ -185,27 +189,31 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
         <Text style={{color:theme.muted}}>Approved player connections and incoming requests will appear here.</Text>
         <Button secondary onPress={()=>router.push("/players")}>Find players</Button>
       </View>:null}
-      {visibleThreads.length>0?<View style={{gap:8}}>
+      {!opened&&visibleThreads.length>0?<View style={{gap:4}}>
         <Text style={{color:theme.foreground,fontWeight:"800",fontSize:17}}>{mode==="requests"?"Contact requests":"Conversations"}</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:8}}>
+        <View style={{gap:0}}>
           {visibleThreads.map(row=>{
             const latest=messages.find(message=>message.request_id===row.id);
             return <Pressable key={row.id} accessibilityRole="button" accessibilityState={{selected:row.id===selectedId}}
-              accessibilityLabel={`Open ${name(row)} conversation`} onPress={()=>{setSelectedId(row.id);setDraft("");}}
-              style={{padding:12,width:170,minHeight:96,backgroundColor:row.id===selectedId?theme.accentSurface:theme.surface,borderColor:row.id===selectedId?theme.accent:theme.border,borderWidth:1,borderRadius:theme.radius.card,gap:4}}>
+              accessibilityLabel={`Open ${name(row)} conversation`} onPress={()=>{setSelectedId(row.id);setOpenedId(row.id);setDraft("");}}
+              style={{paddingVertical:10,paddingHorizontal:4,minHeight:64,flexDirection:"row",alignItems:"center",borderColor:theme.border,borderBottomWidth:1,gap:10}}>
+              <View style={{width:42,height:42,borderRadius:21,backgroundColor:theme.chip,alignItems:"center",justifyContent:"center"}}><Text style={{color:theme.foreground,fontSize:17,fontWeight:"700"}}>{name(row).slice(0,1).toUpperCase()}</Text></View>
+              <View style={{flex:1,minWidth:0,gap:3}}>
               <Text numberOfLines={1} style={{color:theme.foreground,fontWeight:"800"}}>{name(row)}</Text>
               <Text style={{color:theme.muted,fontSize:12}}>{row.status==="accepted"?"Connected":row.player_id===userId&&row.status==="pending"?"Incoming request":row.status==="pending"?"Awaiting acceptance":row.status}</Text>
-              <Text numberOfLines={2} style={{color:theme.muted,fontSize:12}}>{latest?.body||row.message||"No messages yet"}</Text>
+              <Text numberOfLines={1} style={{color:theme.muted,fontSize:12}}>{latest?.body||row.message||"No messages yet"}</Text>
+              </View><Ionicons name="chevron-forward" size={17} color={theme.muted}/>
             </Pressable>;
           })}
-        </ScrollView>
+        </View>
       </View>:null}
-      {selected?<GlassCard>
+      {opened&&selected?<View style={{gap:8}}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Back to conversations" onPress={()=>{setOpenedId("");setDraft("");}} style={{minHeight:44,flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="chevron-back" size={20} color={theme.accent}/><Text style={{color:theme.accent,fontWeight:"700"}}>Conversations</Text></Pressable>
         <Text style={{color:theme.foreground,fontWeight:"900",fontSize:19}}>{name(selected)}</Text>
         <Text style={{color:theme.muted,fontSize:12}}>{selected.status==="accepted"?"Private HoopChat":"Player contact request"}</Text>
         {selected.message?<View style={{padding:12,borderRadius:12,backgroundColor:theme.chip}}><Text style={{color:theme.foreground}}>Introduction: {selected.message}</Text></View>:null}
         <View accessibilityLabel="Conversation history" style={{gap:10,marginVertical:10}}>
-          {history.map(item=><View key={item.id} style={{padding:12,borderRadius:14,backgroundColor:item.sender_id===userId?theme.accentSurface:theme.surface,borderColor:theme.border,borderWidth:1,alignSelf:item.sender_id===userId?"flex-end":"flex-start",maxWidth:"95%",gap:4}}>
+          {history.map(item=><View key={item.id} style={{padding:10,borderRadius:18,backgroundColor:item.sender_id===userId?theme.accentSurface:theme.surface,alignSelf:item.sender_id===userId?"flex-end":"flex-start",maxWidth:"95%",gap:4}}>
             <Text style={{fontSize:12,fontWeight:"800",color:theme.foreground}}>{item.sender_id===userId?"You":name(selected)}</Text>
             <Text style={{color:theme.foreground}}>{item.body}</Text>
             <Text style={{color:theme.muted,fontSize:11}}>{new Date(item.created_at).toLocaleString()}</Text>
@@ -214,10 +222,10 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
         {selected.status==="pending"&&selected.player_id===userId?<View style={{gap:8}}><Text style={{color:theme.muted}}>Approve this request to unlock messaging.</Text><Button disabled={sending||offline} onPress={()=>void respond("accepted")}>Accept request</Button><Button secondary disabled={sending||offline} onPress={()=>void respond("rejected")}>Decline</Button></View>:null}
         {selected.status==="accepted"?<View style={{gap:8}}>
           <TextInput accessibilityLabel="Write private HoopChat message" multiline maxLength={2000} value={draft} onChangeText={setDraft} placeholder="Write a message…" placeholderTextColor={theme.muted}
-            style={{minHeight:80,textAlignVertical:"top",padding:12,backgroundColor:theme.input,color:theme.foreground,borderWidth:1,borderColor:theme.border,borderRadius:theme.radius.control}} />
+            style={{minHeight:48,maxHeight:120,textAlignVertical:"top",padding:12,backgroundColor:theme.input,color:theme.foreground,borderWidth:1,borderColor:theme.border,borderRadius:theme.radius.control}} />
           <Button disabled={sending||offline||!draft.trim()} onPress={()=>void send()}>{sending?"Sending…":"Send"}</Button>
         </View>:selected.status==="pending"?<Text style={{color:theme.muted}}>Messaging opens once the player accepts.</Text>:<Text style={{color:theme.muted}}>This request is no longer active.</Text>}
-      </GlassCard>:null}
+      </View>:null}
     </ScrollView>
   </SafeAreaView>;
 }
