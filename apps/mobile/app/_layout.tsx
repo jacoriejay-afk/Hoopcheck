@@ -91,7 +91,7 @@ function RootLayout() {
     }
   }, [sessionReady, signedIn, segments, router, pathname, routeParams.post, routeParams.q, routeParams.gameId]);
 
-  const glassRoute = ["/dashboard", "/fan-live", "/feed", "/fan-feed", "/reels"].includes(pathname) || (pathname.startsWith("/teams/") && pathname.split("/").length === 3);
+  const glassRoute = ["/dashboard", "/fan-live", "/feed", "/fan-feed", "/reels"].includes(pathname) || pathname.startsWith("/reels/") || (pathname.startsWith("/teams/") && pathname.split("/").length === 3);
   // Mount the navigator on the first render. Font loading must never prevent
   // Router from mounting or leave a blank screen after the splash deadline.
   return (
@@ -119,6 +119,7 @@ function RootLayout() {
         <Stack.Screen name="feed" options={{ headerShown: false }} />
         <Stack.Screen name="fan-feed" options={{ headerShown: false }} />
         <Stack.Screen name="reels" options={{ headerShown: false }} />
+        <Stack.Screen name="reels/studio" options={{ headerShown: false }} />
         <Stack.Screen name="account" options={{ title: "Account" }} />
         <Stack.Screen name="membership" options={{ title: "Membership" }} />
         <Stack.Screen name="account/edit" options={{ title: "Edit profile" }} />
