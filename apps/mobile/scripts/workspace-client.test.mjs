@@ -17,3 +17,14 @@ test("private workspace reads have verified owner and no-store bearer request",a
  await assert.rejects(readWorkspace("https://fixture.example","token",owner,"owner",undefined,async()=>Response.json({...data,owner:"other"})));
  await assert.rejects(readWorkspace("https://fixture.example","token",owner,"owner",undefined,async()=>new Response("{}",{status:403})));
 });
+
+import {readFileSync} from "node:fs";
+test("owner administration shortcuts stay behind verified workspace and use fixed web origin",()=>{
+ const source=readFileSync(new URL("../components/PrivateWorkspace.tsx",import.meta.url),"utf8");
+ assert.ok(source.includes('if(!active||!allowed||kind!=="owner"||data?.kind!=="owner"||data.owner!==owner)return;'));
+ assert.ok(source.includes("session.data.session?.user.id!==owner"));
+ assert.ok(source.includes('Linking.openURL("https://hoopcheck.online"+path)'));
+ assert.ok(source.includes("No app session is transferred."));
+ assert.ok(source.includes("state.data.kind===kind"));
+ for(const path of ["/admin/directory","/admin/reviews","/admin/ambassadors"])assert.ok(source.includes(`openAdmin("${path}")`));
+});
