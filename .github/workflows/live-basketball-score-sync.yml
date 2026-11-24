@@ -3,11 +3,15 @@ name: Sync live basketball scores
 on:
   workflow_dispatch:
   schedule:
-    # Four runs per hour = 96 scheduled API calls per day, leaving four calls
-    # of headroom under the free tier's 100-request daily limit.
-    # Avoid the common top-of-hour / round-quarter GitHub Actions congestion;
-    # schedules can still be delayed or dropped and are not per-second live scores.
-    - cron: "7,22,37,52 * * * *"
+    # 96 regular slots including one previous-day reconciliation; 3 supplemental
+    # calendar slots = 99 scheduled provider requests/day, 1 below the existing
+    # free tier's 100-request budget. Manual runs also consume provider quota.
+    - cron: "22,37,52 * * * *"
+    - cron: "7 1-23 * * *"
+    - cron: "7 0 * * *"
+    - cron: "12 3 * * *"
+    - cron: "32 11 * * *"
+    - cron: "47 19 * * *"
 
 permissions:
   contents: read
@@ -24,6 +28,7 @@ jobs:
       - name: Trigger secured live-score sync endpoint
         env:
           LIVE_SCORES_SYNC_URL: https://hoopcheck.online/api/cron/live-basketball
+          SYNC_SCHEDULE: ${{ github.event.schedule }}
           LIVE_SCORES_CRON_SECRET: ${{ secrets.LIVE_SCORES_CRON_SECRET }}
         run: |
           set -eu
@@ -31,6 +36,15 @@ jobs:
             echo "Configure LIVE_SCORES_CRON_SECRET in GitHub Actions secrets."
             exit 1
           fi
+          offset=0
+          # Date offsets are Baku calendar dates. Reconcile yesterday once and
+          # preload tomorrow plus two rotating days of the seven-day horizon.
+          case "$SYNC_SCHEDULE" in
+            "7 0 * * *") offset=-1 ;;
+            "12 3 * * *") offset=1 ;;
+            "32 11 * * *") offset=$((2 + 2 * ($(date -u +%u) % 3))) ;;
+            "47 19 * * *") offset=$((3 + 2 * ($(date -u +%u) % 3))) ;;
+          esac
           curl --fail --silent --show-error --max-time 25 \
             -H "Authorization: Bearer $LIVE_SCORES_CRON_SECRET" \
-            "$LIVE_SCORES_SYNC_URL"
+            "$LIVE_SCORES_SYNC_URL?date_offset=$offset"

@@ -39,10 +39,11 @@ async function verify(browser,theme,role){
    await page.getByText('Visible career player',{exact:true}).click();await page.getByText('Connect with this player to view their career history.',{exact:true}).waitFor();
    await page.getByText('Professional player verified',{exact:true}).scrollIntoViewIfNeeded();await require('./compact-layout.cjs').capture(page,{path:`${output}/verification-${theme}.png`,fullPage:true});
   }
-  await page.goto(base+'/account');await page.getByRole('heading',{name:'Your membership access',exact:true}).scrollIntoViewIfNeeded();
+  await page.goto(base+'/account');const benefits=page.getByRole('button',{name:'See membership benefits',exact:true});await benefits.waitFor();assert.equal(await page.getByRole('heading',{name:'Your membership access',exact:true}).count(),0);await benefits.click();await page.getByRole('heading',{name:'Your membership access',exact:true}).scrollIntoViewIfNeeded();await page.getByRole('button',{name:'Hide membership benefits',exact:true}).waitFor();
   assert.equal(await page.getByText('Included',{exact:true}).count(),role==='fan'?1:0);
   if(role==='fan')assert.equal(calls.filter(path=>/player_career_stops|team_roster_spots|get_public_player_profile/.test(path)).length,0);
   await require('./compact-layout.cjs').capture(page,{path:`${output}/membership-${role}-${theme}.png`,fullPage:true});
+  await page.getByRole('button',{name:'Hide membership benefits',exact:true}).click();await page.getByRole('heading',{name:'Your membership access',exact:true}).waitFor({state:'detached'});await benefits.waitFor();
   assert.deepEqual(errors,[]);assert.ok(!calls.includes('/rest/v1/profiles'));
   console.log(`PASS ${theme} ${role}: scoped roster/history, private profile denial, canonical verification, server membership preview`);
  }finally{await context.close();}

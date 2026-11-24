@@ -10,7 +10,7 @@ const links = [
   { href: "/coaches", title: "Coaches", detail: "Check coaching reputations", icon: "school-outline", color: "coaches" },
   { href: "/leagues", title: "Leagues", detail: "Compare competitions", icon: "trophy-outline", color: "leagues" },
   { href: "/players", title: "Players", detail: "Discover basketball players", icon: "person-outline", color: "players" },
-  { href: "/team-hub/groups", title: "HoopGroups", detail: "Find your club’s fan community", icon: "people-outline", color: "button" },
+  { href: "/hoopgroups", title: "HoopGroups", detail: "Discover basketball communities", icon: "people-outline", color: "button" },
   { href: "/fan-live", title: "Live Games", detail: "Games, chat and predictions", icon: "radio-outline", color: "button" },
   { href: "/feed", title: "HoopFeed", detail: "Community, comments and Reels", icon: "basketball-outline", color: "button" },
 ] as const;

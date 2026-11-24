@@ -1,9 +1,8 @@
 import { BlurView } from "expo-blur";
 import { GlassView, isGlassEffectAPIAvailable, isLiquidGlassAvailable } from "expo-glass-effect";
-import { LinearGradient } from "expo-linear-gradient";
 import { useMotionSetting } from "../src/motion/Provider";
-import { useEffect, useRef, useState } from "react";
-import { AccessibilityInfo, Platform, StyleSheet, Keyboard, Pressable, Text, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AccessibilityInfo, Platform, StyleSheet, Keyboard, PanResponder, Pressable, Text, View } from "react-native";
 import { usePathname, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -11,7 +10,6 @@ import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, w
 import { motion } from "../src/motion/config";
 import { useHaptics } from "../src/native/haptics";
 import { useEntryTheme } from "../src/theme";
-import { useNativeAccount } from "../src/native/useNativeAccount";
 
 const tabs = [
   { route: "/dashboard", label: "Home", icon: "home-outline", active: "home" },
@@ -58,10 +56,9 @@ export function TabBar() {
   const insets = useSafeAreaInsets();
   const haptic = useHaptics();
   const reduced = useMotionSetting();
-  const { account } = useNativeAccount();
   const pending = useRef<string | null>(null);
   const [width, setWidth] = useState(0);
-  const index = path === "/reels" || path === "/fan-feed" ? 1 : tabs.findIndex(tab => path === tab.route || path.startsWith(tab.route + "/"));
+  const index = path.startsWith("/reels") || path === "/fan-feed" ? 1 : path === "/messages" ? 3 : tabs.findIndex(tab => path === tab.route || path.startsWith(tab.route + "/"));
   const x = useSharedValue(0);
   const opacity = useSharedValue(1);
   useEffect(() => {
@@ -73,6 +70,23 @@ export function TabBar() {
     // Haptic runs only after navigation reaches its target.
   }, [index, path, reduced, width, haptic, x, opacity]);
   const indicator = useAnimatedStyle(() => ({ transform: [{ translateX: x.get() }], opacity: opacity.get() }));
+  // PanResponder registers callbacks; pending.current is written only on gesture release.
+  // eslint-disable-next-line react-hooks/refs
+  const slide = useMemo(() => PanResponder.create({
+    onMoveShouldSetPanResponderCapture: (_event, gesture) => width > 0 && index >= 0 && Math.abs(gesture.dx) > 12 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.5,
+    onPanResponderMove: (_event, gesture) => {
+      if (!reduced) x.set(Math.min((tabs.length - 1) * width / tabs.length, Math.max(0, index * width / tabs.length + gesture.dx)));
+    },
+    onPanResponderRelease: (_event, gesture) => {
+      if (width <= 0 || index < 0) return;
+      const segment = width / tabs.length;
+      const destination = Math.max(0, Math.min(tabs.length - 1, index + Math.round(gesture.dx / segment)));
+      const route = tabs[destination].route;
+      x.set(reduced ? destination * segment : withSpring(destination * segment, motion.spring));
+      if (destination !== index) { pending.current = route; router.navigate(route); }
+    },
+    onPanResponderTerminate: () => { x.set(index * width / tabs.length); },
+  }), [index, width, reduced, router, x]);
   if (keyboardVisible) return null;
   if (path === "/reels/studio") return null;
   if (["/", "/sign-in", "/sign-up", "/forgot-password", "/reset-password", "/auth/callback", "/choose-username"].includes(path)) return null;
@@ -88,46 +102,42 @@ export function TabBar() {
       marginHorizontal: 16 + Math.max(insets.left, insets.right),
       marginBottom: Math.max(8, insets.bottom + 6), borderRadius: 999,
       borderCurve: "continuous", overflow: "hidden",
-      backgroundColor: translucent ? theme.glassFill : theme.surface,
+      backgroundColor: nativeGlass ? "transparent" : translucent ? theme.glassFill : theme.surface,
       borderWidth: 1, borderColor: theme.glassBorder,
       shadowColor: "#000", shadowOffset: { width: 0, height: 12 },
       shadowOpacity: theme.dark ? .3 : .12, shadowRadius: 18, elevation: 8,
     }}>
-    {nativeGlass ? <GlassView pointerEvents="none" accessible={false} glassEffectStyle="regular"
-      tintColor={theme.dark ? "#20334A" : "#EAF1FB"} style={[StyleSheet.absoluteFill, { borderRadius: 999 }]} /> :
+    {nativeGlass ? <GlassView pointerEvents="none" accessible={false} glassEffectStyle="clear" colorScheme={theme.dark ? "dark" : "light"} style={[StyleSheet.absoluteFill, { borderRadius: 999 }]} /> :
       translucent ? <BlurView pointerEvents="none" accessible={false} intensity={55}
         tint={theme.dark ? "dark" : "light"} style={StyleSheet.absoluteFill} /> : null}
-    <LinearGradient pointerEvents="none" accessible={false} style={StyleSheet.absoluteFill}
-      colors={["rgba(255,255,255,.10)", "rgba(255,255,255,0.01)"]}
-      start={{ x: 0, y: 0 }} end={{ x: .2, y: 1 }} />
     {index >= 0 && activeWidth > 0 ? <Animated.View pointerEvents="none" style={[{
-      position: "absolute", left: Math.max(0, (activeWidth - 38) / 2), top: 5,
-      width: 38, height: 38, borderRadius: 19, borderCurve: "continuous",
+      position: "absolute", left: Math.max(0, (activeWidth - 24) / 2), bottom: 2,
+      width: 24, height: 3, borderRadius: 2, borderCurve: "continuous",
       backgroundColor: theme.button,
       borderWidth: 0, borderColor: theme.button,
       shadowColor: "#FF712E", shadowOpacity: theme.dark ? .4 : .13,
       shadowRadius: 9, shadowOffset: { width: 0, height: 2 },
     }, indicator]} /> : null}
-    <View accessibilityRole="tablist" style={{ flexDirection: "row", paddingVertical: 1 }}>
+    <View {...slide.panHandlers} accessibilityRole="tablist" style={{ flexDirection: "row", paddingVertical: 1 }}>
       {tabs.map((tab, i) => {
         const selected = index === i;
-        const label = tab.route === "/feed" && account?.user.accountType === "fan" ? "FAN HQ" : tab.label;
+        const label = tab.label;
         return <Pressable key={tab.route} testID={`tab-${tab.label.toLowerCase()}`}
           accessibilityRole="tab" accessibilityState={{ selected }} accessibilityLabel={label}
           onPress={() => { if (path !== tab.route) { pending.current = tab.route; router.navigate(tab.route); } }}
           style={({ pressed }) => ({
-            flex: 1, minWidth: 0, minHeight: theme.courtside.navigation.height,
+            flex: 1, minWidth: 0, minHeight: 52,
             paddingVertical: 5, alignItems: "center", justifyContent: "center",
             gap: 3, opacity: pressed ? .82 : 1,
           })}>
           {({ pressed }) => <>
             <AnimatedTabIcon selected={selected} pressed={pressed} reduced={reduced}
               icon={tab.icon} active={tab.active} size={theme.courtside.navigation.iconSize}
-              color={selected ? "#FFFFFF" : theme.muted} />
+              color={selected ? theme.accent : theme.muted} />
             <Text numberOfLines={1} style={{
               fontFamily: theme.type.ui.fontFamily, fontSize: 10,
               fontWeight: selected ? "700" : "500",
-              color: selected ? "#FFFFFF" : theme.muted,
+              color: selected ? theme.accent : theme.muted,
             }}>{label}</Text>
             
           </>}

@@ -8,18 +8,18 @@ const header = read("../components/glass/GlassHeader.tsx");
 const check = read("../components/FeedCheckAction.tsx");
 const media = read("../components/FeedMedia.tsx");
 
-test("HoopFeed uses one safe-area glass island with posts/reels and guide controls", () => {
+test("HoopFeed uses one safe-area glass island with two branded tabs and no bot", () => {
   assert.match(feed, /<GlassHeader feedMode feedReels=\{reels\}/);
   assert.match(header, /testID="feed-compact-header"/);
   assert.match(header, /paddingTop: insets\.top \+ 4/);
-  assert.match(header, /<GlassSurface native intensity=\{52\}/);
+  assert.match(header, /<GlassSurface navigation native intensity=\{52\}/);
   assert.match(header, /accessibilityRole="tablist"/);
   assert.match(header, /accessibilityLabel=\{value \? "Reels" : "HoopFeed"\}/);
-  assert.match(header, /accessibilityLabel="Meet HoopBot welcome guide"/);
+  assert.doesNotMatch(header, /Meet HoopBot/);
   assert.doesNotMatch(feed, /Recent posts from hoopers/);
   assert.doesNotMatch(feed, /Meet HoopBot · Welcome guide/);
   assert.doesNotMatch(feed, /fontSize: 28 }}>HOOPFEED/);
-  assert.match(feed, /reels \? \["top", "left", "right", "bottom"\] : \["left", "right", "bottom"\]/);
+  assert.match(feed, /reels && posts.length > 0 \? \["top", "left", "right", "bottom"\] : \["left", "right", "bottom"\]/);
 });
 
 test("feed rows reduce spacing without changing 44pt targets or API gates", () => {

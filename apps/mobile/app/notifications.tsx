@@ -89,9 +89,9 @@ export default function Notifications() {
   const items = offline ? [] : rows;
   return <View style={{ flex: 1, backgroundColor: theme.background }}>
     <FlatList ListHeaderComponent={<View style={{ gap: theme.spacing.md }}>
-      <View style={{ gap: theme.spacing.sm }}><Text style={{ color: theme.foreground, ...theme.type.section }}>Your basketball updates</Text><Text style={{ color: theme.muted }}>{loading ? "Loading activity…" : `${items.filter(item => !item.read_at).length} unread in your latest ${items.length} updates`}</Text></View>
+      <View style={{ gap: theme.spacing.sm }}><Text style={{ color: theme.foreground, fontFamily: "HoopCheckDisplay", fontSize: 20 }}>ACTIVITY</Text><Text style={{ color: theme.muted }}>{loading ? "Loading activity…" : `${items.filter(item => !item.read_at).length} unread in your latest ${items.length} updates`}</Text></View>
       <View style={{flexDirection:"row",flexWrap:"wrap",gap:8}}>
-        <Button secondary onPress={()=>router.push("/messages")}>Messages & sender threads</Button>
+        <Button secondary onPress={()=>router.push("/messages")}>HoopChat · messages and requests</Button>
       </View>
       <Button secondary disabled={busy || failed || offline || !items.some(item => !item.read_at)} onPress={() => void markAll()}>{busy ? "Updating…" : "Mark all as read"}</Button>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{["all", "unread", "games", "clubs", "reviews"].map(value => <Pressable key={value} accessibilityRole="button" aria-pressed={filter === value} accessibilityState={{ selected: filter === value }} onPress={() => setFilter(value)} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 12, borderRadius: theme.radius.control, backgroundColor: filter === value ? theme.accentSurface : theme.chip }}><Text style={{ color: theme.foreground, textTransform: "capitalize" }}>{value}</Text></Pressable>)}</View>

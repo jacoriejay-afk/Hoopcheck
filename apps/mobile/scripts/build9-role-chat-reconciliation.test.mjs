@@ -47,7 +47,7 @@ test("new navigation preserves membership gates, message senders, team group dis
   assert.match(home,/features\.canUseLiveGameHub/);
   assert.match(groups,/TEAM FAN GROUPS/);
   assert.match(groups,/\/hoopgroups/);
-  assert.match(alert,/Messages & sender threads/);
-  assert.match(feed,/onFeedGuide=\{\(\) => router\.push\("\/feed-welcome"\)\}/);
-  assert.match(read("../components/glass/GlassHeader.tsx"),/Meet HoopBot welcome guide/);
+  assert.match(alert,/HoopChat · messages and requests/);
+  assert.doesNotMatch(feed,/onFeedGuide/);
+  assert.doesNotMatch(read("../components/glass/GlassHeader.tsx"),/Meet HoopBot/);
 });

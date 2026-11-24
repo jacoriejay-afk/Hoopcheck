@@ -83,7 +83,7 @@ function LiveGamesContent() {
   }, [allowed, uid, active, side, sideChoice?.owner, scope, revision, account?.features.canUseLiveGameHub]);
   const data = allowed && snapshot?.scope === scope ? snapshot.data : null;
   const game = typeof gameId === "string" ? data?.games.find(item => item.id === gameId) : undefined;
-  const featuredGame = data?.games.find(item => item.status === "live") ?? data?.games.find(item => item.status === "final") ?? data?.games[0];
+  const featuredGame = data?.games.find(item => item.status === "live") ?? data?.games.find(item => item.status === "scheduled") ?? data?.games.slice().reverse().find(item => item.status === "final") ?? data?.games[0];
   const textStyle = { color: theme.foreground };
   if (accountLoading) return <View style={{ flex: 1, backgroundColor: theme.background, padding: 24 }}><Skeleton /></View>;
   if (!allowed || !account) return <View style={{ flex: 1, backgroundColor: theme.background, padding: 24, gap: 16, justifyContent: "center" }}><Text style={{ color: theme.muted, fontSize: 13 }}>Live and upcoming games</Text><Text style={textStyle}>{offline ? "Reconnect to verify game access." : account ? "Live Games chat is available to eligible Pro and Premium members. Free players retain game predictions." : accountError}</Text><Button secondary onPress={retry}>Verify access again</Button><Button secondary onPress={() => router.push("/account")}>Your account</Button></View>;
@@ -135,8 +135,8 @@ function LiveGamesContent() {
     <GlassHeader />
     <View style={{ padding: 12, gap: 8 }}>
       {!game ? <><View style={{ gap: 4 }}>
-        <Text accessibilityRole="header" style={{ fontFamily: "HoopCheckDisplay", fontSize: 30, color: glass.foreground }}>LIVE GAMES</Text>
-        <Text style={{ color: glass.secondary, fontSize: 13 }}>Scores, conversations and predictions.</Text>
+        <Text accessibilityRole="header" style={{ fontFamily: "HoopCheckDisplay", fontSize: 30, color: theme.foreground }}>LIVE GAMES</Text>
+        <Text style={{ color: theme.muted, fontSize: 13 }}>Scores, conversations and predictions.</Text>
       </View>
       {account.features.canSwitchBasketballSide ? <GlassSegmented value={side} options={[{ value: "mens", label: "Men" }, { value: "womens", label: "Women" }]} disabled={savingSide || sideChoice?.owner !== uid} onChange={value => void chooseSide(value)} /> : <Text style={{ color: theme.muted }}>{side === "mens" ? "Men’s basketball" : "Women’s basketball"}</Text>}</> : null}
       {error ? <View style={{ gap: 8 }}><Text accessibilityRole="alert" style={{ color: theme.muted }}>{error}</Text><Button secondary onPress={retry}>Verify access again</Button></View> : null}
@@ -154,13 +154,13 @@ function LiveGamesContent() {
       <Scoreboard game={item} teams={data?.teams || {}} />
     </PressableCard>} ListHeaderComponent={<View style={{gap:10,marginBottom:12}}>
       {featuredGame ? <GlassCard testID="featured-live-game">
-        <Text style={{ color: glass.secondary, fontSize: 11, fontWeight: "800", letterSpacing: 1 }}>FEATURED GAME</Text>
+        <Text style={{ color: theme.muted, fontSize: 11, fontWeight: "800", letterSpacing: 1 }}>FEATURED GAME</Text>
         <View style={{ marginTop: 9 }}><Scoreboard game={featuredGame} teams={data?.teams || {}} /></View>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-around",
-          marginTop: 14, paddingTop: 10, borderTopWidth: 1, borderColor: glass.border }}>
-          <Text accessibilityLabel="Watch unavailable: no verified stream" style={{ color: glass.tertiary, fontSize: 12 }}>Watch</Text>
+          marginTop: 14, paddingTop: 10, borderTopWidth: 1, borderColor: theme.border }}>
+          <Text accessibilityLabel="Watch unavailable: no verified stream" style={{ color: theme.muted, fontSize: 12 }}>Watch</Text>
           <Pressable accessibilityRole="link" onPress={() => { setPanel("chat"); router.push({ pathname: "/fan-live", params: { gameId: featuredGame.id } }); }} style={{ minHeight: 44, justifyContent: "center" }}>
-            <Text style={{ color: glass.foreground, fontSize: 12, fontWeight: "700" }}>Game chat</Text>
+            <Text style={{ color: theme.foreground, fontSize: 12, fontWeight: "700" }}>Game chat</Text>
           </Pressable>
           <Pressable accessibilityRole="link" onPress={() => { setPanel("predictions"); router.push({ pathname: "/fan-live", params: { gameId: featuredGame.id } }); }} style={{ minHeight: 44, justifyContent: "center" }}>
             <Text style={{ color: glass.orange, fontSize: 12, fontWeight: "700" }}>Predict</Text>
@@ -168,7 +168,7 @@ function LiveGamesContent() {
         </View>
       </GlassCard> : null}
       <GlassCard solid radius={glass.radii.row} padding={12}>
-        <Text style={{ color: glass.secondary, fontSize: 12, lineHeight: 18 }}>Scores are LIVE only when under 5 min old — everything else is a final.</Text>
+        <Text style={{ color: theme.muted, fontSize: 12, lineHeight: 18 }}>Live scores depend on the provider. Unverified scores show UPDATE DELAYED, never a guessed final.</Text>
       </GlassCard>
       <Text style={{fontSize:18,fontWeight:"900",color:theme.foreground}}>Browse by activity</Text>
       <Text style={{color:theme.muted,fontSize:12}}>Prioritized by members in chat, live status and available fixtures. The provider decides LIVE status.</Text>

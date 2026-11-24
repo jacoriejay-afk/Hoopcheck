@@ -60,7 +60,7 @@ export function getEntryTheme(dark: boolean, glassScope = false) {
     glassFill: dark ? "rgba(19,30,47,0.65)" : "rgba(255,255,255,0.64)",
     glassBorder: dark ? "rgba(225,235,255,0.23)" : "rgba(255,255,255,0.94)",
     shadow: { shadowColor: "#000000", shadowOffset: { width: 0, height: 12 }, shadowRadius: 32, shadowOpacity: dark ? .32 : .12, elevation: 8 },
-    ...(glassScope ? { dark: true, background: glass.background, surface: glass.solid, elevatedSurface: glass.solid,
+    ...(glassScope && dark ? { dark: true, background: glass.background, surface: "#16171E", elevatedSurface: "#1C1D25",
       foreground: glass.foreground, muted: glass.secondary, border: glass.border, glassBorder: glass.border,
       glassFill: glass.fill, input: glass.fill, chip: glass.solid, onChip: glass.secondary,
       accent: glass.orange, accentSurface: "rgba(255,90,31,0.16)", cardRadius: glass.radii.card,

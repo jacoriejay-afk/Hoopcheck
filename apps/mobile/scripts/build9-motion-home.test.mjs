@@ -19,7 +19,7 @@ test("Build 11 GlassHeader is safe-area pinned, glass-backed and worklet-collaps
   assert.match(dashboard, /paddingTop: insets.top \+ 94/);
   assert.match(header, /homeScrollY\?\.get\(\)/);
   assert.match(header, /interpolate\(offset, \[0, 100\], \[46, 40\]/);
-  assert.match(header, /<GlassCard radius=\{999\} padding=\{8\}>/);
+  assert.match(header, /<GlassSurface navigation native intensity=\{55\}/);
   assert.match(header, /<BrandLogo \/>/);
   assert.match(header, /accessibilityLabel="Alerts"/);
   assert.match(header, /accessibilityElementsHidden/);

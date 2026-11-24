@@ -4,7 +4,7 @@ export type LiveGame = {
   id: string; team_id: string; opponent_team_id: string | null; opponent_name: string;
   status: string; home_score: number | null; away_score: number | null;
   started_at: string | null; ends_at: string | null; scheduled_at: string | null;
-  league_name: string | null; country: string | null; period_label: string | null;
+  league_name: string | null; country: string | null; period_label: string | null; score_updated_at?: string | null;
 };
 export type GameTeam = { id: string; name: string };
 export type ChatMessage = { id: string; body: string; created_at: string; user_id: string };
@@ -54,10 +54,22 @@ export async function readLiveGames(client: SupabaseClient, side: "mens" | "wome
       if (!response.ok || !Array.isArray(data.games) || data.games.length > 500) throw new Error("Games could not load.");
       games = data.games;
     } else {
-      const result = await client.from("fan_live_games").select(fields).in("status", ["scheduled", "live", "final", "finished", "cancelled", "postponed", "abandoned"]).gte("scheduled_at", since).order("scheduled_at", { ascending: true, nullsFirst: false }).order("id").limit(500).abortSignal(timer.signal);
-      if (result.error) throw new Error("Games could not load.");
-      games = (result.data ?? []) as LiveGame[];
+      const latest = new Date(now.getTime() + 7 * 86400000).toISOString();
+      const readWindow = async (selection: string) => Promise.all([
+        client.from("fan_live_games").select(selection).in("status", ["scheduled", "live"])
+          .gte("scheduled_at", new Date(now.getTime() - 4 * 3600000).toISOString())
+          .lte("scheduled_at", latest).order("scheduled_at", { ascending: true, nullsFirst: false })
+          .order("id").limit(350).abortSignal(timer.signal),
+        client.from("fan_live_games").select(selection).in("status", ["final", "finished", "cancelled", "postponed", "abandoned"])
+          .gte("scheduled_at", since).lte("scheduled_at", latest)
+          .order("scheduled_at", { ascending: false, nullsFirst: false }).order("id").limit(150).abortSignal(timer.signal),
+      ]);
+      let results = await readWindow(fields + ",score_updated_at");
+      if (results.some(result => result.error?.code === "42703")) results = await readWindow(fields);
+      if (results.some(result => result.error)) throw new Error("Games could not load.");
+      games = [...(results[0].data ?? []), ...(results[1].data ?? [])] as unknown as LiveGame[];
     }
+    games = [...new Map(games.map(game => [game.id, game])).values()];
     if (games.some(game => !uuid.test(game.id) || !uuid.test(game.team_id) || (game.opponent_team_id && !uuid.test(game.opponent_team_id)))) throw new Error("Invalid game response");
     const ids = [...new Set(games.flatMap(game => [game.team_id, game.opponent_team_id].filter((value): value is string => Boolean(value))))];
     const teams: Record<string, GameTeam> = {};
@@ -72,9 +84,10 @@ export async function readLiveGames(client: SupabaseClient, side: "mens" | "wome
       }
     }
     const recent = Date.parse(since);
+    const latest = now.getTime() + 7 * 86400000;
     return { teams, games: games.filter(game => {
       const tip = Date.parse(game.scheduled_at || "");
-      return (teams[game.team_id] || teams[game.opponent_team_id || ""]) && (!Number.isFinite(tip) || tip >= recent) && !(game.status === "scheduled" && Number.isFinite(tip) && tip < now.getTime() - 4 * 3600000);
+      return (teams[game.team_id] || teams[game.opponent_team_id || ""]) && (!Number.isFinite(tip) || (tip >= recent && tip <= latest)) && !(game.status === "scheduled" && Number.isFinite(tip) && tip < now.getTime() - 4 * 3600000);
     }) };
   } finally { timer.clear(); }
 }

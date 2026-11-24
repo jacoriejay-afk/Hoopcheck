@@ -39,12 +39,17 @@ export async function GET(request: NextRequest) {
 
   try {
     const db = createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
+    const rawOffset = request.nextUrl.searchParams.get("date_offset") ?? "0";
+    if (!/^(?:-1|[0-7])$/.test(rawOffset)) {
+      return NextResponse.json({ error: "Invalid date offset." }, { status: 400, headers: { "Cache-Control": "no-store" } });
+    }
+    const fixtureClock = new Date(Date.now() + Number(rawOffset) * 86400000);
     const bakuDateParts = new Intl.DateTimeFormat("en-CA", {
       timeZone: "Asia/Baku",
       year: "numeric",
       month: "2-digit",
       day: "2-digit"
-    }).formatToParts(new Date());
+    }).formatToParts(fixtureClock);
     const datePart = (type: string) => bakuDateParts.find(part => part.type === type)?.value;
     const fixtureDate = `${datePart("year")}-${datePart("month")}-${datePart("day")}`;
     const response = await fetch(`https://v1.basketball.api-sports.io/games?date=${fixtureDate}&timezone=Asia%2FBaku`, {
@@ -57,23 +62,41 @@ export async function GET(request: NextRequest) {
     }
 
     const payload = await response.json() as ProviderResponse;
-    if (!Array.isArray(payload.response) || (Array.isArray(payload.errors) && payload.errors.length > 0)) {
+    if (!Array.isArray(payload.response) || (Array.isArray(payload.errors) ? payload.errors.length > 0 :
+      Boolean(payload.errors && typeof payload.errors === "object" && Object.keys(payload.errors).length > 0) ||
+      Boolean(payload.errors && typeof payload.errors === "string"))) {
       return NextResponse.json({ error: "Basketball data provider returned an invalid response." }, { status: 502, headers: { "Cache-Control": "no-store" } });
     }
 
-    const { data: mappings, error: mappingError } = await db
-      .from("fan_live_team_provider_map")
-      .select("team_id,provider_team_id")
-      .eq("active", true);
-    if (mappingError) throw mappingError;
+    const receivedAt = new Date().toISOString();
+    const mappings: { team_id: string; provider_team_id: number }[] = [];
+    // PostgREST defaults to a 1,000-row limit; paginate so international teams
+    // beyond the first page are not silently excluded.
+    for (let offset = 0; offset < 10000; offset += 500) {
+      const { data, error } = await db.from("fan_live_team_provider_map")
+        .select("team_id,provider_team_id").eq("active", true)
+        .order("provider_team_id").range(offset, offset + 499);
+      if (error) throw error;
+      mappings.push(...(data || []));
+      if ((data || []).length < 500) break;
+      if (offset === 9500) throw new Error("Provider mapping pagination limit reached");
+    }
 
     const byProviderId = new Map<number, string>();
     for (const mapping of mappings || []) byProviderId.set(Number(mapping.provider_team_id), mapping.team_id);
 
     // Name matching gives the integration a useful default before manual aliases
     // are configured. Explicit provider-ID mappings always take precedence.
-    const { data: teams, error: teamsError } = await db.from("teams").select("id,name").or("source.is.null,source.neq.womens_teams_mirror");
-    if (teamsError) throw teamsError;
+    const teams: { id: string; name: string }[] = [];
+    for (let offset = 0; offset < 10000; offset += 500) {
+      const { data, error } = await db.from("teams").select("id,name")
+        .or("source.is.null,source.neq.womens_teams_mirror").order("id")
+        .range(offset, offset + 499);
+      if (error) throw error;
+      teams.push(...(data || []));
+      if ((data || []).length < 500) break;
+      if (offset === 9500) throw new Error("Team pagination limit reached");
+    }
     const normalize = (name: string) => name.toLocaleLowerCase("en-US").replace(/\b(basketball club|basketball|bc|club|team)\b/g, " ").replace(/[^a-z0-9]/g, "");
     const internalTeamByName = new Map<string, string>();
     const ambiguousTeamNames = new Set<string>();
@@ -176,6 +199,7 @@ export async function GET(request: NextRequest) {
         provider_game_id: String(game.id),
         provider_league_id: typeof providerLeagueId === "number" && Number.isSafeInteger(providerLeagueId) && providerLeagueId > 0 ? providerLeagueId : null,
         status: storedStatus,
+        score_updated_at: receivedAt,
         home_score: storedStatus === "scheduled" ? null : primaryScore,
         away_score: storedStatus === "scheduled" ? null : opponentScore,
         started_at: storedStatus === "scheduled" ? null : startDate,
@@ -274,6 +298,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       ok: true,
       fixtureDate,
+      providerSnapshotReceivedAt: receivedAt,
       providerGamesForDate: payload.response.length,
       providerLiveGames: liveGames.length,
       providerScheduledGames: rows.filter(row => row.status === "scheduled").length,

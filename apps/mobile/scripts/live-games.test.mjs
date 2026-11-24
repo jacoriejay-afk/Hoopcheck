@@ -12,8 +12,11 @@ test('game discovery preserves side identity including away women and excludes s
   const data=await readLiveGames(db,'womens',null,now);
   assert.deepEqual(data.games.map(x=>x.id),[id(1)]);assert.equal(data.teams[id(11)].name,'Away Women');
   assert.equal(calls[0].searchParams.get('gte'),null);
-  assert.equal(calls[0].searchParams.get('scheduled_at'),'gte.2026-11-11T12:00:00.000Z');
-  assert.equal(calls[0].searchParams.get('limit'),'500');assert.equal(calls[0].searchParams.get('order'),'scheduled_at.asc.nullslast,id.asc');
+  assert.deepEqual(calls[0].searchParams.getAll('scheduled_at'),['gte.2026-11-18T08:00:00.000Z','lte.2026-11-25T12:00:00.000Z']);
+  assert.equal(calls[0].searchParams.get('limit'),'350');assert.equal(calls[0].searchParams.get('order'),'scheduled_at.asc.nullslast,id.asc');
+  assert.deepEqual(calls[1].searchParams.getAll('scheduled_at'),['gte.2026-11-11T12:00:00.000Z','lte.2026-11-25T12:00:00.000Z']);
+  assert.equal(calls[1].searchParams.get('limit'),'150');assert.match(calls[1].searchParams.get('status'),/final/);
+  assert.match(calls[0].searchParams.get('select'),/score_updated_at/);
   assert.equal(calls.find(url=>url.pathname.endsWith('/teams')).searchParams.get('basketball_type'),'eq.womens');
   assert.ok(!/email|salary/.test(calls[0].searchParams.get('select')));
 });
@@ -77,4 +80,22 @@ test('unresponsive game requests abort after the native deadline instead of leav
   let started;const registered=new Promise(resolve=>{started=resolve;});
   const db=client(async(_,options)=>new Promise((resolve,reject)=>{options.signal.addEventListener('abort',()=>reject(new Error('aborted')),{once:true});started();}));
   const pending=readBasketballSide(db,id(30));await registered;t.mock.timers.tick(15000);await assert.rejects(pending,/could not load/);
+});
+
+test("old database schema falls back without fabricating a refresh timestamp",async()=>{
+  const requests=[];
+  const db=client(async input=>{
+    const url=new URL(String(input));
+    if(url.pathname.endsWith("/fan_live_games")){
+      requests.push(url);
+      if(url.searchParams.get("select").includes("score_updated_at")) return Response.json({code:"42703",message:"column does not exist"},{status:400});
+      return Response.json([game(1)]);
+    }
+    return Response.json([{id:id(10),name:"Home"}]);
+  });
+  const result=await readLiveGames(db,"mens",null,now);
+  assert.equal(result.games.length,1);
+  assert.equal(result.games[0].score_updated_at,undefined);
+  assert.equal(requests.length,4);
+  assert.ok(requests.slice(2).every(url=>!url.searchParams.get("select").includes("score_updated_at")));
 });

@@ -34,12 +34,26 @@ export async function GET(request: Request) {
     if (!user) return NextResponse.json({ error: "Sign in to view predictions." }, { status: 401 });
     const url = new URL(request.url);
     if (url.searchParams.get("mode") === "games") {
-      const { data: games, error } = await db.from("fan_live_games")
-        .select("id,team_id,opponent_team_id,opponent_name,status,home_score,away_score,started_at,ends_at,scheduled_at,league_name,country,period_label")
-        .in("status", ["scheduled","live","final","finished","cancelled","postponed","abandoned"])
-        .order("scheduled_at", { ascending: true, nullsFirst: false }).limit(500);
-      if (error) throw error;
-      return NextResponse.json({ games: games || [] }, { headers: { "Cache-Control": "private, no-store" } });
+      const now = Date.now();
+      const earliest = new Date(now - 7 * 86400000).toISOString();
+      const latest = new Date(now + 7 * 86400000).toISOString();
+      const base = "id,team_id,opponent_team_id,opponent_name,status,home_score,away_score,started_at,ends_at,scheduled_at,league_name,country,period_label";
+      // Bound before applying LIMIT, and reserve separate capacity for upcoming/live
+      // games so old finals cannot crowd out the entire current schedule.
+      const readWindow = async (fields: string) => Promise.all([
+        db.from("fan_live_games").select(fields).in("status", ["scheduled", "live"])
+          .gte("scheduled_at", new Date(now - 4 * 3600000).toISOString())
+          .lte("scheduled_at", latest).order("scheduled_at", { ascending: true }).order("id").limit(350),
+        db.from("fan_live_games").select(fields).in("status", ["final", "finished", "cancelled", "postponed", "abandoned"])
+          .gte("scheduled_at", earliest).lte("scheduled_at", latest)
+          .order("scheduled_at", { ascending: false }).order("id").limit(150),
+      ]);
+      let results = await readWindow(base + ",score_updated_at");
+      // Older deployed schemas can still serve games during the staged migration.
+      if (results.some(result => result.error?.code === "42703")) results = await readWindow(base);
+      if (results.some(result => result.error)) throw new Error("Games could not load");
+      const games = [...(results[0].data || []), ...(results[1].data || [])];
+      return NextResponse.json({ games }, { headers: { "Cache-Control": "private, no-store" } });
     }
     if (url.searchParams.get("mode") === "leaderboard") {
       const [{ data: games, error: gamesError }, { data: picks, error: picksError }] = await Promise.all([
