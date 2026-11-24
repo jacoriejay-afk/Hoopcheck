@@ -55,7 +55,7 @@ async function verify(browser,theme,role='fan',moderator=false){
    }
    if(table==='womens_teams'){
     assert.equal(url.searchParams.get('select'),'id,logo_url,logo_bg');
-    assert.ok(url.searchParams.get('id')?.includes(team),'Women's crest lookup must be limited to visible club IDs');
+    assert.ok(url.searchParams.get('id')?.includes(team),"Women's crest lookup must be limited to visible club IDs");
     return json([]);
    }
    if(table==='team_fan_group_posts'){assert.ok(member||moderator,'Non-member must never request protected posts');assert.equal(url.searchParams.get('team_id'),`eq.${team}`);return json(removed?posts.slice(1):posts);}
