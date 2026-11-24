@@ -94,23 +94,23 @@ export function TabBar() {
   const activeWidth = width > 0 ? width / tabs.length : 0;
   // Only screens with explicit scroll clearance use the overlay. Form/chat routes
   // retain in-flow navigation until their input surfaces are migrated.
-  const floating = ["/dashboard", "/feed", "/fan-feed", "/reels", "/search", "/notifications", "/account", "/teams", "/coaches", "/leagues", "/womens"].includes(path) || (path !== "/womens/leagues" && /^\/(players|teams|leagues|womens)\/[^/]+$/.test(path)) || /^\/womens\/leagues\/[^/]+$/.test(path);
+  const floating = ["/dashboard", "/fan-feed", "/reels", "/search", "/teams", "/coaches", "/leagues", "/womens"].includes(path) || (path !== "/womens/leagues" && /^\/(players|teams|leagues|womens)\/[^/]+$/.test(path)) || /^\/womens\/leagues\/[^/]+$/.test(path);
   return <View testID="native-tab-bar" onLayout={event => setWidth(event.nativeEvent.layout.width)} style={{
       ...(floating ? { position: "absolute" as const, left: 0, right: 0, bottom: 0, zIndex: 40 } : {}),
-      marginHorizontal: 20 + Math.max(insets.left, insets.right),
-      marginBottom: Math.max(9, insets.bottom), borderRadius: 31,
+      marginHorizontal: 16 + Math.max(insets.left, insets.right),
+      marginBottom: Math.max(9, insets.bottom), borderRadius: 27,
       borderCurve: "continuous", overflow: "hidden",
-      backgroundColor: translucent ? "transparent" : theme.surface,
+      backgroundColor: theme.surface,
       borderWidth: nativeGlass ? 0 : StyleSheet.hairlineWidth, borderColor: theme.dark ? "rgba(255,255,255,.18)" : "rgba(30,42,70,.14)",
       shadowColor: "#000", shadowOffset: { width: 0, height: 14 },
       shadowOpacity: nativeGlass ? 0 : theme.dark ? .20 : .09, shadowRadius: 14, elevation: 12,
     }}>
-    {nativeGlass ? <GlassView pointerEvents="none" accessible={false} glassEffectStyle="clear" style={[StyleSheet.absoluteFill, { borderRadius: 31 }]} /> :
-      translucent ? <BlurView pointerEvents="none" accessible={false} intensity={65}
+    {nativeGlass ? <GlassView pointerEvents="none" accessible={false} glassEffectStyle="regular" style={[StyleSheet.absoluteFill, { borderRadius: 27 }]} /> :
+      translucent ? <BlurView pointerEvents="none" accessible={false} intensity={80}
         tint={theme.dark ? "dark" : "light"} style={StyleSheet.absoluteFill} /> : null}
     {index >= 0 && activeWidth > 0 ? <Animated.View pointerEvents="none" style={[{
-      position: "absolute", left: 4, top: 4, bottom: 4,
-      width: Math.max(0, activeWidth - 8), borderRadius: 26,
+      position: "absolute", left: 8, top: 5, bottom: 5,
+      width: Math.max(0, activeWidth - 16), borderRadius: 20,
       backgroundColor: theme.dark ? "rgba(255,255,255,.14)" : "rgba(0,0,0,.07)",
     }, indicator]} /> : null}
     <View {...slide.panHandlers} accessibilityRole="tablist" style={{ flexDirection: "row", paddingVertical: 4 }}>
@@ -121,13 +121,13 @@ export function TabBar() {
           accessibilityRole="tab" accessibilityState={{ selected }} accessibilityLabel={label}
           onPress={() => { if (path !== tab.route) { pending.current = tab.route; router.navigate(tab.route); } }}
           style={({ pressed }) => ({
-            flex: 1, minWidth: 0, minHeight: theme.courtside.navigation.height,
-            paddingVertical: 5, alignItems: "center", justifyContent: "center",
+            flex: 1, minWidth: 0, minHeight: 52,
+            paddingVertical: 3, alignItems: "center", justifyContent: "center",
             gap: 4, opacity: pressed ? .82 : 1,
           })}>
           {({ pressed }) => <>
             <AnimatedTabIcon selected={selected} pressed={pressed} reduced={reduced}
-              icon={tab.icon} active={tab.active} size={theme.courtside.navigation.iconSize}
+              icon={tab.icon} active={tab.active} size={22}
               color={selected ? theme.accent : theme.muted} />
             <Text numberOfLines={1} style={{
               fontFamily: theme.type.ui.fontFamily, fontSize: 10,
