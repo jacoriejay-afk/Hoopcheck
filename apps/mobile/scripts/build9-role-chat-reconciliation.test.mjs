@@ -47,5 +47,5 @@ test("new navigation preserves membership gates, message senders, team group dis
   assert.match(groups,/\/hoopgroups/);
   assert.match(alert,/accessibilityRole="tablist"/);
   assert.match(alert,/<MessagesScreen embedded mode=/);
-  assert.match(feed,/Meet HoopBot/);
+  assert.doesNotMatch(feed,/Meet HoopBot/, "Build 12 removes the bot prompt from normal posting");
 });

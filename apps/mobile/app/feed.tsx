@@ -190,6 +190,8 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
       !blockedCreators.ids.includes(post.author_id)
     )),
   ) : [];
+  const currentReelIndex = reels ? posts.findIndex(post => visible.has(post.id)) : -1;
+  const nextReelId = currentReelIndex >= 0 ? posts[currentReelIndex + 1]?.id ?? null : null;
   async function hideCreator(authorId: string) {
     if (!uid || !reels || authorId === uid) return;
     const existing = mutedCreators.owner === uid ? mutedCreators.ids : [];
@@ -273,18 +275,10 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
     </GlassSurface>
     {message || loadError ? <Text accessibilityLiveRegion="polite"
       style={{ color: theme.muted, paddingHorizontal: 18 }}>{loadError || message}</Text> : null}
-    <FlatList key={reels ? "reels" : "posts"} keyboardDismissMode="on-drag" style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 9, gap: reels ? 0 : 8 }} keyboardShouldPersistTaps="handled" initialNumToRender={reels ? 2 : 4} maxToRenderPerBatch={reels ? 2 : 4} windowSize={reels ? 3 : 5} pagingEnabled={reels} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
+    <FlatList key={reels ? "reels" : "posts"} keyboardDismissMode="on-drag" style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 9, gap: reels ? 0 : 8 }} keyboardShouldPersistTaps="handled" initialNumToRender={reels ? 2 : 4} maxToRenderPerBatch={reels ? 2 : 4} windowSize={reels ? 3 : 5} pagingEnabled={reels} getItemLayout={reels && height > 0 ? (_items, index) => ({ length: height, offset: height * index, index }) : undefined} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
       ListHeaderComponent={!reels ? <View style={{ marginBottom: 2, gap: 7 }}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Meet HoopBot welcome guide"
-          onPress={()=>router.push("/feed-welcome")}
-          style={{minHeight:38,paddingHorizontal:10,paddingVertical:4,borderWidth:0,borderRadius:12,
-            backgroundColor:"transparent",flexDirection:"row",
-            justifyContent:"space-between",alignItems:"center",gap:8}}>
-          <Text style={{color:theme.foreground,fontWeight:"700",fontSize:13}}>Meet HoopBot · Welcome guide</Text>
-          <Text style={{color:theme.accent,fontWeight:"700",fontSize:12}}>Open →</Text>
-        </Pressable>
         {!composerExpanded ? <Pressable accessibilityRole="button" accessibilityLabel="Create HoopFeed post" disabled={!canWrite} onPress={() => setComposerExpanded(true)} style={{ flexDirection: "row", alignItems: "center", gap: 9, padding: 9, borderWidth: 1, borderColor: theme.border, borderRadius: 15, backgroundColor: theme.elevatedSurface }}>
-          <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: theme.accentSurface, alignItems: "center", justifyContent: "center" }}><Text style={{ color: theme.accent, fontWeight: "900", fontSize: 12 }}>HC</Text></View><Text style={{ color: theme.muted, fontSize: 14 }}>Share something…</Text>
+          <Ionicons name="create-outline" size={23} color={theme.accent} /><Text style={{ color: theme.muted, fontSize: 14 }}>Share a basketball update…</Text>
         </Pressable> : <View style={{ gap: 12, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 18, backgroundColor: theme.surface }}>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}><Text style={{ ...textStyle, fontFamily: theme.type.ui.fontFamily, fontSize: 18, fontWeight: "700" }}>Create a post</Text><Pressable accessibilityRole="button" onPress={() => setComposerExpanded(false)} style={touch}><Text style={textStyle}>Close</Text></Pressable></View>
           <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 8 }}>{[false, true].map(enabled => <Pressable key={String(enabled)} accessibilityRole="tab" accessibilityState={{ selected: !mediaMode && pollEnabled === enabled }} disabled={pending.post} onPress={() => { setMediaMode(false); setPoll(current => ({ owner: uid!, enabled, options: current.owner === uid ? current.options : ["", ""] })); }} style={[touch, { borderColor: !mediaMode && pollEnabled === enabled ? theme.accent : theme.border }]}><Text style={textStyle}>{enabled ? "Poll" : "Discussion"}</Text></Pressable>)}</View>
@@ -321,7 +315,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
             </Pressable> : null}
           </View>
           {post.body ? <Text numberOfLines={reels ? 3 : undefined} style={{ ...textStyle, fontSize: 14, lineHeight: 20 }}>{post.body}</Text> : null}
-          {post.video_url ? <FeedMedia userId={uid!} postId={post.id} reference={post.video_url} video enabled={focused && visible.has(post.id)} loop={reels} height={reels ? Math.max(120, height - 280) : 220} /> : photos.map(reference => <FeedMedia userId={uid!} key={reference} postId={post.id} reference={reference} enabled={focused && visible.has(post.id)} />)}
+          {post.video_url ? <FeedMedia userId={uid!} postId={post.id} reference={post.video_url} video enabled={focused && visible.has(post.id)} preload={reels && focused && post.id === nextReelId} loop={reels} height={reels ? Math.max(120, height - 280) : 220} /> : photos.map(reference => <FeedMedia userId={uid!} key={reference} postId={post.id} reference={reference} enabled={focused && visible.has(post.id)} />)}
           {post.post_kind === "poll" && options.length ? <FeedPoll userId={uid!} postId={post.id} options={options} enabled={canWrite && focused} /> : null}
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4, paddingTop: 6, borderTopWidth: 1, borderColor: theme.border }}>
             <FeedCheckAction checked={checks[post.id]?.mine} count={checks[post.id]?.count}
