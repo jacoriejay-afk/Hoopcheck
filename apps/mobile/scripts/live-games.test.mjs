@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createClient } from '@supabase/supabase-js';
-import { readBasketballSide, saveBasketballSide, readLiveGames, readGameRoom, sendGameMessage, setGameChatControl, reportGameMessage, readPrediction, pickGameWinner } from '../src/native/liveGames.ts';
+import { readBasketballSide, saveBasketballSide, readLiveGames, readGameRoom, sendGameMessage, setGameChatControl, reportGameMessage, readPrediction, pickGameWinner, predictionMatchupReady } from '../src/native/liveGames.ts';
 const id=n=>`11111111-1111-4111-8111-${String(n).padStart(12,'0')}`;
 const now=new Date('2026-11-18T12:00:00Z');
 const game=(n,overrides={})=>({id:id(n),team_id:id(10),opponent_team_id:id(11),opponent_name:'Away',status:'scheduled',scheduled_at:'2026-11-18T12:30:00Z',...overrides});
@@ -78,4 +78,11 @@ test('unresponsive game requests abort after the native deadline instead of leav
   let started;const registered=new Promise(resolve=>{started=resolve;});
   const db=client(async(_,options)=>new Promise((resolve,reject)=>{options.signal.addEventListener('abort',()=>reject(new Error('aborted')),{once:true});started();}));
   const pending=readBasketballSide(db,id(30));await registered;t.mock.timers.tick(15000);await assert.rejects(pending,/could not load/);
+});
+
+test("predictions require both distinct mapped team IDs",()=>{
+ assert.equal(predictionMatchupReady(game(1)),true);
+ for(const opponent_team_id of [null,"", "unknown",id(10)])assert.equal(predictionMatchupReady(game(1,{opponent_team_id})),false);
+ assert.equal(predictionMatchupReady(game(1,{team_id:"invalid"})),false);
+ assert.equal(predictionMatchupReady({team_id:"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",opponent_team_id:"AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA"}),false);
 });
