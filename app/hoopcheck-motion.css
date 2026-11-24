@@ -101,3 +101,11 @@
   .hc-player-profile-completion { align-items: stretch; padding: 14px; }
   .hc-player-profile-completion .btn { width: 100%; justify-content: center; }
 }
+
+/* Owner brand reveal: decorative only, never a loading gate. */
+@media (prefers-reduced-motion: no-preference) {
+  .hc-brand-loader .hc-logo__icon { animation: hc-owner-mark-reveal 500ms cubic-bezier(.2,.75,.25,1) both; transform-origin: center; }
+  .hc-brand-loader .hc-owner-brand-arrow { animation: hc-owner-arrow-reveal 380ms 80ms cubic-bezier(.2,.75,.25,1) both; transform-box: fill-box; transform-origin: center; }
+}
+@keyframes hc-owner-mark-reveal { from { opacity: .3; transform: scale(.94); } to { opacity: 1; transform: scale(1); } }
+@keyframes hc-owner-arrow-reveal { from { opacity: 0; transform: translate(-4px,4px); } to { opacity: 1; transform: translate(0,0); } }
