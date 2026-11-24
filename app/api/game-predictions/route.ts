@@ -3,7 +3,17 @@ import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 const finalStatuses = new Set(["final", "finished"]);
-const liveStatuses = new Set(["live", "in_progress"]);
+const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function completeMatchup(game: {team_id?: unknown; opponent_team_id?: unknown}) {
+  return typeof game.team_id === "string" && uuid.test(game.team_id) &&
+    typeof game.opponent_team_id === "string" && uuid.test(game.opponent_team_id) &&
+    game.team_id.toLowerCase() !== game.opponent_team_id.toLowerCase();
+}
+function predictionLocked(game: {team_id?: unknown; opponent_team_id?: unknown; status?: unknown; scheduled_at?: string | null}) {
+  const tip = Date.parse(game.scheduled_at || "");
+  return !completeMatchup(game) || String(game.status).toLowerCase() !== "scheduled" ||
+    !Number.isFinite(tip) || Date.now() >= tip;
+}
 
 function clients() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -22,7 +32,7 @@ async function currentUser(request: Request, auth: any) {
   return data.user || null;
 }
 function winner(game: any) {
-  if (!finalStatuses.has(String(game.status).toLowerCase())) return null;
+  if (!completeMatchup(game) || !finalStatuses.has(String(game.status).toLowerCase())) return null;
   if (game.home_score == null || game.away_score == null || Number(game.home_score) === Number(game.away_score)) return null;
   return Number(game.home_score) > Number(game.away_score) ? game.team_id : game.opponent_team_id;
 }
@@ -76,7 +86,7 @@ export async function GET(request: Request) {
       return NextResponse.json({leaderboard:overall,games:perGame},{headers:{"Cache-Control":"private, no-store"}});
     }
     const gameId = url.searchParams.get("gameId") || "";
-    if (!/^[0-9a-f-]{36}$/i.test(gameId)) return NextResponse.json({error:"Provide a valid game."},{status:400});
+    if (!uuid.test(gameId)) return NextResponse.json({error:"Provide a valid game."},{status:400});
     const [{data:game,error:gameError},{data:mine,error:mineError},{data:picks,error:picksError}] = await Promise.all([
       db.from("fan_live_games").select("id,team_id,opponent_team_id,opponent_name,status,home_score,away_score,scheduled_at,ends_at").eq("id",gameId).maybeSingle(),
       db.from("game_winner_picks").select("picked_team_id").eq("game_id",gameId).eq("user_id",user.id).maybeSingle(),
@@ -85,8 +95,7 @@ export async function GET(request: Request) {
     if(gameError||mineError||picksError) throw gameError||mineError||picksError;
     if(!game) return NextResponse.json({error:"Game not found."},{status:404});
     const status=String(game.status).toLowerCase();
-    const tip=Date.parse(game.scheduled_at||"");
-    const locked=finalStatuses.has(status)||liveStatuses.has(status)||(Number.isFinite(tip)&&Date.now()>=tip);
+    const locked=predictionLocked(game);
     const winnerId=winner(game), total=(picks||[]).length;
     const winnerCount=winnerId?(picks||[]).filter((p:any)=>p.picked_team_id===winnerId).length:0;
     const results=finalStatuses.has(status)&&winnerId?{winner_team_id:winnerId,total_picks:total,winner_percent:total?Math.round(winnerCount/total*100):0,correct_picks:winnerCount}:null;
@@ -105,16 +114,15 @@ export async function POST(request: Request) {
     const body=await request.json();
     const gameId=typeof body.gameId==="string"?body.gameId:"";
     const pickedTeamId=typeof body.pickedTeamId==="string"?body.pickedTeamId:"";
-    if(!/^[0-9a-f-]{36}$/i.test(gameId)||!/^[0-9a-f-]{36}$/i.test(pickedTeamId)) return NextResponse.json({error:"Choose one of the teams."},{status:400});
+    if(!/^[0-9a-f-]{36}$/i.test(gameId)||!uuid.test(pickedTeamId)) return NextResponse.json({error:"Choose one of the teams."},{status:400});
     const [{data:profile},{data:game,error:gameError}]=await Promise.all([
       db.from("profiles").select("account_type").eq("id",user.id).maybeSingle(),
       db.from("fan_live_games").select("id,team_id,opponent_team_id,status,scheduled_at").eq("id",gameId).maybeSingle(),
     ]);
     if(!["fan","player"].includes(profile?.account_type||"")) return NextResponse.json({error:"Predictions are available to fans and players."},{status:403});
     if(gameError||!game) return NextResponse.json({error:"Game not found."},{status:404});
-    if(!game.opponent_team_id||![game.team_id,game.opponent_team_id].includes(pickedTeamId)) return NextResponse.json({error:"Pick one of the listed teams."},{status:400});
-    const tip=Date.parse(game.scheduled_at||"");
-    if(["final","finished","live","in_progress"].includes(String(game.status).toLowerCase())||!Number.isFinite(tip)||Date.now()>=tip) return NextResponse.json({error:"Picks are locked at tip-off."},{status:409});
+    if(!completeMatchup(game)||![game.team_id,game.opponent_team_id].includes(pickedTeamId)) return NextResponse.json({error:"Pick one of the listed teams."},{status:400});
+    if(predictionLocked(game)) return NextResponse.json({error:"Picks are closed for this game."},{status:409});
     const {error}=await db.from("game_winner_picks").upsert({game_id:gameId,user_id:user.id,picked_team_id:pickedTeamId,updated_at:new Date().toISOString()},{onConflict:"game_id,user_id"});
     if(error) throw error;
     return NextResponse.json({ok:true,picked_team_id:pickedTeamId});
