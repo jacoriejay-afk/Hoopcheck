@@ -10,7 +10,7 @@ test("Build 11 Home hamburger opens a real owner menu in an isolated header isla
   assert.match(dashboard,/setMenuOpen\(open=>!open\)/);
   assert.match(dashboard,/menuOpen \? <GlassSurface/);
   assert.match(dashboard, /<BrandLogo onHero=\{theme\.dark\} \/>/, 'Header logo must remain legible in light and dark glass');
-  for (const route of ["/account","/notifications","/hoopgroups","/settings","/about"]) {
+  for (const route of ["/account","/messages","/hoopgroups","/settings","/about"]) {
     assert.ok(dashboard.includes(`path:"${route}"`), "Menu route "+route);
   }
   assert.match(dashboard,/edges=\{\["top", "left", "right", "bottom"\]\}/);
@@ -42,7 +42,7 @@ test("Build 11 Account owns its header and groups account, membership, safety, w
   assert.match(account,/ProfileAvatar/);
   assert.match(account,/MembershipPreview/);
   assert.match(account,/Membership and restore purchases/);
-  assert.match(account,/HoopChat & requests/);
+  assert.match(account,/HoopChat · messages and requests/);
   assert.match(account,/Two-factor authentication/);
   assert.doesNotMatch(account,/pathname:"\/web"/);
   assert.match(account,/Career Passport · My Journey/);
