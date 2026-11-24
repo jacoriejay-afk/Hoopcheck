@@ -21,7 +21,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/hoopcheck-mark.png",
+          "image": "./assets/hoopcheck-mark-light.png",
           "imageWidth": 120,
           "resizeMode": "contain",
           "backgroundColor": "#F4F4F1",
