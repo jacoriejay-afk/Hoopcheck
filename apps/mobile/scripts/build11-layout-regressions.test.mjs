@@ -10,12 +10,12 @@ test("Build 11 Home hamburger opens a real owner menu in an isolated header isla
   assert.match(dashboard,/setMenuOpen\(open=>!open\)/);
   assert.match(dashboard,/menuOpen \? <GlassSurface/);
   assert.match(dashboard, /<BrandLogo onHero=\{theme\.dark\} \/>/, 'Header logo must remain legible in light and dark glass');
-  for (const route of ["/account","/messages","/hoopgroups","/settings","/support"]) {
+  for (const route of ["/account","/notifications","/hoopgroups","/settings","/about"]) {
     assert.ok(dashboard.includes(`path:"${route}"`), "Menu route "+route);
   }
   assert.match(dashboard,/edges=\{\["top", "left", "right", "bottom"\]\}/);
   assert.match(dashboard,/onScrollBeginDrag=\{\(\)=>setMenuOpen\(false\)\}/);
-  assert.match(dashboard,/if\(item\.path==="\/support"\) router\.push\(\{pathname:"\/web",params:\{path:"\/support"\}\}\)/);
+  assert.doesNotMatch(dashboard,/pathname:"\/web"/);
 });
 
 test("Build 11 HoopFeed is compact, keeps Posts/Reels and owner-only confirmed deletion", () => {
@@ -42,10 +42,10 @@ test("Build 11 Account owns its header and groups account, membership, safety, w
   assert.match(account,/ProfileAvatar/);
   assert.match(account,/MembershipPreview/);
   assert.match(account,/Membership and restore purchases/);
-  assert.match(account,/HoopChat · messages and requests/);
+  assert.match(account,/HoopChat & requests/);
   assert.match(account,/Two-factor authentication/);
-  assert.match(account,/Owner HQ on website/);
-  assert.match(account,/Ambassador HQ on website/);
+  assert.doesNotMatch(account,/pathname:"\/web"/);
+  assert.match(account,/Career Passport · My Journey/);
   assert.match(account,/signOut\(\{ scope: "local" \}\)/);
   assert.match(layout,/name="account" options=\{\{ headerShown: false \}\}/);
   assert.match(account,/HoopCheckLoading/);

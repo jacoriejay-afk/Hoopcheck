@@ -1,3 +1,4 @@
+import { EntitySchedule } from "../../components/EntitySchedule";
 import { TeamRoster } from "../../components/TeamRoster";
 import { EntityHero } from "../../components/EntityHero";
 import { GlassCard, Button } from "../../src/primitives";
@@ -78,12 +79,12 @@ export default function TeamDetailScreen() {
     <SafeAreaView edges={["left", "right", "bottom"]} style={styles.safe}>
       <OfflineBanner savedAt={savedAt} />
       <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); setRefreshId(value => value + 1); }} />} contentContainerStyle={styles.content}>
-        <Pressable accessibilityRole="link" style={{ minHeight: 44, justifyContent: "center" }} onPress={() => router.back()}><Text style={styles.back}>‹ Back to teams</Text></Pressable>
         {loading ? <Skeleton profile /> : error || !team ? (
           <View style={styles.empty}><Text style={styles.title}>Team unavailable</Text><Text style={styles.body}>This team may have been removed or is not currently listed.</Text></View>
         ) : (
           <>
             <EntityHero logoUrl={team.logo_url} logoBg={team.logo_bg} name={team.name} country={team.country} kind="teams" label="TEAM PROFILE" path={`/teams/${team.id}`} location={[team.city, team.country].filter(Boolean).join(", ") || "Location not listed"} />
+          <EntitySchedule scope={{ kind: "team", id: team.id }} side="mens" refresh={refreshId} />
             <GlassCard style={styles.card}>
               <Text style={styles.label}>LEAGUE</Text><Text style={styles.value}>{team.league_name || "Not listed"}</Text>
               <View style={styles.divider} />

@@ -11,13 +11,14 @@ import { useEntryTheme } from "../src/theme";
  * alternatives. Never blur a long scrolling list item by default.
  */
 export function GlassSurface({
-  children, style, intensity = 45, solid = false, native = true,
+  children, style, intensity = 45, solid = false, native = true, navigation = false,
 }: {
   children: ReactNode;
   style?: StyleProp<ViewStyle>;
   intensity?: number;
   solid?: boolean;
   native?: boolean;
+  navigation?: boolean;
 }) {
   const theme = useEntryTheme();
   // The safe initial state is opaque until the OS accessibility setting loads.
@@ -37,17 +38,17 @@ export function GlassSurface({
     && isGlassEffectAPIAvailable() && isLiquidGlassAvailable();
   return <View style={[{
     borderRadius: 24, borderCurve: "continuous", overflow: "hidden",
-    backgroundColor: opaque ? theme.surface : theme.glassFill,
+    backgroundColor: opaque ? theme.surface : navigation && nativeGlass ? "transparent" : theme.glassFill,
     borderWidth: 1, borderColor: theme.glassBorder,
   }, style]}>
     {nativeGlass ? <GlassView pointerEvents="none" accessible={false}
-      glassEffectStyle="regular" tintColor={theme.dark ? "#182B43" : "#EAF1FC"}
+      glassEffectStyle={navigation ? "clear" : "regular"} colorScheme={theme.dark ? "dark" : "light"} tintColor={navigation ? undefined : theme.dark ? "#182B43" : "#EAF1FC"}
       style={[StyleSheet.absoluteFill, { borderRadius: 24 }]} /> :
       !opaque ? <BlurView pointerEvents="none" accessible={false}
         intensity={intensity} tint={theme.dark ? "dark" : "light"} style={StyleSheet.absoluteFill} /> : null}
-    <LinearGradient pointerEvents="none" accessible={false}
+    {!navigation ? <LinearGradient pointerEvents="none" accessible={false}
       colors={theme.dark ? ["rgba(255,255,255,0.15)", "rgba(255,255,255,0.025)", "rgba(255,255,255,0.005)"] : ["rgba(255,255,255,0.72)", "rgba(255,255,255,0.16)", "rgba(255,255,255,0.04)"]}
-      locations={[0, 0.38, 1]} style={StyleSheet.absoluteFill} />
+      locations={[0, 0.38, 1]} style={StyleSheet.absoluteFill} /> : null}
     {children}
   </View>;
 }

@@ -13,6 +13,7 @@ async function verify(browser,theme,role){
   const req=route.request(),url=new URL(req.url());if(url.origin===new URL(base).origin)return route.continue();
   const json=data=>route.fulfill({status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*','access-control-allow-headers':'*'},body:JSON.stringify(data)});
   if(req.method()==='OPTIONS')return json({});calls.push(url.pathname);
+  if(url.hostname==='api.test'&&url.pathname==='/api/game-predictions'){assert.equal(role,'player');assert.equal(url.searchParams.get('mode'),'games');return json({games:[]});}
   if(url.hostname==='api.test'&&url.pathname==='/api/mobile/bootstrap')return json({user:{id:uid,displayName:'Research member',accountType:role},entitlements:{tier:'free',hasPaidMembership:false,canReadHoopFeed:false,canWriteHoopFeed:false,canUseLiveGameHub:false,canUseLiveGameChat:false,canSwitchBasketballSide:false,canUseFanGroups:role==='fan'}});
   if(url.hostname==='fixture.supabase.co'){
    const table=url.pathname.split('/').pop();

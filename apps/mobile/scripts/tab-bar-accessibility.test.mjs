@@ -18,7 +18,7 @@ async function render(accountType, path, platform = "ios") {
     'expo-blur': { BlurView: 'BlurView' },
     'expo-linear-gradient': { LinearGradient: 'LinearGradient' },
     'expo-glass-effect': { GlassView: 'GlassView', isGlassEffectAPIAvailable: () => false, isLiquidGlassAvailable: () => false },
-    'react-native': { Platform: { OS: platform }, StyleSheet: { absoluteFill: {} }, AccessibilityInfo: { isReduceTransparencyEnabled: platform === "ios" ? async () => true : undefined, addEventListener: () => ({ remove() {} }) }, Keyboard: { addListener: () => ({ remove() {} }) }, Pressable: ({ children, ...props }) => React.createElement('Pressable', props, typeof children === 'function' ? children({ pressed: false }) : children), Text: 'Text', View: 'View' },
+    'react-native': { Platform: { OS: platform }, StyleSheet: { absoluteFill: {} }, AccessibilityInfo: { isReduceTransparencyEnabled: platform === "ios" ? async () => true : undefined, addEventListener: () => ({ remove() {} }) }, PanResponder: { create: handlers => ({ panHandlers: handlers }) }, Keyboard: { addListener: () => ({ remove() {} }) }, Pressable: ({ children, ...props }) => React.createElement('Pressable', props, typeof children === 'function' ? children({ pressed: false }) : children), Text: 'Text', View: 'View' },
     'expo-router': { usePathname: () => path, useRouter: () => ({ navigate: route => navigations.push(route) }) },
     '@expo/vector-icons': { Ionicons: 'Ionicons' },
     'react-native-safe-area-context': { useSafeAreaInsets: () => ({ left: 0, right: 0, bottom: 0 }) },
@@ -76,4 +76,16 @@ test('web navigation does not call iOS-only transparency APIs', async () => {
   const { tree } = await render('player', '/dashboard', 'web');
   try { assert.equal(tree.root.findAllByType('Pressable').length, 5); }
   finally { await act(async () => tree.unmount()); }
+});
+
+test("horizontal slide navigates one tab while vertical scrolling does not capture", async () => {
+  const {tree,navigations}=await render("player","/dashboard");
+  try {
+    await act(async()=>tree.root.findByProps({testID:"native-tab-bar"}).props.onLayout({nativeEvent:{layout:{width:350}}}));
+    const handlers=tree.root.findByProps({accessibilityRole:"tablist"}).props;
+    assert.equal(handlers.onMoveShouldSetPanResponderCapture({}, {dx:70,dy:4}),true);
+    assert.equal(handlers.onMoveShouldSetPanResponderCapture({}, {dx:4,dy:70}),false);
+    await act(async()=>handlers.onPanResponderRelease({}, {dx:70,dy:4}));
+    assert.deepEqual(navigations,["/feed"]);
+  } finally {await act(async()=>tree.unmount());}
 });

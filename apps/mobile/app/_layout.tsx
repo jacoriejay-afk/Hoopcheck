@@ -14,6 +14,7 @@ import { NetworkProvider } from "../src/native/network";
 import { MotionProvider } from "../src/motion/Provider";
 import { AppLock } from "../components/AppLock";
 import { AppOpening } from "../components/AppOpening";
+import { NativePageHeader } from "../components/NativePageHeader";
 import { TabBar } from "../components/TabBar";
 import { RouteFade } from "../components/RouteFade";
 import { motion } from "../src/motion/config";
@@ -96,10 +97,11 @@ function RootLayout() {
       <Stack
         screenOptions={{
           animation: "none",
-          headerStyle: { backgroundColor: theme.surface },
+          header: ({ navigation, options, route, back }) => <NativePageHeader title={options.title || route.name} onBack={back ? () => navigation.goBack() : undefined} />,
+          headerStyle: { backgroundColor: theme.background },
           headerTintColor: theme.accent,
           headerShadowVisible: false,
-          headerTitleStyle: { fontWeight: "600", fontSize: 17, color: theme.foreground },
+          headerTitleStyle: { fontFamily: "HoopCheckDisplay", fontSize: 21, color: theme.foreground },
           contentStyle: { backgroundColor: theme.background },
         }}
       >
@@ -108,7 +110,7 @@ function RootLayout() {
         <Stack.Screen name="team-hub/groups/index" options={{ title: "HoopGroups" }} />
         <Stack.Screen name="team-hub/groups/[teamId]" options={{ title: "Club group" }} />
         <Stack.Screen name="fan-live" options={{ title: "Live Games" }} />
-        <Stack.Screen name="notifications" options={{ title: "Activity Center" }} />
+        <Stack.Screen name="notifications" options={{ title: "Alerts" }} />
         <Stack.Screen name="messages" options={{ title: "HoopChat" }} />
         <Stack.Screen name="feed-welcome" options={{ title: "HoopFeed Welcome" }} />
         <Stack.Screen name="hoopgroups" options={{ title: "HoopGroups Communities" }} />
@@ -135,7 +137,7 @@ function RootLayout() {
         <Stack.Screen name="womens/index" options={{ title: "Women’s teams" }} />
         <Stack.Screen name="womens/leagues/[id]" options={{ title: "League profile" }} />
         <Stack.Screen name="womens/[id]" options={{ title: "Team profile" }} />
-        <Stack.Screen name="search" options={{ title: "Search basketball" }} />
+        <Stack.Screen name="search" options={{ title: "Search & Explore" }} />
         <Stack.Screen name="teams" options={{ title: "Teams" }} />
         <Stack.Screen name="teams/[id]" options={{ title: "Team profile" }} />
         <Stack.Screen name="teams/[id]/review" options={{ title: "Write a review" }} />

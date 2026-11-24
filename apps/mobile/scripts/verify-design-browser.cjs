@@ -67,12 +67,11 @@ const uid='11111111-1111-4111-8111-111111111111', team='22222222-2222-4222-8222-
   await page.goto(base+'/account');
   await page.getByRole('button',{name:'Membership and restore purchases',exact:true}).waitFor();
   await require("./compact-layout.cjs").capture(page, {path:`${output}/account-${theme}.png`,fullPage:true});
-  for (const [label,path] of [['Owner HQ on website','/owner-hq'],['Ambassador HQ on website','/ambassador-hq']]) {
-    await page.getByRole('button',{name:label,exact:true}).click();
-    await page.getByText('This workspace is available on the authenticated website. Sign in there if requested; the website verifies your role before granting access.',{exact:true}).waitFor();
-    assert.equal(new URL(page.url()).searchParams.get('path'),path);
-    await page.goto(base+'/account');
-  }
+  assert.equal(await page.getByRole('button',{name:'Owner HQ on website',exact:true}).count(),0);
+  assert.equal(await page.getByRole('button',{name:'Ambassador HQ on website',exact:true}).count(),0);
+  await page.getByRole('button',{name:'HoopChat & requests',exact:true}).click();
+  await page.waitForURL('**/notifications');
+  await page.goto(base+'/account');
   fail=true; // Home now reads the same follow contract; inject this failure at the intended screen.
   await page.getByRole('button',{name:'Connections',exact:true}).click();
   await page.getByText('Connections could not be loaded. Please try again.',{exact:true}).waitFor();

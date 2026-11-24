@@ -1,3 +1,4 @@
+import { upcomingEntityGames, type ScheduleScope } from "./entitySchedule.ts";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { GAME_FUTURE_WINDOW_MS, GAME_PAST_WINDOW_MS } from "./gameFreshness.ts";
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -42,7 +43,7 @@ function api(origin: string) {
   url.pathname = "/api/game-predictions";
   return url;
 }
-export async function readLiveGames(client: SupabaseClient, side: "mens" | "womens", predictionOnly: { origin: string; token: string } | null = null, now = new Date(), request: typeof fetch = fetch) {
+export async function readLiveGames(client: SupabaseClient, side: "mens" | "womens", predictionOnly: { origin: string; token: string } | null = null, now = new Date(), request: typeof fetch = fetch, schedule?: ScheduleScope) {
   const timer = deadline();
   try {
     // Query the useful window in PostgREST BEFORE the 500-row cap. A full
@@ -58,7 +59,18 @@ export async function readLiveGames(client: SupabaseClient, side: "mens" | "wome
       if (!response.ok || !Array.isArray(data.games) || data.games.length > 500) throw new Error("Games could not load.");
       games = data.games;
     } else {
-      const result = await client.from("fan_live_games").select(fields).in("status", ["scheduled", "live", "final", "finished", "cancelled", "postponed", "abandoned"]).gte("scheduled_at", since).lte("scheduled_at", until).order("scheduled_at", { ascending: true, nullsFirst: false }).order("id").limit(500).abortSignal(timer.signal);
+      let query = client.from("fan_live_games").select(fields);
+      if (schedule) {
+        query = query.eq("status", "scheduled").gte("scheduled_at", now.toISOString()).lte("scheduled_at", until);
+        if (schedule.kind === "team") {
+          validId(schedule.id);
+          query = query.or("team_id.eq." + schedule.id + ",opponent_team_id.eq." + schedule.id);
+        } else {
+          if (!schedule.country || !schedule.name.trim()) return { games: [], teams: {} as Record<string, GameTeam> };
+          query = query.eq("league_name", schedule.name).eq("country", schedule.country);
+        }
+      } else query = query.in("status", ["scheduled", "live", "final", "finished", "cancelled", "postponed", "abandoned"]).gte("scheduled_at", since).lte("scheduled_at", until);
+      const result = await query.order("scheduled_at", { ascending: true, nullsFirst: false }).order("id").limit(500).abortSignal(timer.signal);
       if (result.error) throw new Error("Games could not load.");
       games = (result.data ?? []) as LiveGame[];
     }
@@ -71,7 +83,8 @@ export async function readLiveGames(client: SupabaseClient, side: "mens" | "wome
       return Number.isFinite(tip) && tip >= recent && tip <= future
         && !(game.status === "scheduled" && tip < now.getTime() - 4 * 3600000);
     });
-    const ids = [...new Set(visible.flatMap(game => [game.team_id, game.opponent_team_id].filter((value): value is string => Boolean(value))))];
+    const matched = schedule ? upcomingEntityGames(visible, schedule, now.getTime()) : visible;
+    const ids = [...new Set(matched.flatMap(game => [game.team_id, game.opponent_team_id].filter((value): value is string => Boolean(value))))];
     const teams: Record<string, GameTeam> = {};
     // Bound every IN filter. A women's fixture can be stored with its side as the away team.
     for (let offset = 0; offset < ids.length; offset += 50) {
@@ -83,7 +96,7 @@ export async function readLiveGames(client: SupabaseClient, side: "mens" | "wome
         for (const team of result.data ?? []) if (ids.includes(team.id)) teams[team.id] = team;
       }
     }
-    return { teams, games: visible.filter(game => teams[game.team_id] || teams[game.opponent_team_id || ""]) };
+    return { teams, games: matched.filter(game => teams[game.team_id] || teams[game.opponent_team_id || ""]) };
   } finally { timer.clear(); }
 }
 export async function readGameRoom(client: SupabaseClient, gameId: string, userId: string) {
