@@ -1,3 +1,4 @@
+import { BrandLockup } from "../components/BrandLockup";
 import { recordFreshSignIn } from "../src/native/lockPolicy";
 import { useDevicePreferences } from "../src/native/preferences";
 import { Input, Button } from "../src/primitives";
@@ -113,6 +114,7 @@ export default function SignUpScreen() {
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+          <BrandLockup size={44} animated />
           <Text style={[styles.title, { fontFamily: "HoopCheckDisplay", fontWeight: "400" }]}>Create your account</Text>
           <Text style={styles.subtitle}>Join the basketball community. You must be 18 or older.</Text>
 

@@ -1,3 +1,4 @@
+import { BrandLockup } from "../components/BrandLockup";
 import { recordFreshSignIn } from "../src/native/lockPolicy";
 import { takeDestination } from "../src/native/pendingDestination";
 import { GlassCard, Input, Button } from "../src/primitives";
@@ -57,6 +58,7 @@ export default function SignInScreen() {
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}>
         <GlassCard style={styles.container}>
+          <BrandLockup size={44} animated />
           <Text style={[styles.title, { fontFamily: "HoopCheckDisplay", fontWeight: "400" }]}>Welcome back</Text>
           <Text style={styles.subtitle}>Sign in to continue to HoopCheck.</Text>
           <Text style={styles.label}>Email</Text>

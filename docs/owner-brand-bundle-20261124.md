@@ -5,3 +5,6 @@ Source: owner-uploaded alphabet (A–Z and 0–9, angular pointed terminals) and
 This first integration covers shared web Logo, public SVGs, native welcome and dashboard header, and restrained loader motion. No new dependency, auth, data or entitlement change. Native launcher/splash and PWA PNG assets are updated with matching geometry. Motion respects reduced motion and does not delay navigation. Sub-brand logo variants and physical-device release validation remain separate review items.
 
 QA: verify owner visual approval, dark/light contrast, 320px headers, app icon at small size, splash on physical iOS/Android, native typecheck and web build; check that reduced motion is static and no startup time is added. Do not merge into a release until checks pass.
+
+## Expansion
+Native sign-in/sign-up share the lockup; native community headings use traced HoopFeed or the existing display font for HoopReels. Web HoopFeed now uses the same shield. The reusable CheckButton keeps existing authorization and count logic, uses the owner arrow, and suppresses animation on reduced motion. The current feed may use its own Check control; integration of the primitive into additional release branches remains follow-up. Light splash uses a dedicated dark-ink raster; launcher PNG omits unnecessary transparency metadata. No extra dependencies.
