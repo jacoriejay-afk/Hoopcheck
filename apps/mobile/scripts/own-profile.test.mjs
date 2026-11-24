@@ -47,3 +47,29 @@ test('a hung session read has bounded recovery without requesting private data',
  t.mock.timers.enable({apis:['setTimeout']});
  try{let requests=0;const client=fixture(async()=>{requests++;return Response.json({id:owner});});client.auth.getSession=()=>new Promise(()=>{});const work=getOwnProfile(client,owner);await Promise.resolve();t.mock.timers.tick(15001);const result=await work;assert.equal(result.data,null);assert.ok(result.error);assert.equal(requests,0);}finally{t.mock.timers.reset();}
 });
+
+test('missing RPC may use only the protected HTTPS compatibility route with fixed owner token',async()=>{
+ let calls=0;const client=fixture(async()=>Response.json({code:'PGRST202',message:'Missing function'},{status:404}));
+ const result=await getOwnProfile(client,owner,{origin:'https://api.test',request:async(url,options)=>{
+  calls++;assert.equal(url,'https://api.test/api/mobile/own-profile');assert.equal(options.headers.Authorization,'Bearer captured-owner-token');assert.equal(options.redirect,'error');assert.equal(options.cache,'no-store');
+  return Response.json({owner,profile:{id:owner,current_country:'Own private country'}});
+ }});
+ assert.equal(calls,1);assert.equal(result.data.current_country,'Own private country');
+});
+test('compatibility never recovers denied RPC or foreign profile, and rejects changed sessions',async()=>{
+ for(const code of ['42501','57014','PGRST301']){
+  let calls=0;const client=fixture(async()=>Response.json({code,message:'Denied'},{status:403}));
+  const result=await getOwnProfile(client,owner,{origin:'https://api.test',request:async()=>{calls++;return Response.json({owner,profile:{id:owner}});}});
+  assert.ok(result.error);assert.equal(calls,0);
+ }
+ for(const payload of [{owner:other,profile:{id:owner}},{owner,profile:{id:other}}]){
+  const client=fixture(async()=>Response.json({code:'PGRST202',message:'Missing'},{status:404}));
+  assert.ok((await getOwnProfile(client,owner,{origin:'https://api.test',request:async()=>Response.json(payload)})).error);
+ }
+ const client=fixture(async()=>Response.json({code:'PGRST202',message:'Missing'},{status:404}));
+ const result=await getOwnProfile(client,owner,{origin:'https://api.test',request:async()=>{
+  client.auth.getSession=async()=>({data:{session:{user:{id:other},access_token:'changed-token'}},error:null});
+  return Response.json({owner,profile:{id:owner}});
+ }});
+ assert.equal(result.data,null);assert.ok(result.error);
+});
