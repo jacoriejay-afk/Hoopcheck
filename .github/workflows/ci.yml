@@ -193,7 +193,7 @@ jobs:
         run: node --test scripts/test-apple-app-site-association.mjs
 
       - name: Verify native bootstrap authorization
-        run: node --test scripts/test-mobile-bootstrap.mjs
+        run: node --test scripts/test-mobile-bootstrap.mjs scripts/test-mobile-workspaces.mjs
 
       - name: Rehearse guarded legacy player privacy functions with synthetic PostgreSQL roles
         env:

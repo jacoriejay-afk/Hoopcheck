@@ -143,6 +143,13 @@ export default function AccountScreen() {
         <Text accessibilityRole="alert" style={{color:theme.foreground}}>{error}</Text>
         <AccountGroup><AccountRow icon="refresh-outline" title="Try again" onPress={retry} last/></AccountGroup>
       </View>:null}
+      {account?.workspaces?.owner || account?.workspaces?.ambassador ? <>
+        <GroupLabel>Private workspaces</GroupLabel>
+        <AccountGroup>
+          {account.workspaces.owner ? <AccountRow icon="shield-checkmark-outline" title="Owner HQ" onPress={()=>router.push("/account/owner-hq")} last={!account.workspaces.ambassador}/> : null}
+          {account.workspaces.ambassador ? <AccountRow icon="megaphone-outline" title="Ambassador HQ" onPress={()=>router.push("/account/ambassador-hq")} last/> : null}
+        </AccountGroup>
+      </> : null}
       <GroupLabel>Privacy & settings</GroupLabel>
       <AccountGroup>
         <AccountRow icon="lock-closed-outline" title="Two-factor authentication" onPress={()=>router.push("/account/security")}/>
