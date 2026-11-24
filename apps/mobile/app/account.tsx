@@ -2,7 +2,6 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { MembershipPreview } from "../components/MembershipPreview";
 import { ProfileAvatar } from "../components/ProfileAvatar";
@@ -32,8 +31,8 @@ function AccountRow({ icon, title, detail, onPress, last = false }: {
 }
 function AccountGroup({ children }: { children: ReactNode }) {
   const t = useEntryTheme();
-  return <View style={{borderRadius:17,borderCurve:"continuous",borderWidth:1,
-    borderColor:t.glassBorder,backgroundColor:t.surface,overflow:"hidden"}}>{children}</View>;
+  return <View style={{borderBottomWidth:StyleSheet.hairlineWidth,
+    borderColor:t.border,backgroundColor:"transparent",overflow:"hidden"}}>{children}</View>;
 }
 function GroupLabel({ children }: { children: string }) {
   const t=useEntryTheme();
@@ -78,7 +77,7 @@ export default function AccountScreen() {
   const tier=account?.tier==="premium"?"Premium":account?.tier==="pro"?"Pro":"Free";
   const role=account?.user.accountType.replaceAll("_"," ")||"Member";
   return <SafeAreaView edges={["top","left","right","bottom"]} style={{flex:1,backgroundColor:theme.background}}>
-    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{paddingHorizontal:15,paddingTop:9,paddingBottom:36,gap:12,maxWidth:680,width:"100%",alignSelf:"center"}}>
+    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{paddingHorizontal:15,paddingTop:9,paddingBottom:100,gap:9,maxWidth:680,width:"100%",alignSelf:"center"}}>
       <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between",marginBottom:1}}>
         <Text accessibilityRole="header" style={{color:theme.foreground,fontSize:25,fontFamily:"HoopCheckDisplay"}}>Your account</Text>
         <Pressable accessibilityRole="button" accessibilityLabel="Refresh account" onPress={retry}
@@ -87,11 +86,10 @@ export default function AccountScreen() {
         </Pressable>
       </View>
       {loading&&!account?<HoopCheckLoading label="Checking your HoopCheck account…" />:account?<>
-        <View style={{borderRadius:23,overflow:"hidden",borderWidth:1,borderColor:theme.dark?"rgba(255,135,67,.55)":theme.glassBorder}}>
-          <LinearGradient colors={theme.dark?["#1D2B45","#111D31","#362333"]:["#FFFFFF","#FFF4EC","#F6F4FD"]}
-            start={{x:0,y:0}} end={{x:1,y:1}} style={{padding:16,gap:13}}>
+        <View style={{paddingVertical:12,gap:10,borderBottomWidth:StyleSheet.hairlineWidth,borderColor:theme.border}}>
+          <View style={{gap:13}}>
             <View style={{flexDirection:"row",alignItems:"center",gap:13}}>
-              <ProfileAvatar size={62} name={account.user.displayName || "HoopCheck member"} url={avatar.owner===account.user.id?avatar.url:null}/>
+              <ProfileAvatar size={72} name={account.user.displayName || "HoopCheck member"} url={avatar.owner===account.user.id?avatar.url:null}/>
               <View style={{flex:1,minWidth:0,gap:5}}>
                 <Text numberOfLines={1} style={{color:theme.foreground,fontSize:22,fontWeight:"900"}}>{account.user.displayName || "HoopCheck member"}</Text>
                 <Text style={{color:theme.muted,fontSize:13,textTransform:"capitalize"}}>{role} account</Text>
@@ -113,7 +111,7 @@ export default function AccountScreen() {
                 <Text style={{color:theme.foreground,fontSize:13,fontWeight:"800"}}>My profile</Text>
               </Pressable> : null}
             </View>
-          </LinearGradient>
+          </View>
         </View>
         <GroupLabel>My account</GroupLabel>
         <AccountGroup>
