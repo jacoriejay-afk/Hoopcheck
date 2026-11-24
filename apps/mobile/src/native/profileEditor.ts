@@ -33,7 +33,7 @@ async function deadline<T>(work: (signal: AbortSignal) => PromiseLike<T>): Promi
 }
 export async function readOwnProfile(client: SupabaseClient, userId: string): Promise<OwnProfile> {
   if (!uuid.test(userId)) throw new Error("Invalid profile owner");
-  const { data, error } = await getOwnProfile(client, userId);
+  const { data, error } = await getOwnProfile(client, userId, { origin: process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online" });
   if (error || !data || data.id !== userId || !roles.includes(data.account_type)) throw new Error("Your profile could not be verified. Try again.");
   const fields = Object.fromEntries(Object.entries(limits).map(([key, limit]) => [key, text(data[key as keyof typeof limits], limit)]));
   return { ...fields, id: userId, account_type: data.account_type, first_name: text(data.first_name, 100), last_name: text(data.last_name, 100), username: text(data.username, 100), years_pro: Number.isSafeInteger(data.years_pro) && data.years_pro >= 0 ? String(data.years_pro) : "", free_agent: data.free_agent === true, current_country_public: data.current_country_public === true, profile_visibility: data.profile_visibility === "public" ? "public" : "players_only" } as OwnProfile;
