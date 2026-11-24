@@ -34,4 +34,7 @@ test("Home safe-area header uses transparent navigation chrome with low-opacity 
   assert.match(home, /<SafeAreaView edges=\{\["top", "left", "right", "bottom"\]\}/);
   assert.match(home, /<BrandLogo onHero=\{theme\.dark\} \/>/);
   assert.match(home, /accessibilityLabel="Open account menu"/);
+  assert.match(home, /item.label==="HoopChat"\) router\.push\(\{pathname:"\/notifications",params:\{tab:"chat"\}\}\)/);
+  const account = read("../app/account.tsx");
+  assert.match(account, /title="HoopChat & requests"[^\n]*params:\{tab:"chat"\}/);
 });
