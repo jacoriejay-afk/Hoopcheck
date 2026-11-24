@@ -1,5 +1,5 @@
 import type { LiveGame } from "./liveGames";
-import { gameDisplayState } from "./gameFreshness";
+import { gameDisplayState } from "./gameFreshness.ts";
 
 /** Home only highlights games happening now or about to happen.
  * Completed games belong in Game Center, not under a "Live" home rail.
