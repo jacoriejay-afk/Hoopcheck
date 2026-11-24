@@ -243,6 +243,9 @@ jobs:
       - name: Verify read-only NBA validation authorization and error handling
         run: node --test scripts/test-balldontlie-validation.mjs
 
+      - name: Verify free-tier overseas basketball sync dates and provider request cap
+        run: node --test scripts/test-live-score-schedule.mjs
+
       - name: Verify licensed logo matches are explicitly reviewed
         run: node --test scripts/test-team-logo-review-policy.mjs
 
