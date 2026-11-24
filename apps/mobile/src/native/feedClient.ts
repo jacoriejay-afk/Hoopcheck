@@ -3,7 +3,7 @@ export const FEED_PAGE_SIZE = 20;
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const isFeedId = (value: string) => uuid.test(value);
 export type FeedCursor = { id: string; created_at: string };
-export type FeedPost = FeedCursor & { author_id: string; body: string | null; image_url: string | null; image_urls: string[] | null; video_url: string | null; post_kind: string; poll_options: string[] | null; expires_at: string | null; profiles: { display_name: string | null; account_type: string | null; avatar_url?: string | null; avatar_moderation_status?: string | null } | null };
+export type FeedPost = FeedCursor & { author_id: string; body: string | null; image_url: string | null; image_urls: string[] | null; video_url: string | null; post_kind: string; post_location?: string | null; poll_options: string[] | null; expires_at: string | null; profiles: { display_name: string | null; account_type: string | null; avatar_url?: string | null; avatar_moderation_status?: string | null } | null };
 export type FeedComment = FeedCursor & { author_id: string; body: string; parent_id: string | null; profiles: { display_name: string | null; avatar_url?: string | null; avatar_moderation_status?: string | null } | null };
 function apiUrl(origin: string, path: string) {
   const url = new URL(origin);
@@ -15,7 +15,7 @@ function validCursor(cursor: FeedCursor) {
   return uuid.test(cursor.id) && /^\d{4}-\d{2}-\d{2}T[\d:.]+(?:Z|[+-]\d\d:\d\d)$/.test(cursor.created_at) && Number.isFinite(Date.parse(cursor.created_at));
 }
 function readablePosts(client: SupabaseClient, now: Date) {
-  return client.from("feed_posts").select("id,author_id,body,image_url,image_urls,video_url,post_kind,poll_options,created_at,expires_at,profiles:profiles!feed_posts_author_id_fkey(display_name,account_type,avatar_url,avatar_moderation_status)").eq("status", "approved").or(`expires_at.is.null,expires_at.gt.${now.toISOString()}`);
+  return client.from("feed_posts").select("id,author_id,body,image_url,image_urls,video_url,post_kind,post_location,poll_options,created_at,expires_at,profiles:profiles!feed_posts_author_id_fkey(display_name,account_type,avatar_url,avatar_moderation_status)").eq("status", "approved").or(`expires_at.is.null,expires_at.gt.${now.toISOString()}`);
 }
 export async function readSharedFeedPost(client: SupabaseClient, userId: string, postId: string, now = new Date()): Promise<FeedPost | null> {
   if (!uuid.test(userId) || !uuid.test(postId)) throw new Error("Invalid shared post");
@@ -52,14 +52,20 @@ export async function readFeedComments(client: SupabaseClient, postId: string, o
   if (rows.some(row => !validCursor(row) || typeof row.body !== "string")) throw new Error("Invalid comments");
   return { comments: rows.slice(0, 50).map(row => ({ ...row, profiles: Array.isArray(row.profiles) ? row.profiles[0] ?? null : row.profiles })), more: rows.length > 50 };
 }
-export async function moderateFeedText(origin: string, token: string, kind: "post" | "comment", text: string, postId?: string, request: typeof fetch = fetch, parentId?: string) {
+export function appendPostLocation(form: FormData, location: string) {
+  const value=location.trim();
+  if(value.length>100)throw new Error("Enter a location of up to 100 characters.");
+  if(value)form.append("post_location",value);
+}
+export async function moderateFeedText(origin: string, token: string, kind: "post" | "comment", text: string, postId?: string, request: typeof fetch = fetch, parentId?: string, location = "") {
   const target = apiUrl(origin, "/api/hoopfeed/moderate");
   const clean = text.trim();
   if (!token || !clean || clean.length > (kind === "comment" ? 1000 : 2000) || (kind === "comment" && (!postId || !uuid.test(postId)))) throw new Error("Invalid post or comment");
   if (parentId && (kind !== "comment" || !uuid.test(parentId))) throw new Error("Invalid reply target");
   const form = new FormData(); form.append("kind", kind); form.append("text", clean);
   if (parentId) form.append("parent_id", parentId);
-  if (kind === "post") { form.append("audience", "community"); form.append("post_kind", "discussion"); }
+  if (kind === "post") { form.append("audience", "community"); form.append("post_kind", "discussion"); appendPostLocation(form,location); }
+  else if(location.trim())throw new Error("Location is only available on posts.");
   else form.append("post_id", postId!);
   const response = await request(target, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form, cache: "no-store", redirect: "error" });
   const result = await response.json().catch(() => null);
@@ -76,11 +82,11 @@ export function validatedPollOptions(input: unknown): string[] {
   if (new Set(options.map(value => value.toLowerCase())).size !== options.length) throw new Error("Poll answers must be different.");
   return options;
 }
-export async function publishFeedPoll(origin: string, token: string, question: string, input: readonly string[], request: typeof fetch = fetch) {
+export async function publishFeedPoll(origin: string, token: string, question: string, input: readonly string[], request: typeof fetch = fetch, location = "") {
   const target = apiUrl(origin, "/api/hoopfeed/moderate"); const text = question.trim();
   const options = validatedPollOptions(input);
   if (!token || !text || text.length > 2000) throw new Error("Add a poll question of up to 2,000 characters.");
-  const form = new FormData(); form.append("kind", "post"); form.append("text", text); form.append("post_kind", "poll"); form.append("poll_options", JSON.stringify(options)); form.append("audience", "community");
+  const form = new FormData(); form.append("kind", "post"); form.append("text", text); form.append("post_kind", "poll"); form.append("poll_options", JSON.stringify(options)); form.append("audience", "community"); appendPostLocation(form,location);
   const controller = new AbortController(); const deadline = setTimeout(() => controller.abort(), 15000);
   try {
     const response = await request(target, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form, cache: "no-store", redirect: "error", signal: controller.signal });
