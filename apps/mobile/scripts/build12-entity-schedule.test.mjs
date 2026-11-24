@@ -57,7 +57,7 @@ test("navigation glass, header, and native settings destinations remain accessib
   const layout=read("../app/_layout.tsx"),header=read("../components/NativePageHeader.tsx"),glass=read("../components/GlassSurface.tsx"),tab=read("../components/TabBar.tsx");
   assert.match(layout,/<NativePageHeader title=/);assert.match(header,/insets.top \+ 3/);
   assert.match(header,/accessibilityLabel="Back"/);assert.match(header,/fontFamily: "HoopCheckDisplay"/);
-  assert.match(glass,/navigation \? "transparent"/);assert.match(tab,/glassEffectStyle="clear"/);assert.match(tab,/PanResponder\.create/);
+  assert.match(glass,/navigation \? "transparent"/);assert.match(tab,/glassEffectStyle="regular"/);assert.match(tab,/PanResponder\.create/);
   const account=read("../app/account.tsx"),settings=read("../app/settings.tsx");
   assert.doesNotMatch(account,/pathname:"\/web"/);assert.doesNotMatch(settings,/pathname:\s*"\/web"/);
   assert.match(settings,/router.push\("\/membership"\)/);assert.match(settings,/router.push\("\/account\/edit"\)/);

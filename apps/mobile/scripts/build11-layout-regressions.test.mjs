@@ -54,9 +54,9 @@ test("Build 11 Account owns its header and groups account, membership, safety, w
 test("Build 11 keeps nav tabs accessible and uses one floating island without active icon boxes",()=>{
   const nav=read("../components/TabBar.tsx");
   assert.match(nav,/isLiquidGlassAvailable\(\)/);
-  assert.match(nav,/marginHorizontal: 20 \+ Math\.max/);
-  assert.match(nav,/borderRadius: 31/);
-  assert.match(nav,/activeWidth - 8/);
+  assert.match(nav,/marginHorizontal: 16 \+ Math\.max/);
+  assert.match(nav,/borderRadius: 27/);
+  assert.match(nav,/activeWidth - 16/);
   assert.match(nav,/basketball-outline/);
   assert.match(nav,/person-circle-outline/);
   assert.match(nav,/accessibilityRole="tablist"/);

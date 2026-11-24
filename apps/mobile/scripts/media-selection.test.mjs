@@ -68,3 +68,20 @@ test('web capture never requests native permissions',async()=>{
  const f=native({'react-native':{Platform:{OS:'web'}},'expo-image-picker':{}});
  await assert.rejects(f.api.capturePhoto(),/HoopCheck app/);await assert.rejects(f.api.captureVideo(),/HoopCheck app/);
 });
+
+test('explicit front and rear camera choices are forwarded only to user-triggered native capture',async()=>{
+ let options;let asset={uri:'file:///private/camera.jpg',width:4000,height:3000};
+ const f=native({'expo-image-picker':{CameraType:{front:'front',back:'back'},requestCameraPermissionsAsync:async()=>({granted:true}),launchCameraAsync:async value=>{options=value;return {canceled:false,assets:[asset]};},UIImagePickerControllerQualityType:{Medium:1}}});
+ await f.api.capturePhoto('front');assert.equal(options.cameraType,'front');assert.deepEqual(options.mediaTypes,['images']);
+ asset={uri:'file:///private/camera.mov',mimeType:'video/quicktime',duration:3000};
+ await f.api.captureVideo('back');assert.equal(options.cameraType,'back');assert.equal(options.videoMaxDuration,60);
+});
+test('HoopFeed capture has explicit retake and preview without enabling Reel publication',()=>{
+ const composer=readFileSync(new URL('../components/MediaPostComposer.tsx',import.meta.url),'utf8');
+ assert.match(composer,/capturePhoto\(facing\)/);
+ assert.match(composer,/captureVideo\(facing\)/);
+ assert.match(composer,/choose\("photo", undefined, true, index\)/);
+ assert.match(composer,/uri=\{video\.uri\} enabled=\{false\} loop=\{false\}/);
+ assert.match(composer,/Post to HoopFeed/);
+ assert.doesNotMatch(composer,/HOOPREELS_CREATE_ENABLED\s*=/);
+});
