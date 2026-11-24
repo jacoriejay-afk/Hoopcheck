@@ -16,7 +16,7 @@ function AccountRow({ icon, title, detail, onPress, last = false, expanded }: {
   icon: AccountGlyph; title: string; detail?: string; onPress: () => void; last?: boolean; expanded?: boolean;
 }) {
   const t = useEntryTheme();
-  return <Pressable accessibilityRole="button" accessibilityLabel={title} accessibilityState={expanded === undefined ? undefined : { expanded }} onPress={onPress}
+  return <Pressable accessibilityRole="button" accessibilityLabel={title} accessibilityState={expanded === undefined ? undefined : { expanded }} aria-expanded={expanded} onPress={onPress}
     style={({pressed})=>({
       flexDirection:"row",alignItems:"center",gap:12,minHeight:55,paddingHorizontal:13,
       paddingVertical:8,backgroundColor:pressed?t.accentSurface:"transparent",
