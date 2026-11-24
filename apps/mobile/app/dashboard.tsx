@@ -98,7 +98,7 @@ export default function DashboardScreen() {
           }}>
             {([
               {label:"My account",path:"/account",icon:"person-circle-outline"},
-              {label:"HoopChat",path:"/notifications",icon:"chatbubbles-outline"},
+              {label:"HoopChat",path:"/messages",icon:"chatbubbles-outline"},
               {label:"HoopGroups",path:"/hoopgroups",icon:"people-outline"},
               {label:"Settings",path:"/settings",icon:"settings-outline"},
               {label:"About HoopCheck",path:"/about",icon:"help-circle-outline"},
