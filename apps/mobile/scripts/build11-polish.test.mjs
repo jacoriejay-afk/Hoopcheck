@@ -56,3 +56,5 @@ test("provider sync and prediction queries avoid stale oldest-500 truncation", (
 test('account avatar is supplied by verified bootstrap, never a direct profile read',()=>{const account=read('../app/account.tsx');assert.doesNotMatch(account,/\.from\("profiles"\)/);assert.match(account,/account\.user\.avatarUrl/);});
 
 test("compact account exposes membership disclosure accessibly",()=>{const account=read("../app/account.tsx");assert.match(account,/expanded=\{showBenefits\}/);assert.match(account,/accessibilityState=\{expanded === undefined \? undefined : \{ expanded \}\}/);});
+
+test("directory filters wrap within narrow viewports without horizontal clipping",()=>{const search=read("../app/search.tsx");assert.match(search,/flexDirection: "row", flexWrap: "wrap", gap: 5/);assert.doesNotMatch(search,/<ScrollView horizontal/);assert.match(search,/maxWidth: "100%"/);});
