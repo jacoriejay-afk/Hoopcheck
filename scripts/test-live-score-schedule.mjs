@@ -114,3 +114,23 @@ test("fixture country comes from provider country object and incomplete matchup 
  assert.match(source,/incompleteMatchups,\s*missingMatchupMappings,/);
  assert.equal((source.match(/await fetch\(/g)||[]).length,1);
 });
+
+test("server rejects incomplete, cancelled and expired matchups consistently for both prediction reads and writes", async()=>{
+ const src=readFileSync(new URL("../app/api/game-predictions/route.ts",import.meta.url),"utf8");
+ const code=ts.transpileModule(src+"\nexport {predictionLocked,completeMatchup};",{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+ const m={exports:{}};
+ new Function("require","module","exports",code)(name=>{
+   if(name==="next/server")return {NextResponse:{json:(data,init)=>Response.json(data,init)}};
+   if(name==="@supabase/supabase-js")return {};
+   throw Error(name);
+ },m,m.exports);
+ const home="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",away="bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+ const valid={team_id:home,opponent_team_id:away,status:"scheduled",scheduled_at:new Date(Date.now()+3600000).toISOString()};
+ assert.equal(m.exports.predictionLocked(valid),false);
+ for(const status of ["cancelled","postponed","abandoned","live","final","unknown",null])assert.equal(m.exports.predictionLocked({...valid,status}),true);
+ for(const opponent_team_id of [null,"invalid",home,home.toUpperCase()])assert.equal(m.exports.predictionLocked({...valid,opponent_team_id}),true);
+ for(const scheduled_at of [null,"invalid",new Date(Date.now()-1000).toISOString()])assert.equal(m.exports.predictionLocked({...valid,scheduled_at}),true);
+ assert.match(src,/const locked=predictionLocked\(game\)/);
+ assert.match(src,/if\(predictionLocked\(game\)\)/);
+ assert.match(src,/if\(!completeMatchup\(game\)\|\|!\[game.team_id,game.opponent_team_id\]/);
+});
