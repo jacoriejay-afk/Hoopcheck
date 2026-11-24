@@ -3,7 +3,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Alert, FlatList, Linking, Pressable, RefreshControl, Share, Text, TextInput, View, type ViewToken } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Button } from "../src/primitives";
 import { HoopCheckLoading } from "../components/HoopCheckLoading";
@@ -20,6 +20,7 @@ import { deleteOwnedFeedPost, feedAction, isFeedId, moderateFeedText, publishFee
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
 type CommentPage = { rows: FeedComment[]; more: boolean; offset: number; loading: boolean; error: string };
 export function FeedScreen({ initialReels = false }: { initialReels?: boolean }) {
+  const insets = useSafeAreaInsets();
   const theme = useEntryTheme();
   const router = useRouter();
   const params = useLocalSearchParams<{ post?: string; comments?: string }>();
@@ -253,9 +254,9 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
     <Button secondary onPress={retry}>Verify access again</Button><Button secondary onPress={() => router.push("/account")}>Your account</Button>
   </View>;
   return <SafeAreaView edges={["top", "left", "right", "bottom"]} style={{ flex: 1, backgroundColor: theme.background }}>
-    <GlassSurface style={{
-      marginHorizontal: 16, marginTop: 6, marginBottom: 2, padding: 3,
-      borderRadius: 20, flexDirection: "row", alignItems: "center", gap: 6,
+    <GlassSurface navigation style={{
+      position: "absolute", top: insets.top + 4, left: 14, right: 14, zIndex: 20, padding: 2,
+      borderRadius: 25, borderWidth: 0, flexDirection: "row", alignItems: "center", gap: 6,
     }}>
       <View accessibilityRole="tablist" style={{ flex: 1, flexDirection: "row", gap: 6 }}>
         {[false, true].map(value => <Pressable key={String(value)}
@@ -264,25 +265,24 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
           aria-selected={reels === value} onPress={() => setReels(value)}
           style={({ pressed }) => ({
             flex: 1, minHeight: 44, justifyContent: "center", alignItems: "center",
-            borderRadius: 12, borderWidth: 1, opacity: pressed ? .7 : 1,
-            backgroundColor: reels === value ? theme.accentSurface : "transparent",
-            borderColor: reels === value ? theme.accent : "transparent",
+            borderRadius: 23, opacity: pressed ? .7 : 1,
+            backgroundColor: reels === value ? (theme.dark ? "rgba(255,255,255,.13)" : "rgba(0,0,0,.07)") : "transparent",
           })}>
           <Text style={{ color: reels === value ? theme.accent : theme.foreground,
-            fontSize: 14, fontFamily: theme.type.ui.fontFamily, fontWeight: "700" }}>
+            fontSize: 15, fontFamily: "HoopCheckDisplay", fontWeight: "700" }}>
             {value ? "REELS" : "POSTS"}
           </Text>
         </Pressable>)}
       </View>
     </GlassSurface>
     {message || loadError ? <Text accessibilityLiveRegion="polite"
-      style={{ color: theme.muted, paddingHorizontal: 18 }}>{loadError || message}</Text> : null}
-    {reels ? <View testID="hoopreels-provider-hold" style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 12, padding: 24 }}>
+      style={{ color: theme.muted, paddingHorizontal: 18, marginTop: 56 }}>{loadError || message}</Text> : null}
+    {reels ? <View testID="hoopreels-provider-hold" style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 12, padding: 24, paddingBottom: 100 }}>
       <Ionicons name="play-circle-outline" size={36} color={theme.accent} />
       <Text accessibilityRole="header" style={{ ...textStyle, fontSize: 22, fontWeight: "800" }}>HoopReels</Text>
       <Text style={{ color: theme.muted, textAlign: "center" }}>HoopReels is not available yet.</Text>
       <Button secondary onPress={() => setReels(false)}>Back to HoopFeed</Button>
-    </View> : <FlatList key={reels ? "reels" : "posts"} keyboardDismissMode="on-drag" style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 9, gap: reels ? 0 : 8 }} keyboardShouldPersistTaps="handled" initialNumToRender={reels ? 2 : 4} maxToRenderPerBatch={reels ? 2 : 4} windowSize={reels ? 3 : 5} pagingEnabled={reels} getItemLayout={reels && height > 0 ? (_items, index) => ({ length: height, offset: height * index, index }) : undefined} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
+    </View> : <FlatList key={reels ? "reels" : "posts"} keyboardDismissMode="on-drag" style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 9, paddingTop: message || loadError ? 9 : 60, paddingBottom: 100, gap: reels ? 0 : 8 }} keyboardShouldPersistTaps="handled" initialNumToRender={reels ? 2 : 4} maxToRenderPerBatch={reels ? 2 : 4} windowSize={reels ? 3 : 5} pagingEnabled={reels} getItemLayout={reels && height > 0 ? (_items, index) => ({ length: height, offset: height * index, index }) : undefined} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
       ListHeaderComponent={!reels ? <View style={{ marginBottom: 2, gap: 7 }}>
         {!composerExpanded ? <Pressable accessibilityRole="button" accessibilityLabel="Create HoopFeed post" disabled={!canWrite} onPress={() => setComposerExpanded(true)} style={{ flexDirection: "row", alignItems: "center", gap: 9, padding: 9, borderWidth: 1, borderColor: theme.border, borderRadius: 15, backgroundColor: theme.elevatedSurface }}>
           <Ionicons name="create-outline" size={23} color={theme.accent} /><Text style={{ color: theme.muted, fontSize: 14 }}>Share a basketball update…</Text>
