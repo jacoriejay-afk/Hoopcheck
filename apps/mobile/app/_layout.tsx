@@ -110,7 +110,7 @@ function RootLayout() {
         <Stack.Screen name="team-hub/groups/index" options={{ title: "HoopGroups" }} />
         <Stack.Screen name="team-hub/groups/[teamId]" options={{ title: "Club group" }} />
         <Stack.Screen name="fan-live" options={{ title: "Live Games" }} />
-        <Stack.Screen name="notifications" options={{ title: "Alerts" }} />
+        <Stack.Screen name="notifications" options={{ title: "Alerts", headerShown: false }} />
         <Stack.Screen name="messages" options={{ title: "HoopChat" }} />
         <Stack.Screen name="feed-welcome" options={{ title: "HoopFeed Welcome" }} />
         <Stack.Screen name="hoopgroups" options={{ title: "HoopGroups Communities" }} />

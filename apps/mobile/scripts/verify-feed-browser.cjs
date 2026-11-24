@@ -113,7 +113,10 @@ async function fixture(browser,theme,allowed=true){
     await page.getByRole('button',{name:'Check post, 0 Checks',exact:true}).first().click();await page.getByRole('button',{name:'Remove Check, 1 Checks',exact:true}).first().waitFor();
     await page.getByRole('button',{name:'Save',exact:true}).first().click();await page.getByRole('button',{name:'Saved',exact:true}).first().waitFor();
     await page.getByRole('button',{name:'Share',exact:true}).first().click();
+    await page.getByRole('heading',{name:'Share post',exact:true}).waitFor();
+    await page.getByRole('button',{name:'Share link',exact:true}).click();
     assert.ok((await page.evaluate(()=>window.__sharedFeed))?.text?.includes('hoopcheck.online/feed#post-'),'Share uses canonical post link');
+    await page.getByRole('button',{name:'Close share panel',exact:true}).click();
     const option=page.getByRole('button',{name:'Home team · 0',exact:true});await option.scrollIntoViewIfNeeded();await option.click();await page.getByRole('button',{name:'Home team · 1 ✓',exact:true}).waitFor();
     await page.getByRole('tab',{name:'Reels',exact:true}).click();
     await page.getByText('HoopReels is not available yet.',{exact:true}).waitFor();

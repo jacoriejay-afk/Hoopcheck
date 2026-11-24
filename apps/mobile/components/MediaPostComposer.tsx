@@ -7,8 +7,8 @@ import { PublicationUnconfirmed, publishMediaPost } from "../src/native/mediaCli
 import { FeedVideo } from "./FeedVideo";
 import { CommunityWordmark } from "./BrandLockup";
 
-type Props = { userId: string; enabled: boolean; caption: string; token: () => Promise<string>; onPublished: () => void | Promise<void>; onRefresh: () => void | Promise<void> };
-export function MediaPostComposer({ userId, enabled, caption, token, onPublished, onRefresh }: Props) {
+type Props = { preferredSource?: "camera" | "library"; location?: string; userId: string; enabled: boolean; caption: string; token: () => Promise<string>; onPublished: () => void | Promise<void>; onRefresh: () => void | Promise<void> };
+export function MediaPostComposer({ userId, enabled, caption, token, onPublished, onRefresh, preferredSource = "library", location = "" }: Props) {
   const theme = useEntryTheme(); const [photos, setPhotos] = useState<Photo[]>([]); const [video, setVideo] = useState<Video | null>(null);
   const [busy, setBusy] = useState(false); const [uploading, setUploading] = useState(false); const [message, setMessage] = useState(""); const [permissionDenied, setPermissionDenied] = useState(false); const [unconfirmed, setUnconfirmed] = useState(false);
   const [facing, setFacing] = useState<CameraFacing>("back");
@@ -42,14 +42,14 @@ export function MediaPostComposer({ userId, enabled, caption, token, onPublished
     try {
       const authorization = await token();
       if (current !== generation.current) return;
-      await publishMediaPost(process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online", process.env.EXPO_PUBLIC_SUPABASE_URL || "", userId, authorization, caption, photos, video, abort.signal, { photoBody, uploadVideo: uploadVideoFile });
+      await publishMediaPost(process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online", process.env.EXPO_PUBLIC_SUPABASE_URL || "", userId, authorization, caption, photos, video, abort.signal, { photoBody, uploadVideo: uploadVideoFile }, location);
       if (current === generation.current) { setPhotos([]); setVideo(null); setMessage("Published after safety checks."); await onPublished(); }
     } catch (error) { if (current === generation.current) { setMessage(error instanceof Error ? error.message : "Upload failed. Your draft is unchanged."); setUnconfirmed(error instanceof PublicationUnconfirmed); } }
     finally { clearTimeout(deadline); if (current === generation.current) { controller.current = null; working.current = false; setBusy(false); setUploading(false); } }
   }
   return <View style={{ gap: 12 }}>
     <Text style={{ color: theme.muted }}>Add up to four photos, or one video up to 50 MB with a caption. Photos can be cropped when selected and rotated below.</Text>
-    {Platform.OS !== "web" ? <View style={{ gap: 10, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 16 }}>
+    {Platform.OS !== "web" ? <View style={{ gap: 10, padding: 12, borderWidth: 1, borderColor: preferredSource === "camera" ? theme.accent : theme.border, borderRadius: 16 }}>
       <CommunityWordmark size={20} />
       <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 17, fontWeight: "800" }}>HoopCheck™ Camera</Text>
       <Text style={{ color: theme.muted }}>Capture a photo or a video up to 60 seconds using your device camera. Review it before posting to HoopFeed.</Text>

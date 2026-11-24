@@ -5,6 +5,8 @@ import { hoopChatAuthAction } from "../src/native/hoopChatLoad";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FlatList, Pressable, RefreshControl, Text, View } from "react-native";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "../src/primitives";
 import { useEntryTheme } from "../src/theme";
 import { supabase } from "../src/lib/supabase";
@@ -102,9 +104,9 @@ export default function Notifications() {
     finally { marking.current = false; setBusy(false); }
   }
   const items = offline ? [] : rows;
-  return <View style={{ flex: 1, backgroundColor: theme.background }}>
+  return <SafeAreaView edges={["top","left","right"]} style={{ flex: 1, backgroundColor: theme.background }}>
     <View style={{ paddingHorizontal: 14, paddingTop: 10, paddingBottom: 7, gap: 8 }}>
-      <Text accessibilityRole="header" style={{ color: theme.foreground, fontWeight: "900", fontSize: 24 }}>Alerts</Text>
+      <Text accessibilityRole="header" style={{ color: theme.foreground, fontFamily: "HoopCheckDisplay", fontSize: 25 }}>Alerts</Text>
       <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 7 }}>
         {([
           { id: "activity", label: "Activity" },
@@ -116,7 +118,7 @@ export default function Notifications() {
           onPress={() => { haptic("tab"); setSection(tab.id); }}
           style={({pressed}) => ({
             minHeight: 44, flex: 1, alignItems: "center", justifyContent: "center",
-            borderRadius: 13, borderWidth: section === tab.id ? 1 : 0,
+            borderRadius: 12, borderWidth: section === tab.id ? 1 : 0,
             borderColor: theme.accent,
             backgroundColor: section === tab.id ? theme.accentSurface : "transparent",
             opacity: pressed ? .8 : 1,
@@ -129,18 +131,17 @@ export default function Notifications() {
     {section !== "activity"
       ? <MessagesScreen embedded mode={section === "chat" ? "conversations" : "requests"} />
       : <FlatList ListHeaderComponent={<View style={{ gap: 8, paddingBottom: 9 }}>
-      <View style={{ gap: 4 }}><Text style={{ color: theme.muted, fontSize: 12 }}>{loading ? "Checking activity…" : `${items.filter(item => !item.read_at).length} unread · ${items.length} recent updates`}</Text></View>
-      <Button secondary disabled={busy || failed || offline || !items.some(item => !item.read_at)} onPress={() => void markAll()}>{busy ? "Updating…" : "Mark all as read"}</Button>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{["all", "unread", "games", "clubs", "reviews"].map(value => <Pressable key={value} accessibilityRole="button" aria-pressed={filter === value} accessibilityState={{ selected: filter === value }} onPress={() => setFilter(value)} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 12, borderRadius: theme.radius.control, backgroundColor: filter === value ? theme.accentSurface : theme.chip }}><Text style={{ color: theme.foreground, textTransform: "capitalize" }}>{value}</Text></Pressable>)}</View>
+      <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:8}}><Text style={{ color: theme.muted, fontSize: 12,flex:1 }}>{loading ? "Checking activity…" : `${items.filter(item => !item.read_at).length} unread · ${items.length} recent updates`}</Text><Pressable accessibilityRole="button" disabled={busy || failed || offline || !items.some(item => !item.read_at)} accessibilityState={{disabled:busy || failed || offline || !items.some(item => !item.read_at)}} onPress={()=>void markAll()} style={{minHeight:44,justifyContent:"center",paddingHorizontal:5}}><Text style={{color:items.some(item=>!item.read_at)&&!failed&&!offline?theme.accent:theme.muted,fontSize:12,fontWeight:"700"}}>{busy?"Updating…":"Mark all as read"}</Text></Pressable></View>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{["all", "unread", "games", "clubs", "reviews"].map(value => <Pressable key={value} accessibilityRole="button" aria-pressed={filter === value} accessibilityState={{ selected: filter === value }} onPress={() => setFilter(value)} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 9, borderRadius: 14, backgroundColor: filter === value ? theme.accentSurface : theme.chip }}><Text style={{ color: filter === value ? theme.accent : theme.foreground, fontSize: 12, textTransform: "capitalize" }}>{value}</Text></Pressable>)}</View>
       {error ? <Text accessibilityRole="alert" style={{ color: theme.muted }}>{error}</Text> : null}
-    </View>} data={items.filter(item => noticeMatches(item, filter))} keyExtractor={item => item.id} contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 5, paddingBottom: 120, gap: 2 }} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void load()} />} renderItem={({ item }) => {
+    </View>} data={items.filter(item => noticeMatches(item, filter))} keyExtractor={item => item.id} contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 5, paddingBottom: 20, gap: 2 }} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void load()} />} renderItem={({ item }) => {
       const path = notificationPath(item);
       return <View style={{ borderBottomWidth: 1, borderColor: theme.glassBorder }}><Pressable accessibilityRole="button" disabled={!path || busy} accessibilityState={{ disabled: !path || busy }} onPress={() => void openNotice(item)} style={({ pressed }) => ({ minHeight: 61, gap: 4, paddingHorizontal: 8, paddingVertical: 10, opacity: pressed ? .7 : 1 })}>
-        <Text style={{ color: theme.accent, fontWeight: "700" }}>{item.read_at ? "" : "● "}{item.notification_type.replaceAll("_", " ").toUpperCase()}</Text>
+        <View style={{flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name={item.read_at?"notifications-outline":"notifications"} size={16} color={theme.accent}/><Text style={{ color: theme.accent, fontWeight: "700",fontSize:11 }}>{item.read_at ? "" : "● "}{item.notification_type.replaceAll("_", " ").toUpperCase()}</Text></View>
         <Text style={{ color: theme.foreground, fontSize: 14, fontWeight: "800" }}>{item.title}</Text>
         <Text style={{ color: theme.foreground }}>{item.body}</Text>
         <Text style={{ color: theme.muted }}>{new Date(item.created_at).toLocaleString()}</Text>
       </Pressable></View>;
-    }} ListEmptyComponent={loading ? <HoopCheckLoading compact label="Checking activity…" /> : <View style={{ gap: 12, padding: 20 }}><Text style={{ color: theme.foreground }}>{offline ? "Reconnect to view alerts." : failed ? "Alerts are unavailable." : items.length ? "Nothing in this category." : "No notifications yet."}</Text>{failed ? <Button secondary onPress={() => void load()}>Retry loading alerts</Button> : <Button secondary onPress={() => router.push("/teams")}>Find teams</Button>}</View>} />}
-  </View>;
+    }} ListEmptyComponent={loading ? <HoopCheckLoading compact label="Checking activity…" /> : <View style={{ gap: 12, padding: 20,alignItems:"center" }}><Ionicons name="notifications-outline" size={30} color={theme.muted}/><Text style={{ color: theme.foreground,textAlign:"center" }}>{offline ? "Reconnect to view alerts." : failed ? "Alerts are unavailable." : items.length ? "Nothing in this category." : "No notifications yet."}</Text>{failed ? <Button secondary onPress={() => void load()}>Retry loading alerts</Button> : <Button secondary onPress={() => router.push("/teams")}>Find teams</Button>}</View>} />}
+  </SafeAreaView>;
 }

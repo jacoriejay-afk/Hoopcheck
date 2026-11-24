@@ -2,14 +2,15 @@ import { GlassSurface } from "../components/GlassSurface";
 import { CommunityWordmark } from "../components/BrandLockup";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Alert, FlatList, Linking, Pressable, RefreshControl, Share, Text, TextInput, View, type ViewToken } from "react-native";
+import { Alert, FlatList, Linking, Pressable, RefreshControl, Text, TextInput, View, Platform, type ViewToken } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Button } from "../src/primitives";
 import { HoopCheckLoading } from "../components/HoopCheckLoading";
 import { ProfileAvatar } from "../components/ProfileAvatar";
 import { FeedMedia } from "../components/FeedMedia";
+import { FeedSharePanel } from "../components/FeedSharePanel";
 import { MediaPostComposer } from "../components/MediaPostComposer";
 import { FeedPoll } from "../components/FeedPoll";
 import { FeedCheckAction } from "../components/FeedCheckAction";
@@ -18,10 +19,10 @@ import { useEntryTheme } from "../src/theme";
 import { useNativeAccount } from "../src/native/useNativeAccount";
 import { useNetwork, requireOnline } from "../src/native/network";
 import { deleteOwnedFeedPost, feedAction, isFeedId, moderateFeedText, publishFeedPoll, readFeedChecks, readFeedComments, readFeedPage, readFeedSaved, readSharedFeedPost, toggleFeedCheck, validatedPollOptions, type FeedComment, type FeedCursor, type FeedPost } from "../src/native/feedClient";
+function relativeTime(value: string, now: number) { const time=Date.parse(value); if(!Number.isFinite(time))return "Unknown time";const minutes=Math.max(0,Math.floor((now-time)/60000));if(minutes<1)return "Just now";if(minutes<60)return `${minutes}m ago`;if(minutes<1440)return `${Math.floor(minutes/60)}h ago`;if(minutes<10080)return `${Math.floor(minutes/1440)}d ago`;return new Date(time).toLocaleDateString(); }
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
 type CommentPage = { rows: FeedComment[]; more: boolean; offset: number; loading: boolean; error: string };
 export function FeedScreen({ initialReels = false }: { initialReels?: boolean }) {
-  const insets = useSafeAreaInsets();
   const theme = useEntryTheme();
   const router = useRouter();
   const params = useLocalSearchParams<{ post?: string; comments?: string }>();
@@ -32,7 +33,10 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
   const canRead = Boolean(uid && account?.features.canReadHoopFeed && !offline);
   const canWrite = Boolean(uid && account?.features.canWriteHoopFeed && !offline);
   const [composerExpanded, setComposerExpanded] = useState(false);
+  const [postMenu, setPostMenu] = useState<{scope:string;id:string}|null>(null);
+  const [sharePanel,setSharePanel]=useState<{scope:string;id:string}|null>(null);
   const [mediaMode, setMediaMode] = useState(false);
+  const [mediaSource,setMediaSource]=useState<"camera"|"library">("library");
   const [reels, setReels] = useState(initialReels);
   const scope = `${uid ?? ""}:${reels}`;
   const viewer = useRef({ uid, canRead, scope });
@@ -51,6 +55,8 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
   const requests = useRef(new Set<string>());
   const [pending, setPending] = useState<Record<string, boolean>>({});
   const [draft, setDraft] = useState({ owner: "", text: "" });
+  const [locationDraft,setLocationDraft]=useState({owner:"",text:"",open:false});
+  const location=locationDraft.owner===uid?locationDraft.text:"";
   const [poll, setPoll] = useState({ owner: "", enabled: false, options: ["", ""] });
   const pollEnabled = poll.owner === uid && poll.enabled;
   const pollOptions = poll.owner === uid ? poll.options : ["", ""];
@@ -164,10 +170,11 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
     if (!canWrite || draft.owner !== uid || !draft.text.trim() || !pollValid) return;
     const text = draft.text;
     await action("post", async () => {
-      if (pollEnabled) await publishFeedPoll(origin, await token(), text, pollOptions);
-      else await moderateFeedText(origin, await token(), "post", text);
+      if (pollEnabled) await publishFeedPoll(origin, await token(), text, pollOptions, undefined, location);
+      else await moderateFeedText(origin, await token(), "post", text, undefined, undefined, undefined, location);
       setDraft(current => current.owner === uid && current.text === text ? { owner: uid!, text: "" } : current);
       setPoll(current => current.owner === uid ? { owner: uid!, enabled: false, options: ["", ""] } : current);
+      setLocationDraft(current=>current.owner===uid&&current.text===location?{owner:uid!,text:"",open:false}:current);
       if (viewer.current.scope === scope && viewer.current.canRead) { setMessage("Published after safety checks."); await load(); }
     });
   }
@@ -255,8 +262,9 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
     <Button secondary onPress={retry}>Verify access again</Button><Button secondary onPress={() => router.push("/account")}>Your account</Button>
   </View>;
   return <SafeAreaView edges={["top", "left", "right", "bottom"]} style={{ flex: 1, backgroundColor: theme.background }}>
+    <View style={{paddingHorizontal:14,paddingTop:4,paddingBottom:6}}><CommunityWordmark size={23}/></View>
     <GlassSurface navigation style={{
-      position: "absolute", top: insets.top + 4, left: 14, right: 14, zIndex: 20, padding: 2,
+      marginHorizontal: 14, marginBottom: 6, padding: 2,
       borderRadius: 25, borderWidth: 0, flexDirection: "row", alignItems: "center", gap: 6,
     }}>
       <View accessibilityRole="tablist" style={{ flex: 1, flexDirection: "row", gap: 6 }}>
@@ -277,28 +285,28 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
       </View>
     </GlassSurface>
     {message || loadError ? <Text accessibilityLiveRegion="polite"
-      style={{ color: theme.muted, paddingHorizontal: 18, marginTop: 56 }}>{loadError || message}</Text> : null}
+      style={{ color: theme.muted, paddingHorizontal: 18, marginTop: 4 }}>{loadError || message}</Text> : null}
     {reels ? <View testID="hoopreels-provider-hold" style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 12, padding: 24, paddingBottom: 100 }}>
       <Ionicons name="play-circle-outline" size={36} color={theme.accent} />
       <CommunityWordmark reels size={22} />
       <Text style={{ color: theme.muted, textAlign: "center" }}>HoopReels is not available yet.</Text>
       <Button secondary onPress={() => setReels(false)}>Back to HoopFeed</Button>
-    </View> : <FlatList key={reels ? "reels" : "posts"} keyboardDismissMode="on-drag" style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 9, paddingTop: message || loadError ? 9 : 60, paddingBottom: 100, gap: reels ? 0 : 8 }} keyboardShouldPersistTaps="handled" initialNumToRender={reels ? 2 : 4} maxToRenderPerBatch={reels ? 2 : 4} windowSize={reels ? 3 : 5} pagingEnabled={reels} getItemLayout={reels && height > 0 ? (_items, index) => ({ length: height, offset: height * index, index }) : undefined} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
+    </View> : <FlatList key={reels ? "reels" : "posts"} keyboardDismissMode="on-drag" style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 9, paddingTop: 4, paddingBottom: 20, gap: reels ? 0 : 8 }} keyboardShouldPersistTaps="handled" initialNumToRender={reels ? 2 : 4} maxToRenderPerBatch={reels ? 2 : 4} windowSize={reels ? 3 : 5} pagingEnabled={reels} getItemLayout={reels && height > 0 ? (_items, index) => ({ length: height, offset: height * index, index }) : undefined} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
       ListHeaderComponent={!reels ? <View style={{ marginBottom: 2, gap: 7 }}>
-        {!composerExpanded ? <View style={{ flexDirection: "row", alignItems: "center", gap: 8, borderBottomWidth: 1, borderColor: theme.border }}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Create HoopFeed post" disabled={!canWrite} onPress={() => setComposerExpanded(true)} style={{ flex: 1, minHeight: 48, flexDirection: "row", alignItems: "center", gap: 9, padding: 9 }}>
-            <Ionicons name="create-outline" size={23} color={theme.accent} /><Text style={{ color: theme.muted, fontSize: 14, flexShrink: 1 }}>Share a basketball update…</Text>
-          </Pressable>
-          <Pressable testID="hoopfeed-quick-camera" accessibilityRole="button" accessibilityLabel="Open HoopCheck Camera and media composer" accessibilityState={{ disabled: !canWrite || pending.post === true }} disabled={!canWrite || pending.post} onPress={() => { setMediaMode(true); setPoll(current => ({ ...current, owner: uid!, enabled: false })); setComposerExpanded(true); }} style={{ minWidth: 48, minHeight: 48, alignItems: "center", justifyContent: "center", opacity: !canWrite || pending.post ? 0.45 : 1 }}>
-            <Ionicons name="camera-outline" size={25} color={theme.accent} />
-          </Pressable>
-        </View> : <View style={{ gap: 12, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 18, backgroundColor: theme.surface }}>
+        {!composerExpanded ? <View style={{flexDirection:"row",alignItems:"center",gap:4,borderBottomWidth:1,borderColor:theme.border,paddingHorizontal:6}}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Create HoopFeed post" disabled={!canWrite} onPress={()=>{setComposerExpanded(true);setMediaMode(false);}} style={{flex:1,minHeight:44,flexDirection:"row",alignItems:"center",gap:7}}><Ionicons name="create-outline" size={20} color={theme.accent}/><Text numberOfLines={1} style={{color:theme.muted,fontSize:13,flex:1}}>Share a basketball update…</Text></Pressable>
+          {Platform.OS!=="web"?<Pressable accessibilityRole="button" testID="hoopfeed-quick-camera" accessibilityLabel="Open HoopCheck Camera and media composer" disabled={!canWrite||pending.post} onPress={()=>{setMediaSource("camera");setComposerExpanded(true);setMediaMode(true);setPoll(current=>({...current,owner:uid!,enabled:false}));}} style={{minWidth:44,minHeight:44,alignItems:"center",justifyContent:"center"}}><Ionicons name="camera-outline" size={22} color={theme.accent}/></Pressable>:null}
+          <Pressable accessibilityRole="button" accessibilityLabel="Add photo or video to HoopFeed" disabled={!canWrite} onPress={()=>{setMediaSource("library");setComposerExpanded(true);setMediaMode(true);setPoll(current=>({...current,owner:uid!,enabled:false}));}} style={{minWidth:44,minHeight:44,alignItems:"center",justifyContent:"center"}}><Ionicons name="images-outline" size={22} color={theme.accent}/></Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel="Create HoopFeed poll" disabled={!canWrite} onPress={()=>{setComposerExpanded(true);setMediaMode(false);setPoll(current=>({owner:uid!,enabled:true,options:current.owner===uid?current.options:["",""]}));}} style={{minWidth:44,minHeight:44,alignItems:"center",justifyContent:"center"}}><Ionicons name="stats-chart-outline" size={20} color={theme.accent}/></Pressable>
+        </View> : <View style={{ gap: 6, padding: 10, borderWidth: 1, borderColor: theme.border, borderRadius: 15, backgroundColor: theme.surface }}>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}><Text style={{ ...textStyle, fontFamily: theme.type.ui.fontFamily, fontSize: 18, fontWeight: "700" }}>Create a post</Text><Pressable accessibilityRole="button" onPress={() => setComposerExpanded(false)} style={touch}><Text style={textStyle}>Close</Text></Pressable></View>
           <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 8 }}>{[false, true].map(enabled => <Pressable key={String(enabled)} accessibilityRole="tab" accessibilityState={{ selected: !mediaMode && pollEnabled === enabled }} disabled={pending.post} onPress={() => { setMediaMode(false); setPoll(current => ({ owner: uid!, enabled, options: current.owner === uid ? current.options : ["", ""] })); }} style={[touch, { borderColor: !mediaMode && pollEnabled === enabled ? theme.accent : theme.border }]}><Text style={textStyle}>{enabled ? "Poll" : "Discussion"}</Text></Pressable>)}</View>
-          <Button secondary disabled={pending.post} onPress={() => { setMediaMode(true); setPoll(current => ({ ...current, owner: uid!, enabled: false })); }}>Camera or library</Button>
-          <TextInput accessibilityLabel="Write a HoopFeed post" multiline maxLength={2000} editable={!pending.post} placeholder={pollEnabled ? "Ask your poll question…" : "Start a post... (ask, share, discuss, update)"} placeholderTextColor={theme.muted} value={draft.owner === uid ? draft.text : ""} onChangeText={text => setDraft({ owner: uid!, text })} style={{ ...textStyle, fontSize: 15, lineHeight: 23, minHeight: 90, maxHeight: 220, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: theme.radius.control, backgroundColor: theme.input }} />
+          <Pressable accessibilityRole="button" accessibilityLabel="Photo or video" disabled={pending.post} onPress={() => { setMediaSource("library");setMediaMode(true); setPoll(current => ({ ...current, owner: uid!, enabled: false })); }} style={{...touch,flexDirection:"row",justifyContent:"flex-start",alignItems:"center",gap:7}}><Ionicons name="images-outline" size={20} color={theme.accent}/><Text style={linkStyle}>Photo or video</Text></Pressable>
+          <TextInput accessibilityLabel="Write a HoopFeed post" multiline maxLength={2000} editable={!pending.post} placeholder={pollEnabled ? "Ask your poll question…" : "Start a post... (ask, share, discuss, update)"} placeholderTextColor={theme.muted} value={draft.owner === uid ? draft.text : ""} onChangeText={text => setDraft({ owner: uid!, text })} style={{ ...textStyle, fontSize: 15, lineHeight: 23, minHeight: 66, maxHeight: 180, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: theme.radius.control, backgroundColor: theme.input }} />
+          <Pressable accessibilityRole="button" accessibilityLabel="Add or edit post location" accessibilityState={{expanded:locationDraft.owner===uid&&locationDraft.open}} disabled={pending.post} onPress={()=>setLocationDraft(current=>({owner:uid!,text:current.owner===uid?current.text:"",open:current.owner!==uid||!current.open}))} style={{...touch,flexDirection:"row",alignItems:"center",justifyContent:"flex-start",gap:6}}><Ionicons name="location-outline" size={20} color={theme.accent}/><Text style={linkStyle}>{location?location:"Add location (optional)"}</Text></Pressable>
+          {locationDraft.owner===uid&&locationDraft.open?<View style={{gap:4}}><TextInput accessibilityLabel="Post location" placeholder="City, arena or region" placeholderTextColor={theme.muted} value={location} editable={!pending.post} maxLength={100} onChangeText={text=>setLocationDraft({owner:uid!,text,open:true})} style={{...textStyle,minHeight:44,borderWidth:1,borderColor:theme.border,borderRadius:10,paddingHorizontal:10}}/><Text style={{color:theme.muted,fontSize:11}}>Optional. Visible with your post; never uses GPS. Avoid sharing private addresses.</Text></View>:null}
           {pollEnabled && !mediaMode ? <View style={{ gap: 8 }}><Text style={{ color: theme.muted }}>Add 2–4 different answers, up to 60 characters each. Polls are text only.</Text>{pollOptions.map((option, index) => <View key={index} style={{ flexDirection: "row", gap: 8, alignItems: "center" }}><TextInput accessibilityLabel={`Poll answer ${index + 1}`} value={option} maxLength={60} editable={!pending.post} onChangeText={value => setPoll(current => current.owner === uid ? { ...current, options: current.options.map((item, i) => i === index ? value : item) } : current)} style={{ ...textStyle, flex: 1, minHeight: 48, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: theme.radius.control, backgroundColor: theme.input }} />{pollOptions.length > 2 ? <Pressable accessibilityRole="button" accessibilityLabel={`Remove poll answer ${index + 1}`} disabled={pending.post} onPress={() => setPoll(current => current.owner === uid ? { ...current, options: current.options.filter((_, i) => i !== index) } : current)} style={touch}><Text style={linkStyle}>Remove</Text></Pressable> : null}</View>)}{pollOptions.length < 4 ? <Button secondary disabled={pending.post} onPress={() => setPoll(current => current.owner === uid ? { ...current, options: [...current.options, ""] } : current)}>Add poll answer</Button> : null}</View> : null}
-          {mediaMode && uid ? <MediaPostComposer key={uid} userId={uid} enabled={canWrite} caption={draft.owner === uid ? draft.text : ""} token={token} onRefresh={() => load()} onPublished={async () => { setDraft(current => current.owner === uid && current.text === draft.text ? { owner: uid, text: "" } : current); await load(); }} /> : <Button style={{ minHeight: 44, borderRadius: 999, alignSelf: "flex-end", paddingHorizontal: 24 }} disabled={!canWrite || pending.post || draft.owner !== uid || !draft.text.trim() || !pollValid} onPress={() => void publish()}>{pending.post ? "Checking safety…" : "Post"}</Button>}
+          {mediaMode && uid ? <MediaPostComposer key={uid} preferredSource={mediaSource} userId={uid} enabled={canWrite} caption={draft.owner === uid ? draft.text : ""} location={location} token={token} onRefresh={() => load()} onPublished={async () => { setDraft(current => current.owner === uid && current.text === draft.text ? { owner: uid, text: "" } : current); setLocationDraft(current=>current.owner===uid&&current.text===location?{owner:uid,text:"",open:false}:current); await load(); }} /> : <Button style={{ minHeight: 44, borderRadius: 999, alignSelf: "flex-end", paddingHorizontal: 24 }} disabled={!canWrite || pending.post || draft.owner !== uid || !draft.text.trim() || !pollValid} onPress={() => void publish()}>{pending.post ? "Checking safety…" : "Post"}</Button>}
         </View>}
         {!canWrite ? <Text style={{ color: theme.muted, marginTop: 8 }}>Your membership does not include posting.</Text> : null}
       </View> : null}
@@ -318,15 +326,11 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
         }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <ProfileAvatar url={post.profiles?.avatar_moderation_status === "approved" ? post.profiles.avatar_url : null} name={post.profiles?.display_name || "HoopCheck member"} size={34} />
-            <View style={{ flex: 1, gap: 3 }}><Text style={{ ...textStyle, fontFamily: theme.type.ui.fontFamily, fontWeight: "700", fontSize: 14 }}>{post.profiles?.display_name || "HoopCheck member"}</Text><Text style={{ color: theme.muted, ...theme.type.caption }}>{new Date(post.created_at).toLocaleString()}</Text></View>
-            {post.author_id === uid ? <Pressable accessibilityRole="button" accessibilityLabel="Delete your HoopFeed post"
-              disabled={Boolean(pending[`delete:${post.id}`])} onPress={()=>confirmDelete(post)}
-              style={{minWidth:56,minHeight:44,alignItems:"center",justifyContent:"center",
-                flexDirection:"row",gap:4,backgroundColor:"transparent"}}>
-              <Ionicons name="trash-outline" size={16} color={theme.accent}/>
-              <Text style={{color:theme.accent,fontSize:11,fontWeight:"800"}}>Delete</Text>
-            </Pressable> : null}
+            <View style={{ flex: 1, gap: 3 }}><Text style={{ ...textStyle, fontFamily: theme.type.ui.fontFamily, fontWeight: "700", fontSize: 14 }}>{post.profiles?.display_name || "HoopCheck member"}</Text><Text style={{ color: theme.muted, ...theme.type.caption }}>{relativeTime(post.created_at, now)}</Text></View>
+            {post.author_id === uid ? <Pressable accessibilityRole="button" accessibilityLabel="Post options" accessibilityState={{expanded:postMenu?.scope===scope&&postMenu.id===post.id}} onPress={()=>setPostMenu(current=>current?.scope===scope&&current.id===post.id?null:{scope,id:post.id})} style={{minWidth:44,minHeight:44,alignItems:"center",justifyContent:"center"}}><Ionicons name="ellipsis-horizontal" size={23} color={theme.muted}/></Pressable>:null}
           </View>
+          {post.author_id===uid&&postMenu?.scope===scope&&postMenu.id===post.id?<Pressable accessibilityRole="button" accessibilityLabel="Delete your HoopFeed post" disabled={Boolean(pending[`delete:${post.id}`])} onPress={()=>{setPostMenu(null);confirmDelete(post);}} style={{...touch,alignSelf:"flex-end",flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="trash-outline" size={17} color={theme.accent}/><Text style={linkStyle}>Delete</Text></Pressable>:null}
+          {typeof post.post_location==="string"&&post.post_location.trim()?<View style={{flexDirection:"row",alignItems:"center",gap:4}}><Ionicons name="location-outline" size={14} color={theme.muted}/><Text numberOfLines={1} style={{color:theme.muted,fontSize:11,flex:1}}>{post.post_location.slice(0,100)}</Text></View>:null}
           {post.body ? <Text numberOfLines={reels ? 3 : undefined} style={{ ...textStyle, fontSize: 14, lineHeight: 20 }}>{post.body}</Text> : null}
           {post.video_url ? <FeedMedia userId={uid!} postId={post.id} reference={post.video_url} video enabled={focused && visible.has(post.id)} preload={reels && focused && post.id === nextReelId} loop={reels} height={reels ? Math.max(120, height - 280) : 220} /> : photos.map(reference => <FeedMedia userId={uid!} key={reference} postId={post.id} reference={reference} enabled={focused && visible.has(post.id)} />)}
           {post.post_kind === "poll" && options.length ? <FeedPoll userId={uid!} postId={post.id} options={options} enabled={canWrite && focused} /> : null}
@@ -358,16 +362,17 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
                 }
               }
             })} />
-            <Pressable accessibilityRole="button" onPress={() => { if (reels) { router.push({ pathname: "/feed", params: { post: post.id, comments: "1" } }); return; } setOpenComments(previous => ({ ...previous, [post.id]: !previous[post.id] })); if (!page || page.error) void loadComments(post.id); }} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Comments</Text></Pressable>
-            <Pressable accessibilityRole="button" onPress={() => void action(`share:${post.id}`, async () => { await Share.share({ title: "HoopFeed", message: `https://hoopcheck.online/feed#post-${post.id}` }); })} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Share</Text></Pressable>
+            <Pressable accessibilityRole="button" onPress={() => { if (reels) { router.push({ pathname: "/feed", params: { post: post.id, comments: "1" } }); return; } setOpenComments(previous => ({ ...previous, [post.id]: !previous[post.id] })); if (!page || page.error) void loadComments(post.id); }} style={touch}><View style={{flexDirection:"row",alignItems:"center",gap:4}}><Ionicons name="chatbubble-outline" size={16} color={theme.accent}/><Text style={{ ...linkStyle, fontSize: 12 }}>Comments{page&&!page.loading&&!page.error&&!page.more?` · ${page.rows.length}`:""}</Text></View></Pressable>
+            <Pressable accessibilityRole="button" onPress={()=>setSharePanel(current=>current?.scope===scope&&current.id===post.id?null:{scope,id:post.id})} style={touch}><View style={{flexDirection:"row",alignItems:"center",gap:4}}><Ionicons name="share-outline" size={16} color={theme.accent}/><Text style={{ ...linkStyle, fontSize: 12 }}>Share</Text></View></Pressable>
             {reels && <Pressable accessibilityRole="button" accessibilityLabel="Report this Reel" onPress={() => void action(`report:${post.id}`, async () => { await Linking.openURL(`https://hoopcheck.online/support?reportReel=${post.id}`); })} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Report</Text></Pressable>}
             {reels && <Pressable accessibilityRole="button" accessibilityLabel="Hide this Reel from your device" onPress={() => void hideReel(post.id)} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Hide</Text></Pressable>}
             {reels && post.author_id !== uid && <Pressable accessibilityRole="button" accessibilityLabel="Hide this creator's Reels on this device" onPress={() => void hideCreator(post.author_id)} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Hide creator</Text></Pressable>}
             {reels && post.author_id !== uid && <Pressable accessibilityRole="button" accessibilityLabel="Block this HoopCheck account" disabled={Boolean(pending[`block:${post.author_id}`])} onPress={() => void blockAccount(post.author_id)} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Block account</Text></Pressable>}
             <Pressable accessibilityRole="button" disabled={!canWrite || saved[post.id] === undefined || Boolean(pending[`save:${post.id}`])} onPress={() => void action(`save:${post.id}`, async () => { const value = !saved[post.id]; await feedAction(origin, await token(), "bookmark", post.id, value); if (viewer.current.uid === uid) setSaved(previous => ({ ...previous, [post.id]: value })); })} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>{saved[post.id] === undefined ? "Saved status unavailable" : saved[post.id] ? "Saved" : "Save"}</Text></Pressable>
           </View>
+          {uid&&focused&&sharePanel?.scope===scope&&sharePanel.id===post.id?<FeedSharePanel key={scope+post.id} userId={uid} role={account.user.accountType} postId={post.id} author={post.profiles?.display_name||"HoopCheck member"} preview={post.body||""} origin={origin} token={token} active={()=>viewer.current.scope===scope&&viewer.current.canRead} onClose={()=>setSharePanel(null)}/>:null}
           {openComments[post.id] && !reels ? <View style={{ gap: 12 }}>
-            {page?.loading ? <Text style={textStyle}>Loading comments…</Text> : page?.error ? <Text accessibilityRole="alert" style={textStyle}>{page.error}</Text> : !page?.rows.length ? <Text style={{ color: theme.muted }}>No comments yet.</Text> : page.rows.map(comment => <View key={comment.id} style={{ paddingLeft: comment.parent_id ? 12 : 0, borderLeftWidth: comment.parent_id ? 2 : 0, borderColor: theme.border }}><Text style={{ ...textStyle, fontWeight: "700" }}>{comment.profiles?.display_name || "HoopCheck member"}</Text><Text style={textStyle}>{comment.body}</Text><Pressable accessibilityRole="button" accessibilityLabel={`Reply to ${comment.profiles?.display_name || "HoopCheck member"}`} onPress={() => setReply({ owner: uid!, postId: post.id, id: comment.id, name: comment.profiles?.display_name || "HoopCheck member" })} style={touch}><Text style={linkStyle}>Reply</Text></Pressable></View>)}
+            {page?.loading ? <Text style={textStyle}>Loading comments…</Text> : page?.error ? <Text accessibilityRole="alert" style={textStyle}>{page.error}</Text> : !page?.rows.length ? <Text style={{ color: theme.muted }}>No comments yet.</Text> : page.rows.map(comment => <View key={comment.id} style={{ paddingLeft: comment.parent_id ? 12 : 0, borderLeftWidth: comment.parent_id ? 2 : 0, borderColor: theme.border }}><View style={{flexDirection:"row",gap:8,alignItems:"flex-start"}}><ProfileAvatar size={28} name={comment.profiles?.display_name||"HoopCheck member"} url={comment.profiles?.avatar_moderation_status==="approved"?comment.profiles.avatar_url:null}/><View style={{flex:1,gap:3}}><Text style={{ ...textStyle, fontWeight: "700" }}>{comment.profiles?.display_name || "HoopCheck member"}</Text><Text style={textStyle}>{comment.body}</Text></View></View><Pressable accessibilityRole="button" accessibilityLabel={`Reply to ${comment.profiles?.display_name || "HoopCheck member"}`} onPress={() => setReply({ owner: uid!, postId: post.id, id: comment.id, name: comment.profiles?.display_name || "HoopCheck member" })} style={touch}><Text style={linkStyle}>Reply</Text></Pressable></View>)}
             {page?.more ? <Button secondary disabled={page.loading} onPress={() => void loadComments(post.id, page.offset + 50)}>Load more comments</Button> : null}
             {replyTarget ? <Pressable accessibilityRole="button" onPress={() => setReply(null)} style={touch}><Text style={linkStyle}>Replying to {replyTarget.name} · Cancel reply</Text></Pressable> : null}
             <TextInput accessibilityLabel="Write a comment" placeholder="Add a comment" placeholderTextColor={theme.muted} value={commentDraft} maxLength={1000} onChangeText={value => setDrafts(previous => ({ owner: uid!, values: { ...(previous.owner === uid ? previous.values : {}), [post.id]: value } }))} style={{ ...textStyle, minHeight: 48, padding: 12, backgroundColor: theme.input, borderWidth: 1, borderColor: theme.border, borderRadius: theme.radius.control }} />

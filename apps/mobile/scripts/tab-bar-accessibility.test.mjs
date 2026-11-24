@@ -90,12 +90,12 @@ test("horizontal slide navigates one tab while vertical scrolling does not captu
   } finally {await act(async()=>tree.unmount());}
 });
 
-test("primary tabs overlay the screen while unmigrated detail routes keep safe layout", async () => {
+test("scrolling input and account routes reserve navigation space while other primary tabs float", async () => {
   for (const path of ["/dashboard", "/feed", "/search", "/notifications", "/account", "/teams", "/coaches", "/leagues", "/womens", "/players", "/teams/example", "/players/example", "/womens/leagues/example", "/teams/example/review", "/womens/leagues"]) {
     const { tree } = await render("player", path);
     try {
       const style = tree.root.findByProps({testID:"native-tab-bar"}).props.style;
-      if (path === "/teams/example/review" || path === "/womens/leagues" || path === "/players") assert.notEqual(style.position, "absolute");
+      if (["/feed", "/notifications", "/account", "/teams/example/review", "/womens/leagues", "/players"].includes(path)) assert.notEqual(style.position, "absolute");
       else {
         assert.equal(style.position, "absolute");
         assert.equal(style.bottom, 0);
