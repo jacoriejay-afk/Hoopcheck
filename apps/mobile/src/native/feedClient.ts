@@ -159,3 +159,11 @@ export async function deleteOwnedFeedPost(client: SupabaseClient, userId: string
   if (result.error || !Array.isArray(result.data) || result.data.length !== 1 || result.data[0]?.id !== postId)
     throw new Error("This post could not be deleted. Try refreshing the feed.");
 }
+
+/** Deliver only a post identifier through the authenticated server's recipient authorization. */
+export async function sendFeedShare(origin: string, token: string, postId: string, recipientId: string, signal?: AbortSignal, request: typeof fetch = fetch) {
+  if (!token || !uuid.test(postId) || !uuid.test(recipientId)) throw new Error("Invalid share request");
+  const response = await request(apiUrl(origin, "/api/hoopfeed/share"), { method: "POST", headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" }, body: JSON.stringify({ post_id: postId, recipient_id: recipientId }), cache: "no-store", redirect: "error", signal });
+  const result = await response.json().catch(() => null);
+  if (!response.ok || result?.ok !== true) throw new Error(typeof result?.message === "string" ? result.message.slice(0, 250) : "Share could not be confirmed.");
+}
