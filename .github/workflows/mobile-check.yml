@@ -105,6 +105,7 @@ jobs:
           node scripts/verify-profile-editor-browser.cjs
           node scripts/verify-club-groups-browser.cjs
           node scripts/verify-live-games-browser.cjs
+          node scripts/verify-entity-schedule-browser.cjs
           node scripts/verify-feed-browser.cjs
           node scripts/verify-discovery-browser.cjs
           node scripts/verify-theme-preference-browser.cjs
