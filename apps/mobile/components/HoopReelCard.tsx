@@ -81,7 +81,7 @@ export function HoopReelCard({
   const handle = post.profiles?.username ? "@" + post.profiles.username : post.profiles?.display_name || "HoopCheck member";
   const playerProfile = post.profiles?.account_type?.toLowerCase() === "player";
   return <View testID="hoopreels-immersive-card" style={{ height, backgroundColor: "#05080E", overflow: "hidden" }}>
-    {ready && post.reel_source ? <ReelStreamVideo key={post.reel_source.hlsUrl} source={post.reel_source} active={playing} muted={muted} /> : null}
+    {ready && post.reel_source ? <ReelStreamVideo key={post.reel_source.playbackId + ":" + post.reel_source.expiresAt} source={post.reel_source} active={playing} muted={muted} /> : null}
     <Pressable accessibilityRole="button" accessibilityLabel={muted ? "Unmute Reel with one tap, Check with two taps" : "Mute Reel with one tap, Check with two taps"}
       onPress={videoTap} style={StyleSheet.absoluteFill} />
     <LinearGradient pointerEvents="none" accessible={false}

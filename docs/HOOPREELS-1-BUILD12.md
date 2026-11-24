@@ -1,0 +1,19 @@
+# HOOPREELS-1 — Build 12 Phase A stop report
+
+Base: Build 11 integration commit 1050e1fc320939b126d7ca943ef44e4ba12bfd1b. This is a single job and one PR on feat/hoopreels-1. No merge, deployment, paid infrastructure, or release flag change is authorized by this PR.
+
+## Provider/safety gate
+- Inspection of HoopCheck production/preview project environment variable **names** and existing repository code found no configured Mux/alternative HLS streaming provider. No keys or private values were read. No provider account or subscription has been created.
+- SAFE-M1 (Report/Block + automatic hide) was not verified as merged and active; existing manual report, account block, and local hide are retained, but are not a proof of SAFE-M1 auto-hide.
+- `HOOPREELS_CREATE_ENABLED = false` is hard off; the previous Creator Studio is unreachable even by direct route. Existing ordinary HoopFeed posting is unchanged and never automatically becomes a Reel. No B or C commits or creation flow were implemented.
+- **Stop before Phase B** per the owner instruction. A is a provider-ready foundation, not a live content launch. No seeded Reels, fake scores or raw storage fallback.
+
+## Data and watch contract
+The existing approved `feed_posts` is the identity/author/caption/anchor/counter source; no database migration. Server-only operator catalog `HOOPREELS_ADMIN_HLS_CATALOG` links a maximum 20 curated feed post IDs to signed provider assets (playback ID, HLS URL, poster URL, measured duration/resolution, expiry). `HOOPREELS_STREAMING_PROVIDER=mux` is recognized, but neither variable is configured or enabled by this PR. Existing membership bootstrap and caller-scoped RLS/archives/blocks protect the catalog; signed URLs must be supplied/rotated by a real provider operator. No signing/ingest/resumable upload integration is claimed. No client-supplied assets and no raw storage playback path. A provider must verify actual 60s/1080p media and signed URL lifetime before content is published; client catalog metadata validation alone does not verify the encoded file.
+
+A includes full-screen paging, at most current + next two player sources, poster and adaptive buffer preparation, single visible playback, progress, persistent account-scoped sound preference, delayed single-tap mute / double-tap add Check with server-confirmed burst (respects Reduce Motion), sole up-arrow Check, comments sheet using existing moderated comments, native share, save, manual report/block/not interested, verified team anchors when available, real author handles/avatar, expandable caption and sound information sheet. Following uses existing privacy-aware graph; For You ranks recency + capped lifetime checks/hour velocity proxy + followed anchors/authors, not ML. No unverified Official badge, fabricated game score or unverified music credit. Game anchors, verified sound metadata, sound pages remain dependent on the real data/provider work.
+
+Performance target: 60fps mid-range iPhone and first-segment preloading **not measured**. Native player buffering is best-effort; no whole-file Reel download; no guarantee about a specific HLS segment. Catalog is bounded, and no player or raw video is loaded when off. Actual startup time, dropped frames, five-stream swipe recording, comment and team tap recordings require configured provider assets and physical-device validation. The five named reference PNGs were not available in the inspected attachment library/repository, so exact reference parity is unverified.
+
+## B and C
+Not started: segmented camera/editor, resumable/background uploads, real-data overlays and cover persistence, licensed sounds, photo quick-post/slideshow, game chip, Instagram sharing. No sounds table/migration. Creation stays off until both provider and SAFE-M1 are confirmed. No livestream, duets, user music uploads or paid service.

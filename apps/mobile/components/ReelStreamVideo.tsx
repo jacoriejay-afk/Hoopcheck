@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AppState, Image, StyleSheet, Text, View } from "react-native";
 import { VideoView, useVideoPlayer } from "expo-video";
 import type { ReelVideoSource } from "../../../lib/hoopreels-video-source";
@@ -17,26 +17,33 @@ export function ReelStreamVideo({ source, active, muted }: { source: ReelVideoSo
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const [progress, setProgress] = useState(0);
+  const visible = useRef(active);
+  useEffect(() => { visible.current = active; }, [active]);
   useEffect(() => {
-    // expo-video owns an imperative native player.
-    // eslint-disable-next-line react-hooks/immutability
+    // eslint-disable-next-line react-hooks/immutability -- imperative native player.
     player.muted = muted;
-    const sync = () => {
-      if (active && !failed && AppState.currentState === "active" && Date.now() < source.expiresAt) player.play();
-      else player.pause();
-    };
+  }, [muted, player]);
+  useEffect(() => {
+    if (player.status === "readyToPlay") setReady(true);
     const status = player.addListener("statusChange", e => {
       if (e.status === "readyToPlay") setReady(true);
       if (e.status === "error") { setFailed(true); player.pause(); }
     });
-    const app = AppState.addEventListener("change", sync);
     const time = player.addListener("timeUpdate", e => {
-      if (active) setProgress(Math.min(1, Math.max(0, e.currentTime / source.duration)));
+      if (visible.current) setProgress(Math.min(1, Math.max(0, e.currentTime / source.duration)));
     });
     const expires = setTimeout(() => { setFailed(true); player.pause(); }, Math.max(0, Math.min(2_147_000_000, source.expiresAt - Date.now())));
+    return () => { clearTimeout(expires); status.remove(); time.remove(); };
+  }, [player, source.duration, source.expiresAt]);
+  useEffect(() => {
+    const sync = () => {
+      if (active && !failed && AppState.currentState === "active" && Date.now() < source.expiresAt) player.play();
+      else player.pause();
+    };
     sync();
-    return () => { clearTimeout(expires); app.remove(); status.remove(); time.remove(); player.pause(); };
-  }, [player, active, muted, failed, source.duration, source.expiresAt]);
+    const app = AppState.addEventListener("change", sync);
+    return () => { app.remove(); player.pause(); };
+  }, [player, active, failed, source.expiresAt]);
   return <View style={StyleSheet.absoluteFill}>
     <Image source={{ uri: source.posterUrl }} resizeMode="cover" style={StyleSheet.absoluteFill} accessibilityLabel="Reel poster" />
     {!failed ? <View style={[StyleSheet.absoluteFill, { opacity: ready && active ? 1 : 0 }]}>

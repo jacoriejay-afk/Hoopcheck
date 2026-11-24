@@ -7,7 +7,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { FlatList, ScrollView, Linking, Pressable, RefreshControl, Share, Text, TextInput, View, type ViewToken } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Button } from "../src/primitives";
 import { Skeleton } from "../components/Motion";
@@ -30,6 +30,7 @@ type CommentPage = { rows: FeedComment[]; more: boolean; offset: number; loading
 export function FeedScreen({ initialReels = false }: { initialReels?: boolean }) { return <GlassThemeScope><FeedContent initialReels={initialReels} /></GlassThemeScope>; }
 function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
   const theme = useEntryTheme();
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const params = useLocalSearchParams<{ post?: string; comments?: string; compose?: string }>();
   const linkedId = typeof params.post === "string" && isFeedId(params.post) ? params.post : undefined;
@@ -47,17 +48,20 @@ function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
   const [reelSheet, setReelSheet] = useState<{ owner: string; postId: string; kind: "comments" | "sound" } | null>(null);
   const [soundPreference, setSoundPreference] = useState<{ owner: string; muted: boolean }>({ owner: "", muted: true });
   const muted = soundPreference.owner === uid ? soundPreference.muted : true;
+  const soundEdit = useRef(0);
   useEffect(() => {
     if (!uid || !reels) return;
     let current = true;
+    const edit = soundEdit.current;
     void AsyncStorage.getItem("hoopcheck:reels:muted:v1:" + uid).then(value => {
-      if (current) setSoundPreference({ owner: uid, muted: value !== "false" });
+      if (current && edit === soundEdit.current) setSoundPreference({ owner: uid, muted: value !== "false" });
     }).catch(() => {});
     return () => { current = false; };
   }, [uid, reels]);
   function toggleReelMute() {
     if (!uid) return;
     const next = !muted;
+    soundEdit.current++;
     setSoundPreference({ owner: uid, muted: next });
     void AsyncStorage.setItem("hoopcheck:reels:muted:v1:" + uid, String(next)).catch(() => {});
   }
@@ -176,8 +180,8 @@ function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
           if (isReelId(row.target_id)) followed.add(row.target_id);
         }
       }
-      if (reels && checkResult.status === "fulfilled") {
-        const counts = Object.fromEntries(checkResult.value.map(row => [row.post_id, Number(row.checks_count)]));
+      if (reels) {
+        const counts = checkResult.status === "fulfilled" ? Object.fromEntries(checkResult.value.map(row => [row.post_id, Number(row.checks_count)])) : {};
         posts = rankReels(posts, counts, followed);
       }
       const activity = checkResult.status === "fulfilled" ? checkResult.value : [];
@@ -201,8 +205,8 @@ function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
         return result;
       });
       if (activityFailed) setMessage("Posts loaded. Check totals could not be verified.");
-      else if (!cursor && linkedId && !shared) setMessage("The shared post is unavailable for this account.");
-    } catch { if (current === generation.current) setLoadError("HoopFeed could not load. Try again."); }
+      else if (!reels && !cursor && linkedId && !shared) setMessage("The shared post is unavailable for this account.");
+    } catch { if (current === generation.current) setLoadError(reels ? "HoopReels streaming is unavailable. Try again." : "HoopFeed could not load. Try again."); }
     finally { if (current === generation.current) setLoading(false); }
   }, [uid, canRead, reels, linkedId, scope]);
   useEffect(() => {
@@ -264,7 +268,7 @@ function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
   ) : [];
   const activeReelIndex = posts.findIndex(post => visible.has(post.id));
   const firstPreloadIndex = Math.max(0, activeReelIndex);
-  const activeSheet = reels && reelSheet?.owner === uid && posts.some(post => post.id === reelSheet.postId) ? reelSheet : null;
+  const activeSheet = reels && reelSheet && reelSheet.owner === uid && posts.some(post => post.id === reelSheet.postId) ? reelSheet : null;
   async function hideCreator(authorId: string) {
     if (!uid || !reels || authorId === uid) return;
     const existing = mutedCreators.owner === uid ? mutedCreators.ids : [];
@@ -376,7 +380,7 @@ function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
       requestingNext.current = true;
       void load(next).finally(() => { requestingNext.current = false; });
     }} keyboardDismissMode="on-drag" style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ paddingHorizontal: reels ? 0 : 8, paddingTop: reels ? 0 : 3,
-        gap: reels ? 0 : 6, paddingBottom: reels ? 0 : 132 }} keyboardShouldPersistTaps="handled" initialNumToRender={reels ? 3 : 4} maxToRenderPerBatch={reels ? 3 : 4} windowSize={reels ? 5 : 5} pagingEnabled={reels} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
+        gap: reels ? 0 : 6, paddingBottom: reels ? 0 : 132 }} keyboardShouldPersistTaps="handled" initialNumToRender={reels ? 3 : 4} maxToRenderPerBatch={reels ? 3 : 4} windowSize={5} pagingEnabled={reels} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
       ListHeaderComponent={!reels ? <View style={{ marginBottom: 4, gap: 6 }}>
         {/* Only show genuine loaded authors; no fake stories or another title banner. */}
         {posts.length > 0 ? <ScrollView horizontal showsHorizontalScrollIndicator={false}
@@ -416,7 +420,7 @@ function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
         if (reels) return <HoopReelCard post={post} userId={uid!}
           height={height} active={focused && !activeSheet && visible.has(post.id)} ready={focused && index >= firstPreloadIndex && index <= firstPreloadIndex + 2} canWrite={canWrite}
           muted={muted} onMute={toggleReelMute} pulseKey={checkPulses.scope === scope ? checkPulses.values[post.id] ?? 0 : 0}
-          onTeam={() => { if (post.reel_team) router.push({ pathname: post.reel_team.women ? "/womens/[id]" : "/teams/[id]", params: { id: post.reel_team.id } }); }}
+          onTeam={() => { const team = post.reel_team; if (!team) return; if (team.women) router.push({ pathname: "/womens/[id]", params: { id: team.id } }); else router.push({ pathname: "/teams/[id]", params: { id: team.id } }); }}
           onSound={() => setReelSheet({ owner: uid!, postId: post.id, kind: "sound" })}
           check={checks[post.id]} saved={saved[post.id]}
           checkBusy={Boolean(pending["check:" + post.id])}
@@ -452,7 +456,7 @@ function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
             <View style={{ flex: 1, gap: 1 }}><Text style={{ ...textStyle, fontFamily: theme.type.ui.fontFamily, fontWeight: "700", fontSize: 13 }}>{post.profiles?.display_name || "HoopCheck member"}</Text><Text style={{ color: theme.muted, ...theme.type.caption }}>{new Date(post.created_at).toLocaleString()}</Text></View>
           </View>
           {post.body ? <Text numberOfLines={reels ? 3 : undefined} style={{ ...textStyle, fontSize: 14, lineHeight: 19 }}>{post.body}</Text> : null}
-          {post.video_url ? <FeedMedia userId={uid!} postId={post.id} reference={post.video_url} video enabled={focused && visible.has(post.id)} loop={reels} height={reels ? Math.max(120, height - 380) : 240} /> : photos.map(reference => <FeedMedia userId={uid!} key={reference} postId={post.id} reference={reference} maxImageHeight={300}
+          {post.video_url ? <FeedMedia userId={uid!} postId={post.id} reference={post.video_url} video enabled={focused && visible.has(post.id)} height={240} /> : photos.map(reference => <FeedMedia userId={uid!} key={reference} postId={post.id} reference={reference} maxImageHeight={300}
             enabled={focused && visible.has(post.id)} />)}
           {post.post_kind === "poll" && options.length ? <FeedPoll userId={uid!} postId={post.id} options={options} enabled={canWrite && focused} /> : null}
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 3, paddingTop: 3, borderTopWidth: 1, borderColor: theme.border }}>
@@ -473,7 +477,7 @@ function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
       }}
       ListFooterComponent={!reels && next ? <View style={{ padding: 16 }}><Button secondary disabled={loading} onPress={() => void load(next)}>{loading ? "Loading…" : "Load more"}</Button></View> : null}
     />
-    {reels ? <View pointerEvents="box-none" style={{ position: "absolute", top: 54, left: 10, right: 10, flexDirection: "row", alignItems: "center", gap: 8 }}>
+    {reels ? <View pointerEvents="box-none" style={{ position: "absolute", top: insets.top + 6, left: 10, right: 10, flexDirection: "row", alignItems: "center", gap: 8 }}>
       <Pressable accessibilityRole="button" accessibilityLabel="Back to HoopFeed" onPress={() => { setReels(false); if (initialReels) router.navigate("/feed"); }}
         style={{ width: 44, height: 44, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(12,19,31,.85)", borderRadius: 22, borderWidth: 1, borderColor: theme.border }}><Ionicons name="arrow-back" color={theme.foreground} size={20} /></Pressable>
       <View accessibilityRole="tablist" style={{ flex: 1, flexDirection: "row", backgroundColor: "rgba(12,19,31,.85)", borderWidth: 1, borderColor: theme.border, borderRadius: 24, padding: 3 }}>

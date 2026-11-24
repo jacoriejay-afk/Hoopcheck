@@ -25,7 +25,9 @@ test('feed uses approved unexpired rows, deterministic keyset pages and viewer-o
     const url = new URL(String(input)); calls.push({url,options});
     return Response.json(url.pathname.endsWith('/feed_posts') ? rows : [{post_id:id(0)}]);
   });
-  const page = await readFeedPage(db, uid, undefined, true, now);
+  await assert.rejects(readFeedPage(db, uid, undefined, true, now), /streaming catalog/);
+  assert.equal(calls.length, 0, "Reels cannot scan raw feed videos");
+  const page = await readFeedPage(db, uid, undefined, false, now);
   assert.equal(page.posts.length,18);
   assert.equal(page.posts[0].profiles.display_name,'Member');
   assert.deepEqual(page.next, {id:id(19),created_at:rows[19].created_at});
@@ -34,7 +36,7 @@ test('feed uses approved unexpired rows, deterministic keyset pages and viewer-o
   assert.equal(query.get('or'),'(expires_at.is.null,expires_at.gt.2026-11-18T12:00:00.000Z)');
   assert.equal(query.get('order'),'created_at.desc,id.desc');
   assert.equal(query.get('limit'),'21');
-  assert.equal(query.get('video_url'),'not.is.null');
+  assert.equal(query.get('video_url'),null);
   assert.ok(!/email|subscription|salary/.test(query.get('select')));
   assert.equal(calls[1].url.searchParams.get('user_id'),`eq.${uid}`);
   assert.ok(!calls[1].url.searchParams.get('post_id').includes(id(20)));

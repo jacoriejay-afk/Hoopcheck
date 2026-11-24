@@ -51,6 +51,7 @@ test("Creator Studio enforces the existing membership and own-Reel RLS path", ()
   const feed = source("../app/feed.tsx");
   const layout = source("../app/_layout.tsx");
   assert.match(studio, /account\?\.features\.canWriteHoopFeed/);
+  assert.match(studio, /HOOPREELS_CREATE_ENABLED \? <HoopReelsStudio \/> : <CreationPaused \/>/);
   assert.match(studio, /\.eq\("author_id", owner\)\.eq\("status", "approved"\)\.not\("video_url", "is", null\)/);
   assert.match(studio, /\.delete\(\)\.eq\("id", postId\)\.eq\("author_id", owner\)\.select\("id"\)\.maybeSingle\(\)/);
   assert.match(studio, /data\?\.id !== postId/);

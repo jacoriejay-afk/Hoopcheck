@@ -31,8 +31,9 @@ export async function readSharedFeedPost(client: SupabaseClient, userId: string,
 }
 export async function readFeedPage(client: SupabaseClient, userId: string, cursor?: FeedCursor, reels = false, now = new Date()) {
   if (!uuid.test(userId) || (cursor && !validCursor(cursor))) throw new Error("Invalid feed request");
+  // Build 12 Reels are provider-only; the legacy raw-video filter is forbidden.
+  if (reels) throw new Error("Use the authorized HoopReels streaming catalog.");
   let query = readablePosts(client, now).order("created_at", { ascending: false }).order("id", { ascending: false }).limit(FEED_PAGE_SIZE + 1);
-  if (reels) query = query.not("video_url", "is", null);
   if (cursor) query = query.or(`created_at.lt.${cursor.created_at},and(created_at.eq.${cursor.created_at},id.lt.${cursor.id})`);
   const result = await query;
   if (result.error) throw new Error("Feed unavailable");
