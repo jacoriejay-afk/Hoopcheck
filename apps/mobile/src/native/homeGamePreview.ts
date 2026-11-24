@@ -1,4 +1,5 @@
 import type { LiveGame } from "./liveGames";
+import { gameDisplayState } from "./gameFreshness.ts";
 
 /** Home only highlights games happening now or about to happen.
  * Completed games belong in Game Center, not under a "Live" home rail.
@@ -12,11 +13,14 @@ export function selectHomePreviewGames(
   return games.filter(game => {
     const time = kickoff(game);
     if (!Number.isFinite(time)) return false;
-    if (game.status === "live") return time >= nowMs - dayMs && time <= nowMs + 6 * 60 * 60 * 1000;
-    if (game.status === "scheduled") return time >= nowMs;
+    const state = gameDisplayState(game, nowMs);
+    if (state.kind === "live") return time >= nowMs - dayMs && time <= nowMs + 6 * 60 * 60 * 1000;
+    if (state.kind === "upcoming") return time >= nowMs;
     return false;
   }).sort((a, b) => {
-    if (a.status !== b.status) return a.status === "live" ? -1 : 1;
+    const aLive = gameDisplayState(a, nowMs).isLive;
+    const bLive = gameDisplayState(b, nowMs).isLive;
+    if (aLive !== bLive) return aLive ? -1 : 1;
     return kickoff(a) - kickoff(b) || a.id.localeCompare(b.id);
   }).slice(0, Math.max(0, Math.min(Math.trunc(maxResults) || 0, 4)));
 }

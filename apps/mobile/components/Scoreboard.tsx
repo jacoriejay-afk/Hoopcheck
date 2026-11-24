@@ -6,6 +6,7 @@ import { motion } from "../src/motion/config";
 import { EntityArtwork } from "./EntityArtwork";
 import { useEntryTheme } from "../src/theme";
 import type { LiveGame, GameTeam } from "../src/native/liveGames";
+import { gameDisplayState } from "../src/native/gameFreshness";
 
 /**
  * Short, one-shot pulse only when a previously rendered LIVE score changes.
@@ -40,16 +41,17 @@ function ScoreValue({ gameId, name, score, live, color, fontSize, fontFamily }: 
 }
 
 /** Same score hierarchy in Home, league groups and game detail. Null is never zero. */
-export function Scoreboard({ game, teams }: { game: LiveGame; teams: Record<string, GameTeam> }) {
+export function Scoreboard({ game, teams, checkedAtMs, nowMs }: { game: LiveGame; teams: Record<string, GameTeam>; checkedAtMs?: number; nowMs?: number }) {
   const t = useEntryTheme();
-  const live = game.status === "live";
+  const state = gameDisplayState(game, nowMs, checkedAtMs);
+  const live = state.isLive;
   const host = teams[game.team_id];
   const visitor = teams[game.opponent_team_id || ""];
   const home = host?.name || "Home team";
   const away = visitor?.name || game.opponent_name || "Opponent";
   return <View style={{ gap: t.spacing.sm, borderLeftWidth: live ? 3 : 0, borderLeftColor: t.button, paddingLeft: live ? t.spacing.md : 0 }}>
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: t.spacing.sm, alignItems: "center" }}>
-      <View style={{ backgroundColor: live ? t.accentSurface : t.chip, paddingHorizontal: t.spacing.sm, paddingVertical: t.spacing.xs, borderRadius: t.radius.pill }}><Text style={{ color: live ? t.accent : t.onChip, ...t.type.caption, fontWeight: "700" }}>{live ? "● LIVE" : game.status.toUpperCase()}{game.period_label ? ` · ${game.period_label}` : ""}</Text></View>
+      <View style={{ backgroundColor: live ? t.accentSurface : t.chip, paddingHorizontal: t.spacing.sm, paddingVertical: t.spacing.xs, borderRadius: t.radius.pill }}><Text style={{ color: live ? t.accent : t.onChip, ...t.type.caption, fontWeight: "700" }}>{state.label}{live && game.period_label ? ` · ${game.period_label}` : ""}</Text></View>
       <Text style={{ color: t.muted, ...t.type.caption }}>{game.scheduled_at && Number.isFinite(Date.parse(game.scheduled_at)) ? new Date(game.scheduled_at).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "Tip-off not confirmed"}</Text>
     </View>
     {([{ name: home, score: game.home_score, logo: host?.logo_url, bg: host?.logo_bg }, { name: away, score: game.away_score, logo: visitor?.logo_url, bg: visitor?.logo_bg }]).map((team, index) => <View key={index} style={{ flexDirection: "row", gap: t.spacing.md, alignItems: "center" }}>
@@ -58,5 +60,6 @@ export function Scoreboard({ game, teams }: { game: LiveGame; teams: Record<stri
       <ScoreValue gameId={game.id} name={team.name} score={team.score} live={live} color={t.foreground} fontSize={t.courtside.typography.score} fontFamily={t.type.ui.fontFamily} />
     </View>)}
     {game.home_score == null || game.away_score == null ? <Text style={{ color: t.muted, ...t.type.caption }}>Score not reported</Text> : null}
+    {state.needsVerification ? <Text style={{ color: t.muted, ...t.type.caption }}>Provider status not verified. Results may be delayed.</Text> : null}
   </View>;
 }
