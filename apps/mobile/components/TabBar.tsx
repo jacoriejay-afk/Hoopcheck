@@ -100,7 +100,7 @@ export function TabBar() {
       shadowColor: "#000", shadowOffset: { width: 0, height: 14 },
       shadowOpacity: theme.dark ? .42 : .16, shadowRadius: 24, elevation: 12,
     }}>
-    {nativeGlass ? <GlassView pointerEvents="none" accessible={false} glassEffectStyle="clear" colorScheme={theme.dark ? "dark" : "light"} style={[StyleSheet.absoluteFill, { borderRadius: 31 }]} /> :
+    {nativeGlass ? <GlassView pointerEvents="none" accessible={false} glassEffectStyle="clear" style={[StyleSheet.absoluteFill, { borderRadius: 31 }]} /> :
       translucent ? <BlurView pointerEvents="none" accessible={false} intensity={65}
         tint={theme.dark ? "dark" : "light"} style={StyleSheet.absoluteFill} /> : null}
     {index >= 0 && activeWidth > 0 ? <Animated.View pointerEvents="none" style={[{
