@@ -11,6 +11,10 @@ import { HoopCheckLoading } from "./HoopCheckLoading";
 type Space = { id:string;slug:string;name:string;category:string;description:string;owner_id:string|null;accent_color:string;icon_key:string };
 type Channel = { id:string;space_id:string;name:string;slug:string;sort_index:number };
 type Post = { id:string;author_id:string;body:string;moderation_status:string;created_at:string };
+const colorOptions = { orange:"#FF873C", blue:"#60A5FA", purple:"#A78BFA", green:"#4ADE80", pink:"#F472B6", gold:"#FBBF24" } as const;
+const iconOptions = { basketball:"🏀", flame:"🔥", globe:"🌐", star:"⭐", trophy:"🏆", users:"👥" } as const;
+const accent = (name:string) => colorOptions[name as keyof typeof colorOptions] ?? colorOptions.orange;
+const emblem = (name:string) => iconOptions[name as keyof typeof iconOptions] ?? iconOptions.basketball;
 export default function HoopGroupsChannels() {
   const theme=useEntryTheme();
   const { offline } = useNetwork();
@@ -34,6 +38,11 @@ export default function HoopGroupsChannels() {
   const [newDescription,setNewDescription]=useState("");
   const [newCategory,setNewCategory]=useState("global");
   const [newChannel,setNewChannel]=useState("");
+  const [editing,setEditing]=useState(false);
+  const [editName,setEditName]=useState("");
+  const [editDescription,setEditDescription]=useState("");
+  const [editColor,setEditColor]=useState<keyof typeof colorOptions>("orange");
+  const [editIcon,setEditIcon]=useState<keyof typeof iconOptions>("basketball");
   const role=account?.user.accountType||"";
 
   useFocusEffect(useCallback(()=> {
@@ -124,6 +133,39 @@ export default function HoopGroupsChannels() {
     }catch(failure){setError(failure instanceof Error?failure.message:"Could not create group.");}
     finally{setBusy(false);}
   }
+  function beginManage() {
+    if (!selected || selected.owner_id !== userId) return;
+    setEditName(selected.name);setEditDescription(selected.description);
+    setEditColor(selected.accent_color in colorOptions
+      ? selected.accent_color as keyof typeof colorOptions : "orange");
+    setEditIcon(selected.icon_key in iconOptions
+      ? selected.icon_key as keyof typeof iconOptions : "basketball");
+    setEditing(true);
+  }
+  async function saveGroup() {
+    const name=editName.trim();
+    const description=editDescription.trim();
+    if(!selected || !userId || selected.owner_id!==userId || offline || busy
+      || name.length<3 || name.length>80 || description.length>300
+      || !(editColor in colorOptions) || !(editIcon in iconOptions))return;
+    const id=selected.id;
+    setBusy(true);setError("");
+    try{
+      await requireOnline();
+      const {data:{user}}=await supabase.auth.getUser();
+      if(user?.id!==userId)throw Error("Your account changed. Sign in again.");
+      const {data,error:updateError}=await supabase.from("hoop_group_spaces")
+        .update({name,description,accent_color:editColor,icon_key:editIcon})
+        .eq("id",id).eq("owner_id",userId)
+        .select("id,slug,name,category,description,owner_id,accent_color,icon_key").single();
+      if(updateError || !data || data.id!==id || data.owner_id!==userId)
+        throw Error("Group settings could not be saved.");
+      setSpaces(current=>current.map(space=>space.id===id?data as Space:space));
+      setEditing(false);
+    }catch(failure){setError(failure instanceof Error?failure.message:"Could not update community.");}
+    finally{setBusy(false);}
+  }
+
   async function leaveGroup() {
     if(!selected||!userId||offline||busy||!member)return;
     setBusy(true);setError("");
@@ -268,7 +310,10 @@ export default function HoopGroupsChannels() {
           onPress={()=>{setSpaceId(space.id);setChannelId("");setDraft("");}}
           style={{minHeight:68,width:160,borderWidth:1,borderColor:selected?.id===space.id?theme.accent:theme.glassBorder,
             borderRadius:16,backgroundColor:selected?.id===space.id?theme.accentSurface:theme.surface,padding:10,justifyContent:"center"}}>
-          <Text numberOfLines={2} style={{color:theme.foreground,fontWeight:"800"}}>{space.name}</Text>
+          <View style={{flexDirection:"row",alignItems:"center",gap:8}}>
+            <Text accessibilityLabel={space.icon_key+" group icon"} style={{fontSize:23}}>{emblem(space.icon_key)}</Text>
+            <Text numberOfLines={2} style={{color:theme.foreground,fontWeight:"800",flex:1}}>{space.name}</Text>
+          </View>
           <Text style={{color:theme.muted,fontSize:11,marginTop:4}}>
             {space.owner_id===userId?"Your group":joined.includes(space.id)?"Joined":"Discover"}
           </Text>
@@ -279,12 +324,58 @@ export default function HoopGroupsChannels() {
           <View style={{flex:1,gap:4}}>
             <Text style={{color:theme.foreground,fontSize:18,fontWeight:"900"}}>{selected?.name}</Text>
             <Text style={{color:theme.muted,fontSize:12}}>{selected?.description}</Text>
+            <View style={{flexDirection:"row",alignItems:"center",gap:8}}>
+              <Text style={{fontSize:19}}>{selected?emblem(selected.icon_key):"🏀"}</Text>
+              <View style={{width:8,height:8,borderRadius:4,backgroundColor:accent(selected?.accent_color||"orange")}}/>
+              <Text style={{color:theme.muted,fontSize:11}}>Independent HoopGroup</Text>
+            </View>
           </View>
           <Pressable accessibilityRole="button" accessibilityLabel="Share group invite" onPress={()=>void shareGroup()}
             style={{minHeight:44,minWidth:44,justifyContent:"center",alignItems:"center"}}>
             <Text style={{color:theme.accent,fontSize:12,fontWeight:"800"}}>Share</Text>
           </Pressable>
         </View>
+        {selected?.owner_id===userId?<Pressable accessibilityRole="button"
+          accessibilityLabel={editing?"Close group settings":"Manage group appearance"}
+          onPress={()=>editing?setEditing(false):beginManage()}
+          style={{minHeight:42,justifyContent:"center",alignSelf:"flex-start"}}>
+          <Text style={{color:theme.accent,fontWeight:"800"}}>
+            {editing?"Close settings":"Customize your group"}
+          </Text>
+        </Pressable>:null}
+        {editing && selected?.owner_id===userId?<View style={{gap:10,paddingVertical:10,borderTopWidth:1,borderColor:theme.glassBorder}}>
+          <Text style={{color:theme.foreground,fontWeight:"900"}}>Group appearance</Text>
+          <TextInput accessibilityLabel="Edit group name" maxLength={80} value={editName} onChangeText={setEditName}
+            style={{color:theme.foreground,backgroundColor:theme.input,minHeight:44,borderRadius:11,paddingHorizontal:10}} />
+          <TextInput accessibilityLabel="Edit group description" maxLength={300} multiline value={editDescription}
+            onChangeText={setEditDescription} style={{color:theme.foreground,backgroundColor:theme.input,minHeight:62,
+              borderRadius:11,paddingHorizontal:10,paddingVertical:8,textAlignVertical:"top"}} />
+          <Text style={{color:theme.muted,fontSize:12}}>Community color</Text>
+          <View style={{flexDirection:"row",gap:10,flexWrap:"wrap"}}>
+            {(Object.keys(colorOptions) as (keyof typeof colorOptions)[]).map(name=><Pressable key={name}
+              accessibilityRole="radio" accessibilityLabel={name+" group color"}
+              accessibilityState={{checked:editColor===name}}
+              onPress={()=>setEditColor(name)}
+              style={{width:40,height:40,borderRadius:20,backgroundColor:colorOptions[name],
+                borderWidth:editColor===name?3:0,borderColor:theme.foreground,alignItems:"center",justifyContent:"center"}}>
+              {editColor===name?<Text style={{color:"#111827",fontWeight:"900"}}>✓</Text>:null}
+            </Pressable>)}
+          </View>
+          <Text style={{color:theme.muted,fontSize:12}}>Community emblem</Text>
+          <View style={{flexDirection:"row",gap:7,flexWrap:"wrap"}}>
+            {(Object.keys(iconOptions) as (keyof typeof iconOptions)[]).map(name=><Pressable key={name}
+              accessibilityRole="radio" accessibilityLabel={name+" group emblem"}
+              accessibilityState={{checked:editIcon===name}}
+              onPress={()=>setEditIcon(name)}
+              style={{minWidth:44,minHeight:44,alignItems:"center",justifyContent:"center",
+                borderWidth:editIcon===name?1:0,borderColor:theme.accent,borderRadius:12,
+                backgroundColor:editIcon===name?theme.accentSurface:"transparent"}}>
+              <Text style={{fontSize:24}}>{iconOptions[name]}</Text>
+            </Pressable>)}
+          </View>
+          <Button disabled={busy||offline||editName.trim().length<3||editDescription.trim().length>300}
+            onPress={()=>void saveGroup()}>{busy?"Saving…":"Save group settings"}</Button>
+        </View>:null}
         {!member?<Button disabled={busy||offline} onPress={()=>void join()}>Join group</Button>:
           <Pressable accessibilityRole="button" accessibilityLabel="Leave group" disabled={busy||offline}
             onPress={()=>void leaveGroup()} style={{minHeight:40,justifyContent:"center",alignItems:"flex-start"}}>
