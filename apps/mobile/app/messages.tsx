@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Button } from "../src/primitives";
+import { ChatMessageEnter, ChatTypingBasketball, useConfirmedMessageMotion } from "../components/chat/ChatMotion";
 import { HoopCheckLoading } from "../components/HoopCheckLoading";
 import { useEntryTheme } from "../src/theme";
 import { supabase } from "../src/lib/supabase";
@@ -141,7 +142,9 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
   const selected = visibleThreads.find(item => item.id === selectedId) || visibleThreads[0];
   const opened = Boolean(selected && selected.id === openedId && openedMode === mode);
   useEffect(() => { setOpenedId(""); setDraft(""); }, [mode]);
-  const history=messages.filter(item=>item.request_id===selected?.id).slice().reverse();
+  const history=useMemo(()=>messages.filter(item=>item.request_id===selected?.id).slice().reverse(),[messages,selected?.id]);
+  const motionActive=Boolean(userId && opened && selected?.status==="accepted" && !offline);
+  const freshIds=useConfirmedMessageMotion(`${userId}:${openedId}:${mode}`,history,motionActive);
 
   async function respond(status:"accepted"|"rejected") {
     if(!selected || selected.player_id!==userId || selected.status!=="pending" || !opened || sending) return;
@@ -216,14 +219,15 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
         <Text style={{color:theme.muted,fontSize:12}}>{selected.status==="accepted"?"Private HoopChat":"Player contact request"}</Text>
         {selected.message?<View style={{padding:12,borderRadius:12,backgroundColor:theme.chip}}><Text style={{color:theme.foreground}}>Introduction: {selected.message}</Text></View>:null}
         <View accessibilityLabel="Conversation history" style={{gap:10,marginVertical:10}}>
-          {history.map(item=><View key={item.id} style={{padding:10,borderRadius:18,backgroundColor:item.sender_id===userId?theme.accentSurface:theme.surface,alignSelf:item.sender_id===userId?"flex-end":"flex-start",maxWidth:"95%",gap:4}}>
+          {history.map(item=><ChatMessageEnter key={item.id} fresh={freshIds.has(item.id)} incoming={item.sender_id!==userId} active={motionActive}><View style={{padding:10,borderRadius:18,backgroundColor:item.sender_id===userId?theme.accentSurface:theme.surface,alignSelf:item.sender_id===userId?"flex-end":"flex-start",maxWidth:"95%",gap:4}}>
             <Text style={{fontSize:12,fontWeight:"800",color:theme.foreground}}>{item.sender_id===userId?"You":name(selected)}</Text>
             <Text style={{color:theme.foreground}}>{item.body}</Text>
             <Text style={{color:theme.muted,fontSize:11}}>{new Date(item.created_at).toLocaleString()}</Text>
-          </View>)}
+          </View></ChatMessageEnter>)}
         </View>
         {selected.status==="pending"&&selected.player_id===userId?<View style={{gap:8}}><Text style={{color:theme.muted}}>Approve this request to unlock messaging.</Text><Button disabled={sending||offline} onPress={()=>void respond("accepted")}>Accept request</Button><Button secondary disabled={sending||offline} onPress={()=>void respond("rejected")}>Decline</Button></View>:null}
         {selected.status==="accepted"?<View style={{gap:8}}>
+          <ChatTypingBasketball active={motionActive && Boolean(draft.trim()) && !sending} />
           <TextInput accessibilityLabel="Write private HoopChat message" multiline maxLength={2000} value={draft} onChangeText={setDraft} placeholder="Write a message…" placeholderTextColor={theme.muted}
             style={{minHeight:48,maxHeight:120,textAlignVertical:"top",padding:12,backgroundColor:theme.input,color:theme.foreground,borderWidth:1,borderColor:theme.border,borderRadius:theme.radius.control}} />
           <Button disabled={sending||offline||!draft.trim()} onPress={()=>void send()}>{sending?"Sending…":"Send"}</Button>
