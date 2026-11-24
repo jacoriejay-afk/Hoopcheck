@@ -1,9 +1,11 @@
 import { useHaptics } from "../src/native/haptics";
-import { Skeleton } from "../components/Motion";
+import { HoopCheckLoading } from "../components/HoopCheckLoading";
+import MessagesScreen from "./messages";
+import { hoopChatAuthAction } from "../src/native/hoopChatLoad";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FlatList, Pressable, RefreshControl, Text, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
-import { Button, GlassCard } from "../src/primitives";
+import { Button } from "../src/primitives";
 import { useEntryTheme } from "../src/theme";
 import { supabase } from "../src/lib/supabase";
 import { requireOnline, useNetwork } from "../src/native/network";
@@ -25,6 +27,7 @@ export default function Notifications() {
   const [error, setError] = useState("");
   const [failed, setFailed] = useState(false);
   const [filter, setFilter] = useState("all");
+  const [section, setSection] = useState<"activity" | "chat" | "requests">("activity");
   const load = useCallback(async () => {
     const current = ++generation.current;
     owner.current = null; setRows([]); setLoading(true); setError(""); setFailed(false);
@@ -88,7 +91,32 @@ export default function Notifications() {
   }
   const items = offline ? [] : rows;
   return <View style={{ flex: 1, backgroundColor: theme.background }}>
-    <FlatList ListHeaderComponent={<View style={{ gap: theme.spacing.md }}>
+    <View style={{ paddingHorizontal: 14, paddingTop: 10, paddingBottom: 7, gap: 8 }}>
+      <Text accessibilityRole="header" style={{ color: theme.foreground, fontWeight: "900", fontSize: 24 }}>Alerts</Text>
+      <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 7 }}>
+        {([
+          { id: "activity", label: "Activity" },
+          { id: "chat", label: "HoopChat" },
+          { id: "requests", label: "Requests" },
+        ] as const).map(tab => <Pressable key={tab.id}
+          accessibilityRole="tab" accessibilityLabel={tab.label}
+          accessibilityState={{ selected: section === tab.id }}
+          onPress={() => { haptic("tab"); setSection(tab.id); }}
+          style={({pressed}) => ({
+            minHeight: 44, flex: 1, alignItems: "center", justifyContent: "center",
+            borderRadius: 13, borderWidth: section === tab.id ? 1 : 0,
+            borderColor: theme.accent,
+            backgroundColor: section === tab.id ? theme.accentSurface : "transparent",
+            opacity: pressed ? .8 : 1,
+          })}>
+          <Text style={{ color: section === tab.id ? theme.accent : theme.foreground,
+            fontSize: 13, fontWeight: "800" }}>{tab.label}</Text>
+        </Pressable>)}
+      </View>
+    </View>
+    {section !== "activity"
+      ? <MessagesScreen embedded mode={section === "chat" ? "conversations" : "requests"} />
+      : <FlatList ListHeaderComponent={<View style={{ gap: theme.spacing.md }}>
       <View style={{ gap: theme.spacing.sm }}><Text style={{ color: theme.foreground, ...theme.type.section }}>Your basketball updates</Text><Text style={{ color: theme.muted }}>{loading ? "Loading activity…" : `${items.filter(item => !item.read_at).length} unread in your latest ${items.length} updates`}</Text></View>
       <View style={{flexDirection:"row",flexWrap:"wrap",gap:8}}>
         <Button secondary onPress={()=>router.push("/messages")}>Messages & sender threads</Button>
@@ -104,6 +132,6 @@ export default function Notifications() {
         <Text style={{ color: theme.foreground }}>{item.body}</Text>
         <Text style={{ color: theme.muted }}>{new Date(item.created_at).toLocaleString()}</Text>
       </Pressable></GlassCard>;
-    }} ListEmptyComponent={loading ? <Skeleton /> : <View style={{ gap: 12, padding: 20 }}><Text style={{ color: theme.foreground }}>{offline ? "Reconnect to view alerts." : failed ? "Alerts are unavailable." : items.length ? "Nothing in this category." : "No notifications yet."}</Text>{failed ? <Button secondary onPress={() => void load()}>Retry loading alerts</Button> : <Button secondary onPress={() => router.push("/teams")}>Find teams</Button>}</View>} />
+    }} ListEmptyComponent={loading ? <Skeleton /> : <View style={{ gap: 12, padding: 20 }}><Text style={{ color: theme.foreground }}>{offline ? "Reconnect to view alerts." : failed ? "Alerts are unavailable." : items.length ? "Nothing in this category." : "No notifications yet."}</Text>{failed ? <Button secondary onPress={() => void load()}>Retry loading alerts</Button> : <Button secondary onPress={() => router.push("/teams")}>Find teams</Button>}</View>} />}
   </View>;
 }
