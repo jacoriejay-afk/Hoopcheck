@@ -31,6 +31,31 @@ jobs:
             echo "Configure LIVE_SCORES_CRON_SECRET in GitHub Actions secrets."
             exit 1
           fi
-          curl --fail --silent --show-error --max-time 25 \
+          body="$(mktemp)"
+          trap 'rm -f "$body"' EXIT
+          if ! status="$(curl --silent --show-error --max-time 25 \
+            --output "$body" --write-out '%{http_code}' \
             -H "Authorization: Bearer $LIVE_SCORES_CRON_SECRET" \
-            "$LIVE_SCORES_SYNC_URL"
+            "$LIVE_SCORES_SYNC_URL")"; then
+            echo "::error::Live-score sync network failure or timeout."
+            exit 1
+          fi
+          case "$status" in
+            200) ;;
+            401|403) echo "::error::Live-score sync authorization rejected. Check matching GitHub and production server secrets."; exit 1 ;;
+            503) echo "::error::Live-score sync production configuration unavailable."; exit 1 ;;
+            502) echo "::error::Live-score provider returned an error or invalid response."; exit 1 ;;
+            500) echo "::error::Live-score sync failed server-side. Inspect production function logs."; exit 1 ;;
+            *) echo "::error::Unexpected live-score endpoint HTTP status: $status"; exit 1 ;;
+          esac
+          if ! jq -e '.ok == true and (.fixtureDate | type == "string" and test("^[0-9]{4}-[0-9]{2}-[0-9]{2}$")) and (.providerSnapshotReceivedAt | type == "string" and length > 0) and (.providerGamesForDate | type == "number" and . >= 0 and floor == .) and (.matchedGames | type == "number" and . >= 0 and floor == .) and (.matchedGames <= .providerGamesForDate)' "$body" >/dev/null; then
+            echo "::error::Live-score endpoint did not return a valid provider receipt."
+            exit 1
+          fi
+          jq -c '{fixtureDate, providerSnapshotReceivedAt, providerGamesForDate, matchedGames}' "$body"
+          if jq -e '.providerGamesForDate > 0 and .matchedGames == 0' "$body" >/dev/null; then
+            echo "::warning::Provider returned fixtures but none matched HoopCheck teams. Review mapping coverage."
+          fi
+          if jq -e '.providerGamesForDate == 0' "$body" >/dev/null; then
+            echo "::notice::Provider returned no fixtures for this date; no game freshness claimed."
+          fi
