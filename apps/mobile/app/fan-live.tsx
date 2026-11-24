@@ -4,7 +4,7 @@ import { HoopCheckLoading } from "../components/HoopCheckLoading";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { SectionList, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import { Button, PressableCard } from "../src/primitives";
+import { Button } from "../src/primitives";
 import { GameChat } from "../components/GameChat";
 import { GamePrediction } from "../components/GamePrediction";
 import { useNativeAccount } from "../src/native/useNativeAccount";
@@ -158,9 +158,9 @@ export default function LiveGames() {
     renderSectionFooter={({section})=>section.total>3?<Pressable accessibilityRole="button" onPress={()=>setExpandedGroups(current=>current.includes(section.title)?current.filter(item=>item!==section.title):[...current,section.title])}
       style={{minHeight:44,justifyContent:"center",alignItems:"center",borderWidth:1,borderColor:theme.border,borderRadius:14,marginTop:8,backgroundColor:theme.surface}}>
       <Text style={{color:theme.accent,fontWeight:"800"}}>{expandedGroups.includes(section.title)?"Show 3 games":`Show all ${section.total} games`}</Text>
-    </Pressable>:null} keyExtractor={item => item.id} contentContainerStyle={{ padding: 12, gap: 4 }} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => setRevision(value => value + 1)} />} renderItem={({ item }) => <PressableCard accessibilityRole="button" style={{ backgroundColor: "transparent", borderWidth: 0, borderBottomWidth: 1, borderColor: theme.border, borderRadius: 0, padding: 8 }} onPress={() => router.push({ pathname: "/fan-live", params: { gameId: item.id } })}>
+    </Pressable>:null} keyExtractor={item => item.id} contentContainerStyle={{ padding: 12, gap: 4 }} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => setRevision(value => value + 1)} />} renderItem={({ item }) => <Pressable accessibilityRole="button" style={({ pressed }) => ({ minHeight: 44, opacity: pressed ? .72 : 1, backgroundColor: "transparent", borderBottomWidth: 1, borderColor: theme.border, padding: 8 })} onPress={() => router.push({ pathname: "/fan-live", params: { gameId: item.id } })}>
       <Scoreboard game={item} teams={data?.teams || {}} checkedAtMs={checkedAtMs ?? undefined} nowMs={clockMs} />
-    </PressableCard>} ListHeaderComponent={<View style={{gap:10,marginBottom:12}}>
+    </Pressable>} ListHeaderComponent={<View style={{gap:10,marginBottom:12}}>
       <Text style={{fontSize:18,fontWeight:"900",color:theme.foreground}}>Browse by activity</Text>
       <Text style={{color:theme.muted,fontSize:12}}>Prioritized by members in chat, live status and available fixtures. The provider decides LIVE status.</Text>
       <Text style={{color:theme.foreground,fontWeight:"700"}}>Popular countries</Text>
