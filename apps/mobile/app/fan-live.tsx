@@ -1,4 +1,3 @@
-import { CourtsideBanner } from "../components/CourtsideBanner";
 import { GlassSurface } from "../components/GlassSurface";
 import { Scoreboard } from "../components/Scoreboard";
 import { HoopCheckLoading } from "../components/HoopCheckLoading";
@@ -143,7 +142,7 @@ export default function LiveGames() {
   const chatEnabled = active && account.features.canUseLiveGameChat && !offline;
   return <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={100} style={{ flex: 1, backgroundColor: theme.background }}>
     <View style={{ padding: 12, gap: 8 }}>
-      {!game ? <><CourtsideBanner eyebrow="GAME CENTER" title="The game lives here">Scores, conversations and predictions.</CourtsideBanner>
+      {!game ? <><Text accessibilityRole="header" style={{ color: theme.foreground, fontFamily: "HoopCheckDisplay", fontSize: 22 }}>GAME CENTER</Text>
       {account.features.canSwitchBasketballSide ? <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 7, padding: 4, borderRadius: 15, borderColor: theme.glassBorder, borderWidth: 1, backgroundColor: theme.elevatedSurface }}>{(["mens", "womens"] as const).map(value => <Pressable key={value} accessibilityRole="tab" aria-selected={side === value} accessibilityState={{ selected: side === value }} disabled={savingSide || sideChoice?.owner !== uid} onPress={() => void chooseSide(value)} style={{ flex: 1, minHeight: 44, justifyContent: "center", alignItems: "center", borderRadius: 11, backgroundColor: side === value ? theme.accentSurface : "transparent", borderWidth: side === value ? 1 : 0, borderColor: theme.accent }}><Text style={{ color: side === value ? theme.accent : theme.foreground, fontWeight: "800" }}>{value === "mens" ? "Men" : "Women"}</Text></Pressable>)}</View> : <Text style={{ color: theme.muted }}>{side === "mens" ? "Men’s basketball" : "Women’s basketball"}</Text>}</> : null}
       {data ? <Text testID="game-data-checked" style={{ color: theme.muted, fontSize: 12 }}>
         {lastCheckedLabel(checkedAtMs!, clockMs)} · {activeLiveCount ? `${activeLiveCount} reported live` : "No games currently reported live"} · Provider scores may lag
@@ -152,14 +151,14 @@ export default function LiveGames() {
       {gameId ? <Button secondary onPress={() => router.replace("/fan-live")}>All games</Button> : null}
     </View>
     {game ? <View style={{ flex: 1, paddingHorizontal: 12, paddingBottom: 12, gap: 8 }}>
-      <GlassSurface style={{ padding: theme.spacing.md, borderRadius: 17 }}><Scoreboard game={game} teams={data?.teams || {}} checkedAtMs={checkedAtMs ?? undefined} nowMs={clockMs} /></GlassSurface>
+      <GlassSurface style={{ padding: 8, borderRadius: 12, borderWidth: 0 }}><Scoreboard game={game} teams={data?.teams || {}} checkedAtMs={checkedAtMs ?? undefined} nowMs={clockMs} /></GlassSurface>
       <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 20 }}>{(["chat", "predictions"] as const).map(value => <Pressable key={value} accessibilityRole="tab" aria-selected={panel === value} accessibilityState={{ selected: panel === value }} onPress={() => setPanel(value)} style={{ minHeight: 44, justifyContent: "center" }}><Text style={{ color: panel === value ? theme.accent : theme.foreground, fontWeight: "800" }}>{value === "chat" ? "Chat" : "Predictions"}</Text></Pressable>)}</View>
       {panel === "chat" ? <GameChat key={`${uid}:${game.id}`} gameId={game.id} userId={uid!} enabled={chatEnabled} /> : <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 24 }}><GamePrediction key={`${uid}:${game.id}`} game={game} userId={uid!} homeName={data?.teams[game.team_id]?.name || "Home team"} awayName={data?.teams[game.opponent_team_id || ""]?.name || game.opponent_name} active={active} /></ScrollView>}
     </View> : <SectionList sections={sections} stickySectionHeadersEnabled={false} renderSectionHeader={({ section }) => <Text accessibilityRole="header" style={{ ...theme.type.section, color: theme.foreground, paddingVertical: theme.spacing.sm }}>{section.title} · {section.chatting} chatting</Text>}
     renderSectionFooter={({section})=>section.total>3?<Pressable accessibilityRole="button" onPress={()=>setExpandedGroups(current=>current.includes(section.title)?current.filter(item=>item!==section.title):[...current,section.title])}
       style={{minHeight:44,justifyContent:"center",alignItems:"center",borderWidth:1,borderColor:theme.border,borderRadius:14,marginTop:8,backgroundColor:theme.surface}}>
       <Text style={{color:theme.accent,fontWeight:"800"}}>{expandedGroups.includes(section.title)?"Show 3 games":`Show all ${section.total} games`}</Text>
-    </Pressable>:null} keyExtractor={item => item.id} contentContainerStyle={{ padding: 12, gap: 8 }} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => setRevision(value => value + 1)} />} renderItem={({ item }) => <PressableCard accessibilityRole="button" onPress={() => router.push({ pathname: "/fan-live", params: { gameId: item.id } })}>
+    </Pressable>:null} keyExtractor={item => item.id} contentContainerStyle={{ padding: 12, gap: 4 }} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => setRevision(value => value + 1)} />} renderItem={({ item }) => <PressableCard accessibilityRole="button" style={{ backgroundColor: "transparent", borderWidth: 0, borderBottomWidth: 1, borderColor: theme.border, borderRadius: 0, padding: 8 }} onPress={() => router.push({ pathname: "/fan-live", params: { gameId: item.id } })}>
       <Scoreboard game={item} teams={data?.teams || {}} checkedAtMs={checkedAtMs ?? undefined} nowMs={clockMs} />
     </PressableCard>} ListHeaderComponent={<View style={{gap:10,marginBottom:12}}>
       <Text style={{fontSize:18,fontWeight:"900",color:theme.foreground}}>Browse by activity</Text>
