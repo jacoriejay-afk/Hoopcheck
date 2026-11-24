@@ -78,8 +78,8 @@ export default function HoopFeedPrivateMedia({
   if (!active) return <span role="status" className="muted">Scroll to view video</span>;
   if (error) return <span role="status" className="muted">Media unavailable</span>;
   if (!url) return <span role="status" className="muted">Loading media…</span>;
-  if (kind === "video") return <video ref={player} src={url} controls playsInline
+  if (kind === "video") return <div className="hc-owner-watermarked-media"><video ref={player} src={url} controls playsInline
     preload="metadata" muted={autoplay} autoPlay={autoplay} loop={loop}
-    className={className} aria-label={ariaLabel || "HoopFeed video"} />;
-  return <img src={url} alt={alt || "HoopFeed post"} className={className} />;
+    className={className} aria-label={ariaLabel || "HoopFeed video"} /><span className="hc-owner-media-watermark" aria-hidden="true"><img src="/hoopcheck-mark.svg" alt="" width="20" height="20" />HoopCheck</span></div>;
+  return <div className="hc-owner-watermarked-media"><img src={url} alt={alt || "HoopFeed post"} className={className} /><span className="hc-owner-media-watermark" aria-hidden="true"><img src="/hoopcheck-mark.svg" alt="" width="20" height="20" />HoopCheck</span></div>;
 }

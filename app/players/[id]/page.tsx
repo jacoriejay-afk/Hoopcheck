@@ -152,7 +152,7 @@ export default function PlayerProfilePage() {
     <main className="page-shell player-profile-page">
       <div className="page-container">
         <SocialProfileHeader name={player.display_name || "HoopCheck Player"} avatarUrl={player.avatar_url}
-          badge={player.player_verified && <VerifiedBadge label="Verified professional player" />}
+          badge={player.player_verified && <VerifiedBadge label="Verified professional player" celebrate />}
           actions={isOwnProfile ? <Link href="/account#profile-editor" className="btn">Edit profile</Link>
             : <><FollowButton targetType="player" targetId={player.id} showCount={false} showNotifications={false} />
               <PlayerContactButton playerId={player.id} /></>}>

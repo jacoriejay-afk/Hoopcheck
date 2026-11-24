@@ -37,3 +37,7 @@
   .hc-passport-print { border: none !important; box-shadow: none !important; padding: 0 !important; }
 }
 @media (prefers-reduced-motion: reduce) { .hc-passport-export * { scroll-behavior: auto; } }
+
+.hc-passport-print__mark { background: #080808; }
+.hc-passport-print__mark img { display: block; object-fit: contain; }
+@media print { .hc-passport-print__mark { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }

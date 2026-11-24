@@ -85,7 +85,7 @@ const sansFont = Inter({ variable: "--font-sans", subsets: ["latin"], display: "
 const siteUrl = SITE_URL;
 const defaultTitle = "HoopCheck™ | Basketball Teams, Players & Reviews";
 const defaultDescription = "Discover professional basketball teams, leagues, coaches and players worldwide. Explore live games and firsthand player reviews. Join HoopCheck™ for free.";
-const socialImage = "/hoopcheck-logo.svg";
+const socialImage = "/icons/hoopcheck-512.png";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

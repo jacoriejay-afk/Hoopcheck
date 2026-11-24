@@ -1,7 +1,8 @@
 import { useMotionSetting } from "../src/motion/Provider";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { BrandMark } from "./BrandLockup";
 import { LinearGradient } from "expo-linear-gradient";
-import { View, type ViewStyle } from "react-native";
+import { Text, View, type ViewStyle } from "react-native";
 import Animated, { cancelAnimation, FadeIn, useAnimatedStyle, useSharedValue, withRepeat, withTiming, type SharedValue } from "react-native-reanimated";
 import { motion } from "../src/motion/config";
 import { useEntryTheme } from "../src/theme";
@@ -24,7 +25,7 @@ function Bone({ style }: { style: ViewStyle }) {
 }
 
 // Reserved footprint exists immediately; shimmer starts only after the delay.
-export function Skeleton({ profile = false, review = false }: { profile?: boolean; review?: boolean }) {
+export function Skeleton({ profile = false, review = false, branded = false }: { profile?: boolean; review?: boolean; branded?: boolean }) {
   const theme = useEntryTheme();
   const reduced = useMotionSetting();
   const [visible, setVisible] = useState(false);
@@ -37,6 +38,10 @@ export function Skeleton({ profile = false, review = false }: { profile?: boolea
   }, [visible, reduced, progress]);
   return <View accessibilityLabel="Loading content" accessibilityRole="progressbar" style={{ padding: profile ? 0 : 16 }}>
     <View style={{ opacity: visible ? 1 : 0 }}><Shimmer.Provider value={progress}>
+      {branded && <View accessible={false} importantForAccessibility="no-hide-descendants" style={{ height: 42, marginBottom: 10, flexDirection: "row", alignItems: "center", gap: 8 }}>
+        {visible && <BrandMark size={34} animated />}
+        <Text style={{ color: theme.muted, fontSize: 13 }}>Loading HoopCheck…</Text>
+      </View>}
       {profile && <View style={{ gap: 12, marginBottom: 26 }}><Bone style={{ width: 66, height: 66 }} /><Bone style={{ width: "70%", height: 32 }} /><Bone style={{ width: "45%", height: 18 }} /></View>}
       {Array.from({ length: review ? 1 : profile ? 2 : 5 }, (_, index) => <View key={index} style={{ flexDirection: "row", gap: 12, padding: 14, marginBottom: 10, minHeight: review ? 120 : 100, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, borderRadius: 12 }}>
         {!profile && !review && <Bone style={{ width: 44, height: 44 }} />}

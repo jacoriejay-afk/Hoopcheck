@@ -20,14 +20,15 @@ export default function Logo({
 }: LogoProps) {
   return (
     <span className={`hc-logo hc-logo--${variant} ${className}`.trim()} aria-label={title} role="img">
-      <svg className="hc-logo__icon" viewBox="0 0 100 100" width={size} height={size}
-        aria-hidden="true" focusable="false" fill="none" stroke="currentColor"
-        strokeLinecap="square" strokeLinejoin="miter" {...props}>
-        <path d="M50 5 88 27v35L97 51 78 82 50 96 12 74V27Z" strokeWidth="5.2" />
-        <circle cx="49" cy="49" r="25" strokeWidth="3.4" />
-        <path d="M25 46c15-13 34-13 49-4M27 32c12 17 26 15 44 5M50 24c-13 19-14 41-3 50M49 24c-4 18-2 39 10 49M26 58c14-15 30-12 47 8" strokeWidth="2.8" />
-        <path className="hc-logo__check" d="m47 60 14 11 34-42" stroke="currentColor"
-          strokeWidth="7" strokeLinecap="square" strokeLinejoin="miter" />
+      <svg className="hc-logo__icon" viewBox="190 240 720 750" width={size} height={size}
+        aria-hidden="true" focusable="false" fill="none" {...props}>
+        <path d="M505 260 775 426 775 545 732 582 732 451 505 313 260 458 260 764 496 913 706 779 501 971 215 793 215 430Z" fill="currentColor" stroke="none" />
+        <ellipse cx="495" cy="606" rx="200" ry="208" fill="none" stroke="currentColor" strokeWidth={15} />
+        <path d="M360 450 C418 548 510 510 633 458" fill="none" stroke="currentColor" strokeWidth={14} strokeLinecap="round" />
+        <path d="M505 399 C423 507 418 676 497 813" fill="none" stroke="currentColor" strokeWidth={14} strokeLinecap="round" />
+        <path d="M298 610 C382 527 570 544 693 621" fill="none" stroke="currentColor" strokeWidth={14} strokeLinecap="round" />
+        <path d="M353 756 C337 662 391 595 451 619 C526 622 565 714 636 756" fill="none" stroke="currentColor" strokeWidth={14} strokeLinecap="round" />
+        <path className="hc-owner-brand-arrow" d="M891 486 781 793 510 971 743 760 790 630 635 766 671 668Z" fill="#FF6A00" stroke="none" />
       </svg>
       {variant === "full" && (
         <svg className={`hc-logo__official-wordmark ${wordmarkClassName}`.trim()}

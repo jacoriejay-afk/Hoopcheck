@@ -1,12 +1,10 @@
 import { GlassCard, Button } from "../src/primitives";
 import { useRouter } from "expo-router";
-import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEntryTheme } from "../src/theme";
 
-// Metro uses a static asset reference for native image bundling.
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const hoopcheckMark = require("../assets/hoopcheck-mark.png");
+import { BrandLockup } from "../components/BrandLockup";
 
 export default function WelcomeScreen() {
   const theme = useEntryTheme();
@@ -17,7 +15,7 @@ export default function WelcomeScreen() {
       <ScrollView contentContainerStyle={styles.scroll}>
         <GlassCard style={styles.content}>
           <View style={styles.brand}>
-            <Image alt="HoopCheck" accessibilityLabel="HoopCheck" source={hoopcheckMark} style={styles.mark} />
+            <BrandLockup size={54} animated />
 
           </View>
           <Text accessibilityRole="header" style={[theme.type.display, styles.headline, { color: theme.foreground }]}>
@@ -39,7 +37,6 @@ const styles = StyleSheet.create({
   scroll: { flexGrow: 1, justifyContent: "center", padding: 24 },
   content: { width: "100%", maxWidth: 520, alignSelf: "center", gap: 12 },
   brand: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 12, marginBottom: 20 },
-  mark: { width: 48, height: 48, },
   headline: {},
   description: { fontSize: 17, lineHeight: 25, marginBottom: 16 },
   action: { minHeight: 52, padding: 14, alignItems: "center", justifyContent: "center" },

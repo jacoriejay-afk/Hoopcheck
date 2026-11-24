@@ -1,9 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="HoopCheck basketball check icon">
-<rect width="512" height="512" rx="82" fill="#F7F7F5"/>
-<g fill="none" stroke="#0A0A0A" stroke-linecap="square" stroke-linejoin="miter">
-<path d="M256 28 448 140v208L256 484 64 348V140Z" stroke-width="18"/>
-<circle cx="250" cy="250" r="122" stroke-width="12"/>
-<path d="M128 250h244M250 128c-48 50-48 194 0 244M250 128c48 50 48 194 0 244M163 162c60 35 112 119 174 176M337 162c-60 35-112 119-174 176" stroke-width="10"/>
-</g>
-<path d="m250 298 45 40 165-194-56 6-112 129-32-28Z" fill="#FF5A1F" stroke="#F7F7F5" stroke-width="5" stroke-linejoin="miter"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="HoopCheck app icon"><rect width="1024" height="1024" rx="0" fill="#080808"/><g transform="translate(152 132) scale(1) translate(-190 -240)"><path d="M505 260 775 426 775 545 732 582 732 451 505 313 260 458 260 764 496 913 706 779 501 971 215 793 215 430Z" fill="#F4F4F4" stroke="none"/><ellipse cx="495" cy="606" rx="200" ry="208" fill="none" stroke="#F4F4F4" stroke-width="15"/><path d="M360 450 C418 548 510 510 633 458" fill="none" stroke="#F4F4F4" stroke-width="14" stroke-linecap="round"/><path d="M505 399 C423 507 418 676 497 813" fill="none" stroke="#F4F4F4" stroke-width="14" stroke-linecap="round"/><path d="M298 610 C382 527 570 544 693 621" fill="none" stroke="#F4F4F4" stroke-width="14" stroke-linecap="round"/><path d="M353 756 C337 662 391 595 451 619 C526 622 565 714 636 756" fill="none" stroke="#F4F4F4" stroke-width="14" stroke-linecap="round"/><path d="M891 486 781 793 510 971 743 760 790 630 635 766 671 668Z" fill="#FF6A00" stroke="none"/></g></svg>

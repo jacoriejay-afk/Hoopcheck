@@ -101,3 +101,45 @@
   .hc-player-profile-completion { align-items: stretch; padding: 14px; }
   .hc-player-profile-completion .btn { width: 100%; justify-content: center; }
 }
+
+/* Owner brand reveal: decorative only, never a loading gate. */
+@media (prefers-reduced-motion: no-preference) {
+  .hc-brand-loader .hc-logo__icon { animation: hc-owner-mark-reveal 500ms cubic-bezier(.2,.75,.25,1) both; transform-origin: center; }
+  .hc-brand-loader .hc-owner-brand-arrow { animation: hc-owner-arrow-reveal 380ms 80ms cubic-bezier(.2,.75,.25,1) both; transform-box: fill-box; transform-origin: center; }
+}
+@keyframes hc-owner-mark-reveal { from { opacity: .3; transform: scale(.94); } to { opacity: 1; transform: scale(1); } }
+@keyframes hc-owner-arrow-reveal { from { opacity: 0; transform: translate(-4px,4px); } to { opacity: 1; transform: translate(0,0); } }
+
+/* Court Pulse: local decorative vector, no layout growth or continuous extra loop. */
+.hc-owner-court { position: absolute; inset: 20%; width: 60%; height: 60%; pointer-events: none; stroke: #ff6a00; stroke-width: 1.5; opacity: .3; }
+@media (prefers-reduced-motion: no-preference) {
+  .hc-owner-court { animation: hc-owner-court-pulse 900ms ease-out 1 both; }
+}
+@keyframes hc-owner-court-pulse { 0% { opacity: .12; transform: scale(.92); } 55% { opacity: .75; } 100% { opacity: .3; transform: scale(1); } }
+
+.hc-owner-community-title { display: flex; align-items: center; gap: .35em; }
+.hc-owner-community-icon { display: inline-flex; width: .95em; height: .95em; flex: 0 0 auto; color: #ff6a00; }
+.hc-owner-community-icon svg { width: 100%; height: 100%; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+.hc-owner-tier--premium::after { content: ""; display: block; width: 100%; max-width: 5rem; height: 2px; background: linear-gradient(90deg,#c45100,#ff9a4d,#ff6a00); transform-origin: left; }
+.hc-owner-tier--pro::after { content: ""; display: block; width: 2.5rem; height: 2px; background: currentColor; opacity: .5; transform-origin: left; }
+@media (prefers-reduced-motion: no-preference) {
+  .hc-owner-community-icon { animation: hc-owner-icon-reveal 380ms ease-out 1 both; }
+  .hc-owner-tier::after { animation: hc-owner-tier-reveal 520ms ease-out 1 both; }
+  .hc-owner-game-night .hc-live-badge--visible > span { display: inline-block; animation: hc-owner-game-reveal 700ms ease-out 1 both; }
+  .hc-owner-verified-reveal { animation: hc-owner-icon-reveal 420ms ease-out 1 both; }
+}
+@keyframes hc-owner-icon-reveal { from { opacity: .4; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes hc-owner-tier-reveal { from { opacity: 0; transform: scaleX(.1); } to { opacity: 1; transform: scaleX(1); } }
+@keyframes hc-owner-game-reveal { from { opacity: .35; transform: scale(.8); } 60% { opacity: 1; transform: scale(1.15); } to { opacity: 1; transform: scale(1); } }
+@media print { .hc-owner-verified-reveal { animation: none !important; opacity: 1; transform: none; } }
+
+/* Presentation-only watermarks: never export protected media or intercept controls. */
+.hc-owner-watermarked-media { position: relative; min-width: 0; max-width: 100%; }
+.hc-owner-media-watermark { position: absolute; top: 8px; right: 8px; z-index: 1; display: inline-flex; gap: 4px; align-items: center; padding: 3px 6px; border-radius: 8px; background: rgba(8,8,8,.78); color: #f4f4f4; font: 700 11px/1.2 system-ui,sans-serif; pointer-events: none; }
+.hc-owner-media-watermark img { display: block; width: 20px; height: 20px; object-fit: contain; border-radius: 0 !important; }
+.hc-reel-video > .hc-owner-watermarked-media { width: 100%; height: 100%; display: grid; place-items: center; min-height: 0; }
+.hc-reel-video > .hc-owner-watermarked-media > video { min-height: 0; }
+.hc-feed-media-area .hf5-carousel .hc-owner-media-watermark { right: auto; left: 8px; }
+@media (prefers-reduced-motion: no-preference) { .hc-owner-achievement-reveal { animation: hc-owner-achievement 520ms cubic-bezier(.2,.75,.25,1) 1 both; transform-origin: center; } }
+@keyframes hc-owner-achievement { 0% { opacity: .45; transform: scale(.92); } 65% { opacity: 1; transform: scale(1.05); } 100% { opacity: 1; transform: scale(1); } }
+@media print { .hc-owner-achievement-reveal { animation: none !important; opacity: 1; transform: none; } }

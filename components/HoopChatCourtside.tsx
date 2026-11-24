@@ -297,7 +297,7 @@ export default function HoopChatCourtside(){
     "hc-courtside--"+appearance.density,"hc-courtside--"+appearance.scale,
     "hc-courtside--"+appearance.accent].join(" ")} aria-label="HoopChat Courtside messaging">
     <div className="hc-courtside-top">
-      <div><p className="eyebrow">HOOPCHAT · COURTSIDE</p><h2>HoopChat<span>.</span></h2>
+      <div><p className="eyebrow">HOOPCHAT · COURTSIDE</p><h2 className="hc-owner-community-title"><span className="hc-owner-community-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M4 7h24v15H15l-7 6v-6H4Z"/><path d="M10 14h12M10 17h8"/></svg></span>HoopChat<span>.</span></h2>
         <p>Private messages and requests. Contacts must accept before chatting.</p></div>
       <div className="hc-courtside-top-actions">
         {totalUnread>0&&<span className="hc-courtside-unread" aria-label={totalUnread+" unread on this device"}>{totalUnread} new</span>}

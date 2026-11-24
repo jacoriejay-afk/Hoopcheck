@@ -9,6 +9,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { DevicePreferences } from "../src/native/preferences";
 import { NetworkProvider } from "../src/native/network";
 import { MotionProvider } from "../src/motion/Provider";
+import { BrandLockup } from "../components/BrandLockup";
 import { AppLock } from "../components/AppLock";
 import { TabBar } from "../components/TabBar";
 import { RouteFade } from "../components/RouteFade";
@@ -114,6 +115,7 @@ function RootLayout() {
         <Stack.Screen name="reset-password" options={{ title: "Choose new password" }} />
         <Stack.Screen name="dashboard" options={{
           title: "HoopCheck™",
+          headerTitle: () => <BrandLockup size={30} />,
           headerStyle: { backgroundColor: theme.background },
           headerTitleStyle: { fontWeight: "800", color: theme.foreground },
           headerTintColor: theme.accent,
