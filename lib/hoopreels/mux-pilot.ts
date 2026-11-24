@@ -26,7 +26,7 @@ export async function muxPilotCatalog(env: NodeJS.ProcessEnv, viewer: string, fe
     }
     const kid = env.MUX_SIGNING_KEY_ID, pem = env.MUX_SIGNING_PRIVATE_KEY, tokenId = env.MUX_TOKEN_ID, tokenSecret = env.MUX_TOKEN_SECRET;
     if (!validId(kid) || !pem || !tokenId || !tokenSecret) return disabled();
-    const key = createPrivateKey(Buffer.from(pem, "base64"));
+    const key = createPrivateKey(pem.includes("-----BEGIN") ? pem.replaceAll("\\n", "\n") : Buffer.from(pem, "base64"));
     if (key.asymmetricKeyType !== "rsa" || (key.asymmetricKeyDetails?.modulusLength || 0) < 2048) return disabled();
     const authorization = "Basic " + Buffer.from(tokenId + ":" + tokenSecret).toString("base64");
     const exp = Math.floor(now / 1000) + 900;
