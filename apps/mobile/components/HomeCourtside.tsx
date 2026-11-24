@@ -190,8 +190,8 @@ export function HomeCourtside() {
       {!gameAccess?<Text style={{color:t.muted,fontSize:12}}>Game Center requires an eligible membership.</Text>:
         data.games===null?<Text accessibilityRole="alert" style={{color:t.muted}}>Scores could not load.</Text>:
         !previewGames.length?<Text style={{color:t.muted,fontSize:12}}>No live or upcoming games. See Game Center for past results.</Text>:
-        previewGames.map(game=><Pressable accessibilityRole="button" key={game.id} style={({pressed})=>({minHeight:44,paddingVertical:8,borderBottomWidth:1,borderColor:t.border,opacity:pressed?.72:1})} onPress={()=>router.push({pathname:"/fan-live",params:{gameId:game.id}})}>
-          <Scoreboard game={game} teams={data.games!.teams} nowMs={clockMs}/>
+        previewGames.map((game, index)=><Pressable accessibilityRole="button" key={game.id} style={({pressed})=>({minHeight:44,paddingVertical:8,borderBottomWidth:1,borderColor:t.border,opacity:pressed?.72:1})} onPress={()=>router.push({pathname:"/fan-live",params:{gameId:game.id}})}>
+          <Scoreboard game={game} teams={data.games!.teams} nowMs={clockMs} featured={index === 0} active={active}/>
         </Pressable>)}
       <ArenaHeading title="FROM HOOPFEED" cta="Open" onPress={()=>router.push("/feed")}/>
       {!feedAccess?<Text style={{color:t.muted,fontSize:12}}>Community posts require an eligible membership.</Text>:
