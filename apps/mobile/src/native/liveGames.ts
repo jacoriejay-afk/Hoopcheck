@@ -182,3 +182,8 @@ export async function pickGameWinner(origin: string, token: string, gameId: stri
     if (!response.ok || data.ok !== true || data.picked_team_id !== teamId) throw new Error(response.status === 409 ? "Picks are locked at tip-off." : "Pick could not be confirmed. Try again.");
   } finally { timer.clear(); }
 }
+
+/** Predictions are only actionable for two distinct mapped teams before tip-off. */
+export function predictionMatchupReady(game: Pick<LiveGame,"team_id"|"opponent_team_id">) {
+  return uuid.test(game.team_id) && typeof game.opponent_team_id === "string" && uuid.test(game.opponent_team_id) && game.team_id.toLowerCase() !== game.opponent_team_id.toLowerCase();
+}
