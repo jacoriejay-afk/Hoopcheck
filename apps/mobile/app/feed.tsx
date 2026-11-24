@@ -96,7 +96,8 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 30000); return () => clearInterval(timer); }, []);
   const load = useCallback(async (cursor?: FeedCursor) => {
-    if (!uid || !canRead) return;
+    // Dedicated Reel streaming remains disabled until provider and moderation acceptance.
+    if (!uid || !canRead || reels) return;
     const current = ++generation.current;
     setLoading(true); setLoadError("");
     try {
@@ -126,11 +127,11 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
   }, [uid, canRead, reels, linkedId, scope]);
   useEffect(() => {
     setRows({ scope, posts: [] }); setNext(null); setChecks({}); setSaved({}); setOpenComments({}); setMessage("");
-    if (canRead) void load(); else setLoading(false);
+    if (canRead && !reels) void load(); else setLoading(false);
     // This is an async request generation counter, not a mounted node reference.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     return () => { generation.current++; };
-  }, [canRead, load, scope]);
+  }, [canRead, load, scope, reels]);
   async function token() {
     await requireOnline();
     const { data, error } = await supabase.auth.getSession();
@@ -220,7 +221,11 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
       <View accessibilityRole="tablist" style={{ flex: 1, flexDirection: "row", gap: 6 }}>{[false, true].map(value => <Pressable key={String(value)} accessibilityRole="tab" accessibilityLabel={value ? "Reels" : "HoopFeed"} accessibilityState={{ selected: reels === value }} aria-selected={reels === value} onPress={() => setReels(value)} style={[touch, { backgroundColor: reels === value ? theme.surface : theme.background, borderColor: reels === value ? theme.accent : theme.border }]}><View accessible={false} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden><CommunityWordmark reels={value} size={18} /></View></Pressable>)}</View>
       {message || loadError ? <Text accessibilityLiveRegion="polite" style={{ color: theme.muted }}>{loadError || message}</Text> : null}
     </View>
-    <FlatList key={reels ? "reels" : "posts"} style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 16, gap: reels ? 0 : 14 }} keyboardShouldPersistTaps="handled" initialNumToRender={reels ? 2 : 4} maxToRenderPerBatch={reels ? 2 : 4} windowSize={reels ? 3 : 5} pagingEnabled={reels} decelerationRate={reels ? "fast" : "normal"} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
+    {reels ? <View testID="hoopreels-provider-hold" style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 12, padding: 24 }}>
+      <Text accessibilityRole="header" style={{ ...textStyle, fontSize: 22, fontWeight: "800" }}>HoopReels</Text>
+      <Text style={{ color: theme.muted, textAlign: "center" }}>HoopReels is not available yet.</Text>
+      <Button secondary onPress={() => setReels(false)}>Back to HoopFeed</Button>
+    </View> : <FlatList key={reels ? "reels" : "posts"} style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 16, gap: reels ? 0 : 14 }} keyboardShouldPersistTaps="handled" initialNumToRender={reels ? 2 : 4} maxToRenderPerBatch={reels ? 2 : 4} windowSize={reels ? 3 : 5} pagingEnabled={reels} decelerationRate={reels ? "fast" : "normal"} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
       ListHeaderComponent={!reels ? <View style={{ marginBottom: 12 }}>
         {!composerExpanded ? <Pressable accessibilityRole="button" accessibilityLabel="Create HoopFeed post" disabled={!canWrite} onPress={() => setComposerExpanded(true)} style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 18, backgroundColor: theme.surface }}>
           <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: "#171717", alignItems: "center", justifyContent: "center" }}><Text style={{ color: "#FF8A5C", fontWeight: "900", fontSize: 12 }}>HC</Text></View><Text style={{ color: theme.muted, fontSize: 14 }}>Share something…</Text>
@@ -286,7 +291,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
         </View></View>;
       }}
       ListFooterComponent={next ? <View style={{ padding: 16 }}><Button secondary disabled={loading} onPress={() => void load(next)}>{loading ? "Loading…" : "Load more"}</Button></View> : null}
-    />
+    />}
   </SafeAreaView>;
 }
 export default function FeedRoute() { return <FeedScreen />; }
