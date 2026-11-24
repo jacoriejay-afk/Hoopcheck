@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { GET as bootstrap } from "../../mobile/bootstrap/route";
-import { curatedReelCatalog } from "../../../../lib/hoopreels/video-source";
+import { muxPilotCatalog } from "../../../../lib/hoopreels/mux-pilot";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 const reply = (body: unknown, status = 200) => NextResponse.json(body, { status, headers: { "Cache-Control": "private, no-store" } });
 
 /** A curated, read-only catalog linked to existing approved feed_posts.
@@ -18,7 +19,7 @@ export async function GET(request: Request) {
     if (!access.ok) return reply({ error: "Account access could not be verified." }, access.status);
     const account = await access.json();
     if (account?.entitlements?.canReadHoopFeed !== true || typeof account?.user?.id !== "string") return reply({ error: "Membership required." }, 403);
-    const catalog = curatedReelCatalog(process.env.HOOPREELS_STREAMING_PROVIDER, process.env.HOOPREELS_ADMIN_HLS_CATALOG);
+    const catalog = await muxPilotCatalog(process.env, account.user.id);
     if (!catalog.configured || !catalog.assets.length) return reply({ configured: catalog.configured, posts: [] });
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL, key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
     if (!url || !key) return reply({ error: "Reels unavailable." }, 503);
