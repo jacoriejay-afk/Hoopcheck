@@ -1,9 +1,8 @@
 import { BlurView } from "expo-blur";
 import { GlassView, isGlassEffectAPIAvailable, isLiquidGlassAvailable } from "expo-glass-effect";
-import { LinearGradient } from "expo-linear-gradient";
 import { useMotionSetting } from "../src/motion/Provider";
-import { useEffect, useRef, useState } from "react";
-import { AccessibilityInfo, Platform, StyleSheet, Keyboard, Pressable, Text, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AccessibilityInfo, Platform, StyleSheet, Keyboard, PanResponder, Pressable, Text, View } from "react-native";
 import { usePathname, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -59,7 +58,7 @@ export function TabBar() {
   const reduced = useMotionSetting();
   const pending = useRef<string | null>(null);
   const [width, setWidth] = useState(0);
-  const index = path === "/reels" || path === "/fan-feed" ? 1 : tabs.findIndex(tab => path === tab.route || path.startsWith(tab.route + "/"));
+  const index = path === "/reels" || path === "/fan-feed" ? 1 : path === "/messages" ? 3 : tabs.findIndex(tab => path === tab.route || path.startsWith(tab.route + "/"));
   const x = useSharedValue(0);
   const opacity = useSharedValue(1);
   useEffect(() => {
@@ -71,32 +70,44 @@ export function TabBar() {
     // Haptic runs only after navigation reaches its target.
   }, [index, path, reduced, width, haptic, x, opacity]);
   const indicator = useAnimatedStyle(() => ({ transform: [{ translateX: x.get() }], opacity: opacity.get() }));
+  // PanResponder registers callbacks; pending.current is written only on gesture release.
+  // eslint-disable-next-line react-hooks/refs
+  const slide = useMemo(() => PanResponder.create({
+    onMoveShouldSetPanResponderCapture: (_event, g) => width > 0 && index >= 0 && Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+    onPanResponderMove: (_event, g) => {
+      if (!reduced) x.set(Math.max(0, Math.min(4 * width / tabs.length, index * width / tabs.length + g.dx)));
+    },
+    onPanResponderRelease: (_event, g) => {
+      if (width <= 0 || index < 0) return;
+      const segment = width / tabs.length;
+      const destination = Math.max(0, Math.min(tabs.length - 1, index + Math.round(g.dx / segment)));
+      x.set(reduced ? destination * segment : withSpring(destination * segment, motion.spring));
+      if (destination !== index) { pending.current = tabs[destination].route; router.navigate(tabs[destination].route); }
+    },
+    onPanResponderTerminate: () => x.set(Math.max(0, index) * width / tabs.length),
+  }), [width, index, reduced, x, router]);
   if (keyboardVisible) return null;
   if (["/", "/sign-in", "/sign-up", "/forgot-password", "/reset-password", "/auth/callback", "/choose-username"].includes(path)) return null;
   const translucent = Platform.OS === "ios" && !reduceTransparency;
   const nativeGlass = translucent && isGlassEffectAPIAvailable() && isLiquidGlassAvailable();
   const activeWidth = width > 0 ? width / tabs.length : 0;
-  return <View onLayout={event => setWidth(event.nativeEvent.layout.width)} style={{
+  return <View testID="native-tab-bar" onLayout={event => setWidth(event.nativeEvent.layout.width)} style={{
       marginHorizontal: 20 + Math.max(insets.left, insets.right),
       marginBottom: Math.max(9, insets.bottom), borderRadius: 31,
       borderCurve: "continuous", overflow: "hidden",
-      backgroundColor: translucent ? theme.glassFill : (theme.dark ? "#111923" : "#F6F8FD"),
+      backgroundColor: translucent ? "transparent" : theme.surface,
       borderWidth: 1, borderColor: theme.dark ? "rgba(255,255,255,.24)" : "rgba(30,42,70,.16)",
       shadowColor: "#000", shadowOffset: { width: 0, height: 14 },
       shadowOpacity: theme.dark ? .42 : .16, shadowRadius: 24, elevation: 12,
     }}>
-    {nativeGlass ? <GlassView pointerEvents="none" accessible={false} glassEffectStyle="regular"
-      tintColor={theme.dark ? "#161B29" : "#F3F6FC"} style={[StyleSheet.absoluteFill, { borderRadius: 31 }]} /> :
+    {nativeGlass ? <GlassView pointerEvents="none" accessible={false} glassEffectStyle="clear" style={[StyleSheet.absoluteFill, { borderRadius: 31 }]} /> :
       translucent ? <BlurView pointerEvents="none" accessible={false} intensity={65}
         tint={theme.dark ? "dark" : "light"} style={StyleSheet.absoluteFill} /> : null}
-    <LinearGradient pointerEvents="none" accessible={false} style={StyleSheet.absoluteFill}
-      colors={theme.dark ? ["rgba(255,255,255,.11)", "rgba(255,255,255,.02)"] : ["rgba(255,255,255,.77)", "rgba(242,242,247,.36)"]}
-      start={{ x: 0, y: 0 }} end={{ x: .2, y: 1 }} />
     {index >= 0 && activeWidth > 0 ? <Animated.View pointerEvents="none" style={[{
       position: "absolute", left: Math.max(0, (activeWidth - 18) / 2), bottom: 2,
       width: 18, height: 3, borderRadius: 3, backgroundColor: theme.accent,
     }, indicator]} /> : null}
-    <View accessibilityRole="tablist" style={{ flexDirection: "row", paddingVertical: 4 }}>
+    <View {...slide.panHandlers} accessibilityRole="tablist" style={{ flexDirection: "row", paddingVertical: 4 }}>
       {tabs.map((tab, i) => {
         const selected = index === i;
         const label = tab.label;

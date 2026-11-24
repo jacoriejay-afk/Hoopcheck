@@ -60,6 +60,7 @@ function screen(path, { state = [], params = {}, segments = [], pathname = "/", 
     if (name.endsWith("/native/telemetry")) return { traceFlow: (_, fn) => fn(), Sentry: { wrap: component => component } };
     if (name.endsWith("/Onboarding")) return { Onboarding: "Onboarding" };
     if (name.endsWith("/AppLock")) return { AppLock: "AppLock" };
+    if (name.endsWith("/NativePageHeader")) return { NativePageHeader: "NativePageHeader" };
     if (name.endsWith("/TabBar")) return { TabBar: "TabBar" };
     if (name.endsWith("/RouteFade")) return { RouteFade: "RouteFade" };
     if (/\.(png|ttf)$/.test(name)) return 1;

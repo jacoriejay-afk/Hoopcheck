@@ -1,3 +1,4 @@
+import { EntitySchedule } from "../../components/EntitySchedule";
 import { LeagueClubs } from "../../components/EntityCompetition";
 import { EntityHero } from "../../components/EntityHero";
 import { DirectoryCrest } from "../../components/DirectoryIdentity";
@@ -7,8 +8,8 @@ import { OfflineBanner } from "../../components/OfflineBanner";
 import { Skeleton } from "../../components/Motion";
 import { useEntryTheme, type EntryTheme } from "../../src/theme";
 import { useEffect, useState } from "react";
-import { Alert, Linking, Pressable, ScrollView, RefreshControl, StyleSheet, Text, View } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Alert, Linking, ScrollView, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../../src/lib/supabase";
 
@@ -19,7 +20,6 @@ function safeWebsite(value: string | null) { if (!value) return null; try { cons
 export default function LeagueDetailScreen() {
   const theme = useEntryTheme();
   const styles = createStyles(theme);
-  const router = useRouter();
   const { read, savedAt } = useCachedRead();
   const { revision, offline } = useNetwork();
   const [refreshing, setRefreshing] = useState(false);
@@ -79,12 +79,12 @@ export default function LeagueDetailScreen() {
     <SafeAreaView edges={["left", "right", "bottom"]} style={styles.safe}>
       <OfflineBanner savedAt={savedAt} />
       <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); setRefreshId(value => value + 1); }} />} contentContainerStyle={styles.content}>
-        <Pressable accessibilityRole="link" style={{ minHeight: 44, justifyContent: "center" }} onPress={() => router.back()}><Text style={styles.back}>‹ Back to leagues</Text></Pressable>
         {loading ? <Skeleton profile /> : error || !league ? (
           <View style={styles.empty}><Text style={styles.title}>League unavailable</Text><Text style={styles.body}>This league may have been removed or is not currently listed.</Text></View>
         ) : (
           <>
             <EntityHero name={league.name} country={league.country} kind="leagues" label="LEAGUE PROFILE" path={`/leagues/${league.id}`} />
+          <EntitySchedule scope={{ kind: "league", name: league.name, country: league.country }} side="mens" refresh={refreshId} />
             <View style={{marginTop:12,flexDirection:"row",alignItems:"center",gap:12}}>
               <DirectoryCrest name={league.name} kind="leagues" logoUrl={league.logo_url} size={70}/>
               <View style={{flex:1}}><Text style={{color:theme.foreground,fontWeight:"800"}}>{league.logo_url?"League logo URL on record":"League badge placeholder"}</Text>

@@ -72,11 +72,11 @@ export default function DashboardScreen() {
       {/* Pinned outside the scroll view: the logo and menu must never slide under
           the iPhone status bar / Dynamic Island as the Home feed scrolls. */}
       <View style={styles.pinnedHeader}>
-          <GlassSurface style={{borderRadius:24,borderWidth:1,
+          <GlassSurface navigation style={{borderRadius:24,borderWidth:1,
             borderColor:theme.dark?"rgba(255,135,67,.65)":"rgba(234,113,56,.7)",
             marginBottom:9,shadowColor:"#000",shadowOpacity:theme.dark?.35:.12,shadowRadius:16,
             shadowOffset:{width:0,height:8}}}>
-            <LinearGradient colors={theme.dark?["rgba(18,30,51,.65)","rgba(24,45,73,.55)","rgba(45,35,53,.45)"]:["rgba(255,255,255,.75)","rgba(255,245,235,.5)"]}
+            <LinearGradient colors={theme.dark?["rgba(18,30,51,.12)","rgba(24,45,73,.06)","rgba(45,35,53,.02)"]:["rgba(255,255,255,.10)","rgba(255,245,235,.03)"]}
               start={{x:0,y:0}} end={{x:1,y:1}} style={StyleSheet.absoluteFill}/>
             <View style={{minHeight:62,paddingHorizontal:13,paddingVertical:9,
               flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:8}}>
@@ -101,9 +101,9 @@ export default function DashboardScreen() {
               {label:"HoopChat",path:"/messages",icon:"chatbubbles-outline"},
               {label:"HoopGroups",path:"/hoopgroups",icon:"people-outline"},
               {label:"Settings",path:"/settings",icon:"settings-outline"},
-              {label:"Support",path:"/support",icon:"help-circle-outline"},
+              {label:"About HoopCheck",path:"/about",icon:"help-circle-outline"},
             ] as const).map(item=><Pressable key={item.path} accessibilityRole="menuitem"
-              accessibilityLabel={item.label} onPress={()=>{setMenuOpen(false); if(item.path==="/support") router.push({pathname:"/web",params:{path:"/support"}}); else if(item.path==="/messages") router.push({pathname:"/notifications",params:{tab:"chat"}}); else router.push(item.path);}}
+              accessibilityLabel={item.label} onPress={()=>{setMenuOpen(false); if(item.label==="HoopChat") router.push({pathname:"/notifications",params:{tab:"chat"}}); else router.push(item.path);}}
               style={({pressed})=>({flexDirection:"row",alignItems:"center",gap:10,minHeight:47,
                 paddingHorizontal:12,borderRadius:12,backgroundColor:pressed?theme.accentSurface:"transparent"})}>
               <Ionicons name={item.icon} size={19} color={theme.accent}/>

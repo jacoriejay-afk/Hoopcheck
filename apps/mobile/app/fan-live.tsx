@@ -20,7 +20,7 @@ type Games = Awaited<ReturnType<typeof readLiveGames>>;
 export default function LiveGames() {
   const theme = useEntryTheme();
   const router = useRouter();
-  const { gameId } = useLocalSearchParams<{ gameId?: string }>();
+  const { gameId, side: requestedSide } = useLocalSearchParams<{ gameId?: string; side?: string }>();
   const { account, loading: accountLoading, error: accountError, retry } = useNativeAccount();
   const { offline } = useNetwork();
   const active = useActiveScreen();
@@ -37,9 +37,9 @@ export default function LiveGames() {
   useEffect(() => {
     if (!allowed || !uid) { setSideChoice(null); return; }
     let valid = true;
-    void readBasketballSide(supabase, uid).then(value => { if (valid) setSideChoice({ owner: uid, side: value }); }).catch(() => { if (valid) setError("Game preferences could not load. Verify access again."); });
+    void readBasketballSide(supabase, uid).then(value => { if (valid) setSideChoice({ owner: uid, side: account?.features.canSwitchBasketballSide && (requestedSide === "mens" || requestedSide === "womens") ? requestedSide : value }); }).catch(() => { if (valid) setError("Game preferences could not load. Verify access again."); });
     return () => { valid = false; };
-  }, [allowed, uid]);
+  }, [allowed, uid, requestedSide, account?.features.canSwitchBasketballSide]);
   const viewer = useRef({ scope, allowed });
   useLayoutEffect(() => { viewer.current = { scope, allowed }; }, [scope, allowed]);
   const [snapshot, setSnapshot] = useState<{ scope: string; data: Games; checkedAtMs: number } | null>(null);

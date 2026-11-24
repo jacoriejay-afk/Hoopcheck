@@ -57,6 +57,6 @@ test("Home and Account HoopChat shortcuts deep-link to the Alerts conversation t
   assert.match(alerts, /useLocalSearchParams<\{ tab\?: string \}>\(\)/);
   assert.match(alerts, /tab === "chat" \? "chat" : tab === "requests" \? "requests"/);
   assert.match(alerts, /if \(tab === "chat" \|\| tab === "requests" \|\| tab === "activity"\) setSection\(tab\)/);
-  assert.match(home, /item\.path==="\/messages"\) router\.push\(\{pathname:"\/notifications",params:\{tab:"chat"\}\}\)/);
+  assert.match(home, /item\.label==="HoopChat"\) router\.push\(\{pathname:"\/notifications",params:\{tab:"chat"\}\}\)/);
   assert.match(account, /title="HoopChat · messages and requests"[^\n]*onPress=\{\(\)=>router\.push\(\{pathname:"\/notifications",params:\{tab:"chat"\}\}\)\}/);
 });

@@ -38,7 +38,7 @@ function AccountGroup({ children }: { children: ReactNode }) {
 function GroupLabel({ children }: { children: string }) {
   const t=useEntryTheme();
   return <Text accessibilityRole="header" style={{
-    color:t.muted,fontSize:11,fontWeight:"800",letterSpacing:1.1,
+    color:t.muted,fontSize:15,fontFamily:"HoopCheckDisplay",letterSpacing:1.1,
     textTransform:"uppercase",marginTop:4,marginBottom:-1,marginHorizontal:3,
   }}>{children}</Text>;
 }
@@ -80,7 +80,7 @@ export default function AccountScreen() {
   return <SafeAreaView edges={["top","left","right","bottom"]} style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{paddingHorizontal:15,paddingTop:9,paddingBottom:36,gap:12,maxWidth:680,width:"100%",alignSelf:"center"}}>
       <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between",marginBottom:1}}>
-        <Text accessibilityRole="header" style={{color:theme.foreground,fontSize:25,fontWeight:"900"}}>Your account</Text>
+        <Text accessibilityRole="header" style={{color:theme.foreground,fontSize:25,fontFamily:"HoopCheckDisplay"}}>Your account</Text>
         <Pressable accessibilityRole="button" accessibilityLabel="Refresh account" onPress={retry}
           style={{minWidth:44,minHeight:44,alignItems:"center",justifyContent:"center"}}>
           <Ionicons name="refresh-outline" size={22} color={theme.muted}/>
@@ -105,24 +105,22 @@ export default function AccountScreen() {
                 <Ionicons name="create-outline" size={17} color={theme.onButton}/>
                 <Text style={{color:theme.onButton,fontSize:13,fontWeight:"800"}}>Edit profile</Text>
               </Pressable>
-              <Pressable accessibilityRole="button" accessibilityLabel="View my profile" onPress={()=>router.push({pathname:"/players/[id]",params:{id:account.user.id}})}
-                disabled={account.user.accountType!=="player"}
+              {account.user.accountType === "player" ? <Pressable accessibilityRole="button" accessibilityLabel="View my profile" onPress={()=>router.push({pathname:"/players/[id]",params:{id:account.user.id}})}
                 style={({pressed})=>({flex:1,minHeight:44,borderRadius:13,alignItems:"center",justifyContent:"center",
                   flexDirection:"row",gap:7,borderWidth:1,borderColor:theme.glassBorder,
-                  opacity:account.user.accountType !== "player" ? .4 : pressed ? .76 : 1})}>
+                  opacity:pressed ? .76 : 1})}>
                 <Ionicons name="person-outline" size={17} color={theme.foreground}/>
                 <Text style={{color:theme.foreground,fontSize:13,fontWeight:"800"}}>My profile</Text>
-              </Pressable>
+              </Pressable> : null}
             </View>
           </LinearGradient>
         </View>
         <GroupLabel>My account</GroupLabel>
         <AccountGroup>
           <AccountRow icon="chatbubble-ellipses-outline" title="HoopChat · messages and requests" detail="Conversations and connections" onPress={()=>router.push({pathname:"/notifications",params:{tab:"chat"}})}/>
-          <AccountRow icon="notifications-outline" title="Basketball alerts" onPress={()=>router.push("/notifications")}/>
           <AccountRow icon="people-outline" title="Connections" onPress={()=>router.push("/connections")}/>
           {account.user.accountType==="player" ? <AccountRow icon="person-circle-outline" title="View public player profile"
-            detail="Open your basketball passport" onPress={()=>router.push({pathname:"/players/[id]",params:{id:account.user.id}})}
+            detail="Career history and Player Passport" onPress={()=>router.push({pathname:"/players/[id]",params:{id:account.user.id}})}
             last/> : null}
         </AccountGroup>
         <GroupLabel>Membership status</GroupLabel>
@@ -151,13 +149,13 @@ export default function AccountScreen() {
         <AccountRow icon="settings-outline" title="Device settings" onPress={()=>router.push("/settings")}/>
         <AccountRow icon="information-circle-outline" title="About HoopCheck" onPress={()=>router.push("/about")} last/>
       </AccountGroup>
-      <GroupLabel>Workspaces</GroupLabel>
-      <AccountGroup>
-        <AccountRow icon="globe-outline" title="Edit profile and manage account on HoopCheck" onPress={()=>router.push({pathname:"/web",params:{path:"/account"}})}/>
-        <AccountRow icon="shield-checkmark-outline" title="Owner HQ on website" onPress={()=>router.push({pathname:"/web",params:{path:"/owner-hq"}})}/>
-        <AccountRow icon="megaphone-outline" title="Ambassador HQ on website" onPress={()=>router.push({pathname:"/web",params:{path:"/ambassador-hq"}})} last/>
-      </AccountGroup>
-      <Text style={{color:theme.muted,fontSize:11,lineHeight:16,paddingHorizontal:4}}>Role workspaces remain on the authenticated website. Access requires an authorized website role.</Text>
+      {account?.user.accountType === "player" ? <>
+        <GroupLabel>Basketball tools</GroupLabel>
+        <AccountGroup>
+          <AccountRow icon="document-text-outline" title="Career Passport · My Journey" onPress={()=>router.push({ pathname: "/players/[id]", params: { id: account.user.id } })}/>
+          <AccountRow icon="star-outline" title="Find a team to review" onPress={()=>router.push("/teams")} last/>
+        </AccountGroup>
+      </> : null}
       <Pressable accessibilityRole="button" accessibilityLabel="Sign out of this device" disabled={signingOut}
         onPress={()=>void signOut()} style={{minHeight:48,alignItems:"center",justifyContent:"center",marginTop:4}}>
         <Text style={{color:theme.accent,fontWeight:"800"}}>{signingOut?"Signing out…":"Sign out of this device"}</Text>

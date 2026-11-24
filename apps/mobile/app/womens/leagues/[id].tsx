@@ -1,3 +1,4 @@
+import { EntitySchedule } from "../../../components/EntitySchedule";
 import { useEffect, useRef, useState } from "react";
 import { FlatList, Pressable, RefreshControl, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -69,9 +70,9 @@ export default function WomensLeagueScreen() {
     <FlatList data={visible ? teams : []} keyExtractor={item => item.id} contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.md }}
       refreshControl={<RefreshControl refreshing={loading && refresh > 0} onRefresh={() => setRefresh(value => value + 1)} />}
       ListHeaderComponent={<View style={{ gap: 16, marginBottom: 16 }}>
-        <Pressable accessibilityRole="link" onPress={() => router.push("/womens")} style={{ minHeight: 48, justifyContent: "center" }}><Text style={{ color: theme.accent }}>‹ Women’s teams</Text></Pressable>
         {visible ? <>
           <EntityHero name={visible.name} country={visible.country} kind="leagues" label="WOMEN’S LEAGUE PROFILE" path={`/womens/leagues/${visible.id}`} />
+          <EntitySchedule scope={{ kind: "league", name: visible.name, country: visible.country }} side="womens" refresh={refresh} />
           <GlassCard><Text style={{ color: theme.muted, fontSize: 11, fontWeight: "800", letterSpacing: 1 }}>COMPETITION LEVEL</Text><Text style={{ color: theme.foreground, fontSize: 16, fontWeight: "700", marginTop: 7 }}>{visible.level || "Not listed"}</Text></GlassCard>
           <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 22, fontWeight: "800" }}>Teams</Text>
         </> : loading ? <Skeleton profile /> : <Text style={{ color: theme.foreground }}>League unavailable.</Text>}
