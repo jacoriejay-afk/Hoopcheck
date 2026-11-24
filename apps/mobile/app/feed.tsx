@@ -107,7 +107,9 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 30000); return () => clearInterval(timer); }, []);
   const load = useCallback(async (cursor?: FeedCursor) => {
-    if (!uid || !canRead) return;
+    // The legacy storage-video list is not an approved HoopReels streaming source.
+    // Keep this mode fail-closed until the provider-backed viewer is integrated.
+    if (!uid || !canRead || reels) return;
     const current = ++generation.current;
     setLoading(true); setLoadError("");
     try {
@@ -137,11 +139,11 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
   }, [uid, canRead, reels, linkedId, scope]);
   useEffect(() => {
     setRows({ scope, posts: [] }); setNext(null); setChecks({}); setCheckPulses({ scope, values: {} }); setSaved({}); setOpenComments({}); setMessage("");
-    if (canRead) void load(); else setLoading(false);
+    if (canRead && !reels) void load(); else setLoading(false);
     // This is an async request generation counter, not a mounted node reference.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     return () => { generation.current++; };
-  }, [canRead, load, scope]);
+  }, [canRead, load, scope, reels]);
   async function token() {
     await requireOnline();
     const { data, error } = await supabase.auth.getSession();
@@ -275,7 +277,12 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
     </GlassSurface>
     {message || loadError ? <Text accessibilityLiveRegion="polite"
       style={{ color: theme.muted, paddingHorizontal: 18 }}>{loadError || message}</Text> : null}
-    <FlatList key={reels ? "reels" : "posts"} keyboardDismissMode="on-drag" style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 9, gap: reels ? 0 : 8 }} keyboardShouldPersistTaps="handled" initialNumToRender={reels ? 2 : 4} maxToRenderPerBatch={reels ? 2 : 4} windowSize={reels ? 3 : 5} pagingEnabled={reels} getItemLayout={reels && height > 0 ? (_items, index) => ({ length: height, offset: height * index, index }) : undefined} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
+    {reels ? <View testID="hoopreels-provider-hold" style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 12, padding: 24 }}>
+      <Ionicons name="play-circle-outline" size={36} color={theme.accent} />
+      <Text accessibilityRole="header" style={{ ...textStyle, fontSize: 22, fontWeight: "800" }}>HoopReels</Text>
+      <Text style={{ color: theme.muted, textAlign: "center" }}>HoopReels is not available yet.</Text>
+      <Button secondary onPress={() => setReels(false)}>Back to HoopFeed</Button>
+    </View> : <FlatList key={reels ? "reels" : "posts"} keyboardDismissMode="on-drag" style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 9, gap: reels ? 0 : 8 }} keyboardShouldPersistTaps="handled" initialNumToRender={reels ? 2 : 4} maxToRenderPerBatch={reels ? 2 : 4} windowSize={reels ? 3 : 5} pagingEnabled={reels} getItemLayout={reels && height > 0 ? (_items, index) => ({ length: height, offset: height * index, index }) : undefined} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
       ListHeaderComponent={!reels ? <View style={{ marginBottom: 2, gap: 7 }}>
         {!composerExpanded ? <Pressable accessibilityRole="button" accessibilityLabel="Create HoopFeed post" disabled={!canWrite} onPress={() => setComposerExpanded(true)} style={{ flexDirection: "row", alignItems: "center", gap: 9, padding: 9, borderWidth: 1, borderColor: theme.border, borderRadius: 15, backgroundColor: theme.elevatedSurface }}>
           <Ionicons name="create-outline" size={23} color={theme.accent} /><Text style={{ color: theme.muted, fontSize: 14 }}>Share a basketball update…</Text>
@@ -371,7 +378,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
         </View></View>;
       }}
       ListFooterComponent={next ? <View style={{ padding: 16 }}><Button secondary disabled={loading} onPress={() => void load(next)}>{loading ? "Loading…" : "Load more"}</Button></View> : null}
-    />
+    />}
   </SafeAreaView>;
 }
 export default function FeedRoute() { return <FeedScreen />; }
