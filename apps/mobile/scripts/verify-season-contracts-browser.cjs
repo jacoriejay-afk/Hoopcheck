@@ -12,6 +12,11 @@ async function verify(browser,theme){
   const json=(data,status=200)=>route.fulfill({status,contentType:'application/json',headers:{'access-control-allow-origin':'*','access-control-allow-headers':'*'},body:JSON.stringify(data)});
   if(req.method()==='OPTIONS')return json({});calls.push(u.pathname);
   if(u.hostname==='api.test'&&u.pathname==='/api/mobile/bootstrap')return json({user:{id:uid,displayName:'Season member',accountType:'player'},entitlements:{tier:'free',hasPaidMembership:false,canReadHoopFeed:false,canWriteHoopFeed:false,canUseLiveGameHub:false,canUseLiveGameChat:false,canSwitchBasketballSide:false,canUseFanGroups:false}});
+  if(u.hostname==='api.test'&&u.pathname==='/api/game-predictions'){
+   assert.equal(req.method(),'GET');assert.equal(req.headers().authorization,'Bearer '+token);
+   assert.deepEqual([...u.searchParams.entries()],[['mode','games']]);
+   return json({games:[]});
+  }
   if(u.hostname==='fixture.supabase.co'){
    const table=u.pathname.split('/').pop();
    if(u.pathname==='/auth/v1/user')return json(user);
@@ -45,7 +50,7 @@ async function verify(browser,theme){
   await page.goto(base+'/teams/'+current);await page.getByText('Roster research is unavailable in this release.',{exact:true}).scrollIntoViewIfNeeded();await require('./compact-layout.cjs').capture(page,{path:`${output}/default-roster-${theme}.png`,fullPage:true});
   await page.goto(base+'/players/'+uid);await page.getByText('Career history is unavailable in this release.',{exact:true}).scrollIntoViewIfNeeded();await page.getByText('Verified current link',{exact:true}).scrollIntoViewIfNeeded();await require('./compact-layout.cjs').capture(page,{path:`${output}/owner-team-links-${theme}.png`,fullPage:true});await page.getByRole('button',{name:'Preview Player Passport',exact:true}).click();await page.getByRole('button',{name:'Export & share PDF',exact:true}).click();await page.getByText('Passport file sharing is available in the iOS and Android app.',{exact:true}).waitFor();
   await require('./compact-layout.cjs').capture(page,{path:`${output}/default-passport-${theme}.png`,fullPage:true});
-  assert.ok(!calls.some(path=>/player_career_stops|team_roster_spots|fan_live_team_provider_map|player_contact_requests/.test(path)));assert.ok(!calls.includes('/rest/v1/profiles'));assert.deepEqual(errors,[]);
+  assert.ok(!calls.some(path=>/player_career_stops|team_roster_spots|fan_live_team_provider_map|player_contact_requests/.test(path)));assert.ok(!calls.includes('/rest/v1/profiles'));assert.ok(calls.includes('/api/game-predictions'),'Native schedule must use authenticated free-player fixture access');assert.ok(!calls.includes('/rest/v1/fan_live_games'),'Free player must not read the paid live-game table');assert.deepEqual(errors,[]);
   console.log(`PASS ${theme}: exact historical/current season, no mixed clubs, empty/error/retry, default-off undeployed data, owner Passport preserved`);
  }finally{await context.close();}
 }
