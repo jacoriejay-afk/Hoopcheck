@@ -16,13 +16,13 @@ export function GroupModerationPanel({userId,spaceId,onChanged}:{userId:string;s
   if(pending.current||!active.current||action&&!posts.some(p=>p.id===action.id))return;
   pending.current=true;setBusy(true);setNotice("");
   try{
-   const session=await readWithDeadline(supabase.auth.getSession());
+   const session=await readWithDeadline(()=>supabase.auth.getSession());
    const token=session.data.session?.access_token;
    if(session.error||!token||session.data.session?.user.id!==userId)throw Error("Sign in again.");
-   const verified=await readWithDeadline(supabase.auth.getUser(token));
+   const verified=await readWithDeadline(()=>supabase.auth.getUser(token));
    if(verified.error||verified.data.user?.id!==userId||!active.current)throw Error("Your account changed.");
    const next=await groupModeration(origin,token,spaceId,action);
-   const current=await readWithDeadline(supabase.auth.getSession());
+   const current=await readWithDeadline(()=>supabase.auth.getSession());
    if(!active.current||current.error||current.data.session?.user.id!==userId||current.data.session.access_token!==token)return;
    if(action){setPosts(prev=>prev.filter(p=>p.id!==action.id));setNotice("Moderation action confirmed.");onChanged();}
    else {setPosts(next);setLoaded(true);}
