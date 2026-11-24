@@ -86,7 +86,7 @@ export default function AccountScreen() {
   const role=account?.user.accountType.replaceAll("_"," ")||"Member";
   const ownCover=cover?.owner===account?.user.id?profileCovers.find(item=>item.id===cover?.value):undefined;
   return <SafeAreaView edges={["top","left","right","bottom"]} style={{flex:1,backgroundColor:theme.background}}>
-    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{paddingHorizontal:15,paddingTop:9,paddingBottom:100,gap:9,maxWidth:680,width:"100%",alignSelf:"center"}}>
+    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{paddingHorizontal:15,paddingTop:9,paddingBottom:20,gap:9,maxWidth:680,width:"100%",alignSelf:"center"}}>
       <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between",marginBottom:1}}>
         <Text accessibilityRole="header" style={{color:theme.foreground,fontSize:25,fontFamily:"HoopCheckDisplay"}}>Your account</Text>
         <Pressable accessibilityRole="button" accessibilityLabel="Refresh account" onPress={()=>{retry();setAppearanceRevision(value=>value+1);}}
@@ -97,13 +97,13 @@ export default function AccountScreen() {
       {loading&&!account?<HoopCheckLoading label="Checking your HoopCheck account…" />:account?<>
         <View style={{paddingVertical:12,gap:10,borderBottomWidth:StyleSheet.hairlineWidth,borderColor:theme.border}}>
           <View style={{gap:13}}>
-            {ownCover?<View accessible accessibilityLabel={`${ownCover.label} profile cover`} style={{height:66,borderRadius:14,backgroundColor:ownCover.color}}/>:null}
+            {ownCover?<Pressable accessibilityRole="button" accessibilityLabel={`Edit ${ownCover.label} profile appearance`} onPress={()=>router.push("/account/edit")} style={{flexDirection:"row",alignItems:"center",gap:7,minHeight:44}}><View style={{width:24,height:24,borderRadius:8,backgroundColor:ownCover.color}}/><Text style={{color:theme.muted,fontSize:12}}>Profile appearance</Text><Ionicons name="chevron-forward" size={14} color={theme.muted}/></Pressable>:null}
             <View style={{flexDirection:"row",alignItems:"center",gap:13}}>
               <ProfileAvatar size={72} name={account.user.displayName || "HoopCheck member"} url={avatar.owner===account.user.id?avatar.url:null}/>
               <View style={{flex:1,minWidth:0,gap:5}}>
                 <Text numberOfLines={1} style={{color:theme.foreground,fontSize:22,fontWeight:"900"}}>{account.user.displayName || "HoopCheck member"}</Text>
                 <Text style={{color:theme.muted,fontSize:13,textTransform:"capitalize"}}>{role} account</Text>
-                <Text style={{color:theme.accent,fontWeight:"800",fontSize:12}}>{tier.toUpperCase()} MEMBER</Text>
+                <View style={{alignSelf:"flex-start",flexDirection:"row",alignItems:"center",gap:5,paddingHorizontal:8,paddingVertical:4,borderRadius:10,backgroundColor:theme.accentSurface}}><Ionicons name={account.hasPaidMembership?"diamond-outline":"person-outline"} size={13} color={theme.accent}/><Text style={{color:theme.accent,fontWeight:"800",fontSize:11}}>{tier.toUpperCase()} MEMBER</Text></View>
               </View>
             </View>
             <View style={{flexDirection:"row",gap:9}}>
@@ -123,13 +123,17 @@ export default function AccountScreen() {
             </View>
           </View>
         </View>
-        <GroupLabel>My account</GroupLabel>
+      {account?.workspaces?.owner || account?.workspaces?.ambassador ? <>
+        <GroupLabel>Private workspaces</GroupLabel>
+        <AccountGroup>
+          {account.workspaces.owner ? <AccountRow icon="shield-checkmark-outline" title="Owner HQ" onPress={()=>router.push("/account/owner-hq")} last={!account.workspaces.ambassador}/> : null}
+          {account.workspaces.ambassador ? <AccountRow icon="megaphone-outline" title="Ambassador HQ" onPress={()=>router.push("/account/ambassador-hq")} last/> : null}
+        </AccountGroup>
+      </> : null}
+        <GroupLabel>Personal</GroupLabel>
         <AccountGroup>
           <AccountRow icon="chatbubble-ellipses-outline" title="HoopChat · messages and requests" detail="Conversations and connections" onPress={()=>router.push({pathname:"/notifications",params:{tab:"chat"}})}/>
-          <AccountRow icon="people-outline" title="Connections" onPress={()=>router.push("/connections")}/>
-          {account.user.accountType==="player" ? <AccountRow icon="person-circle-outline" title="View public player profile"
-            detail="Career history and Player Passport" onPress={()=>router.push({pathname:"/players/[id]",params:{id:account.user.id}})}
-            last/> : null}
+          <AccountRow icon="people-outline" title="Connections" onPress={()=>router.push("/connections")} last/>
         </AccountGroup>
         <GroupLabel>Membership status</GroupLabel>
         <AccountGroup>
@@ -151,14 +155,7 @@ export default function AccountScreen() {
         <Text accessibilityRole="alert" style={{color:theme.foreground}}>{error}</Text>
         <AccountGroup><AccountRow icon="refresh-outline" title="Try again" onPress={retry} last/></AccountGroup>
       </View>:null}
-      {account?.workspaces?.owner || account?.workspaces?.ambassador ? <>
-        <GroupLabel>Private workspaces</GroupLabel>
-        <AccountGroup>
-          {account.workspaces.owner ? <AccountRow icon="shield-checkmark-outline" title="Owner HQ" onPress={()=>router.push("/account/owner-hq")} last={!account.workspaces.ambassador}/> : null}
-          {account.workspaces.ambassador ? <AccountRow icon="megaphone-outline" title="Ambassador HQ" onPress={()=>router.push("/account/ambassador-hq")} last/> : null}
-        </AccountGroup>
-      </> : null}
-      <GroupLabel>Privacy & settings</GroupLabel>
+      <GroupLabel>Security & settings</GroupLabel>
       <AccountGroup>
         <AccountRow icon="lock-closed-outline" title="Two-factor authentication" onPress={()=>router.push("/account/security")}/>
         <AccountRow icon="settings-outline" title="Device settings" onPress={()=>router.push("/settings")}/>
