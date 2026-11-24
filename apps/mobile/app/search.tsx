@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { GlassCard } from "../src/primitives";
 import { GlassHeader } from "../components/glass/GlassHeader";
 import { useMotionSetting } from "../src/motion/Provider";
@@ -25,7 +25,10 @@ export default function SearchScreen() {
   const reduced = useMotionSetting();
   const [searchExpanded, setSearchExpanded] = useState(true);
   const cancelTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => { if (cancelTimer.current) clearTimeout(cancelTimer.current); }, []);
+  useFocusEffect(useCallback(() => {
+    setSearchExpanded(true);
+    return () => { if (cancelTimer.current) clearTimeout(cancelTimer.current); cancelTimer.current = null; };
+  }, []));
   const [term, setTerm] = useState(typeof q === "string" ? q : "");
   const [result, setResult] = useState<{ term: string; scope: string; groups: SearchGroup[] } | null>(null);
   const [loading, setLoading] = useState(false);
@@ -50,6 +53,7 @@ export default function SearchScreen() {
       onSearchTermChange={setTerm} onSearchSubmit={() => remember(term)}
       onSearchBlur={() => remember(term)}
       onSearchCancel={() => {
+        if (cancelTimer.current) return;
         setSearchExpanded(false);
         cancelTimer.current = setTimeout(() => {
           if (fromHome === "1" && router.canGoBack()) router.back();

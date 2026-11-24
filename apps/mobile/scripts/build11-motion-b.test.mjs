@@ -44,3 +44,5 @@ test("40: verified new-message entrances and local drafting only; no fabricated 
   assert.match(gameChat, /readGameRoom\(supabase, gameId, userId\)/);
   assert.match(messages, /ChatTypingBasketball/);
 });
+
+test("collapsed search has no read-only textbox; returning to Search restores input",()=>{assert.match(file("components/glass/GlassHeader.tsx"),/\{searchOpen \? <Animated.View pointerEvents="auto"/);assert.match(file("app/search.tsx"),/useFocusEffect\(useCallback\(\(\) => \{\s*setSearchExpanded\(true\)/);assert.match(file("components/glass/GlassHeader.tsx"),/if \(feedMode\)/);});

@@ -8,6 +8,7 @@ import Svg, { Circle, Path } from "react-native-svg";
 import { BrandLogo } from "../BrandLogo";
 import { useMotionSetting } from "../../src/motion/Provider";
 import { GlassCard } from "./GlassCard";
+import { GlassSurface } from "../GlassSurface";
 import { glassTokens as glass } from "../../src/glassTheme";
 
 /**
@@ -18,6 +19,10 @@ import { glassTokens as glass } from "../../src/glassTheme";
  */
 type SearchHeaderProps = {
   homeScrollY?: SharedValue<number>;
+  feedMode?: boolean;
+  feedReels?: boolean;
+  onFeedTabChange?: (reels: boolean) => void;
+  onFeedGuide?: () => void;
   searchOpen?: boolean;
   onSearchOpen?: () => void;
   onSearchCancel?: () => void;
@@ -29,7 +34,7 @@ type SearchHeaderProps = {
 
 /** Search expands inside the same glass pill. The search screen owns results. */
 export function GlassHeader({
-  homeScrollY, searchOpen = false, onSearchOpen, onSearchCancel,
+  homeScrollY, feedMode = false, feedReels = false, onFeedTabChange, onFeedGuide, searchOpen = false, onSearchOpen, onSearchCancel,
   searchTerm = "", onSearchTermChange, onSearchSubmit, onSearchBlur,
 }: SearchHeaderProps = {}) {
   const insets = useSafeAreaInsets();
@@ -81,6 +86,43 @@ export function GlassHeader({
     return { opacity: (1 - searchProgress.get()) * (!homeScrollY ? 0 : reduced ? (offset > 55 ? 1 : 0) :
       interpolate(offset, [35, 90], [0, 1], Extrapolation.CLAMP)) };
   });
+  // HoopFeed has one slim header island instead of the HoopCheck header,
+  // a separate tab container and a second page title.
+  if (feedMode) return <View testID="feed-compact-header"
+    style={{ paddingTop: insets.top + 4, paddingHorizontal: 10, paddingBottom: 4 }}>
+    <GlassSurface native intensity={52} style={{
+      borderRadius: 999, minHeight: 46, paddingHorizontal: 11,
+      flexDirection: "row", alignItems: "center", gap: 5,
+    }}>
+      <Text accessibilityRole="header" numberOfLines={1}
+        style={{ color: glass.foreground, fontFamily: "HoopCheckDisplay", fontSize: 20, flexShrink: 1 }}>
+        HOOPFEED
+      </Text>
+      <View accessibilityRole="tablist" style={{ flexDirection: "row", marginLeft: "auto", gap: 2 }}>
+        {[false, true].map(value => <Pressable key={String(value)}
+          accessibilityRole="tab" accessibilityLabel={value ? "Reels" : "HoopFeed"}
+          accessibilityState={{ selected: feedReels === value }}
+          aria-selected={feedReels === value}
+          onPress={() => onFeedTabChange?.(value)}
+          style={({ pressed }) => ({
+            minWidth: 52, minHeight: 44, paddingHorizontal: 6, borderRadius: 20,
+            justifyContent: "center", alignItems: "center",
+            backgroundColor: feedReels === value ? glass.orange + "28" : "transparent",
+            opacity: pressed ? 0.7 : 1,
+          })}>
+          <Text style={{ color: feedReels === value ? glass.orange : glass.secondary,
+            fontSize: 11, fontWeight: "800" }}>{value ? "Reels" : "Posts"}</Text>
+        </Pressable>)}
+      </View>
+      <Pressable accessibilityRole="button" accessibilityLabel="Meet HoopBot welcome guide"
+        onPress={onFeedGuide}
+        style={({ pressed }) => ({ width: 36, minHeight: 44, justifyContent: "center",
+          alignItems: "center", opacity: pressed ? 0.7 : 1 })}>
+        <Ionicons name="help-circle-outline" size={22} color={glass.secondary} />
+      </Pressable>
+    </GlassSurface>
+  </View>;
+
   return <Animated.View testID="glass-safe-header" style={[
     { paddingTop: insets.top + 8, paddingHorizontal: 16, paddingBottom: 8,
       zIndex: homeScrollY ? 30 : 3 },
@@ -128,7 +170,7 @@ export function GlassHeader({
             style={{ position: "absolute", right: 9, top: 8, width: 7, height: 7,
               borderRadius: 4, backgroundColor: glass.orange }} />
         </Pressable></Animated.View>
-        <Animated.View pointerEvents={searchOpen ? "auto" : "none"}
+        {searchOpen ? <Animated.View pointerEvents="auto"
           accessibilityElementsHidden={!searchOpen}
           importantForAccessibility={searchOpen ? "auto" : "no-hide-descendants"}
           style={[{ position: "absolute", left: 9, right: 0, top: 0, bottom: 0,
@@ -147,7 +189,7 @@ export function GlassHeader({
             style={{ minHeight: 44, paddingHorizontal: 8, justifyContent: "center" }}>
             <Text style={{ color: glass.orange, fontSize: 13, fontWeight: "700" }}>Cancel</Text>
           </Pressable>
-        </Animated.View>
+        </Animated.View> : null}
       </Animated.View>
     </GlassCard></Animated.View>
   </Animated.View>;

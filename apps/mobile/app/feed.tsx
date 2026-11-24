@@ -1,6 +1,6 @@
-import { GlassSurface } from "../components/GlassSurface";
 import { GlassHeader } from "../components/glass/GlassHeader";
 import { GlassBackdrop } from "../components/glass/GlassBackdrop";
+import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../components/glass/GlassCard";
 import { glassTokens as glass } from "../src/glassTheme";
 import { LinearGradient } from "expo-linear-gradient";
@@ -13,6 +13,7 @@ import { Button } from "../src/primitives";
 import { Skeleton } from "../components/Motion";
 import { ProfileAvatar } from "../components/ProfileAvatar";
 import { FeedMedia } from "../components/FeedMedia";
+import { HoopReelCard } from "../components/HoopReelCard";
 import { MediaPostComposer } from "../components/MediaPostComposer";
 import { FeedPoll } from "../components/FeedPoll";
 import { FeedCheckAction } from "../components/FeedCheckAction";
@@ -27,7 +28,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
 function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
   const theme = useEntryTheme();
   const router = useRouter();
-  const params = useLocalSearchParams<{ post?: string; comments?: string }>();
+  const params = useLocalSearchParams<{ post?: string; comments?: string; compose?: string }>();
   const linkedId = typeof params.post === "string" && isFeedId(params.post) ? params.post : undefined;
   const { account, loading: accountLoading, error: accountError, retry } = useNativeAccount();
   const { offline } = useNetwork();
@@ -37,6 +38,9 @@ function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
   const [composerExpanded, setComposerExpanded] = useState(false);
   const [mediaMode, setMediaMode] = useState(false);
   const [reels, setReels] = useState(initialReels);
+  useEffect(() => {
+    if (params.compose === "media" && !reels && canWrite) { setComposerExpanded(true); setMediaMode(true); }
+  }, [params.compose, reels, canWrite]);
   const [viewedHighlights, setViewedHighlights] = useState<Set<string>>(new Set());
   const scope = `${uid ?? ""}:${reels}`;
   const viewer = useRef({ uid, canRead, scope });
@@ -47,6 +51,7 @@ function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
   const [next, setNext] = useState<FeedCursor | null>(null);
   const [loading, setLoading] = useState(false);
   const generation = useRef(0);
+  const requestingNext = useRef(false);
   const [message, setMessage] = useState("");
   const [loadError, setLoadError] = useState("");
   const [checks, setChecks] = useState<Record<string, { count: number; mine: boolean }>>({});
@@ -231,105 +236,10 @@ function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
     try { await AsyncStorage.setItem(`hoopcheck:reels:hidden:${uid}`, JSON.stringify(nextIds)); }
     catch { setMessage("Video hidden for this session. It could not be saved to your device."); }
   }
-  const textStyle = { color: theme.foreground };
-  const linkStyle = { color: theme.accent };
-  const touch = { minHeight: 44, paddingHorizontal: 10, borderWidth: 1, borderColor: theme.border, borderRadius: 13, backgroundColor: theme.chip, justifyContent: "center" as const };
-  if (accountLoading) return <View style={{ flex: 1, padding: 24, backgroundColor: theme.background }}><Skeleton /></View>;
-  if (!account || !canRead) return <View style={{ flex: 1, padding: 24, gap: 20, justifyContent: "center", backgroundColor: theme.background }}>
-    <Text accessibilityRole="header" style={{ ...textStyle, fontSize: 28, fontWeight: "900" }}>HoopFeed</Text>
-    <Text style={textStyle}>{offline ? "Reconnect to verify community access." : account ? "An active HoopCheck membership is required to use HoopFeed." : accountError}</Text>
-    <Button secondary onPress={retry}>Verify access again</Button><Button secondary onPress={() => router.push("/account")}>Your account</Button>
-  </View>;
-  return <SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: theme.background }}>
-    <GlassBackdrop screen="feed" />
-    <GlassHeader />
-    <GlassSurface style={{
-      marginHorizontal: 12, marginTop: 5, marginBottom: 5, padding: 5,
-      borderRadius: glass.radii.row, flexDirection: "row", alignItems: "center", gap: 7,
-    }}>
-      <View accessibilityRole="tablist" style={{ flex: 1, flexDirection: "row", gap: 6 }}>
-        {[false, true].map(value => <Pressable key={String(value)}
-          accessibilityRole="tab" accessibilityLabel={value ? "Reels" : "HoopFeed"}
-          accessibilityState={{ selected: reels === value }}
-          aria-selected={reels === value} onPress={() => setReels(value)}
-          style={({ pressed }) => ({
-            flex: 1, minHeight: 44, justifyContent: "center", alignItems: "center",
-            borderRadius: 12, borderWidth: 1, opacity: pressed ? .7 : 1,
-            backgroundColor: reels === value ? glass.orange : "transparent",
-            borderColor: reels === value ? glass.orange : "transparent",
-          })}>
-          <Text style={{ color: reels === value ? "#FFFFFF" : glass.secondary,
-            fontSize: 14, fontFamily: theme.type.ui.fontFamily, fontWeight: "700" }}>
-            {value ? "REELS" : "HOOPFEED"}
-          </Text>
-        </Pressable>)}
-      </View>
-    </GlassSurface>
-    {message || loadError ? <Text accessibilityLiveRegion="polite"
-      style={{ color: theme.muted, paddingHorizontal: 18 }}>{loadError || message}</Text> : null}
-    <FlatList key={reels ? "reels" : "posts"} keyboardDismissMode="on-drag" style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 12, gap: reels ? 0 : theme.spacing.md, paddingBottom: reels ? 0 : 144 }} keyboardShouldPersistTaps="handled" initialNumToRender={reels ? 2 : 4} maxToRenderPerBatch={reels ? 2 : 4} windowSize={reels ? 3 : 5} pagingEnabled={reels} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
-      ListHeaderComponent={!reels ? <View style={{ marginBottom: theme.spacing.sm, gap: theme.spacing.sm }}><View style={{ gap: 10 }}>
-          <Text accessibilityRole="header" style={{ fontFamily: "HoopCheckDisplay", color: glass.foreground, fontSize: 28 }}>HOOPFEED</Text>
-          <Text style={{ color: glass.secondary, fontSize: 12 }}>Recent posts from hoopers</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingVertical: 5 }}>
-            {posts.filter((post, index, all) => all.findIndex(row => row.author_id === post.author_id) === index)
-              .slice(0, 8).map(post => <Pressable key={post.id} accessibilityRole="link"
-                accessibilityLabel={`View post by ${post.profiles?.display_name || "HoopCheck member"}`}
-                onPress={() => { setViewedHighlights(current => new Set([...current, post.id])); router.push({ pathname: "/feed", params: { post: post.id } }); }}
-                style={{ width: 70, gap: 5, alignItems: "center" }}>
-                <LinearGradient colors={viewedHighlights.has(post.id) ? ["#777777", "#555555"] : [glass.orange, glass.violet, glass.pink]}
-                  style={{ height: 60, width: 60, borderRadius: 30, padding: 3, alignItems: "center", justifyContent: "center" }}>
-                  <View style={{ height: 54, width: 54, borderRadius: 27, padding: 2, backgroundColor: glass.background, alignItems: "center", justifyContent: "center" }}>
-                    <ProfileAvatar name={post.profiles?.display_name || "HoopCheck member"}
-                      url={post.profiles?.avatar_moderation_status === "approved" ? post.profiles.avatar_url : null} size={48} />
-                  </View>
-                </LinearGradient>
-                <Text numberOfLines={1} style={{ color: glass.secondary, fontSize: 10, textAlign: "center", width: 70 }}>{post.profiles?.display_name || "Hooper"}</Text>
-              </Pressable>)}
-          </ScrollView>
-        </View>
-        <Pressable accessibilityRole="button" accessibilityLabel="Meet HoopBot welcome guide"
-          onPress={()=>router.push("/feed-welcome")}
-          style={{minHeight:44,paddingHorizontal:12,paddingVertical:7,borderWidth:1,borderRadius:14,
-            borderColor:theme.border,backgroundColor:theme.accentSurface,flexDirection:"row",
-            justifyContent:"space-between",alignItems:"center",gap:8}}>
-          <Text style={{color:theme.foreground,fontWeight:"700",fontSize:13}}>Meet HoopBot · Welcome guide</Text>
-          <Text style={{color:theme.accent,fontWeight:"700",fontSize:12}}>Open →</Text>
-        </Pressable>
-        {!composerExpanded ? <Pressable accessibilityRole="button" accessibilityLabel="Create HoopFeed post" disabled={!canWrite} onPress={() => setComposerExpanded(true)} style={{ flexDirection: "row", alignItems: "center", gap: 9, padding: 9, borderWidth: 1, borderColor: theme.border, borderRadius: 15, backgroundColor: theme.elevatedSurface }}>
-          <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: theme.accentSurface, alignItems: "center", justifyContent: "center" }}><Text style={{ color: theme.accent, fontWeight: "900", fontSize: 12 }}>HC</Text></View><Text style={{ color: theme.muted, fontSize: 14 }}>Share something…</Text>
-        </Pressable> : <View style={{ gap: 12, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 18, backgroundColor: theme.surface }}>
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}><Text style={{ ...textStyle, fontFamily: theme.type.ui.fontFamily, fontSize: 18, fontWeight: "700" }}>Create a post</Text><Pressable accessibilityRole="button" onPress={() => setComposerExpanded(false)} style={touch}><Text style={textStyle}>Close</Text></Pressable></View>
-          <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 8 }}>{[false, true].map(enabled => <Pressable key={String(enabled)} accessibilityRole="tab" accessibilityState={{ selected: !mediaMode && pollEnabled === enabled }} disabled={pending.post} onPress={() => { setMediaMode(false); setPoll(current => ({ owner: uid!, enabled, options: current.owner === uid ? current.options : ["", ""] })); }} style={[touch, { borderColor: !mediaMode && pollEnabled === enabled ? theme.accent : theme.border }]}><Text style={textStyle}>{enabled ? "Poll" : "Discussion"}</Text></Pressable>)}</View>
-          <Button secondary disabled={pending.post} onPress={() => { setMediaMode(true); setPoll(current => ({ ...current, owner: uid!, enabled: false })); }}>Photo or video</Button>
-          <TextInput accessibilityLabel="Write a HoopFeed post" multiline maxLength={2000} editable={!pending.post} placeholder={pollEnabled ? "Ask your poll question…" : "Start a post... (ask, share, discuss, update)"} placeholderTextColor={theme.muted} value={draft.owner === uid ? draft.text : ""} onChangeText={text => setDraft({ owner: uid!, text })} style={{ ...textStyle, fontSize: 15, lineHeight: 23, minHeight: 90, maxHeight: 220, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: theme.radius.control, backgroundColor: theme.input }} />
-          {pollEnabled && !mediaMode ? <View style={{ gap: 8 }}><Text style={{ color: theme.muted }}>Add 2–4 different answers, up to 60 characters each. Polls are text only.</Text>{pollOptions.map((option, index) => <View key={index} style={{ flexDirection: "row", gap: 8, alignItems: "center" }}><TextInput accessibilityLabel={`Poll answer ${index + 1}`} value={option} maxLength={60} editable={!pending.post} onChangeText={value => setPoll(current => current.owner === uid ? { ...current, options: current.options.map((item, i) => i === index ? value : item) } : current)} style={{ ...textStyle, flex: 1, minHeight: 48, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: theme.radius.control, backgroundColor: theme.input }} />{pollOptions.length > 2 ? <Pressable accessibilityRole="button" accessibilityLabel={`Remove poll answer ${index + 1}`} disabled={pending.post} onPress={() => setPoll(current => current.owner === uid ? { ...current, options: current.options.filter((_, i) => i !== index) } : current)} style={touch}><Text style={linkStyle}>Remove</Text></Pressable> : null}</View>)}{pollOptions.length < 4 ? <Button secondary disabled={pending.post} onPress={() => setPoll(current => current.owner === uid ? { ...current, options: [...current.options, ""] } : current)}>Add poll answer</Button> : null}</View> : null}
-          {mediaMode && uid ? <MediaPostComposer key={uid} userId={uid} enabled={canWrite} caption={draft.owner === uid ? draft.text : ""} token={token} onRefresh={() => load()} onPublished={async () => { setDraft(current => current.owner === uid && current.text === draft.text ? { owner: uid, text: "" } : current); await load(); }} /> : <Button style={{ minHeight: 44, borderRadius: 999, alignSelf: "flex-end", paddingHorizontal: 24 }} disabled={!canWrite || pending.post || draft.owner !== uid || !draft.text.trim() || !pollValid} onPress={() => void publish()}>{pending.post ? "Checking safety…" : "Post"}</Button>}
-        </View>}
-        {!canWrite ? <Text style={{ color: theme.muted, marginTop: 8 }}>Your membership does not include posting.</Text> : null}
-      </View> : null}
-      refreshControl={<RefreshControl refreshing={loading} onRefresh={() => { setBlocksVersion(version => version + 1); void load(); }} />}
-      ListEmptyComponent={loading || (reels && blockedCreators.owner === uid && !blockedCreators.ready) ? <Skeleton /> : <View style={{ padding: 24, gap: 12 }}><Text style={textStyle}>{loadError || (reels && blockedCreators.failed ? "Blocked accounts could not be verified. Retry before viewing Reels." : reels ? "No video posts are available in this page." : "No posts are available in this page.")}</Text><Button secondary onPress={() => { setBlocksVersion(version => version + 1); void load(); }}>Refresh</Button></View>}
-      renderItem={({ item: post }) => {
-        const page = comments.owner === uid ? comments.values[post.id] : undefined;
-        const replyTarget = reply && reply.owner === uid && reply.postId === post.id ? reply : null;
-        const commentDraft = drafts.owner === uid ? drafts.values[post.id] ?? "" : "";
-        const photos = (Array.isArray(post.image_urls) && post.image_urls.length ? post.image_urls : post.image_url ? [post.image_url] : []).filter((value): value is string => typeof value === "string").slice(0, 4);
-        const options = Array.isArray(post.poll_options) ? post.poll_options.filter((value): value is string => typeof value === "string").slice(0, 6).map(value => value.slice(0, 120)) : [];
-        return <View style={reels ? { height, padding: 12 } : undefined}><GlassCard testID={`feed-post-${post.id}`} solid radius={glass.radii.card} padding={theme.courtside.card.featuredPadding} style={reels ? { flex: 1 } : undefined} contentStyle={{ gap: theme.spacing.sm, flex: reels ? 1 : undefined }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <ProfileAvatar url={post.profiles?.avatar_moderation_status === "approved" ? post.profiles.avatar_url : null} name={post.profiles?.display_name || "HoopCheck member"} size={36} />
-            <View style={{ flex: 1, gap: 3 }}><Text style={{ ...textStyle, fontFamily: theme.type.ui.fontFamily, fontWeight: "700", fontSize: 14 }}>{post.profiles?.display_name || "HoopCheck member"}</Text><Text style={{ color: theme.muted, ...theme.type.caption }}>{new Date(post.created_at).toLocaleString()}</Text></View>
-          </View>
-          {post.body ? <Text numberOfLines={reels ? 3 : undefined} style={{ ...textStyle, fontSize: 14, lineHeight: 20 }}>{post.body}</Text> : null}
-          {post.video_url ? <FeedMedia userId={uid!} postId={post.id} reference={post.video_url} video enabled={focused && visible.has(post.id)} loop={reels} height={reels ? Math.max(120, height - 380) : 280} /> : photos.map(reference => <FeedMedia userId={uid!} key={reference} postId={post.id} reference={reference} enabled={focused && visible.has(post.id)} />)}
-          {post.post_kind === "poll" && options.length ? <FeedPoll userId={uid!} postId={post.id} options={options} enabled={canWrite && focused} /> : null}
-          {typeof checks[post.id]?.count === "number" ? <Text style={{ color: glass.secondary, fontSize: 12 }}>Checked by {checks[post.id].count} hoopers</Text> : null}
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, paddingTop: 12, borderTopWidth: 1, borderColor: theme.border }}>
-            <FeedCheckAction checked={checks[post.id]?.mine} count={checks[post.id]?.count}
-              pulseKey={checkPulses.scope === scope ? checkPulses.values[post.id] ?? 0 : 0}
-              disabled={!canWrite || !checks[post.id]} busy={Boolean(pending[`check:${post.id}`])}
-              onPress={() => void action(`check:${post.id}`, async () => {
+
+  // The full-screen Reel viewer and HoopFeed reuse the same verified Check path.
+  async function checkPost(post: FeedPost) {
+    await action("check:" + post.id, async () => {
               await token();
               const wasChecked = checks[post.id]?.mine;
               let activity;
@@ -352,14 +262,126 @@ function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
                   }));
                 }
               }
-            })} />
-            <Pressable accessibilityRole="button" onPress={() => { if (reels) { router.push({ pathname: "/feed", params: { post: post.id, comments: "1" } }); return; } setOpenComments(previous => ({ ...previous, [post.id]: !previous[post.id] })); if (!page || page.error) void loadComments(post.id); }} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Comments</Text></Pressable>
-            <Pressable accessibilityRole="button" onPress={() => void action(`share:${post.id}`, async () => { await Share.share({ title: "HoopFeed", message: `https://hoopcheck.online/feed#post-${post.id}` }); })} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Share</Text></Pressable>
+
+    });
+  }
+  const textStyle = { color: theme.foreground };
+  const linkStyle = { color: theme.accent };
+  const touch = { minHeight: 44, paddingHorizontal: 10, borderWidth: 1, borderColor: theme.border, borderRadius: 13, backgroundColor: theme.chip, justifyContent: "center" as const };
+  // Keep 44pt targets without oversized action-pill backgrounds.
+  const feedActionTouch = { minHeight: 44, paddingHorizontal: 4, borderWidth: 0,
+    borderRadius: 12, backgroundColor: "transparent", justifyContent: "center" as const,
+    flexDirection: "row" as const, alignItems: "center" as const, gap: 4 };
+  if (accountLoading) return <View style={{ flex: 1, padding: 24, backgroundColor: theme.background }}><Skeleton /></View>;
+  if (!account || !canRead) return <View style={{ flex: 1, padding: 24, gap: 20, justifyContent: "center", backgroundColor: theme.background }}>
+    <Text accessibilityRole="header" style={{ ...textStyle, fontSize: 28, fontWeight: "900" }}>HoopFeed</Text>
+    <Text style={textStyle}>{offline ? "Reconnect to verify community access." : account ? "An active HoopCheck membership is required to use HoopFeed." : accountError}</Text>
+    <Button secondary onPress={retry}>Verify access again</Button><Button secondary onPress={() => router.push("/account")}>Your account</Button>
+  </View>;
+  return <SafeAreaView edges={reels ? ["top", "left", "right", "bottom"] : ["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: theme.background }}>
+    {!reels ? <>
+      <GlassBackdrop screen="feed" />
+      <GlassHeader feedMode feedReels={reels}
+        onFeedTabChange={setReels}
+        onFeedGuide={() => router.push("/feed-welcome")} />
+    </> : null}
+    {message || loadError ? <Text accessibilityLiveRegion="polite"
+      style={{ color: theme.muted, paddingHorizontal: 18 }}>{loadError || message}</Text> : null}
+    <FlatList key={reels ? "reels" : "posts"} onEndReachedThreshold={reels ? 0.6 : undefined} onEndReached={() => {
+      if (!reels || !next || loading || requestingNext.current) return;
+      requestingNext.current = true;
+      void load(next).finally(() => { requestingNext.current = false; });
+    }} keyboardDismissMode="on-drag" style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ paddingHorizontal: reels ? 0 : 8, paddingTop: reels ? 0 : 3,
+        gap: reels ? 0 : 6, paddingBottom: reels ? 0 : 132 }} keyboardShouldPersistTaps="handled" initialNumToRender={reels ? 2 : 4} maxToRenderPerBatch={reels ? 2 : 4} windowSize={reels ? 3 : 5} pagingEnabled={reels} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
+      ListHeaderComponent={!reels ? <View style={{ marginBottom: 4, gap: 6 }}>
+        {/* Only show genuine loaded authors; no fake stories or another title banner. */}
+        {posts.length > 0 ? <ScrollView horizontal showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 7, paddingVertical: 2 }}>
+          {posts.filter((post, index, all) => all.findIndex(row => row.author_id === post.author_id) === index)
+            .slice(0, 8).map(post => <Pressable key={post.id} accessibilityRole="link"
+              accessibilityLabel={`View post by ${post.profiles?.display_name || "HoopCheck member"}`}
+              onPress={() => { setViewedHighlights(current => new Set([...current, post.id])); router.push({ pathname: "/feed", params: { post: post.id } }); }}
+              style={{ width: 54, gap: 2, alignItems: "center" }}>
+              <LinearGradient colors={viewedHighlights.has(post.id) ? ["#777777", "#555555"] : [glass.orange, glass.violet, glass.pink]}
+                style={{ height: 48, width: 48, borderRadius: 24, padding: 2, alignItems: "center", justifyContent: "center" }}>
+                <View style={{ height: 44, width: 44, borderRadius: 22, padding: 2, backgroundColor: glass.background, alignItems: "center", justifyContent: "center" }}>
+                  <ProfileAvatar name={post.profiles?.display_name || "HoopCheck member"}
+                    url={post.profiles?.avatar_moderation_status === "approved" ? post.profiles.avatar_url : null} size={38} />
+                </View>
+              </LinearGradient>
+              <Text numberOfLines={1} style={{ color: glass.secondary, fontSize: 10, textAlign: "center", width: 54 }}>{post.profiles?.display_name || "Hooper"}</Text>
+            </Pressable>)}
+        </ScrollView> : null}
+        {!composerExpanded ? <Pressable accessibilityRole="button" accessibilityLabel="Create HoopFeed post" disabled={!canWrite} onPress={() => setComposerExpanded(true)} style={{ flexDirection: "row", alignItems: "center", gap: 8, minHeight: 44,
+          paddingHorizontal: 8, paddingVertical: 4, borderWidth: 1, borderColor: theme.border,
+          borderRadius: 14, backgroundColor: theme.elevatedSurface }}>
+          <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: theme.accentSurface, alignItems: "center", justifyContent: "center" }}><Text style={{ color: theme.accent, fontWeight: "900", fontSize: 11 }}>HC</Text></View><Text style={{ color: theme.muted, fontSize: 14 }}>Share something…</Text>
+        </Pressable> : <View style={{ gap: 12, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 18, backgroundColor: theme.surface }}>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}><Text style={{ ...textStyle, fontFamily: theme.type.ui.fontFamily, fontSize: 18, fontWeight: "700" }}>Create a post</Text><Pressable accessibilityRole="button" onPress={() => setComposerExpanded(false)} style={touch}><Text style={textStyle}>Close</Text></Pressable></View>
+          <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 8 }}>{[false, true].map(enabled => <Pressable key={String(enabled)} accessibilityRole="tab" accessibilityState={{ selected: !mediaMode && pollEnabled === enabled }} disabled={pending.post} onPress={() => { setMediaMode(false); setPoll(current => ({ owner: uid!, enabled, options: current.owner === uid ? current.options : ["", ""] })); }} style={[touch, { borderColor: !mediaMode && pollEnabled === enabled ? theme.accent : theme.border }]}><Text style={textStyle}>{enabled ? "Poll" : "Discussion"}</Text></Pressable>)}</View>
+          <Button secondary disabled={pending.post} onPress={() => { setMediaMode(true); setPoll(current => ({ ...current, owner: uid!, enabled: false })); }}>Photo or video</Button>
+          <TextInput accessibilityLabel="Write a HoopFeed post" multiline maxLength={2000} editable={!pending.post} placeholder={pollEnabled ? "Ask your poll question…" : "Start a post... (ask, share, discuss, update)"} placeholderTextColor={theme.muted} value={draft.owner === uid ? draft.text : ""} onChangeText={text => setDraft({ owner: uid!, text })} style={{ ...textStyle, fontSize: 15, lineHeight: 23, minHeight: 90, maxHeight: 220, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: theme.radius.control, backgroundColor: theme.input }} />
+          {pollEnabled && !mediaMode ? <View style={{ gap: 8 }}><Text style={{ color: theme.muted }}>Add 2–4 different answers, up to 60 characters each. Polls are text only.</Text>{pollOptions.map((option, index) => <View key={index} style={{ flexDirection: "row", gap: 8, alignItems: "center" }}><TextInput accessibilityLabel={`Poll answer ${index + 1}`} value={option} maxLength={60} editable={!pending.post} onChangeText={value => setPoll(current => current.owner === uid ? { ...current, options: current.options.map((item, i) => i === index ? value : item) } : current)} style={{ ...textStyle, flex: 1, minHeight: 48, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: theme.radius.control, backgroundColor: theme.input }} />{pollOptions.length > 2 ? <Pressable accessibilityRole="button" accessibilityLabel={`Remove poll answer ${index + 1}`} disabled={pending.post} onPress={() => setPoll(current => current.owner === uid ? { ...current, options: current.options.filter((_, i) => i !== index) } : current)} style={touch}><Text style={linkStyle}>Remove</Text></Pressable> : null}</View>)}{pollOptions.length < 4 ? <Button secondary disabled={pending.post} onPress={() => setPoll(current => current.owner === uid ? { ...current, options: [...current.options, ""] } : current)}>Add poll answer</Button> : null}</View> : null}
+          {mediaMode && uid ? <MediaPostComposer key={uid} userId={uid} enabled={canWrite} caption={draft.owner === uid ? draft.text : ""} token={token} onRefresh={() => load()} onPublished={async () => { setDraft(current => current.owner === uid && current.text === draft.text ? { owner: uid, text: "" } : current); await load(); }} /> : <Button style={{ minHeight: 44, borderRadius: 999, alignSelf: "flex-end", paddingHorizontal: 24 }} disabled={!canWrite || pending.post || draft.owner !== uid || !draft.text.trim() || !pollValid} onPress={() => void publish()}>{pending.post ? "Checking safety…" : "Post"}</Button>}
+        </View>}
+        {!canWrite ? <Text style={{ color: theme.muted, marginTop: 8 }}>Your membership does not include posting.</Text> : null}
+      </View> : null}
+      refreshControl={<RefreshControl refreshing={loading} onRefresh={() => { setBlocksVersion(version => version + 1); void load(); }} />}
+      ListEmptyComponent={loading || (reels && blockedCreators.owner === uid && !blockedCreators.ready) ? <Skeleton /> : <View style={{ padding: 24, gap: 12 }}><Text style={textStyle}>{loadError || (reels && blockedCreators.failed ? "Blocked accounts could not be verified. Retry before viewing Reels." : reels ? "No video posts are available in this page." : "No posts are available in this page.")}</Text><Button secondary onPress={() => { setBlocksVersion(version => version + 1); void load(); }}>Refresh</Button></View>}
+      renderItem={({ item: post }) => {
+        if (reels) return <HoopReelCard post={post} userId={uid!}
+          height={height} active={focused && visible.has(post.id)} ready={focused} canWrite={canWrite}
+          check={checks[post.id]} saved={saved[post.id]}
+          checkBusy={Boolean(pending["check:" + post.id])}
+          saveBusy={Boolean(pending["save:" + post.id])}
+          blockBusy={Boolean(pending["block:" + post.author_id])}
+          onBack={() => { setReels(false); if (initialReels) router.navigate("/feed"); }}
+          onViewPlayer={() => router.push({ pathname: "/players/[id]", params: { id: post.author_id } })}
+          onCreate={() => { if (canWrite) router.push("/reels/studio"); }}
+          onCheck={() => void checkPost(post)}
+          onComments={() => router.push({ pathname: "/feed", params: { post: post.id, comments: "1" } })}
+          onShare={() => void action("share:" + post.id, async () => {
+            await Share.share({ title: "HoopReels", message: "https://hoopcheck.online/feed#post-" + post.id });
+          })}
+          onSave={() => void action("save:" + post.id, async () => {
+            const value = !saved[post.id];
+            await feedAction(origin, await token(), "bookmark", post.id, value);
+            if (viewer.current.uid === uid && viewer.current.scope === scope) setSaved(previous => ({ ...previous, [post.id]: value }));
+          })}
+          onReport={() => void action("report:" + post.id, async () => {
+            await Linking.openURL("https://hoopcheck.online/support?reportReel=" + post.id);
+          })}
+          onHide={() => void hideReel(post.id)}
+          onHideCreator={() => void hideCreator(post.author_id)}
+          onBlockCreator={() => void blockAccount(post.author_id)} />;
+
+        const page = comments.owner === uid ? comments.values[post.id] : undefined;
+        const replyTarget = reply && reply.owner === uid && reply.postId === post.id ? reply : null;
+        const commentDraft = drafts.owner === uid ? drafts.values[post.id] ?? "" : "";
+        const photos = (Array.isArray(post.image_urls) && post.image_urls.length ? post.image_urls : post.image_url ? [post.image_url] : []).filter((value): value is string => typeof value === "string").slice(0, 4);
+        const options = Array.isArray(post.poll_options) ? post.poll_options.filter((value): value is string => typeof value === "string").slice(0, 6).map(value => value.slice(0, 120)) : [];
+        return <View style={reels ? { height, padding: 12 } : undefined}><GlassCard testID={`feed-post-${post.id}`} solid radius={glass.radii.row} padding={9}
+          style={reels ? { flex: 1 } : undefined} contentStyle={{ gap: 6, flex: reels ? 1 : undefined }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <ProfileAvatar url={post.profiles?.avatar_moderation_status === "approved" ? post.profiles.avatar_url : null} name={post.profiles?.display_name || "HoopCheck member"} size={30} />
+            <View style={{ flex: 1, gap: 1 }}><Text style={{ ...textStyle, fontFamily: theme.type.ui.fontFamily, fontWeight: "700", fontSize: 13 }}>{post.profiles?.display_name || "HoopCheck member"}</Text><Text style={{ color: theme.muted, ...theme.type.caption }}>{new Date(post.created_at).toLocaleString()}</Text></View>
+          </View>
+          {post.body ? <Text numberOfLines={reels ? 3 : undefined} style={{ ...textStyle, fontSize: 14, lineHeight: 19 }}>{post.body}</Text> : null}
+          {post.video_url ? <FeedMedia userId={uid!} postId={post.id} reference={post.video_url} video enabled={focused && visible.has(post.id)} loop={reels} height={reels ? Math.max(120, height - 380) : 240} /> : photos.map(reference => <FeedMedia userId={uid!} key={reference} postId={post.id} reference={reference} maxImageHeight={300}
+            enabled={focused && visible.has(post.id)} />)}
+          {post.post_kind === "poll" && options.length ? <FeedPoll userId={uid!} postId={post.id} options={options} enabled={canWrite && focused} /> : null}
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 3, paddingTop: 3, borderTopWidth: 1, borderColor: theme.border }}>
+            <FeedCheckAction compact checked={checks[post.id]?.mine} count={checks[post.id]?.count}
+              pulseKey={checkPulses.scope === scope ? checkPulses.values[post.id] ?? 0 : 0}
+              disabled={!canWrite || !checks[post.id]} busy={Boolean(pending[`check:${post.id}`])}
+              onPress={() => void checkPost(post)} />
+            <Pressable accessibilityRole="button" accessibilityLabel="Comments" onPress={() => { if (reels) { router.push({ pathname: "/feed", params: { post: post.id, comments: "1" } }); return; } setOpenComments(previous => ({ ...previous, [post.id]: !previous[post.id] })); if (!page || page.error) void loadComments(post.id); }} style={feedActionTouch}><Ionicons name="chatbubble-outline" size={15} color={theme.muted} /><Text style={{ ...linkStyle, fontSize: 12 }}>Comments</Text></Pressable>
+            <Pressable accessibilityRole="button" accessibilityLabel="Share" onPress={() => void action(`share:${post.id}`, async () => { await Share.share({ title: "HoopFeed", message: `https://hoopcheck.online/feed#post-${post.id}` }); })} style={feedActionTouch}><Ionicons name="arrow-redo-outline" size={15} color={theme.muted} /><Text style={{ ...linkStyle, fontSize: 12 }}>Share</Text></Pressable>
             {reels && <Pressable accessibilityRole="button" accessibilityLabel="Report this Reel" onPress={() => void action(`report:${post.id}`, async () => { await Linking.openURL(`https://hoopcheck.online/support?reportReel=${post.id}`); })} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Report</Text></Pressable>}
             {reels && <Pressable accessibilityRole="button" accessibilityLabel="Hide this Reel from your device" onPress={() => void hideReel(post.id)} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Hide</Text></Pressable>}
             {reels && post.author_id !== uid && <Pressable accessibilityRole="button" accessibilityLabel="Hide this creator's Reels on this device" onPress={() => void hideCreator(post.author_id)} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Hide creator</Text></Pressable>}
             {reels && post.author_id !== uid && <Pressable accessibilityRole="button" accessibilityLabel="Block this HoopCheck account" disabled={Boolean(pending[`block:${post.author_id}`])} onPress={() => void blockAccount(post.author_id)} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Block account</Text></Pressable>}
-            <Pressable accessibilityRole="button" disabled={!canWrite || saved[post.id] === undefined || Boolean(pending[`save:${post.id}`])} onPress={() => void action(`save:${post.id}`, async () => { const value = !saved[post.id]; await feedAction(origin, await token(), "bookmark", post.id, value); if (viewer.current.uid === uid) setSaved(previous => ({ ...previous, [post.id]: value })); })} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>{saved[post.id] === undefined ? "Saved status unavailable" : saved[post.id] ? "Saved" : "Save"}</Text></Pressable>
+            <Pressable accessibilityRole="button" accessibilityLabel={saved[post.id] ? "Saved" : "Save"} disabled={!canWrite || saved[post.id] === undefined || Boolean(pending[`save:${post.id}`])} onPress={() => void action(`save:${post.id}`, async () => { const value = !saved[post.id]; await feedAction(origin, await token(), "bookmark", post.id, value); if (viewer.current.uid === uid) setSaved(previous => ({ ...previous, [post.id]: value })); })} style={feedActionTouch}><Ionicons name={saved[post.id] ? "bookmark" : "bookmark-outline"} size={15} color={theme.muted} /><Text style={{ ...linkStyle, fontSize: 12 }}>{saved[post.id] === undefined ? "Saved status unavailable" : saved[post.id] ? "Saved" : "Save"}</Text></Pressable>
           </View>
           {openComments[post.id] && !reels ? <View style={{ gap: 12 }}>
             {page?.loading ? <Text style={textStyle}>Loading comments…</Text> : page?.error ? <Text accessibilityRole="alert" style={textStyle}>{page.error}</Text> : !page?.rows.length ? <Text style={{ color: theme.muted }}>No comments yet.</Text> : page.rows.map(comment => <View key={comment.id} style={{ paddingLeft: comment.parent_id ? 12 : 0, borderLeftWidth: comment.parent_id ? 2 : 0, borderColor: theme.border }}><Text style={{ ...textStyle, fontWeight: "700" }}>{comment.profiles?.display_name || "HoopCheck member"}</Text><Text style={textStyle}>{comment.body}</Text><Pressable accessibilityRole="button" accessibilityLabel={`Reply to ${comment.profiles?.display_name || "HoopCheck member"}`} onPress={() => setReply({ owner: uid!, postId: post.id, id: comment.id, name: comment.profiles?.display_name || "HoopCheck member" })} style={touch}><Text style={linkStyle}>Reply</Text></Pressable></View>)}
@@ -378,7 +400,7 @@ function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
           </View> : null}
         </GlassCard></View>;
       }}
-      ListFooterComponent={next ? <View style={{ padding: 16 }}><Button secondary disabled={loading} onPress={() => void load(next)}>{loading ? "Loading…" : "Load more"}</Button></View> : null}
+      ListFooterComponent={!reels && next ? <View style={{ padding: 16 }}><Button secondary disabled={loading} onPress={() => void load(next)}>{loading ? "Loading…" : "Load more"}</Button></View> : null}
     />
   </SafeAreaView>;
 }

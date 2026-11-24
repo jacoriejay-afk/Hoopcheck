@@ -7,13 +7,14 @@ import { motion } from "../src/motion/config";
 import { useEntryTheme } from "../src/theme";
 
 /** Visual feedback only: the parent owns the verified Check API and membership gates. */
-export function FeedCheckAction({ checked, count, pulseKey, disabled, busy, onPress }: {
+export function FeedCheckAction({ checked, count, pulseKey, disabled, busy, onPress, compact = false }: {
   checked: boolean | undefined;
   count: number | undefined;
   /** Increments only after the current viewer's successful server-acknowledged Check. */
   pulseKey: number;
   disabled: boolean;
   busy: boolean;
+  compact?: boolean;
   onPress: () => void;
 }) {
   const theme = useEntryTheme();
@@ -41,17 +42,17 @@ export function FeedCheckAction({ checked, count, pulseKey, disabled, busy, onPr
     accessibilityState={{ selected, disabled: disabled || !available || busy, busy }}
     disabled={disabled || !available || busy} onPress={onPress}
     style={({ pressed }) => ({
-      flexDirection: "row", alignItems: "center", gap: 5, minHeight: 44,
-      paddingHorizontal: 11, borderRadius: theme.radius.pill,
-      backgroundColor: selected ? theme.accentSurface : theme.chip,
-      borderWidth: selected ? 1 : 0, borderColor: theme.accent,
+      flexDirection: "row", alignItems: "center", gap: compact ? 3 : 5, minHeight: 44,
+      paddingHorizontal: compact ? 5 : 11, borderRadius: theme.radius.pill,
+      backgroundColor: selected ? theme.accentSurface : compact ? "transparent" : theme.chip,
+      borderWidth: selected && !compact ? 1 : 0, borderColor: theme.accent,
       opacity: pressed ? .76 : disabled ? .6 : 1,
     })}>
     <Animated.View pointerEvents="none" style={animated}>
       <Ionicons name={selected ? "arrow-up-circle" : "arrow-up-circle-outline"}
-        color={selected ? theme.accent : theme.muted} size={18} />
+        color={selected ? theme.accent : theme.muted} size={compact ? 17 : 18} />
     </Animated.View>
-    <Text style={{ color: selected ? theme.accent : theme.foreground, fontSize: 13,
+    <Text style={{ color: selected ? theme.accent : theme.foreground, fontSize: compact ? 12 : 13,
       fontWeight: "700", fontVariant: ["tabular-nums"] }}>
       {!available ? "Checks unavailable" : `${selected ? "Checked" : "Check"} · ${count}`}
     </Text>

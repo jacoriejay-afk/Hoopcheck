@@ -48,5 +48,6 @@ test("new navigation preserves membership gates, message senders, team group dis
   assert.match(groups,/TEAM FAN GROUPS/);
   assert.match(groups,/\/hoopgroups/);
   assert.match(alert,/Messages & sender threads/);
-  assert.match(feed,/Meet HoopBot/);
+  assert.match(feed,/onFeedGuide=\{\(\) => router\.push\("\/feed-welcome"\)\}/);
+  assert.match(read("../components/glass/GlassHeader.tsx"),/Meet HoopBot welcome guide/);
 });
