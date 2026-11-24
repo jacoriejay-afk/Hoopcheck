@@ -64,8 +64,33 @@ assert.match(cron,/endingByProviderId\.get\(row\.provider_game_id\) \|\| confirm
 assert.doesNotMatch(cron,/update\(\{\s*status:\s*["']final["']\s*\}\)/,"No fabricated final statuses");
 
 const scoreWorkflow=read(".github/workflows/live-basketball-score-sync.yml");
-assert.ok(scoreWorkflow.includes('- cron: "7,22,37,52 * * * *"'),"Provider sync stays at four off-peak checks per hour");
-assert.ok(!scoreWorkflow.includes("*/5 ") && !scoreWorkflow.includes("*/1 "),"Never overspend the free-tier provider request budget");
+// Count actual unique daily slots, not the spelling of the old cron expression.
+const schedules = [...scoreWorkflow.matchAll(/- cron: "([^"]+)"/g)].map(m => m[1]);
+function values(field, max) {
+  if (field === "*") return Array.from({length:max+1}, (_,i)=>i);
+  return field.split(",").flatMap(part => {
+    assert.match(part, /^\d+(?:-\d+)?$/, "Only explicit bounded daily slots");
+    const [first,last=first] = part.split("-").map(Number);
+    assert.ok(first >= 0 && last <= max && first <= last);
+    return Array.from({length:last-first+1}, (_,i)=>first+i);
+  });
+}
+const slots = new Set();
+for (const schedule of schedules) {
+  const [mins,hours,...days]=schedule.split(" ");
+  assert.deepEqual(days, ["*","*","*"]);
+  for (const h of values(hours,23)) for (const m of values(mins,59)) {
+    const slot=h*60+m;
+    assert.ok(!slots.has(slot), "No duplicate provider calls");
+    slots.add(slot);
+  }
+}
+assert.equal(slots.size,99,"99 scheduled requests preserves one free-tier request of headroom");
+for(let hour=0;hour<24;hour++) for(const minute of [7,22,37,52])
+  assert.ok(slots.has(hour*60+minute),"Maintain regular off-peak refresh slots");
+assert.match(scoreWorkflow, /"7 0 \* \* \*"\) offset=-1/,"Reconcile yesterday without exceeding quota");
+assert.match(scoreWorkflow, /"12 3 \* \* \*"\) offset=1/,"Preload tomorrow");
+assert.match(scoreWorkflow, /date_offset=\$offset/,"Send requested calendar offset");
 
 const sql=read("supabase/candidates/live_game_chat_realtime_directory_review_only.sql");
 assert.match(sql,/REVIEW ONLY/);
