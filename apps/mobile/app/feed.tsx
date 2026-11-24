@@ -2,7 +2,7 @@ import { GlassSurface } from "../components/GlassSurface";
 import { CommunityWordmark } from "../components/BrandLockup";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Alert, FlatList, Linking, Pressable, RefreshControl, Share, Text, TextInput, View, Platform, type ViewToken } from "react-native";
+import { Alert, FlatList, Linking, Pressable, RefreshControl, Text, TextInput, View, Platform, type ViewToken } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
@@ -10,6 +10,7 @@ import { Button } from "../src/primitives";
 import { HoopCheckLoading } from "../components/HoopCheckLoading";
 import { ProfileAvatar } from "../components/ProfileAvatar";
 import { FeedMedia } from "../components/FeedMedia";
+import { FeedSharePanel } from "../components/FeedSharePanel";
 import { MediaPostComposer } from "../components/MediaPostComposer";
 import { FeedPoll } from "../components/FeedPoll";
 import { FeedCheckAction } from "../components/FeedCheckAction";
@@ -33,6 +34,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
   const canWrite = Boolean(uid && account?.features.canWriteHoopFeed && !offline);
   const [composerExpanded, setComposerExpanded] = useState(false);
   const [postMenu, setPostMenu] = useState<{scope:string;id:string}|null>(null);
+  const [sharePanel,setSharePanel]=useState<{scope:string;id:string}|null>(null);
   const [mediaMode, setMediaMode] = useState(false);
   const [mediaSource,setMediaSource]=useState<"camera"|"library">("library");
   const [reels, setReels] = useState(initialReels);
@@ -355,13 +357,14 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
               }
             })} />
             <Pressable accessibilityRole="button" onPress={() => { if (reels) { router.push({ pathname: "/feed", params: { post: post.id, comments: "1" } }); return; } setOpenComments(previous => ({ ...previous, [post.id]: !previous[post.id] })); if (!page || page.error) void loadComments(post.id); }} style={touch}><View style={{flexDirection:"row",alignItems:"center",gap:4}}><Ionicons name="chatbubble-outline" size={16} color={theme.accent}/><Text style={{ ...linkStyle, fontSize: 12 }}>Comments{page&&!page.loading&&!page.error&&!page.more?` · ${page.rows.length}`:""}</Text></View></Pressable>
-            <Pressable accessibilityRole="button" onPress={() => void action(`share:${post.id}`, async () => { await Share.share({ title: "HoopFeed", message: `https://hoopcheck.online/feed#post-${post.id}` }); })} style={touch}><View style={{flexDirection:"row",alignItems:"center",gap:4}}><Ionicons name="share-outline" size={16} color={theme.accent}/><Text style={{ ...linkStyle, fontSize: 12 }}>Share</Text></View></Pressable>
+            <Pressable accessibilityRole="button" onPress={()=>setSharePanel(current=>current?.scope===scope&&current.id===post.id?null:{scope,id:post.id})} style={touch}><View style={{flexDirection:"row",alignItems:"center",gap:4}}><Ionicons name="share-outline" size={16} color={theme.accent}/><Text style={{ ...linkStyle, fontSize: 12 }}>Share</Text></View></Pressable>
             {reels && <Pressable accessibilityRole="button" accessibilityLabel="Report this Reel" onPress={() => void action(`report:${post.id}`, async () => { await Linking.openURL(`https://hoopcheck.online/support?reportReel=${post.id}`); })} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Report</Text></Pressable>}
             {reels && <Pressable accessibilityRole="button" accessibilityLabel="Hide this Reel from your device" onPress={() => void hideReel(post.id)} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Hide</Text></Pressable>}
             {reels && post.author_id !== uid && <Pressable accessibilityRole="button" accessibilityLabel="Hide this creator's Reels on this device" onPress={() => void hideCreator(post.author_id)} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Hide creator</Text></Pressable>}
             {reels && post.author_id !== uid && <Pressable accessibilityRole="button" accessibilityLabel="Block this HoopCheck account" disabled={Boolean(pending[`block:${post.author_id}`])} onPress={() => void blockAccount(post.author_id)} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Block account</Text></Pressable>}
             <Pressable accessibilityRole="button" disabled={!canWrite || saved[post.id] === undefined || Boolean(pending[`save:${post.id}`])} onPress={() => void action(`save:${post.id}`, async () => { const value = !saved[post.id]; await feedAction(origin, await token(), "bookmark", post.id, value); if (viewer.current.uid === uid) setSaved(previous => ({ ...previous, [post.id]: value })); })} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>{saved[post.id] === undefined ? "Saved status unavailable" : saved[post.id] ? "Saved" : "Save"}</Text></Pressable>
           </View>
+          {uid&&focused&&sharePanel?.scope===scope&&sharePanel.id===post.id?<FeedSharePanel key={scope+post.id} userId={uid} role={account.user.accountType} postId={post.id} author={post.profiles?.display_name||"HoopCheck member"} preview={post.body||""} origin={origin} token={token} active={()=>viewer.current.scope===scope&&viewer.current.canRead} onClose={()=>setSharePanel(null)}/>:null}
           {openComments[post.id] && !reels ? <View style={{ gap: 12 }}>
             {page?.loading ? <Text style={textStyle}>Loading comments…</Text> : page?.error ? <Text accessibilityRole="alert" style={textStyle}>{page.error}</Text> : !page?.rows.length ? <Text style={{ color: theme.muted }}>No comments yet.</Text> : page.rows.map(comment => <View key={comment.id} style={{ paddingLeft: comment.parent_id ? 12 : 0, borderLeftWidth: comment.parent_id ? 2 : 0, borderColor: theme.border }}><View style={{flexDirection:"row",gap:8,alignItems:"flex-start"}}><ProfileAvatar size={28} name={comment.profiles?.display_name||"HoopCheck member"} url={comment.profiles?.avatar_moderation_status==="approved"?comment.profiles.avatar_url:null}/><View style={{flex:1,gap:3}}><Text style={{ ...textStyle, fontWeight: "700" }}>{comment.profiles?.display_name || "HoopCheck member"}</Text><Text style={textStyle}>{comment.body}</Text></View></View><Pressable accessibilityRole="button" accessibilityLabel={`Reply to ${comment.profiles?.display_name || "HoopCheck member"}`} onPress={() => setReply({ owner: uid!, postId: post.id, id: comment.id, name: comment.profiles?.display_name || "HoopCheck member" })} style={touch}><Text style={linkStyle}>Reply</Text></Pressable></View>)}
             {page?.more ? <Button secondary disabled={page.loading} onPress={() => void loadComments(post.id, page.offset + 50)}>Load more comments</Button> : null}
