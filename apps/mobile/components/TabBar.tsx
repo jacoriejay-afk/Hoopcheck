@@ -93,7 +93,7 @@ export function TabBar() {
   const activeWidth = width > 0 ? width / tabs.length : 0;
   // Only screens with explicit scroll clearance use the overlay. Form/chat routes
   // retain in-flow navigation until their input surfaces are migrated.
-  const floating = ["/dashboard", "/feed", "/fan-feed", "/reels", "/search", "/notifications", "/account"].includes(path) || /^\/(players|teams|leagues|womens)\/[^/]+$/.test(path) || /^\/womens\/leagues\/[^/]+$/.test(path);
+  const floating = ["/dashboard", "/feed", "/fan-feed", "/reels", "/search", "/notifications", "/account"].includes(path) || (path !== "/womens/leagues" && /^\/(players|teams|leagues|womens)\/[^/]+$/.test(path)) || /^\/womens\/leagues\/[^/]+$/.test(path);
   return <View testID="native-tab-bar" onLayout={event => setWidth(event.nativeEvent.layout.width)} style={{
       ...(floating ? { position: "absolute" as const, left: 0, right: 0, bottom: 0, zIndex: 40 } : {}),
       marginHorizontal: 20 + Math.max(insets.left, insets.right),
