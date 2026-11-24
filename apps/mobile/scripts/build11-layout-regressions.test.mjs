@@ -9,6 +9,7 @@ test("Build 11 Home hamburger opens a real owner menu in an isolated header isla
   assert.match(dashboard,/accessibilityState=\{\{expanded:menuOpen\}\}/);
   assert.match(dashboard,/setMenuOpen\(open=>!open\)/);
   assert.match(dashboard,/menuOpen \? <GlassSurface/);
+  assert.match(dashboard, /<BrandLogo onHero=\{theme\.dark\} \/>/, 'Header logo must remain legible in light and dark glass');
   for (const route of ["/account","/messages","/hoopgroups","/settings","/support"]) {
     assert.ok(dashboard.includes(`path:"${route}"`), "Menu route "+route);
   }
