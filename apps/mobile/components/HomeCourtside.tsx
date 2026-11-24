@@ -11,6 +11,7 @@ import { visibleConnections, type PublicConnection } from "../src/native/connect
 import { readBasketballSide, readLiveGames } from "../src/native/liveGames";
 import { selectHomePreviewGames } from "../src/native/homeGamePreview";
 import { readFeedPage, type FeedPost } from "../src/native/feedClient";
+import { withHoopChatDeadline } from "../src/native/hoopChatLoad";
 import { HoopCheckLoading } from "./HoopCheckLoading";
 import { Scoreboard } from "./Scoreboard";
 import { MyCourtActions } from "./MyCourtActions";
@@ -46,27 +47,27 @@ export function HomeCourtside() {
   useFocusEffect(useCallback(() => {
     void revision; // A user refresh starts a new focused request.
     let active = true; const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
+    const timeout = setTimeout(() => controller.abort(), 21000);
     // Keep the last verified snapshot while refreshing this same user and tier.
     // The scope check below prevents old account or membership data from leaking.
     async function load() {
       if (!uid || !role) return;
       try {
-        const before = await supabase.auth.getSession();
+        const before = await withHoopChatDeadline(() => supabase.auth.getSession(), 5000);
         if (before.error || before.data.session?.user.id !== uid) throw Error("Session changed");
         const token = before.data.session.access_token;
         const results = await Promise.allSettled([
-          supabase.rpc("get_public_follow_list", { p_mode: "following", p_target_type: null, p_target_id: null, p_user_id: uid }).abortSignal(controller.signal).then(result => { if (result.error) throw Error("Teams unavailable"); return visibleConnections(result.data, role).filter(row => row.target_type === "team"); }),
-          gameAccess ? readBasketballSide(supabase, uid).then(side => readLiveGames(supabase, side, fullGames ? null : { origin, token })) : Promise.resolve(null),
-          feedAccess ? readFeedPage(supabase, uid).then(page => page.posts.slice(0, 2)) : Promise.resolve(null),
+          withHoopChatDeadline(signal => supabase.rpc("get_public_follow_list", { p_mode: "following", p_target_type: null, p_target_id: null, p_user_id: uid }).abortSignal(signal).then(result => { if (result.error) throw Error("Teams unavailable"); return visibleConnections(result.data, role).filter(row => row.target_type === "team"); }), 7000),
+          gameAccess ? withHoopChatDeadline(() => readBasketballSide(supabase, uid).then(side => readLiveGames(supabase, side, fullGames ? null : { origin, token })), 9000) : Promise.resolve(null),
+          feedAccess ? withHoopChatDeadline(() => readFeedPage(supabase, uid).then(page => page.posts.slice(0, 2)), 7000) : Promise.resolve(null),
         ]);
         const teams = results[0].status === "fulfilled" ? results[0].value : null;
-        const after = await supabase.auth.getSession();
+        const after = await withHoopChatDeadline(() => supabase.auth.getSession(), 5000);
         if (!active) return;
         if (controller.signal.aborted || after.error || after.data.session?.user.id !== uid) throw Error("Home could not be verified");
         // Show the trusted page before fetching optional artwork. A slow or
         // missing logo may never block the rest of Home content.
-        setSnapshot({ scope, teams, logos: {}, games: results[1].status === "fulfilled" ? results[1].value : null, posts: results[2].status === "fulfilled" ? results[2].value : null });
+        setSnapshot(current => ({ scope, teams, logos: current?.scope === scope ? Object.fromEntries(Object.entries(current.logos).filter(([id]) => teams?.some(team => team.target_id === id))) : {}, games: results[1].status === "fulfilled" ? results[1].value : null, posts: results[2].status === "fulfilled" ? results[2].value : null }));
         const ids = teams?.slice(0, 2).map(item => item.target_id) ?? [];
         if (ids.length) {
           try {
