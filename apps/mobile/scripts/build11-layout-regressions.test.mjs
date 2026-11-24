@@ -56,7 +56,7 @@ test("Build 11 keeps nav tabs accessible and uses one floating island without ac
   assert.match(nav,/isLiquidGlassAvailable\(\)/);
   assert.match(nav,/marginHorizontal: 20 \+ Math\.max/);
   assert.match(nav,/borderRadius: 31/);
-  assert.match(nav,/activeWidth - 18/);
+  assert.match(nav,/activeWidth - 8/);
   assert.match(nav,/basketball-outline/);
   assert.match(nav,/person-circle-outline/);
   assert.match(nav,/accessibilityRole="tablist"/);

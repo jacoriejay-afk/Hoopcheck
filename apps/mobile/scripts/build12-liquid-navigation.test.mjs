@@ -22,6 +22,7 @@ test("bottom floating navigation supports iOS clear glass and BlurView with redu
   assert.doesNotMatch(tabs, /LinearGradient/);
   assert.match(tabs, /AccessibilityInfo\.isReduceTransparencyEnabled\(\)/);
   assert.match(tabs, /const translucent = Platform\.OS === "ios" && !reduceTransparency/);
+  assert.match(tabs, /position: "absolute" as const, left: 0, right: 0, bottom: 0/);
   assert.match(tabs, /marginBottom: Math\.max\(9, insets\.bottom\)/);
   assert.match(tabs, /<View \{\.\.\.slide\.panHandlers\} accessibilityRole="tablist"/);
 });
@@ -29,7 +30,9 @@ test("bottom floating navigation supports iOS clear glass and BlurView with redu
 test("Home safe-area header uses transparent navigation chrome with low-opacity highlights", () => {
   const home = read("../app/dashboard.tsx");
   assert.match(home, /<GlassSurface navigation style=/);
-  assert.match(home, /rgba\(255,255,255,\.10\)/);
+  assert.match(home, /pinnedHeader: \{ position: "absolute"/);
+  assert.match(home, /paddingTop: 72, paddingBottom: 100/);
+  assert.doesNotMatch(home, /rgba\(255,135,67,\.65\)/);
   assert.doesNotMatch(home, /rgba\(255,255,255,\.75\)/);
   assert.match(home, /<SafeAreaView edges=\{\["top", "left", "right", "bottom"\]\}/);
   assert.match(home, /<BrandLogo onHero=\{theme\.dark\} \/>/);

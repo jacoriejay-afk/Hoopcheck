@@ -10,12 +10,12 @@ export function EntityHero({ name, country, kind, label, location, path, logoUrl
   label: string; location?: string; path: string; logoUrl?: string | null; logoBg?: string | null;
 }) {
   const theme = useEntryTheme();
-  return <View style={{ backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, borderTopWidth: 3, borderTopColor: theme.button, borderRadius: theme.radius.hero, borderCurve: "continuous", padding: theme.spacing.lg, gap: theme.spacing.md }}>
+  return <View style={{ backgroundColor: "transparent", borderBottomWidth: 1, borderColor: theme.border, paddingVertical: 10, gap: 8 }}>
     <View style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.md }}>
-      <EntityArtwork name={name} kind={kind} size={72} logoUrl={logoUrl} logoBg={logoBg} />
+      <EntityArtwork name={name} kind={kind} size={64} logoUrl={logoUrl} logoBg={logoBg} />
       <View style={{ flex: 1, minWidth: 0, gap: theme.spacing.sm }}>
         <Text style={{ color: theme.muted, fontSize: 11, fontWeight: "800", letterSpacing: 1 }}>{label}</Text>
-        <Text accessibilityRole="header" style={{ color: theme.foreground, fontFamily: "HoopCheckDisplay", fontSize: 28, lineHeight: 32 }}>{name}</Text>
+        <Text accessibilityRole="header" style={{ color: theme.foreground, fontFamily: "HoopCheckDisplay", fontSize: 25, lineHeight: 29 }}>{name}</Text>
       </View>
     </View>
     <CountryChip country={country} />

@@ -9,8 +9,8 @@ export function NativePageHeader({ title, onBack }: { title: string; onBack?: ()
   const theme = useEntryTheme();
   const insets = useSafeAreaInsets();
   return <View testID="native-page-header" style={{ paddingTop: insets.top + 3, paddingBottom: 4,
-    paddingLeft: Math.max(10, insets.left), paddingRight: Math.max(10, insets.right), backgroundColor: theme.background }}>
-    <GlassSurface navigation intensity={55} style={{ minHeight: 46, borderRadius: 26,
+    paddingLeft: Math.max(10, insets.left), paddingRight: Math.max(10, insets.right), backgroundColor: "transparent" }}>
+    <GlassSurface navigation intensity={55} style={{ minHeight: 46, borderRadius: 26, borderWidth: 0,
       flexDirection: "row", alignItems: "center", paddingHorizontal: 5 }}>
       <View style={{ width: 44 }}>{onBack ? <Pressable accessibilityRole="button" accessibilityLabel="Back"
         onPress={onBack} style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center" }}>

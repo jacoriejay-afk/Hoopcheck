@@ -1,7 +1,7 @@
 import { EntitySchedule } from "../../components/EntitySchedule";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, RefreshControl, ScrollView, Text } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { EntityHero } from "../../components/EntityHero";
 import { OfflineBanner } from "../../components/OfflineBanner";
@@ -16,6 +16,7 @@ type Team = { logo_url?: string | null; logo_bg?: string | null; id: string; nam
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
 export default function WomensTeamScreen() {
   const theme = useEntryTheme();
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string | string[] }>();
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
@@ -73,8 +74,8 @@ export default function WomensTeamScreen() {
   const link = { color: theme.accent };
   const touch = { minHeight: 48, justifyContent: "center" as const };
   return <SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: theme.background }}>
-    <OfflineBanner savedAt={savedAt} />
-    <ScrollView contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.lg }} refreshControl={<RefreshControl refreshing={loading && refresh > 0} onRefresh={() => setRefresh(value => value + 1)} />}>
+    <ScrollView contentContainerStyle={{ padding: 12, paddingTop: insets.top + 62, paddingBottom: 100, gap: 10 }} refreshControl={<RefreshControl refreshing={loading && refresh > 0} onRefresh={() => setRefresh(value => value + 1)} />}>
+      <OfflineBanner savedAt={savedAt} />
       {loading ? <Skeleton profile /> : !current ? <Text accessibilityRole="alert" style={text}>Team unavailable. Pull to retry.</Text> : <>
         <EntityHero logoUrl={current.logo_url} logoBg={current.logo_bg} name={current.name} country={current.country} kind="women" label="WOMEN’S TEAM PROFILE" path={`/womens/${current.id}`} location={[current.city, current.country].filter(Boolean).join(", ") || "Location not listed"} />
           <EntitySchedule scope={{ kind: "team", id: current.id }} side="womens" refresh={refresh} />

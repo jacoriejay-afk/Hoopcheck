@@ -98,7 +98,7 @@ function RootLayout() {
         screenOptions={{
           animation: "none",
           header: ({ navigation, options, route, back }) => <NativePageHeader title={options.title || route.name} onBack={back ? () => navigation.goBack() : undefined} />,
-          headerStyle: { backgroundColor: theme.background },
+          headerStyle: { backgroundColor: "transparent" },
           headerTintColor: theme.accent,
           headerShadowVisible: false,
           headerTitleStyle: { fontFamily: "HoopCheckDisplay", fontSize: 21, color: theme.foreground },
@@ -134,17 +134,17 @@ function RootLayout() {
         <Stack.Screen name="reset-password" options={{ title: "Choose new password" }} />
         <Stack.Screen name="dashboard" options={{ title: "Home", headerShown: false, contentStyle: { backgroundColor: theme.background } }} />
         <Stack.Screen name="players" options={{ title: "Find players" }} />
-        <Stack.Screen name="players/[id]" options={{ title: "Player profile" }} />
+        <Stack.Screen name="players/[id]" options={{ title: "Player profile", headerTransparent: true }} />
         <Stack.Screen name="coaches" options={{ title: "Find a coach" }} />
         <Stack.Screen name="womens/index" options={{ title: "Women’s teams" }} />
-        <Stack.Screen name="womens/leagues/[id]" options={{ title: "League profile" }} />
-        <Stack.Screen name="womens/[id]" options={{ title: "Team profile" }} />
+        <Stack.Screen name="womens/leagues/[id]" options={{ title: "League profile", headerTransparent: true }} />
+        <Stack.Screen name="womens/[id]" options={{ title: "Team profile", headerTransparent: true }} />
         <Stack.Screen name="search" options={{ title: "Search & Explore" }} />
         <Stack.Screen name="teams" options={{ title: "Teams" }} />
-        <Stack.Screen name="teams/[id]" options={{ title: "Team profile" }} />
+        <Stack.Screen name="teams/[id]" options={{ title: "Team profile", headerTransparent: true }} />
         <Stack.Screen name="teams/[id]/review" options={{ title: "Write a review" }} />
         <Stack.Screen name="leagues" options={{ title: "Leagues" }} />
-        <Stack.Screen name="leagues/[id]" options={{ title: "League profile" }} />
+        <Stack.Screen name="leagues/[id]" options={{ title: "League profile", headerTransparent: true }} />
       </Stack></RouteFade>
       {signedIn ? <TabBar /> : null}<AppLock authReady={sessionReady} userId={session.userId} startupError={session.error} retryStartup={() => { void bootstrap.current?.retry(); }} protectedScreen={signedIn && !["sign-in", "sign-up", "reset-password", "auth"].includes(segments[0] ?? "")} />
       <AppOpening ready={sessionReady && (fontsLoaded || Boolean(fontError))}

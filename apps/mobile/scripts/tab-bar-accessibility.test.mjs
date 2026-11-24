@@ -18,7 +18,7 @@ async function render(accountType, path, platform = "ios") {
     'expo-blur': { BlurView: 'BlurView' },
     'expo-linear-gradient': { LinearGradient: 'LinearGradient' },
     'expo-glass-effect': { GlassView: 'GlassView', isGlassEffectAPIAvailable: () => false, isLiquidGlassAvailable: () => false },
-    'react-native': { Platform: { OS: platform }, StyleSheet: { absoluteFill: {} }, AccessibilityInfo: { isReduceTransparencyEnabled: platform === "ios" ? async () => true : undefined, addEventListener: () => ({ remove() {} }) }, PanResponder: { create: handlers => ({ panHandlers: handlers }) }, Keyboard: { addListener: () => ({ remove() {} }) }, Pressable: ({ children, ...props }) => React.createElement('Pressable', props, typeof children === 'function' ? children({ pressed: false }) : children), Text: 'Text', View: 'View' },
+    'react-native': { Platform: { OS: platform }, StyleSheet: { absoluteFill: {}, hairlineWidth: 1 }, AccessibilityInfo: { isReduceTransparencyEnabled: platform === "ios" ? async () => true : undefined, addEventListener: () => ({ remove() {} }) }, PanResponder: { create: handlers => ({ panHandlers: handlers }) }, Keyboard: { addListener: () => ({ remove() {} }) }, Pressable: ({ children, ...props }) => React.createElement('Pressable', props, typeof children === 'function' ? children({ pressed: false }) : children), Text: 'Text', View: 'View' },
     'expo-router': { usePathname: () => path, useRouter: () => ({ navigate: route => navigations.push(route) }) },
     '@expo/vector-icons': { Ionicons: 'Ionicons' },
     'react-native-safe-area-context': { useSafeAreaInsets: () => ({ left: 0, right: 0, bottom: 0 }) },
@@ -88,4 +88,20 @@ test("horizontal slide navigates one tab while vertical scrolling does not captu
     await act(async()=>handlers.onPanResponderRelease({}, {dx:70,dy:4}));
     assert.deepEqual(navigations,["/feed"]);
   } finally {await act(async()=>tree.unmount());}
+});
+
+test("primary tabs overlay the screen while unmigrated detail routes keep safe layout", async () => {
+  for (const path of ["/dashboard", "/feed", "/search", "/notifications", "/account", "/teams/example", "/players/example", "/womens/leagues/example", "/teams/example/review", "/womens/leagues"]) {
+    const { tree } = await render("player", path);
+    try {
+      const style = tree.root.findByProps({testID:"native-tab-bar"}).props.style;
+      if (path === "/teams/example/review" || path === "/womens/leagues") assert.notEqual(style.position, "absolute");
+      else {
+        assert.equal(style.position, "absolute");
+        assert.equal(style.bottom, 0);
+        assert.equal(style.left, 0);
+        assert.equal(style.right, 0);
+      }
+    } finally { await act(async () => tree.unmount()); }
+  }
 });

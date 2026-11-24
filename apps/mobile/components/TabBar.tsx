@@ -91,21 +91,26 @@ export function TabBar() {
   const translucent = Platform.OS === "ios" && !reduceTransparency;
   const nativeGlass = translucent && isGlassEffectAPIAvailable() && isLiquidGlassAvailable();
   const activeWidth = width > 0 ? width / tabs.length : 0;
+  // Only screens with explicit scroll clearance use the overlay. Form/chat routes
+  // retain in-flow navigation until their input surfaces are migrated.
+  const floating = ["/dashboard", "/feed", "/fan-feed", "/reels", "/search", "/notifications", "/account"].includes(path) || (path !== "/womens/leagues" && /^\/(players|teams|leagues|womens)\/[^/]+$/.test(path)) || /^\/womens\/leagues\/[^/]+$/.test(path);
   return <View testID="native-tab-bar" onLayout={event => setWidth(event.nativeEvent.layout.width)} style={{
+      ...(floating ? { position: "absolute" as const, left: 0, right: 0, bottom: 0, zIndex: 40 } : {}),
       marginHorizontal: 20 + Math.max(insets.left, insets.right),
       marginBottom: Math.max(9, insets.bottom), borderRadius: 31,
       borderCurve: "continuous", overflow: "hidden",
       backgroundColor: translucent ? "transparent" : theme.surface,
-      borderWidth: 1, borderColor: theme.dark ? "rgba(255,255,255,.24)" : "rgba(30,42,70,.16)",
+      borderWidth: nativeGlass ? 0 : StyleSheet.hairlineWidth, borderColor: theme.dark ? "rgba(255,255,255,.18)" : "rgba(30,42,70,.14)",
       shadowColor: "#000", shadowOffset: { width: 0, height: 14 },
-      shadowOpacity: theme.dark ? .42 : .16, shadowRadius: 24, elevation: 12,
+      shadowOpacity: nativeGlass ? 0 : theme.dark ? .20 : .09, shadowRadius: 14, elevation: 12,
     }}>
     {nativeGlass ? <GlassView pointerEvents="none" accessible={false} glassEffectStyle="clear" style={[StyleSheet.absoluteFill, { borderRadius: 31 }]} /> :
       translucent ? <BlurView pointerEvents="none" accessible={false} intensity={65}
         tint={theme.dark ? "dark" : "light"} style={StyleSheet.absoluteFill} /> : null}
     {index >= 0 && activeWidth > 0 ? <Animated.View pointerEvents="none" style={[{
-      position: "absolute", left: Math.max(0, (activeWidth - 18) / 2), bottom: 2,
-      width: 18, height: 3, borderRadius: 3, backgroundColor: theme.accent,
+      position: "absolute", left: 4, top: 4, bottom: 4,
+      width: Math.max(0, activeWidth - 8), borderRadius: 26,
+      backgroundColor: theme.dark ? "rgba(255,255,255,.14)" : "rgba(0,0,0,.07)",
     }, indicator]} /> : null}
     <View {...slide.panHandlers} accessibilityRole="tablist" style={{ flexDirection: "row", paddingVertical: 4 }}>
       {tabs.map((tab, i) => {

@@ -1,7 +1,7 @@
 import { EntitySchedule } from "../../../components/EntitySchedule";
 import { useEffect, useRef, useState } from "react";
 import { FlatList, Pressable, RefreshControl, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { EntityHero } from "../../../components/EntityHero";
 import { Skeleton } from "../../../components/Motion";
@@ -15,6 +15,7 @@ type League = { id: string; name: string; country: string | null; level: string 
 type Team = { id: string; name: string; city: string | null; country: string | null };
 export default function WomensLeagueScreen() {
   const theme = useEntryTheme();
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string | string[] }>();
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
@@ -66,10 +67,10 @@ export default function WomensLeagueScreen() {
   }
   const visible = league?.id === id ? league : null;
   return <SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: theme.background }}>
-    <OfflineBanner savedAt={savedAt} />
-    <FlatList data={visible ? teams : []} keyExtractor={item => item.id} contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.md }}
+    <FlatList data={visible ? teams : []} keyExtractor={item => item.id} contentContainerStyle={{ padding: 12, paddingTop: insets.top + 62, paddingBottom: 100, gap: 8 }}
       refreshControl={<RefreshControl refreshing={loading && refresh > 0} onRefresh={() => setRefresh(value => value + 1)} />}
-      ListHeaderComponent={<View style={{ gap: 16, marginBottom: 16 }}>
+      ListHeaderComponent={<View style={{ gap: 8, marginBottom: 8 }}>
+        <OfflineBanner savedAt={savedAt} />
         {visible ? <>
           <EntityHero name={visible.name} country={visible.country} kind="leagues" label="WOMEN’S LEAGUE PROFILE" path={`/womens/leagues/${visible.id}`} />
           <EntitySchedule scope={{ kind: "league", name: visible.name, country: visible.country }} side="womens" refresh={refresh} />

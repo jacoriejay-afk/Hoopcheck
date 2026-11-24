@@ -1,9 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useCallback, useState } from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
-import { Button, PressableCard } from "../src/primitives";
+import { Button } from "../src/primitives";
 import { useEntryTheme } from "../src/theme";
 import { useNativeAccount } from "../src/native/useNativeAccount";
 import { supabase } from "../src/lib/supabase";
@@ -11,15 +11,11 @@ import { visibleConnections, type PublicConnection } from "../src/native/connect
 import { readBasketballSide, readLiveGames } from "../src/native/liveGames";
 import { selectHomePreviewGames } from "../src/native/homeGamePreview";
 import { readFeedPage, type FeedPost } from "../src/native/feedClient";
-import { Skeleton } from "./Motion";
 import { HoopCheckLoading } from "./HoopCheckLoading";
 import { Scoreboard } from "./Scoreboard";
 import { MyCourtActions } from "./MyCourtActions";
 import { EntityArtwork } from "./EntityArtwork";
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
-// Existing bundled court art: no real player photograph, team crest, or sponsored asset.
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const arena = require("../assets/courtside-arena.webp");
 type Games = Awaited<ReturnType<typeof readLiveGames>>;
 type HomeData = { scope: string; teams: PublicConnection[] | null; games: Games | null; posts: FeedPost[] | null;
   logos: Record<string, { url: string | null; bg: string | null }>; };
@@ -95,7 +91,7 @@ export function HomeCourtside() {
     return () => { active = false; controller.abort(); clearTimeout(timeout); };
   }, [uid, role, scope, revision, gameAccess, feedAccess, fullGames]));
   const data=account&&snapshot?.scope===scope?snapshot:null;
-  if(loading)return <Skeleton review />;
+  if(loading)return <HoopCheckLoading compact label="Loading your court…" />;
   if(!account)return <View style={{gap:t.spacing.sm}}>
     <Text accessibilityRole="alert" style={{color:t.muted}}>{error||"Verify your account to personalize Home."}</Text>
     <Button secondary onPress={retry}>Retry account verification</Button>
@@ -103,35 +99,29 @@ export function HomeCourtside() {
   const tier=account.tier==="premium"?"PREMIUM":account.tier==="pro"?"PRO":"FREE";
   const followTeams=data?.teams??[];
   const previewGames=selectHomePreviewGames(data?.games?.games??[]);
-  return <View style={{gap:14,marginBottom:t.spacing.lg}}>
-    <View style={{borderRadius:19,overflow:"hidden",borderWidth:1,
-        borderColor:t.dark?"rgba(255,150,74,.70)":"rgba(211,93,29,.58)",
-        backgroundColor:"#101F35"}}>
-        <LinearGradient colors={["#0D203B","#153A62","#351B25"]} start={{x:0,y:0}}
-          end={{x:1,y:1}} style={StyleSheet.absoluteFill}/>
-        <Image source={arena} resizeMode="cover" accessible={false} alt=""
-          style={[StyleSheet.absoluteFill,{opacity:.14}]}/>
-        <View style={{padding:14,gap:12}}>
+  return <View style={{gap:9,marginBottom:t.spacing.md}}>
+    <View style={{borderBottomWidth:1,borderColor:t.border}}>
+        <View style={{paddingVertical:8,gap:5}}>
           <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
             <View style={{flex:1,minWidth:0,gap:3}}>
-              <Text accessibilityRole="header" numberOfLines={2} style={{color:"#FFFFFF",
-                fontFamily:t.type.ui.fontFamily,fontWeight:"700",fontSize:18,lineHeight:23}}>
+              <Text accessibilityRole="header" numberOfLines={2} style={{color:t.foreground,
+                fontFamily:"HoopCheckDisplay",fontWeight:"700",fontSize:18,lineHeight:23}}>
                 {account.user.displayName?`Welcome back, ${account.user.displayName}`:"Welcome to HoopCheck"}
               </Text>
-              <Text style={{color:"#C7D8ED",fontSize:12,lineHeight:17}}>Know who you're signing with.</Text>
+              <Text style={{color:t.muted,fontSize:12,lineHeight:17}}>Know who you're signing with.</Text>
             </View>
-            <View accessible accessibilityLabel={`${tier} membership`} style={{backgroundColor:account.tier==="free"?"rgba(255,255,255,.12)":"#FF8E37",
+            <View accessible accessibilityLabel={`${tier} membership`} style={{backgroundColor:account.tier==="free"?t.chip:"#FF8E37",
               borderRadius:9,paddingHorizontal:9,paddingVertical:5,borderWidth:1,
-              borderColor:account.tier==="free"?"rgba(255,255,255,.28)":"#FFD07A"}}>
-              <Text style={{fontSize:10,fontWeight:"800",color:account.tier==="free"?"#FFFFFF":"#1C1B23"}}>{tier}</Text>
+              borderColor:account.tier==="free"?t.border:"#FFD07A"}}>
+              <Text style={{fontSize:10,fontWeight:"800",color:account.tier==="free"?t.foreground:"#1C1B23"}}>{tier}</Text>
             </View>
           </View>
           <Pressable accessibilityRole="link" onPress={()=>router.push("/account/edit")}
             style={{flexDirection:"row",alignItems:"center",minHeight:44,gap:8,
-              borderTopWidth:1,borderColor:"rgba(255,255,255,.19)",paddingTop:8}}>
+              borderTopWidth:1,borderColor:t.border,paddingTop:8}}>
             <Ionicons name="person-circle-outline" color="#FFAD73" size={18} />
-            <Text style={{flex:1,color:"#E7EFF9",fontSize:12}}>Complete your profile</Text>
-            <Text style={{color:"#FFA362",fontWeight:"700",fontSize:12}}>Edit profile →</Text>
+            <Text style={{flex:1,color:t.foreground,fontSize:12}}>Complete your profile</Text>
+            <Text style={{color:t.accent,fontWeight:"700",fontSize:12}}>Edit profile →</Text>
           </Pressable>
         </View>
     </View>
@@ -147,9 +137,9 @@ export function HomeCourtside() {
       followTeams.slice(0,2).map(team=><Pressable key={team.target_id}
         accessibilityRole="link" accessibilityLabel={team.display_name||"View team"}
         onPress={()=>router.push({pathname:"/teams/[id]",params:{id:team.target_id}})}
-        style={({pressed})=>({opacity:pressed?.8:1,borderRadius:16,overflow:"hidden",borderWidth:1,
-          borderColor:t.dark?"rgba(94,171,255,.36)":t.border,backgroundColor:t.elevatedSurface})}>
-        <View style={{flexDirection:"row",alignItems:"center",gap:10,padding:10,minHeight:67}}>
+        style={({pressed})=>({opacity:pressed?.8:1,borderRadius:0,overflow:"hidden",borderBottomWidth:1,
+          borderColor:t.border,backgroundColor:"transparent"})}>
+        <View style={{flexDirection:"row",alignItems:"center",gap:8,padding:6,minHeight:55}}>
           <EntityArtwork name={team.display_name||"Team"} kind="teams" size={46} logoUrl={data.logos[team.target_id]?.url} logoBg={data.logos[team.target_id]?.bg}/>
           <View style={{flex:1,minWidth:0}}>
             <Text numberOfLines={1} style={{fontFamily:t.type.ui.fontFamily,color:t.foreground,
@@ -190,9 +180,9 @@ export function HomeCourtside() {
       {!gameAccess?<Text style={{color:t.muted,fontSize:12}}>Game Center requires an eligible membership.</Text>:
         data.games===null?<Text accessibilityRole="alert" style={{color:t.muted}}>Scores could not load.</Text>:
         !previewGames.length?<Text style={{color:t.muted,fontSize:12}}>No live or upcoming games. See Game Center for past results.</Text>:
-        previewGames.map(game=><PressableCard key={game.id} onPress={()=>router.push({pathname:"/fan-live",params:{gameId:game.id}})}>
+        previewGames.map(game=><Pressable accessibilityRole="button" key={game.id} style={({pressed})=>({minHeight:44,paddingVertical:8,borderBottomWidth:1,borderColor:t.border,opacity:pressed?.72:1})} onPress={()=>router.push({pathname:"/fan-live",params:{gameId:game.id}})}>
           <Scoreboard game={game} teams={data.games!.teams}/>
-        </PressableCard>)}
+        </Pressable>)}
       <ArenaHeading title="FROM HOOPFEED" cta="Open" onPress={()=>router.push("/feed")}/>
       {!feedAccess?<Text style={{color:t.muted,fontSize:12}}>Community posts require an eligible membership.</Text>:
         data.posts===null?<Text accessibilityRole="alert" style={{color:t.muted}}>HoopFeed preview could not load.</Text>:
@@ -204,10 +194,10 @@ export function HomeCourtside() {
             No community posts yet. Start a discussion in HoopFeed →
           </Text>
         </Pressable>:
-        data.posts.map(post=><PressableCard key={post.id} onPress={()=>router.push({pathname:"/feed",params:{post:post.id}})}>
+        data.posts.map(post=><Pressable accessibilityRole="button" key={post.id} style={({pressed})=>({minHeight:44,paddingVertical:8,borderBottomWidth:1,borderColor:t.border,opacity:pressed?.72:1,gap:4})} onPress={()=>router.push({pathname:"/feed",params:{post:post.id}})}>
           <Text style={{color:t.muted,...t.type.caption}}>{post.profiles?.display_name||"HoopCheck member"} · {new Date(post.created_at).toLocaleDateString()}</Text>
           <Text numberOfLines={3} style={{color:t.foreground,...t.type.body}}>{post.body||(post.video_url?"Watch a community highlight":"View community media")}</Text>
-        </PressableCard>)}
+        </Pressable>)}
       <Button secondary onPress={()=>setRevision(v=>v+1)}>Refresh courtside</Button>
     </>}
   </View>;
