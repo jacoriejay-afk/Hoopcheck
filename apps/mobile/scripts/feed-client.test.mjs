@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createClient } from '@supabase/supabase-js';
-import { readFeedPage, readSharedFeedPost, readFeedComments, moderateFeedText, publishFeedPoll, validatedPollOptions, authorizedFeedMedia, toggleFeedCheck, readFeedChecks, readFeedSaved, feedAction, deleteOwnedFeedPost } from '../src/native/feedClient.ts';
+import { readFeedPage, readSharedFeedPost, readFeedComments, moderateFeedText, publishFeedPoll, validatedPollOptions, authorizedFeedMedia, toggleFeedCheck, readFeedChecks, readFeedSaved, feedAction, deleteOwnedFeedPost, sendFeedShare } from '../src/native/feedClient.ts';
 const uid = '11111111-1111-4111-8111-111111111111';
 const id = n => `22222222-2222-4222-8222-${String(n).padStart(12, '0')}`;
 const now = new Date('2026-11-18T12:00:00Z');
@@ -176,4 +176,16 @@ test('delete never claims success on RLS denial, zero-row response, wrong identi
   await assert.rejects(deleteOwnedFeedPost(noNetwork,'bad',id(1)));
   await assert.rejects(deleteOwnedFeedPost(noNetwork,uid,'bad'));
   assert.equal(calls,0);
+});
+
+test('share delivery sends only the two IDs and requires explicit server acknowledgement',async()=>{
+  const calls=[];const request=async(url,options)=>{calls.push({url,options});return Response.json({ok:true});};
+  await sendFeedShare('https://api.test','token',id(1),id(2),undefined,request);
+  assert.equal(calls[0].url,'https://api.test/api/hoopfeed/share');
+  assert.equal(calls[0].options.headers.Authorization,'Bearer token');
+  assert.equal(calls[0].options.redirect,'error');assert.equal(calls[0].options.cache,'no-store');
+  assert.deepEqual(JSON.parse(calls[0].options.body),{post_id:id(1),recipient_id:id(2)});
+  await assert.rejects(sendFeedShare('https://api.test','token',id(1),'bad',undefined,request));assert.equal(calls.length,1);
+  await assert.rejects(sendFeedShare('https://api.test','token',id(1),id(2),undefined,async()=>Response.json({ok:false,message:'Not eligible'},{status:403})),/Not eligible/);
+  await assert.rejects(sendFeedShare('https://api.test','token',id(1),id(2),undefined,async()=>Response.json({ok:'true'})),/could not be confirmed/);
 });
