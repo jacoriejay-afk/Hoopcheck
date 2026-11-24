@@ -189,3 +189,14 @@ test('share delivery sends only the two IDs and requires explicit server acknowl
   await assert.rejects(sendFeedShare('https://api.test','token',id(1),id(2),undefined,async()=>Response.json({ok:false,message:'Not eligible'},{status:403})),/Not eligible/);
   await assert.rejects(sendFeedShare('https://api.test','token',id(1),id(2),undefined,async()=>Response.json({ok:'true'})),/could not be confirmed/);
 });
+
+test("optional post location is explicitly entered, bounded, and never attached to comments",async()=>{
+  const requests=[];const request=async(url,options)=>{requests.push(options.body);return Response.json({allowed:true});};
+  await moderateFeedText("https://api.test","token","post","Hello",undefined,request,undefined,"  Arena  ");
+  await publishFeedPoll("https://api.test","token","Question?",["A","B"],request,"  City  ");
+  assert.equal(requests[0].get("post_location"),"Arena");assert.equal(requests[1].get("post_location"),"City");
+  assert.equal(requests[0].has("share_country"),false);
+  await assert.rejects(moderateFeedText("https://api.test","token","comment","Reply",id(1),request,undefined,"City"));
+  await assert.rejects(publishFeedPoll("https://api.test","token","Question?",["A","B"],request,"x".repeat(101)));
+  assert.equal(requests.length,2);
+});
