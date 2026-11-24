@@ -7,7 +7,7 @@ import { useMotionSetting } from "../src/motion/Provider";
 import { motion } from "../src/motion/config";
 
 /** Vector redraw of the owner's November 24 shield and orange arrow. */
-export function BrandMark({ size = 48, animated = false }: { size?: number; animated?: boolean }) {
+export function BrandMark({ size = 48, animated = false, ink }: { size?: number; animated?: boolean; ink?: string }) {
   const theme = useEntryTheme();
   const reduced = useMotionSetting();
   const progress = useSharedValue(animated && !reduced ? 0 : 1);
@@ -27,12 +27,12 @@ export function BrandMark({ size = 48, animated = false }: { size?: number; anim
   const takeoff = useAnimatedStyle(() => ({ opacity: arrowProgress.get(), transform: [{ translateX: -(1 - arrowProgress.get()) * size * 0.10 }, { translateY: (1 - arrowProgress.get()) * size * 0.10 }] }));
   return <View accessible={false} importantForAccessibility="no-hide-descendants" style={{ width: size, height: size }}>
     <Animated.View style={reveal}><Svg width={size} height={size} viewBox="190 240 720 750">
-      <Path d="M505 260 775 426 775 545 732 582 732 451 505 313 260 458 260 764 496 913 706 779 501 971 215 793 215 430Z" fill={theme.foreground} />
-      <Ellipse cx={495} cy={606} rx={200} ry={208} fill="none" stroke={theme.foreground} strokeWidth={15} />
-      <Path d="M360 450 C418 548 510 510 633 458" fill="none" stroke={theme.foreground} strokeWidth={14} strokeLinecap="round" />
-      <Path d="M505 399 C423 507 418 676 497 813" fill="none" stroke={theme.foreground} strokeWidth={14} strokeLinecap="round" />
-      <Path d="M298 610 C382 527 570 544 693 621" fill="none" stroke={theme.foreground} strokeWidth={14} strokeLinecap="round" />
-      <Path d="M353 756 C337 662 391 595 451 619 C526 622 565 714 636 756" fill="none" stroke={theme.foreground} strokeWidth={14} strokeLinecap="round" />
+      <Path d="M505 260 775 426 775 545 732 582 732 451 505 313 260 458 260 764 496 913 706 779 501 971 215 793 215 430Z" fill={ink ?? theme.foreground} />
+      <Ellipse cx={495} cy={606} rx={200} ry={208} fill="none" stroke={ink ?? theme.foreground} strokeWidth={15} />
+      <Path d="M360 450 C418 548 510 510 633 458" fill="none" stroke={ink ?? theme.foreground} strokeWidth={14} strokeLinecap="round" />
+      <Path d="M505 399 C423 507 418 676 497 813" fill="none" stroke={ink ?? theme.foreground} strokeWidth={14} strokeLinecap="round" />
+      <Path d="M298 610 C382 527 570 544 693 621" fill="none" stroke={ink ?? theme.foreground} strokeWidth={14} strokeLinecap="round" />
+      <Path d="M353 756 C337 662 391 595 451 619 C526 622 565 714 636 756" fill="none" stroke={ink ?? theme.foreground} strokeWidth={14} strokeLinecap="round" />
     </Svg></Animated.View>
     <Animated.View pointerEvents="none" style={[{ position: "absolute", top: 0, left: 0, width: size, height: size }, takeoff]}>
       <Svg width={size} height={size} viewBox="190 240 720 750"><Path d="M891 486 781 793 510 971 743 760 790 630 635 766 671 668Z" fill="#FF6A00" /></Svg>

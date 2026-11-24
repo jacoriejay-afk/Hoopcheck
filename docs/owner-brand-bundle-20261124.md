@@ -23,3 +23,5 @@ Marketing: docs/hoopcheck-marketing-motion-kit.html is a self-contained official
 
 ## Share and milestone completion candidate
 Authorized native/web feed media and Reels have a static, non-interactive on-screen brand overlay; the original files, signed links, media grants and share visibility are unchanged. Native and web shares carry HoopCheck attribution and existing gated links. The public social preview uses the branded PNG only, never a private post thumbnail. Existing verified profile/passport milestones have a finite reduced-motion-safe reveal; this does not create new awards or fabricate unlock events. No video/photo file export or server-side watermarking is included. Physical iOS/Android and latest CI remain release gates.
+
+Native media watermark uses fixed light ink on its dark scrim, independent of device theme; regular app marks retain adaptive ink.
