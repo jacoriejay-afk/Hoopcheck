@@ -16,7 +16,7 @@ function compile(source, stubs={}) {
   vm.runInNewContext(result.outputText, { exports, require: name=>stubs[name] || require(name), URL, Date, Set, Map, Promise, setTimeout, clearTimeout });
   return exports;
 }
-const sourceApi = compile(read("../../../lib/hoopreels-video-source.ts"));
+const sourceApi = compile(read("../../../lib/hoopreels/video-source.ts"));
 const owner = "11111111-1111-4111-8111-111111111111";
 const postId = "22222222-2222-4222-8222-222222222222";
 const author = "33333333-3333-4333-8333-333333333333";
@@ -54,7 +54,7 @@ test("For You ranks real recency, normalized Checks and followed anchors; Follow
   assert.equal(sourceApi.rankReels([fresh,strong],{[other]:20},new Set([owner]),now)[0].id,other);
 });
 test("catalog client uses bearer auth, no raw fallback, and verifies curated post identity",async()=>{
-  const api=compile(read("../src/native/reelCatalog.ts"),{"../../../../lib/hoopreels-video-source":sourceApi});
+  const api=compile(read("../src/native/reelCatalog.ts"),{"../../../../lib/hoopreels/video-source":sourceApi});
   const signal=new AbortController().signal;
   let requestCount=0;
   const result=await api.requestReelCatalog("https://api.test","fixture-token",signal,async(url,opts)=>{

@@ -16,7 +16,7 @@ import { FeedMedia } from "../components/FeedMedia";
 import { HoopReelCard } from "../components/HoopReelCard";
 import { Sheet } from "../components/Sheet";
 import { requestReelCatalog } from "../src/native/reelCatalog";
-import { HOOPREELS_CREATE_ENABLED, isFollowedReel, isReelId, rankReels } from "../../../lib/hoopreels-video-source";
+import { HOOPREELS_CREATE_ENABLED, isFollowedReel, isReelId, rankReels } from "../../../lib/hoopreels/video-source";
 import { MediaPostComposer } from "../components/MediaPostComposer";
 import { FeedPoll } from "../components/FeedPoll";
 import { FeedCheckAction } from "../components/FeedCheckAction";

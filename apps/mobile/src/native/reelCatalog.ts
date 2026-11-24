@@ -1,5 +1,5 @@
 import type { FeedPost } from "./feedClient";
-import { isReelId, REEL_CATALOG_LIMIT, resolveVideoSource } from "../../../../lib/hoopreels-video-source";
+import { isReelId, REEL_CATALOG_LIMIT, resolveVideoSource } from "../../../../lib/hoopreels/video-source";
 
 /** Only call this provider catalog, never the ordinary raw-media reader. */
 export async function requestReelCatalog(origin: string, token: string, signal: AbortSignal, request: typeof fetch = fetch) {

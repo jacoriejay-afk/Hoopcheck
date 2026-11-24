@@ -12,7 +12,7 @@ import { useNativeAccount } from "../../src/native/useNativeAccount";
 import { REEL_TOPICS, type ReelTopic } from "../../src/native/mediaClient";
 import { clearReelCaptionDraft, readReelCaptionDraft, writeReelCaptionDraft } from "../../src/native/reelDraft";
 import { GlassThemeScope, useEntryTheme } from "../../src/theme";
-import { HOOPREELS_CREATE_ENABLED } from "../../../../lib/hoopreels-video-source";
+import { HOOPREELS_CREATE_ENABLED } from "../../../../lib/hoopreels/video-source";
 
 type OwnReel = { id: string; body: string | null; created_at: string; status: string };
 const isUuid = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);

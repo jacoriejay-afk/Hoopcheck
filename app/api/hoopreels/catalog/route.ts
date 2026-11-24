@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { GET as bootstrap } from "../../mobile/bootstrap/route";
-import { curatedReelCatalog } from "../../../../lib/hoopreels-video-source";
+import { curatedReelCatalog } from "../../../../lib/hoopreels/video-source";
 
 export const dynamic = "force-dynamic";
 const reply = (body: unknown, status = 200) => NextResponse.json(body, { status, headers: { "Cache-Control": "private, no-store" } });

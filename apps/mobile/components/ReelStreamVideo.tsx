@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AppState, Image, StyleSheet, Text, View } from "react-native";
 import { VideoView, useVideoPlayer } from "expo-video";
-import type { ReelVideoSource } from "../../../lib/hoopreels-video-source";
+import type { ReelVideoSource } from "../../../lib/hoopreels/video-source";
 
 /** Mounted only for the visible Reel and its next two neighbours. expo-video
  * starts buffering a source before the attached view plays. No whole-file
