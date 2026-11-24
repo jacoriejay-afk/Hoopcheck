@@ -35,5 +35,26 @@ export function ExploreLinks({ publicOnly = false, compact = false }: { publicOn
         </View>
         {!compact ? <Ionicons name="chevron-forward" size={17} color={theme.foreground} /> : null}
       </Pressable>)}
+    {!publicOnly ? ([
+      { kind: "agents", title: "Agents & Scouts", detail: "Discover professional showcases", icon: "briefcase-outline" },
+      { kind: "creators", title: "Creators", detail: "Discover the basketball creator network", icon: "videocam-outline" },
+      { kind: "safety", title: "Player Safety", detail: "Recognize and report suspicious offers", icon: "shield-checkmark-outline" },
+    ] as const).map(item =>
+      <Pressable key={item.kind} accessibilityRole="link" accessibilityLabel={item.title}
+        onPress={() => router.push({ pathname: "/account/network", params: { kind: item.kind } })}
+        style={({ pressed }) => ({
+          flexDirection: "row", alignItems: "center",
+          ...(compact ? { width: "48%" as const, flexGrow: 1, minHeight: 55, paddingHorizontal: 13, paddingVertical: 6, gap: 11 }
+            : { minHeight: 70, padding: theme.spacing.md, gap: theme.spacing.md }),
+          borderRadius: theme.radius.control, borderCurve: "continuous" as const, borderWidth: 1, borderColor: theme.border,
+          backgroundColor: pressed ? theme.accentSurface : theme.surface,
+        })}>
+        <Ionicons name={item.icon} size={compact ? 22 : 25} color={theme.accent} />
+        <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
+          <Text numberOfLines={compact ? 2 : undefined} style={{ color: theme.foreground, fontSize: compact ? 12 : undefined, fontWeight: compact ? "700" : undefined, ...(!compact ? theme.type.section : {}) }}>{item.title}</Text>
+          {!compact ? <Text style={{ color: theme.muted, fontSize: 12, lineHeight: 17 }}>{item.detail}</Text> : null}
+        </View>
+        {!compact ? <Ionicons name="chevron-forward" size={17} color={theme.foreground} /> : null}
+      </Pressable>) : null}
   </View>;
 }
