@@ -14,10 +14,10 @@ test("native glass navigation is clear without opaque overlays, preserving card 
   assert.match(glass, /<BlurView pointerEvents="none" accessible=\{false\}/);
 });
 
-test("bottom floating navigation supports iOS clear glass and BlurView with reduced transparency fallback", () => {
+test("bottom navigation uses a legible surface, regular iOS glass and reduced transparency fallback", () => {
   const tabs = read("../components/TabBar.tsx");
-  assert.match(tabs, /backgroundColor: translucent \? "transparent" : theme\.surface/);
-  assert.match(tabs, /glassEffectStyle="clear"/);
+  assert.match(tabs, /backgroundColor: theme\.surface/);
+  assert.match(tabs, /glassEffectStyle="regular"/);
   assert.doesNotMatch(tabs, /colorScheme=/);
   assert.doesNotMatch(tabs, /LinearGradient/);
   assert.match(tabs, /AccessibilityInfo\.isReduceTransparencyEnabled\(\)/);
