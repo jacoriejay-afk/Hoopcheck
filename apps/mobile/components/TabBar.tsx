@@ -91,8 +91,8 @@ export function TabBar() {
   const translucent = Platform.OS === "ios" && !reduceTransparency;
   const nativeGlass = translucent && isGlassEffectAPIAvailable() && isLiquidGlassAvailable();
   const activeWidth = width > 0 ? width / tabs.length : 0;
-  // Only screens with explicit scroll clearance use the overlay. Detail screens
-  // retain in-flow navigation until their input/scroll surfaces are migrated.
+  // Only screens with explicit scroll clearance use the overlay. Form/chat routes
+  // retain in-flow navigation until their input surfaces are migrated.
   const floating = ["/dashboard", "/feed", "/fan-feed", "/reels", "/search", "/notifications", "/account"].includes(path) || /^\/(players|teams|leagues|womens)\/[^/]+$/.test(path) || /^\/womens\/leagues\/[^/]+$/.test(path);
   return <View testID="native-tab-bar" onLayout={event => setWidth(event.nativeEvent.layout.width)} style={{
       ...(floating ? { position: "absolute" as const, left: 0, right: 0, bottom: 0, zIndex: 40 } : {}),
