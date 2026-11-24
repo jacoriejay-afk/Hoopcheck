@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ScrollView, Share, Text, View } from "react-native";
+import { Linking, ScrollView, Share, Text, View } from "react-native";
 import { Button } from "../src/primitives";
 import { useEntryTheme } from "../src/theme";
 import { useNativeAccount } from "../src/native/useNativeAccount";
@@ -19,6 +19,8 @@ export function PrivateWorkspace({kind}:{kind:WorkspaceKind}) {
   const owner=account?.user.id,allowed=Boolean(owner&&account?.workspaces?.[kind]===true&&!offline);
   const [state,setState]=useState<{owner:string;data:Workspace|null;error:string}|null>(null);
   const [refresh,setRefresh]=useState(0);
+  const [linkError,setLinkError]=useState("");
+  useEffect(()=>{setLinkError("");},[owner,kind,allowed,active]);
   useEffect(()=>{
     if(!active||!allowed||!owner){setState(null);return;}
     const controller=new AbortController(),deadline=setTimeout(()=>controller.abort(),25000);
@@ -36,7 +38,16 @@ export function PrivateWorkspace({kind}:{kind:WorkspaceKind}) {
     }
     void load();return()=>{live=false;clearTimeout(deadline);controller.abort();};
   },[active,allowed,owner,kind,refresh]);
-  const current=active&&allowed&&state?.owner===owner?state:null,data=current?.data;
+  const current=active&&allowed&&state&&state.owner===owner&&(!state.data||state.data.kind===kind)?state:null,data=current?.data;
+  async function openAdmin(path:"/admin/directory"|"/admin/ambassadors"|"/admin/reviews") {
+    if(!active||!allowed||kind!=="owner"||data?.kind!=="owner"||data.owner!==owner)return;
+    setLinkError("");
+    try {
+      const session=await readWithDeadline(()=>supabase.auth.getSession());
+      if(session.error||session.data.session?.user.id!==owner)throw Error("Verify your account again.");
+      await Linking.openURL("https://hoopcheck.online"+path);
+    }catch{setLinkError("Could not open administration. Verify your account and try again.");}
+  }
   const title={color:t.foreground,fontFamily:"HoopCheckDisplay",fontSize:23},body={color:t.foreground,fontSize:14},muted={color:t.muted,fontSize:12,lineHeight:18};
   const row=(label:string,value:string|number)=><View key={label} style={{flexDirection:"row",alignItems:"center",gap:10,paddingVertical:10,borderBottomWidth:1,borderColor:t.border}}>
     <Text style={{...muted,flex:1}}>{label}</Text><Text style={{...body,fontWeight:"700",maxWidth:"48%"}}>{value}</Text></View>;
@@ -54,6 +65,12 @@ export function PrivateWorkspace({kind}:{kind:WorkspaceKind}) {
         <Text style={muted}>Gross invoices by creation date, before fees, taxes and refunds. Refunds use refund creation date; these figures do not calculate net revenue or MRR.</Text>
       </>}
       <Text style={muted}>Read-only overview. No payment, role or payout changes are performed here.</Text>
+      <Text accessibilityRole="header" style={title}>ADMINISTRATION</Text>
+      <Text style={muted}>Management opens the secured HoopCheck website in your browser. Sign in there and complete any required security verification. No app session is transferred.</Text>
+      <Button secondary onPress={()=>void openAdmin("/admin/directory")}>Admin Control Center (web)</Button>
+      <Button secondary onPress={()=>void openAdmin("/admin/reviews")}>Review moderation (web)</Button>
+      <Button secondary onPress={()=>void openAdmin("/admin/ambassadors")}>Ambassador administration (web)</Button>
+      {linkError?<Text accessibilityRole="alert" style={body}>{linkError}</Text>:null}
     </>:data?.kind==="ambassador"?<>
       <Text accessibilityRole="header" style={title}>CAMPAIGN</Text><Text style={body}>{data.dashboard.active?"Active campaign":data.dashboard.status}</Text>
       {row("Referral visits",data.dashboard.clicks)}{row("Verified signups",data.dashboard.signups)}{row("Paid conversions",data.dashboard.conversions)}
