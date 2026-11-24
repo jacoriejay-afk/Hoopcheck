@@ -201,7 +201,7 @@ export function HomeCourtside() {
         accessibilityRole="link" accessibilityLabel={team.display_name||"View team"}
         onPress={()=>router.push({pathname:"/teams/[id]",params:{id:team.target_id}})}
         style={({pressed})=>({opacity:pressed?.8:1,borderRadius:glass.radii.row,overflow:"hidden",borderWidth:1,
-          borderColor:glass.border,backgroundColor:glass.solid})}>
+          borderColor:t.border,backgroundColor:t.surface})}>
         <View style={{flexDirection:"row",alignItems:"center",gap:10,padding:10,minHeight:67}}>
           <EntityArtwork name={team.display_name||"Team"} kind="teams" size={46}/>
           <View style={{flex:1,minWidth:0}}>
@@ -216,7 +216,7 @@ export function HomeCourtside() {
       </View>
     </HomeStagger>
     {role==="player"&&reviewPromptVisible?<HomeStagger index={3}><View style={{borderRadius:glass.radii.card,overflow:"hidden",
-      borderWidth:1,borderColor:glass.border,backgroundColor:glass.solid}}>
+      borderWidth:1,borderColor:t.border,backgroundColor:t.surface}}>
       <LinearGradient colors={["#1A161C","#171821","#241417"]}
         start={{x:0,y:0}} end={{x:1,y:1}} style={StyleSheet.absoluteFill}/>
       <View style={{padding:12,gap:9}}>

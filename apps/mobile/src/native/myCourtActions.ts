@@ -6,7 +6,7 @@ export const COURT_ACTIONS = [
   { id: "teams", label: "Check teams", href: "/teams", icon: "shield-checkmark-outline", tone: "orange" },
   { id: "live", label: "Live games", href: "/fan-live", icon: "radio-outline", tone: "blue" },
   { id: "clubgroups", label: "Fan groups", href: "/team-hub/groups", icon: "people-outline", tone: "green" },
-  { id: "chat", label: "HoopChat", href: "/messages", icon: "chatbubbles-outline", tone: "violet" },
+  { id: "chat", label: "HoopChat", href: "/notifications", icon: "chatbubbles-outline", tone: "violet" },
   { id: "feed", label: "HoopFeed", href: "/feed", icon: "flame-outline", tone: "orange" },
   { id: "players", label: "Find players", href: "/players", icon: "person-outline", tone: "blue" },
   { id: "leagues", label: "Leagues", href: "/leagues", icon: "trophy-outline", tone: "green" },

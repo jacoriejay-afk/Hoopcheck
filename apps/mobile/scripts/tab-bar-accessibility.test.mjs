@@ -18,7 +18,7 @@ async function render(accountType, path, platform = "ios") {
     'expo-blur': { BlurView: 'BlurView' },
     'expo-linear-gradient': { LinearGradient: 'LinearGradient' },
     'expo-glass-effect': { GlassView: 'GlassView', isGlassEffectAPIAvailable: () => false, isLiquidGlassAvailable: () => false },
-    'react-native': { Platform: { OS: platform }, StyleSheet: { absoluteFill: {} }, AccessibilityInfo: { isReduceTransparencyEnabled: platform === "ios" ? async () => true : undefined, addEventListener: () => ({ remove() {} }) }, Keyboard: { addListener: () => ({ remove() {} }) }, Pressable: ({ children, ...props }) => React.createElement('Pressable', props, typeof children === 'function' ? children({ pressed: false }) : children), Text: 'Text', View: 'View' },
+    'react-native': { Platform: { OS: platform }, StyleSheet: { absoluteFill: {} }, AccessibilityInfo: { isReduceTransparencyEnabled: platform === "ios" ? async () => true : undefined, addEventListener: () => ({ remove() {} }) }, PanResponder: { create: handlers => ({ panHandlers: handlers }) }, Keyboard: { addListener: () => ({ remove() {} }) }, Pressable: ({ children, ...props }) => React.createElement('Pressable', props, typeof children === 'function' ? children({ pressed: false }) : children), Text: 'Text', View: 'View' },
     'expo-router': { usePathname: () => path, useRouter: () => ({ navigate: route => navigations.push(route) }) },
     '@expo/vector-icons': { Ionicons: 'Ionicons' },
     'react-native-safe-area-context': { useSafeAreaInsets: () => ({ left: 0, right: 0, bottom: 0 }) },
@@ -52,7 +52,7 @@ test('tab accessible names match visible labels for fans, other accounts and loa
         assert.equal(tab.props.accessibilityLabel, tab.findByType('Text').props.children);
       }
       const feed = tree.root.findByProps({ testID: 'tab-hoopfeed' });
-      assert.equal(feed.props.accessibilityLabel, accountType === 'fan' ? 'FAN HQ' : 'HoopFeed');
+      assert.equal(feed.props.accessibilityLabel, 'HoopFeed');
       assert.equal(feed.props.accessibilityState.selected, false);
       await act(async () => { feed.props.onPress(); });
       assert.deepEqual(navigations, ['/feed']);
@@ -65,7 +65,7 @@ test('fan feed tab retains selected semantics on feed and fan-feed routes', asyn
     const { tree } = await render('fan', path);
     try {
       const feed = tree.root.findByProps({ testID: 'tab-hoopfeed' });
-      assert.equal(feed.props.accessibilityLabel, 'FAN HQ');
+      assert.equal(feed.props.accessibilityLabel, 'HoopFeed');
       assert.equal(feed.props.accessibilityState.selected, true);
       assert.equal(tree.root.findAllByType('Pressable').filter(tab => tab.props.accessibilityState.selected).length, 1);
     } finally { await act(async () => tree.unmount()); }
@@ -88,4 +88,16 @@ test('glass routes float while other Build 9 screens retain their navigation foo
     await act(async () => floated.tree.unmount());
     await act(async () => ordinary.tree.unmount());
   }
+});
+
+test("navigation slides to adjacent tab and keeps tap and vertical-scroll behavior", async () => {
+  const { tree, navigations } = await render("player", "/dashboard");
+  try {
+    await act(async () => tree.root.findByProps({ testID: "glass-floating-tab-bar" }).props.onLayout({ nativeEvent: { layout: { width: 350 } } }));
+    const row = tree.root.findByProps({ accessibilityRole: "tablist" });
+    assert.equal(row.props.onMoveShouldSetPanResponderCapture({}, { dx: 70, dy: 4 }), true);
+    assert.equal(row.props.onMoveShouldSetPanResponderCapture({}, { dx: 4, dy: 80 }), false);
+    await act(async () => row.props.onPanResponderRelease({}, { dx: 70, dy: 4 }));
+    assert.deepEqual(navigations, ["/feed"]);
+  } finally { await act(async () => tree.unmount()); }
 });

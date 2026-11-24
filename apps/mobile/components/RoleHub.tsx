@@ -5,7 +5,7 @@ import { useNativeAccount } from "../src/native/useNativeAccount";
 import { useEntryTheme } from "../src/theme";
 import { PressableScale } from "./PressableScale";
 
-type Destination = "/account" | "/teams" | "/players" | "/fan-live" | "/messages" |
+type Destination = "/account" | "/teams" | "/players" | "/fan-live" | "/notifications" |
   "/feed" | "/leagues" | "/team-hub/groups" | "/hoopgroups";
 type Shortcut = { label: string; href: Destination; icon: "person-outline" | "basketball-outline" |
   "chatbubble-ellipses-outline" | "people-outline" | "flash-outline" | "search-outline" };
@@ -13,7 +13,7 @@ const map: Record<string, { heading: string; links: Shortcut[] }> = {
   player: { heading: "PLAYER HQ", links: [
     { label: "My profile", href: "/account", icon: "person-outline" },
     { label: "Research clubs", href: "/teams", icon: "search-outline" },
-    { label: "HoopChat", href: "/messages", icon: "chatbubble-ellipses-outline" }] },
+    { label: "Alerts & HoopChat", href: "/notifications", icon: "chatbubble-ellipses-outline" }] },
   fan: { heading: "FAN HQ", links: [
     { label: "Live games", href: "/fan-live", icon: "flash-outline" },
     { label: "My club groups", href: "/team-hub/groups", icon: "people-outline" },
@@ -21,19 +21,19 @@ const map: Record<string, { heading: string; links: Shortcut[] }> = {
   coach: { heading: "COACH HQ", links: [
     { label: "Discover players", href: "/players", icon: "person-outline" },
     { label: "Clubs", href: "/teams", icon: "basketball-outline" },
-    { label: "HoopChat", href: "/messages", icon: "chatbubble-ellipses-outline" }] },
+    { label: "Alerts & HoopChat", href: "/notifications", icon: "chatbubble-ellipses-outline" }] },
   agent: { heading: "AGENT HQ", links: [
     { label: "Find talent", href: "/players", icon: "search-outline" },
     { label: "Leagues", href: "/leagues", icon: "basketball-outline" },
-    { label: "HoopChat", href: "/messages", icon: "chatbubble-ellipses-outline" }] },
+    { label: "Alerts & HoopChat", href: "/notifications", icon: "chatbubble-ellipses-outline" }] },
   scout: { heading: "SCOUT HQ", links: [
     { label: "Find talent", href: "/players", icon: "search-outline" },
     { label: "Leagues", href: "/leagues", icon: "basketball-outline" },
-    { label: "HoopChat", href: "/messages", icon: "chatbubble-ellipses-outline" }] },
+    { label: "Alerts & HoopChat", href: "/notifications", icon: "chatbubble-ellipses-outline" }] },
   manager: { heading: "TEAM HQ", links: [
     { label: "My clubs", href: "/teams", icon: "basketball-outline" },
     { label: "Manage club fans", href: "/team-hub/groups", icon: "people-outline" },
-    { label: "Messages", href: "/messages", icon: "chatbubble-ellipses-outline" }] },
+    { label: "Alerts & HoopChat", href: "/notifications", icon: "chatbubble-ellipses-outline" }] },
 };
 map.club_admin = map.manager;
 

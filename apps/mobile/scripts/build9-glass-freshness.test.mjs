@@ -14,6 +14,7 @@ const exports = {};
 vm.runInNewContext(code, {
   exports,
   require: id => id === "react-native" ? { Text: "Text", View: "View" }
+    : id === "../../src/theme" ? { useEntryTheme: () => ({ surface: "#fff", foreground: "#111", border: "#ddd" }) }
     : id === "../../src/glassTheme" ? { glassTokens: { orange: "#FF5A1F", border: "#FFF", solid: "#16171E" } }
     : require(id),
 });
@@ -46,7 +47,7 @@ test("shared glass surfaces preserve reduced-transparency fallback", () => {
 test("cold-launch configuration avoids conflicting iOS splash style overrides", () => {
   const config = JSON.parse(readFileSync(new URL("../app.json", import.meta.url), "utf8")).expo;
   const splash = config.plugins.find(plugin => Array.isArray(plugin) && plugin[0] === "expo-splash-screen")?.[1];
-  assert.equal(config.userInterfaceStyle, "dark");
+  assert.equal(config.userInterfaceStyle, "automatic");
   assert.equal(splash?.backgroundColor, "#07070A");
   assert.equal(splash?.dark, undefined, "duplicate same-color dark splash override causes an Expo style warning");
 });

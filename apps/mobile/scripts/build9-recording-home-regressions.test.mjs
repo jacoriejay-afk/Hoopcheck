@@ -19,7 +19,7 @@ test("Home GlassHeader stays pinned and owns the iPhone top safe area once", () 
   assert.match(header, /useSafeAreaInsets/);
   assert.match(dash, /useAnimatedScrollHandler/);
   assert.match(header, /homeScrollY\?\.get\(\)/);
-  assert.match(header, /GlassCard radius=\{999\}/);
+  assert.match(header, /GlassSurface navigation native intensity=\{55\}/);
   assert.match(header, /paddingTop: insets\.top \+ 8/);
   assert.match(header, /<BrandLogo \/>/);
   assert.match(header, /accessibilityLabel="Alerts"/);

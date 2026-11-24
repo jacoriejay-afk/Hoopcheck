@@ -44,12 +44,19 @@ function ScoreValue({ gameId, name, score, live, color, fontSize, fontFamily }: 
 /** Same score hierarchy in Home, league groups and game detail. Null is never zero. */
 export function Scoreboard({ game, teams }: { game: LiveGame; teams: Record<string, GameTeam> }) {
   const t = useEntryTheme();
-  const live = isFreshLive(game.status, (game as LiveGame & { score_updated_at?: string | null }).score_updated_at);
+  const live = isFreshLive(game.status, game.score_updated_at);
+  const conflictingFinal = ["final", "finished"].includes(game.status) &&
+    /^(?:q[1-4]|quarter\s*[1-4]|(?:first|second|third|fourth)\s+quarter|half[\s-]?time|break\s*time|bt|ht|ot\d*|overtime)$/i.test((game.period_label ?? "").trim());
+  const label = live ? "● LIVE" : conflictingFinal ? "RESULT PENDING" :
+    game.status === "scheduled" ? "SCHEDULED" : game.status === "live" ? "UPDATE DELAYED" :
+    ["final", "finished"].includes(game.status) ? "FINAL" : game.status.toUpperCase();
+  const updated = game.score_updated_at ? Date.parse(game.score_updated_at) : NaN;
+  const age = Number.isFinite(updated) && updated <= Date.now() ? Math.floor((Date.now() - updated) / 60000) : null;
   const home = teams[game.team_id]?.name || "Home team";
   const away = teams[game.opponent_team_id || ""]?.name || game.opponent_name || "Opponent";
   return <View style={{ gap: t.spacing.sm, borderLeftWidth: live ? 3 : 0, borderLeftColor: t.button, paddingLeft: live ? t.spacing.md : 0 }}>
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: t.spacing.sm, alignItems: "center" }}>
-      <GlassBadge live={live} label={live ? "● LIVE" : game.status === "scheduled" ? "SCHEDULED" : ["live", "final", "finished"].includes(game.status) ? "FINAL" : game.status.toUpperCase()} />
+      <GlassBadge live={live} label={label} />
       <Text style={{ color: t.muted, ...t.type.caption }}>{game.scheduled_at && Number.isFinite(Date.parse(game.scheduled_at)) ? new Date(game.scheduled_at).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "Tip-off not confirmed"}</Text>
     </View>
     {([{ name: home, score: game.home_score }, { name: away, score: game.away_score }]).map((team, index) => <View key={index} style={{ flexDirection: "row", gap: t.spacing.md, alignItems: "center" }}>
@@ -57,6 +64,7 @@ export function Scoreboard({ game, teams }: { game: LiveGame; teams: Record<stri
       <Text style={{ flex: 1, minWidth: 0, color: t.foreground, ...t.type.section }}>{team.name}</Text>
       <ScoreValue gameId={game.id} name={team.name} score={team.score} live={live} color={game.home_score != null && game.away_score != null && team.score! > (index === 0 ? game.away_score : game.home_score) ? glass.orange : t.foreground} fontSize={t.courtside.typography.score} fontFamily={t.type.ui.fontFamily} />
     </View>)}
+    {game.status === "live" ? <Text style={{ color: t.muted, ...t.type.caption }}>{age === null ? "Score refresh not verified" : age === 0 ? "Provider synced just now" : age < 60 ? "Provider synced " + age + "m ago" : "Provider synced " + Math.floor(age / 60) + "h ago"}</Text> : null}
     {game.home_score == null || game.away_score == null ? <Text style={{ color: t.muted, ...t.type.caption }}>Score not reported</Text> : null}
   </View>;
 }

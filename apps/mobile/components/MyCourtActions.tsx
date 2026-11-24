@@ -95,8 +95,8 @@ export function MyCourtActions({ userId, role, feedEnabled }: {
           <PressableScale accessibilityRole="link" accessibilityLabel={action.label} onPress={() => router.push(action.href)}
             style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", minHeight: 58,
               paddingHorizontal: 9, paddingVertical: 9, gap: 8, borderRadius: glass.radii.row,
-              borderWidth: 1, borderColor: glass.border,
-              backgroundColor: glass.solid, opacity: pressed ? .76 : 1 })}>
+              borderWidth: 1, borderColor: theme.border,
+              backgroundColor: theme.surface, opacity: pressed ? .76 : 1 })}>
             <View style={{ width: 33, height: 33, borderRadius: 17, backgroundColor: `${accent}20`,
               alignItems: "center", justifyContent: "center" }}>
               <Ionicons name={action.icon} size={19} color={accent} />

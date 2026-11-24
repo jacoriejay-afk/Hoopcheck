@@ -94,30 +94,30 @@ function TeamDetailContent() {
           <View style={styles.empty}><Text style={styles.title}>Team unavailable</Text><Text style={styles.body}>This team may have been removed or is not currently listed.</Text></View>
         ) : (
           <>
-            <View style={{ height: 190, borderRadius: glass.radii.card, overflow: "hidden", backgroundColor: glass.solid }}>
+            <View style={{ height: 190, borderRadius: glass.radii.card, overflow: "hidden", backgroundColor: theme.surface }}>
               <Image source={arenaArtwork} alt="" accessibilityIgnoresInvertColors resizeMode="cover"
                 style={{ width: "100%", height: "100%", opacity: .6 }} />
               <View style={{ position: "absolute", left: 0, right: 0, bottom: 0,
                 padding: 16, paddingTop: 30, backgroundColor: "rgba(7,7,10,0.74)" }}>
-                <Text style={{ color: glass.secondary, fontSize: 11, fontWeight: "800", letterSpacing: 1.5 }}>TEAM PROFILE</Text>
+                <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "800", letterSpacing: 1.5 }}>TEAM PROFILE</Text>
               </View>
             </View>
             <GlassCard style={{ marginTop: -44, marginHorizontal: 8 }} radius={glass.radii.card}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
                 <EntityArtwork name={team.name} kind="teams" size={72} logoUrl={team.logo_url} logoBg={team.logo_bg} />
                 <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
-                  <Text accessibilityRole="header" style={{ color: glass.foreground, fontSize: 23, fontFamily: "HoopCheckDisplay" }}>{team.name}</Text>
-                  <Text style={{ color: glass.secondary, fontSize: 13 }}>{[team.city, team.country].filter(Boolean).join(", ") || "Location not listed"}</Text>
-                  <Text style={{ color: glass.tertiary, fontSize: 12 }}>{team.league_name || "League not listed"}</Text>
+                  <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 23, fontFamily: "HoopCheckDisplay" }}>{team.name}</Text>
+                  <Text style={{ color: theme.muted, fontSize: 13 }}>{[team.city, team.country].filter(Boolean).join(", ") || "Location not listed"}</Text>
+                  <Text style={{ color: theme.muted, fontSize: 12 }}>{team.league_name || "League not listed"}</Text>
                 </View>
               </View>
               <View style={{ flexDirection: "row", justifyContent: "space-around", paddingVertical: 18, marginTop: 14,
-                borderTopWidth: 1, borderColor: glass.border }}>
+                borderTopWidth: 1, borderColor: theme.border }}>
                 {([{ label: "Reviews shown", value: reviewsLoading ? "—" : String(reviews.length) },
                   { label: "Followers", value: "—" }, { label: "Trust score", value: "—" }]).map(stat =>
                   <View key={stat.label} style={{ alignItems: "center", gap: 5 }}>
-                    <Text style={{ color: glass.foreground, fontWeight: "800", fontSize: 19 }}>{stat.value}</Text>
-                    <Text style={{ color: glass.secondary, fontSize: 11 }}>{stat.label}</Text>
+                    <Text style={{ color: theme.foreground, fontWeight: "800", fontSize: 19 }}>{stat.value}</Text>
+                    <Text style={{ color: theme.muted, fontSize: 11 }}>{stat.label}</Text>
                   </View>)}
               </View>
               <View style={{ flexDirection: "row", gap: 9 }}>
@@ -129,8 +129,8 @@ function TeamDetailContent() {
                 </Pressable>
                 <Pressable accessibilityRole="button" accessibilityLabel="Follow unavailable from team profile" disabled
                   style={{ minHeight: 50, paddingHorizontal: 13, justifyContent: "center", alignItems: "center",
-                    borderRadius: glass.radii.button, borderWidth: 1, borderColor: glass.border, backgroundColor: glass.solid, opacity: .6 }}>
-                  <Text style={{ color: glass.secondary, fontWeight: "700" }}>+ Follow</Text>
+                    borderRadius: glass.radii.button, borderWidth: 1, borderColor: theme.border, backgroundColor: theme.surface, opacity: .6 }}>
+                  <Text style={{ color: theme.muted, fontWeight: "700" }}>+ Follow</Text>
                 </Pressable>
               </View>
               <View style={{ marginTop: 12 }}><ShareSheet title={team.name} path={`/teams/${team.id}`} /></View>
@@ -139,7 +139,7 @@ function TeamDetailContent() {
             <View style={{ gap: theme.spacing.md, marginTop: theme.spacing.xl }}><Button secondary onPress={() => router.push({ pathname: "/team-hub/groups/[teamId]", params: { teamId: team.id } })}>Club fan group</Button></View>
             <GlassCard radius={glass.radii.row} solid style={{ marginTop: 14 }}>
               <Pressable accessibilityRole="link" onPress={() => router.push("/fan-live")} style={{ minHeight: 44, justifyContent: "space-between", alignItems: "center", flexDirection: "row" }}>
-                <Text style={{ color: glass.foreground, fontWeight: "700" }}>Fixtures · Browse Live Games</Text>
+                <Text style={{ color: theme.foreground, fontWeight: "700" }}>Fixtures · Browse Live Games</Text>
                 <Text style={{ color: glass.orange }}>›</Text>
               </Pressable>
             </GlassCard>
@@ -158,8 +158,8 @@ function TeamDetailContent() {
                   <Text style={styles.reviewDate}>{new Date(review.created_at).toLocaleDateString()}</Text>
                 </GlassCard>
               )) : <GlassCard solid radius={glass.radii.row} style={{ marginTop: 12 }}>
-                  <Text style={{ color: glass.foreground, fontSize: 17, fontWeight: "800" }}>Be the first to share your experience</Text>
-                  <Text style={{ color: glass.secondary, lineHeight: 21, marginTop: 7 }}>No approved reviews are visible to this account. Help the next player know what to expect.</Text>
+                  <Text style={{ color: theme.foreground, fontSize: 17, fontWeight: "800" }}>Be the first to share your experience</Text>
+                  <Text style={{ color: theme.muted, lineHeight: 21, marginTop: 7 }}>No approved reviews are visible to this account. Help the next player know what to expect.</Text>
                   <Button onPress={() => router.push({ pathname: "/teams/[id]/review", params: { id: team.id, teamName: team.name } })} style={{ marginTop: 14 }}>Write a review</Button>
                 </GlassCard>}
             </View>
