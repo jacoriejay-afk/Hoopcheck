@@ -73,7 +73,7 @@ export function TabBar() {
     // Haptic runs only after navigation reaches its target.
   }, [index, path, reduced, width, haptic, x, opacity]);
   const indicator = useAnimatedStyle(() => ({ transform: [{ translateX: x.get() }], opacity: opacity.get() }));
-  if (keyboardVisible) return null;
+  if (keyboardVisible || path === "/reels/studio") return null;
   if (["/", "/sign-in", "/sign-up", "/forgot-password", "/reset-password", "/auth/callback", "/choose-username"].includes(path)) return null;
   const translucent = Platform.OS === "ios" && !reduceTransparency;
   const nativeGlass = translucent && isGlassEffectAPIAvailable() && isLiquidGlassAvailable();
