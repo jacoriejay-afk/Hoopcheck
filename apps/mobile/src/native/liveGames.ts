@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { GAME_FUTURE_WINDOW_MS, GAME_PAST_WINDOW_MS } from "./gameFreshness";
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export type LiveGame = {
   id: string; team_id: string; opponent_team_id: string | null; opponent_name: string;
@@ -44,7 +45,10 @@ function api(origin: string) {
 export async function readLiveGames(client: SupabaseClient, side: "mens" | "womens", predictionOnly: { origin: string; token: string } | null = null, now = new Date(), request: typeof fetch = fetch) {
   const timer = deadline();
   try {
-    const since = new Date(now.getTime() - 7 * 86400000).toISOString();
+    // Query the useful window in PostgREST BEFORE the 500-row cap. A full
+    // week of old finals otherwise crowds out today and upcoming games.
+    const since = new Date(now.getTime() - GAME_PAST_WINDOW_MS).toISOString();
+    const until = new Date(now.getTime() + GAME_FUTURE_WINDOW_MS).toISOString();
     let games: LiveGame[];
     if (predictionOnly) {
       if (!predictionOnly.token) throw new Error("Sign in again to view games.");
@@ -54,12 +58,20 @@ export async function readLiveGames(client: SupabaseClient, side: "mens" | "wome
       if (!response.ok || !Array.isArray(data.games) || data.games.length > 500) throw new Error("Games could not load.");
       games = data.games;
     } else {
-      const result = await client.from("fan_live_games").select(fields).in("status", ["scheduled", "live", "final", "finished", "cancelled", "postponed", "abandoned"]).gte("scheduled_at", since).order("scheduled_at", { ascending: true, nullsFirst: false }).order("id").limit(500).abortSignal(timer.signal);
+      const result = await client.from("fan_live_games").select(fields).in("status", ["scheduled", "live", "final", "finished", "cancelled", "postponed", "abandoned"]).gte("scheduled_at", since).lte("scheduled_at", until).order("scheduled_at", { ascending: true, nullsFirst: false }).order("id").limit(500).abortSignal(timer.signal);
       if (result.error) throw new Error("Games could not load.");
       games = (result.data ?? []) as LiveGame[];
     }
     if (games.some(game => !uuid.test(game.id) || !uuid.test(game.team_id) || (game.opponent_team_id && !uuid.test(game.opponent_team_id)))) throw new Error("Invalid game response");
-    const ids = [...new Set(games.flatMap(game => [game.team_id, game.opponent_team_id].filter((value): value is string => Boolean(value))))];
+    // Also enforce the same bound on the player prediction API response. Avoid
+    // fetching crests for irrelevant, unverified or several-week-old matches.
+    const recent = Date.parse(since), future = Date.parse(until);
+    const visible = games.filter(game => {
+      const tip = Date.parse(game.scheduled_at || "");
+      return Number.isFinite(tip) && tip >= recent && tip <= future
+        && !(game.status === "scheduled" && tip < now.getTime() - 4 * 3600000);
+    });
+    const ids = [...new Set(visible.flatMap(game => [game.team_id, game.opponent_team_id].filter((value): value is string => Boolean(value))))];
     const teams: Record<string, GameTeam> = {};
     // Bound every IN filter. A women's fixture can be stored with its side as the away team.
     for (let offset = 0; offset < ids.length; offset += 50) {
@@ -71,11 +83,7 @@ export async function readLiveGames(client: SupabaseClient, side: "mens" | "wome
         for (const team of result.data ?? []) if (ids.includes(team.id)) teams[team.id] = team;
       }
     }
-    const recent = Date.parse(since);
-    return { teams, games: games.filter(game => {
-      const tip = Date.parse(game.scheduled_at || "");
-      return (teams[game.team_id] || teams[game.opponent_team_id || ""]) && (!Number.isFinite(tip) || tip >= recent) && !(game.status === "scheduled" && Number.isFinite(tip) && tip < now.getTime() - 4 * 3600000);
-    }) };
+    return { teams, games: visible.filter(game => teams[game.team_id] || teams[game.opponent_team_id || ""]) };
   } finally { timer.clear(); }
 }
 export async function readGameRoom(client: SupabaseClient, gameId: string, userId: string) {
