@@ -49,15 +49,15 @@ export function Scoreboard({ game, teams, checkedAtMs, nowMs }: { game: LiveGame
   const visitor = teams[game.opponent_team_id || ""];
   const home = host?.name || "Home team";
   const away = visitor?.name || game.opponent_name || "Opponent";
-  return <View style={{ gap: t.spacing.sm, borderLeftWidth: live ? 3 : 0, borderLeftColor: t.button, paddingLeft: live ? t.spacing.md : 0 }}>
+  return <View style={{ gap: 4, borderLeftWidth: live ? 2 : 0, borderLeftColor: t.button, paddingLeft: live ? 8 : 0 }}>
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: t.spacing.sm, alignItems: "center" }}>
       <View style={{ backgroundColor: live ? t.accentSurface : t.chip, paddingHorizontal: t.spacing.sm, paddingVertical: t.spacing.xs, borderRadius: t.radius.pill }}><Text style={{ color: live ? t.accent : t.onChip, ...t.type.caption, fontWeight: "700" }}>{state.label}{live && game.period_label ? ` · ${game.period_label}` : ""}</Text></View>
       <Text style={{ color: t.muted, ...t.type.caption }}>{game.scheduled_at && Number.isFinite(Date.parse(game.scheduled_at)) ? new Date(game.scheduled_at).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "Tip-off not confirmed"}</Text>
     </View>
-    {([{ name: home, score: game.home_score, logo: host?.logo_url, bg: host?.logo_bg }, { name: away, score: game.away_score, logo: visitor?.logo_url, bg: visitor?.logo_bg }]).map((team, index) => <View key={index} style={{ flexDirection: "row", gap: t.spacing.md, alignItems: "center" }}>
-      <EntityArtwork name={team.name} kind="teams" size={36} logoUrl={team.logo} logoBg={team.bg} />
+    {([{ name: home, score: game.home_score, logo: host?.logo_url, bg: host?.logo_bg }, { name: away, score: game.away_score, logo: visitor?.logo_url, bg: visitor?.logo_bg }]).map((team, index) => <View key={index} style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
+      <EntityArtwork name={team.name} kind="teams" size={28} logoUrl={team.logo} logoBg={team.bg} />
       <Text style={{ flex: 1, minWidth: 0, color: t.foreground, ...t.type.section }}>{team.name}</Text>
-      <ScoreValue gameId={game.id} name={team.name} score={team.score} live={live} color={t.foreground} fontSize={t.courtside.typography.score} fontFamily={t.type.ui.fontFamily} />
+      <ScoreValue gameId={game.id} name={team.name} score={team.score} live={live} color={t.foreground} fontSize={Math.min(24, t.courtside.typography.score)} fontFamily={t.type.ui.fontFamily} />
     </View>)}
     {game.home_score == null || game.away_score == null ? <Text style={{ color: t.muted, ...t.type.caption }}>Score not reported</Text> : null}
     {game.status === "live" ? <Text style={{ color: t.muted, ...t.type.caption }}>{providerReceiptLabel(game.score_updated_at, nowMs)}</Text> : null}
