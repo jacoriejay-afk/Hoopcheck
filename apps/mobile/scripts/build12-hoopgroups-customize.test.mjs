@@ -34,6 +34,6 @@ test("group visuals come from approved fixed choices, not unmoderated image URLs
   assert.match(groups,/emblem\(space\.icon_key\)/);
   assert.match(groups,/accent\(selected\?\.accent_color\|\|"orange"\)/);
   assert.match(groups,/accessibilityRole="radio"/);
-  assert.match(groups,/accessibilityLabel="Manage group appearance"/);
+  assert.match(groups,/editing\?"Close group settings":"Manage group appearance"/);
   assert.doesNotMatch(groups,/upload.*banner|banner_url|cover_url/i);
 });
