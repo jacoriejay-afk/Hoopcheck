@@ -5,7 +5,6 @@ import { PlayerAccess } from "../../components/PlayerAccess";
 import { ProfileAvatar } from "../../components/ProfileAvatar";
 import { readPlayerProfile, type PlayerProfile, type PlayerViewer } from "../../src/native/playerProfiles";
 import { GlassCard, Button, Chip } from "../../src/primitives";
-import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { ShareSheet } from "../../components/ShareSheet";
 import { Sheet } from "../../components/Sheet";
@@ -16,7 +15,7 @@ import { Skeleton } from "../../components/Motion";
 import { useEntryTheme, type EntryTheme } from "../../src/theme";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, RefreshControl, StyleSheet, Text, View, useWindowDimensions } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { supabase } from "../../src/lib/supabase";
 
@@ -24,6 +23,7 @@ export default function PlayerDetailScreen() { return <PlayerAccess>{viewer => <
 
 function PlayerProfileDetails({ viewer }: { viewer: PlayerViewer }) {
   const theme = useEntryTheme();
+  const insets = useSafeAreaInsets();
   const styles = createStyles(theme);
   const compactHero = useWindowDimensions().width < 390;
   const { id: viewerId, accountType } = viewer;
@@ -110,49 +110,22 @@ function PlayerProfileDetails({ viewer }: { viewer: PlayerViewer }) {
   const name = player?.display_name || ("Player profile");
   return (
     <SafeAreaView edges={["left", "right", "bottom"]} style={styles.safe}>
-      <ScrollView keyboardDismissMode="on-drag" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); setRefreshId(value => value + 1); }} />} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView keyboardDismissMode="on-drag" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); setRefreshId(value => value + 1); }} />} contentContainerStyle={[styles.content, { paddingTop: insets.top + 62, paddingBottom: 100 }]} keyboardShouldPersistTaps="handled">
         {loading ? <Skeleton profile /> : error ? (
           <View style={styles.empty}><Text style={styles.emptyTitle}>Profile unavailable</Text><Text style={styles.body}>{error}</Text><Button secondary onPress={() => setRefreshId(v => v + 1)}>Retry profile</Button>{id === viewerId ? <Button onPress={() => router.push("/account/edit")}>Edit my profile</Button> : <Button style={styles.button} onPress={() => router.replace("/players")}><Text style={styles.buttonText}>Return to player search</Text></Button>}</View>
         ) : player ? (
           <>
             <GlassCard style={styles.hero}>
-              <LinearGradient colors={["#0C1D36", "#152A40", "#402422"]}
-                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                style={{ width: "100%", padding: 12, borderRadius: 16, borderCurve: "continuous",
-                  gap: 9, minHeight: 112, overflow: "hidden" }}>
-                <View pointerEvents="none" accessible={false} style={{
-                  position: "absolute", right: -66, top: -72, width: 164, height: 164,
-                  borderRadius: 82, borderColor: "rgba(255,255,255,.12)", borderWidth: 1,
-                }} />
-                <View pointerEvents="none" accessible={false} style={{
-                  position: "absolute", right: -26, top: -26, width: 104, height: 104,
-                  borderRadius: 52, borderColor: "rgba(255,255,255,.12)", borderWidth: 1,
-                }} />
-                <View style={{ flexDirection: "row", justifyContent: "space-between",
-                  alignItems: "center", gap: 10 }}>
-                  <Text style={{ color: "#FFAC72", fontFamily: "HoopCheckDisplay", fontSize: 11, letterSpacing: .7 }}>HOOPCHECK</Text>
-                  {player.player_verified ? <View style={{ flexDirection: "row", gap: 5,
-                    alignItems: "center", borderColor: "rgba(118,242,184,.38)", borderWidth: 1,
-                    backgroundColor: "rgba(30,134,97,.22)", borderRadius: 100, paddingHorizontal: 10,
-                    paddingVertical: 6 }}>
-                    <Ionicons name="checkmark-circle" size={13} color="#9DF1CA" />
-                    <Text style={{ color: "#C4FBE1", fontSize: 10, fontWeight: "900" }}>VERIFIED</Text>
-                  </View> : null}
-                </View>
-                <View style={{ flexDirection: "row",
-                  alignItems: "center", gap: 10 }}>
-                  <View style={{ borderRadius: 18, padding: 2, borderWidth: 1, borderColor: "rgba(255,164,95,.73)",
-                    backgroundColor: "rgba(255,255,255,.08)" }}>
-                    <ProfileAvatar url={player.avatar_url} name={name} size={compactHero ? 62 : 80} />
-                  </View>
-                  <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
-                    <Text style={{ color: "#E9EFF5", fontSize: 10, fontWeight: "600" }}>Player</Text>
-                    <Text accessibilityRole="header" numberOfLines={2} style={{ fontFamily: theme.type.ui.fontFamily,
-                      fontWeight: "700", fontSize: compactHero ? 21 : 25, lineHeight: compactHero ? 26 : 30, color: "#FFFFFF" }}>{name}</Text>
-                    <View style={{ height: 2, width: 28, backgroundColor: "#FF8F56", borderRadius: 2 }} />
+              <View style={{ width: "100%", gap: 10, paddingVertical: 8 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 13 }}>
+                  <ProfileAvatar url={player.avatar_url} name={name} size={compactHero ? 72 : 92} />
+                  <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
+                    <Text accessibilityRole="header" numberOfLines={2} style={{ fontFamily: "HoopCheckDisplay", fontSize: compactHero ? 25 : 30, color: theme.foreground }}>{name}</Text>
+                    <Text style={{ color: theme.muted, fontSize: 13 }}>Professional player</Text>
+                    {player.player_verified ? <View style={{ flexDirection: "row", gap: 5, alignItems: "center" }}><Ionicons name="checkmark-circle" size={16} color={theme.success} /><Text style={{ color: theme.success, fontSize: 12, fontWeight: "700" }}>VERIFIED</Text></View> : null}
                   </View>
                 </View>
-               </LinearGradient>
+              </View>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm, marginVertical: theme.spacing.sm }}>
                  {player.position ? <Chip>{player.position}</Chip> : null}
               </View>
@@ -232,5 +205,5 @@ function Info({ label, value }: { label: string; value: string | number | null |
 }
 
 const createStyles = (theme: EntryTheme) => StyleSheet.create({
-  safe: {flex:1,backgroundColor: theme.background},content: {padding:12,paddingBottom:24,width:"100%",maxWidth:720,alignSelf:"center"},back: {color: theme.accent,fontSize:14,fontWeight:"700",marginBottom:8},hero: {backgroundColor: theme.surface,borderRadius:theme.courtside.hero.radius,borderCurve:"continuous",padding:theme.spacing.md,borderTopWidth:0,alignItems:"flex-start",marginBottom:14},avatar: {width:60,height:60,borderRadius:18,backgroundColor: theme.chip,alignItems:"center",justifyContent:"center",marginBottom:15},avatarText: {fontSize:26,fontWeight:"900",color: theme.onChip},kicker: {fontSize:10,fontWeight:"900",letterSpacing:1.4,color: theme.accent},heroTitle: {fontSize:36,lineHeight:40,fontWeight: "400", fontFamily: "HoopCheckDisplay",color: theme.foreground,marginTop:5},emptyTitle: {fontSize:22,fontWeight:"900",color: theme.foreground,textAlign:"center"},handle: {color: theme.muted,fontSize:14,marginTop:4},pill: {backgroundColor: theme.chip,borderRadius:20,paddingHorizontal:10,paddingVertical:5,marginTop:12},pillText: {color: theme.onChip,fontSize:10,fontWeight:"900",letterSpacing:0.7},card: {backgroundColor: theme.surface,borderRadius: theme.radius.card,padding:12,marginBottom:8,borderWidth:1,borderColor: theme.border},sectionTitle: {fontSize:15,fontWeight:"700",fontFamily:theme.type.ui.fontFamily,color: theme.foreground,marginBottom:8},infoRow: {paddingVertical:9,borderBottomWidth:1,borderBottomColor: theme.border,gap:4},label: {fontSize:11,fontWeight:"800",color: theme.muted,textTransform:"uppercase",letterSpacing:0.5},value: {fontSize:15,color: theme.foreground,fontWeight:"600"},body: {fontSize:14,lineHeight:21,color: theme.muted},footer: {fontSize:12,lineHeight:18,color: theme.muted,textAlign:"center",paddingHorizontal:4,marginTop:4},loader: {marginTop:60},empty: {backgroundColor: theme.surface,padding:22,borderRadius: theme.radius.card,alignItems:"center"},button: {backgroundColor: theme.button,padding:13,borderRadius: theme.radius.control,marginTop:16},buttonText: {color: theme.onButton,fontWeight:"900"},reportCard: {backgroundColor: theme.surface,borderRadius: theme.radius.card,padding:12,marginBottom:8,borderWidth:1,borderColor: theme.border},reportButton: {backgroundColor: theme.button,paddingHorizontal:14,paddingVertical:12,borderRadius: theme.radius.control,alignItems:"center",justifyContent:"center",marginTop:14},reportButtonText: {color: theme.onButton,fontWeight:"800",fontSize:14},reportForm: {marginTop:12},reportInput: {minHeight:100,borderWidth:1,borderColor: theme.border,borderRadius: theme.radius.control,padding:12,color: theme.foreground,fontSize:14,marginTop:8},characterCount: {fontSize:11,color: theme.muted,textAlign:"right",marginTop:5},reportActions: {flexDirection:"row",gap:10,marginTop:12},cancelButton: {flex:1,borderWidth:1,borderColor: theme.border,padding:12,borderRadius: theme.radius.control,alignItems:"center",justifyContent:"center"},cancelButtonText: {color: theme.foreground,fontWeight:"800"},disabledButton: {opacity:0.5},reportMessage: {marginTop:10,color: theme.error,fontSize:13,lineHeight:19}
+  safe: {flex:1,backgroundColor: theme.background},content: {padding:12,paddingBottom:24,width:"100%",maxWidth:720,alignSelf:"center"},back: {color: theme.accent,fontSize:14,fontWeight:"700",marginBottom:8},hero: {backgroundColor: "transparent",borderWidth:0,borderRadius:0,padding:0,alignItems:"flex-start",marginBottom:10},avatar: {width:60,height:60,borderRadius:18,backgroundColor: theme.chip,alignItems:"center",justifyContent:"center",marginBottom:15},avatarText: {fontSize:26,fontWeight:"900",color: theme.onChip},kicker: {fontSize:10,fontWeight:"900",letterSpacing:1.4,color: theme.accent},heroTitle: {fontSize:36,lineHeight:40,fontWeight: "400", fontFamily: "HoopCheckDisplay",color: theme.foreground,marginTop:5},emptyTitle: {fontSize:22,fontWeight:"900",color: theme.foreground,textAlign:"center"},handle: {color: theme.muted,fontSize:14,marginTop:4},pill: {backgroundColor: theme.chip,borderRadius:20,paddingHorizontal:10,paddingVertical:5,marginTop:12},pillText: {color: theme.onChip,fontSize:10,fontWeight:"900",letterSpacing:0.7},card: {backgroundColor: "transparent",borderRadius:0,padding:8,marginBottom:6,borderWidth:0,borderBottomWidth:1,borderColor: theme.border},sectionTitle: {fontSize:15,fontWeight:"700",fontFamily:theme.type.ui.fontFamily,color: theme.foreground,marginBottom:8},infoRow: {paddingVertical:9,borderBottomWidth:1,borderBottomColor: theme.border,gap:4},label: {fontSize:11,fontWeight:"800",color: theme.muted,textTransform:"uppercase",letterSpacing:0.5},value: {fontSize:15,color: theme.foreground,fontWeight:"600"},body: {fontSize:14,lineHeight:21,color: theme.muted},footer: {fontSize:12,lineHeight:18,color: theme.muted,textAlign:"center",paddingHorizontal:4,marginTop:4},loader: {marginTop:60},empty: {backgroundColor: theme.surface,padding:22,borderRadius: theme.radius.card,alignItems:"center"},button: {backgroundColor: theme.button,padding:13,borderRadius: theme.radius.control,marginTop:16},buttonText: {color: theme.onButton,fontWeight:"900"},reportCard: {backgroundColor: theme.surface,borderRadius: theme.radius.card,padding:12,marginBottom:8,borderWidth:1,borderColor: theme.border},reportButton: {backgroundColor: theme.button,paddingHorizontal:14,paddingVertical:12,borderRadius: theme.radius.control,alignItems:"center",justifyContent:"center",marginTop:14},reportButtonText: {color: theme.onButton,fontWeight:"800",fontSize:14},reportForm: {marginTop:12},reportInput: {minHeight:100,borderWidth:1,borderColor: theme.border,borderRadius: theme.radius.control,padding:12,color: theme.foreground,fontSize:14,marginTop:8},characterCount: {fontSize:11,color: theme.muted,textAlign:"right",marginTop:5},reportActions: {flexDirection:"row",gap:10,marginTop:12},cancelButton: {flex:1,borderWidth:1,borderColor: theme.border,padding:12,borderRadius: theme.radius.control,alignItems:"center",justifyContent:"center"},cancelButtonText: {color: theme.foreground,fontWeight:"800"},disabledButton: {opacity:0.5},reportMessage: {marginTop:10,color: theme.error,fontSize:13,lineHeight:19}
 });
