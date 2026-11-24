@@ -12,7 +12,8 @@ test('game discovery preserves side identity including away women and excludes s
   const data=await readLiveGames(db,'womens',null,now);
   assert.deepEqual(data.games.map(x=>x.id),[id(1)]);assert.equal(data.teams[id(11)].name,'Away Women');
   assert.equal(calls[0].searchParams.get('gte'),null);
-  assert.equal(calls[0].searchParams.get('scheduled_at'),'gte.2026-11-11T12:00:00.000Z');
+  assert.deepEqual(calls[0].searchParams.getAll('scheduled_at'),['gte.2026-11-17T00:00:00.000Z','lte.2026-12-02T12:00:00.000Z']);
+  assert.equal(calls[0].searchParams.getAll('scheduled_at').length,2,'Both window bounds precede the game cap');
   assert.equal(calls[0].searchParams.get('limit'),'500');assert.equal(calls[0].searchParams.get('order'),'scheduled_at.asc.nullslast,id.asc');
   assert.equal(calls.find(url=>url.pathname.endsWith('/teams')).searchParams.get('basketball_type'),'eq.womens');
   assert.ok(!/email|salary/.test(calls[0].searchParams.get('select')));
