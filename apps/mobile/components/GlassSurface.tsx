@@ -42,7 +42,7 @@ export function GlassSurface({
     borderWidth: 1, borderColor: theme.glassBorder,
   }, style]}>
     {nativeGlass ? <GlassView pointerEvents="none" accessible={false}
-      glassEffectStyle={navigation ? "clear" : "regular"} colorScheme={theme.dark ? "dark" : "light"} tintColor={navigation ? undefined : theme.dark ? "#182B43" : "#EAF1FC"}
+      glassEffectStyle={navigation ? "clear" : "regular"} tintColor={navigation ? undefined : theme.dark ? "#182B43" : "#EAF1FC"}
       style={[StyleSheet.absoluteFill, { borderRadius: 24 }]} /> :
       !opaque ? <BlurView pointerEvents="none" accessible={false}
         intensity={intensity} tint={theme.dark ? "dark" : "light"} style={StyleSheet.absoluteFill} /> : null}
