@@ -5,9 +5,11 @@ import { GlassSurface } from "../components/GlassSurface";
 import { BrandLogo } from "../components/BrandLogo";
 import { ExploreLinks } from "../components/ExploreLinks";
 import { Input, Chip, SectionHeader } from "../src/primitives";
-import { useEffect, useState } from "react";
-import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { useRouter } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
+import { Alert, Keyboard, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import Animated, { FadeIn } from "react-native-reanimated";
+import { useMotionSetting } from "../src/motion/Provider";
+import { useFocusEffect, useRouter } from "expo-router";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../src/lib/supabase";
@@ -28,6 +30,11 @@ export default function DashboardScreen() {
   const theme = useEntryTheme();
   const insets = useSafeAreaInsets();
   const [search, setSearch] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const reduced = useMotionSetting();
+  const closeSearch = useCallback(() => { setSearchOpen(false); Keyboard.dismiss(); }, []);
+  useFocusEffect(useCallback(() => () => { closeSearch(); setMenuOpen(false); }, [closeSearch]));
+  const submitSearch = () => { closeSearch(); router.push({ pathname: "/search", params: { q: search } }); };
   const [busy, setBusy] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [email, setEmail] = useState("");
@@ -72,9 +79,16 @@ export default function DashboardScreen() {
       {/* Overlay the scrolling screen, without a dedicated opaque header row. */}
       <View pointerEvents="box-none" style={[styles.pinnedHeader, { top: insets.top + 4 }]}>
           <GlassSurface navigation style={{borderRadius:28,borderWidth:0}}>
-            <View style={{minHeight:54,paddingHorizontal:12,paddingVertical:5,
+            {searchOpen ? <Animated.View entering={reduced ? undefined : FadeIn.duration(150)} style={{ minHeight:54, paddingHorizontal:8, flexDirection:"row", alignItems:"center", gap:4 }}>
+              <Ionicons name="search-outline" size={21} color={theme.accent} />
+              <Input autoFocus accessibilityLabel="Search basketball directory" placeholder="Search basketball…" value={search} maxLength={100} autoCapitalize="none" autoCorrect={false} returnKeyType="search" onChangeText={setSearch} onSubmitEditing={submitSearch}
+                style={{ flex:1, minWidth:0, paddingHorizontal:4, backgroundColor:"transparent", borderWidth:0, fontSize:14 }} />
+              <Pressable accessibilityRole="button" accessibilityLabel="Show search results" onPress={submitSearch} style={{ width:44, height:44, justifyContent:"center", alignItems:"center" }}><Ionicons name="arrow-forward" size={20} color={theme.accent}/></Pressable>
+              <Pressable accessibilityRole="button" accessibilityLabel="Cancel search" onPress={closeSearch} style={{ minHeight:44, minWidth:44, justifyContent:"center", alignItems:"center" }}><Ionicons name="close" size={23} color={theme.foreground}/></Pressable>
+            </Animated.View> : <Animated.View entering={reduced ? undefined : FadeIn.duration(150)} style={{minHeight:54,paddingHorizontal:12,paddingVertical:5,
               flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:8}}>
-              <BrandLogo onHero={theme.dark} />
+              <View style={{ flex:1, minWidth:0 }}><BrandLogo onHero={theme.dark} /></View>
+              <Pressable accessibilityRole="button" accessibilityLabel="Search" onPress={()=>{ setMenuOpen(false); setSearchOpen(true); }} style={{ width:44, height:44, justifyContent:"center", alignItems:"center" }}><Ionicons name="search-outline" size={23} color={theme.foreground}/></Pressable>
               <Pressable accessibilityRole="button" accessibilityLabel="Open account menu"
                 accessibilityState={{expanded:menuOpen}} onPress={()=>setMenuOpen(open=>!open)}
                 style={({pressed})=>({width:44,height:44,borderRadius:19,
@@ -83,9 +97,9 @@ export default function DashboardScreen() {
                   alignItems:"center",justifyContent:"center",opacity:pressed?.72:1})}>
                 <Ionicons name={menuOpen?"close":"menu"} size={25} color={theme.dark?"#FFFFFF":theme.foreground} />
               </Pressable>
-            </View>
+            </Animated.View>}
           </GlassSurface>
-          {menuOpen ? <GlassSurface style={{
+          {menuOpen && !searchOpen ? <GlassSurface style={{
             position:"absolute",right:12,top:61,width:232,zIndex:30,
             padding:6,borderRadius:18,borderColor:theme.glassBorder,
             shadowColor:"#000",shadowOpacity:.3,shadowRadius:14,shadowOffset:{width:0,height:8},
@@ -105,27 +119,8 @@ export default function DashboardScreen() {
             </Pressable>)}
           </GlassSurface> : null}
       </View>
-      <ScrollView keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled" onScrollBeginDrag={()=>setMenuOpen(false)} testID="dashboard-scroll" contentContainerStyle={styles.scroll}>
+      <ScrollView keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled" onScrollBeginDrag={()=>setMenuOpen(false)} scrollEnabled={!searchOpen} testID="dashboard-scroll" contentContainerStyle={styles.scroll}>
         <View style={styles.content}>
-          <GlassSurface style={{ flexDirection:"row",alignItems:"center",marginBottom:14,
-            borderRadius:17,paddingLeft:12,paddingRight:5,minHeight:50,
-            backgroundColor:theme.dark?"#1A2940":"#FFFFFF",
-            borderColor:theme.dark?"rgba(113,173,236,.42)":theme.border }}>
-            <Ionicons name="search-outline" size={21} color={theme.accent} />
-            <Input style={{ flex:1,minWidth:0,backgroundColor:"transparent",
-              borderWidth:0,fontSize:14,color:theme.foreground }}
-              accessibilityLabel="Search basketball directory"
-              placeholder="Search players, coaches, teams, or leagues…" value={search}
-              maxLength={100} onChangeText={setSearch} returnKeyType="search"
-              onSubmitEditing={()=>router.push({pathname:"/search",params:{q:search}})} />
-            <Pressable accessibilityRole="button" accessibilityLabel="Search"
-              onPress={()=>router.push({pathname:"/search",params:{q:search}})}
-              style={({pressed})=>({minHeight:44,minWidth:44,borderRadius:13,
-                backgroundColor:theme.accentSurface,justifyContent:"center",alignItems:"center",
-                opacity:pressed?.72:1})}>
-              <Ionicons name="arrow-forward" size={20} color={theme.accent} />
-            </Pressable>
-          </GlassSurface>
           <HomeCourtside />
           <RoleHub />
           <SectionHeader>Explore basketball</SectionHeader>
