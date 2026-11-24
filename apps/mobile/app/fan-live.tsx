@@ -131,7 +131,7 @@ export default function LiveGames() {
   }
   const rankedGroups=[...leagueGroups].sort(([a,ga],[b,gb])=>{
     const count=(rows:Games["games"])=>rows.reduce((n,g)=>n+(presenceCounts[g.id]||0),0);
-    const live=(rows:Games["games"])=>rows.filter(g=>g.status==="live").length;
+    const live=(rows:Games["games"])=>rows.filter(g=>gameDisplayState(g, clockMs, checkedAtMs).isLive).length;
     return count(gb)-count(ga)||live(gb)-live(ga)||gb.length-ga.length||a.localeCompare(b);
   });
   const sections = (allGroups?rankedGroups:rankedGroups.slice(0,4)).map(([title,rows])=>({
