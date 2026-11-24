@@ -45,6 +45,7 @@ test("new navigation preserves membership gates, message senders, team group dis
   assert.match(home,/features\.canUseLiveGameHub/);
   assert.match(groups,/TEAM FAN GROUPS/);
   assert.match(groups,/\/hoopgroups/);
-  assert.match(alert,/Messages & sender threads/);
+  assert.match(alert,/accessibilityRole="tablist"/);
+  assert.match(alert,/<MessagesScreen embedded mode=/);
   assert.match(feed,/Meet HoopBot/);
 });
