@@ -3,7 +3,7 @@ import { Pressable, Text, View } from "react-native";
 import { supabase } from "../src/lib/supabase";
 import { useEntryTheme } from "../src/theme";
 import { requireOnline } from "../src/native/network";
-import { pickGameWinner, readPrediction, type LiveGame, type Prediction } from "../src/native/liveGames";
+import { pickGameWinner, readPrediction, predictionMatchupReady, type LiveGame, type Prediction } from "../src/native/liveGames";
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
 
 type PredictionProps = { game: LiveGame; userId: string; homeName: string; awayName: string; active: boolean };
@@ -38,8 +38,7 @@ function PredictionSurface({game,userId,homeName,awayName,active}:PredictionProp
   const data = active && snapshot?.scope === scope ? snapshot.data : null;
   const tip = Date.parse(game.scheduled_at || "");
   const teams = [{ id: game.team_id, name: homeName, side: "Home" }, { id: game.opponent_team_id, name: awayName, side: "Away" }];
-  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  const bothMapped = teams.every(team => typeof team.id === "string" && uuid.test(team.id)) && game.team_id !== game.opponent_team_id;
+  const bothMapped = predictionMatchupReady(game);
   const locked = !active || !data || data.locked || !bothMapped || game.status !== "scheduled" || !Number.isFinite(tip) || now >= tip;
   async function pick(teamId: string) {
     if (locked || Date.now() >= tip || pending.current || !teams.some(team => team.id === teamId)) return;
@@ -56,7 +55,7 @@ function PredictionSurface({game,userId,homeName,awayName,active}:PredictionProp
   return <View style={{ gap: 10 }}>
     <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 21, fontWeight: "800" }}>Pick the winner</Text>
     <Text style={{ color: theme.muted }}>{!bothMapped ? "Predictions unavailable until both teams are verified." : !data ? "Verifying predictions…" : locked ? "Picks are closed for this game." : "One pick per game. Change it until tip-off."}</Text>
-    {teams.map(team => <Pressable key={team.side} accessibilityRole="button" aria-pressed={Boolean(team.id && data?.my_pick === team.id)} accessibilityState={{ selected: data?.my_pick === team.id, disabled: locked || busy }} disabled={locked || busy} onPress={() => { if(team.id) void pick(team.id); }} style={{ minHeight: 48, padding: 12, borderRadius: theme.radius.control, backgroundColor: data?.my_pick === team.id ? theme.accentSurface : theme.chip }}><Text style={{ color: theme.foreground }}>{team.name}{data?.my_pick === team.id ? " ✓ Your pick" : ""}</Text></Pressable>)}
+    {teams.map(team => <Pressable key={team.side} accessibilityRole="button" aria-pressed={Boolean(team.id && data?.my_pick === team.id)} accessibilityState={{ selected: Boolean(team.id && data?.my_pick === team.id), disabled: locked || busy }} disabled={locked || busy} onPress={() => { if(team.id) void pick(team.id); }} style={{ minHeight: 48, padding: 12, borderRadius: theme.radius.control, backgroundColor: Boolean(team.id && data?.my_pick === team.id) ? theme.accentSurface : theme.chip }}><Text style={{ color: theme.foreground }}>{team.name || team.side + " team"}{Boolean(team.id && data?.my_pick === team.id) ? " ✓ Your pick" : ""}</Text></Pressable>)}
     {data?.results ? <Text style={{ color: theme.foreground }}>{data.results.winner_percent}% picked the winner · {data.results.correct_picks} correct of {data.results.total_picks}</Text> : null}
     {message ? <Text accessibilityLiveRegion="polite" style={{ color: theme.muted }}>{message}</Text> : null}
   </View>;
