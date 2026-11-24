@@ -38,7 +38,7 @@ export function PrivateWorkspace({kind}:{kind:WorkspaceKind}) {
     }
     void load();return()=>{live=false;clearTimeout(deadline);controller.abort();};
   },[active,allowed,owner,kind,refresh]);
-  const current=active&&allowed&&state?.owner===owner&&(!state.data||state.data.kind===kind)?state:null,data=current?.data;
+  const current=active&&allowed&&state&&state.owner===owner&&(!state.data||state.data.kind===kind)?state:null,data=current?.data;
   async function openAdmin(path:"/admin/directory"|"/admin/ambassadors"|"/admin/reviews") {
     if(!active||!allowed||kind!=="owner"||data?.kind!=="owner"||data.owner!==owner)return;
     setLinkError("");
