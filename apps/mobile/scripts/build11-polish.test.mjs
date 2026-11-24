@@ -52,3 +52,5 @@ test("provider sync and prediction queries avoid stale oldest-500 truncation", (
   assert.match(board, /"UPDATE DELAYED"/);
   assert.match(board, /"Score refresh not verified"/);
 });
+
+test('account avatar is supplied by verified bootstrap, never a direct profile read',()=>{const account=read('../app/account.tsx');assert.doesNotMatch(account,/\.from\("profiles"\)/);assert.match(account,/account\.user\.avatarUrl/);});

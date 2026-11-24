@@ -24,3 +24,5 @@ test('invalid API origin never receives a session token',async()=>{
  for(const origin of ['http://sandbox.example','https://user:pass@sandbox.example','https://sandbox.example/path','https://sandbox.example?x=1'])await assert.rejects(requestNativeAccount(origin,'fixture-token',undefined,fetcher));
  await assert.rejects(requestNativeAccount('https://sandbox.example','',undefined,fetcher));assert.equal(calls,0);
 });
+
+test('optional approved-avatar response is backward compatible and HTTPS-only',()=>{assert.equal(parseNativeAccount(input).user.avatarUrl,undefined);assert.equal(parseNativeAccount({...input,user:{...input.user,avatarUrl:'https://fixture.example/avatar.png'}}).user.avatarUrl,'https://fixture.example/avatar.png');assert.equal(parseNativeAccount({...input,user:{...input.user,avatarUrl:'http://fixture.example/avatar.png'}}).user.avatarUrl,undefined);});

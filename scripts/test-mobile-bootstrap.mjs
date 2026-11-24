@@ -16,7 +16,7 @@ function fixture(options = {}) {
   const db = {
     auth: { getUser: async token => { calls.push(['getUser', token]); return { data: { user }, error: options.invalid ? new Error('Rejected token') : null }; } },
     from(table) { const chain = { select(columns) { calls.push(['select',table,columns]); return chain; }, eq(key,value) { calls.push(['eq',table,key,value]); return chain; }, async maybeSingle() {
-      return { data: table === 'profiles' ? (options.noProfile ? null : { account_type: options.accountType || 'player', display_name: 'Fixture', player_verified: true }) : (options.subscription || null), error: options.missingEntitlements && table === 'membership_entitlements' ? { code: '42P01', message: 'relation membership_entitlements does not exist' } : options.queryError ? new Error('private database error') : null };
+      return { data: table === 'profiles' ? (options.noProfile ? null : { account_type: options.accountType || 'player', display_name: 'Fixture', player_verified: true, avatar_url: options.avatar, avatar_moderation_status: options.avatarStatus }) : (options.subscription || null), error: options.missingEntitlements && table === 'membership_entitlements' ? { code: '42P01', message: 'relation membership_entitlements does not exist' } : options.queryError ? new Error('private database error') : null };
     } }; return chain; },
     rpc: async name => { calls.push(['rpc',name]); return { data: options.role ?? null, error: options.roleError ? new Error('Role unavailable') : null }; },
   };
@@ -83,4 +83,10 @@ test('missing membership entitlement relation fails closed without leaking datab
   assert.equal(body.includes('Fixture'), false);
   assert.ok(f.calls.some(c => c[0] === 'select' && c[1] === 'membership_entitlements'));
   assert.equal(response.headers.get('cache-control'), 'private, no-store');
+});
+
+test('bootstrap exposes only approved HTTPS avatar for the verified caller', async () => {
+ const avatar='https://fixture.example/avatar.png';
+ for (const status of ['approved','pending','rejected',undefined]) { const data=await (await fixture({avatar,avatarStatus:status}).get('Bearer fixture')).json(); assert.equal(data.user.avatarUrl,status==='approved'?avatar:undefined); }
+ const data=await (await fixture({avatar:'http://fixture.example/avatar.png',avatarStatus:'approved'}).get('Bearer fixture')).json(); assert.equal(data.user.avatarUrl,undefined);
 });
