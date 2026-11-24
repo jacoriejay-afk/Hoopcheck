@@ -57,7 +57,7 @@ export function HomeCourtside() {
         if (before.error || before.data.session?.user.id !== uid) throw Error("Session changed");
         const token = before.data.session.access_token;
         const results = await Promise.allSettled([
-          withHoopChatDeadline(signal => supabase.rpc("get_public_follow_list", { p_mode: "following", p_target_type: null, p_target_id: null, p_user_id: uid }).abortSignal(signal).then(result => { if (result.error) throw Error("Teams unavailable"); return visibleConnections(result.data, role).filter(row => row.target_type === "team"); }), 7000),
+          withHoopChatDeadline(async signal => supabase.rpc("get_public_follow_list", { p_mode: "following", p_target_type: null, p_target_id: null, p_user_id: uid }).abortSignal(signal).then(result => { if (result.error) throw Error("Teams unavailable"); return visibleConnections(result.data, role).filter(row => row.target_type === "team"); }), 7000),
           gameAccess ? withHoopChatDeadline(() => readBasketballSide(supabase, uid).then(side => readLiveGames(supabase, side, fullGames ? null : { origin, token })), 9000) : Promise.resolve(null),
           feedAccess ? withHoopChatDeadline(() => readFeedPage(supabase, uid).then(page => page.posts.slice(0, 2)), 7000) : Promise.resolve(null),
         ]);
