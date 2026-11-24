@@ -1,11 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Button } from "../src/primitives";
 import { useEntryTheme } from "../src/theme";
 import { useNativeAccount } from "../src/native/useNativeAccount";
+import { useActiveScreen } from "../src/native/useActiveScreen";
 import { supabase } from "../src/lib/supabase";
 import { visibleConnections, type PublicConnection } from "../src/native/connectionPresentation";
 import { readBasketballSide, readLiveGames } from "../src/native/liveGames";
@@ -36,6 +37,14 @@ export function HomeCourtside() {
   const t=useEntryTheme();const router=useRouter();
   const { account, loading, error, retry }=useNativeAccount();
   const [revision,setRevision]=useState(0);
+  const active = useActiveScreen();
+  const [clockMs, setClockMs] = useState(() => Date.now());
+  useEffect(() => {
+    if (!active) return;
+    setClockMs(Date.now());
+    const ticker = setInterval(() => setClockMs(Date.now()), 30_000);
+    return () => clearInterval(ticker);
+  }, [active]);
   const [snapshot,setSnapshot]=useState<HomeData|null>(null);
   const [reviewPromptVisible,setReviewPromptVisible]=useState(true);
   const uid=account?.user.id;
@@ -99,7 +108,7 @@ export function HomeCourtside() {
   </View>;
   const tier=account.tier==="premium"?"PREMIUM":account.tier==="pro"?"PRO":"FREE";
   const followTeams=data?.teams??[];
-  const previewGames=selectHomePreviewGames(data?.games?.games??[]);
+  const previewGames=selectHomePreviewGames(data?.games?.games??[], clockMs);
   return <View style={{gap:9,marginBottom:t.spacing.md}}>
     <View style={{borderBottomWidth:1,borderColor:t.border}}>
         <View style={{paddingVertical:8,gap:5}}>
@@ -181,8 +190,8 @@ export function HomeCourtside() {
       {!gameAccess?<Text style={{color:t.muted,fontSize:12}}>Game Center requires an eligible membership.</Text>:
         data.games===null?<Text accessibilityRole="alert" style={{color:t.muted}}>Scores could not load.</Text>:
         !previewGames.length?<Text style={{color:t.muted,fontSize:12}}>No live or upcoming games. See Game Center for past results.</Text>:
-        previewGames.map(game=><Pressable accessibilityRole="button" key={game.id} style={({pressed})=>({minHeight:44,paddingVertical:8,borderBottomWidth:1,borderColor:t.border,opacity:pressed?.72:1})} onPress={()=>router.push({pathname:"/fan-live",params:{gameId:game.id}})}>
-          <Scoreboard game={game} teams={data.games!.teams}/>
+        previewGames.map((game, index)=><Pressable accessibilityRole="button" key={game.id} style={({pressed})=>({minHeight:44,paddingVertical:8,borderBottomWidth:1,borderColor:t.border,opacity:pressed?.72:1})} onPress={()=>router.push({pathname:"/fan-live",params:{gameId:game.id}})}>
+          <Scoreboard game={game} teams={data.games!.teams} nowMs={clockMs} featured={index === 0} active={active}/>
         </Pressable>)}
       <ArenaHeading title="FROM HOOPFEED" cta="Open" onPress={()=>router.push("/feed")}/>
       {!feedAccess?<Text style={{color:t.muted,fontSize:12}}>Community posts require an eligible membership.</Text>:

@@ -1,4 +1,6 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import { ChatMessageEnter, ChatTypingBasketball, useConfirmedMessageMotion } from "./chat/ChatMotion";
 import { FlatList, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useNativeDraft } from "../src/native/drafts";
 import { Button } from "../src/primitives";
@@ -7,6 +9,7 @@ import { useEntryTheme } from "../src/theme";
 import { requireOnline } from "../src/native/network";
 import { readGameRoom, reportGameMessage, sendGameMessage, setGameChatControl, type ChatMessage } from "../src/native/liveGames";
 type Room = Awaited<ReturnType<typeof readGameRoom>>;
+const emptyMessages: ChatMessage[] = [];
 export function GameChat({ gameId, userId, enabled }: { gameId: string; userId: string; enabled: boolean }) {
   const theme = useEntryTheme();
   const scope = `${userId}:${gameId}`;
@@ -47,6 +50,10 @@ export function GameChat({ gameId, userId, enabled }: { gameId: string; userId: 
   }, [enabled, gameId, userId, scope, revision]);
   const room = enabled && snapshot?.scope === scope ? snapshot.room : null;
   const reportTarget = report?.scope === scope ? report.item : null;
+  const [motionFocused, setMotionFocused] = useState(false);
+  useFocusEffect(useCallback(() => { setMotionFocused(true); return () => setMotionFocused(false); }, []));
+  const motionActive = motionFocused && enabled && room?.open === true && !reportTarget && !managing;
+  const freshIds = useConfirmedMessageMotion(scope, room?.messages ?? emptyMessages, motionActive);
   async function action(task: () => Promise<void>) {
     if (request.current || !enabled) return;
     request.current = true; setBusy(true); setNotice("");
@@ -80,11 +87,12 @@ export function GameChat({ gameId, userId, enabled }: { gameId: string; userId: 
   return <View style={{ gap: 12, flex: 1 }}>
     <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 23, fontWeight: "800" }}>Game chat</Text>
     {!enabled ? <Text style={{ color: theme.muted }}>Live chat requires eligible active membership. Free players can still make game predictions.</Text> : !room ? <Text style={{ color: theme.muted }}>Verifying room access…</Text> : !room.open ? <Text style={{ color: theme.muted }}>This room is closed. Chat opens 60 minutes before tip-off and closes when the game ends.</Text> : <>
-      <FlatList style={{ flex: 1, minHeight: 0 }} inverted data={[...room.messages].reverse()} keyExtractor={item => item.id} keyboardShouldPersistTaps="handled" ListEmptyComponent={<Text style={{ color: theme.muted }}>No messages yet.</Text>} renderItem={({ item }) => <View style={{ paddingVertical: 10, gap: 6, borderBottomWidth: 1, borderColor: theme.border }}>
+      <FlatList style={{ flex: 1, minHeight: 0 }} inverted data={[...room.messages].reverse()} keyExtractor={item => item.id} keyboardShouldPersistTaps="handled" ListEmptyComponent={<Text style={{ color: theme.muted }}>No messages yet.</Text>} renderItem={({ item }) => <ChatMessageEnter fresh={freshIds.has(item.id)} incoming={item.user_id !== userId} active={motionActive}><View style={{ paddingVertical: 10, gap: 6, borderBottomWidth: 1, borderColor: theme.border }}>
         <Text style={{ color: theme.foreground, fontWeight: "800" }}>{room.names[item.user_id] || "HoopCheck member"}</Text>
         <Text style={{ color: theme.foreground }}>{item.body}</Text><Text style={{ color: theme.muted }}>{new Date(item.created_at).toLocaleTimeString()}</Text>
         {item.user_id !== userId ? <View style={{ flexDirection: "row", gap: 12 }}>{["mute", "block", "report"].map(kind => <Pressable key={kind} accessibilityRole="button" accessibilityLabel={`${kind} ${room.names[item.user_id] || "member"}`} disabled={busy} onPress={() => { if (kind === "report") { setReason("harassment"); setDetails(""); setReport({ scope, item }); } else void control(item.user_id, kind as "block" | "mute"); }} style={{ minHeight: 44, justifyContent: "center" }}><Text style={{ color: theme.accent, textTransform: "capitalize" }}>{kind}</Text></Pressable>)}</View> : null}
-      </View>} />
+      </View></ChatMessageEnter>} />
+      <ChatTypingBasketball active={motionActive && Boolean(text.trim()) && !busy} />
       <TextInput accessibilityLabel="Game chat message" placeholder="Message the room" placeholderTextColor={theme.muted} value={text} maxLength={500} multiline onChangeText={setDraft} style={{ color: theme.foreground, backgroundColor: theme.input, borderColor: theme.border, borderWidth: 1, borderRadius: theme.radius.control, padding: 12, minHeight: 48, maxHeight: 120 }} />
       <Button disabled={busy || !text.trim()} onPress={() => void send()}>{busy ? "Sending…" : "Send message"}</Button>
     </>}
