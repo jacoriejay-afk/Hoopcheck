@@ -33,3 +33,16 @@ test("Logo loading uses a named crest fallback without a spinner", () => {
   assert.doesNotMatch(art, /ActivityIndicator/);
   assert.match(art, /value\.protocol === "https:"/);
 });
+
+test("HoopGroups uses a compact community directory while preserving owner settings and launch gate", () => {
+  const groups = read("../components/HoopGroupsChannels.tsx");
+  const screen = read("../app/hoopgroups.tsx");
+  assert.match(groups, /accessibilityLabel="Community directory"/);
+  assert.doesNotMatch(groups, /width:160/);
+  assert.match(groups, /borderColor:accent\(space\.accent_color\)/);
+  assert.match(groups, /editing && selected\?\.owner_id===userId/);
+  assert.match(groups, /setEditing\(false\);setSpaceId\(space\.id\)/);
+  assert.match(groups, /Report or block/);
+  assert.match(screen, /EXPO_PUBLIC_HOOPGROUPS_CHANNELS_ENABLED === "true"/);
+  assert.match(screen, /not enabled in this release yet/);
+});
