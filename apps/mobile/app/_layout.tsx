@@ -98,7 +98,7 @@ function RootLayout() {
         screenOptions={{
           animation: "none",
           header: ({ navigation, options, route, back }) => <NativePageHeader title={options.title || route.name} onBack={back ? () => navigation.goBack() : undefined} />,
-          headerStyle: { backgroundColor: theme.background },
+          headerStyle: { backgroundColor: "transparent" },
           headerTintColor: theme.accent,
           headerShadowVisible: false,
           headerTitleStyle: { fontFamily: "HoopCheckDisplay", fontSize: 21, color: theme.foreground },
