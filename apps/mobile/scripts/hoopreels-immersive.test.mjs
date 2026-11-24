@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import vm from "node:vm";
+import { generateKeyPairSync, verify } from "node:crypto";
 import ts from "typescript";
 import React from "react";
 import { act, create } from "react-test-renderer";
@@ -13,7 +14,7 @@ function compile(source, stubs={}) {
   const result = ts.transpileModule(source, { compilerOptions:{ module:ts.ModuleKind.CommonJS, jsx:ts.JsxEmit.ReactJSX, target:ts.ScriptTarget.ES2022 }, reportDiagnostics:true });
   assert.equal(result.diagnostics?.length || 0, 0);
   const exports = {};
-  vm.runInNewContext(result.outputText, { exports, require: name=>stubs[name] || require(name), URL, Date, Set, Map, Promise, setTimeout, clearTimeout });
+  vm.runInNewContext(result.outputText, { exports, require: name=>stubs[name] || require(name), URL, Date, Set, Map, Promise, Buffer, AbortSignal, fetch, setTimeout, clearTimeout });
   return exports;
 }
 const sourceApi = compile(read("../../../lib/hoopreels/video-source.ts"));
@@ -120,6 +121,36 @@ test("watch preserves membership, block RLS, moderation, and shared comments wit
   assert.match(feed,/hoopcheck:reels:muted:v1:/);
   assert.doesNotMatch(card,/<FeedMedia/);assert.match(stream,/contentType: "hls"/);
   assert.match(route,/await bootstrap\(request\)/);assert.match(route,/entitlements\?\.canReadHoopFeed/);
-  assert.match(route,/HOOPREELS_ADMIN_HLS_CATALOG/);assert.match(route,/eq\("status", "approved"\)/);
+  assert.match(route,/await muxPilotCatalog\(process\.env, account\.user\.id\)/);assert.match(route,/eq\("status", "approved"\)/);
   assert.match(studio,/HOOPREELS_CREATE_ENABLED \? <HoopReelsStudio \/> : <CreationPaused \/>/);
+});
+
+test("free Mux pilot is disabled by default and signs only reviewed, verified provider assets", async () => {
+  const {muxPilotCatalog,MUX_PILOT_LIMIT}=compile(read("../../../lib/hoopreels/mux-pilot.ts"),{"./video-source":sourceApi});
+  const {privateKey,publicKey}=generateKeyPairSync("rsa",{modulusLength:2048});
+  const entry={postId,assetId:"fixtureAssetId",playbackId:"fixtureVideoId",moderationJobId:"fixtureModerationId",reviewed:true};
+  const env={HOOPREELS_STREAMING_PROVIDER:"mux",HOOPREELS_PILOT_ENABLED:"true",HOOPREELS_PILOT_VIEWERS:owner,HOOPREELS_MUX_PILOT_ASSETS:JSON.stringify([entry]),MUX_SIGNING_KEY_ID:"fixtureKeyId",MUX_SIGNING_PRIVATE_KEY:Buffer.from(privateKey.export({type:"pkcs8",format:"pem"})).toString("base64"),MUX_TOKEN_ID:"test-only",MUX_TOKEN_SECRET:"test-only"};
+  const asset={id:entry.assetId,status:"ready",duration:30,playback_ids:[{id:entry.playbackId,policy:"signed"}],tracks:[{type:"video",max_width:720,max_height:1280}]};
+  const job={id:entry.moderationJobId,workflow:"moderate",status:"completed",parameters:{asset_id:entry.assetId,on_flagged:{action:"delete_playback_ids"}},outputs:{exceeds_threshold:false}};
+  let calls=[];
+  const fetcher=(a=asset,j=job)=>async(url,options)=>{calls.push(url);assert.equal(options.redirect,"error");assert.equal(options.cache,"no-store");return {ok:true,json:async()=>({data:url.includes("/robots/")?j:a})};};
+  assert.equal(MUX_PILOT_LIMIT,10);
+  for (const [settings,viewer] of [[{...env,HOOPREELS_PILOT_ENABLED:"false"},owner],[env,other],[{...env,HOOPREELS_MUX_PILOT_ASSETS:JSON.stringify(Array(11).fill(entry))},owner],[{...env,HOOPREELS_MUX_PILOT_ASSETS:JSON.stringify([{...entry,reviewed:false}])},owner]]) {
+    assert.equal((await muxPilotCatalog(settings,viewer,fetcher())).configured,false);
+  }
+  assert.equal(calls.length,0);
+  const now=Date.now(), result=await muxPilotCatalog(env,owner,fetcher(),now);
+  assert.equal(result.assets.length,1);
+  assert.equal(calls.length,2);
+  for (const [url,aud] of [[result.assets[0].hlsUrl,"v"],[result.assets[0].posterUrl,"t"]]){
+    const [h,p,s]=new URL(url).searchParams.get("token").split(".");
+    const claims=JSON.parse(Buffer.from(p,"base64url").toString());
+    assert.equal(claims.sub,entry.playbackId);assert.equal(claims.aud,aud);assert.equal(claims.exp,Math.floor(now/1000)+900);
+    assert.ok(verify("RSA-SHA256",Buffer.from(h+"."+p),publicKey,Buffer.from(s,"base64url")));
+  }
+  for (const bad of [{...job,status:"pending"},{...job,outputs:{exceeds_threshold:true}},{...job,parameters:{...job.parameters,asset_id:"differentAsset"}},{...job,parameters:{asset_id:entry.assetId}}]){
+    assert.equal((await muxPilotCatalog(env,owner,fetcher(asset,bad))).assets.length,0);
+  }
+  assert.equal((await muxPilotCatalog(env,owner,fetcher({...asset,playback_ids:[{id:entry.playbackId,policy:"public"}]}))).assets.length,0);
+  assert.equal((await muxPilotCatalog(env,owner,fetcher({...asset,duration:61}))).assets.length,0);
 });
