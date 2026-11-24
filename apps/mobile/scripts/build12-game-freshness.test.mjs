@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { GAME_PAST_WINDOW_MS, GAME_FUTURE_WINDOW_MS, gameDisplayState, lastCheckedLabel } from "../src/native/gameFreshness.ts";
+import { GAME_PAST_WINDOW_MS, GAME_FUTURE_WINDOW_MS, gameDisplayState, lastCheckedLabel, providerReceiptLabel } from "../src/native/gameFreshness.ts";
 import { selectHomePreviewGames } from "../src/native/homeGamePreview.ts";
 
 const now = Date.parse("2026-11-24T08:00:00Z");
 const game = (status, scheduled_at, overrides = {}) => ({
   id: "11111111-1111-4111-8111-000000000001",
-  status, scheduled_at, started_at: null, period_label: null, ...overrides,
+  status, scheduled_at, started_at: null, period_label: null, score_updated_at: new Date(now-5*60_000).toISOString(), ...overrides,
 });
 
 test("a completed game is FINAL and never inherits an old Q1 label", () => {
@@ -95,4 +95,12 @@ test("free-player predictions API uses the same bounded period before LIMIT", ()
   assert.ok(modeSection.indexOf('.gte("scheduled_at", since)') < modeSection.indexOf(".limit(500)"));
   assert.match(source, /currentUser\(request, auth\)/, "Keep authenticated user gate");
   assert.match(source, /Cache-Control": "private, no-store"/, "Never cache per-user predictions in a public CDN");
+});
+
+test("fresh database polls cannot turn missing or expired provider receipts into LIVE", () => {
+  for (const value of [undefined,null,"invalid",new Date(now-31*60_000).toISOString(),new Date(now+120_000).toISOString()]) {
+    assert.equal(gameDisplayState(game("live","2026-11-24T06:00:00Z",{score_updated_at:value}),now,now).isLive,false);
+  }
+  assert.equal(providerReceiptLabel(null,now),"Provider refresh not verified");
+  assert.equal(providerReceiptLabel(new Date(now-5*60_000).toISOString(),now),"Provider checked 5 min ago");
 });

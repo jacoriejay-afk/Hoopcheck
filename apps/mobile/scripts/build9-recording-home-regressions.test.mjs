@@ -7,7 +7,7 @@ const dash = readFileSync(new URL("../app/dashboard.tsx", import.meta.url), "utf
 const home = readFileSync(new URL("../components/HomeCourtside.tsx", import.meta.url), "utf8");
 const explore = readFileSync(new URL("../components/ExploreLinks.tsx", import.meta.url), "utf8");
 const now = Date.parse("2026-11-23T18:30:00Z");
-const fixture = (id, status, scheduled_at) => ({ id, status, scheduled_at });
+const fixture = (id, status, scheduled_at) => ({ id, status, scheduled_at, score_updated_at: new Date(now-5*60_000).toISOString() });
 
 test("Home header stays pinned below iPhone's top safe area", () => {
   assert.match(dash, /edges=\{\["top", "left", "right", "bottom"\]\}/);

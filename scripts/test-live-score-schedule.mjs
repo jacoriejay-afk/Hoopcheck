@@ -55,3 +55,12 @@ test("cron uses one existing authenticated, bounded provider request per invocat
   assert.match(workflow, /LIVE_SCORES_CRON_SECRET/);
   assert.match(workflow, /timeout-minutes: 1/);
 });
+
+test("provider snapshots record actual receipt times and scan the full mapped team directory", () => {
+  const source = readFileSync(new URL("../app/api/cron/live-basketball/route.ts", import.meta.url), "utf8");
+  assert.match(source,/score_updated_at: receivedAt/);
+  assert.match(source,/const receivedAt = new Date\(\).toISOString\(\)/);
+  assert.equal((source.match(/\.range\(offset,offset\+499\)/g)||[]).length,2);
+  assert.match(source,/Object.keys\(payload.errors\).length > 0/);
+  assert.match(source,/if \(insertMappingsError\) throw insertMappingsError/);
+});
