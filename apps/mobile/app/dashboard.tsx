@@ -72,11 +72,11 @@ export default function DashboardScreen() {
       {/* Pinned outside the scroll view: the logo and menu must never slide under
           the iPhone status bar / Dynamic Island as the Home feed scrolls. */}
       <View style={styles.pinnedHeader}>
-          <GlassSurface style={{borderRadius:24,borderWidth:1,
+          <GlassSurface chrome style={{borderRadius:24,borderWidth:1,
             borderColor:theme.dark?"rgba(255,135,67,.65)":"rgba(234,113,56,.7)",
             marginBottom:9,shadowColor:"#000",shadowOpacity:theme.dark?.35:.12,shadowRadius:16,
             shadowOffset:{width:0,height:8}}}>
-            <LinearGradient colors={theme.dark?["rgba(18,30,51,.65)","rgba(24,45,73,.55)","rgba(45,35,53,.45)"]:["rgba(255,255,255,.75)","rgba(255,245,235,.5)"]}
+            <LinearGradient colors={theme.dark?["rgba(18,30,51,.12)","rgba(24,45,73,.06)","rgba(45,35,53,.02)"]:["rgba(255,255,255,.10)","rgba(255,245,235,.03)"]}
               start={{x:0,y:0}} end={{x:1,y:1}} style={StyleSheet.absoluteFill}/>
             <View style={{minHeight:62,paddingHorizontal:13,paddingVertical:9,
               flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:8}}>
