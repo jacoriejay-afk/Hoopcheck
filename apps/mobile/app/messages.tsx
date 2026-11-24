@@ -28,6 +28,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
   const [selectedId, setSelectedId] = useState("");
   const [draft, setDraft] = useState("");
   const [openedId, setOpenedId] = useState("");
+  const [openedMode, setOpenedMode] = useState(mode);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
@@ -138,27 +139,29 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
     || (mode === "conversations" && row.status === "accepted")
     || (mode === "requests" && row.status === "pending"));
   const selected = visibleThreads.find(item => item.id === selectedId) || visibleThreads[0];
-  const opened = Boolean(selected && selected.id === openedId);
+  const opened = Boolean(selected && selected.id === openedId && openedMode === mode);
   useEffect(() => { setOpenedId(""); setDraft(""); }, [mode]);
   const history=messages.filter(item=>item.request_id===selected?.id).slice().reverse();
 
   async function respond(status:"accepted"|"rejected") {
     if(!selected || selected.player_id!==userId || selected.status!=="pending" || !opened || sending) return;
+    const actionGeneration = generation.current;
     setSending(true);setError("");
     try {
       await requireOnline();
       const {data:{user}}=await supabase.auth.getUser();
-      if(user?.id!==userId)throw new Error("Your session changed.");
+      if(user?.id!==userId || actionGeneration!==generation.current || !focused.current)throw new Error("Your session changed.");
       const {error:updateError}=await supabase.from("player_contact_requests")
         .update({status,responded_at:new Date().toISOString()})
         .eq("id",selected.id).eq("player_id",userId).eq("status","pending");
       if(updateError)throw new Error("Could not update the request.");
-      await load();
-    }catch(failure){setError(failure instanceof Error?failure.message:"Unable to update request.");}
+      if(actionGeneration===generation.current && focused.current) await load();
+    }catch(failure){if(actionGeneration===generation.current && focused.current)setError(failure instanceof Error?failure.message:"Unable to update request.");}
     finally{setSending(false);}
   }
   async function send(){
     if(!selected || selected.status!=="accepted" || !opened || !draft.trim() || sending) return;
+    const actionGeneration = generation.current;
     setSending(true);setError("");
     try{
       await requireOnline();
@@ -167,8 +170,8 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       const {error:sendError}=await supabase.from("player_contact_messages")
         .insert({request_id:selected.id,sender_id:userId,body:draft.trim().slice(0,2000)});
       if(sendError)throw new Error("The message was not sent.");
-      setDraft("");await load();
-    }catch(failure){setError(failure instanceof Error?failure.message:"Message failed.");}
+      if(actionGeneration===generation.current && focused.current){setDraft("");await load();}
+    }catch(failure){if(actionGeneration===generation.current && focused.current)setError(failure instanceof Error?failure.message:"Message failed.");}
     finally{setSending(false);}
   }
   return <SafeAreaView edges={embedded ? ["left","right"] : ["bottom","left","right"]} style={{flex:1,backgroundColor:theme.background}}>
@@ -195,7 +198,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
           {visibleThreads.map(row=>{
             const latest=messages.find(message=>message.request_id===row.id);
             return <Pressable key={row.id} accessibilityRole="button" accessibilityState={{selected:row.id===selectedId}}
-              accessibilityLabel={`Open ${name(row)} conversation`} onPress={()=>{setSelectedId(row.id);setOpenedId(row.id);setDraft("");}}
+              accessibilityLabel={`Open ${name(row)} conversation`} onPress={()=>{setSelectedId(row.id);setOpenedMode(mode);setOpenedId(row.id);setDraft("");}}
               style={{paddingVertical:10,paddingHorizontal:4,minHeight:64,flexDirection:"row",alignItems:"center",borderColor:theme.border,borderBottomWidth:1,gap:10}}>
               <View style={{width:42,height:42,borderRadius:21,backgroundColor:theme.chip,alignItems:"center",justifyContent:"center"}}><Text style={{color:theme.foreground,fontSize:17,fontWeight:"700"}}>{name(row).slice(0,1).toUpperCase()}</Text></View>
               <View style={{flex:1,minWidth:0,gap:3}}>
