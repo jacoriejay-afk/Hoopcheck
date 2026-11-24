@@ -6,7 +6,11 @@ import { requireOnline } from "../src/native/network";
 import { pickGameWinner, readPrediction, type LiveGame, type Prediction } from "../src/native/liveGames";
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
 
-export function GamePrediction({ game, userId, homeName, awayName, active }: { game: LiveGame; userId: string; homeName: string; awayName: string; active: boolean }) {
+type PredictionProps = { game: LiveGame; userId: string; homeName: string; awayName: string; active: boolean };
+export function GamePrediction(props: PredictionProps) {
+  return <PredictionSurface key={JSON.stringify([props.userId,props.game.id,props.game.team_id,props.game.opponent_team_id,props.active])} {...props}/>;
+}
+function PredictionSurface({game,userId,homeName,awayName,active}:PredictionProps) {
   const theme = useEntryTheme();
   const scope = `${userId}:${game.id}`;
   const [snapshot, setSnapshot] = useState<{ scope: string; data: Prediction } | null>(null);
@@ -33,9 +37,12 @@ export function GamePrediction({ game, userId, homeName, awayName, active }: { g
   }, [active, game.id, userId, scope, revision]);
   const data = active && snapshot?.scope === scope ? snapshot.data : null;
   const tip = Date.parse(game.scheduled_at || "");
-  const locked = !data || data.locked || !Number.isFinite(tip) || now >= tip;
+  const teams = [{ id: game.team_id, name: homeName, side: "Home" }, { id: game.opponent_team_id, name: awayName, side: "Away" }];
+  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const bothMapped = teams.every(team => typeof team.id === "string" && uuid.test(team.id)) && game.team_id !== game.opponent_team_id;
+  const locked = !active || !data || data.locked || !bothMapped || game.status !== "scheduled" || !Number.isFinite(tip) || now >= tip;
   async function pick(teamId: string) {
-    if (locked || pending.current) return;
+    if (locked || Date.now() >= tip || pending.current || !teams.some(team => team.id === teamId)) return;
     pending.current = true; setBusy(true); setMessage("");
     try {
       await requireOnline();
@@ -48,8 +55,8 @@ export function GamePrediction({ game, userId, homeName, awayName, active }: { g
   }
   return <View style={{ gap: 10 }}>
     <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 21, fontWeight: "800" }}>Pick the winner</Text>
-    <Text style={{ color: theme.muted }}>{!data ? "Verifying predictions…" : locked ? "Picks locked at tip-off." : "One pick per game. Change it until tip-off."}</Text>
-    {[{ id: game.team_id, name: homeName }, { id: game.opponent_team_id, name: awayName }].filter((team): team is { id: string; name: string } => Boolean(team.id)).map(team => <Pressable key={team.id} accessibilityRole="button" aria-pressed={data?.my_pick === team.id} accessibilityState={{ selected: data?.my_pick === team.id, disabled: locked || busy }} disabled={locked || busy} onPress={() => void pick(team.id)} style={{ minHeight: 48, padding: 12, borderRadius: theme.radius.control, backgroundColor: data?.my_pick === team.id ? theme.accentSurface : theme.chip }}><Text style={{ color: theme.foreground }}>{team.name}{data?.my_pick === team.id ? " ✓ Your pick" : ""}</Text></Pressable>)}
+    <Text style={{ color: theme.muted }}>{!bothMapped ? "Predictions unavailable until both teams are verified." : !data ? "Verifying predictions…" : locked ? "Picks are closed for this game." : "One pick per game. Change it until tip-off."}</Text>
+    {teams.map(team => <Pressable key={team.side} accessibilityRole="button" aria-pressed={Boolean(team.id && data?.my_pick === team.id)} accessibilityState={{ selected: data?.my_pick === team.id, disabled: locked || busy }} disabled={locked || busy} onPress={() => { if(team.id) void pick(team.id); }} style={{ minHeight: 48, padding: 12, borderRadius: theme.radius.control, backgroundColor: data?.my_pick === team.id ? theme.accentSurface : theme.chip }}><Text style={{ color: theme.foreground }}>{team.name}{data?.my_pick === team.id ? " ✓ Your pick" : ""}</Text></Pressable>)}
     {data?.results ? <Text style={{ color: theme.foreground }}>{data.results.winner_percent}% picked the winner · {data.results.correct_picks} correct of {data.results.total_picks}</Text> : null}
     {message ? <Text accessibilityLiveRegion="polite" style={{ color: theme.muted }}>{message}</Text> : null}
   </View>;
