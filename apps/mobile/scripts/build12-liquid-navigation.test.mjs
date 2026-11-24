@@ -18,7 +18,7 @@ test("bottom floating navigation supports iOS clear glass and BlurView with redu
   const tabs = read("../components/TabBar.tsx");
   assert.match(tabs, /backgroundColor: translucent \? "transparent" : theme\.surface/);
   assert.match(tabs, /glassEffectStyle="clear"/);
-  assert.match(tabs, /colorScheme=\{theme\.dark \? "dark" : "light"\}/);
+  assert.doesNotMatch(tabs, /colorScheme=/);
   assert.doesNotMatch(tabs, /LinearGradient/);
   assert.match(tabs, /AccessibilityInfo\.isReduceTransparencyEnabled\(\)/);
   assert.match(tabs, /const translucent = Platform\.OS === "ios" && !reduceTransparency/);
