@@ -38,7 +38,7 @@ export function GlassSurface({
     && isGlassEffectAPIAvailable() && isLiquidGlassAvailable();
   return <View style={[{
     borderRadius: 24, borderCurve: "continuous", overflow: "hidden",
-    backgroundColor: opaque ? theme.surface : navigation && nativeGlass ? "transparent" : theme.glassFill,
+    backgroundColor: opaque ? theme.surface : navigation ? "transparent" : theme.glassFill,
     borderWidth: 1, borderColor: theme.glassBorder,
   }, style]}>
     {nativeGlass ? <GlassView pointerEvents="none" accessible={false}
