@@ -19,15 +19,18 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { supabase } from "../../src/lib/supabase";
 
-export default function PlayerDetailScreen() { return <PlayerAccess>{viewer => <PlayerProfileDetails viewer={viewer} />}</PlayerAccess>; }
+export default function PlayerDetailScreen() {
+  const { id: rawId } = useLocalSearchParams<{ id: string }>();
+  const id = typeof rawId === "string" ? rawId : "";
+  return <PlayerAccess>{viewer => <PlayerProfileDetails key={JSON.stringify([viewer.id, viewer.accountType, id])} viewer={viewer} id={id} />}</PlayerAccess>;
+}
 
-function PlayerProfileDetails({ viewer }: { viewer: PlayerViewer }) {
+function PlayerProfileDetails({ viewer, id }: { viewer: PlayerViewer; id: string }) {
   const theme = useEntryTheme();
   const insets = useSafeAreaInsets();
   const styles = createStyles(theme);
   const compactHero = useWindowDimensions().width < 390;
   const { id: viewerId, accountType } = viewer;
-  const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const haptic = useHaptics();
   const { revision, offline } = useNetwork();
@@ -63,7 +66,8 @@ function PlayerProfileDetails({ viewer }: { viewer: PlayerViewer }) {
 
   async function submitReport() {
     const reason = reportReason.trim();
-    if (reason.length < 1 || reason.length > 500 || !player) {
+    if (reportSubmitting || !player || player.id !== id) return;
+    if (reason.length < 1 || reason.length > 500) {
       setReportMessage("Please enter a reason of 1–500 characters.");
       return;
     }
@@ -77,10 +81,12 @@ function PlayerProfileDetails({ viewer }: { viewer: PlayerViewer }) {
     try {
       await requireOnline();
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !session?.access_token) {
+      if (sessionError || !session?.access_token || session.user.id !== viewerId) {
         setReportMessage("Please sign in again before reporting this profile.");
         return;
       }
+      const verified = await supabase.auth.getUser(session.access_token);
+      if (verified.error || verified.data.user?.id !== viewerId) throw new Error("Session changed");
       const response = await fetch(`${apiOrigin}/api/profile-reports`, {
         method: "POST",
         headers: {
@@ -132,6 +138,7 @@ function PlayerProfileDetails({ viewer }: { viewer: PlayerViewer }) {
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.md, paddingVertical: theme.spacing.sm, borderTopWidth: 1, borderColor: theme.border, width: "100%" }}>
                 {[{ label: "PRO EXPERIENCE", value: player.years_pro === null ? "Not listed" : `${player.years_pro} ${player.years_pro === 1 ? "year" : "years"}` }, { label: "CURRENT TEAM", value: player.current_team || "Not listed" }].map(item => <View key={item.label} style={{ flexShrink: 1, gap: theme.spacing.xs }}><Text style={{ ...theme.type.caption, color: theme.muted }}>{item.label}</Text><Text selectable style={{ ...theme.type.section, color: theme.foreground }}>{item.value}</Text></View>)}
               </View>
+              {player.id === viewerId && accountType === "player" ? <Button secondary onPress={() => router.push("/account/edit")}>Edit my profile</Button> : null}
               <ShareSheet title={name} path={`/players/${player.id}`} />
               <PlayerPassport player={player} />
               {player.player_verified ? <Text style={{ color: theme.success, marginTop: 8 }}>Verified professional player</Text> : null}
