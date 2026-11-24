@@ -69,3 +69,38 @@ test("legacy membership denies invalid sessions and MFA gaps; database errors ne
  for(const opts of [{readError:true},{row:{billing_interval:"unknown"}}])assert.equal((await membershipFixture(opts).get("membership")).status,503);
  const f=membershipFixture();assert.equal((await f.get("membership","Basic invalid")).status,401);assert.deepEqual(f.calls,[]);
 });
+
+function profileFixture(opts={}){
+ const calls=[],token=Buffer.from("{}").toString("base64url")+"."+Buffer.from(JSON.stringify({sub:uid,exp:Math.floor(Date.now()/1000)+3600,aal:opts.aal||"aal1"})).toString("base64url")+".signature";
+ const user={id:uid,is_anonymous:opts.anonymous===true,factors:opts.mfa?[{id:other,status:"verified",factor_type:"totp"}]:[]};
+ const row={id:opts.foreign?other:uid,account_type:"player",current_country:"Own private country",moderation_note:"never return",birthdate:"never return"};
+ const db={auth:{getUser:async()=>({data:{user:opts.invalid?null:user},error:null}),getClaims:async()=>({data:{claims:{role:opts.role||"authenticated"}},error:null})},
+ rpc:async name=>{calls.push(["rpc",name]);return {data:opts.code?null:row,error:opts.code?{code:opts.code}:null};},
+ from(table){calls.push(["table",table]);return {select(columns){calls.push(["select",columns]);return this;},eq(key,value){calls.push(["eq",key,value]);return this;},async maybeSingle(){return {data:opts.readError?null:row,error:opts.readError?Error("private"):null};}};}};
+ const {GET}=compile("../app/api/mobile/own-profile/route.ts",name=>{
+  if(name==="next/server")return {NextResponse:{json:(data,init)=>Response.json(data,init)}};
+  if(name==="@supabase/supabase-js")return {createClient:(_url,key,options)=>{calls.push(["key",key,options.global.headers.Authorization]);return db;}};
+  if(name.endsWith("mfa-core"))return mfa;throw Error(name);
+ });
+ process.env.NEXT_PUBLIC_SUPABASE_URL="https://fixture.example";process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="fixture-publishable";
+ return {calls,get:(header="Bearer "+token)=>GET(new Request("https://fixture.example/api/mobile/own-profile?user="+other,{headers:{authorization:header}}))};
+}
+test("owner profile API prefers RPC and permits only absent-function compatibility with fixed caller",async()=>{
+ for(const opts of [{},{code:"PGRST202"}]){
+  const f=profileFixture(opts),res=await f.get();assert.equal(res.status,200);assert.equal(res.headers.get("cache-control"),"private, no-store");
+  assert.deepEqual(await res.json(),{owner:uid,profile:{id:uid,account_type:"player",current_country:"Own private country"}});
+  assert.equal(f.calls[0][1],"fixture-publishable");assert.deepEqual(f.calls[1],["rpc","get_own_profile"]);
+  assert.equal(f.calls.some(c=>c[0]==="table"),Boolean(opts.code));
+  if(opts.code)assert.deepEqual(f.calls.find(c=>c[0]==="eq"),["eq","id",uid]);
+ }
+});
+test("profile API denies unverified or insufficient-MFA callers, foreign rows and all other RPC failures",async()=>{
+ for(const opts of [{invalid:true},{anonymous:true},{mfa:true},{role:"anon"}]){
+  const f=profileFixture(opts);assert.ok([401,403].includes((await f.get()).status));assert.ok(!f.calls.some(c=>c[0]==="rpc"||c[0]==="table"));
+ }
+ for(const opts of [{code:"42501"},{code:"57014"},{foreign:true},{code:"PGRST202",foreign:true},{code:"PGRST202",readError:true}]){
+  const f=profileFixture(opts);assert.equal((await f.get()).status,503);if(opts.code!=="PGRST202")assert.ok(!f.calls.some(c=>c[0]==="table"));
+ }
+ assert.equal((await profileFixture({mfa:true,aal:"aal2"}).get()).status,200);
+ const f=profileFixture();assert.equal((await f.get("Basic fixture")).status,401);assert.deepEqual(f.calls,[]);
+});
