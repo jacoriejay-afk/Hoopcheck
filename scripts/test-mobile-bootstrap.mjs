@@ -24,6 +24,7 @@ function fixture(options = {}) {
     if (name === 'next/server') return { NextResponse: { json: (body, init) => Response.json(body, init) } };
     if (name === '@supabase/supabase-js') return { createClient: (...args) => { calls.push(['client',...args]); return db; } };
     if (name === '../../../../lib/membership-tier') return membership;
+    if (name === '../../../../lib/ambassador/mobile-access') return { mobileWorkspaceAccess: async () => options.workspaces || { owner: false, ambassador: false } };
     throw new Error(`Unexpected import ${name}`);
   });
   process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://fixture.supabase.co';
@@ -71,4 +72,13 @@ test('database and role failures deny access without leaking errors', async () =
     assert.equal((await response.text()).includes('private database'),false);
   }
   assert.equal((await fixture({noProfile:true}).get('Bearer fixture')).status,409);
+});
+
+test('HQ grants are additive and do not change existing subscription access', async () => {
+  const subscription = {plan:'premium',status:'active',current_period_end:'2099-01-01T00:00:00Z'};
+  const f = fixture({subscription,workspaces:{owner:true,ambassador:false}});
+  const data=await (await f.get('Bearer fixture')).json();
+  assert.deepEqual(data.workspaces,{owner:true,ambassador:false});
+  assert.equal(data.entitlements.tier,'premium');
+  assert.ok(f.calls.some(c=>c[0]==='select'&&c[1]==='subscriptions'));
 });
