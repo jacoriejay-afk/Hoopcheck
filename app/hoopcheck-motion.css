@@ -109,3 +109,10 @@
 }
 @keyframes hc-owner-mark-reveal { from { opacity: .3; transform: scale(.94); } to { opacity: 1; transform: scale(1); } }
 @keyframes hc-owner-arrow-reveal { from { opacity: 0; transform: translate(-4px,4px); } to { opacity: 1; transform: translate(0,0); } }
+
+/* Court Pulse: local decorative vector, no layout growth or continuous extra loop. */
+.hc-owner-court { position: absolute; inset: 20%; width: 60%; height: 60%; pointer-events: none; stroke: #ff6a00; stroke-width: 1.5; opacity: .3; }
+@media (prefers-reduced-motion: no-preference) {
+  .hc-owner-court { animation: hc-owner-court-pulse 900ms ease-out 1 both; }
+}
+@keyframes hc-owner-court-pulse { 0% { opacity: .12; transform: scale(.92); } 55% { opacity: .75; } 100% { opacity: .3; transform: scale(1); } }

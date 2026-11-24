@@ -8,3 +8,10 @@ QA: verify owner visual approval, dark/light contrast, 320px headers, app icon a
 
 ## Expansion
 Native sign-in/sign-up share the lockup; native community headings use traced HoopFeed or the existing display font for HoopReels. Web HoopFeed now uses the same shield. The reusable CheckButton keeps existing authorization and count logic, uses the owner arrow, and suppresses animation on reduced motion. The current feed may use its own Check control; integration of the primitive into additional release branches remains follow-up. Light splash uses a dedicated dark-ink raster; launcher PNG omits unnecessary transparency metadata. No extra dependencies.
+
+## Signature motion expansion
+- Takeoff: native shield reveal and independently timed orange arrow; one 500ms sequence with a static reduced-motion path.
+- Court Pulse: decorative finite court-line reveal on the existing web loading surface and optional native branded feed skeleton. Existing skeleton delay and data requests are unchanged.
+- Confirmed Check: actual native feed action shows the owner arrow and animates the unchecked-to-checked transition after the existing server response. The button's permission, pending, error and count paths remain untouched.
+- Pull-to-refresh: native OS indicator uses brand colors; no custom gesture or fake spinner.
+- Device rendering, native typecheck, and web checks are still required. The custom basketball refresh gesture, premium reveal, marketing assets and other separate release-branch surfaces remain follow-up.

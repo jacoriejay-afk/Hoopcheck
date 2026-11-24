@@ -1,4 +1,4 @@
-import { BrandMark, CommunityWordmark } from "../components/BrandLockup";
+import { BrandMark, CommunityWordmark, ConfirmedCheckGlyph } from "../components/BrandLockup";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { FlatList, Linking, Pressable, RefreshControl, Share, Text, TextInput, View, type ViewToken } from "react-native";
@@ -208,7 +208,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
   const textStyle = { color: theme.foreground };
   const linkStyle = { color: theme.accent };
   const touch = { minHeight: 44, paddingHorizontal: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 999, backgroundColor: theme.elevatedSurface, justifyContent: "center" as const };
-  if (accountLoading) return <View style={{ flex: 1, padding: 24, backgroundColor: theme.background }}><Skeleton /></View>;
+  if (accountLoading) return <View style={{ flex: 1, padding: 24, backgroundColor: theme.background }}><Skeleton branded /></View>;
   if (!account || !canRead) return <View style={{ flex: 1, padding: 24, gap: 20, justifyContent: "center", backgroundColor: theme.background }}>
     <Text accessibilityRole="header" style={{ ...textStyle, fontSize: 28, fontWeight: "900" }}>HoopFeed</Text>
     <Text style={textStyle}>{offline ? "Reconnect to verify community access." : account ? "An active HoopCheck membership is required to use HoopFeed." : accountError}</Text>
@@ -231,8 +231,8 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
         </View>}
         {!canWrite ? <Text style={{ color: theme.muted, marginTop: 8 }}>Your membership does not include posting.</Text> : null}
       </View> : null}
-      refreshControl={<RefreshControl refreshing={loading} onRefresh={() => { setBlocksVersion(version => version + 1); void load(); }} />}
-      ListEmptyComponent={loading || (reels && blockedCreators.owner === uid && !blockedCreators.ready) ? <Skeleton /> : <View style={{ padding: 24, gap: 12 }}><Text style={textStyle}>{loadError || (reels && blockedCreators.failed ? "Blocked accounts could not be verified. Retry before viewing Reels." : reels ? "No video posts are available in this page." : "No posts are available in this page.")}</Text><Button secondary onPress={() => { setBlocksVersion(version => version + 1); void load(); }}>Refresh</Button></View>}
+      refreshControl={<RefreshControl refreshing={loading} tintColor={theme.accent} colors={[theme.button]} progressBackgroundColor={theme.surface} onRefresh={() => { setBlocksVersion(version => version + 1); void load(); }} />}
+      ListEmptyComponent={loading || (reels && blockedCreators.owner === uid && !blockedCreators.ready) ? <Skeleton branded /> : <View style={{ padding: 24, gap: 12 }}><Text style={textStyle}>{loadError || (reels && blockedCreators.failed ? "Blocked accounts could not be verified. Retry before viewing Reels." : reels ? "No video posts are available in this page." : "No posts are available in this page.")}</Text><Button secondary onPress={() => { setBlocksVersion(version => version + 1); void load(); }}>Refresh</Button></View>}
       renderItem={({ item: post }) => {
         const page = comments.owner === uid ? comments.values[post.id] : undefined;
         const replyTarget = reply && reply.owner === uid && reply.postId === post.id ? reply : null;
@@ -259,7 +259,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
               if (viewer.current.uid !== uid || !viewer.current.canRead) return;
               const total = activity.find(row => row.post_id === post.id);
               if (total && Number.isSafeInteger(Number(total.checks_count)) && Number(total.checks_count) >= 0) setChecks(previous => ({ ...previous, [post.id]: { count: Number(total.checks_count), mine: total.checked_by_me === true } }));
-            })} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>{!checks[post.id] ? "Checks unavailable" : checks[post.id].mine ? "Checked" : "Check"}{checks[post.id] ? ` · ${checks[post.id].count}` : ""}</Text></Pressable>
+            })} style={[touch, { flexDirection: "row", alignItems: "center", gap: 5 }]}>{checks[post.id] ? <ConfirmedCheckGlyph checked={checks[post.id].mine === true} /> : null}<Text style={{ ...linkStyle, fontSize: 12 }}>{!checks[post.id] ? "Checks unavailable" : checks[post.id].mine ? "Checked" : "Check"}{checks[post.id] ? ` · ${checks[post.id].count}` : ""}</Text></Pressable>
             <Pressable accessibilityRole="button" onPress={() => { if (reels) { router.push({ pathname: "/feed", params: { post: post.id, comments: "1" } }); return; } setOpenComments(previous => ({ ...previous, [post.id]: !previous[post.id] })); if (!page || page.error) void loadComments(post.id); }} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Comments</Text></Pressable>
             <Pressable accessibilityRole="button" onPress={() => void action(`share:${post.id}`, async () => { await Share.share({ title: "HoopFeed", message: `https://hoopcheck.online/feed#post-${post.id}` }); })} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Share</Text></Pressable>
             {reels && <Pressable accessibilityRole="button" accessibilityLabel="Report this Reel" onPress={() => void action(`report:${post.id}`, async () => { await Linking.openURL(`https://hoopcheck.online/support?reportReel=${post.id}`); })} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Report</Text></Pressable>}
