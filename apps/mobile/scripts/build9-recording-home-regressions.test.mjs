@@ -43,7 +43,7 @@ test("Home game preview prioritizes live, then next tip-off, excluding old final
   assert.deepEqual(selectHomePreviewGames(data, now).map(g => g.id), ["live", "soon"]);
   assert.deepEqual(selectHomePreviewGames(data, now, 4).map(g => g.id), ["live", "soon", "tomorrow"]);
   assert.deepEqual(selectHomePreviewGames([data[0], data[1], data[5]], now), []);
-  assert.match(home, /selectHomePreviewGames\(data\?\.games\?\.games\?\?\[\]\)/);
+  assert.match(home, /selectHomePreviewGames\(data\?\.games\?\.games\?\?\[\], clockMs\)/);
   assert.match(home, /title="LIVE & UPCOMING"/);
 });
 
@@ -73,4 +73,18 @@ test("Eligible HoopFeed empty state is actionable and preserves membership gatin
   assert.match(home, /accessibilityLabel="Open HoopFeed to start a discussion"/);
   assert.match(home, /!feedAccess\?<Text/);
   assert.match(home, /onPress=\{\(\)=>router\.push\("\/feed"\)\}/);
+});
+
+
+test("Home expires live provider receipts even without a new request, using the same clock for preview and score", () => {
+  const live = fixture("expires", "live", "2026-11-23T17:00:00Z");
+  assert.equal(selectHomePreviewGames([live], now).length, 1);
+  assert.deepEqual(selectHomePreviewGames([live], now + 26 * 60_000), []);
+  assert.match(home, /const active = useActiveScreen\(\)/);
+  assert.match(home, /if \(!active\) return;\s*setClockMs\(Date.now\(\)\)/);
+  assert.match(home, /setInterval\(\(\) => setClockMs\(Date.now\(\)\), 30_000\)/);
+  assert.match(home, /clearInterval\(ticker\)/);
+  assert.match(home, /<Scoreboard game=\{game\}[^>]+nowMs=\{clockMs\}/);
+  const liveScreen = readFileSync(new URL("../app/fan-live.tsx", import.meta.url), "utf8");
+  assert.match(liveScreen, /rows\.filter\(g=>gameDisplayState\(g, clockMs, checkedAtMs\)\.isLive\)/);
 });
