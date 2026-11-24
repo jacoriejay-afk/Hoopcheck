@@ -243,7 +243,7 @@ export default function HoopGroupsChannels() {
     ]);
   }
 
-  return <View style={{gap:12}}>
+  return <View style={{gap:9}}>
     <Text style={{color:theme.muted,fontSize:13,lineHeight:19}}>
       Independent basketball communities, member-created groups and moderated discussion channels.
     </Text>
@@ -262,8 +262,8 @@ export default function HoopGroupsChannels() {
           accessibilityLabel={value==="discover"?"Discover groups":value==="joined"?"Joined groups":"My groups"}
           onPress={()=>setFilter(value)}
           style={{minHeight:44,flex:1,justifyContent:"center",alignItems:"center",borderRadius:12,
-            backgroundColor:filter===value?theme.accentSurface:theme.surface,
-            borderWidth:1,borderColor:filter===value?theme.accent:theme.glassBorder}}>
+            backgroundColor:filter===value?theme.accentSurface:"transparent",
+            borderBottomWidth:filter===value?2:0,borderColor:theme.accent}}>
           <Text style={{color:filter===value?theme.accent:theme.foreground,fontWeight:"800",fontSize:12}}>
             {value==="discover"?"Discover":value==="joined"?"Joined":"My groups"}
           </Text>
@@ -272,7 +272,7 @@ export default function HoopGroupsChannels() {
       <Pressable accessibilityRole="button" accessibilityLabel={creating?"Cancel new group":"Create a group"}
         onPress={()=>setCreating(value=>!value)}
         style={{minHeight:44,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:8,
-          borderRadius:13,borderWidth:1,borderColor:theme.glassBorder,backgroundColor:theme.surface}}>
+          borderRadius:13,borderWidth:0,backgroundColor:theme.accentSurface}}>
         <Text style={{color:theme.accent,fontWeight:"800"}}>{creating?"Cancel":"＋ Create your group"}</Text>
       </Pressable>
       {creating?<GlassCard style={{gap:9}}>
@@ -303,26 +303,26 @@ export default function HoopGroupsChannels() {
       <Text accessibilityRole="header" style={{color:theme.foreground,fontSize:17,fontWeight:"900"}}>
         {filter==="joined"?"Joined groups":filter==="mine"?"Your groups":"Discover communities"}
       </Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:8}}>
+      <View accessibilityLabel="Community directory" style={{gap:0}}>
         {filtered.map(space=><Pressable key={space.id} accessibilityRole="button"
           accessibilityState={{selected:selected?.id===space.id}}
           accessibilityLabel={`Open ${space.name} group`}
-          onPress={()=>{setSpaceId(space.id);setChannelId("");setDraft("");}}
-          style={{minHeight:68,width:160,borderWidth:1,borderColor:selected?.id===space.id?theme.accent:theme.glassBorder,
-            borderRadius:16,backgroundColor:selected?.id===space.id?theme.accentSurface:theme.surface,padding:10,justifyContent:"center"}}>
+          onPress={()=>{setEditing(false);setSpaceId(space.id);setChannelId("");setDraft("");}}
+          style={{minHeight:62,borderBottomWidth:1,borderColor:theme.border,
+            backgroundColor:selected?.id===space.id?theme.accentSurface:"transparent",padding:8,justifyContent:"center"}}>
           <View style={{flexDirection:"row",alignItems:"center",gap:8}}>
-            <Text accessibilityLabel={space.icon_key+" group icon"} style={{fontSize:23}}>{emblem(space.icon_key)}</Text>
+            <View style={{width:42,height:42,borderRadius:21,alignItems:"center",justifyContent:"center",borderWidth:2,borderColor:accent(space.accent_color)}}><Text accessibilityLabel={space.icon_key+" group icon"} style={{fontSize:22}}>{emblem(space.icon_key)}</Text></View>
             <Text numberOfLines={2} style={{color:theme.foreground,fontWeight:"800",flex:1}}>{space.name}</Text>
           </View>
           <Text style={{color:theme.muted,fontSize:11,marginTop:4}}>
             {space.owner_id===userId?"Your group":joined.includes(space.id)?"Joined":"Discover"}
           </Text>
         </Pressable>)}
-      </ScrollView>
-      <GlassCard style={{gap:10}}>
+      </View>
+      <GlassCard style={{gap:10,backgroundColor:"transparent",borderWidth:0,padding:4}}>
         <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:10}}>
           <View style={{flex:1,gap:4}}>
-            <Text style={{color:theme.foreground,fontSize:18,fontWeight:"900"}}>{selected?.name}</Text>
+            <Text style={{color:theme.foreground,fontSize:22,fontFamily:"HoopCheckDisplay"}}>{selected?.name}</Text>
             <Text style={{color:theme.muted,fontSize:12}}>{selected?.description}</Text>
             <View style={{flexDirection:"row",alignItems:"center",gap:8}}>
               <Text style={{fontSize:19}}>{selected?emblem(selected.icon_key):"🏀"}</Text>
@@ -401,8 +401,8 @@ export default function HoopGroupsChannels() {
           </View>:null}
         </>:null}
       </GlassCard>
-      {member&&channel?<GlassCard style={{gap:10}}>
-        <Text style={{color:theme.foreground,fontSize:17,fontWeight:"900"}}># {channel.name}</Text>
+      {member&&channel?<GlassCard style={{gap:8,backgroundColor:"transparent",borderWidth:0,padding:4}}>
+        <Text style={{color:theme.foreground,fontSize:19,fontFamily:"HoopCheckDisplay"}}># {channel.name}</Text>
         <Text style={{color:theme.muted,fontSize:12}}>Members only · moderated posts · 20-second slow mode</Text>
         {posts.length?posts.map(post=><View key={post.id}
           style={{borderBottomWidth:1,borderColor:theme.border,paddingVertical:10,gap:5}}>
