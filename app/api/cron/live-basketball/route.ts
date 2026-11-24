@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { GAME_CHAT_OPEN_EARLY_MINUTES } from "../../../../lib/game-availability";
+import { selectFixtureSyncDay } from "../../../../lib/live-score-schedule";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 20;
@@ -39,14 +40,10 @@ export async function GET(request: NextRequest) {
 
   try {
     const db = createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
-    const bakuDateParts = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Asia/Baku",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit"
-    }).formatToParts(new Date());
-    const datePart = (type: string) => bakuDateParts.find(part => part.type === type)?.value;
-    const fixtureDate = `${datePart("year")}-${datePart("month")}-${datePart("day")}`;
+    // Preserve the existing free-tier provider budget: ONE date per trigger.
+    // A small number of existing 15-minute slots fetch future fixtures
+    // and yesterday's corrected finals; the rest refresh today's scores.
+    const { date: fixtureDate, dayOffset } = selectFixtureSyncDay();
     const response = await fetch(`https://v1.basketball.api-sports.io/games?date=${fixtureDate}&timezone=Asia%2FBaku`, {
       headers: { "x-apisports-key": apiKey, "Accept": "application/json" },
       cache: "no-store",
@@ -274,6 +271,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       ok: true,
       fixtureDate,
+      dayOffset,
       providerGamesForDate: payload.response.length,
       providerLiveGames: liveGames.length,
       providerScheduledGames: rows.filter(row => row.status === "scheduled").length,

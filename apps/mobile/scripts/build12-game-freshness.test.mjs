@@ -83,3 +83,16 @@ test("Game Center keeps its last verified user-scoped snapshot during network fa
   assert.match(loader, /\.lte\("scheduled_at", until\)/);
   assert.match(loader, /const visible = games\.filter/);
 });
+
+test("free-player predictions API uses the same bounded period before LIMIT", () => {
+  const source = readFileSync(new URL("../../../app/api/game-predictions/route.ts", import.meta.url), "utf8");
+  const modeSection = source.split('url.searchParams.get("mode") === "games"')[1]?.split('url.searchParams.get("mode") === "leaderboard"')[0] || "";
+  assert.ok(modeSection, "Find free-player games mode");
+  assert.match(modeSection, /const since = new Date\(now - 36 \* 60 \* 60_000\)/);
+  assert.match(modeSection, /const until = new Date\(now \+ 14 \* 24 \* 60 \* 60_000\)/);
+  assert.match(modeSection, /\.gte\("scheduled_at", since\)\.lte\("scheduled_at", until\)/);
+  assert.match(modeSection, /\.limit\(500\)/);
+  assert.ok(modeSection.indexOf('.gte("scheduled_at", since)') < modeSection.indexOf(".limit(500)"));
+  assert.match(source, /currentUser\(request, auth\)/, "Keep authenticated user gate");
+  assert.match(source, /Cache-Control": "private, no-store"/, "Never cache per-user predictions in a public CDN");
+});

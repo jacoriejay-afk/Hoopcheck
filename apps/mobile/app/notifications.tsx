@@ -4,7 +4,7 @@ import MessagesScreen from "./messages";
 import { hoopChatAuthAction } from "../src/native/hoopChatLoad";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FlatList, Pressable, RefreshControl, Text, View } from "react-native";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Button } from "../src/primitives";
 import { useEntryTheme } from "../src/theme";
 import { supabase } from "../src/lib/supabase";
@@ -15,6 +15,7 @@ import { markNotificationsRead, noticeMatches, notificationPath, readNotificatio
 export default function Notifications() {
   const theme = useEntryTheme();
   const router = useRouter();
+  const { tab } = useLocalSearchParams<{ tab?: string }>();
   const haptic = useHaptics();
   const { offline } = useNetwork();
   const generation = useRef(0);
@@ -27,7 +28,12 @@ export default function Notifications() {
   const [error, setError] = useState("");
   const [failed, setFailed] = useState(false);
   const [filter, setFilter] = useState("all");
-  const [section, setSection] = useState<"activity" | "chat" | "requests">("activity");
+  const [section, setSection] = useState<"activity" | "chat" | "requests">(
+    tab === "chat" ? "chat" : tab === "requests" ? "requests" : "activity",
+  );
+  useEffect(() => {
+    if (tab === "chat" || tab === "requests" || tab === "activity") setSection(tab);
+  }, [tab]);
   const load = useCallback(async () => {
     const current = ++generation.current;
     owner.current = null; setRows([]); setLoading(true); setError(""); setFailed(false);
