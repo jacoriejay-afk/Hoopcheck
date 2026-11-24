@@ -1,3 +1,4 @@
+import { appendPostLocation } from "./feedClient.ts";
 import type { Photo, Video } from "./mediaSelection";
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function originUrl(origin: string, path: string) {
@@ -11,7 +12,7 @@ export type MediaTransport = {
   uploadVideo: (url: string, headers: Record<string, string>, video: Video, signal: AbortSignal) => Promise<{ status: number }>;
   request?: typeof fetch;
 };
-export async function publishMediaPost(api: string, project: string, owner: string, token: string, caption: string, photos: Photo[], video: Video | null, signal: AbortSignal, transport: MediaTransport) {
+export async function publishMediaPost(api: string, project: string, owner: string, token: string, caption: string, photos: Photo[], video: Video | null, signal: AbortSignal, transport: MediaTransport, location = "") {
   const target = originUrl(api, "/api/hoopfeed/moderate");
   const storage = originUrl(project, "/storage/v1/object/upload/sign/");
   if (!uuid.test(owner) || !token || caption.trim().length > 2000 || (video && !caption.trim()) || (!photos.length && !video) || photos.length > 4 || (photos.length && video)) throw new Error("Choose up to four photos or one video with a caption.");
@@ -21,7 +22,7 @@ export async function publishMediaPost(api: string, project: string, owner: stri
   const headers = { Authorization: `Bearer ${token}` };
   let uploadPath: string | null = null, moderationStarted = false, definitiveRejection = false;
   try {
-    const form = new FormData(); form.append("kind", "post"); form.append("post_kind", "discussion"); form.append("audience", "community"); form.append("text", caption.trim());
+    const form = new FormData(); form.append("kind", "post"); form.append("post_kind", "discussion"); form.append("audience", "community"); form.append("text", caption.trim()); appendPostLocation(form,location);
     for (let index = 0; index < photos.length; index++) form.append(index === 0 ? "image" : "images", await transport.photoBody(photos[index]), "photo.jpg");
     if (video) {
       const response = await request(originUrl(api, "/api/hoopfeed/video-upload"), { method: "POST", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ content_type: video.type, size: video.size }), cache: "no-store", redirect: "error", signal });

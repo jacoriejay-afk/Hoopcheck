@@ -1,3 +1,4 @@
+import { TeamTrustIndex } from "../../components/TeamTrustIndex";
 import { EntitySchedule } from "../../components/EntitySchedule";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, RefreshControl, ScrollView, Text } from "react-native";
@@ -82,7 +83,8 @@ export default function WomensTeamScreen() {
         <GlassCard><Text style={{ color: theme.muted, fontSize: 11, fontWeight: "800", letterSpacing: 1 }}>LEAGUE</Text><Text style={{ ...text, fontSize: 16, fontWeight: "700", marginTop: 7 }}>{current.league_name || "Not listed"}</Text>
           {current.league_id ? <Pressable accessibilityRole="link" onPress={() => router.push({ pathname: "/womens/leagues/[id]", params: { id: current.league_id! } })} style={touch}><Text style={link}>Open league profile</Text></Pressable> : null}
         </GlassCard>
-        <Text accessibilityRole="header" style={{ ...text, fontSize: 22, fontWeight: "800" }}>Latest reviews</Text>
+        <TeamTrustIndex key={current.id} id={current.id} entity="womens-team" refresh={refresh} />
+            <Text accessibilityRole="header" style={{ ...text, fontSize: 22, fontWeight: "800" }}>Latest reviews</Text>
         {accessLoading ? <Skeleton review /> : offline ? <Text style={text}>Reconnect to revalidate review access. Reviews are not saved offline.</Text> : accessError ? <Text accessibilityRole="alert" style={text}>Review access could not be verified. Pull to retry.</Text> : permissions?.canReadFull ? permissions.reviews.length ? permissions.reviews.map(review => <GlassCard key={review.id}>
           <Text style={link}>{review.overall_rating == null ? "Rating not listed" : `${review.overall_rating}/5 overall`}</Text>
           {review.title ? <Text style={{ ...text, fontWeight: "700", marginTop: 8 }}>{review.title}</Text> : null}

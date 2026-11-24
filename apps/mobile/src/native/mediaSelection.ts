@@ -65,14 +65,18 @@ async function requireCamera() {
   const permission = await ImagePicker.requestCameraPermissionsAsync();
   if (!permission.granted) throw new MediaPermissionError("Allow camera access in device Settings, then try again.");
 }
-export async function capturePhoto(): Promise<Photo | null> {
+export type CameraFacing = "front" | "back";
+function cameraOptions(facing?: CameraFacing) {
+  return facing ? { cameraType: facing === "front" ? ImagePicker.CameraType.front : ImagePicker.CameraType.back } : {};
+}
+export async function capturePhoto(facing?: CameraFacing): Promise<Photo | null> {
   await requireCamera();
-  const result = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], allowsEditing: true, aspect: [4, 3], quality: 1, exif: false, base64: false });
+  const result = await ImagePicker.launchCameraAsync({ ...cameraOptions(facing), mediaTypes: ["images"], allowsEditing: true, aspect: [4, 3], quality: 1, exif: false, base64: false });
   return result.canceled ? null : preparePhoto(result.assets[0]);
 }
-export async function captureVideo(): Promise<Video | null> {
+export async function captureVideo(facing?: CameraFacing): Promise<Video | null> {
   await requireCamera();
-  const result = await ImagePicker.launchCameraAsync({ mediaTypes: ["videos"], allowsEditing: false, videoMaxDuration: 60, videoQuality: ImagePicker.UIImagePickerControllerQualityType.Medium, exif: false, base64: false });
+  const result = await ImagePicker.launchCameraAsync({ ...cameraOptions(facing), mediaTypes: ["videos"], allowsEditing: false, videoMaxDuration: 60, videoQuality: ImagePicker.UIImagePickerControllerQualityType.Medium, exif: false, base64: false });
   if (result.canceled) return null;
   const asset = result.assets[0];
   if (typeof asset.duration !== "number" || !Number.isFinite(asset.duration) || asset.duration <= 0 || asset.duration > 60000) throw new Error("Record a video of up to 60 seconds.");
@@ -90,14 +94,18 @@ export async function photoBody(photo: Photo): Promise<Blob> {
   // React Native fetch/FormData supports a local file descriptor, not a web Blob.
   return { uri: photo.uri, name: photo.name, type: photo.type } as unknown as Blob;
 }
-export async function uploadVideoFile(url: string, headers: Record<string, string>, video: Video, signal: AbortSignal): Promise<{ status: number }> {
+export async function uploadVideoFile(url: string, headers: Record<string, string>, video: Video, signal: AbortSignal, onProgress?: (fraction: number) => void): Promise<{ status: number }> {
   localUri(video.uri); if (signal.aborted) throw new Error("Media upload was cancelled. Your draft is unchanged.");
   if (Platform.OS === "web") return fetch(url, { method: "PUT", headers, body: await (await fetch(video.uri)).blob(), signal, redirect: "error" });
   const file = new File(video.uri);
   if (!file.exists || file.size !== video.size) throw new Error("Video is no longer available. Choose it again.");
   // SDK 54 expo/fetch buffers Blob/streams in JavaScript. Native binary upload
   // uses a file-backed URLSession task so a 50 MB video is not base64/JS buffered.
-  const task = FileSystem.createUploadTask(url, video.uri, { httpMethod: "PUT", uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT, sessionType: FileSystem.FileSystemSessionType.FOREGROUND, headers });
+  const task = FileSystem.createUploadTask(url, video.uri, { httpMethod: "PUT", uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT, sessionType: FileSystem.FileSystemSessionType.FOREGROUND, headers }, progress => {
+    if (!signal.aborted && progress.totalBytesExpectedToSend > 0 && Number.isFinite(progress.totalBytesSent)) {
+      onProgress?.(Math.max(0, Math.min(1, progress.totalBytesSent / progress.totalBytesExpectedToSend)));
+    }
+  });
   const cancel = () => { void task.cancelAsync().catch(() => {}); };
   signal.addEventListener("abort", cancel, { once: true });
   try {
