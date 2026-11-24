@@ -80,17 +80,17 @@ export function TabBar() {
       marginHorizontal: 20 + Math.max(insets.left, insets.right),
       marginBottom: Math.max(9, insets.bottom), borderRadius: 31,
       borderCurve: "continuous", overflow: "hidden",
-      backgroundColor: translucent ? theme.glassFill : (theme.dark ? "#111923" : "#F6F8FD"),
+      backgroundColor: translucent ? "transparent" : (theme.dark ? "#111923" : "#F6F8FD"),
       borderWidth: 1, borderColor: theme.dark ? "rgba(255,255,255,.24)" : "rgba(30,42,70,.16)",
       shadowColor: "#000", shadowOffset: { width: 0, height: 14 },
       shadowOpacity: theme.dark ? .42 : .16, shadowRadius: 24, elevation: 12,
     }}>
-    {nativeGlass ? <GlassView pointerEvents="none" accessible={false} glassEffectStyle="regular"
-      tintColor={theme.dark ? "#161B29" : "#F3F6FC"} style={[StyleSheet.absoluteFill, { borderRadius: 31 }]} /> :
+    {nativeGlass ? <GlassView pointerEvents="none" accessible={false} glassEffectStyle="clear"
+      tintColor={theme.dark ? "rgba(18,34,54,0.12)" : "rgba(255,255,255,0.12)"} style={[StyleSheet.absoluteFill, { borderRadius: 31 }]} /> :
       translucent ? <BlurView pointerEvents="none" accessible={false} intensity={65}
         tint={theme.dark ? "dark" : "light"} style={StyleSheet.absoluteFill} /> : null}
     <LinearGradient pointerEvents="none" accessible={false} style={StyleSheet.absoluteFill}
-      colors={theme.dark ? ["rgba(255,255,255,.11)", "rgba(255,255,255,.02)"] : ["rgba(255,255,255,.77)", "rgba(242,242,247,.36)"]}
+      colors={translucent ? (theme.dark ? ["rgba(255,255,255,.055)", "rgba(255,255,255,.005)"] : ["rgba(255,255,255,.10)", "rgba(255,255,255,.02)"]) : (theme.dark ? ["rgba(255,255,255,.11)", "rgba(255,255,255,.02)"] : ["rgba(255,255,255,.38)", "rgba(242,242,247,.12)"])}
       start={{ x: 0, y: 0 }} end={{ x: .2, y: 1 }} />
     {index >= 0 && activeWidth > 0 ? <Animated.View pointerEvents="none" style={[{
       position: "absolute", left: Math.max(0, (activeWidth - 18) / 2), bottom: 2,
