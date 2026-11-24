@@ -40,9 +40,24 @@ test("HoopGroups uses a compact community directory while preserving owner setti
   assert.match(groups, /accessibilityLabel="Community directory"/);
   assert.doesNotMatch(groups, /width:160/);
   assert.match(groups, /borderColor:accent\(space\.accent_color\)/);
-  assert.match(groups, /editing && selected\?\.owner_id===userId/);
+  assert.match(groups, /managing && selected\?\.owner_id===userId/);
   assert.match(groups, /setEditing\(false\);setSpaceId\(space\.id\)/);
   assert.match(groups, /Report or block/);
   assert.match(screen, /EXPO_PUBLIC_HOOPGROUPS_CHANNELS_ENABLED === "true"/);
   assert.match(screen, /not enabled in this release yet/);
+});
+
+
+test("HoopGroups resets local state across account changes and scopes private channel content", () => {
+  const groups = read("../components/HoopGroupsChannels.tsx");
+  assert.match(groups, /<ScopedHoopGroups key=\{JSON\.stringify\(\[userId,offline\]\)\}/);
+  assert.match(groups, /const posts=member&&channel&&postSnapshot\?\.channelId===channel\.id\?postSnapshot\.posts:\[\]/);
+  assert.match(groups, /const draft=member&&channel&&draftState\?\.channelId===channel\.id\?draftState\.value:""/);
+  assert.match(groups, /if\(!alive\)return;\s*if\(readError\)/);
+  assert.match(groups, /setPostSnapshot\(\{channelId:channel\.id,posts:/);
+  assert.match(groups, /const managing=editing&&editingGroupId===selected\?\.id/);
+  assert.match(groups, /if\(!selected \|\| !managing \|\| !userId/);
+  const join = groups.slice(groups.indexOf("async function join()"), groups.indexOf("async function createGroup()"));
+  assert.match(join, /supabase\.auth\.getUser\(\)/);
+  assert.match(join, /user\?\.id!==userId/);
 });
