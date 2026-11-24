@@ -142,7 +142,8 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
   const selected = visibleThreads.find(item => item.id === selectedId) || visibleThreads[0];
   const opened = Boolean(selected && selected.id === openedId && openedMode === mode);
   useEffect(() => { setOpenedId(""); setDraft(""); }, [mode]);
-  const history=useMemo(()=>messages.filter(item=>item.request_id===selected?.id).slice().reverse(),[messages,selected?.id]);
+  const selectedRequestId = selected?.id;
+  const history=useMemo(()=>messages.filter(item=>item.request_id===selectedRequestId).slice().reverse(),[messages,selectedRequestId]);
   const motionActive=Boolean(userId && opened && selected?.status==="accepted" && !offline);
   const freshIds=useConfirmedMessageMotion(`${userId}:${openedId}:${mode}`,history,motionActive);
 
