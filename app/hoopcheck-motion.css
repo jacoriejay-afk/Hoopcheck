@@ -116,3 +116,19 @@
   .hc-owner-court { animation: hc-owner-court-pulse 900ms ease-out 1 both; }
 }
 @keyframes hc-owner-court-pulse { 0% { opacity: .12; transform: scale(.92); } 55% { opacity: .75; } 100% { opacity: .3; transform: scale(1); } }
+
+.hc-owner-community-title { display: flex; align-items: center; gap: .35em; }
+.hc-owner-community-icon { display: inline-flex; width: .95em; height: .95em; flex: 0 0 auto; color: #ff6a00; }
+.hc-owner-community-icon svg { width: 100%; height: 100%; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+.hc-owner-tier--premium::after { content: ""; display: block; width: 100%; max-width: 5rem; height: 2px; background: linear-gradient(90deg,#c45100,#ff9a4d,#ff6a00); transform-origin: left; }
+.hc-owner-tier--pro::after { content: ""; display: block; width: 2.5rem; height: 2px; background: currentColor; opacity: .5; transform-origin: left; }
+@media (prefers-reduced-motion: no-preference) {
+  .hc-owner-community-icon { animation: hc-owner-icon-reveal 380ms ease-out 1 both; }
+  .hc-owner-tier::after { animation: hc-owner-tier-reveal 520ms ease-out 1 both; }
+  .hc-owner-game-night .hc-live-badge--visible > span { display: inline-block; animation: hc-owner-game-reveal 700ms ease-out 1 both; }
+  .hc-owner-verified-reveal { animation: hc-owner-icon-reveal 420ms ease-out 1 both; }
+}
+@keyframes hc-owner-icon-reveal { from { opacity: .4; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes hc-owner-tier-reveal { from { opacity: 0; transform: scaleX(.1); } to { opacity: 1; transform: scaleX(1); } }
+@keyframes hc-owner-game-reveal { from { opacity: .35; transform: scale(.8); } 60% { opacity: 1; transform: scale(1.15); } to { opacity: 1; transform: scale(1); } }
+@media print { .hc-owner-verified-reveal { animation: none !important; opacity: 1; transform: none; } }

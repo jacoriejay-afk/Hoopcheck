@@ -76,8 +76,8 @@ export default function PlayerPassportExport({
           <button type="button" onClick={() => setOpen(false)}>Close preview</button>
         </div>
         <article className="hc-passport-print" id="hoopcheck-passport-export">
-          <header><div><p>HOOP<span>CHECK</span>™</p><h2>{playerName}</h2><small>PROFESSIONAL BASKETBALL CAREER PASSPORT</small></div><div className="hc-passport-print__mark">HC</div></header>
-          <p className="hc-passport-print__badge">{verifiedPlayer ? "HoopCheck verified player profile" : "HoopCheck player profile"}
+          <header><div><p>HOOP<span>CHECK</span>™</p><h2>{playerName}</h2><small>PROFESSIONAL BASKETBALL CAREER PASSPORT</small></div><div className="hc-passport-print__mark"><img src="/hoopcheck-mark.svg" width="44" height="44" alt="HoopCheck" /></div></header>
+          <p className={`hc-passport-print__badge${verifiedPlayer ? " hc-owner-verified-reveal" : ""}`}>{verifiedPlayer ? "HoopCheck verified player profile" : "HoopCheck player profile"}
             <span> · Career entries are self-reported, not individually verified</span></p>
           <h3>Career timeline</h3>
           {visible.length ? <ol>{visible.map(stop => <li key={stop.id}>

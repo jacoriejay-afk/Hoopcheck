@@ -15,3 +15,6 @@ Native sign-in/sign-up share the lockup; native community headings use traced Ho
 - Confirmed Check: actual native feed action shows the owner arrow and animates the unchecked-to-checked transition after the existing server response. The button's permission, pending, error and count paths remain untouched.
 - Pull-to-refresh: native OS indicator uses brand colors; no custom gesture or fake spinner.
 - Device rendering, native typecheck, and web checks are still required. The custom basketball refresh gesture, premium reveal, marketing assets and other separate release-branch surfaces remain follow-up.
+
+## Final expansion candidate
+Restore established Reels accessibility name. Add compact web HoopChat/HoopGroups sub-brand emblems, one-shot plan accents, verified-live-only Game Night indicator, passport mark and verified-profile badge reveal. Native account shows official mark for confirmed paid membership. Shared-post/reel watermark, achievement unlock integration and device testing remain follow-up. No entitlement changes.

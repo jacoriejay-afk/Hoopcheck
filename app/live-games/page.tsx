@@ -274,7 +274,7 @@ export default function LiveGamesPage() {
     const score = scoreText(game);
     const tip = game.scheduled_at || game.started_at;
     return (
-      <article className={`hc-live-hub-card ${isLive ? "is-live" : ""} ${isRecent ? "is-recent" : ""}`}>
+      <article className={`hc-live-hub-card ${isLive ? "is-live hc-owner-game-night" : ""} ${isRecent ? "is-recent" : ""}`}>
         <div className="hc-live-hub-card__top">
           {presentation.isUnverified ? <span className="hc-live-state">{presentation.label}</span>
             : isLive ? <span className="hc-live-badge hc-live-badge--visible"><span aria-hidden="true">●</span> LIVE</span>

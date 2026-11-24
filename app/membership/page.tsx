@@ -394,7 +394,7 @@ function MembershipContent() {
                 <div className="plan-top">
                   <div>
                     <div className="eyebrow">{accountType === "fan" ? "HOOPCHECK FAN PRO" : "HOOPCHECK PRO"}</div>
-                    <h3>{accountType === "fan" ? "Fan Pro" : "Pro"}</h3>
+                    <h3 className="hc-owner-tier hc-owner-tier--pro">{accountType === "fan" ? "Fan Pro" : "Pro"}</h3>
                   </div>
                   <div className="price">
                     <strong>{PLAN_PRICES.pro[billingInterval]}</strong>
@@ -436,7 +436,7 @@ function MembershipContent() {
                 <div className="plan-top">
                   <div>
                     <div className="eyebrow">{accountType === "fan" ? "HOOPCHECK FAN PREMIUM" : "HOOPCHECK PREMIUM"}</div>
-                    <h3>{accountType === "fan" ? "Fan Premium" : "Premium"}</h3>
+                    <h3 className="hc-owner-tier hc-owner-tier--premium">{accountType === "fan" ? "Fan Premium" : "Premium"}</h3>
                   </div>
                   <div className="price">
                     <strong>{PLAN_PRICES.premium[billingInterval]}</strong>
