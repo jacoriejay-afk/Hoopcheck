@@ -65,14 +65,18 @@ async function requireCamera() {
   const permission = await ImagePicker.requestCameraPermissionsAsync();
   if (!permission.granted) throw new MediaPermissionError("Allow camera access in device Settings, then try again.");
 }
-export async function capturePhoto(): Promise<Photo | null> {
+export type CameraFacing = "front" | "back";
+function cameraOptions(facing?: CameraFacing) {
+  return facing ? { cameraType: facing === "front" ? ImagePicker.CameraType.front : ImagePicker.CameraType.back } : {};
+}
+export async function capturePhoto(facing?: CameraFacing): Promise<Photo | null> {
   await requireCamera();
-  const result = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], allowsEditing: true, aspect: [4, 3], quality: 1, exif: false, base64: false });
+  const result = await ImagePicker.launchCameraAsync({ ...cameraOptions(facing), mediaTypes: ["images"], allowsEditing: true, aspect: [4, 3], quality: 1, exif: false, base64: false });
   return result.canceled ? null : preparePhoto(result.assets[0]);
 }
-export async function captureVideo(): Promise<Video | null> {
+export async function captureVideo(facing?: CameraFacing): Promise<Video | null> {
   await requireCamera();
-  const result = await ImagePicker.launchCameraAsync({ mediaTypes: ["videos"], allowsEditing: false, videoMaxDuration: 60, videoQuality: ImagePicker.UIImagePickerControllerQualityType.Medium, exif: false, base64: false });
+  const result = await ImagePicker.launchCameraAsync({ ...cameraOptions(facing), mediaTypes: ["videos"], allowsEditing: false, videoMaxDuration: 60, videoQuality: ImagePicker.UIImagePickerControllerQualityType.Medium, exif: false, base64: false });
   if (result.canceled) return null;
   const asset = result.assets[0];
   if (typeof asset.duration !== "number" || !Number.isFinite(asset.duration) || asset.duration <= 0 || asset.duration > 60000) throw new Error("Record a video of up to 60 seconds.");
