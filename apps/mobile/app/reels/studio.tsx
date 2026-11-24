@@ -12,12 +12,22 @@ import { useNativeAccount } from "../../src/native/useNativeAccount";
 import { REEL_TOPICS, type ReelTopic } from "../../src/native/mediaClient";
 import { clearReelCaptionDraft, readReelCaptionDraft, writeReelCaptionDraft } from "../../src/native/reelDraft";
 import { GlassThemeScope, useEntryTheme } from "../../src/theme";
+import { HOOPREELS_CREATE_ENABLED } from "../../../../lib/hoopreels/video-source";
 
 type OwnReel = { id: string; body: string | null; created_at: string; status: string };
 const isUuid = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 
 export default function HoopReelsStudioRoute() {
-  return <GlassThemeScope><HoopReelsStudio /></GlassThemeScope>;
+  return <GlassThemeScope>{HOOPREELS_CREATE_ENABLED ? <HoopReelsStudio /> : <CreationPaused />}</GlassThemeScope>;
+}
+function CreationPaused() {
+  const router = useRouter();
+  const theme = useEntryTheme();
+  return <SafeAreaView style={{ flex: 1, backgroundColor: theme.background, padding: 24, gap: 16, justifyContent: "center" }}>
+    <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 24, fontWeight: "800" }}>Reel creation is not available yet</Text>
+    <Text style={{ color: theme.muted }}>HoopReels is preparing its streaming and safety systems. Existing HoopFeed posting remains available according to your membership.</Text>
+    <Pressable accessibilityRole="button" onPress={() => router.replace("/reels")} style={{ minHeight: 48 }}><Text style={{ color: theme.accent }}>Back to Reels</Text></Pressable>
+  </SafeAreaView>;
 }
 function HoopReelsStudio() {
   const theme = useEntryTheme();

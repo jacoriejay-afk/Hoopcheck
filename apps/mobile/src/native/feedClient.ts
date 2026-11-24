@@ -1,9 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { ReelVideoSource } from "../../../../lib/hoopreels/video-source";
 export const FEED_PAGE_SIZE = 20;
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const isFeedId = (value: string) => uuid.test(value);
 export type FeedCursor = { id: string; created_at: string };
-export type FeedPost = FeedCursor & { author_id: string; body: string | null; image_url: string | null; image_urls: string[] | null; video_url: string | null; post_kind: string; poll_options: string[] | null; expires_at: string | null; profiles: { display_name: string | null; account_type: string | null; avatar_url?: string | null; avatar_moderation_status?: string | null } | null };
+export type FeedPost = FeedCursor & { author_id: string; body: string | null; image_url: string | null; image_urls: string[] | null; video_url: string | null; post_kind: string; poll_options: string[] | null; expires_at: string | null; profiles: { display_name: string | null; account_type: string | null; avatar_url?: string | null; avatar_moderation_status?: string | null; username?: string | null } | null; club_id?: string | null; womens_club_id?: string | null; league_id?: string | null; womens_league_id?: string | null; reel_source?: ReelVideoSource; reel_team?: { id: string; name: string; women: boolean } | null };
 export type FeedComment = FeedCursor & { author_id: string; body: string; parent_id: string | null; profiles: { display_name: string | null } | null };
 function apiUrl(origin: string, path: string) {
   const url = new URL(origin);
@@ -30,8 +31,9 @@ export async function readSharedFeedPost(client: SupabaseClient, userId: string,
 }
 export async function readFeedPage(client: SupabaseClient, userId: string, cursor?: FeedCursor, reels = false, now = new Date()) {
   if (!uuid.test(userId) || (cursor && !validCursor(cursor))) throw new Error("Invalid feed request");
+  // Build 12 Reels are provider-only; the legacy raw-video filter is forbidden.
+  if (reels) throw new Error("Use the authorized HoopReels streaming catalog.");
   let query = readablePosts(client, now).order("created_at", { ascending: false }).order("id", { ascending: false }).limit(FEED_PAGE_SIZE + 1);
-  if (reels) query = query.not("video_url", "is", null);
   if (cursor) query = query.or(`created_at.lt.${cursor.created_at},and(created_at.eq.${cursor.created_at},id.lt.${cursor.id})`);
   const result = await query;
   if (result.error) throw new Error("Feed unavailable");

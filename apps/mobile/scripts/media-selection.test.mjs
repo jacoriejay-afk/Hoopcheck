@@ -47,3 +47,24 @@ test('native video upload is file-backed binary, foreground-only, abortable and 
  const uploading=f.api.uploadVideoFile('https://storage.test/upload',{'Content-Type':'video/quicktime'},{uri:'file:///private/video.mov',size:500},controller.signal);
  controller.abort();await assert.rejects(uploading,/cancelled/);assert.equal(cancelled,1);assert.equal(options.uploadType,0);assert.equal(options.sessionType,1);assert.equal(options.httpMethod,'PUT');
 });
+
+test('camera permission denial and cancellation never select or publish media',async()=>{
+ let calls=0;const picker={requestCameraPermissionsAsync:async()=>({granted:false}),launchCameraAsync:async()=>{calls++;return {canceled:true,assets:null};},UIImagePickerControllerQualityType:{Medium:1}};
+ const f=native({'expo-image-picker':picker});await assert.rejects(f.api.capturePhoto(),f.api.MediaPermissionError);assert.equal(calls,0);
+ picker.requestCameraPermissionsAsync=async()=>({granted:true});
+ assert.equal(await f.api.capturePhoto(),null);assert.equal(await f.api.captureVideo(),null);assert.equal(calls,2);
+});
+test('capture photo uses bounded JPEG preparation and video validates duration, size and local URI',async()=>{
+ let options,asset={uri:'file:///private/camera.jpg',width:4000,height:3000};
+ const f=native({'expo-image-picker':{requestCameraPermissionsAsync:async()=>({granted:true}),launchCameraAsync:async value=>{options=value;return {canceled:false,assets:[asset]};},UIImagePickerControllerQualityType:{Medium:1}}});
+ const photo=await f.api.capturePhoto();assert.equal(photo.type,'image/jpeg');assert.deepEqual(options.mediaTypes,['images']);assert.equal(options.exif,false);assert.equal(options.base64,false);
+ asset={uri:'file:///private/camera.mov',mimeType:'video/quicktime',duration:45000};
+ const video=await f.api.captureVideo();assert.equal(video.type,'video/quicktime');assert.equal(options.videoMaxDuration,60);
+ asset={...asset,duration:61000};await assert.rejects(f.api.captureVideo(),/60 seconds/);
+ asset={...asset,duration:3000,uri:'https://evil.test/camera.mov'};await assert.rejects(f.api.captureVideo(),/device library/);
+ asset={...asset,uri:'file:///private/camera.mov'};f.setSize(51*1024*1024);await assert.rejects(f.api.captureVideo(),/50 MB/);
+});
+test('web capture never requests native permissions',async()=>{
+ const f=native({'react-native':{Platform:{OS:'web'}},'expo-image-picker':{}});
+ await assert.rejects(f.api.capturePhoto(),/HoopCheck app/);await assert.rejects(f.api.captureVideo(),/HoopCheck app/);
+});

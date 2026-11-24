@@ -29,6 +29,7 @@ async function fixture(browser,theme,allowed=true){
     if(method==='OPTIONS')return json({});
     if(url.hostname==='api.test'){
       assert.ok(request.headers().authorization?.startsWith('Bearer '),'API must receive bearer');
+      if(url.pathname==='/api/hoopreels/catalog')return json({configured:false,posts:[]});
       if(url.pathname==='/api/mobile/bootstrap')return json({user:{id:uid,displayName:'Fixture Member',accountType:'player'},entitlements:{tier:allowed?'pro':'free',hasPaidMembership:allowed,canReadHoopFeed:allowed,canWriteHoopFeed:allowed,canUseLiveGameHub:allowed,canUseLiveGameChat:allowed,canSwitchBasketballSide:allowed,canUseFanGroups:allowed}});
       if(url.pathname==='/api/hoopfeed/media'&&body.includes('photo.png')&&!mediaFailed){mediaFailed=true;return json({error:'Synthetic media failure'},503);}
       if(url.pathname==='/api/hoopfeed/media')return json({url:`https://fixture.supabase.co/storage/v1/object/sign/feed/${body.includes('video.webm')?'video.webm':'photo.png'}?token=synthetic`});
@@ -115,24 +116,28 @@ async function fixture(browser,theme,allowed=true){
     await page.getByRole('button',{name:'Share',exact:true}).first().click();
     assert.ok((await page.evaluate(()=>window.__sharedFeed))?.text?.includes('hoopcheck.online/feed#post-'),'Share uses canonical post link');
     const option=page.getByRole('button',{name:'Home team · 0',exact:true});await option.scrollIntoViewIfNeeded();await option.click();await page.getByRole('button',{name:'Home team · 1 ✓',exact:true}).waitFor();
+    const beforeReels = calls.length;
     await page.getByRole('tab',{name:'Reels',exact:true}).click();
-    const video=page.locator('video');await video.waitFor();
-    await video.evaluate(async element=>{element.muted=true;await element.play();});
-    await page.waitForFunction(()=>{const v=document.querySelector('video');return v&&!v.paused&&v.currentTime>0;});
-    await page.screenshot({path:`/tmp/hoopcheck-native-ui/reels-${theme}.png`,fullPage:true});
-    assert.ok(calls.some(c=>c.path==='/api/hoopfeed/media'&&c.body.includes('protected/video.webm')));
-    await page.getByRole('button',{name:'Reel options',exact:true}).click();
-    await page.getByRole('button',{name:'Block account',exact:true}).click();
-    await page.getByText('Creator added to your HoopCheck blocked accounts.',{exact:true}).waitFor();
-    assert.ok(blocked.has(id(5)),'Native block saves to shared account block table');
-    await page.getByText('No video posts are available in this page.',{exact:true}).waitFor();
+    await page.getByText('HoopReels streaming is not available yet.',{exact:true}).waitFor();
+    await page.getByRole('tab',{name:'For You',exact:true}).waitFor();
+    await page.getByRole('tab',{name:'Following',exact:true}).click();
+    assert.ok(calls.slice(beforeReels).some(c=>c.path==='/api/hoopreels/catalog'),'Provider catalog requested');
+    assert.ok(!calls.slice(beforeReels).some(c=>c.path==='/api/hoopfeed/media'&&c.body.includes('protected/video.webm')),'No raw media request from Reels');
+    assert.equal(await page.locator('video').count(),0,'Provider-off Reels do not mount any video');
+    assert.equal(await page.getByRole('button',{name:'Create Reel (not available)',exact:true}).isDisabled(),true);
+    await page.screenshot({path:`/tmp/hoopcheck-native-ui/reels-provider-off-${theme}.png`,fullPage:true});
+    await page.goto(`${base}/reels/studio`);
+    await page.getByText('Reel creation is not available yet',{exact:true}).waitFor();
+    assert.equal(await page.getByRole('button',{name:'Publish Reel',exact:true}).count(),0,'Direct Studio links cannot bypass creation flag');
+    await page.getByRole('button',{name:'Back to Reels',exact:true}).click();
+    await page.getByText('HoopReels streaming is not available yet.',{exact:true}).waitFor();
     await page.getByRole('tab',{name:'Alerts',exact:true}).click();await page.getByText('Fixture team review',{exact:true}).waitFor();
     await page.getByRole('button',{name:'Mark all as read',exact:true}).click();await page.getByRole('button',{name:'unread',exact:true}).click();await page.getByText('Nothing in this category.',{exact:true}).waitFor();
     await page.getByRole('tab',{name:'Account',exact:true}).click();await page.getByText('Active access verified by HoopCheck',{exact:true}).waitFor();
     await page.getByRole('tab',{name:'Search',exact:true}).click();await page.getByText('Search basketball',{exact:true}).waitFor();
     await page.getByRole('tab',{name:'Home',exact:true}).click();await page.getByText('Explore basketball',{exact:true}).waitFor();
     assert.deepEqual(errors,[]);await page.screenshot({path:`/tmp/hoopcheck-native-ui/feed-${theme}.png`,fullPage:true});
-    console.log(`PASS ${theme}: native feed moderation/draft/reply/check/save/poll/Reels playback/alerts/account/search/home`);
+    console.log(`PASS ${theme}: native feed moderation/draft/reply/check/save/poll/Reels provider-off/alerts/account/search/home`);
   }catch(error){console.log('Fixture failure URL:',page.url());console.log(await page.locator('body').innerText());throw error;}finally{await context.close();}
 }
 (async()=>{png=await require('sharp')({create:{width:640,height:360,channels:3,background:'#FF5A1F'}}).png().toBuffer();fs.mkdirSync('/tmp/hoopcheck-native-ui',{recursive:true});const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});try{for(const theme of ['light','dark'])await fixture(browser,theme);await fixture(browser,'light',false);console.log('PASS denied membership: protected feed queries never started');}finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});

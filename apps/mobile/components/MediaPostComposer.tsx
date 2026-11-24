@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Image, Linking, Text, View } from "react-native";
+import { Image, Linking, Platform, Text, View } from "react-native";
 import { Button } from "../src/primitives";
 import { useEntryTheme } from "../src/theme";
-import { choosePhoto, chooseVideo, MediaPermissionError, photoBody, preparePhoto, uploadVideoFile, type Photo, type Video } from "../src/native/mediaSelection";
+import { capturePhoto, captureVideo, choosePhoto, chooseVideo, MediaPermissionError, photoBody, preparePhoto, uploadVideoFile, type Photo, type Video } from "../src/native/mediaSelection";
 import { PublicationUnconfirmed, publishMediaPost, type ReelTopic } from "../src/native/mediaClient";
 import { FeedVideo } from "./FeedVideo";
 
@@ -14,13 +14,13 @@ export function MediaPostComposer({ userId, enabled, caption, token, onPublished
   const generation = useRef(0); const controller = useRef<AbortController | null>(null); const working = useRef(false);
   useEffect(() => { const current = ++generation.current; return () => { generation.current = current + 1; controller.current?.abort(); }; }, [userId]);
   useEffect(() => { if (!enabled) controller.current?.abort(); }, [enabled]);
-  async function choose(kind: "photo" | "video", rotate?: number) {
+  async function choose(kind: "photo" | "video", rotate?: number, camera = false) {
     if (working.current || !enabled) return;
     const current = generation.current; working.current = true; setBusy(true); setMessage(""); setPermissionDenied(false);
     try {
-      if (kind === "video") { const selected = await chooseVideo(); if (current === generation.current && selected) { setVideo(selected); setPhotos([]); setUnconfirmed(false); } }
+      if (kind === "video") { const selected = await (camera ? captureVideo() : chooseVideo()); if (current === generation.current && selected) { setVideo(selected); setPhotos([]); setUnconfirmed(false); } }
       else {
-        const selected = rotate === undefined ? await choosePhoto() : await preparePhoto(photos[rotate], false, true);
+        const selected = rotate === undefined ? await (camera ? capturePhoto() : choosePhoto()) : await preparePhoto(photos[rotate], false, true);
         if (current === generation.current && selected) { setPhotos(previous => rotate === undefined ? [...previous, selected].slice(0, 4) : previous.map((photo, index) => index === rotate ? selected : photo)); setVideo(null); setUnconfirmed(false); }
       }
     } catch (error) { if (current === generation.current) { setMessage(error instanceof Error ? error.message : "Media selection failed. Try again."); setPermissionDenied(error instanceof MediaPermissionError); } }
@@ -40,7 +40,7 @@ export function MediaPostComposer({ userId, enabled, caption, token, onPublished
   }
   return <View style={{ gap: 12 }}>
     <Text style={{ color: theme.muted }}>{videoOnly ? "Choose one video up to 50 MB. Use your device editor to trim up to 3 minutes before posting." : "Add up to four photos, or one video up to 50 MB with a caption. Photos can be cropped when selected and rotated below."}</Text>
-    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{!videoOnly ? <Button secondary disabled={busy || !enabled || photos.length >= 4 || Boolean(video)} onPress={() => void choose("photo")}>Add photo</Button> : null}<Button secondary disabled={busy || !enabled || photos.length > 0} onPress={() => void choose("video")}>{video ? "Replace video" : "Choose video"}</Button></View>
+    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{!videoOnly ? <Button secondary disabled={busy || !enabled || photos.length >= 4 || Boolean(video)} onPress={() => void choose("photo")}>Add photo</Button> : null}<Button secondary disabled={busy || !enabled || photos.length > 0} onPress={() => void choose("video")}>{video ? "Replace video" : "Choose video"}</Button>{Platform.OS !== "web" ? <>{!videoOnly ? <Button secondary disabled={busy || !enabled || photos.length >= 4 || Boolean(video)} onPress={() => void choose("photo", undefined, true)}>Take photo</Button> : null}<Button secondary disabled={busy || !enabled || photos.length > 0} onPress={() => void choose("video", undefined, true)}>Record video</Button></> : null}</View>
     {photos.map((photo, index) => <View key={`${photo.uri}:${index}`} style={{ gap: 8 }}><Image alt={`Selected photo ${index + 1}`} accessibilityLabel={`Selected photo ${index + 1}`} source={{ uri: photo.uri }} style={{ height: 180, width: "100%", borderRadius: 12 }} resizeMode="contain" /><View style={{ flexDirection: "row", gap: 8 }}><Button secondary disabled={busy || !enabled} onPress={() => void choose("photo", index)}>Rotate photo {index + 1}</Button><Button secondary disabled={busy} onPress={() => { setPhotos(previous => previous.filter((_, i) => i !== index)); setUnconfirmed(false); }}>Remove photo {index + 1}</Button></View></View>)}
     {video ? <View style={{ gap: 8 }}>
       {videoOnly ? <View style={{ alignItems: "center", backgroundColor: "#05080E", borderRadius: 16, paddingVertical: 6 }}>
@@ -53,7 +53,7 @@ export function MediaPostComposer({ userId, enabled, caption, token, onPublished
     </View> : null}
     <Button disabled={busy || !enabled || unconfirmed || (videoOnly ? !video : (!photos.length && !video)) || (Boolean(video) && !caption.trim())} onPress={() => void publish()}>{busy ? "Preparing and checking media…" : videoOnly ? "Publish Reel" : "Post media"}</Button>
     {uploading ? <Button secondary onPress={() => controller.current?.abort()}>Cancel upload</Button> : null}
-    {permissionDenied ? <Button secondary onPress={() => { void Linking.openSettings().catch(() => setMessage("Open your device Settings, allow photo access for HoopCheck, and return to try again.")); }}>Open device Settings</Button> : null}
+    {permissionDenied ? <Button secondary onPress={() => { void Linking.openSettings().catch(() => setMessage("Open your device Settings, allow the required camera or photo access for HoopCheck, and return to try again.")); }}>Open device Settings</Button> : null}
     {unconfirmed ? <Button secondary onPress={() => { void onRefresh(); }}>Refresh and review feed</Button> : null}
     {message ? <Text selectable accessibilityRole="alert" style={{ color: theme.foreground }}>{message}</Text> : null}
   </View>;

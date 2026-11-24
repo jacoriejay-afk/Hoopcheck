@@ -7,13 +7,16 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { FlatList, ScrollView, Linking, Pressable, RefreshControl, Share, Text, TextInput, View, type ViewToken } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Button } from "../src/primitives";
 import { Skeleton } from "../components/Motion";
 import { ProfileAvatar } from "../components/ProfileAvatar";
 import { FeedMedia } from "../components/FeedMedia";
 import { HoopReelCard } from "../components/HoopReelCard";
+import { Sheet } from "../components/Sheet";
+import { requestReelCatalog } from "../src/native/reelCatalog";
+import { HOOPREELS_CREATE_ENABLED, isFollowedReel, isReelId, rankReels } from "../../../lib/hoopreels/video-source";
 import { MediaPostComposer } from "../components/MediaPostComposer";
 import { FeedPoll } from "../components/FeedPoll";
 import { FeedCheckAction } from "../components/FeedCheckAction";
@@ -27,6 +30,7 @@ type CommentPage = { rows: FeedComment[]; more: boolean; offset: number; loading
 export function FeedScreen({ initialReels = false }: { initialReels?: boolean }) { return <GlassThemeScope><FeedContent initialReels={initialReels} /></GlassThemeScope>; }
 function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
   const theme = useEntryTheme();
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const params = useLocalSearchParams<{ post?: string; comments?: string; compose?: string }>();
   const linkedId = typeof params.post === "string" && isFeedId(params.post) ? params.post : undefined;
@@ -38,6 +42,29 @@ function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
   const [composerExpanded, setComposerExpanded] = useState(false);
   const [mediaMode, setMediaMode] = useState(false);
   const [reels, setReels] = useState(initialReels);
+  const [watchMode, setWatchMode] = useState<"following" | "for-you">("for-you");
+  const [catalogReady, setCatalogReady] = useState(false);
+  const [followGraph, setFollowGraph] = useState<{ owner: string; ids: Set<string>; verified: boolean }>({ owner: "", ids: new Set(), verified: false });
+  const [reelSheet, setReelSheet] = useState<{ owner: string; postId: string; kind: "comments" | "sound" } | null>(null);
+  const [soundPreference, setSoundPreference] = useState<{ owner: string; muted: boolean }>({ owner: "", muted: true });
+  const muted = soundPreference.owner === uid ? soundPreference.muted : true;
+  const soundEdit = useRef(0);
+  useEffect(() => {
+    if (!uid || !reels) return;
+    let current = true;
+    const edit = soundEdit.current;
+    void AsyncStorage.getItem("hoopcheck:reels:muted:v1:" + uid).then(value => {
+      if (current && edit === soundEdit.current) setSoundPreference({ owner: uid, muted: value !== "false" });
+    }).catch(() => {});
+    return () => { current = false; };
+  }, [uid, reels]);
+  function toggleReelMute() {
+    if (!uid) return;
+    const next = !muted;
+    soundEdit.current++;
+    setSoundPreference({ owner: uid, muted: next });
+    void AsyncStorage.setItem("hoopcheck:reels:muted:v1:" + uid, String(next)).catch(() => {});
+  }
   useEffect(() => {
     if (params.compose === "media" && !reels && canWrite) { setComposerExpanded(true); setMediaMode(true); }
   }, [params.compose, reels, canWrite]);
@@ -122,12 +149,48 @@ function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
     const current = ++generation.current;
     setLoading(true); setLoadError("");
     try {
-      const [page, shared] = await Promise.all([readFeedPage(supabase, uid, cursor, reels), !cursor && linkedId ? readSharedFeedPost(supabase, uid, linkedId) : null]);
-      const posts = shared && (!reels || shared.video_url) && !page.posts.some(post => post.id === shared.id) ? [shared, ...page.posts] : page.posts;
-      const [checkResult, savedResult] = await Promise.allSettled([readFeedChecks(supabase, posts.map(post => post.id)), readFeedSaved(supabase, uid, posts.map(post => post.id))]);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+      const readWatch = async () => {
+        const { data, error } = await supabase.auth.getSession();
+        if (error || data.session?.user.id !== uid) throw Error("Sign in again to watch Reels.");
+        return requestReelCatalog(origin, data.session.access_token, controller.signal);
+      };
+      let watchConfigured = false;
+      let page: { posts: FeedPost[]; next: FeedCursor | null }, shared: FeedPost | null;
+      try {
+        if (reels) {
+          const catalog = await readWatch();
+          watchConfigured = catalog.configured;
+          page = catalog; shared = null;
+        } else {
+          [page, shared] = await Promise.all([readFeedPage(supabase, uid, cursor, false), !cursor && linkedId ? readSharedFeedPost(supabase, uid, linkedId) : null]);
+        }
+      } finally { clearTimeout(timeout); }
+      let posts = shared && !page.posts.some(post => post.id === shared!.id) ? [shared, ...page.posts] : page.posts;
+      // Fetch counts and the existing privacy-aware follow graph in parallel.
+      const [checkResult, savedResult, followResult] = await Promise.allSettled([
+        readFeedChecks(supabase, posts.map(post => post.id)), readFeedSaved(supabase, uid, posts.map(post => post.id)),
+        reels && posts.length ? supabase.rpc("get_public_follow_list", { p_mode: "following", p_target_type: null, p_target_id: null, p_user_id: uid }) : Promise.resolve({ data: [], error: null })
+      ]);
+      const followVerified = followResult.status === "fulfilled" && !followResult.value.error;
+      const followed = new Set<string>();
+      if (followVerified && followResult.status === "fulfilled") {
+        for (const row of (followResult.value.data || []) as { target_id?: unknown }[]) {
+          if (isReelId(row.target_id)) followed.add(row.target_id);
+        }
+      }
+      if (reels) {
+        const counts = checkResult.status === "fulfilled" ? Object.fromEntries(checkResult.value.map(row => [row.post_id, Number(row.checks_count)])) : {};
+        posts = rankReels(posts, counts, followed);
+      }
       const activity = checkResult.status === "fulfilled" ? checkResult.value : [];
       const activityFailed = checkResult.status === "rejected";
       if (current !== generation.current || viewer.current.scope !== scope || !viewer.current.canRead) return;
+      if (reels) {
+        setCatalogReady(watchConfigured);
+        setFollowGraph({ owner: uid, ids: followed, verified: followVerified });
+      }
       setRows(previous => ({ scope, posts: cursor && previous.scope === scope ? [...new Map([...previous.posts, ...posts].map(post => [post.id, post])).values()] : posts }));
       setNext(page.next);
       setSaved(previous => {
@@ -142,12 +205,12 @@ function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
         return result;
       });
       if (activityFailed) setMessage("Posts loaded. Check totals could not be verified.");
-      else if (!cursor && linkedId && !shared) setMessage("The shared post is unavailable for this account.");
-    } catch { if (current === generation.current) setLoadError("HoopFeed could not load. Try again."); }
+      else if (!reels && !cursor && linkedId && !shared) setMessage("The shared post is unavailable for this account.");
+    } catch { if (current === generation.current) setLoadError(reels ? "HoopReels streaming is unavailable. Try again." : "HoopFeed could not load. Try again."); }
     finally { if (current === generation.current) setLoading(false); }
   }, [uid, canRead, reels, linkedId, scope]);
   useEffect(() => {
-    setRows({ scope, posts: [] }); setNext(null); setChecks({}); setCheckPulses({ scope, values: {} }); setSaved({}); setOpenComments({}); setMessage("");
+    setRows({ scope, posts: [] }); setCatalogReady(false); setReelSheet(null); setVisible(new Set()); setNext(null); setChecks({}); setCheckPulses({ scope, values: {} }); setSaved({}); setOpenComments({}); setMessage("");
     if (canRead) void load(); else setLoading(false);
     // This is an async request generation counter, not a mounted node reference.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -195,12 +258,17 @@ function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
   const posts = canRead && rows.scope === scope ? rows.posts.filter(post =>
     (!post.expires_at || Date.parse(post.expires_at) > now) &&
     (!reels || (
+      Boolean(post.reel_source && post.reel_source.expiresAt > now) &&
+      (watchMode !== "following" || (followGraph.owner === uid && followGraph.verified && isFollowedReel(post, followGraph.ids))) &&
       (hiddenReels.owner !== uid || !hiddenReels.ids.includes(post.id)) &&
       (mutedCreators.owner !== uid || !mutedCreators.ids.includes(post.author_id)) &&
       blockedCreators.owner === uid && blockedCreators.ready && !blockedCreators.failed &&
       !blockedCreators.ids.includes(post.author_id)
     )),
   ) : [];
+  const activeReelIndex = posts.findIndex(post => visible.has(post.id));
+  const firstPreloadIndex = Math.max(0, activeReelIndex);
+  const activeSheet = reels && reelSheet && reelSheet.owner === uid && posts.some(post => post.id === reelSheet.postId) ? reelSheet : null;
   async function hideCreator(authorId: string) {
     if (!uid || !reels || authorId === uid) return;
     const existing = mutedCreators.owner === uid ? mutedCreators.ids : [];
@@ -272,6 +340,26 @@ function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
   const feedActionTouch = { minHeight: 44, paddingHorizontal: 4, borderWidth: 0,
     borderRadius: 12, backgroundColor: "transparent", justifyContent: "center" as const,
     flexDirection: "row" as const, alignItems: "center" as const, gap: 4 };
+  function renderComments(post: FeedPost) {
+    const page = comments.owner === uid ? comments.values[post.id] : undefined;
+    const replyTarget = reply && reply.owner === uid && reply.postId === post.id ? reply : null;
+    const commentDraft = drafts.owner === uid ? drafts.values[post.id] ?? "" : "";
+    return <View style={{ gap: 12 }}>
+            {page?.loading ? <Text style={textStyle}>Loading comments…</Text> : page?.error ? <Text accessibilityRole="alert" style={textStyle}>{page.error}</Text> : !page?.rows.length ? <Text style={{ color: theme.muted }}>No comments yet.</Text> : page.rows.map(comment => <View key={comment.id} style={{ paddingLeft: comment.parent_id ? 12 : 0, borderLeftWidth: comment.parent_id ? 2 : 0, borderColor: theme.border }}><Text style={{ ...textStyle, fontWeight: "700" }}>{comment.profiles?.display_name || "HoopCheck member"}</Text><Text style={textStyle}>{comment.body}</Text><Pressable accessibilityRole="button" accessibilityLabel={`Reply to ${comment.profiles?.display_name || "HoopCheck member"}`} onPress={() => setReply({ owner: uid!, postId: post.id, id: comment.id, name: comment.profiles?.display_name || "HoopCheck member" })} style={touch}><Text style={linkStyle}>Reply</Text></Pressable></View>)}
+            {page?.more ? <Button secondary disabled={page.loading} onPress={() => void loadComments(post.id, page.offset + 50)}>Load more comments</Button> : null}
+            {replyTarget ? <Pressable accessibilityRole="button" onPress={() => setReply(null)} style={touch}><Text style={linkStyle}>Replying to {replyTarget.name} · Cancel reply</Text></Pressable> : null}
+            <TextInput accessibilityLabel="Write a comment" placeholder="Add a comment" placeholderTextColor={theme.muted} value={commentDraft} maxLength={1000} onChangeText={value => setDrafts(previous => ({ owner: uid!, values: { ...(previous.owner === uid ? previous.values : {}), [post.id]: value } }))} style={{ ...textStyle, minHeight: 48, padding: 12, backgroundColor: theme.input, borderWidth: 1, borderColor: theme.border, borderRadius: theme.radius.control }} />
+            <Button secondary disabled={!canWrite || !commentDraft.trim() || Boolean(pending[`comment:${post.id}`])} onPress={() => void action(`comment:${post.id}`, async () => { const published = await moderateFeedText(origin, await token(), "comment", commentDraft, post.id, undefined, replyTarget?.id); setDrafts(previous => previous.owner === uid ? { owner: uid!, values: { ...previous.values, [post.id]: previous.values[post.id] === commentDraft ? "" : previous.values[post.id] } } : previous); if (viewer.current.uid === uid) {
+              await loadComments(post.id);
+              if (published && published.author_id === uid && viewer.current.uid === uid && viewer.current.canRead) setComments(previous => {
+                const current = previous.owner === uid ? previous.values[post.id] : undefined;
+                const rows = [...new Map([...(current?.rows ?? []), { ...published, profiles: { display_name: account?.user.displayName || "HoopCheck member" } }].map(row => [row.id, row])).values()].sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id));
+                return { owner: uid!, values: { ...(previous.owner === uid ? previous.values : {}), [post.id]: { rows, more: current?.more ?? false, offset: current?.offset ?? 0, loading: false, error: "" } } };
+              });
+              setReply(current => current && current.owner === uid && current.id === replyTarget?.id ? null : current);
+            } })}>{pending[`comment:${post.id}`] ? "Checking safety…" : "Comment"}</Button>
+</View>;
+  }
   if (accountLoading) return <View style={{ flex: 1, padding: 24, backgroundColor: theme.background }}><Skeleton /></View>;
   if (!account || !canRead) return <View style={{ flex: 1, padding: 24, gap: 20, justifyContent: "center", backgroundColor: theme.background }}>
     <Text accessibilityRole="header" style={{ ...textStyle, fontSize: 28, fontWeight: "900" }}>HoopFeed</Text>
@@ -287,12 +375,12 @@ function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
     </> : null}
     {message || loadError ? <Text accessibilityLiveRegion="polite"
       style={{ color: theme.muted, paddingHorizontal: 18 }}>{loadError || message}</Text> : null}
-    <FlatList key={reels ? "reels" : "posts"} onEndReachedThreshold={reels ? 0.6 : undefined} onEndReached={() => {
+    <FlatList key={reels ? "reels:" + watchMode : "posts"} onEndReachedThreshold={reels ? 0.6 : undefined} onEndReached={() => {
       if (!reels || !next || loading || requestingNext.current) return;
       requestingNext.current = true;
       void load(next).finally(() => { requestingNext.current = false; });
     }} keyboardDismissMode="on-drag" style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ paddingHorizontal: reels ? 0 : 8, paddingTop: reels ? 0 : 3,
-        gap: reels ? 0 : 6, paddingBottom: reels ? 0 : 132 }} keyboardShouldPersistTaps="handled" initialNumToRender={reels ? 2 : 4} maxToRenderPerBatch={reels ? 2 : 4} windowSize={reels ? 3 : 5} pagingEnabled={reels} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
+        gap: reels ? 0 : 6, paddingBottom: reels ? 0 : 132 }} keyboardShouldPersistTaps="handled" initialNumToRender={reels ? 3 : 4} maxToRenderPerBatch={reels ? 3 : 4} windowSize={5} pagingEnabled={reels} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
       ListHeaderComponent={!reels ? <View style={{ marginBottom: 4, gap: 6 }}>
         {/* Only show genuine loaded authors; no fake stories or another title banner. */}
         {posts.length > 0 ? <ScrollView horizontal showsHorizontalScrollIndicator={false}
@@ -327,19 +415,22 @@ function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
         {!canWrite ? <Text style={{ color: theme.muted, marginTop: 8 }}>Your membership does not include posting.</Text> : null}
       </View> : null}
       refreshControl={<RefreshControl refreshing={loading} onRefresh={() => { setBlocksVersion(version => version + 1); void load(); }} />}
-      ListEmptyComponent={loading || (reels && blockedCreators.owner === uid && !blockedCreators.ready) ? <Skeleton /> : <View style={{ padding: 24, gap: 12 }}><Text style={textStyle}>{loadError || (reels && blockedCreators.failed ? "Blocked accounts could not be verified. Retry before viewing Reels." : reels ? "No video posts are available in this page." : "No posts are available in this page.")}</Text><Button secondary onPress={() => { setBlocksVersion(version => version + 1); void load(); }}>Refresh</Button></View>}
-      renderItem={({ item: post }) => {
+      ListEmptyComponent={loading || (reels && blockedCreators.owner === uid && !blockedCreators.ready) ? <Skeleton /> : <View style={{ padding: 24, paddingTop: reels ? 90 : 24, gap: 12 }}><Text accessibilityRole="header" style={textStyle}>{loadError || (reels && blockedCreators.failed ? "Blocked accounts could not be verified. Retry before viewing Reels." : reels && !catalogReady ? "HoopReels streaming is not available yet." : reels && watchMode === "following" && !followGraph.verified ? "Following could not be verified. Refresh to try again." : reels ? "No curated Reels are available." : "No posts are available in this page.")}</Text><Button secondary onPress={() => { setBlocksVersion(version => version + 1); void load(); }}>Refresh</Button></View>}
+      renderItem={({ item: post, index }) => {
         if (reels) return <HoopReelCard post={post} userId={uid!}
-          height={height} active={focused && visible.has(post.id)} ready={focused} canWrite={canWrite}
+          height={height} active={focused && !activeSheet && visible.has(post.id)} ready={focused && index >= firstPreloadIndex && index <= firstPreloadIndex + 2} canWrite={canWrite}
+          muted={muted} onMute={toggleReelMute} pulseKey={checkPulses.scope === scope ? checkPulses.values[post.id] ?? 0 : 0}
+          onTeam={() => { const team = post.reel_team; if (!team) return; if (team.women) router.push({ pathname: "/womens/[id]", params: { id: team.id } }); else router.push({ pathname: "/teams/[id]", params: { id: team.id } }); }}
+          onSound={() => setReelSheet({ owner: uid!, postId: post.id, kind: "sound" })}
           check={checks[post.id]} saved={saved[post.id]}
           checkBusy={Boolean(pending["check:" + post.id])}
           saveBusy={Boolean(pending["save:" + post.id])}
           blockBusy={Boolean(pending["block:" + post.author_id])}
           onBack={() => { setReels(false); if (initialReels) router.navigate("/feed"); }}
           onViewPlayer={() => router.push({ pathname: "/players/[id]", params: { id: post.author_id } })}
-          onCreate={() => { if (canWrite) router.push("/reels/studio"); }}
+          onCreate={() => { if (HOOPREELS_CREATE_ENABLED && canWrite) router.push("/reels/studio"); }}
           onCheck={() => void checkPost(post)}
-          onComments={() => router.push({ pathname: "/feed", params: { post: post.id, comments: "1" } })}
+          onComments={() => { setReelSheet({ owner: uid!, postId: post.id, kind: "comments" }); void loadComments(post.id); }}
           onShare={() => void action("share:" + post.id, async () => {
             await Share.share({ title: "HoopReels", message: "https://hoopcheck.online/feed#post-" + post.id });
           })}
@@ -356,8 +447,6 @@ function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
           onBlockCreator={() => void blockAccount(post.author_id)} />;
 
         const page = comments.owner === uid ? comments.values[post.id] : undefined;
-        const replyTarget = reply && reply.owner === uid && reply.postId === post.id ? reply : null;
-        const commentDraft = drafts.owner === uid ? drafts.values[post.id] ?? "" : "";
         const photos = (Array.isArray(post.image_urls) && post.image_urls.length ? post.image_urls : post.image_url ? [post.image_url] : []).filter((value): value is string => typeof value === "string").slice(0, 4);
         const options = Array.isArray(post.poll_options) ? post.poll_options.filter((value): value is string => typeof value === "string").slice(0, 6).map(value => value.slice(0, 120)) : [];
         return <View style={reels ? { height, padding: 12 } : undefined}><GlassCard testID={`feed-post-${post.id}`} solid radius={glass.radii.row} padding={9}
@@ -367,7 +456,7 @@ function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
             <View style={{ flex: 1, gap: 1 }}><Text style={{ ...textStyle, fontFamily: theme.type.ui.fontFamily, fontWeight: "700", fontSize: 13 }}>{post.profiles?.display_name || "HoopCheck member"}</Text><Text style={{ color: theme.muted, ...theme.type.caption }}>{new Date(post.created_at).toLocaleString()}</Text></View>
           </View>
           {post.body ? <Text numberOfLines={reels ? 3 : undefined} style={{ ...textStyle, fontSize: 14, lineHeight: 19 }}>{post.body}</Text> : null}
-          {post.video_url ? <FeedMedia userId={uid!} postId={post.id} reference={post.video_url} video enabled={focused && visible.has(post.id)} loop={reels} height={reels ? Math.max(120, height - 380) : 240} /> : photos.map(reference => <FeedMedia userId={uid!} key={reference} postId={post.id} reference={reference} maxImageHeight={300}
+          {post.video_url ? <FeedMedia userId={uid!} postId={post.id} reference={post.video_url} video enabled={focused && visible.has(post.id)} height={240} /> : photos.map(reference => <FeedMedia userId={uid!} key={reference} postId={post.id} reference={reference} maxImageHeight={300}
             enabled={focused && visible.has(post.id)} />)}
           {post.post_kind === "poll" && options.length ? <FeedPoll userId={uid!} postId={post.id} options={options} enabled={canWrite && focused} /> : null}
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 3, paddingTop: 3, borderTopWidth: 1, borderColor: theme.border }}>
@@ -383,25 +472,27 @@ function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
             {reels && post.author_id !== uid && <Pressable accessibilityRole="button" accessibilityLabel="Block this HoopCheck account" disabled={Boolean(pending[`block:${post.author_id}`])} onPress={() => void blockAccount(post.author_id)} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Block account</Text></Pressable>}
             <Pressable accessibilityRole="button" accessibilityLabel={saved[post.id] ? "Saved" : "Save"} disabled={!canWrite || saved[post.id] === undefined || Boolean(pending[`save:${post.id}`])} onPress={() => void action(`save:${post.id}`, async () => { const value = !saved[post.id]; await feedAction(origin, await token(), "bookmark", post.id, value); if (viewer.current.uid === uid) setSaved(previous => ({ ...previous, [post.id]: value })); })} style={feedActionTouch}><Ionicons name={saved[post.id] ? "bookmark" : "bookmark-outline"} size={15} color={theme.muted} /><Text style={{ ...linkStyle, fontSize: 12 }}>{saved[post.id] === undefined ? "Saved status unavailable" : saved[post.id] ? "Saved" : "Save"}</Text></Pressable>
           </View>
-          {openComments[post.id] && !reels ? <View style={{ gap: 12 }}>
-            {page?.loading ? <Text style={textStyle}>Loading comments…</Text> : page?.error ? <Text accessibilityRole="alert" style={textStyle}>{page.error}</Text> : !page?.rows.length ? <Text style={{ color: theme.muted }}>No comments yet.</Text> : page.rows.map(comment => <View key={comment.id} style={{ paddingLeft: comment.parent_id ? 12 : 0, borderLeftWidth: comment.parent_id ? 2 : 0, borderColor: theme.border }}><Text style={{ ...textStyle, fontWeight: "700" }}>{comment.profiles?.display_name || "HoopCheck member"}</Text><Text style={textStyle}>{comment.body}</Text><Pressable accessibilityRole="button" accessibilityLabel={`Reply to ${comment.profiles?.display_name || "HoopCheck member"}`} onPress={() => setReply({ owner: uid!, postId: post.id, id: comment.id, name: comment.profiles?.display_name || "HoopCheck member" })} style={touch}><Text style={linkStyle}>Reply</Text></Pressable></View>)}
-            {page?.more ? <Button secondary disabled={page.loading} onPress={() => void loadComments(post.id, page.offset + 50)}>Load more comments</Button> : null}
-            {replyTarget ? <Pressable accessibilityRole="button" onPress={() => setReply(null)} style={touch}><Text style={linkStyle}>Replying to {replyTarget.name} · Cancel reply</Text></Pressable> : null}
-            <TextInput accessibilityLabel="Write a comment" placeholder="Add a comment" placeholderTextColor={theme.muted} value={commentDraft} maxLength={1000} onChangeText={value => setDrafts(previous => ({ owner: uid!, values: { ...(previous.owner === uid ? previous.values : {}), [post.id]: value } }))} style={{ ...textStyle, minHeight: 48, padding: 12, backgroundColor: theme.input, borderWidth: 1, borderColor: theme.border, borderRadius: theme.radius.control }} />
-            <Button secondary disabled={!canWrite || !commentDraft.trim() || Boolean(pending[`comment:${post.id}`])} onPress={() => void action(`comment:${post.id}`, async () => { const published = await moderateFeedText(origin, await token(), "comment", commentDraft, post.id, undefined, replyTarget?.id); setDrafts(previous => previous.owner === uid ? { owner: uid!, values: { ...previous.values, [post.id]: previous.values[post.id] === commentDraft ? "" : previous.values[post.id] } } : previous); if (viewer.current.uid === uid) {
-              await loadComments(post.id);
-              if (published && published.author_id === uid && viewer.current.uid === uid && viewer.current.canRead) setComments(previous => {
-                const current = previous.owner === uid ? previous.values[post.id] : undefined;
-                const rows = [...new Map([...(current?.rows ?? []), { ...published, profiles: { display_name: account.user.displayName } }].map(row => [row.id, row])).values()].sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id));
-                return { owner: uid!, values: { ...(previous.owner === uid ? previous.values : {}), [post.id]: { rows, more: current?.more ?? false, offset: current?.offset ?? 0, loading: false, error: "" } } };
-              });
-              setReply(current => current && current.owner === uid && current.id === replyTarget?.id ? null : current);
-            } })}>{pending[`comment:${post.id}`] ? "Checking safety…" : "Comment"}</Button>
-          </View> : null}
+          {openComments[post.id] && !reels ? renderComments(post) : null}
         </GlassCard></View>;
       }}
       ListFooterComponent={!reels && next ? <View style={{ padding: 16 }}><Button secondary disabled={loading} onPress={() => void load(next)}>{loading ? "Loading…" : "Load more"}</Button></View> : null}
     />
+    {reels ? <View pointerEvents="box-none" style={{ position: "absolute", top: insets.top + 6, left: 10, right: 10, flexDirection: "row", alignItems: "center", gap: 8 }}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Back to HoopFeed" onPress={() => { setReels(false); if (initialReels) router.navigate("/feed"); }}
+        style={{ width: 44, height: 44, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(12,19,31,.85)", borderRadius: 22, borderWidth: 1, borderColor: theme.border }}><Ionicons name="arrow-back" color={theme.foreground} size={20} /></Pressable>
+      <View accessibilityRole="tablist" style={{ flex: 1, flexDirection: "row", backgroundColor: "rgba(12,19,31,.85)", borderWidth: 1, borderColor: theme.border, borderRadius: 24, padding: 3 }}>
+        {(["following", "for-you"] as const).map(mode => <Pressable key={mode} accessibilityRole="tab" accessibilityState={{ selected: watchMode === mode }} onPress={() => { setVisible(new Set()); setWatchMode(mode); }}
+          style={{ flex: 1, minHeight: 42, justifyContent: "center", alignItems: "center", borderRadius: 21, backgroundColor: watchMode === mode ? theme.elevatedSurface : "transparent" }}>
+          <Text style={{ color: watchMode === mode ? theme.foreground : theme.muted, fontWeight: "800", fontSize: 13 }}>{mode === "following" ? "Following" : "For You"}</Text>
+        </Pressable>)}
+      </View>
+      <Pressable accessibilityRole="button" accessibilityLabel="Create Reel (not available)" accessibilityState={{ disabled: true }} disabled style={{ width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(12,19,31,.85)", opacity: .5 }}>
+        <Ionicons name="add" color={theme.muted} size={24} />
+      </Pressable>
+    </View> : null}
+    {activeSheet ? <Sheet open onClose={() => setReelSheet(null)} title={activeSheet.kind === "comments" ? "Comments" : "Sound information"}>
+      {activeSheet.kind === "comments" ? (() => { const post = posts.find(row => row.id === activeSheet.postId); return post ? renderComments(post) : null; })() : <Text style={textStyle}>This curated video does not have verified sound credits in HoopCheck yet. Sound reuse is not available.</Text>}
+    </Sheet> : null}
   </SafeAreaView>;
 }
 export default function FeedRoute() { return <FeedScreen />; }
