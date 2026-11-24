@@ -12,8 +12,9 @@ test("owner customization uses only the existing permitted database fields and c
   assert.match(groups,/\.update\(\{name,description,accent_color:editColor,icon_key:editIcon\}\)/);
   assert.match(groups,/\.eq\("id",id\)\.eq\("owner_id",userId\)/);
   assert.match(groups,/data\.owner_id!==userId/);
-  assert.match(groups,/if\(!selected \|\| !userId \|\| selected\.owner_id!==userId/);
+  assert.match(groups,/if\(!selected \|\| !managing \|\| !userId \|\| selected\.owner_id!==userId/);
   assert.match(groups,/selected\?\.owner_id===userId\?<Pressable/);
+  assert.match(groups,/const managing=editing&&editingGroupId===selected\?\.id/);
   assert.match(groups,/name\.length<3 \|\| name\.length>80 \|\| description\.length>300/);
   assert.match(groups,/setSpaces\(current=>current\.map\(space=>space\.id===id\?data as Space:space\)\)/);
 });
@@ -34,6 +35,6 @@ test("group visuals come from approved fixed choices, not unmoderated image URLs
   assert.match(groups,/emblem\(space\.icon_key\)/);
   assert.match(groups,/accent\(selected\?\.accent_color\|\|"orange"\)/);
   assert.match(groups,/accessibilityRole="radio"/);
-  assert.match(groups,/editing\?"Close group settings":"Manage group appearance"/);
+  assert.match(groups,/managing\?"Close group settings":"Manage group appearance"/);
   assert.doesNotMatch(groups,/upload.*banner|banner_url|cover_url/i);
 });
