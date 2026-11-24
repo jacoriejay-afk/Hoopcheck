@@ -6,7 +6,7 @@ import { BrandLogo } from "../components/BrandLogo";
 import { ExploreLinks } from "../components/ExploreLinks";
 import { Input, Chip, SectionHeader } from "../src/primitives";
 import { useCallback, useEffect, useState } from "react";
-import { Alert, Keyboard, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Keyboard, Linking, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { useMotionSetting } from "../src/motion/Provider";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -29,6 +29,7 @@ export default function DashboardScreen() {
   const router = useRouter();
   const theme = useEntryTheme();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const reduced = useMotionSetting();
@@ -87,7 +88,7 @@ export default function DashboardScreen() {
               <Pressable accessibilityRole="button" accessibilityLabel="Cancel search" onPress={closeSearch} style={{ minHeight:44, minWidth:44, justifyContent:"center", alignItems:"center" }}><Ionicons name="close" size={23} color={theme.foreground}/></Pressable>
             </Animated.View> : <Animated.View entering={reduced ? undefined : FadeIn.duration(150)} style={{minHeight:54,paddingHorizontal:12,paddingVertical:5,
               flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:8}}>
-              <View style={{ flex:1, minWidth:0 }}><BrandLogo onHero={theme.dark} /></View>
+              <View style={{ flex:1, minWidth:0 }}>{width < 360 ? <BrandLogo compact onHero={theme.dark} /> : <BrandLogo onHero={theme.dark} />}</View>
               <Pressable accessibilityRole="button" accessibilityLabel="Search" onPress={()=>{ setMenuOpen(false); setSearchOpen(true); }} style={{ width:44, height:44, justifyContent:"center", alignItems:"center" }}><Ionicons name="search-outline" size={23} color={theme.foreground}/></Pressable>
               <Pressable accessibilityRole="button" accessibilityLabel="Open account menu"
                 accessibilityState={{expanded:menuOpen}} onPress={()=>setMenuOpen(open=>!open)}
