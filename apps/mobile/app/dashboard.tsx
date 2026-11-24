@@ -3,13 +3,12 @@ import { RoleHub } from "../components/RoleHub";
 import { useNativeAccount } from "../src/native/useNativeAccount";
 import { GlassSurface } from "../components/GlassSurface";
 import { BrandLogo } from "../components/BrandLogo";
-import { LinearGradient } from "expo-linear-gradient";
 import { ExploreLinks } from "../components/ExploreLinks";
 import { Input, Chip, SectionHeader } from "../src/primitives";
 import { useEffect, useState } from "react";
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../src/lib/supabase";
 import { useEntryTheme } from "../src/theme";
@@ -27,6 +26,7 @@ const accountLinks = [
 export default function DashboardScreen() {
   const router = useRouter();
   const theme = useEntryTheme();
+  const insets = useSafeAreaInsets();
   const [search, setSearch] = useState("");
   const [busy, setBusy] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -69,30 +69,24 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView edges={["top", "left", "right", "bottom"]} style={[styles.safe, { backgroundColor: theme.background }]}>
-      {/* Pinned outside the scroll view: the logo and menu must never slide under
-          the iPhone status bar / Dynamic Island as the Home feed scrolls. */}
-      <View style={styles.pinnedHeader}>
-          <GlassSurface navigation style={{borderRadius:24,borderWidth:1,
-            borderColor:theme.dark?"rgba(255,135,67,.65)":"rgba(234,113,56,.7)",
-            marginBottom:9,shadowColor:"#000",shadowOpacity:theme.dark?.35:.12,shadowRadius:16,
-            shadowOffset:{width:0,height:8}}}>
-            <LinearGradient colors={theme.dark?["rgba(18,30,51,.12)","rgba(24,45,73,.06)","rgba(45,35,53,.02)"]:["rgba(255,255,255,.10)","rgba(255,245,235,.03)"]}
-              start={{x:0,y:0}} end={{x:1,y:1}} style={StyleSheet.absoluteFill}/>
-            <View style={{minHeight:62,paddingHorizontal:13,paddingVertical:9,
+      {/* Overlay the scrolling screen, without a dedicated opaque header row. */}
+      <View pointerEvents="box-none" style={[styles.pinnedHeader, { top: insets.top + 4 }]}>
+          <GlassSurface navigation style={{borderRadius:28,borderWidth:0}}>
+            <View style={{minHeight:54,paddingHorizontal:12,paddingVertical:5,
               flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:8}}>
               <BrandLogo onHero={theme.dark} />
               <Pressable accessibilityRole="button" accessibilityLabel="Open account menu"
                 accessibilityState={{expanded:menuOpen}} onPress={()=>setMenuOpen(open=>!open)}
                 style={({pressed})=>({width:44,height:44,borderRadius:19,
                   borderWidth:menuOpen?1:0,borderColor:theme.accent,
-                  backgroundColor:menuOpen?theme.accentSurface:"rgba(255,255,255,.09)",
+                  backgroundColor:menuOpen?theme.accentSurface:"transparent",
                   alignItems:"center",justifyContent:"center",opacity:pressed?.72:1})}>
                 <Ionicons name={menuOpen?"close":"menu"} size={25} color={theme.dark?"#FFFFFF":theme.foreground} />
               </Pressable>
             </View>
           </GlassSurface>
           {menuOpen ? <GlassSurface style={{
-            position:"absolute",right:12,top:78,width:232,zIndex:30,
+            position:"absolute",right:12,top:61,width:232,zIndex:30,
             padding:6,borderRadius:18,borderColor:theme.glassBorder,
             shadowColor:"#000",shadowOpacity:.3,shadowRadius:14,shadowOffset:{width:0,height:8},
           }}>
@@ -169,8 +163,8 @@ export default function DashboardScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  pinnedHeader: { width: "100%", maxWidth: 664, alignSelf: "center", paddingHorizontal: 17, paddingTop: 9, zIndex: 20 },
-  scroll: { flexGrow: 1, padding: 12 },
+  pinnedHeader: { position: "absolute", width: "100%", maxWidth: 664, alignSelf: "center", paddingHorizontal: 17, zIndex: 20 },
+  scroll: { flexGrow: 1, padding: 12, paddingTop: 72, paddingBottom: 100 },
   content: { width: "100%", maxWidth: 640, alignSelf: "center" },
   title: { fontSize: 32, fontWeight: "900", letterSpacing: -0.7, marginBottom: 16 },
   directories: { gap: 8, marginTop: 6 },
