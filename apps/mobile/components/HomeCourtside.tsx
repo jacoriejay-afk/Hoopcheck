@@ -12,6 +12,7 @@ import { readBasketballSide, readLiveGames } from "../src/native/liveGames";
 import { selectHomePreviewGames } from "../src/native/homeGamePreview";
 import { readFeedPage, type FeedPost } from "../src/native/feedClient";
 import { Skeleton } from "./Motion";
+import { HoopCheckLoading } from "./HoopCheckLoading";
 import { Scoreboard } from "./Scoreboard";
 import { MyCourtActions } from "./MyCourtActions";
 import { EntityArtwork } from "./EntityArtwork";
@@ -20,7 +21,8 @@ const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoo
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const arena = require("../assets/courtside-arena.webp");
 type Games = Awaited<ReturnType<typeof readLiveGames>>;
-type HomeData = { scope: string; teams: PublicConnection[] | null; games: Games | null; posts: FeedPost[] | null };
+type HomeData = { scope: string; teams: PublicConnection[] | null; games: Games | null; posts: FeedPost[] | null;
+  logos: Record<string, { url: string | null; bg: string | null }>; };
 function ArenaHeading({title,cta,onPress}: {title:string;cta?:string;onPress?:()=>void}) {
   const theme=useEntryTheme();
   return <View style={{ flexDirection:"row",alignItems:"center",gap:8,minHeight:30 }}>
@@ -62,11 +64,31 @@ export function HomeCourtside() {
           gameAccess ? readBasketballSide(supabase, uid).then(side => readLiveGames(supabase, side, fullGames ? null : { origin, token })) : Promise.resolve(null),
           feedAccess ? readFeedPage(supabase, uid).then(page => page.posts.slice(0, 2)) : Promise.resolve(null),
         ]);
+        const teams = results[0].status === "fulfilled" ? results[0].value : null;
         const after = await supabase.auth.getSession();
         if (!active) return;
         if (controller.signal.aborted || after.error || after.data.session?.user.id !== uid) throw Error("Home could not be verified");
-        setSnapshot({ scope, teams: results[0].status === "fulfilled" ? results[0].value : null, games: results[1].status === "fulfilled" ? results[1].value : null, posts: results[2].status === "fulfilled" ? results[2].value : null });
-      } catch { if (active) setSnapshot({ scope, teams: null, games: null, posts: null }); }
+        // Show the trusted page before fetching optional artwork. A slow or
+        // missing logo may never block the rest of Home content.
+        setSnapshot({ scope, teams, logos: {}, games: results[1].status === "fulfilled" ? results[1].value : null, posts: results[2].status === "fulfilled" ? results[2].value : null });
+        const ids = teams?.slice(0, 2).map(item => item.target_id) ?? [];
+        if (ids.length) {
+          try {
+            const [men, women] = await Promise.all([
+              supabase.from("teams").select("id,logo_url,logo_bg").in("id", ids).abortSignal(controller.signal),
+              supabase.from("womens_teams").select("id,logo_url,logo_bg").in("id", ids).abortSignal(controller.signal),
+            ]);
+            if (!active || controller.signal.aborted) return;
+            const logos: HomeData["logos"] = {};
+            for (const response of [men, women]) if (!response.error) {
+              for (const team of response.data ?? []) if (ids.includes(team.id)) {
+                logos[team.id] = { url: team.logo_url, bg: team.logo_bg };
+              }
+            }
+            setSnapshot(current => current?.scope === scope ? { ...current, logos } : current);
+          } catch { /* Optional logo lookup never downgrades verified Home. */ }
+        }
+      } catch { if (active) setSnapshot({ scope, teams: null, logos: {}, games: null, posts: null }); }
       finally { clearTimeout(timeout); }
     }
     void load();
@@ -115,7 +137,7 @@ export function HomeCourtside() {
     </View>
     <MyCourtActions key={`${uid}:${role}`} userId={uid!} role={role!} feedEnabled={feedAccess} />
     <ArenaHeading title="My Teams" cta="Find teams" onPress={()=>router.push("/teams")}/>
-    {!data?<Text accessibilityRole="text" style={{color:t.muted,fontSize:12,paddingVertical:8}}>Loading followed teams…</Text>:data.teams===null?<Text accessibilityRole="alert"
+    {!data?<HoopCheckLoading compact label="Loading your teams…" />:data.teams===null?<Text accessibilityRole="alert"
       style={{color:t.muted}}>Your teams could not load.</Text>:followTeams.length===0?
       <Pressable accessibilityRole="link" onPress={()=>router.push("/teams")} style={{minHeight:55,
         borderRadius:16,backgroundColor:t.surface,borderWidth:1,borderColor:t.border,
@@ -128,7 +150,7 @@ export function HomeCourtside() {
         style={({pressed})=>({opacity:pressed?.8:1,borderRadius:16,overflow:"hidden",borderWidth:1,
           borderColor:t.dark?"rgba(94,171,255,.36)":t.border,backgroundColor:t.elevatedSurface})}>
         <View style={{flexDirection:"row",alignItems:"center",gap:10,padding:10,minHeight:67}}>
-          <EntityArtwork name={team.display_name||"Team"} kind="teams" size={46}/>
+          <EntityArtwork name={team.display_name||"Team"} kind="teams" size={46} logoUrl={data.logos[team.target_id]?.url} logoBg={data.logos[team.target_id]?.bg}/>
           <View style={{flex:1,minWidth:0}}>
             <Text numberOfLines={1} style={{fontFamily:t.type.ui.fontFamily,color:t.foreground,
               fontSize:15,fontWeight:"700"}}>{team.display_name||"Team"}</Text>

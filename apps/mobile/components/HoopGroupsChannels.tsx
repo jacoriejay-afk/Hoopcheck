@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { Button, GlassCard } from "../src/primitives";
 import { useEntryTheme } from "../src/theme";
 import { supabase } from "../src/lib/supabase";
 import { requireOnline, useNetwork } from "../src/native/network";
 import { useNativeAccount } from "../src/native/useNativeAccount";
+import { HoopCheckLoading } from "./HoopCheckLoading";
 
-type Space = { id:string;slug:string;name:string;category:string;description:string };
+type Space = { id:string;slug:string;name:string;category:string;description:string;owner_id:string|null;accent_color:string;icon_key:string };
 type Channel = { id:string;space_id:string;name:string;slug:string;sort_index:number };
 type Post = { id:string;author_id:string;body:string;moderation_status:string;created_at:string };
 export default function HoopGroupsChannels() {
@@ -26,6 +27,13 @@ export default function HoopGroupsChannels() {
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState("");
   const [revision,setRevision]=useState(0);
+  const [query,setQuery]=useState("");
+  const [filter,setFilter]=useState<"discover"|"joined"|"mine">("discover");
+  const [creating,setCreating]=useState(false);
+  const [newName,setNewName]=useState("");
+  const [newDescription,setNewDescription]=useState("");
+  const [newCategory,setNewCategory]=useState("global");
+  const [newChannel,setNewChannel]=useState("");
   const role=account?.user.accountType||"";
 
   useFocusEffect(useCallback(()=> {
@@ -38,7 +46,7 @@ export default function HoopGroupsChannels() {
         const {data:{user}}=await supabase.auth.getUser();
         if(user?.id!==userId)throw Error("Revalidate your session.");
         const [a,b,c]=await Promise.all([
-          supabase.from("hoop_group_spaces").select("id,slug,name,category,description").order("name"),
+          supabase.from("hoop_group_spaces").select("id,slug,name,category,description,owner_id,accent_color,icon_key").order("name"),
           supabase.from("hoop_group_channels").select("id,space_id,name,slug,sort_index").order("sort_index"),
           supabase.from("hoop_group_members").select("space_id").eq("user_id",userId),
         ]);
@@ -58,7 +66,13 @@ export default function HoopGroupsChannels() {
     const priority=(s:Space)=>Number(s.category===role || (role==="scout"&&s.category==="agents"));
     return priority(b)-priority(a)||a.name.localeCompare(b.name);
   }),[spaces,role]);
-  const selected=spaces.find(item=>item.id===spaceId)||ordered[0];
+  const filtered=ordered.filter(space=>{
+    if(filter==="joined" && !joined.includes(space.id))return false;
+    if(filter==="mine" && space.owner_id!==userId)return false;
+    const needle=query.trim().toLocaleLowerCase();
+    return !needle || [space.name,space.description,space.category].some(value=>value.toLocaleLowerCase().includes(needle));
+  });
+  const selected=filtered.find(item=>item.id===spaceId)||filtered[0];
   const availableChannels=channels.filter(item=>item.space_id===selected?.id);
   const channel=availableChannels.find(item=>item.id===channelId)||availableChannels[0];
   const member=Boolean(selected&&joined.includes(selected.id));
@@ -87,6 +101,66 @@ export default function HoopGroupsChannels() {
     }catch(failure){setError(failure instanceof Error?failure.message:"Join failed.");}
     finally{setBusy(false);}
   }
+  async function createGroup() {
+    const name=newName.trim();
+    const description=newDescription.trim();
+    if(!userId || offline || busy || name.length<3 || name.length>80 || description.length>300)return;
+    if(!["global","players","fans","coaches","agents","womens"].includes(newCategory))return;
+    setBusy(true);setError("");
+    try{
+      await requireOnline();
+      const {data:{user}}=await supabase.auth.getUser();
+      if(user?.id!==userId)throw Error("Your account changed. Sign in again.");
+      const base=name.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"")
+        .replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,40).replace(/-+$/g,"")||"court";
+      const slug=(base+"-"+Math.random().toString(36).slice(2,10)).slice(0,60);
+      const {data,error:createError}=await supabase.from("hoop_group_spaces")
+        .insert({slug,name,description,category:newCategory,owner_id:userId,accent_color:"orange",icon_key:"basketball"})
+        .select("id,slug,name,category,description,owner_id,accent_color,icon_key").single();
+      if(createError||!data)throw Error("Group creation was not confirmed. You can own up to three groups.");
+      setSpaces(current=>[...current,data as Space]);setSpaceId(data.id);
+      setFilter("discover");setQuery("");setCreating(false);setNewName("");setNewDescription("");
+      setRevision(value=>value+1);
+    }catch(failure){setError(failure instanceof Error?failure.message:"Could not create group.");}
+    finally{setBusy(false);}
+  }
+  async function leaveGroup() {
+    if(!selected||!userId||offline||busy||!member)return;
+    setBusy(true);setError("");
+    try{
+      await requireOnline();
+      const {data:{user}}=await supabase.auth.getUser();
+      if(user?.id!==userId)throw Error("Sign in again.");
+      const {error:leaveError}=await supabase.from("hoop_group_members")
+        .delete().eq("space_id",selected.id).eq("user_id",userId);
+      if(leaveError)throw Error("Could not leave this group.");
+      setJoined(current=>current.filter(id=>id!==selected.id));setPosts([]);setDraft("");
+    }catch(failure){setError(failure instanceof Error?failure.message:"Could not leave group.");}
+    finally{setBusy(false);}
+  }
+  async function createChannel() {
+    const name=newChannel.trim();
+    if(!selected||selected.owner_id!==userId||!userId||offline||busy||name.length<2||name.length>50||availableChannels.length>=12)return;
+    setBusy(true);setError("");
+    try{
+      await requireOnline();
+      const {data:{user}}=await supabase.auth.getUser();
+      if(user?.id!==userId)throw Error("Sign in again.");
+      const slug=name.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"")
+        .replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,40)||"discussion";
+      const {data,error:channelError}=await supabase.from("hoop_group_channels")
+        .insert({space_id:selected.id,slug,name,sort_index:availableChannels.length})
+        .select("id,space_id,name,slug,sort_index").single();
+      if(channelError||!data)throw Error("Could not create a new discussion topic.");
+      setChannels(current=>[...current,data as Channel]);setChannelId(data.id);setNewChannel("");
+    }catch(failure){setError(failure instanceof Error?failure.message:"Topic creation failed.");}
+    finally{setBusy(false);}
+  }
+  async function shareGroup() {
+    if(!selected)return;
+    await Share.share({message:`Join ${selected.name} on HoopGroups: https://hoopcheck.online/hoopgroups?group=${encodeURIComponent(selected.slug)}`});
+  }
+
   async function send() {
     if(!channel||!member||!userId||offline||busy||!draft.trim())return;
     setBusy(true);setError("");
@@ -128,45 +202,136 @@ export default function HoopGroupsChannels() {
   }
 
   return <View style={{gap:12}}>
-    <Text style={{color:theme.muted,fontSize:13}}>Moderated basketball servers: messages remain pending until approved. Team Fan Groups are separate.</Text>
-    {loading?<Text style={{color:theme.muted}}>Loading community servers…</Text>:null}
+    <Text style={{color:theme.muted,fontSize:13,lineHeight:19}}>
+      Independent basketball communities, member-created groups and moderated discussion channels.
+    </Text>
+    {loading?<HoopCheckLoading label="Finding HoopGroups…" />:null}
     {error?<Text accessibilityRole="alert" style={{color:theme.accent}}>{error}</Text>:null}
-    {offline?<Text style={{color:theme.muted}}>Reconnect to see your channels.</Text>:null}
-    {!userId&&!loading?<Text style={{color:theme.muted}}>Sign in to join HoopGroups.</Text>:null}
-    {Boolean(ordered.length)&&<><Text style={{color:theme.foreground,fontSize:17,fontWeight:"800"}}>Your community servers</Text>
+    {offline?<Text style={{color:theme.muted}}>Reconnect to see your groups.</Text>:null}
+    {!userId&&!loading?<Text style={{color:theme.muted}}>Sign in to discover HoopGroups.</Text>:null}
+    {Boolean(userId)&&!offline?<>
+      <TextInput accessibilityLabel="Search HoopGroups" placeholder="Search group names and topics…" placeholderTextColor={theme.muted}
+        value={query} maxLength={100} onChangeText={setQuery}
+        style={{minHeight:46,paddingHorizontal:12,color:theme.foreground,backgroundColor:theme.input,
+          borderColor:theme.glassBorder,borderWidth:1,borderRadius:14}} />
+      <View accessibilityRole="tablist" style={{flexDirection:"row",gap:6}}>
+        {(["discover","joined","mine"] as const).map(value=><Pressable key={value}
+          accessibilityRole="tab" accessibilityState={{selected:filter===value}}
+          accessibilityLabel={value==="discover"?"Discover groups":value==="joined"?"Joined groups":"My groups"}
+          onPress={()=>setFilter(value)}
+          style={{minHeight:44,flex:1,justifyContent:"center",alignItems:"center",borderRadius:12,
+            backgroundColor:filter===value?theme.accentSurface:theme.surface,
+            borderWidth:1,borderColor:filter===value?theme.accent:theme.glassBorder}}>
+          <Text style={{color:filter===value?theme.accent:theme.foreground,fontWeight:"800",fontSize:12}}>
+            {value==="discover"?"Discover":value==="joined"?"Joined":"My groups"}
+          </Text>
+        </Pressable>)}
+      </View>
+      <Pressable accessibilityRole="button" accessibilityLabel={creating?"Cancel new group":"Create a group"}
+        onPress={()=>setCreating(value=>!value)}
+        style={{minHeight:44,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:8,
+          borderRadius:13,borderWidth:1,borderColor:theme.glassBorder,backgroundColor:theme.surface}}>
+        <Text style={{color:theme.accent,fontWeight:"800"}}>{creating?"Cancel":"＋ Create your group"}</Text>
+      </Pressable>
+      {creating?<GlassCard style={{gap:9}}>
+        <Text style={{color:theme.foreground,fontWeight:"900",fontSize:17}}>Create an independent group</Text>
+        <Text style={{color:theme.muted,fontSize:12}}>Choose a name, description and basketball topic. You can own up to three groups.</Text>
+        <TextInput accessibilityLabel="Group name" placeholder="Group name" placeholderTextColor={theme.muted}
+          maxLength={80} value={newName} onChangeText={setNewName}
+          style={{color:theme.foreground,minHeight:44,backgroundColor:theme.input,borderRadius:10,paddingHorizontal:10}} />
+        <TextInput accessibilityLabel="Group description" placeholder="What is this group for?" placeholderTextColor={theme.muted}
+          maxLength={300} value={newDescription} onChangeText={setNewDescription} multiline
+          style={{color:theme.foreground,minHeight:62,backgroundColor:theme.input,borderRadius:10,padding:10,textAlignVertical:"top"}} />
+        <Text style={{color:theme.muted,fontSize:12}}>Basketball topic</Text>
+        <View style={{flexDirection:"row",flexWrap:"wrap",gap:6}}>
+          {([{value:"global",label:"Basketball"},{value:"players",label:"Players"},{value:"fans",label:"Supporters"},
+             {value:"coaches",label:"Coaches"},{value:"agents",label:"Scouting"},{value:"womens",label:"Women’s hoops"}]).map(item=>
+            <Pressable key={item.value} accessibilityRole="radio" accessibilityState={{checked:newCategory===item.value}}
+              onPress={()=>setNewCategory(item.value)}
+              style={{minHeight:40,justifyContent:"center",paddingHorizontal:10,borderRadius:12,
+                borderWidth:1,borderColor:newCategory===item.value?theme.accent:theme.glassBorder}}>
+              <Text style={{color:newCategory===item.value?theme.accent:theme.foreground,fontSize:12}}>{item.label}</Text>
+            </Pressable>)}
+        </View>
+        <Button disabled={busy||newName.trim().length<3||newDescription.trim().length>300}
+          onPress={()=>void createGroup()}>{busy?"Creating…":"Create group"}</Button>
+      </GlassCard>:null}
+    </>:null}
+    {Boolean(filtered.length)&&<>
+      <Text accessibilityRole="header" style={{color:theme.foreground,fontSize:17,fontWeight:"900"}}>
+        {filter==="joined"?"Joined groups":filter==="mine"?"Your groups":"Discover communities"}
+      </Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:8}}>
-        {ordered.map(space=><Pressable key={space.id} accessibilityRole="button" accessibilityState={{selected:selected?.id===space.id}}
+        {filtered.map(space=><Pressable key={space.id} accessibilityRole="button"
+          accessibilityState={{selected:selected?.id===space.id}}
+          accessibilityLabel={`Open ${space.name} group`}
           onPress={()=>{setSpaceId(space.id);setChannelId("");setDraft("");}}
-          style={{minHeight:62,width:150,borderWidth:1,borderColor:selected?.id===space.id?theme.accent:theme.border,borderRadius:16,backgroundColor:selected?.id===space.id?theme.accentSurface:theme.surface,padding:10,justifyContent:"center"}}>
+          style={{minHeight:68,width:160,borderWidth:1,borderColor:selected?.id===space.id?theme.accent:theme.glassBorder,
+            borderRadius:16,backgroundColor:selected?.id===space.id?theme.accentSurface:theme.surface,padding:10,justifyContent:"center"}}>
           <Text numberOfLines={2} style={{color:theme.foreground,fontWeight:"800"}}>{space.name}</Text>
-          <Text style={{color:theme.muted,fontSize:11,marginTop:4}}>{joined.includes(space.id)?"Joined":"Browse server"}</Text>
+          <Text style={{color:theme.muted,fontSize:11,marginTop:4}}>
+            {space.owner_id===userId?"Your group":joined.includes(space.id)?"Joined":"Discover"}
+          </Text>
         </Pressable>)}
       </ScrollView>
-      <GlassCard><Text style={{color:theme.foreground,fontSize:19,fontWeight:"900"}}>{selected?.name}</Text>
-        <Text style={{color:theme.muted,marginTop:5}}>{selected?.description}</Text>
-        {!member?<Button disabled={busy||offline} onPress={()=>void join()}>Join community</Button>:null}
-        {member?<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:8,marginTop:12}}>
-          {availableChannels.map(item=><Pressable key={item.id} accessibilityRole="button" accessibilityState={{selected:channel?.id===item.id}}
-            onPress={()=>{setChannelId(item.id);setDraft("");}}
-            style={{minHeight:44,justifyContent:"center",paddingHorizontal:12,borderRadius:12,backgroundColor:channel?.id===item.id?theme.accentSurface:theme.chip}}>
-            <Text style={{color:theme.foreground,fontWeight:"700"}}># {item.name}</Text>
-          </Pressable>)}
-        </ScrollView>:null}
+      <GlassCard style={{gap:10}}>
+        <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:10}}>
+          <View style={{flex:1,gap:4}}>
+            <Text style={{color:theme.foreground,fontSize:18,fontWeight:"900"}}>{selected?.name}</Text>
+            <Text style={{color:theme.muted,fontSize:12}}>{selected?.description}</Text>
+          </View>
+          <Pressable accessibilityRole="button" accessibilityLabel="Share group invite" onPress={()=>void shareGroup()}
+            style={{minHeight:44,minWidth:44,justifyContent:"center",alignItems:"center"}}>
+            <Text style={{color:theme.accent,fontSize:12,fontWeight:"800"}}>Share</Text>
+          </Pressable>
+        </View>
+        {!member?<Button disabled={busy||offline} onPress={()=>void join()}>Join group</Button>:
+          <Pressable accessibilityRole="button" accessibilityLabel="Leave group" disabled={busy||offline}
+            onPress={()=>void leaveGroup()} style={{minHeight:40,justifyContent:"center",alignItems:"flex-start"}}>
+            <Text style={{color:theme.accent,fontSize:12,fontWeight:"800"}}>Leave group</Text>
+          </Pressable>}
+        {member?<>
+          <Text style={{color:theme.muted,fontSize:11,fontWeight:"800",letterSpacing:1}}>DISCUSSION CHANNELS</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:8}}>
+            {availableChannels.map(item=><Pressable key={item.id} accessibilityRole="button"
+              accessibilityState={{selected:channel?.id===item.id}}
+              onPress={()=>{setChannelId(item.id);setDraft("");}}
+              style={{minHeight:44,justifyContent:"center",paddingHorizontal:11,borderRadius:11,
+                backgroundColor:channel?.id===item.id?theme.accentSurface:theme.chip}}>
+              <Text style={{color:theme.foreground,fontWeight:"700"}}># {item.name}</Text>
+            </Pressable>)}
+          </ScrollView>
+          {selected?.owner_id===userId&&availableChannels.length<12?<View style={{flexDirection:"row",gap:8}}>
+            <TextInput accessibilityLabel="New discussion channel" placeholder="New channel name" placeholderTextColor={theme.muted}
+              maxLength={50} value={newChannel} onChangeText={setNewChannel}
+              style={{flex:1,minHeight:44,color:theme.foreground,backgroundColor:theme.input,
+                borderRadius:11,paddingHorizontal:10}} />
+            <Button secondary disabled={busy||newChannel.trim().length<2} onPress={()=>void createChannel()}>Add topic</Button>
+          </View>:null}
+        </>:null}
       </GlassCard>
-      {member&&channel?<GlassCard>
-        <Text style={{color:theme.foreground,fontSize:18,fontWeight:"900"}}># {channel.name}</Text>
+      {member&&channel?<GlassCard style={{gap:10}}>
+        <Text style={{color:theme.foreground,fontSize:17,fontWeight:"900"}}># {channel.name}</Text>
         <Text style={{color:theme.muted,fontSize:12}}>Members only · moderated posts · 20-second slow mode</Text>
-        {posts.length?posts.map(post=><View key={post.id} style={{borderBottomWidth:1,borderColor:theme.border,paddingVertical:10,gap:5}}>
+        {posts.length?posts.map(post=><View key={post.id}
+          style={{borderBottomWidth:1,borderColor:theme.border,paddingVertical:10,gap:5}}>
           <Text style={{color:theme.foreground,fontWeight:"700"}}>{post.author_id===userId?"You":"Community member"}</Text>
           <Text style={{color:theme.foreground}}>{post.body}</Text>
           <Text style={{color:theme.muted,fontSize:11}}>{post.moderation_status==="approved"?"Approved":"Pending review · visible only to you"} · {new Date(post.created_at).toLocaleString()}</Text>
-          {post.author_id!==userId&&post.moderation_status==="approved"?<Pressable accessibilityRole="button" style={{minHeight:40,justifyContent:"center"}} onPress={()=>actions(post)}><Text style={{color:theme.accent}}>Report or block</Text></Pressable>:null}
-        </View>):<Text style={{color:theme.muted,marginVertical:14}}>No approved messages yet.</Text>}
-        <TextInput accessibilityLabel={"Message in "+channel.name} multiline maxLength={1200} value={draft} onChangeText={setDraft} placeholder="Share a basketball discussion…" placeholderTextColor={theme.muted}
-          style={{backgroundColor:theme.input,color:theme.foreground,borderWidth:1,borderColor:theme.border,padding:12,minHeight:75,textAlignVertical:"top",borderRadius:14}} />
-        <Button disabled={busy||offline||!draft.trim()} onPress={()=>void send()}>{busy?"Submitting…":"Submit for moderation"}</Button>
+          {post.author_id!==userId&&post.moderation_status==="approved"?<Pressable accessibilityRole="button"
+            style={{minHeight:40,justifyContent:"center"}} onPress={()=>actions(post)}>
+            <Text style={{color:theme.accent}}>Report or block</Text>
+          </Pressable>:null}
+        </View>):<Text style={{color:theme.muted,marginVertical:12}}>No approved messages yet.</Text>}
+        <TextInput accessibilityLabel={"Message in "+channel.name} multiline maxLength={1200}
+          value={draft} onChangeText={setDraft} placeholder="Post to this discussion…" placeholderTextColor={theme.muted}
+          style={{backgroundColor:theme.input,color:theme.foreground,borderWidth:1,borderColor:theme.border,
+            padding:12,minHeight:72,textAlignVertical:"top",borderRadius:14}} />
+        <Button disabled={busy||offline||!draft.trim()} onPress={()=>void send()}>{busy?"Submitting…":"Post for approval"}</Button>
       </GlassCard>:null}
     </>}
-    {!loading&&!ordered.length&&!error?<Text style={{color:theme.muted}}>No community servers available.</Text>:null}
+    {!loading&&!filtered.length&&!error?<Text style={{color:theme.muted}}>
+      {filter==="joined"?"You haven’t joined any groups yet.":filter==="mine"?"You haven’t created a group yet.":"No communities match this search."}
+    </Text>:null}
   </View>;
 }

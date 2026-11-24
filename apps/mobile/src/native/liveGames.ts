@@ -6,7 +6,7 @@ export type LiveGame = {
   started_at: string | null; ends_at: string | null; scheduled_at: string | null;
   league_name: string | null; country: string | null; period_label: string | null;
 };
-export type GameTeam = { id: string; name: string };
+export type GameTeam = { id: string; name: string; logo_url?: string | null; logo_bg?: string | null };
 export type ChatMessage = { id: string; body: string; created_at: string; user_id: string };
 export type ChatControl = { target_user_id: string; is_blocked: boolean; is_muted: boolean };
 export type Prediction = { my_pick: string | null; locked: boolean; total_picks: number; results: { winner_team_id: string; winner_percent: number; correct_picks: number; total_picks: number } | null };
@@ -64,8 +64,8 @@ export async function readLiveGames(client: SupabaseClient, side: "mens" | "wome
     // Bound every IN filter. A women's fixture can be stored with its side as the away team.
     for (let offset = 0; offset < ids.length; offset += 50) {
       const chunk = ids.slice(offset, offset + 50);
-      const requests = [client.from("teams").select("id,name").in("id", chunk).eq("basketball_type", side).abortSignal(timer.signal)];
-      if (side === "womens") requests.push(client.from("womens_teams").select("id,name").in("id", chunk).abortSignal(timer.signal));
+      const requests = [client.from("teams").select("id,name,logo_url,logo_bg").in("id", chunk).eq("basketball_type", side).abortSignal(timer.signal)];
+      if (side === "womens") requests.push(client.from("womens_teams").select("id,name,logo_url,logo_bg").in("id", chunk).abortSignal(timer.signal));
       for (const result of await Promise.all(requests)) {
         if (result.error) throw new Error("Game teams could not load.");
         for (const team of result.data ?? []) if (ids.includes(team.id)) teams[team.id] = team;

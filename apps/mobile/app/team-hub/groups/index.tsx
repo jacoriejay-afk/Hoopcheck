@@ -23,6 +23,7 @@ export default function ClubGroups() {
   const scope = `${uid ?? ""}:${query}:${page}:${mode}`;
   const [result, setResult] = useState<{ scope: string; data: Awaited<ReturnType<typeof readClubGroups>> } | null>(null);
   const [error, setError] = useState("");
+  const [logos,setLogos] = useState<{scope:string;items:Record<string,{url:string|null;bg:string|null}>}>({scope:"",items:{}});
   useFocusEffect(useCallback(() => { retry(); }, [retry]));
   useEffect(() => {
     if (!uid || offline) { setResult(null); return; }
@@ -32,14 +33,32 @@ export default function ClubGroups() {
     return () => { valid = false; clearTimeout(timer); };
   }, [uid, query, page, mode, scope, offline, revision]);
   const current = !offline && result?.scope === scope ? result.data : null;
+  useEffect(()=>{
+    const groups=current?.groups ?? [];
+    const ids=[...new Set(groups.map(item=>item.team_id))].slice(0,50);
+    if(!uid || offline || !ids.length){setLogos({scope:"",items:{}});return;}
+    let active=true;
+    const controller=new AbortController();
+    void Promise.all([
+      supabase.from("teams").select("id,logo_url,logo_bg").in("id",ids).abortSignal(controller.signal),
+      supabase.from("womens_teams").select("id,logo_url,logo_bg").in("id",ids).abortSignal(controller.signal),
+    ]).then(results=>{
+      if(!active)return;
+      const items:Record<string,{url:string|null;bg:string|null}>={};
+      for(const response of results)if(!response.error)for(const item of response.data??[])if(ids.includes(item.id))
+        items[item.id]={url:item.logo_url,bg:item.logo_bg};
+      setLogos({scope,items});
+    }).catch(()=>{if(active)setLogos({scope,items:{}});});
+    return()=>{active=false;controller.abort();};
+  },[uid,offline,current?.groups,scope]);
   const header = <View style={{ gap: theme.spacing.sm }}><CourtsideBanner eyebrow="TEAM FAN GROUPS" title="Find your club">Join the club conversation.</CourtsideBanner>
       <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 6, padding: 4, borderRadius: 15, borderCurve: "continuous", borderWidth: 1, borderColor: theme.glassBorder, backgroundColor: theme.elevatedSurface }}>{(["discover", "joined"] as const).map(value => <Pressable key={value} accessibilityRole="tab" accessibilityState={{ selected: mode === value }} onPress={() => { setMode(value); setPage(0); }} style={({ pressed }) => ({ minHeight: 44, flex: 1, justifyContent: "center", alignItems: "center", borderRadius: 11, backgroundColor: mode === value ? theme.accentSurface : "transparent", opacity: pressed ? .7 : 1 })}><Text style={{ color: mode === value ? theme.accent : theme.foreground, fontFamily: theme.type.ui.fontFamily, fontWeight: "700", fontSize: 13 }}>{value === "discover" ? "Discover" : "Joined groups"}</Text></Pressable>)}</View>
-      <Button secondary onPress={()=>router.push("/hoopgroups")}>Explore separate HoopGroups topic servers</Button>
+      <Pressable accessibilityRole="link" onPress={()=>router.push("/hoopgroups")} style={{minHeight:40,justifyContent:"center"}}><Text style={{color:theme.accent,fontWeight:"800",fontSize:12}}>Independent HoopGroups communities →</Text></Pressable>
       <TextInput accessibilityLabel="Search club groups" placeholder="Search club groups" placeholderTextColor={theme.muted} maxLength={120} value={query} onChangeText={value => { setQuery(value); setPage(0); }} style={{ minHeight: 44, paddingHorizontal: 12, paddingVertical: 8, color: theme.foreground, backgroundColor: theme.glassFill, borderColor: theme.glassBorder, borderWidth: 1, borderRadius: 13 }} />
       {accountError || error || offline ? <Text accessibilityRole="alert" style={{ color: theme.muted }}>{offline ? "Reconnect to browse club groups." : error || accountError}</Text> : null}
       {!account && !accountLoading ? <Button secondary onPress={retry}>Verify account again</Button> : null}
     </View>;
   return <View style={{ flex: 1, backgroundColor: theme.background }}>
-    <FlatList style={{ flex: 1 }} ListHeaderComponent={header} contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" data={current?.groups ?? []} keyExtractor={group => group.team_id} contentContainerStyle={{ padding: 12, gap: 8 }} renderItem={({ item }) => <PressableCard accessibilityRole="button" onPress={() => router.push({ pathname: "/team-hub/groups/[teamId]", params: { teamId: item.team_id } })}><View style={{ flexDirection: "row", gap: theme.spacing.sm, alignItems: "center" }}><EntityArtwork name={item.group_name} kind="teams" size={40} /><Text numberOfLines={2} style={{ ...theme.type.section, fontFamily: theme.type.ui.fontFamily, color: theme.foreground, flex: 1 }}>{item.group_name}</Text><Text style={{ color: theme.accent, fontSize: 12 }}>Open club group</Text></View></PressableCard>} ListEmptyComponent={accountLoading || (!current && uid && !offline && !error) ? <Skeleton /> : <View style={{ padding: theme.spacing.lg, gap: theme.spacing.md }}><Text accessibilityRole="header" style={{ ...theme.type.title, color: theme.foreground }}>Team Fan Groups</Text><Text style={{ color: theme.muted }}>{accountLoading || (!current && uid && !offline && !error) ? "Loading club groups…" : current ? "No club groups match this search." : "Club groups are unavailable."}</Text>{error ? <Button secondary onPress={() => setRevision(value => value + 1)}>Retry club groups</Button> : null}</View>} ListFooterComponent={page > 0 || current?.more ? <View style={{ flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.md }}><Button secondary disabled={page === 0} onPress={() => setPage(value => value - 1)}>Previous</Button><Button secondary disabled={!current?.more} onPress={() => setPage(value => value + 1)}>Next</Button></View> : null} />
+    <FlatList style={{ flex: 1 }} ListHeaderComponent={header} contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" data={current?.groups ?? []} keyExtractor={group => group.team_id} contentContainerStyle={{ padding: 12, gap: 8 }} renderItem={({ item }) => <PressableCard accessibilityRole="button" onPress={() => router.push({ pathname: "/team-hub/groups/[teamId]", params: { teamId: item.team_id } })}><View style={{ flexDirection: "row", gap: theme.spacing.sm, alignItems: "center" }}><EntityArtwork name={item.group_name} kind="teams" size={40} logoUrl={logos.scope===scope?logos.items[item.team_id]?.url:null} logoBg={logos.scope===scope?logos.items[item.team_id]?.bg:null} /><Text numberOfLines={2} style={{ ...theme.type.section, fontFamily: theme.type.ui.fontFamily, color: theme.foreground, flex: 1 }}>{item.group_name}</Text><Text style={{ color: theme.accent, fontSize: 12 }}>Open club group</Text></View></PressableCard>} ListEmptyComponent={accountLoading || (!current && uid && !offline && !error) ? <Skeleton /> : <View style={{ padding: theme.spacing.lg, gap: theme.spacing.md }}><Text accessibilityRole="header" style={{ ...theme.type.title, color: theme.foreground }}>Team Fan Groups</Text><Text style={{ color: theme.muted }}>{accountLoading || (!current && uid && !offline && !error) ? "Loading club groups…" : current ? "No club groups match this search." : "Club groups are unavailable."}</Text>{error ? <Button secondary onPress={() => setRevision(value => value + 1)}>Retry club groups</Button> : null}</View>} ListFooterComponent={page > 0 || current?.more ? <View style={{ flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.md }}><Button secondary disabled={page === 0} onPress={() => setPage(value => value - 1)}>Previous</Button><Button secondary disabled={!current?.more} onPress={() => setPage(value => value + 1)}>Next</Button></View> : null} />
   </View>;
 }

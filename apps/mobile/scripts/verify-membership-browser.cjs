@@ -10,6 +10,11 @@ async function verify(browser,theme,role){
   const json=(body,status=200)=>route.fulfill({status,contentType:'application/json',headers:{'access-control-allow-origin':'*','access-control-allow-headers':'*'},body:JSON.stringify(body)});
   if(route.request().method()==='OPTIONS')return json({});calls.push(url.pathname);
   if(url.hostname==='fixture.supabase.co'&&url.pathname==='/auth/v1/user')return json(user);
+  if(url.hostname==='fixture.supabase.co'&&url.pathname==='/rest/v1/profiles'){
+    assert.equal(url.searchParams.get('id'),'eq.'+uid,'Avatar lookup stays owner-scoped');
+    assert.equal(url.searchParams.get('select'),'avatar_url,avatar_moderation_status');
+    return json({avatar_url:null,avatar_moderation_status:'approved'});
+  }
   if(url.hostname==='api.test'&&url.pathname==='/api/mobile/bootstrap')return json({user:{id:uid,displayName:'Fixture member',accountType:role},entitlements:{tier:'pro',hasPaidMembership:true,canReadHoopFeed:true,canWriteHoopFeed:true,canUseLiveGameHub:role==='player'||role==='fan',canUseLiveGameChat:role==='player'||role==='fan',canSwitchBasketballSide:role==='fan',canUseFanGroups:role==='fan'}});
   if(url.hostname==='api.test'&&url.pathname==='/api/membership')return json({owner:uid,subscription:{plan:'pro',status:'active',access_status:'pro',current_period_end:'2099-01-01T00:00:00Z',cancel_at_period_end:false,billing_interval:'month',provider:'stripe'}});
   throw Error('Unexpected external request '+url.origin+url.pathname);

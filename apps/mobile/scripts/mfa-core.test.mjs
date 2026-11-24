@@ -5,9 +5,9 @@ const owner='11111111-1111-4111-8111-111111111111',other='22222222-2222-4222-822
 const jwt=(sub=owner,aal='aal1',exp=Math.floor(Date.now()/1000)+3600)=>Buffer.from('{"alg":"HS256"}').toString('base64url')+'.'+Buffer.from(JSON.stringify({sub,aal,exp})).toString('base64url')+'.fixture';
 const verified=id=>({id,factor_type:'totp',status:'verified',friendly_name:'Authenticator'});
 function fixture(initial=[verified(factor)]){
- let factors=initial,level='aal1';const calls=[];
+ let factors=initial,level='aal1',capturedSessionToken=null;const calls=[];
  const user=()=>({id:owner,factors,user_metadata:{aal:'aal2',factors:[]}});
- const client={auth:{getSession:async()=>({data:{session:{user:user(),access_token:jwt(owner,level)}}}),getUser:async token=>{assert.equal(token,jwt(owner,level));calls.push('verified-user');return {data:{user:user()},error:null};},refreshSession:async()=>{calls.push('refresh');level=factors.some(f=>f.status==='verified')?'aal2':'aal1';return {data:{user:user()},error:null};},mfa:{
+ const client={auth:{getSession:async()=>{capturedSessionToken=jwt(owner,level);return {data:{session:{user:user(),access_token:capturedSessionToken}}};},getUser:async token=>{assert.equal(token,capturedSessionToken);calls.push('verified-user');return {data:{user:user()},error:null};},refreshSession:async()=>{calls.push('refresh');level=factors.some(f=>f.status==='verified')?'aal2':'aal1';return {data:{user:user()},error:null};},mfa:{
   challengeAndVerify:async({factorId,code})=>{calls.push('verify');if(code!=='123456')return {error:Error('invalid code')};factors=factors.map(f=>f.id===factorId?{...f,status:'verified'}:f);level='aal2';return {data:{user:user()},error:null};},
   enroll:async()=>{calls.push('enroll');factors=[...factors,{...verified(backup),status:'unverified'}];return {data:{id:backup,type:'totp',totp:{secret:'JBSWY3DPEHPK3PXP',qr_code:'data:image/svg+xml;utf-8,<svg></svg>'}},error:null};},
   unenroll:async({factorId})=>{calls.push('remove:'+factorId);factors=factors.filter(f=>f.id!==factorId);return {error:null};},

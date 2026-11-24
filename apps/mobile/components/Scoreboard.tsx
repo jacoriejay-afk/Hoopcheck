@@ -43,15 +43,17 @@ function ScoreValue({ gameId, name, score, live, color, fontSize, fontFamily }: 
 export function Scoreboard({ game, teams }: { game: LiveGame; teams: Record<string, GameTeam> }) {
   const t = useEntryTheme();
   const live = game.status === "live";
-  const home = teams[game.team_id]?.name || "Home team";
-  const away = teams[game.opponent_team_id || ""]?.name || game.opponent_name || "Opponent";
+  const host = teams[game.team_id];
+  const visitor = teams[game.opponent_team_id || ""];
+  const home = host?.name || "Home team";
+  const away = visitor?.name || game.opponent_name || "Opponent";
   return <View style={{ gap: t.spacing.sm, borderLeftWidth: live ? 3 : 0, borderLeftColor: t.button, paddingLeft: live ? t.spacing.md : 0 }}>
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: t.spacing.sm, alignItems: "center" }}>
       <View style={{ backgroundColor: live ? t.accentSurface : t.chip, paddingHorizontal: t.spacing.sm, paddingVertical: t.spacing.xs, borderRadius: t.radius.pill }}><Text style={{ color: live ? t.accent : t.onChip, ...t.type.caption, fontWeight: "700" }}>{live ? "● LIVE" : game.status.toUpperCase()}{game.period_label ? ` · ${game.period_label}` : ""}</Text></View>
       <Text style={{ color: t.muted, ...t.type.caption }}>{game.scheduled_at && Number.isFinite(Date.parse(game.scheduled_at)) ? new Date(game.scheduled_at).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "Tip-off not confirmed"}</Text>
     </View>
-    {([{ name: home, score: game.home_score }, { name: away, score: game.away_score }]).map((team, index) => <View key={index} style={{ flexDirection: "row", gap: t.spacing.md, alignItems: "center" }}>
-      <EntityArtwork name={team.name} kind="teams" size={36} />
+    {([{ name: home, score: game.home_score, logo: host?.logo_url, bg: host?.logo_bg }, { name: away, score: game.away_score, logo: visitor?.logo_url, bg: visitor?.logo_bg }]).map((team, index) => <View key={index} style={{ flexDirection: "row", gap: t.spacing.md, alignItems: "center" }}>
+      <EntityArtwork name={team.name} kind="teams" size={36} logoUrl={team.logo} logoBg={team.bg} />
       <Text style={{ flex: 1, minWidth: 0, color: t.foreground, ...t.type.section }}>{team.name}</Text>
       <ScoreValue gameId={game.id} name={team.name} score={team.score} live={live} color={t.foreground} fontSize={t.courtside.typography.score} fontFamily={t.type.ui.fontFamily} />
     </View>)}

@@ -13,7 +13,7 @@ test("Home header stays pinned below iPhone's top safe area", () => {
   assert.match(dash, /edges=\{\["top", "left", "right", "bottom"\]\}/);
   const pinned = dash.indexOf("<View style={styles.pinnedHeader}>");
   const scroll = dash.indexOf('testID="dashboard-scroll"');
-  const brand = dash.indexOf("<BrandLogo onHero />", pinned);
+  const brand = dash.indexOf("<BrandLogo onHero={theme.dark} />", pinned);
   const menu = dash.indexOf('accessibilityLabel="Open account menu"', pinned);
   assert.ok(pinned > 0 && brand > pinned && menu > pinned && brand < scroll && menu < scroll,
     "Header and account menu must remain outside scrolling content");
@@ -24,7 +24,7 @@ test("Home shows followed teams once, labels loading, and does not lose account 
   assert.equal((home.match(/title="My Teams"/g) || []).length, 1);
   assert.doesNotMatch(home, /title="TEAMS YOU FOLLOW"/);
   assert.doesNotMatch(home, /accessibilityLabel="Find more teams"/);
-  assert.match(home, /Loading followed teams/);
+  assert.match(home, /HoopCheckLoading compact label="Loading your teams/);
   assert.match(home, /snapshot\?\.scope===scope/);
   assert.match(home, /visibleConnections\(result\.data, role\)/);
 });

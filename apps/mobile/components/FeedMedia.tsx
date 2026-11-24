@@ -43,7 +43,7 @@ export function FeedMedia({ userId, postId, reference, video = false, enabled, l
     return () => { active = false; };
   }, [uri, video, reference, fail]);
   const ratio = imageSize?.reference === reference ? imageSize.ratio : 4 / 3;
-  const mediaHeight = video ? height : Math.min(380, Math.max(120, (width || 320) / ratio));
+  const mediaHeight = video ? height : Math.min(260, Math.max(120, (width || 320) / ratio));
   return <View onLayout={event => setWidth(event.nativeEvent.layout.width)} style={{ height: mediaHeight, backgroundColor: theme.elevatedSurface, borderRadius: 14, overflow: "hidden", justifyContent: "center" }}>
     {!enabled ? <Text style={{ color: theme.muted, padding: 16 }}>Media loads when visible.</Text> : error ? <Pressable accessibilityRole="button" onPress={() => setRevision(value => value + 1)} style={{ minHeight: 48, padding: 16 }}><Text style={{ color: theme.accent }}>Media unavailable. Tap to retry.</Text></Pressable> : !uri ? <ActivityIndicator accessibilityLabel="Authorizing media" color={theme.accent} /> : video ? <FeedVideo height={height} uri={uri} enabled={enabled} loop={loop} onFailure={fail} /> : <><Image alt="HoopFeed photo" accessibilityLabel="HoopFeed photo" source={{ uri }} style={{ width: "100%", height: mediaHeight }} resizeMode="contain" onLoad={() => setLoadedUri(uri)} onError={fail} />{loadedUri !== uri ? <ActivityIndicator accessibilityLabel="Loading photo" color={theme.accent} style={{ position: "absolute", alignSelf: "center" }} /> : null}</>}
   </View>;

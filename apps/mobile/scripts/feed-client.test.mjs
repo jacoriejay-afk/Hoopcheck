@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createClient } from '@supabase/supabase-js';
-import { readFeedPage, readSharedFeedPost, readFeedComments, moderateFeedText, publishFeedPoll, validatedPollOptions, authorizedFeedMedia, toggleFeedCheck, readFeedChecks, readFeedSaved, feedAction } from '../src/native/feedClient.ts';
+import { readFeedPage, readSharedFeedPost, readFeedComments, moderateFeedText, publishFeedPoll, validatedPollOptions, authorizedFeedMedia, toggleFeedCheck, readFeedChecks, readFeedSaved, feedAction, deleteOwnedFeedPost } from '../src/native/feedClient.ts';
 const uid = '11111111-1111-4111-8111-111111111111';
 const id = n => `22222222-2222-4222-8222-${String(n).padStart(12, '0')}`;
 const now = new Date('2026-11-18T12:00:00Z');
@@ -147,4 +147,33 @@ test('failed or malformed Check totals never become invented zero counts',async(
     const db=client(async()=>Response.json(rows));
     await assert.rejects(readFeedChecks(db,[id(1)]));
   }
+});
+
+test('a signed-in owner can delete only their own post and receives a confirmed row', async()=>{
+  const calls=[];
+  const db=client(async(input,options)=>{
+    const url=new URL(String(input));calls.push({url,options});
+    return Response.json([{id:id(1)}]);
+  });
+  await deleteOwnedFeedPost(db,uid,id(1));
+  assert.equal(calls.length,1);
+  assert.equal(calls[0].options.method,'DELETE');
+  assert.equal(calls[0].url.pathname,'/rest/v1/feed_posts');
+  assert.equal(calls[0].url.searchParams.get('id'),`eq.${id(1)}`);
+  assert.equal(calls[0].url.searchParams.get('author_id'),`eq.${uid}`);
+  assert.equal(calls[0].url.searchParams.get('select'),'id');
+});
+
+test('delete never claims success on RLS denial, zero-row response, wrong identity or invalid ids',async()=>{
+  const denied=client(async()=>Response.json({message:'permission denied'},{status:403}));
+  await assert.rejects(deleteOwnedFeedPost(denied,uid,id(1)),/could not be deleted/);
+  const missing=client(async()=>Response.json([]));
+  await assert.rejects(deleteOwnedFeedPost(missing,uid,id(1)),/could not be deleted/);
+  const wrong=client(async()=>Response.json([{id:id(2)}]));
+  await assert.rejects(deleteOwnedFeedPost(wrong,uid,id(1)),/could not be deleted/);
+  let calls=0;
+  const noNetwork=client(async()=>{calls++;return Response.json([]);});
+  await assert.rejects(deleteOwnedFeedPost(noNetwork,'bad',id(1)));
+  await assert.rejects(deleteOwnedFeedPost(noNetwork,uid,'bad'));
+  assert.equal(calls,0);
 });

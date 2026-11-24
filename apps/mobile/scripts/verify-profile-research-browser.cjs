@@ -17,6 +17,11 @@ async function verify(browser,theme,role){
   if(url.hostname==='fixture.supabase.co'){
    const table=url.pathname.split('/').pop();
    if(url.pathname==='/auth/v1/user')return json(user);
+   if(table==='profiles'){
+    assert.equal(url.searchParams.get('id'),'eq.'+uid,'Account avatar query must stay scoped to the signed-in owner');
+    assert.equal(url.searchParams.get('select'),'avatar_url,avatar_moderation_status','Avatar query must not expand private profile fields');
+    return json({avatar_url:null,avatar_moderation_status:'approved'});
+   }
    if(table==='teams')return json({id:team,name:'Research Club',country:'Spain',city:'Madrid',league_name:'Research League',website:null});
    if(table==='reviews')return json([]);
    if(['player_career_stops','team_roster_spots','get_public_player_profile','is_player_country_public','player_contact_requests'].includes(table))assert.notEqual(role,'fan','Fan must not query player research');
@@ -39,11 +44,11 @@ async function verify(browser,theme,role){
    await page.getByText('Visible career player',{exact:true}).click();await page.getByText('Connect with this player to view their career history.',{exact:true}).waitFor();
    await page.getByText('Professional player verified',{exact:true}).scrollIntoViewIfNeeded();await require('./compact-layout.cjs').capture(page,{path:`${output}/verification-${theme}.png`,fullPage:true});
   }
-  await page.goto(base+'/account');await page.getByRole('heading',{name:'Your membership access',exact:true}).scrollIntoViewIfNeeded();
+  await page.goto(base+'/account');await page.getByRole('button',{name:'See membership benefits',exact:true}).click();await page.getByRole('heading',{name:'Your membership access',exact:true}).scrollIntoViewIfNeeded();
   assert.equal(await page.getByText('Included',{exact:true}).count(),role==='fan'?1:0);
   if(role==='fan')assert.equal(calls.filter(path=>/player_career_stops|team_roster_spots|get_public_player_profile/.test(path)).length,0);
   await require('./compact-layout.cjs').capture(page,{path:`${output}/membership-${role}-${theme}.png`,fullPage:true});
-  assert.deepEqual(errors,[]);assert.ok(!calls.includes('/rest/v1/profiles'));
+  assert.deepEqual(errors,[]);assert.equal(calls.filter(path=>path==='/rest/v1/profiles').length,1,'Only the exact owner-avatar lookup is allowed');
   console.log(`PASS ${theme} ${role}: scoped roster/history, private profile denial, canonical verification, server membership preview`);
  }finally{await context.close();}
 }

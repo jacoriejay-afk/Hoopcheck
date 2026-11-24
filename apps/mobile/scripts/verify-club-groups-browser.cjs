@@ -46,7 +46,18 @@ async function verify(browser,theme,role='fan',moderator=false){
    if(table==='get_team_fan_group_summary')return json([{group_name:'Fixture Club Group',member_count:member?3:2,join_mode:'open',is_member:true,has_pending_request:false}]); // Deliberately untrusted membership hint.
    if(table==='team_fan_group_members'){assert.equal(url.searchParams.get('user_id'),`eq.${uid}`);assert.equal(url.searchParams.get('team_id'),`eq.${team}`);return json(member?{user_id:uid}:null);}
    if(table==='is_team_fan_group_moderator')return json(moderator);
-   if(table==='teams')return json({name:'Fixture Club',basketball_type:'womens'});
+   if(table==='teams'){
+    if(url.searchParams.get('select')==='id,logo_url,logo_bg'){
+     assert.ok(url.searchParams.get('id')?.includes(team),'The club crest lookup must be limited to visible club IDs');
+     return json([{id:team,logo_url:null,logo_bg:null}]);
+    }
+    return json({name:'Fixture Club',basketball_type:'womens'});
+   }
+   if(table==='womens_teams'){
+    assert.equal(url.searchParams.get('select'),'id,logo_url,logo_bg');
+    assert.ok(url.searchParams.get('id')?.includes(team),"Women's crest lookup must be limited to visible club IDs");
+    return json([]);
+   }
    if(table==='team_fan_group_posts'){assert.ok(member||moderator,'Non-member must never request protected posts');assert.equal(url.searchParams.get('team_id'),`eq.${team}`);return json(removed?posts.slice(1):posts);}
    if(table==='team_fan_group_comments'){assert.ok(member||moderator);const target=url.searchParams.get('post_id').slice(3);return json(comments.filter(comment=>comment.post_id===target));}
    if(table==='profiles')return json([{id:uid,display_name:'Fixture Member'}]);

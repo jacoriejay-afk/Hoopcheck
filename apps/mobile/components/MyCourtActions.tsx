@@ -92,14 +92,11 @@ export function MyCourtActions({ userId, role, feedEnabled }: {
         return <View key={action.id} style={{ width: "48%", flexGrow: 1 }}>
           <Pressable accessibilityRole="link" accessibilityLabel={action.label} onPress={() => router.push(action.href)}
             style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", minHeight: 58,
-              paddingHorizontal: 9, paddingVertical: 7, gap: 8, borderRadius: 14,
+              paddingHorizontal: 11, paddingVertical: 7, gap: 11, borderRadius: 17,
               borderWidth: 1, borderColor: theme.dark ? theme.glassBorder : theme.border,
               backgroundColor: theme.elevatedSurface, opacity: pressed ? .76 : 1,
               transform: [{ scale: pressed ? .98 : 1 }] })}>
-            <View style={{ width: 33, height: 33, borderRadius: 11, backgroundColor: theme.accentSurface,
-              alignItems: "center", justifyContent: "center" }}>
-              <Ionicons name={action.icon} size={19} color={accent} />
-            </View>
+            <Ionicons name={action.icon} size={23} color={accent} />
             <Text numberOfLines={2} style={{ flex: 1, color: theme.foreground, fontSize: 12,
               lineHeight: 16, fontFamily: theme.type.ui.fontFamily, fontWeight: "700" }}>{action.label}</Text>
             <Ionicons name="chevron-forward" size={13} color={theme.muted} />
