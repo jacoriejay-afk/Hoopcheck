@@ -50,11 +50,33 @@ export async function chooseVideo(): Promise<Video | null> {
   if (!permission.granted && permission.accessPrivileges !== "limited") throw new MediaPermissionError("Allow photo-library access in Settings to choose a video, then try again.");
   const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["videos"], allowsEditing: true, videoMaxDuration: 180, videoExportPreset: ImagePicker.VideoExportPreset.MediumQuality, exif: false, base64: false });
   if (result.canceled) return null;
-  const asset = result.assets[0]; localUri(asset.uri);
-  const type = asset.mimeType === "video/mp4" || asset.mimeType === "video/quicktime" || asset.mimeType === "video/webm" ? asset.mimeType : /\.mov$/i.test(asset.fileName ?? asset.uri) ? "video/quicktime" : null;
+  return prepareVideo(result.assets[0]);
+}
+function prepareVideo(asset: ImagePicker.ImagePickerAsset): Video {
+  localUri(asset.uri);
+  const type = asset.mimeType === "video/mp4" || asset.mimeType === "video/quicktime" || asset.mimeType === "video/webm" ? asset.mimeType : /\.mov$/i.test(asset.fileName ?? asset.uri) ? "video/quicktime" : /\.mp4$/i.test(asset.fileName ?? asset.uri) ? "video/mp4" : null;
   const size = Platform.OS === "web" ? asset.file?.size ?? asset.fileSize : new File(asset.uri).size;
   if (!type || !Number.isSafeInteger(size) || !size || size < 0 || size > 50 * 1024 * 1024) throw new Error("Choose an MP4, MOV or WebM video up to 50 MB.");
   return { uri: asset.uri, type, size, name: "video." + (type === "video/quicktime" ? "mov" : type === "video/webm" ? "webm" : "mp4") };
+}
+// Capture is explicitly user-triggered and native-only; it never publishes.
+async function requireCamera() {
+  if (Platform.OS === "web") throw new Error("Use the HoopCheck app to capture media, or choose a library file.");
+  const permission = await ImagePicker.requestCameraPermissionsAsync();
+  if (!permission.granted) throw new MediaPermissionError("Allow camera access in device Settings, then try again.");
+}
+export async function capturePhoto(): Promise<Photo | null> {
+  await requireCamera();
+  const result = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], allowsEditing: true, aspect: [4, 3], quality: 1, exif: false, base64: false });
+  return result.canceled ? null : preparePhoto(result.assets[0]);
+}
+export async function captureVideo(): Promise<Video | null> {
+  await requireCamera();
+  const result = await ImagePicker.launchCameraAsync({ mediaTypes: ["videos"], allowsEditing: false, videoMaxDuration: 60, videoQuality: ImagePicker.UIImagePickerControllerQualityType.Medium, exif: false, base64: false });
+  if (result.canceled) return null;
+  const asset = result.assets[0];
+  if (typeof asset.duration !== "number" || !Number.isFinite(asset.duration) || asset.duration <= 0 || asset.duration > 60000) throw new Error("Record a video of up to 60 seconds.");
+  return prepareVideo(asset);
 }
 export async function photoBody(photo: Photo): Promise<Blob> {
   localUri(photo.uri);
