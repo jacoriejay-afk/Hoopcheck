@@ -91,11 +91,11 @@ test("horizontal slide navigates one tab while vertical scrolling does not captu
 });
 
 test("primary tabs overlay the screen while unmigrated detail routes keep safe layout", async () => {
-  for (const path of ["/dashboard", "/feed", "/search", "/notifications", "/account", "/teams/example", "/players/example", "/womens/leagues/example", "/teams/example/review", "/womens/leagues"]) {
+  for (const path of ["/dashboard", "/feed", "/search", "/notifications", "/account", "/teams", "/coaches", "/leagues", "/womens", "/players", "/teams/example", "/players/example", "/womens/leagues/example", "/teams/example/review", "/womens/leagues"]) {
     const { tree } = await render("player", path);
     try {
       const style = tree.root.findByProps({testID:"native-tab-bar"}).props.style;
-      if (path === "/teams/example/review" || path === "/womens/leagues") assert.notEqual(style.position, "absolute");
+      if (path === "/teams/example/review" || path === "/womens/leagues" || path === "/players") assert.notEqual(style.position, "absolute");
       else {
         assert.equal(style.position, "absolute");
         assert.equal(style.bottom, 0);
@@ -103,5 +103,22 @@ test("primary tabs overlay the screen while unmigrated detail routes keep safe l
         assert.equal(style.right, 0);
       }
     } finally { await act(async () => tree.unmount()); }
+  }
+});
+
+
+test("directory screens retain Search selection and safe bottom clearance", async () => {
+  for (const path of ["/teams", "/coaches", "/leagues", "/womens", "/players", "/teams/example", "/womens/leagues/example"]) {
+    const { tree } = await render("player", path);
+    try {
+      assert.equal(tree.root.findByProps({testID:"tab-search"}).props.accessibilityState.selected, true);
+      assert.equal(tree.root.findAllByType("Pressable").filter(tab => tab.props.accessibilityState.selected).length, 1);
+    } finally { await act(async () => tree.unmount()); }
+  }
+  for (const file of ["../components/TeamDirectoryScreen.tsx", "../app/coaches.tsx", "../app/leagues.tsx"]) {
+    const screen = readFileSync(new URL(file, import.meta.url), "utf8");
+    assert.match(screen, /edges=\{\["left", "right", "bottom"\]\}/);
+    assert.match(screen, /paddingBottom: 100/);
+    assert.match(screen, /contentContainerStyle=\{styles\.list\}/);
   }
 });
