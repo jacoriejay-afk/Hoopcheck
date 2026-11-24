@@ -29,7 +29,7 @@
 
 ## Remaining Build 12 work — separate scoped jobs, not already implemented
 
-**D — HoopGroups community activation:** Group banner/icon customization, moderator invitations and audit trail, member onboarding, community rules, channel creation flow and live reporting queues. Keep `EXPO_PUBLIC_HOOPGROUPS_CHANNELS_ENABLED` off until moderated test accounts verify owner, member, banned and guest permissions; HoopGroups are NOT official Team Fan Groups. Use existing free database/RLS; no blind production grants.
+**D — HoopGroups (PR #920):** Implemented owner-scoped edits of the existing group name/description, six preset accent colors and six emblems with server RLS and checked update acknowledgments. Group banner uploads, moderator invitations/audit trail, member onboarding, community rules and live reporting queues remain **not implemented**. Keep `EXPO_PUBLIC_HOOPGROUPS_CHANNELS_ENABLED` off until moderated test accounts verify owner, member, blocked and guest permissions; HoopGroups are NOT official Team Fan Groups. Use existing free database/RLS; no blind production grants.
 
 **E — Courtside Mode:** Combine reliable live score, league/game lobby chat, predictions, fan reactions, and Player of the Game voting using already verified entitlements, official game lifecycle and vote windows. Never backfill synthetic scores or pretend LIVE when stale.
 
