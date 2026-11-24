@@ -116,22 +116,23 @@ async function fixture(browser,theme,allowed=true){
     assert.ok((await page.evaluate(()=>window.__sharedFeed))?.text?.includes('hoopcheck.online/feed#post-'),'Share uses canonical post link');
     const option=page.getByRole('button',{name:'Home team · 0',exact:true});await option.scrollIntoViewIfNeeded();await option.click();await page.getByRole('button',{name:'Home team · 1 ✓',exact:true}).waitFor();
     await page.getByRole('tab',{name:'Reels',exact:true}).click();
-    const video=page.locator('video');await video.waitFor();
-    await video.evaluate(async element=>{element.muted=true;await element.play();});
-    await page.waitForFunction(()=>{const v=document.querySelector('video');return v&&!v.paused&&v.currentTime>0;});
+    await page.getByText('HoopReels is not available yet.',{exact:true}).waitFor();
+    assert.equal(await page.locator('video').count(),0,'Unavailable Reels must never mount a storage video player');
+    assert.ok(!calls.some(c=>c.path.endsWith('/feed_posts')&&new URLSearchParams(c.query).has('video_url')),'No legacy Reel catalog requests');
     await page.screenshot({path:`/tmp/hoopcheck-native-ui/reels-${theme}.png`,fullPage:true});
-    assert.ok(calls.some(c=>c.path==='/api/hoopfeed/media'&&c.body.includes('protected/video.webm')));
-    await page.getByRole('button',{name:'Block this HoopCheck account'}).click();
-    await page.getByText('Creator added to your HoopCheck blocked accounts.',{exact:true}).waitFor();
-    assert.ok(blocked.has(id(5)),'Native block saves to shared account block table');
-    await page.getByText('No video posts are available in this page.',{exact:true}).waitFor();
+    await page.getByRole('button',{name:'Back to HoopFeed',exact:true}).click();
+    await page.getByText('Fixture community discussion',{exact:true}).waitFor();
+    await page.goto(`${base}/reels`);
+    await page.getByText('HoopReels is not available yet.',{exact:true}).waitFor();
+    assert.equal(await page.locator('video').count(),0,'Direct Reel route must fail closed');
+    assert.ok(!calls.some(c=>c.path.endsWith('/feed_posts')&&new URLSearchParams(c.query).has('video_url')),'Direct Reel route cannot fetch raw videos');
     await page.getByRole('tab',{name:'Alerts',exact:true}).click();await page.getByText('Fixture team review',{exact:true}).waitFor();
     await page.getByRole('button',{name:'Mark all as read',exact:true}).click();await page.getByRole('button',{name:'unread',exact:true}).click();await page.getByText('Nothing in this category.',{exact:true}).waitFor();
     await page.getByRole('tab',{name:'Account',exact:true}).click();await page.getByText('Active access verified by HoopCheck',{exact:true}).waitFor();
     await page.getByRole('tab',{name:'Search',exact:true}).click();await page.getByRole('heading',{name:'Search & Explore',exact:true}).waitFor();
     await page.getByRole('tab',{name:'Home',exact:true}).click();await page.getByText('Explore basketball',{exact:true}).waitFor();
     assert.deepEqual(errors,[]);await page.screenshot({path:`/tmp/hoopcheck-native-ui/feed-${theme}.png`,fullPage:true});
-    console.log(`PASS ${theme}: native feed moderation/draft/reply/check/save/poll/Reels playback/alerts/account/search/home`);
+    console.log(`PASS ${theme}: native feed moderation/draft/reply/check/save/poll/Reels provider hold/alerts/account/search/home`);
   }catch(error){console.log('Fixture failure URL:',page.url());console.log(await page.locator('body').innerText());throw error;}finally{await context.close();}
 }
 (async()=>{png=await require('sharp')({create:{width:640,height:360,channels:3,background:'#FF5A1F'}}).png().toBuffer();fs.mkdirSync('/tmp/hoopcheck-native-ui',{recursive:true});const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});try{for(const theme of ['light','dark'])await fixture(browser,theme);await fixture(browser,'light',false);console.log('PASS denied membership: protected feed queries never started');}finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});
