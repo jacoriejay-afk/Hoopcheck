@@ -15,7 +15,7 @@ function fixture(secondResult, failure = null) {
   const db = {
     auth: { getUser: async () => ({ data: { user: { id: 'fixture-player' } } }) },
     from(table) {
-      const records = { profiles: { account_type: 'player' }, subscriptions: { plan: 'premium', status: 'active' } };
+      const records = { profiles: { account_type: 'player' }, membership_entitlements: { plan: 'premium', status: 'active' } };
       return {
         select: () => ({ eq: () => table === 'admin_roles' ? { data: [] } : { maybeSingle: async () => ({ data: records[table] }) } }),
         insert: async (row) => { events.push(['insert', table, row.image_urls.length]); return { error: failure === 'insert' ? { message: 'fixture insert failed' } : null }; },

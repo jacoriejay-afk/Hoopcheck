@@ -1,0 +1,15 @@
+✔ media path is normalized and has no caller-supplied segments (1.188085ms)
+✔ media access is owner-only and bucket-scoped (0.194772ms)
+✔ all four features remain disabled (0.927974ms)
+✔ attendance never bypasses chat window or authorization (0.165599ms)
+✔ check-in preflight rejects bad coordinates, timing and venue mismatch (0.2002ms)
+✔ travel requires valid country code (0.235624ms)
+✔ highlight publishing requires branding, entitlement and moderation (0.197627ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 823.673335

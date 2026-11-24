@@ -1,0 +1,14 @@
+✔ anonymous and malformed auth cannot start database reads (108.329058ms)
+✔ invalid bearer is verified by Auth and cannot query membership (7.361932ms)
+✔ scoped reads use verified identity and never service credentials or metadata roles (8.275109ms)
+✔ canonical expiry and independently verified admin rules govern entitlements (32.386442ms)
+✔ database and role failures deny access without leaking errors (21.835781ms)
+✔ missing membership entitlement relation fails closed without leaking database details (9.624944ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 197.204605

@@ -417,3 +417,50 @@ html:is(.theme-light,.theme-dark) body main.hc-account-page .hc-layout-row + .hc
   .hc-feed-page :is(.hc-feed-action-pill,.hc-feed-editor-surface,.hc-feed-post-more__menu),
   .hc-account-page .hc-account-tools {transition:none!important}
 }
+
+
+/* Build 9 browser contrast regression repair — scoped to the affected
+   surfaces. Keep orange branding while pairing it with readable ink. */
+html:is(.theme-light,.theme-dark) body main.hc-feed-page .hc-feed-compose-fab {
+  color:#141414!important;
+  -webkit-text-fill-color:#141414!important;
+}
+html.theme-light body main.hc-live-hub-page .hc-live-directory-link {
+  color:#8c3600!important;
+  -webkit-text-fill-color:#8c3600!important;
+}
+/* Club hero titles, location and chips use white: ensure a truly dark
+   opaque backdrop even when global glass/card resets are active. */
+html:is(.theme-light,.theme-dark) body main .hc-team-look-hero {
+  background-color:#111827!important;
+  /* Preserve team-specific arena artwork / gradient; pair the white title with an opaque fallback. */
+}
+
+
+/* Native team hero text surface isolation: generic profile card styling must not
+   place opaque light backgrounds behind white club names/location. Keep pill
+   tint and original women’s arena background while retaining dark hero ink. */
+html:is(.theme-light,.theme-dark) body main .hc-team-look-hero :is(
+  #hc-team-profile-title,.hc-team-hero-location,.hc-team-hero-chip
+) {
+  background-color:transparent!important;
+}
+html:is(.theme-light,.theme-dark) body main .hc-team-look-hero .hc-team-hero-chip {
+  background-color:rgba(255,255,255,.13)!important;
+}
+html:is(.theme-light,.theme-dark) body main .hc-team-look-hero .hc-team-hero-kicker {
+  color:#ffdac3!important;
+  -webkit-text-fill-color:#ffdac3!important;
+  background-color:transparent!important;
+}
+
+/* BUILD9-LOGO-QUEUE-CONTRAST: imported logo-review pills were white-on-white
+   under Build 9 light-mode card unification. Give the compact action a real
+   opaque surface and guaranteed readable text without changing permissions. */
+html.theme-light body main.admin-team-logo-studio button.hc-admin-logo-queue-select,
+html.theme-dark body main.admin-team-logo-studio button.hc-admin-logo-queue-select {
+  background-color:#182334!important;
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  border-color:#64748b!important;
+}

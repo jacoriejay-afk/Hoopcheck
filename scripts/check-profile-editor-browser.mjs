@@ -31,6 +31,7 @@ try {
     if(req.method()==='PUT') user.user_metadata={...user.user_metadata,...req.postDataJSON().data};
     data=user;
    }
+   else if(url.pathname.endsWith('/rpc/get_own_profile')) data=profile;
    else if(url.pathname.endsWith('/profiles')){
     if(req.method()==='PATCH'){const patch=req.postDataJSON();patches.push(patch);profile={...profile,...patch};data={id:uid};}
     else data=profile;
@@ -43,9 +44,10 @@ try {
    else if(url.pathname.endsWith('/leagues')||url.pathname.endsWith('/womens_leagues'))data=[{id:'33333333-3333-4333-8333-333333333333',name:'QA League',country:'QA Country',basketball_type:gender}];
    await route.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify(data)});
   });
+  await page.route('**/api/membership', route => route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({owner:uid,subscription:{...subscription,cancel_at_period_end:false,billing_interval:'month',provider:'stripe'}})}));
   await page.goto(`${baseURL}/account`);
   await page.locator('#profile-editor').waitFor();
-  // The iOS compact account keeps secondary profile options behind an accessible disclosure.
+  // The compact Account UI stores styling controls within an accessible disclosure.
   const appearanceSummary=page.locator('.hc-account-tools > summary').filter({hasText:'Profile appearance and social links'});
   await appearanceSummary.click();
   await page.getByRole('radio',{name:'Violet'}).check();
@@ -56,8 +58,8 @@ try {
   assert.equal(user.user_metadata.hoopcheck_profile_cover,'violet');
   assert.equal(user.user_metadata.hoopcheck_profile_layout,'showcase');
   assert.equal(user.user_metadata.hoopcheck_social_links?.instagram,'https://instagram.com/qa_player');
-  assert.equal(await page.locator('.hc-account-minimal-header').count(),1,'Account uses the compact identity header');
-  assert.equal(await page.getByRole('radio',{name:'Violet'}).isChecked(),true,'Saved cover choice stays selected');
+  assert.equal(await page.locator('.hc-account-minimal-header').count(),1,'Account uses a compact identity header');
+  assert.equal(await page.getByRole('radio',{name:'Violet'}).isChecked(),true,'Saved cover is still selected');
   await page.locator('#position').selectOption('PG');
   await page.locator('#player-height').fill('193 cm');
   await page.locator('#current-team .hc-shared-picker-trigger').click();

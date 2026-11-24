@@ -1,0 +1,81 @@
+name: Unsigned iOS Native Verification
+on:
+  push:
+    branches:
+      - "integration/build9-backend-completion-20261121"
+  pull_request:
+    paths:
+      - "apps/mobile/**"
+      - ".github/workflows/ios-native-compile.yml"
+permissions:
+  contents: read
+# PR updates may cancel older attempts for the same PR; integration pushes must
+# keep each commit's native evidence rather than sharing the empty PR-number key.
+concurrency:
+  group: ios-native-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+jobs:
+  simulator-compile:
+    runs-on: macos-15
+    # Allow the cold real UI-test runner to compile before genuine light/dark XCTests.
+    # Both themes still fail closed under their own bounded watchdogs.
+    timeout-minutes: 75
+    defaults:
+      run:
+        working-directory: apps/mobile
+    env:
+      EXPO_NO_TELEMETRY: "1"
+      EXPO_PUBLIC_SUPABASE_URL: https://fixture.supabase.co
+      EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: fixture-publishable-key
+      EXPO_PUBLIC_HOOPCHECK_API_URL: https://api.test
+      SENTRY_DISABLE_AUTO_UPLOAD: "true"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+      - name: Inspect the installed Apple toolchain
+        run: xcodebuild -version
+      - name: Install mobile dependencies
+        run: npm ci --no-audit
+      - name: Verify macOS image binaries and Expo tooling consumers
+        run: node --test scripts/tooling-compatibility.test.mjs
+      - name: Compile the real StoreKit core and exercise product policies
+        run: swift test --package-path modules/hoopcheck-storekit
+      - name: Verify Passport XCTest watchdog fail-closed behavior
+        run: |
+          bash -n scripts/ios-passport-smoke/run.sh
+          python3 -m unittest discover -s scripts/ios-passport-smoke -p 'test_bounded_xctest.py' -v
+      - name: Generate the native simulator project locally
+        run: npx --no-install expo prebuild --platform ios --no-install
+      - name: Verify generated permissions
+        run: python3 scripts/verify-ios-permissions.py
+      - name: Install native pods
+        run: pod install --project-directory=ios
+      - name: Compile the simulator app without signing or EAS
+        run: |
+          if ! xcodebuild -workspace ios/HoopCheck.xcworkspace -scheme HoopCheck -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/hoopcheck-ios-derived CODE_SIGNING_ALLOWED=NO > /tmp/hoopcheck-ios-compile.log 2>&1; then
+            tail -n 160 /tmp/hoopcheck-ios-compile.log
+            exit 1
+          fi
+      - name: Run real Passport PDF and share-sheet simulator tests (no EAS)
+        run: bash scripts/ios-passport-smoke/run.sh
+      - name: Upload simulator runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: passport-ios-simulator-evidence
+          path: /tmp/hoopcheck-passport-simulator
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Upload compile diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-ios-compile-diagnostics
+          path: /tmp/hoopcheck-ios-compile.log
+          if-no-files-found: ignore

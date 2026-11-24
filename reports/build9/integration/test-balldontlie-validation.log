@@ -1,0 +1,14 @@
+✔ missing configuration or invalid authorization rejects before contacting the provider (53.442289ms)
+✔ an authorized call without a provider key fails closed without an outbound request (0.801016ms)
+✔ one bounded read-only request returns only aggregate statuses and bypasses caching (6.79167ms)
+✔ an empty game day succeeds without invented fixtures (3.615223ms)
+✔ malformed provider responses fail rather than reporting successful validation (10.548958ms)
+✔ provider errors, connection failures and timeouts never expose payloads or credentials (1.677774ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 85.67841

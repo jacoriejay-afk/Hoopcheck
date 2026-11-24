@@ -49,8 +49,24 @@ try {
       await page.locator(`html.theme-${theme}`).waitFor();
       const directoryNav = page.locator('.hc-shared-directory-tile-grid');
       const directoryLinks = directoryNav.getByRole('link');
+      // The server-rendered nav can briefly overlap its hydrated replacement.
+      // Assert the settled single-grid/single-active-link contract before sampling.
+      await page.waitForFunction(() => {
+        const grids = document.querySelectorAll('.hc-shared-directory-tile-grid');
+        if (grids.length !== 1) return false;
+        const links = grids[0].querySelectorAll('a');
+        const current = grids[0].querySelectorAll('a[aria-current="page"]');
+        return links.length === 4 && current.length === 1 && current[0].getAttribute('href') === '/coaches';
+      }, null, { timeout: 15000 });
       assert.equal(await directoryLinks.count(), 4, 'Guest directory switcher has four accessible routes');
-      assert.equal(await directoryNav.locator('[aria-current="page"]').getAttribute('href'), '/coaches');
+      assert.equal(await directoryNav.locator('[aria-current="page"]').first().getAttribute('href'), '/coaches');
+      // Route hydration can replace the directory grid after the locator resolves.
+      // Wait for a connected, styled element before sampling layout metrics.
+      await page.waitForFunction(() => {
+        const grid = document.querySelector('.hc-shared-directory-tile-grid');
+        return Boolean(grid?.isConnected && grid.parentElement?.isConnected &&
+          getComputedStyle(grid.parentElement).backgroundColor);
+      });
       const layout = await directoryNav.evaluate(grid => ({
         backdrop: getComputedStyle(grid.parentElement).backgroundColor,
         width: grid.clientWidth,

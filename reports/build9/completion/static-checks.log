@@ -1,0 +1,47 @@
+HARDCODED_SURFACE_AUDIT=PASS
+TOTAL_MATCHES=0
+PASS html.theme-light --hc-on-card on --hc-card-surface: 17.93:1
+PASS html.theme-dark --hc-on-card on --hc-card-surface: 16.71:1
+PASS html.theme-light --hc-foreground on --hc-card: 17.93:1
+PASS html.theme-dark --hc-foreground on --hc-card: 16.71:1
+PASS html.theme-light --hc-chip-foreground on --hc-chip-surface: 7.63:1
+PASS html.theme-dark --hc-chip-foreground on --hc-chip-surface: 12.50:1
+PASS html.theme-light --hc-live-chip-foreground on --hc-live-chip-surface: 7.17:1
+PASS html.theme-dark --hc-live-chip-foreground on --hc-live-chip-surface: 8.46:1
+PASS html.theme-light --hc-empty-foreground on --hc-empty-surface: 16.86:1
+PASS html.theme-dark --hc-empty-foreground on --hc-empty-surface: 16.06:1
+PASS html.theme-light --hc-button-primary-foreground on --hc-button-primary-surface: 6.06:1
+PASS html.theme-dark --hc-button-primary-foreground on --hc-button-primary-surface: 6.06:1
+PASS html.theme-light --hc-tab-fg on --hc-tab-bg: 14.87:1
+PASS html.theme-dark --hc-tab-fg on --hc-tab-bg: 18.46:1
+PASS html.theme-light --hc-nav-active-fg on --hc-nav-active-bg: 4.66:1
+PASS html.theme-dark --hc-nav-active-fg on --hc-nav-active-bg: 6.70:1
+PASS html.theme-light --hc-button-primary-fg on --hc-button-primary-bg: 6.06:1
+PASS html.theme-dark --hc-button-primary-fg on --hc-button-primary-bg: 6.06:1
+PASS html.theme-light --hc-button-outline-fg on --hc-button-outline-bg: 17.93:1
+PASS html.theme-dark --hc-button-outline-fg on --hc-button-outline-bg: 16.71:1
+PASS html.theme-light --hc-brand-tile-fg on --hc-brand-tile-bg: 6.00:1
+PASS html.theme-dark --hc-brand-tile-fg on --hc-brand-tile-bg: 6.00:1
+PASS html.theme-light --hc-accent-text on --hc-card-surface: 5.62:1
+PASS html.theme-dark --hc-accent-text on --hc-card-surface: 7.72:1
+PASS html.theme-light --hc-on-hero on --hc-hero-surface: 17.93:1
+PASS html.theme-dark --hc-on-hero on --hc-hero-surface: 16.71:1
+PASS html.theme-light --hc-hero-muted on --hc-hero-surface: 7.69:1
+PASS html.theme-dark --hc-hero-muted on --hc-hero-surface: 9.54:1
+THEME_PAIR_AUDIT=PASS
+Verified 38 theme tokens in both themes and 21 authored component pairs.
+Trial release and webhook safety checks passed (trial issuance disabled).
+HoopFeed vote, bookmark, and share security guards passed
+PASS HoopFeed composer uses existing 2,000-character server limit
+PASS HoopFeed text body renders outside media wrapper
+PASS HoopFeed API keeps 2,000-character limit and text-only moderation
+PASS Text-only posts have standard theme-aware typography
+PASS One fan group is created for existing and future teams
+PASS Fan-only membership and member-only post reads are enforced by RLS
+PASS Group media bucket is private and member-gated
+PASS Group API implements join, approvals, member and moderator controls
+PASS Group posts support permanent text/photo content and comments
+PASS Fan-only group route and moderator panel are present
+PASS Men’s and women’s team profiles and Team Hub share the Fan Group entry
+\nAll HF-4 / FAN-GRP-1 source checks passed.\nPlayer profile completion checks passed.
+Rounded corner token checks passed.

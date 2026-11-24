@@ -1,4 +1,5 @@
-import { DirectoryCrest, CountryChip } from "../components/DirectoryIdentity";
+import { EntityArtwork } from "./EntityArtwork";
+import { CountryChip } from "../components/DirectoryIdentity";
 import { Input, Button } from "../src/primitives";
 import { Sheet } from "../components/Sheet";
 import { useCachedRead, useNetwork } from "../src/native/network";
@@ -14,7 +15,7 @@ import { useRouter } from "expo-router";
 import { teamDirectoryQuery, cleanTeamSearch, TEAM_PAGE_SIZE } from "../src/native/teamDirectory";
 import { supabase } from "../src/lib/supabase";
 
-type Team = { id: string; name: string; country: string | null; city: string | null; league_name: string | null; website?: string | null };
+type Team = { logo_url?: string | null; logo_bg?: string | null; id: string; name: string; country: string | null; city: string | null; league_name: string | null; website?: string | null };
 const PAGE_SIZE = TEAM_PAGE_SIZE;
 
 export function TeamDirectoryScreen({ women = false }: { women?: boolean }) {
@@ -103,7 +104,7 @@ export function TeamDirectoryScreen({ women = false }: { women?: boolean }) {
           renderItem={({ item, index }) => (
             <Reveal key={`${appliedTerm}:${item.id}`} index={index}>
             <Pressable accessibilityHint="Hold to preview this team" onLongPress={() => setPreview(item)} onPress={() => router.push({ pathname: women ? "/womens/[id]" : "/teams/[id]", params: { id: item.id } })} style={styles.card}>
-              <DirectoryCrest name={item.name} kind={women ? "women" : "teams"} />
+              <EntityArtwork name={item.name} kind={women ? "women" : "teams"} size={48} logoUrl={item.logo_url} logoBg={item.logo_bg} />
               <View style={styles.cardBody}>
                 <Text style={styles.teamName}>{item.name}</Text>
                 <CountryChip country={item.country} />
@@ -142,8 +143,8 @@ const createStyles = (theme: EntryTheme) => StyleSheet.create({
   searchButton: { backgroundColor: theme.surface, borderRadius: 10, alignItems: "center", justifyContent: "center", paddingHorizontal: 15 },
   searchButtonText: { color: theme.foreground, fontWeight: "900" },
   count: { color: theme.muted, fontSize: 12, marginTop: 12 },
-  list: { padding: 16, paddingBottom: 30, gap: 10 },
-  card: { flexDirection: "row", alignItems: "center", backgroundColor: theme.surface, borderRadius: theme.radius.card, padding: 14, borderWidth: 1, borderColor: theme.border, gap: 12 },
+  list: { padding: 10, paddingBottom: 100, gap: 2 },
+  card: { flexDirection: "row", alignItems: "center", backgroundColor: "transparent", borderRadius: 0, padding: 9, borderBottomWidth: 1, borderColor: theme.border, gap: 10 },
   logo: { width: 44, height: 44, borderRadius: 12, backgroundColor: theme.surface, alignItems: "center", justifyContent: "center" },
   logoText: { color: theme.foreground, fontSize: 19, fontWeight: "900" },
   cardBody: { flex: 1 },

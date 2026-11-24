@@ -1,0 +1,24 @@
+✔ themed welcome buttons navigate explicitly to sign-in and sign-up (88.974678ms)
+✔ password sign-in normalizes email and retains profile destination selection (61.150292ms)
+✔ Google sign-in keeps the native PKCE callback and opens only a returned OAuth URL (9.349516ms)
+✔ invalid build configuration blocks both sign-in methods before any auth request (13.751203ms)
+✔ layout does not interrupt callback exchange, but retains protected-route redirects (117.529011ms)
+✔ callback exchanges its code and selects the correct authenticated destination (18.482286ms)
+✔ denied, missing-code and misconfigured callbacks never exchange or redirect (15.000762ms)
+✔ OS callback URL reaches native PKCE exchange rather than browser handoff (16.057982ms)
+✔ OAuth callback honors the pending destination after a verified fresh sign-in (4.225602ms)
+✔ a provider error without description never exchanges a supplied code (4.021746ms)
+✔ OAuth exchange screen does not trigger app lock before fresh sign-in is recorded (20.182913ms)
+✔ protected native links preserve bounded post/search destinations without retaining auth secrets (50.546882ms)
+✔ protected search retains a bounded query across sign-in without extra URL fields (15.835147ms)
+✔ root navigator mounts before any redirect even if the display font never loads (8.413899ms)
+✔ accepts a Supabase project root with or without a trailing slash (1.036999ms)
+✔ rejects missing configuration and URLs that would produce invalid auth endpoints (0.21261ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 16
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2992.497312

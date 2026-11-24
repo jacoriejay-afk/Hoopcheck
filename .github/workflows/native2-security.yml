@@ -10,12 +10,8 @@ on:
   push:
     branches:
       - feat/native-2-foundation
-    paths:
-      - 'apps/mobile/src/lib/native2/**'
-      - 'apps/mobile/package.json'
-      - 'lib/native2/**'
-      - 'app/api/native2/**'
-      - '.github/workflows/native2-security.yml'
+      - "integration/build9-backend-completion-20261121"
+
 permissions:
   contents: read
 jobs:
@@ -24,6 +20,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: '22'

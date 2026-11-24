@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { makeThemeColorMath } from "./lib/theme-color-math.mjs";
 import { mkdir } from "node:fs/promises";
 import { chromium } from "playwright";
 
@@ -105,6 +106,9 @@ const subscription = {
   current_period_end: null,
   cancel_at_period_end: false,
 };
+// The integrated app does not authorize HoopFeed from raw subscriptions. Its
+// owner-scoped resolver requires a signed bearer request and provider metadata.
+const effectiveSubscription = { ...subscription, billing_interval: "month", provider: "stripe" };
 
 let serverReady = false;
 for (let attempt = 0; attempt < 60; attempt += 1) {
@@ -271,6 +275,7 @@ try {
         isMobile: true,
         hasTouch: true,
       });
+      await context.addInitScript({ content: `globalThis.__hoopcheckThemeColorMath = (${makeThemeColorMath.toString()})();` });
       const page = await context.newPage();
       const encodedSession = "base64-" + btoa(unescape(encodeURIComponent(JSON.stringify(session))))
         .replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
@@ -284,6 +289,17 @@ try {
         localStorage.setItem("sb-ci-auth-token", JSON.stringify(authSession));
       }, { themePreference: theme, authSession: session, language: testLanguage });
 
+      let signedMembershipRequests = 0;
+      await page.route("**/api/membership", async (route) => {
+        const request = route.request();
+        const authorized = request.method() === "GET" && request.headers().authorization === `Bearer ${session.access_token}`;
+        if (!authorized) {
+          await route.fulfill({ status: 401, contentType: "application/json", headers: { "cache-control": "no-store" }, body: JSON.stringify({ error: "Unauthorized" }) });
+          return;
+        }
+        signedMembershipRequests++;
+        await route.fulfill({ status: 200, contentType: "application/json", headers: { "cache-control": "no-store" }, body: JSON.stringify({ owner: userId, subscription: effectiveSubscription }) });
+      });
       await page.route("https://ci.invalid/**", async (route) => {
         const request = route.request();
         const url = new URL(request.url());
@@ -331,7 +347,7 @@ try {
       console.log("THEME_BROWSER_PAGE", JSON.stringify({ routeName, theme, url: page.url(), title: await page.title(), body: (await page.locator("body").innerText().catch(() => "")).slice(0, 240) }));
       const wrapperSelector = routeName === "dashboard" ? "main.hc-home3" : routeName === "feed" ? "main.hc-feed-page" : "main.admin-directory-shell";
       try {
-        await page.locator(wrapperSelector).waitFor({ state: "visible", timeout: 30000 });
+        await page.locator(wrapperSelector).filter({ visible: true }).first().waitFor({ state: "visible", timeout: 30000 });
       } catch (error) {
         const diagnostics = await page.evaluate((selector) => {
           const node = document.querySelector(selector);
@@ -344,6 +360,7 @@ try {
       }
       if (routeName === "feed") {
         await page.locator(".hc-feed-slim-composer").waitFor({ state: "visible", timeout: 30000 });
+        assert.ok(signedMembershipRequests > 0, "HoopFeed paid surface must be unlocked by owner-bound provider-aware membership API proof");
         await page.locator(".hf5-type-chip").first().waitFor({ state: "visible", timeout: 30000 });
       }
 
@@ -353,7 +370,7 @@ try {
       // Give client-side auth redirects a brief chance to complete after the
       // dashboard's initial loading shell becomes visible.
       await page.waitForTimeout(750);
-      await page.locator(wrapperSelector).waitFor({ state: "visible", timeout: 30000 });
+      await page.locator(wrapperSelector).filter({ visible: true }).first().waitFor({ state: "visible", timeout: 30000 });
       if (routeName === "dashboard") {
         await page.locator(".hc-home3-greeting").waitFor({ state: "visible", timeout: 30000 });
         await page.locator(".hc-home3-search").first().waitFor({ state: "visible", timeout: 30000 });
@@ -550,6 +567,7 @@ try {
       { name: "hoopcheck-theme", value: theme, url: baseURL },
       { name: "sb-ci-auth-token", value: encodedSession, url: baseURL },
     ]);
+    await context.addInitScript({ content: `globalThis.__hoopcheckThemeColorMath = (${makeThemeColorMath.toString()})();` });
     const page = await context.newPage();
     let activeRoutePath = "";
     let moderatorViewingGroup = false;
@@ -584,6 +602,20 @@ try {
       document.documentElement.style.setProperty("--hc-safe-area-bottom", "34px");
       localStorage.setItem("sb-ci-auth-token", JSON.stringify(authSession));
     }, { themePreference: theme, authSession: session, language: testLanguage });
+    // The route sweep uses a separate browser context from the screenshot tests.
+    // Match the production owner-bound provider-aware membership API contract.
+    // Deny missing/foreign bearer tokens instead of unlocking anonymous clients.
+    let signedSweepMembershipRequests = 0;
+    await page.route("**/api/membership", async (route) => {
+      const request = route.request();
+      const authorized = request.method() === "GET" && request.headers().authorization === `Bearer ${session.access_token}`;
+      if (!authorized) {
+        await route.fulfill({ status: 401, contentType: "application/json", headers: { "cache-control": "no-store" }, body: JSON.stringify({ error: "Unauthorized" }) });
+        return;
+      }
+      signedSweepMembershipRequests++;
+      await route.fulfill({ status: 200, contentType: "application/json", headers: { "cache-control": "no-store" }, body: JSON.stringify({ owner: userId, subscription: effectiveSubscription }) });
+    });
     await page.route("https://ci.invalid/**", async (route) => {
       const request = route.request();
       const url = new URL(request.url());
@@ -731,7 +763,15 @@ try {
         const routeRoot = document.body;
         const color = (element) => element ? getComputedStyle(element).backgroundColor : null;
         const scaffoldTerms = ["KICKER", "TITLE", "Subtitle", "TEAM FIRST", "Fan Only Note", "Composer Placeholder", "EMPTY TITLE", "EMPTY KICKER", "Empty Body", "Lorem", "TODO", "Placeholder"];
-        const renderedCopy = routeRoot?.innerText || "";
+        const walker = document.createTreeWalker(routeRoot, NodeFilter.SHOW_TEXT);
+        const copy = [];
+        while (walker.nextNode()) {
+          const node = walker.currentNode;
+          if (node.parentElement?.checkVisibility()) copy.push(node.textContent || "");
+        }
+        // Inspect authored visible text. CSS uppercase must not turn Spanish
+        // "Todo" (All) into a false developer TODO placeholder.
+        const renderedCopy = copy.join("\n");
         const renderedAttributes = Array.from(routeRoot?.querySelectorAll("*") || []).flatMap((element) =>
           ["placeholder", "aria-label", "title", "alt"].map((name) => element.getAttribute(name) || "")
         ).join("\\n");
@@ -785,24 +825,10 @@ try {
               if (/(logo|avatar|photo|portrait|image)/i.test(cls) || element.closest("[aria-hidden='true']")) return false;
               const style = getComputedStyle(element);
               if (style.display === "none" || style.visibility === "hidden" || Number(style.opacity) < 0.6) return false;
-              const rgb = (value) => {
-                const m = value.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([\d.]+))?\s*\)/);
-                return m ? [Number(m[1]), Number(m[2]), Number(m[3]), m[4] == null ? 1 : Number(m[4])] : null;
-              };
-              const luminance = (c) => c.slice(0, 3).map(v => { const x=v/255; return x<=0.04045?x/12.92:((x+0.055)/1.055)**2.4; }).reduce((a,v,i)=>a+v*[0.2126,0.7152,0.0722][i],0);
-              const foreground = rgb(style.color);
+              const colors = globalThis.__hoopcheckThemeColorMath;
+              const foreground = colors.parse(style.color);
               if (!foreground) return false;
-              let node = element;
-              let background = null;
-              while (node && node !== document.documentElement) {
-                const candidate = rgb(getComputedStyle(node).backgroundColor);
-                if (candidate && candidate[3] >= 0.95) { background = candidate; break; }
-                node = node.parentElement;
-              }
-              if (!background) background = rgb(getComputedStyle(document.body).backgroundColor);
-              if (!background) return false;
-              const l1=luminance(foreground), l2=luminance(background);
-              const ratio=(Math.max(l1,l2)+0.05)/(Math.min(l1,l2)+0.05);
+              const ratio = colors.contrast(foreground, colors.background(element));
               const fontSize=parseFloat(style.fontSize)||14;
               const large=fontSize>=24 || (fontSize>=18 && Number(style.fontWeight)>=700);
               return ratio < (large ? 3 : 4.5);
@@ -814,6 +840,7 @@ try {
               text: (element.textContent || "").trim().slice(0, 60),
               color: getComputedStyle(element).color,
               background: (() => { let n=element; while(n && n!==document.documentElement){const c=getComputedStyle(n).backgroundColor;if(c!=="rgba(0, 0, 0, 0)")return c;n=n.parentElement;} return getComputedStyle(document.body).backgroundColor; })(),
+              ancestry: (() => { const chain=[]; let n=element; for(let i=0;n && i<7;i++,n=n.parentElement){const st=getComputedStyle(n);chain.push({tag:n.tagName.toLowerCase(),className:typeof n.className==="string"?n.className:"",background:st.backgroundColor,backgroundImage:st.backgroundImage.slice(0,130),color:st.color});}return chain; })(),
             })),
           navigationError,
         };
@@ -824,7 +851,7 @@ try {
         await page.getByRole("tab", { name: "Fan Group" }).click();
         await page.locator("main.hc-womens-profile-page .hc-team-fan-group-entry").waitFor({ state: "visible", timeout: 15000 });
         const fanGroupEntry = (await page.locator("main.hc-womens-profile-page .hc-team-fan-group-entry").innerText()).trim();
-        if (!/fan group/i.test(fanGroupEntry) || !/joined/i.test(fanGroupEntry)) errors.push("women team profile: Fan Group entry is missing or not joined: " + fanGroupEntry);
+        if (!/fan group/i.test(fanGroupEntry) || !/(?:joined|unido)/i.test(fanGroupEntry)) errors.push("women team profile: Fan Group entry is missing or not joined: " + fanGroupEntry);
       }
       if (requestedPath === "/fan-feed") {
         // HF-5: Fan Feed now redirects into the shared HoopFeed community.
@@ -876,6 +903,7 @@ try {
         // LIVECHAT-2: assert the new conversation-first layout rather than the removed hero.
         const hub = page.locator("main.hc-live-hub-page");
         await hub.getByRole("heading", { name: "Happening Now" }).waitFor({ state: "visible" });
+        assert.ok(signedSweepMembershipRequests > 0, "Live Games must require signed, provider-aware membership verification");
         assert.equal(await hub.locator(".hc-live-hub-hero").count(), 0, "old hero must be removed");
         for (const label of ["Live Now", "Upcoming", "My Teams"]) {
           assert.equal(await hub.getByRole("button", { name: label, exact: true }).count(), 1, "missing segment: " + label);
@@ -924,7 +952,6 @@ try {
           await page.getByRole("tab", { name: "Reviews", exact: true }).click();
           await page.locator("#team-reviews-panel").waitFor({ state: "visible" });
         }
-        const visibleText = await page.locator("body").innerText();
         const expectedText = testLanguage === "es"
           ? requestedPath === "/dashboard" ? ["ACCIONES RÁPIDAS", "CONSULTAR UN EQUIPO"]
             : requestedPath === "/search" ? ["Explorar directorios"]
@@ -932,6 +959,8 @@ try {
           : requestedPath === "/dashboard" ? ["QUICK ACTIONS", "Check a Team"]
             : requestedPath === "/search" ? ["Browse directories"]
             : ["ROSTER BOARD", "No approved reviews yet"];
+        await page.waitForFunction(expected => expected.every(text => document.body.innerText.toLocaleUpperCase().includes(text.toLocaleUpperCase())), expectedText, { timeout: 15000 });
+        const visibleText = await page.locator("body").innerText();
         const missingText = expectedText.filter((expected) => !visibleText.toLocaleUpperCase().includes(expected.toLocaleUpperCase()));
         if (missingText.length) errors.push("language assertions missing: " + missingText.join(", "));
       }
@@ -1044,6 +1073,8 @@ try {
   }
   console.log("THEME_COMPONENT_INVENTORY=" + JSON.stringify(themeComponentInventory, null, 2));
   console.log("THEME_ROUTE_SWEEP=" + JSON.stringify(routeSweepResults, null, 2));
+  const failures = routeSweepResults.filter(result => result.status === "FAIL");
+  assert.equal(failures.length, 0, "Theme route failures: " + failures.map(result => `${result.theme} ${result.requestedPath}: ${result.reason}`).join("; "));
 
 } finally {
   await browser.close();

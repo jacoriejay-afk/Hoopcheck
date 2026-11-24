@@ -1,10 +1,13 @@
 "use client";
 
+import { readOwnProfile } from "../../lib/read-own-profile";
+import { getEffectiveMembership } from "../../lib/billing/client-membership";
+
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getCachedSession, supabase } from "../../lib/supabase";
-import { readOwnProfile } from "../../lib/read-own-profile";
 import HoopLoading from "../../components/HoopLoading";
 import { useLanguage } from "../../components/LanguageProvider";
 import { getHoopCheckEntitlements } from "../../lib/membership-tier";
@@ -61,7 +64,6 @@ export default function DashboardPage() {
   const [canViewTrust,setCanViewTrust] = useState(false);
   const [hasFeedAccess,setHasFeedAccess] = useState(false);
   const [canWriteReviews,setCanWriteReviews] = useState(false);
-  const [canUseLiveGames,setCanUseLiveGames] = useState(false);
   const [membershipTier,setMembershipTier] = useState<"free"|"pro"|"premium">("free");
   const [loading,setLoading] = useState(true);
   const [loadError,setLoadError] = useState(false);
@@ -72,7 +74,7 @@ export default function DashboardPage() {
   useEffect(() => {
     let mounted = true;
     async function loadHome() {
-      if(mounted){setLoading(true);setLoadError(false);setAuthErrorDetail("");}
+      if(mounted){setLoading(true);setLoadError(false);setAuthErrorDetail("");setAuthenticatedUserId("");}
       // Capture auth events as well as session reads. Some browsers can stall a
       // getSession call during token refresh even after SIGNED_IN has fired.
       let resolveAuthEvent: (session: any) => void = () => {};
@@ -111,7 +113,7 @@ export default function DashboardPage() {
 
       const [profileResult, subscriptionResult, followsResult] = await Promise.allSettled([
         withTimeout(readOwnProfile<Profile>(user.id, "id,display_name,first_name,last_name,bio,position,current_team,current_country,height,free_agent,profile_visibility,nationality,hometown,avatar_url,interests,favorite_leagues,player_verified,account_type"), 8000),
-        withTimeout(supabase.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id",user.id).maybeSingle(), 8000),
+        withTimeout(getEffectiveMembership(user.id), 8000),
         withTimeout(supabase.from("follow_relationships").select("target_id").eq("follower_id",user.id).eq("target_type","team").order("created_at",{ascending:false}).limit(100), 8000)
       ] as const);
       if (!mounted) return;
@@ -126,7 +128,6 @@ export default function DashboardPage() {
       const entitlements = getHoopCheckEntitlements({ accountType: p?.account_type, subscription, playerVerified: p?.player_verified === true });
       setMembershipTier(entitlements.tier);
       setCanWriteReviews(entitlements.canWriteReviews);
-      setCanUseLiveGames(entitlements.canUseLiveGameHub);
       // A dismissed reminder stays hidden for 30 days on this device.
       // Do not show review prompts to fans or players without write access.
       if (entitlements.canWriteReviews) {

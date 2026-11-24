@@ -1,9 +1,9 @@
+import { EntitySchedule } from "../../components/EntitySchedule";
 import { useEffect, useRef, useState } from "react";
-import { Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Pressable, RefreshControl, ScrollView, Text } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { DirectoryCrest, CountryChip } from "../../components/DirectoryIdentity";
-import { ShareSheet } from "../../components/ShareSheet";
+import { EntityHero } from "../../components/EntityHero";
 import { OfflineBanner } from "../../components/OfflineBanner";
 import { Skeleton } from "../../components/Motion";
 import { GlassCard } from "../../src/primitives";
@@ -12,10 +12,11 @@ import { useCachedRead, useNetwork } from "../../src/native/network";
 import { readReviewAccess, type ReviewAccess } from "../../src/native/reviewAccess";
 import { useEntryTheme } from "../../src/theme";
 
-type Team = { id: string; name: string; country: string | null; city: string | null; league_id: string | null; league_name: string | null };
+type Team = { logo_url?: string | null; logo_bg?: string | null; id: string; name: string; country: string | null; city: string | null; league_id: string | null; league_name: string | null };
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
 export default function WomensTeamScreen() {
   const theme = useEntryTheme();
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string | string[] }>();
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
@@ -40,7 +41,7 @@ export default function WomensTeamScreen() {
     const load = async () => {
       try {
         if (!id) { if (active) setTeam(null); return; }
-        const result = await read(`womens-teams:profile:${id}`, () => supabase.from("womens_teams").select("id,name,country,city,league_id,league_name").eq("id", id).eq("active", true).maybeSingle());
+        const result = await read(`womens-teams:profile:${id}`, () => supabase.from("womens_teams").select("id,name,country,city,league_id,league_name,logo_url,logo_bg").eq("id", id).eq("active", true).maybeSingle());
         if (active) setTeam(result.error ? null : result.data as Team | null);
       } catch { if (active) setTeam(null); }
       finally { if (active) setLoading(false); }
@@ -73,19 +74,12 @@ export default function WomensTeamScreen() {
   const link = { color: theme.accent };
   const touch = { minHeight: 48, justifyContent: "center" as const };
   return <SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: theme.background }}>
-    <OfflineBanner savedAt={savedAt} />
-    <ScrollView contentContainerStyle={{ padding: 20, gap: 20 }} refreshControl={<RefreshControl refreshing={loading && refresh > 0} onRefresh={() => setRefresh(value => value + 1)} />}>
-      <Pressable accessibilityRole="link" onPress={() => router.push("/womens")} style={touch}><Text style={link}>‹ Women’s teams</Text></Pressable>
+    <ScrollView contentContainerStyle={{ padding: 12, paddingTop: insets.top + 62, paddingBottom: 100, gap: 10 }} refreshControl={<RefreshControl refreshing={loading && refresh > 0} onRefresh={() => setRefresh(value => value + 1)} />}>
+      <OfflineBanner savedAt={savedAt} />
       {loading ? <Skeleton profile /> : !current ? <Text accessibilityRole="alert" style={text}>Team unavailable. Pull to retry.</Text> : <>
-        <View style={{ backgroundColor: theme.entityHero.background, padding: 24, borderRadius: theme.radius.hero, gap: 12 }}>
-          <DirectoryCrest name={current.name} kind="women" size={88} />
-          <CountryChip country={current.country} />
-          <Text style={{ color: theme.entityHero.muted }}>WOMEN’S TEAM PROFILE</Text>
-          <Text accessibilityRole="header" style={{ color: theme.entityHero.ink, fontSize: 30, fontWeight: "900" }}>{current.name}</Text>
-          <ShareSheet onHero title={current.name} path={`/womens/${current.id}`} />
-          <Text style={{ color: theme.entityHero.muted }}>{[current.city, current.country].filter(Boolean).join(", ") || "Location not listed"}</Text>
-        </View>
-        <GlassCard><Text style={{ color: theme.muted }}>LEAGUE</Text><Text style={text}>{current.league_name || "Not listed"}</Text>
+        <EntityHero logoUrl={current.logo_url} logoBg={current.logo_bg} name={current.name} country={current.country} kind="women" label="WOMEN’S TEAM PROFILE" path={`/womens/${current.id}`} location={[current.city, current.country].filter(Boolean).join(", ") || "Location not listed"} />
+          <EntitySchedule scope={{ kind: "team", id: current.id }} side="womens" refresh={refresh} />
+        <GlassCard><Text style={{ color: theme.muted, fontSize: 11, fontWeight: "800", letterSpacing: 1 }}>LEAGUE</Text><Text style={{ ...text, fontSize: 16, fontWeight: "700", marginTop: 7 }}>{current.league_name || "Not listed"}</Text>
           {current.league_id ? <Pressable accessibilityRole="link" onPress={() => router.push({ pathname: "/womens/leagues/[id]", params: { id: current.league_id! } })} style={touch}><Text style={link}>Open league profile</Text></Pressable> : null}
         </GlassCard>
         <Text accessibilityRole="header" style={{ ...text, fontSize: 22, fontWeight: "800" }}>Latest reviews</Text>

@@ -69,12 +69,7 @@ export function getActiveMembershipTier(
   return "free";
 }
 
-/**
- * A new checkout must only move a user to a strictly higher active tier.
- * Existing paid access (including non-Stripe grants) must not be repurchased
- * or downgraded through a direct checkout API call. Existing Stripe-backed
- * subscriptions are separately handled by the billing portal guard.
- */
+/** Reject same-tier and downgrade checkouts, including active non-Stripe grants. */
 export function canStartNewMembershipCheckout(
   currentTier: MembershipTier,
   requestedTier: "pro" | "premium",

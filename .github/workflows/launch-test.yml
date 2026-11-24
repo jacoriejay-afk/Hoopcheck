@@ -1,9 +1,9 @@
 name: HoopCheck Launch Test (Final Gate)
 on:
   push:
-    branches: [main]
+    branches: [main, "integration/build9-backend-completion-20261121"]
   pull_request:
-    branches: [main]
+    branches: [main, "fix/build9-iphone-repairs", "integration/build9-backend-completion-20261121"]
   workflow_dispatch:
 jobs:
   launch-test:
@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Setup Node
         uses: actions/setup-node@v4
         with:

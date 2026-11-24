@@ -1,6 +1,7 @@
 import { recordFreshSignIn } from "../src/native/lockPolicy";
 import { useDevicePreferences } from "../src/native/preferences";
 import { Input, Button } from "../src/primitives";
+import { ArenaBrand } from "../components/ArenaBrand";
 import { useEntryTheme, type EntryTheme } from "../src/theme";
 import { useEffect, useRef, useState } from "react";
 import { Alert, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -97,7 +98,7 @@ export default function SignUpScreen() {
       });
       if (error) throw error;
       if (data.session) {
-        recordFreshSignIn();
+        recordFreshSignIn(data.session.user.id);
         router.replace("/dashboard");
       } else {
         Alert.alert("Check your email", "HoopCheck may require email verification before you can sign in.", [
@@ -113,6 +114,7 @@ export default function SignUpScreen() {
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+          <ArenaBrand size={66} compact dark={theme.dark}/>
           <Text style={[styles.title, { fontFamily: "HoopCheckDisplay", fontWeight: "400" }]}>Create your account</Text>
           <Text style={styles.subtitle}>Join the basketball community. You must be 18 or older.</Text>
 

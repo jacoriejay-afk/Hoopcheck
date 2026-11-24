@@ -29,7 +29,7 @@ async function fixture(browser,theme,allowed=true){
     if(method==='OPTIONS')return json({});
     if(url.hostname==='api.test'){
       assert.ok(request.headers().authorization?.startsWith('Bearer '),'API must receive bearer');
-      if(url.pathname==='/api/mobile/bootstrap')return json({user:{id:uid,displayName:'Fixture Member',accountType:'player'},entitlements:{tier:allowed?'pro':'free',hasPaidMembership:allowed,canReadHoopFeed:allowed,canWriteHoopFeed:allowed,canUseLiveGameHub:allowed,canUseFanGroups:allowed}});
+      if(url.pathname==='/api/mobile/bootstrap')return json({user:{id:uid,displayName:'Fixture Member',accountType:'player'},entitlements:{tier:allowed?'pro':'free',hasPaidMembership:allowed,canReadHoopFeed:allowed,canWriteHoopFeed:allowed,canUseLiveGameHub:allowed,canUseLiveGameChat:allowed,canSwitchBasketballSide:allowed,canUseFanGroups:allowed}});
       if(url.pathname==='/api/hoopfeed/media'&&body.includes('photo.png')&&!mediaFailed){mediaFailed=true;return json({error:'Synthetic media failure'},503);}
       if(url.pathname==='/api/hoopfeed/media')return json({url:`https://fixture.supabase.co/storage/v1/object/sign/feed/${body.includes('video.webm')?'video.webm':'photo.png'}?token=synthetic`});
       if(url.pathname==='/api/hoopfeed/moderate'){
@@ -55,11 +55,23 @@ async function fixture(browser,theme,allowed=true){
       if(table==='feed_post_archives')return json([]);
       if(table==='user_blocks'){
         assert.ok(allowed,'Denied viewer cannot access account blocks');
-        if(method==='POST'){const record=JSON.parse(body);assert.equal(record.blocker_id,uid);assert.equal(record.blocked_id,id(5));blocked.add(record.blocked_id);return json({},201);}
+        if(method==='POST'){assert.ok(!String(request.headers().prefer||'').includes('resolution=merge-duplicates'),'Reel blocking must use INSERT, not UPDATE-requiring upsert');const record=JSON.parse(body);assert.equal(record.blocker_id,uid);assert.equal(record.blocked_id,id(5));blocked.add(record.blocked_id);return json({},201);}
         assert.equal(url.searchParams.get('blocker_id'),`eq.${uid}`,'Only owner block list can be read');
         return json([...blocked].map(blocked_id=>({blocked_id})));
       }
       if(table==='feed_post_bookmarks')return json(saved?[{post_id:id(1)}]:[]);
+      if(table==='fan_live_games'){
+        // Optional HomeCourt live score rail: no scheduled games in the
+        // synthetic fixture, without changing LIVE/final authority.
+        assert.equal(method,'GET');
+        return json([]);
+      }
+      if(table==='get_public_follow_list'){
+        // Read-only public follow rail is optional. No synthetic accounts are
+        // following in this fixture, and no private relation rows are exposed.
+        assert.equal(method,'POST');
+        return json([]);
+      }
       if(table==='get_hoopfeed_check_totals')return json(JSON.parse(body).post_ids.map(post_id=>({post_id,checks_count:checked?1:0,checked_by_me:checked})));
       if(table==='feed_post_checks'){checked=method==='POST';return route.fulfill({status:204});}
       if(table==='get_hoopfeed_poll_totals')return json([0,1].map(option_index=>({option_index,votes_count:vote===option_index?1:0,voted_by_me:vote===option_index})));
@@ -98,28 +110,29 @@ async function fixture(browser,theme,allowed=true){
     await page.getByText('Original fixture comment',{exact:true}).waitFor();await page.getByRole('button',{name:'Reply to Fixture Member',exact:true}).first().click();
     await page.getByRole('textbox',{name:'Write a comment'}).fill('Fixture reply');await page.getByRole('button',{name:'Comment',exact:true}).click();
     await page.getByText('Fixture reply',{exact:true}).waitFor();
-    await page.getByRole('button',{name:'Check · 0',exact:true}).first().click();await page.getByRole('button',{name:'Checked · 1',exact:true}).first().waitFor();
+    await page.getByRole('button',{name:'Check post, 0 Checks',exact:true}).first().click();await page.getByRole('button',{name:'Remove Check, 1 Checks',exact:true}).first().waitFor();
     await page.getByRole('button',{name:'Save',exact:true}).first().click();await page.getByRole('button',{name:'Saved',exact:true}).first().waitFor();
     await page.getByRole('button',{name:'Share',exact:true}).first().click();
     assert.ok((await page.evaluate(()=>window.__sharedFeed))?.text?.includes('hoopcheck.online/feed#post-'),'Share uses canonical post link');
     const option=page.getByRole('button',{name:'Home team · 0',exact:true});await option.scrollIntoViewIfNeeded();await option.click();await page.getByRole('button',{name:'Home team · 1 ✓',exact:true}).waitFor();
     await page.getByRole('tab',{name:'Reels',exact:true}).click();
-    const video=page.locator('video');await video.waitFor();
-    await video.evaluate(async element=>{element.muted=true;await element.play();});
-    await page.waitForFunction(()=>{const v=document.querySelector('video');return v&&!v.paused&&v.currentTime>0;});
+    await page.getByText('HoopReels is not available yet.',{exact:true}).waitFor();
+    assert.equal(await page.locator('video').count(),0,'Unavailable Reels must never mount a storage video player');
+    assert.ok(!calls.some(c=>c.path.endsWith('/feed_posts')&&new URLSearchParams(c.query).has('video_url')),'No legacy Reel catalog requests');
     await page.screenshot({path:`/tmp/hoopcheck-native-ui/reels-${theme}.png`,fullPage:true});
-    assert.ok(calls.some(c=>c.path==='/api/hoopfeed/media'&&c.body.includes('protected/video.webm')));
-    await page.getByRole('button',{name:'Block this HoopCheck account'}).click();
-    await page.getByText('Creator added to your HoopCheck blocked accounts.',{exact:true}).waitFor();
-    assert.ok(blocked.has(id(5)),'Native block saves to shared account block table');
-    await page.getByText('No video posts are available in this page.',{exact:true}).waitFor();
+    await page.getByRole('button',{name:'Back to HoopFeed',exact:true}).click();
+    await page.getByText('Fixture community discussion',{exact:true}).waitFor();
+    await page.goto(`${base}/reels`);
+    await page.getByText('HoopReels is not available yet.',{exact:true}).waitFor();
+    assert.equal(await page.locator('video').count(),0,'Direct Reel route must fail closed');
+    assert.ok(!calls.some(c=>c.path.endsWith('/feed_posts')&&new URLSearchParams(c.query).has('video_url')),'Direct Reel route cannot fetch raw videos');
     await page.getByRole('tab',{name:'Alerts',exact:true}).click();await page.getByText('Fixture team review',{exact:true}).waitFor();
     await page.getByRole('button',{name:'Mark all as read',exact:true}).click();await page.getByRole('button',{name:'unread',exact:true}).click();await page.getByText('Nothing in this category.',{exact:true}).waitFor();
     await page.getByRole('tab',{name:'Account',exact:true}).click();await page.getByText('Active access verified by HoopCheck',{exact:true}).waitFor();
-    await page.getByRole('tab',{name:'Search',exact:true}).click();await page.getByText('Search basketball',{exact:true}).waitFor();
+    await page.getByRole('tab',{name:'Search',exact:true}).click();await page.getByRole('heading',{name:'Search & Explore',exact:true}).waitFor();
     await page.getByRole('tab',{name:'Home',exact:true}).click();await page.getByText('Explore basketball',{exact:true}).waitFor();
     assert.deepEqual(errors,[]);await page.screenshot({path:`/tmp/hoopcheck-native-ui/feed-${theme}.png`,fullPage:true});
-    console.log(`PASS ${theme}: native feed moderation/draft/reply/check/save/poll/Reels playback/alerts/account/search/home`);
+    console.log(`PASS ${theme}: native feed moderation/draft/reply/check/save/poll/Reels provider hold/alerts/account/search/home`);
   }catch(error){console.log('Fixture failure URL:',page.url());console.log(await page.locator('body').innerText());throw error;}finally{await context.close();}
 }
 (async()=>{png=await require('sharp')({create:{width:640,height:360,channels:3,background:'#FF5A1F'}}).png().toBuffer();fs.mkdirSync('/tmp/hoopcheck-native-ui',{recursive:true});const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});try{for(const theme of ['light','dark'])await fixture(browser,theme);await fixture(browser,'light',false);console.log('PASS denied membership: protected feed queries never started');}finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});

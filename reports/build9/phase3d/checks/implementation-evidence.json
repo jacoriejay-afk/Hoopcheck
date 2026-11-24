@@ -1,0 +1,50 @@
+{
+  "implementation_head": "e81f2d685fe2316179d434e893b7ad290d85cfb6",
+  "baseline": "201792d799ac2c8f1e86be84f4b5adc63a81d820",
+  "native_behavioral_tests": {
+    "pass": 223,
+    "fail": 0
+  },
+  "auth_billing_permission_tests": {
+    "pass": 47,
+    "fail": 0
+  },
+  "native_auth_tests": {
+    "pass": 14,
+    "fail": 0
+  },
+  "entitlements": {
+    "role_tier_cells": 10,
+    "entitlements": 22
+  },
+  "browser_suites": {
+    "pass": 13,
+    "fail": 0,
+    "identity": "synthetic localhost",
+    "themes": [
+      "light",
+      "dark"
+    ]
+  },
+  "lint": {
+    "errors": 0,
+    "inherited_warnings": 125
+  },
+  "doctor": {
+    "passed": 16,
+    "total": 18,
+    "failed": "network: Expo config schema and React Native Directory"
+  },
+  "ios_simulator_runtime": "attempt1 test-target configuration failure before execution; corrected follow-up pending CI",
+  "physical_iphone": false,
+  "screenshots": {
+    "owner-team-links-light.png": "31cc0cb5aa9d05c45d7d247273eed83c9d62270c6b619ddb116dc0f77bb0c671",
+    "owner-team-links-dark.png": "3513e68e259e2d38343e4fd490c6d0b1c3cff5dc91f05472d80a0e43a785a217",
+    "default-passport-light.png": "01b832b61f706305049c1d35b0c8c7c5b01e169fe0da09543ecb4921beb36e58",
+    "historical-season-dark.png": "de0eeeda03ff344ca10f23f477fe35f5b772c1cc0dafec7e7f0cfe13b0f4056c",
+    "default-roster-dark.png": "ce349569afe32c8ea086b23e9723eb7f0043ddc8829f9fc64f7ec33b7e5400a8",
+    "historical-season-light.png": "d92868ee5cc87a87ba4acf72c9754277dd012fbe58f27e0dd829ab67fe481598",
+    "default-passport-dark.png": "ad686c9848899d095904538f9b5923545944f9ca382d580910354f821bbd2f8d",
+    "default-roster-light.png": "d27234a05eed49163d8068ef3feb68adf281d6367be43aca9456853e32f61679"
+  }
+}

@@ -7,6 +7,7 @@ import OwnProfilePostsGrid from "../../components/OwnProfilePostsGrid";
 import ProfileLatestPost from "../../components/ProfileLatestPost";
 import { getCachedSession, supabase } from "../../lib/supabase";
 import { readOwnProfile } from "../../lib/read-own-profile";
+import { getEffectiveMembership } from "../../lib/billing/client-membership";
 import HoopLoading from "../../components/HoopLoading";
 import { HoopIcon, VerifiedBadge } from "../../components/HoopCheckUI";
 import Surface from "../../components/Surface";
@@ -89,20 +90,18 @@ export default function ProfilePage() {
     return () => { active = false; };
   }, [retryKey]);
 
-  // Gate editing with the same server-backed subscription resolver used on public player pages.
+  // Use provider-aware effective entitlements for Stripe and Apple, not a Stripe-only subscription read.
   useEffect(() => {
     let active = true;
-    if (!p?.id || p.account_type !== "player") {
-      setCanManageJourney(false);
-      return () => { active = false; };
-    }
     setCanManageJourney(false);
-    void supabase.from("subscriptions").select("plan,status,access_status,current_period_end")
-      .eq("user_id", p.id).maybeSingle().then(({ data, error }) => {
+    if (p?.id && p.account_type === "player") {
+      void getEffectiveMembership(p.id).then(({ data, error }) => {
         if (active && !error) setCanManageJourney(getHoopCheckEntitlements({
-          accountType: p.account_type, subscription: data,
+          accountType: p.account_type,
+          subscription: data,
         }).canUseProPassport);
-      });
+      }).catch(() => { if (active) setCanManageJourney(false); });
+    }
     return () => { active = false; };
   }, [p?.id, p?.account_type]);
 

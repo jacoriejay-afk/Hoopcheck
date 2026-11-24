@@ -107,7 +107,7 @@ export default function SettingsPage() {
           {isPlayer&&<Link href="/profile#career-passport">Career history</Link>}
           {isPlayer&&<Link href="/account#team-review-checklist">Team reviews</Link>}
           <Link href="/membership">Membership</Link>
-          <Link href="/account#account-settings">Security</Link>
+          <Link href="/account/security">Security</Link>
           <Link href="/privacy-center">Privacy</Link>
           <Link href="/notifications">Alerts</Link>
           <Link href="/notifications?tab=messages">Messages</Link>
@@ -152,7 +152,7 @@ export default function SettingsPage() {
               <Link href="/account">Edit profile</Link>
               {isPlayer&&<Link href="/profile#career-passport">Career Passport</Link>}
               {isPlayer&&<Link href="/account#team-review-checklist">Review a team</Link>}
-              <Link href="/account#account-settings">Security settings</Link>
+              <Link href="/account/security">Security settings</Link>
             </div>
           </section>
         </div>

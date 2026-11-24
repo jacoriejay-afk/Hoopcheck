@@ -1,0 +1,172 @@
+CREATE ROLE
+CREATE SCHEMA
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE FUNCTION
+CREATE FUNCTION
+ALTER TABLE
+CREATE POLICY
+ALTER TABLE
+ALTER TABLE
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+GRANT
+GRANT
+GRANT
+GRANT
+INSERT 0 2
+INSERT 0 5
+BEGIN
+psql:supabase/migrations/20261111000100_secure_feed_poll_votes.sql:4: NOTICE:  policy "feed poll votes read" for relation "public.feed_poll_votes" does not exist, skipping
+DROP POLICY
+CREATE POLICY
+psql:supabase/migrations/20261111000100_secure_feed_poll_votes.sql:17: NOTICE:  policy "feed poll votes insert own" for relation "public.feed_poll_votes" does not exist, skipping
+DROP POLICY
+CREATE POLICY
+DROP POLICY
+CREATE POLICY
+psql:supabase/migrations/20261111000100_secure_feed_poll_votes.sql:33: NOTICE:  policy "feed poll votes update own" for relation "public.feed_poll_votes" does not exist, skipping
+COMMIT
+BEGIN
+DROP POLICY
+DROP POLICY
+DROP POLICY
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+COMMIT
+BEGIN
+psql:supabase/migrations/20261111000200_secure_feed_bookmarks.sql:4: NOTICE:  policy "feed bookmarks insert own" for relation "public.feed_post_bookmarks" does not exist, skipping
+DROP POLICY
+CREATE POLICY
+COMMIT
+DO
+DO
+INSERT 0 1
+INSERT 0 1
+SET
+              set_config
+--------------------------------------
+ 00000000-0000-0000-0000-000000000001
+(1 row)
+
+              set_config
+--------------------------------------
+ 00000000-0000-0000-0000-000000000002
+(1 row)
+
+INSERT 0 1
+DO
+DO
+CREATE FUNCTION
+ expect_denied
+---------------
+
+(1 row)
+
+ expect_denied
+---------------
+
+(1 row)
+
+ expect_denied
+---------------
+
+(1 row)
+
+ expect_denied
+---------------
+
+(1 row)
+
+ expect_denied
+---------------
+
+(1 row)
+
+ expect_denied
+---------------
+
+(1 row)
+
+ expect_denied
+---------------
+
+(1 row)
+
+INSERT 0 1
+DO
+INSERT 0 1
+ expect_denied
+---------------
+
+(1 row)
+
+ expect_denied
+---------------
+
+(1 row)
+
+ set_config
+------------
+
+(1 row)
+
+DO
+RESET
+ALTER TABLE
+ALTER TABLE
+UPDATE 2
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+INSERT 0 1
+INSERT 0 1
+GRANT
+CREATE FUNCTION
+CREATE FUNCTION
+GRANT
+SET
+ set_config
+------------
+
+(1 row)
+
+DO
+RESET
+UPDATE 1
+SET
+DO
+RESET
+UPDATE 1
+UPDATE 1
+SET
+DO
+RESET
+UPDATE 1
+SET
+DO
+RESET
+UPDATE 1
+DELETE 1
+SET
+DO
+RESET
+INSERT 0 1
+SET
+DO
+RESET
+ALTER TABLE
+ALTER TABLE
+CREATE POLICY
+DELETE 1
+INSERT 0 1
+SET
+DO
+RESET
+UPDATE 1
+SET
+DO

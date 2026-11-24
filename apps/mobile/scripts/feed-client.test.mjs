@@ -1,12 +1,22 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createClient } from '@supabase/supabase-js';
-import { readFeedPage, readSharedFeedPost, readFeedComments, moderateFeedText, authorizedFeedMedia, toggleFeedCheck, readFeedSaved, feedAction } from '../src/native/feedClient.ts';
+import { readFeedPage, readSharedFeedPost, readFeedComments, moderateFeedText, publishFeedPoll, validatedPollOptions, authorizedFeedMedia, toggleFeedCheck, readFeedChecks, readFeedSaved, feedAction, deleteOwnedFeedPost } from '../src/native/feedClient.ts';
 const uid = '11111111-1111-4111-8111-111111111111';
 const id = n => `22222222-2222-4222-8222-${String(n).padStart(12, '0')}`;
 const now = new Date('2026-11-18T12:00:00Z');
 const post = n => ({ id: id(n), created_at: `2026-11-17T12:00:${String(59-n).padStart(2,'0')}Z`, author_id: uid, body: 'Fixture', expires_at: null, profiles: [{ display_name: 'Member' }] });
 const client = request => createClient('https://fixture.supabase.co', 'fixture-key', { auth: { persistSession:false,autoRefreshToken:false,detectSessionInUrl:false }, global:{fetch:request} });
+test('native polls use only moderated canonical fields and require acknowledged publication', async () => {
+  let call;const request=async(url,options)=>{call={url,options};return Response.json({allowed:true});};
+  await publishFeedPoll('https://api.test','token',' Question? ',[' Home ',' Away '],request);
+  assert.equal(call.url,'https://api.test/api/hoopfeed/moderate');assert.equal(call.options.headers.Authorization,'Bearer token');assert.equal(call.options.cache,'no-store');assert.equal(call.options.redirect,'error');
+  assert.deepEqual(Object.fromEntries(call.options.body),{kind:'post',text:'Question?',post_kind:'poll',poll_options:'["Home","Away"]',audience:'community'});
+  for(const options of [[],['one'],['one','two','three','four','five'],['Home',' home '],['a',''],['a','b'.repeat(61)],[1,'b']])assert.throws(()=>validatedPollOptions(options));
+  await assert.rejects(publishFeedPoll('https://api.test','token','',['a','b'],request));
+  await assert.rejects(publishFeedPoll('https://api.test','token','Question',['a','b'],async()=>Response.json({allowed:false,message:'Moderation declined'},{status:400})),/Moderation declined/);
+  await assert.rejects(publishFeedPoll('https://api.test','token','Question',['a','b'],async()=>Response.json({allowed:'true'})),/could not be confirmed/);
+});
 test('feed uses approved unexpired rows, deterministic keyset pages and viewer-only archives', async () => {
   const calls = [];
   const rows = Array.from({length:21}, (_,i) => post(i));
@@ -96,4 +106,74 @@ test('votes and bookmarks use server permission checks and reject invalid inputs
   for(const [kind,value]of[['vote',-1],['vote',6],['bookmark',1]])await assert.rejects(feedAction('https://api.test','token',kind,id(1),value,request));
   assert.equal(calls.length,2);
   await assert.rejects(feedAction('https://api.test','token','vote',id(1),1,async()=>Response.json({allowed:false},{status:403})));
+});
+
+test('a post with zero Checks remains usable after a successful empty aggregate RPC',async()=>{
+  const calls=[];
+  const db=client(async(input,options)=>{
+    const url=new URL(String(input));calls.push({url,options});
+    return Response.json([]);
+  });
+  assert.deepEqual(await readFeedChecks(db,[id(1),id(2)]),[
+    {post_id:id(1),checks_count:0,checked_by_me:false},
+    {post_id:id(2),checks_count:0,checked_by_me:false},
+  ]);
+  assert.equal(calls.length,1);
+  assert.equal(calls[0].url.pathname,'/rest/v1/rpc/get_hoopfeed_check_totals');
+  assert.deepEqual(JSON.parse(calls[0].options.body),{post_ids:[id(1),id(2)]});
+  assert.deepEqual(await readFeedChecks(db,[]),[]);
+  assert.equal(calls.length,1,'An empty feed does not query Checks');
+});
+
+test('Check totals preserve real RPC counts and fill only omitted zero-count posts',async()=>{
+  const db=client(async()=>Response.json([{post_id:id(2),checks_count:'3',checked_by_me:true}]));
+  assert.deepEqual(await readFeedChecks(db,[id(1),id(2)]),[
+    {post_id:id(1),checks_count:0,checked_by_me:false},
+    {post_id:id(2),checks_count:3,checked_by_me:true},
+  ]);
+});
+
+test('failed or malformed Check totals never become invented zero counts',async()=>{
+  const failed=client(async()=>Response.json({message:'Permission denied'},{status:403}));
+  await assert.rejects(readFeedChecks(failed,[id(1)]),/Checks unavailable/);
+  for(const rows of [
+    null,
+    [{post_id:id(1),checks_count:-1,checked_by_me:false}],
+    [{post_id:id(1),checks_count:'not-a-number',checked_by_me:false}],
+    [{post_id:id(1),checks_count:2,checked_by_me:'true'}],
+    [{post_id:id(2),checks_count:2,checked_by_me:false}],
+    [{post_id:id(1),checks_count:1,checked_by_me:true},{post_id:id(1),checks_count:1,checked_by_me:true}],
+  ]) {
+    const db=client(async()=>Response.json(rows));
+    await assert.rejects(readFeedChecks(db,[id(1)]));
+  }
+});
+
+test('a signed-in owner can delete only their own post and receives a confirmed row', async()=>{
+  const calls=[];
+  const db=client(async(input,options)=>{
+    const url=new URL(String(input));calls.push({url,options});
+    return Response.json([{id:id(1)}]);
+  });
+  await deleteOwnedFeedPost(db,uid,id(1));
+  assert.equal(calls.length,1);
+  assert.equal(calls[0].options.method,'DELETE');
+  assert.equal(calls[0].url.pathname,'/rest/v1/feed_posts');
+  assert.equal(calls[0].url.searchParams.get('id'),`eq.${id(1)}`);
+  assert.equal(calls[0].url.searchParams.get('author_id'),`eq.${uid}`);
+  assert.equal(calls[0].url.searchParams.get('select'),'id');
+});
+
+test('delete never claims success on RLS denial, zero-row response, wrong identity or invalid ids',async()=>{
+  const denied=client(async()=>Response.json({message:'permission denied'},{status:403}));
+  await assert.rejects(deleteOwnedFeedPost(denied,uid,id(1)),/could not be deleted/);
+  const missing=client(async()=>Response.json([]));
+  await assert.rejects(deleteOwnedFeedPost(missing,uid,id(1)),/could not be deleted/);
+  const wrong=client(async()=>Response.json([{id:id(2)}]));
+  await assert.rejects(deleteOwnedFeedPost(wrong,uid,id(1)),/could not be deleted/);
+  let calls=0;
+  const noNetwork=client(async()=>{calls++;return Response.json([]);});
+  await assert.rejects(deleteOwnedFeedPost(noNetwork,'bad',id(1)));
+  await assert.rejects(deleteOwnedFeedPost(noNetwork,uid,'bad'));
+  assert.equal(calls,0);
 });

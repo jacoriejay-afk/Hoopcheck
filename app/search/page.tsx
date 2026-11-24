@@ -222,13 +222,8 @@ function SearchContent() {
               })()
             : Promise.resolve({ data: [], error: null }),
           wantsPlayers && username && page === 1
-            ? supabase.from("profiles")
-                .select("id,display_name,username,avatar_url,avatar_moderation_status,country,player_position:position,years_pro,current_team,player_verified")
-                .eq("username", username)
-                .eq("account_type", "player")
-                .eq("profile_visibility", "public")
-                .neq("moderation_status", "suspended")
-                .maybeSingle()
+            ? supabase.rpc("search_public_players_by_username", { p_username: username, p_country: countryFilter || null, p_limit: 101, p_offset: 0 })
+                .then(result => { const row = (result.data ?? []).find((row: { username: string | null }) => row.username?.toLowerCase() === username.toLowerCase()); return { error: result.error, data: row ? { ...row, player_position: row.position } : null }; })
             : Promise.resolve({ data: null, error: null }),
         ]);
 
@@ -239,15 +234,7 @@ function SearchContent() {
           setError("Some directories are temporarily unavailable. Available results are shown below; try another category or search again.");
         }
         const playerMatches = (playerResult.error ? [] : playerResult.data ?? []) as Player[];
-        // Keep exact @username results on the public profile projection only.
-        // Never request raw current_country through a direct public table read:
-        // it can be private even when the player profile itself is public.
-        const rawUsernameMatch = usernameResult.data;
-        const usernameMatch: Player | null = rawUsernameMatch ? {
-          ...rawUsernameMatch,
-          avatar_url: (rawUsernameMatch.avatar_moderation_status === null || rawUsernameMatch.avatar_moderation_status === "approved") ? rawUsernameMatch.avatar_url : null,
-          current_country: null,
-        } : null;
+        const usernameMatch = usernameResult.data as Player | null;
         const exactPlayer = usernameMatch && (!verifiedOnly || usernameMatch.player_verified) ? usernameMatch : null;
         setHasMore([playerResult, coachResult, teamResult, womensTeamResult, leagueResult]
           .some(result => !result.error && (result.data?.length ?? 0) > pageSize));

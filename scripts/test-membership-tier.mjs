@@ -10,31 +10,17 @@ const moduleUrl = "data:text/javascript;base64," + Buffer.from(compiled).toStrin
 const { getHoopCheckEntitlements, getActiveMembershipTier, canStartNewMembershipCheckout } = await import(moduleUrl);
 
 const active = (plan) => ({ plan, status: "active", access_status: "active" });
-// Direct checkout must never sell an equal or lower tier while paid access is active.
-// A non-Stripe Premium grant is still Premium and cannot buy Pro again.
-const checkoutEligibilityCases = [
-  ["free", "pro", true],
-  ["free", "premium", true],
-  ["pro", "pro", false],
-  ["pro", "premium", true],
-  ["premium", "pro", false],
-  ["premium", "premium", false],
-];
-for (const [current, requested, expected] of checkoutEligibilityCases) {
-  assert.equal(canStartNewMembershipCheckout(current, requested), expected,
-    `checkout ${current} -> ${requested} must ${expected ? "allow" : "deny"}`);
-}
-assert.equal(canStartNewMembershipCheckout(getActiveMembershipTier({plan:"premium",status:"active"}),"pro"), false,
-  "non-Stripe active Premium cannot downgrade through checkout");
-assert.equal(canStartNewMembershipCheckout(getActiveMembershipTier({plan:"premium",status:"canceled"}),"pro"), true,
-  "canceled Premium without active entitlement may purchase again");
-assert.equal(canStartNewMembershipCheckout(getActiveMembershipTier({plan:"premium",status:"active",current_period_end:"2000-01-01T00:00:00Z"}),"pro"), true,
-  "expired Premium may restart paid membership");
+// A paid member must never open a same-tier or lower-tier Checkout.
+for (const [current, requested, allowed] of [
+  ["free","pro",true], ["free","premium",true],
+  ["pro","pro",false], ["pro","premium",true],
+  ["premium","pro",false], ["premium","premium",false],
+]) assert.equal(canStartNewMembershipCheckout(current, requested), allowed);
+assert.equal(canStartNewMembershipCheckout(getActiveMembershipTier({plan:"premium",status:"active"}),"pro"),false);
+assert.equal(canStartNewMembershipCheckout(getActiveMembershipTier({plan:"premium",status:"canceled"}),"pro"),true);
+assert.equal(canStartNewMembershipCheckout(getActiveMembershipTier({plan:"premium",status:"active",current_period_end:"2000-01-01T00:00:00Z"}),"pro"),true);
 const checkoutSource = readFileSync(new URL("../app/api/stripe/webhook/create-checkout/route.ts", import.meta.url), "utf8");
-assert.ok(checkoutSource.includes("!canStartNewMembershipCheckout(currentTier, plan)"),
-  "server-side checkout route must enforce no downgrade");
-assert.ok(checkoutSource.includes("hasStripeSubscription || !canStartNewMembershipCheckout(currentTier, plan)"),
-  "existing Stripe-backed subscriptions must remain separately guarded");
+assert.ok(checkoutSource.includes("hasStripeSubscription || !canStartNewMembershipCheckout(currentTier, plan)"));
 
 const keys = [
   "canReadHoopFeed", "canWriteHoopFeed", "canReadFanFeed", "canWriteFanFeed",
@@ -255,9 +241,9 @@ assert.match(liveChat, /opponent_team_id/, "Live Game Chat must resolve both fix
 assert.match(liveChat, /canUseLiveGameChat/, "Live Game Chat must use the shared chat entitlement");
 assert.match(liveHub, /womens_teams/, "Live Game Hub must include women's teams");
 assert.match(trustApi, /row\.womens_team_id/, "women's Trust Score must aggregate women's reviews");
-assert.match(membershipPage, /Built for fans who follow the game/, "Fan membership page must not use player upsell copy");
-assert.match(membershipPage, /HOOPCHECK FAN PRO/, "Fan Pro plan must be role-labelled");
-assert.match(membershipPage, /HOOPCHECK FAN PREMIUM/, "Fan Premium plan must be role-labelled");
+assert.match(membershipPage, /Fan membership status/, "Fan accounts retain a dedicated status area");
+assert.match(membershipPage, /Paid fan products have not been priced/, "Owner-confirmed unpriced fan products must not be offered");
+assert.match(membershipPage, /accountType !== "fan"/, "Unpriced fans cannot see new professional checkout cards");
 assert.match(accountPage, /entitlements\.canUseRecruitingNetwork/, "Premium recruiting upsell must be player-only");
 assert.match(fanConnection, /accountType !== "fan"/, "fan connection gates must be hidden from non-fans");
 

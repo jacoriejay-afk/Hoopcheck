@@ -23,7 +23,7 @@ export default function MembershipComparison({ audience, currentTier, billingTer
       {(["free","pro","premium"] as const).filter(tier => !premiumOnly || tier !== "pro").map(tier => <article key={tier} className={currentTier===tier ? "plan-card hc-membership-plan is-current" : "plan-card hc-membership-plan"} >
         <div className="eyebrow">{premiumOnly ? "COACH & TEAM MANAGER" : audience.toUpperCase()} MEMBERSHIP</div>
         <h3>{tier[0].toUpperCase()+tier.slice(1)} {currentTier===tier && <small aria-label="Your current membership">· CURRENT</small>}</h3>
-        <p className="price"><strong>{tier==="free"?"Free":PLAN_PRICES[tier][billingTerm]}</strong> {tier!=="free" && <span>{BILLING_LABELS[billingTerm]}</span>}</p>
+        <p className="price"><strong>{tier==="free" ? "Free" : audience==="fan" ? "Not yet priced" : PLAN_PRICES[tier][billingTerm]}</strong> {tier!=="free" && audience!=="fan" && <span>{BILLING_LABELS[billingTerm]}</span>}</p>
         {tier === "premium" && <p className="hc-plan-difference" style={{fontWeight:700,fontSize:13}}>{premiumExclusive.length ? "Everything in Pro, plus full team ratings and reviews" : "Includes all listed Pro features. No additional exclusive benefits are currently listed for this audience."}</p>}
         <ul style={{listStyle:"none",padding:0}}>
           {perks.map(perk => { const included=isAtLeastTier(tier,perk.minimum);const newlyIncluded=included&&!isAtLeastTier(currentTier,perk.minimum);
@@ -32,7 +32,7 @@ export default function MembershipComparison({ audience, currentTier, billingTer
             </li>;
           })}
         </ul>
-        {onSelect && tier!=="free" && tier!==currentTier && <button type="button" className="btn plan-button" disabled={purchaseDisabled} onClick={()=>onSelect(tier)}>Choose {tier==="pro"?"Pro":"Premium"}</button>}
+        {onSelect && audience!=="fan" && tier!=="free" && tier!==currentTier && <button type="button" className="btn plan-button" disabled={purchaseDisabled} onClick={()=>onSelect(tier)}>Choose {tier==="pro"?"Pro":"Premium"}</button>}
       </article>)}
     </div>
   </section>;

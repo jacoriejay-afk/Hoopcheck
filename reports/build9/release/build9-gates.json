@@ -1,0 +1,116 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-11-23",
+  "release": "Build 9",
+  "source_branch": "integration/build9-backend-completion-20261121",
+  "release_commit": null,
+  "build": {
+    "expo_project_id": "62f822cb-ab9a-42ba-8456-007d2822ef70",
+    "app_id": "6835366982",
+    "bundle_id": "online.hoopcheck.app",
+    "version": "0.2.0",
+    "last_verified_store_build": 9,
+    "signed_ios_commit": "cf29f4190e42dcbcd86ddbcac4547415fe0227f1",
+    "signed_ios_build_id": "4b902ebf-58e8-4c4b-acad-d1874e9ce08e",
+    "signed_ios_archive_url": "https://expo.dev/artifacts/eas/RsKD-wJyluOFcbq0gN3vEWpxt5hcCA7S9ECkc1OAa5U.ipa",
+    "app_store_submission_id": "b9d4afaa-0a4d-49d1-8305-204c51ddb75d"
+  },
+  "gates": [
+    {
+      "id": "native_feature_integration",
+      "status": "PASS",
+      "details": "PR #808 role HQ/HoopChat/HoopBot/HoopGroups merged; verified feature paths present in Build 9 integration",
+      "evidence": "https://github.com/jacoriejay-afk/Hoopcheck/pull/808"
+    },
+    {
+      "id": "expo_identity_structure",
+      "status": "PASS",
+      "details": "Bundle/EAS app ID, associated domains, remote autoIncrement, requireCommit and submit app ID statically verified; this is not Apple signing approval",
+      "evidence": "https://github.com/jacoriejay-afk/Hoopcheck/blob/integration/build9-backend-completion-20261121/apps/mobile/eas.json"
+    },
+    {
+      "id": "production_website",
+      "status": "PASS",
+      "details": "Current website deployment verified READY; no claim about iOS binary",
+      "evidence": "https://hoopcheck.online"
+    },
+    {
+      "id": "source_main_reconciliation",
+      "status": "PASS",
+      "details": "Manual source-history reconciliation PR #875 merged into protected Build 9 integration at a735ce9b; Build 9 is now descendant of verified production main 04b2fb6c (388 commits ahead, 0 behind at 53428306). All 19 previously overlapping paths reviewed; this is Git ancestry and source review only, not production runtime acceptance.",
+      "evidence": "https://github.com/jacoriejay-afk/Hoopcheck/pull/875"
+    },
+    {
+      "id": "exact_head_all_ci",
+      "status": "HOLD",
+      "details": "Seven exact-source SHA workflows passed at frozen signed Build 9 commit cf29f4190e42dcbcd86ddbcac4547415fe0227f1 (root CI, mobile, unsigned iOS simulator/XCTest, launch, native security, entitlements, PG17 privacy). This manifest and release-prep guard will change Git HEAD: rerun exact-head CI after any change, and do not equate the earlier signed binary with a newly modified commit.",
+      "evidence": null
+    },
+    {
+      "id": "startup_passport_fixes",
+      "status": "PASS",
+      "details": "Startup interruption/recovery and the real native Career Passport PDF/share/cleanup fixture were merged through PR #813; PR #836 exact-head (1fbad23a) passed unsigned iOS simulator compilation and real Passport light/dark theme XCTest in workflow 45005943667. This closes the feature implementation/review gate only; latest exact-head CI, installed Build7/8, real physical iPhone, Apple signing and Apple Sandbox remain independent HOLD gates.",
+      "evidence": "https://github.com/jacoriejay-afk/Hoopcheck/actions/runs/45005943667"
+    },
+    {
+      "id": "production_schema_rehearsal",
+      "status": "WAIVED",
+      "details": "Owner explicitly waived the production-equivalent PostgreSQL 17 rehearsal on 2026-11-23. Migration safety, role/ACL/owner compatibility and rollback remain UNVERIFIED RISKS; this procedural waiver is NOT a security PASS and authorizes NO PRODUCTION SQL or privacy-permission changes. Real signed Auth/MFA, Build 7/8, Apple Sandbox, physical iPhone and other HOLD gates remain mandatory.",
+      "evidence": "https://github.com/jacoriejay-afk/Hoopcheck/issues/882#issuecomment-7102438249"
+    },
+    {
+      "id": "owner_mfa_signed_http",
+      "status": "HOLD",
+      "details": "Production lacks protected get_own_profile() and global opt-in MFA. Candidate PR #812 merged as uninstalled SQL; need real Auth-issued owner/non-owner AAL1/AAL2 acceptance.",
+      "evidence": null
+    },
+    {
+      "id": "private_country_column_boundary",
+      "status": "HOLD",
+      "details": "Anon and authenticated roles can still SELECT raw profiles.current_country. Do not revoke until installed Build 7/8 profile/owner read compatibility is proved.",
+      "evidence": null
+    },
+    {
+      "id": "privileged_profile_update_acl",
+      "status": "HOLD",
+      "details": "Production authenticated has table-wide UPDATE on all 59 public.profiles columns at the ACL layer. Seven BEFORE UPDATE triggers and owner RLS remain present; no exploit was demonstrated. Require reviewed least-privilege ACL/rollback on production-equivalent PG17, genuine signed owner/nonowner AAL1/AAL2, and installed Build 7/8 editor compatibility before enabling the Build 9 native editor.",
+      "evidence": null
+    },
+    {
+      "id": "build7_8_compatibility",
+      "status": "HOLD",
+      "details": "Exact shipped Store Build 8 source c0b77ba3 is recovered and its native editor requires get_own_profile(), which a read-only production catalog still reports MISSING (PR #876). Store Build 7 exact source is unresolved; real installed-client API/read/write/startup tests and compatible server RPC before production privacy changes remain required.",
+      "evidence": "https://github.com/jacoriejay-afk/Hoopcheck/pull/876"
+    },
+    {
+      "id": "apple_bundle_signing",
+      "status": "PASS",
+      "details": "Signed iOS Store archive 0.2.0 (9) successfully produced under online.hoopcheck.app for the frozen source SHA cf29f4190e42dcbcd86ddbcac4547415fe0227f1; Expo build 4b902ebf-58e8-4c4b-acad-d1874e9ce08e reports FINISHED and signed IPA. App Store Connect submission b9d4afaa-0a4d-49d1-8305-204c51ddb75d was queued; owner reports seeing Build 9 in TestFlight. This PASS certifies signed archive creation only, NOT physical-device, Sandbox billing, Apple processing state, backend privacy or any subsequent code commit; changes require a new signed build.",
+      "evidence": "https://expo.dev/artifacts/eas/RsKD-wJyluOFcbq0gN3vEWpxt5hcCA7S9ECkc1OAa5U.ipa"
+    },
+    {
+      "id": "physical_iphone",
+      "status": "HOLD",
+      "details": "Cold start/freeze/touches, interruption recovery, OAuth/email, Face ID, chat, group navigation, both themes and profile editor not proven on a physical iPhone.",
+      "evidence": null
+    },
+    {
+      "id": "apple_sandbox_subscriptions",
+      "status": "HOLD",
+      "details": "Pro/Premium trial, purchase, cancel, renew, refund, restore, app switching, membership and Stripe/Apple entitlements need actual Apple Sandbox acceptance.",
+      "evidence": null
+    },
+    {
+      "id": "security_advisors",
+      "status": "HOLD",
+      "details": "Review callable SECURITY DEFINER warnings individually and leaked-password-protection settings; do not blanket revoke auth policies.",
+      "evidence": null
+    },
+    {
+      "id": "owner_release_authorization",
+      "status": "HOLD",
+      "details": "Final owner approval after the above evidence and dry-run release report; no EAS or TestFlight triggered by this manifest.",
+      "evidence": null
+    }
+  ]
+}

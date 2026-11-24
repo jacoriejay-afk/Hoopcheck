@@ -1,6 +1,8 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { getOwnProfile } from "../lib/auth/own-profile";
+
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 
 export type Language = "en" | "es" | "fr" | "de" | "tr" | "pt" | "it" | "el" | "ar" | "ru" | "az" | "pl" | "zh" | "ja" | "sr" | "fi" | "he" | "lt" | "uk";
@@ -117,8 +119,11 @@ export function useLanguage() { return useContext(LanguageContext); }
 
 export default function LanguageProvider({ children, initialLanguage = "en" }: { children: React.ReactNode; initialLanguage?: Language }) {
   const [language, setLanguageState] = useState<Language>(validLanguage(initialLanguage) ? initialLanguage : "en");
+  // Protect explicit user changes from a stale profile fetch finishing afterward.
+  const manualLanguageChoice = useRef<Language | null>(null);
   const setLanguage = useCallback((next: Language) => {
     if (!validLanguage(next)) return;
+    manualLanguageChoice.current = next;
     setLanguageState(next);
     if (typeof document !== "undefined") {
       document.documentElement.lang = next;
@@ -148,12 +153,14 @@ export default function LanguageProvider({ children, initialLanguage = "en" }: {
     const onLanguageChange = (event: Event) => apply((event as CustomEvent<Language>).detail);
     window.addEventListener("hoopcheck-language-change", onLanguageChange);
     const loadProfileLanguage = async (userId: string) => {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("preferred_language")
-        .eq("id", userId)
-        .maybeSingle();
+      const { data: profile } = await getOwnProfile(supabase, userId);
       if (mounted) {
+        // A user's in-tab selection beats any profile read started before it.
+        // Otherwise the account setting remains authoritative across devices.
+        if (manualLanguageChoice.current) {
+          apply(manualLanguageChoice.current);
+          return;
+        }
         // The account setting is authoritative across devices. Local storage is only
         // a fallback for accounts that have not selected a language yet.
         const accountLanguage = profile?.preferred_language;
@@ -167,7 +174,10 @@ export default function LanguageProvider({ children, initialLanguage = "en" }: {
     });
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session?.user) void loadProfileLanguage(session.user.id);
-      if (event === "SIGNED_OUT") apply(validLanguage(localStorage.getItem("hoopcheck-language")) ? localStorage.getItem("hoopcheck-language") : browserLanguage());
+      if (event === "SIGNED_OUT") {
+        manualLanguageChoice.current = null;
+        apply(validLanguage(localStorage.getItem("hoopcheck-language")) ? localStorage.getItem("hoopcheck-language") : browserLanguage());
+      }
     });
     return () => {
       mounted = false;

@@ -1,0 +1,22 @@
+✔ themed welcome buttons navigate explicitly to sign-in and sign-up (102.124014ms)
+✔ password sign-in normalizes email and retains profile destination selection (74.381947ms)
+✔ Google sign-in keeps the native PKCE callback and opens only a returned OAuth URL (13.714957ms)
+✔ invalid build configuration blocks both sign-in methods before any auth request (14.518864ms)
+✔ layout does not interrupt callback exchange, but retains protected-route redirects (194.101012ms)
+✔ callback exchanges its code and selects the correct authenticated destination (12.115063ms)
+✔ denied, missing-code and misconfigured callbacks never exchange or redirect (23.991456ms)
+✔ OS callback URL reaches native PKCE exchange rather than browser handoff (53.552932ms)
+✔ OAuth callback honors the pending destination after a verified fresh sign-in (8.303266ms)
+✔ a provider error without description never exchanges a supplied code (7.322041ms)
+✔ OAuth exchange screen does not trigger app lock before fresh sign-in is recorded (35.641005ms)
+✔ protected native links preserve bounded post/search destinations without retaining auth secrets (143.070359ms)
+✔ protected search retains a bounded query across sign-in without extra URL fields (28.969516ms)
+✔ root navigator mounts before any redirect even if the display font never loads (21.832833ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2444.329702

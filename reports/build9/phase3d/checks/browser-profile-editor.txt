@@ -1,0 +1,4 @@
+PASS light player: own profile/locked identity/role fields/failure draft/save/cover/navigation/reload
+PASS dark player: own profile/locked identity/role fields/failure draft/save/cover/navigation/reload
+PASS light fan: own profile/locked identity/role fields/failure draft/save/cover/navigation/reload
+PASS dark coach: own profile/locked identity/role fields/failure draft/save/cover/navigation/reload

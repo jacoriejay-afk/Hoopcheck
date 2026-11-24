@@ -1,0 +1,5 @@
+{
+  "CFBundleIdentifier": "$(PRODUCT_BUNDLE_IDENTIFIER)",
+  "NSFaceIDUsageDescription": "Allow HoopCheck to securely protect your sign-in session.",
+  "NSPhotoLibraryUsageDescription": "Choose photos and videos to share on HoopCheck or customize your profile."
+}

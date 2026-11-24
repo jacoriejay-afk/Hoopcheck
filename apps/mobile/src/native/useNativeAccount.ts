@@ -1,7 +1,9 @@
 import { createContext, createElement, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { AppState } from "react-native";
 import { supabase } from "../lib/supabase";
+import { useMfaSession } from "./mfa";
 import { useNetwork } from "./network";
+import { readWithDeadline } from "./readDeadline";
 import { requestNativeAccount, type NativeAccount } from "./accountClient";
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
 function useAccountRequest() {
@@ -11,15 +13,23 @@ function useAccountRequest() {
   const [refresh, setRefresh] = useState(0);
   const generation = useRef(0);
   const { offline, revision } = useNetwork();
+  const security = useMfaSession();
   const retry = useCallback(() => { generation.current++; setAccount(null); setRefresh(value => value + 1); }, []);
   useEffect(() => {
     const listener = AppState.addEventListener("change", state => { if (state === "active") retry(); });
-    return () => listener.remove();
+    const refreshTimer = setInterval(() => { if (AppState.currentState === "active") retry(); }, 15 * 60 * 1000);
+    return () => { listener.remove(); clearInterval(refreshTimer); };
   }, [retry]);
   useEffect(() => {
-    const { data } = supabase.auth.onAuthStateChange(retry);
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      // Token refreshes and initial session broadcasts are not account changes.
+      // They previously invalidated the verified account and flashed skeletons.
+      const nextId = session?.user.id ?? null;
+      if (event === "SIGNED_OUT" || event === "USER_UPDATED"
+        || (event === "SIGNED_IN" && nextId !== security.owner)) retry();
+    });
     return () => data.subscription.unsubscribe();
-  }, [retry]);
+  }, [retry, security.owner]);
   useEffect(() => {
     let active = true;
     const current = generation.current;
@@ -29,8 +39,9 @@ function useAccountRequest() {
     const load = async () => {
       try {
         if (offline) throw new Error("Offline");
-        const { data, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError || !data.session) throw new Error("Missing session");
+        if (security.phase !== "ready") throw new Error("Finish security verification first");
+        const { data, error: sessionError } = await readWithDeadline(() => supabase.auth.getSession());
+        if (sessionError || !data.session || data.session.user.id !== security.owner) throw new Error("Missing session");
         const result = await requestNativeAccount(origin, data.session.access_token, controller.signal);
         if (result.user.id !== data.session.user.id) throw new Error("Account identity mismatch");
         if (active && current === generation.current) setAccount(result);
@@ -39,8 +50,8 @@ function useAccountRequest() {
     };
     void load();
     return () => { active = false; clearTimeout(deadline); controller.abort(); };
-  }, [offline, revision, refresh]);
-  return { account: offline ? null : account, loading, error, retry };
+  }, [offline, revision, refresh, security.phase, security.owner]);
+  return { account: offline || security.phase !== "ready" ? null : account, loading, error, retry };
 }
 
 const AccountContext = createContext<ReturnType<typeof useAccountRequest>>({ account: null, loading: true, error: "", retry: () => {} });

@@ -1,536 +1,132 @@
 "use client";
 
-import { BILLING_LABELS, PLAN_PRICES } from "../../lib/plan-comparison";
-
-
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import HoopLoading from "../../components/HoopLoading";
 import MembershipComparison from "../../components/MembershipComparison";
+import { BILLING_LABELS, PLAN_PRICES } from "../../lib/plan-comparison";
 import { getActiveMembershipTier } from "../../lib/membership-tier";
-import { useSearchParams } from "next/navigation";
+import { readDeadline } from "../../lib/billing/client-membership-core";
+import { getEffectiveMembership } from "../../lib/billing/client-membership";
+import type { EffectiveMembership } from "../../lib/billing/membership";
 import { supabase } from "../../lib/supabase";
-
 type Plan = "pro" | "premium";
 type BillingInterval = "month" | "6_month" | "year";
-
-type Subscription = {
-  plan: Plan;
-  status: string;
-  access_status?: string | null;
-  current_period_end: string | null;
-  cancel_at_period_end: boolean;
-  stripe_subscription_id: string | null;
-};
-
+type StripeBilling = { plan: Plan | null; status: string; current_period_end: string | null; cancel_at_period_end: boolean; stripe_subscription_id: string | null; stripe_customer_id: string | null };
 function MembershipContent() {
   const searchParams = useSearchParams();
-
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [subscription, setSubscription] = useState<EffectiveMembership | null>(null);
+  const [appleBillingKnown, setAppleBillingKnown] = useState(false);
+  const [billing, setBilling] = useState<StripeBilling | null>(null);
+  const [accountType, setAccountType] = useState<string | null>(null), [userId, setUserId] = useState("");
+  const [loading, setLoading] = useState(true), [busy, setBusy] = useState("");
   const [billingInterval, setBillingInterval] = useState<BillingInterval>("month");
-  const [accountType, setAccountType] = useState<string | null>(null);
-  const [trialPubliclyAvailable, setTrialPubliclyAvailable] = useState(false);
-  const [portalLoading, setPortalLoading] = useState(false);
-  const [cancelLoading, setCancelLoading] = useState(false);
-
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
-
-  // The server, not the browser, decides whether public trial activation is
-  // actually enabled. A failed status check keeps the launch notice OFF.
-  useEffect(() => {
-    const controller = new AbortController();
-    void fetch("/api/membership/trial-status", {
-      cache: "no-store",
-      signal: controller.signal,
-    })
-      .then((response) => response.ok ? response.json() : null)
-      .then((payload: { available?: boolean } | null) => {
-        if (!controller.signal.aborted) {
-          setTrialPubliclyAvailable(payload?.available === true);
-        }
-      })
-      .catch(() => {
-        // A network failure never advertises a trial that cannot be purchased.
-      });
-    return () => controller.abort();
+  const [message, setMessage] = useState(""), [error, setError] = useState("");
+  const [authRevision, setAuthRevision] = useState(0);
+  const generation = useRef(0), acting = useRef(false), authEpoch = useRef(0);
+  const invalidate = useCallback(() => { generation.current++; authEpoch.current++; }, []);
+  const loadSubscription = useCallback(async () => {
+    const current = ++generation.current;
+    setLoading(true); setError(""); setSubscription(null); setBilling(null); setAppleBillingKnown(false); setAccountType(null); setUserId("");
+    const controller = new AbortController(); let deadline: ReturnType<typeof setTimeout> | undefined;
+    try {
+      await Promise.race([(async () => {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError) throw Error("Your sign-in could not be verified. Try again.");
+        if (!user) return;
+        const [profile, effective, stripe, apple] = await Promise.all([
+          supabase.from("profiles").select("account_type").eq("id", user.id).abortSignal(controller.signal).maybeSingle(),
+          getEffectiveMembership(user.id),
+          supabase.from("subscriptions").select("plan,status,current_period_end,cancel_at_period_end,stripe_subscription_id,stripe_customer_id").eq("user_id", user.id).abortSignal(controller.signal).maybeSingle(),
+          supabase.from("apple_memberships").select("status").eq("user_id", user.id).limit(1).abortSignal(controller.signal).maybeSingle(),
+        ]);
+        if (current !== generation.current || controller.signal.aborted) return;
+        if (profile.error || effective.error || stripe.error || apple.error || !profile.data) throw Error("We couldn't verify your membership and billing. Refresh before making changes.");
+        setUserId(user.id); setAccountType(profile.data.account_type); setSubscription(effective.data); setBilling(stripe.data); setAppleBillingKnown(Boolean(apple.data));
+      })(), new Promise<never>((_, reject) => { deadline = setTimeout(() => { controller.abort(); reject(Error("Membership verification timed out. Please try again.")); }, 30000); })]);
+    } catch (value) { if (current === generation.current) setError(value instanceof Error ? value.message : "Membership could not be verified."); }
+    finally { clearTimeout(deadline); controller.abort(); if (current === generation.current) setLoading(false); }
   }, []);
-
-  async function loadSubscription(silent = false) {
-    if (!silent) {
-      setLoading(true);
-      setError("");
-    }
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      setSubscription(null);
-      setAccountType(null);
-      if (!silent) setLoading(false);
-      return;
-    }
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("account_type")
-      .eq("id", user.id)
-      .maybeSingle();
-    setAccountType(profile?.account_type ?? null);
-
-    const { data, error } = await supabase
-      .from("subscriptions")
-      .select("plan, status, access_status, current_period_end, cancel_at_period_end, stripe_subscription_id")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (error) {
-      console.error("Error loading subscription:", error);
-      setError("We couldn't load your membership status.");
-    } else {
-      setSubscription(data as Subscription | null);
-    }
-
-    if (!silent) setLoading(false);
-  }
-
+  useEffect(() => {
+    const { data } = supabase.auth.onAuthStateChange(event => {
+      if (event === "INITIAL_SESSION") return;
+      invalidate(); setSubscription(null); setBilling(null); setAppleBillingKnown(false); setAccountType(null); setUserId(""); setMessage(""); setAuthRevision(value => value + 1);
+    });
+    return () => { data.subscription.unsubscribe(); invalidate(); };
+  }, [invalidate]);
   useEffect(() => {
     void loadSubscription();
-
-    const success = searchParams.get("success");
-    const canceled = searchParams.get("canceled");
-
-    if (success === "true") {
-      setMessage(
-        "Checkout completed. Confirming your HoopCheck membership..."
-      );
-
-      let attempts = 0;
-      const refresh = window.setInterval(async () => {
-        attempts += 1;
-        await loadSubscription(true);
-
-        if (attempts >= 6) {
-          window.clearInterval(refresh);
-          setMessage(
-            "Checkout completed. If your membership has not appeared yet, refresh this page in a moment while Stripe finishes confirming the subscription."
-          );
-        }
-      }, 2000);
-
-      return () => window.clearInterval(refresh);
-    }
-
-    if (canceled === "true") {
-      setMessage("Checkout was canceled. No subscription was created.");
-    }
-
-    return undefined;
-  }, [searchParams]);
-
-  async function startCheckout(plan: Plan, interval: BillingInterval = billingInterval, code?: string) {
-    setCheckoutLoading(`${plan}-${interval}`);
-    setError("");
-    setMessage("");
-
+    if (searchParams.get("canceled") === "true") setMessage("Checkout was canceled. No subscription was confirmed.");
+    if (searchParams.get("success") !== "true") return;
+    setMessage("Checkout completed. Confirming membership with the billing provider…");
+    let attempts = 0;
+    const timer = setInterval(() => { void loadSubscription(); if (++attempts >= 6) { clearInterval(timer); setMessage("Refresh to check your verified membership. Checkout completion alone does not confirm access."); } }, 2000);
+    return () => clearInterval(timer);
+  }, [loadSubscription, searchParams, authRevision]);
+  async function billingAction(action: string, path: string, body?: Record<string, unknown>) {
+    if (acting.current || loading || !userId) return;
+    acting.current = true; setBusy(action); setError(""); setMessage("");
+    const captured = authEpoch.current;
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session?.access_token) {
-        setError("Please log in before purchasing a membership.");
-        setCheckoutLoading(null);
-        return;
-      }
-
-      const response = await fetch("/api/stripe/webhook/create-checkout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ plan, interval, promoCode: code?.trim() || undefined }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.error || "Unable to start checkout.");
-      }
-
-      if (!data?.url) {
-        throw new Error("Stripe did not return a checkout URL.");
-      }
-
-      setCheckoutLoading(null);
-      window.location.href = data.url;
-    } catch (checkoutError) {
-      console.error("Checkout error:", checkoutError);
-      setError(
-        checkoutError instanceof Error
-          ? checkoutError.message
-          : "Unable to start checkout."
-      );
-      setCheckoutLoading(null);
-    }
+      const { data: { session }, error: sessionError } = await readDeadline(() => supabase.auth.getSession(), 10000);
+      if (sessionError || session?.user.id !== userId || captured !== authEpoch.current) throw Error("Your account changed. Refresh before managing billing.");
+      const controller = new AbortController();
+      let value;
+      try {
+      value = await readDeadline(async () => {
+      const response = await fetch(path, { method: "POST", headers: { Authorization: `Bearer ${session.access_token}`, ...(body ? { "Content-Type": "application/json" } : {}) }, body: body ? JSON.stringify(body) : undefined, cache: "no-store", redirect: "error", signal: controller.signal });
+      const payload = await response.json();
+      if (!response.ok) throw Error(payload?.error || "Billing could not be confirmed. Refresh before retrying.");
+      return payload;
+      }, 30000);
+      } finally { controller.abort(); }
+      if (captured !== authEpoch.current) return;
+      if (value.url) {
+        const target = new URL(value.url);
+        if (target.protocol !== "https:" || !["checkout.stripe.com", "billing.stripe.com"].includes(target.hostname) || target.username || target.password || target.port) throw Error("The secure billing destination could not be verified.");
+        window.location.assign(target.toString());
+      } else { await loadSubscription(); if (captured === authEpoch.current) setMessage("Billing updated. Your current access is verified separately above."); }
+    } catch (value) { if (captured === authEpoch.current) setError(value instanceof Error ? value.message : "Billing could not be confirmed."); }
+    finally { acting.current = false; setBusy(""); }
   }
-
-  async function cancelMembership() {
-    if (!window.confirm("Cancel your HoopCheck subscription at the end of the current trial or billing period? You will keep access through that date.")) return;
-    setCancelLoading(true); setError(""); setMessage("");
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error("Please log in before managing your membership.");
-      const response = await fetch("/api/stripe/cancel-subscription", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "cancel" }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data?.error || "Unable to cancel membership.");
-      if (data?.cancel_at_period_end !== true) throw new Error("Stripe did not confirm the cancellation request.");
-      setSubscription((current) => current ? { ...current, cancel_at_period_end: true, current_period_end: data.current_period_end ?? current.current_period_end } : current);
-      setMessage(data.current_period_end
-        ? `Automatic renewal is off. Your access continues through ${new Date(data.current_period_end).toLocaleDateString()}.`
-        : "Automatic renewal is off. Your access continues until the end of the current trial or billing period.");
-    } catch (e) { setError(e instanceof Error ? e.message : "Unable to cancel membership."); }
-    finally { setCancelLoading(false); }
-  }
-
-  async function resumeMembership() {
-    setCancelLoading(true); setError(""); setMessage("");
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error("Please log in before managing your membership.");
-      const response = await fetch("/api/stripe/cancel-subscription", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "resume" }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data?.error || "Unable to resume membership.");
-      setSubscription((current) => current ? { ...current, cancel_at_period_end: false, current_period_end: data.current_period_end } : current);
-      setMessage("Membership cancellation was removed. Your subscription will continue.");
-    } catch (e) { setError(e instanceof Error ? e.message : "Unable to resume membership."); }
-    finally { setCancelLoading(false); }
-  }
-
-  async function openCustomerPortal() {
-    setPortalLoading(true);
-    setError("");
-    setMessage("");
-
-    try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session?.access_token) {
-        setError("Please log in before managing your membership.");
-        setPortalLoading(false);
-        return;
-      }
-
-      const response = await fetch("/api/stripe/create-portal", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.error || "Unable to open billing portal.");
-      }
-
-      if (!data?.url) {
-        throw new Error("Stripe did not return a billing portal URL.");
-      }
-
-      setPortalLoading(false);
-      window.location.href = data.url;
-    } catch (portalError) {
-      console.error("Portal error:", portalError);
-      setError(
-        portalError instanceof Error
-          ? portalError.message
-          : "Unable to open billing portal."
-      );
-      setPortalLoading(false);
-    }
-  }
-
-  const currentTier = getActiveMembershipTier(subscription);
-  const isActive = currentTier !== "free";
-  // Don't hide cancellation for paid/trialing accounts when local access is stale.
-  const hasManageableSubscription = Boolean(subscription?.stripe_subscription_id &&
-    ["active", "trialing", "past_due", "unpaid"].includes(subscription.status));
-  const showMembershipManagement = isActive || hasManageableSubscription;
+  const currentTier = getActiveMembershipTier(subscription), isActive = currentTier !== "free";
   const premiumOnlyAccount = accountType === "coach" || accountType === "manager";
+  const stripeOngoing = Boolean(billing?.stripe_subscription_id && ["active", "trialing", "past_due", "unpaid", "incomplete", "paused"].includes(billing.status));
+  const appleOngoing = subscription?.provider === "apple" && isActive;
+  const canBuy = !loading && !error && Boolean(userId && accountType && ["player", "coach", "manager", "scout", "agent", "club_admin"].includes(accountType)) && !stripeOngoing && !appleOngoing;
+  const checkout = (plan: Plan, interval = billingInterval, code?: string) => {
+    if (!canBuy || premiumOnlyAccount && plan !== "premium") return;
+    void billingAction("checkout", "/api/stripe/webhook/create-checkout", { plan, interval, ...(code?.trim() ? { promoCode: code.trim() } : {}) });
+  };
+  return <main className="hc-membership-page">
+    <section className="hero membership-hero"><div className="eyebrow">HoopCheck Membership</div><h1>Research deeper.<br />Decide smarter.</h1><p>Research teams, coaches and leagues through first-hand basketball experiences. Existing role, verification and moderation rules apply to every membership.</p><div className="hero-links"><Link href="/search">Global Research Search →</Link></div></section>
+    {loading ? <HoopLoading label="Verifying membership and billing…" /> : null}
+    {error ? <div className="status error" role="alert">{error}</div> : null}
+    {message ? <div className="status success" role="status">{message}</div> : null}
+    <section className="membership-section">
+      {isActive && subscription && <div className="active-card" id="manage-subscription"><div className="eyebrow">CURRENT MEMBERSHIP</div><h2>HoopCheck {currentTier === "premium" ? "Premium" : "Pro"}</h2><p>Verified access: <strong>{subscription.status}</strong> · {subscription.provider === "apple" ? "Apple" : subscription.provider === "stripe" ? "Stripe" : "HoopCheck"}</p>{subscription.current_period_end ? <p>Current period ends: <strong>{new Date(subscription.current_period_end).toLocaleDateString()}</strong></p> : null}{subscription.cancel_at_period_end ? <p className="cancel-warning">Renewal is cancelled. Access continues until the verified period ends.</p> : null}
+        {subscription.provider === "apple" ? <><p>Manage, change or cancel Apple billing in Apple subscriptions. Restore purchases from Membership in the HoopCheck iPhone app. Stripe controls cannot change Apple billing.</p><a className="btn" href="https://apps.apple.com/account/subscriptions" target="_blank" rel="noreferrer">Manage Apple subscription</a><p className="legal-note">Deleting HoopCheck or signing out does not cancel an Apple subscription.</p></> : subscription.provider === "manual" ? <p>Your existing membership is active and has no linked Stripe subscription. <Link href="/support?membershipCancellation=1">Contact billing support</Link> to request a reviewed change or cancellation; this does not cancel Apple subscriptions.</p> : null}
+      </div>}
+      {appleBillingKnown && subscription?.provider !== "apple" ? <div className="dashboard-card"><h2>Apple billing and restoration</h2><p>You also have Apple purchase history. Manage any Apple renewal with Apple, even when your current HoopCheck access comes from another provider. Restore purchases in the HoopCheck iPhone app.</p><a className="btn" href="https://apps.apple.com/account/subscriptions" target="_blank" rel="noreferrer">Manage Apple subscription</a></div> : null}
+      {subscription?.provider === "apple" && !isActive ? <div className="dashboard-card"><h2>Apple billing and restoration</h2><p>Current access is inactive or needs verification. Manage Apple billing or restore purchases in the HoopCheck iPhone app before changing billing providers.</p><a className="btn" href="https://apps.apple.com/account/subscriptions" target="_blank" rel="noreferrer">Manage Apple subscription</a></div> : null}
+      {billing?.stripe_customer_id || billing?.stripe_subscription_id ? <div className="dashboard-card" id="stripe-billing"><div className="eyebrow">STRIPE BILLING</div><h2>{subscription?.provider === "apple" ? "Separate Stripe billing" : "Manage Stripe membership"}</h2><p>Status: {billing.status}. Stripe invoices and cancellation affect Stripe billing only.</p><div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}><button className="btn" disabled={Boolean(busy) || loading} onClick={() => void billingAction("portal", "/api/stripe/create-portal")}>{busy === "portal" ? "Opening billing…" : "Manage / Upgrade Plan"}</button>{stripeOngoing ? <button className="btn dark" disabled={Boolean(busy) || loading} onClick={() => {
+        if (!billing.cancel_at_period_end && !window.confirm("Cancel Stripe renewal at the end of your current billing period? This does not cancel Apple billing.")) return;
+        void billingAction("cancel", "/api/stripe/cancel-subscription", { action: billing.cancel_at_period_end ? "resume" : "cancel" });
+      }}>{busy === "cancel" ? "Updating…" : billing.cancel_at_period_end ? "Keep Membership" : "Cancel Membership"}</button> : null}</div></div> : null}
+      {accountType === "fan" ? <div className="dashboard-card"><h2>Fan membership status</h2><p>Paid fan products have not been priced and are not offered for purchase. Existing Pro and Premium entitlements, renewals and billing-management access remain unchanged.</p><Link className="btn" href="/team-hub/groups">Explore HoopGroups</Link></div> : null}
+      {isActive && subscription && <MembershipComparison audience={accountType === "fan" ? "fan" : "player"} currentTier={currentTier} billingTerm={billingInterval} premiumOnly={premiumOnlyAccount} />}
+      {!loading && !isActive && accountType && accountType !== "fan" ? <><div className="section-heading"><div className="eyebrow">CHOOSE YOUR ACCESS</div><h2>{premiumOnlyAccount ? "Premium for coaches and team managers." : "Built for basketball professionals."}</h2><p>Choose a billing period. New purchases are available after your account and current billing are verified.</p></div><div className="hc-billing-options" role="group" aria-label="Choose billing term">{(["month", "6_month", "year"] as const).map(term => <button key={term} type="button" aria-pressed={billingInterval === term} className="hc-billing-option" onClick={() => setBillingInterval(term)}><span>{term === "month" ? "Monthly" : term === "6_month" ? "6 months" : "Annual"}</span><small>{BILLING_LABELS[term]}</small></button>)}</div>
+        {accountType !== "fan" && billingInterval === "month" ? <p className="hc-trial-note" role="note"><strong>one-time seven-day free trial:</strong> HoopCheck is preparing an eligible first-time monthly Pro/Premium offer for all supported HoopCheck account types, but it is not currently available at public checkout. Paid fan products are not yet priced or available. Your actual recurring price, taxes, and payment date are confirmed before payment.</p> : null}
+        <div className="plans">{!premiumOnlyAccount ? <div className="plan-card"><div className="eyebrow">HOOPCHECK PRO</div><h3>Pro</h3><div className="price"><strong>{PLAN_PRICES.pro[billingInterval]}</strong><span>{BILLING_LABELS[billingInterval]}</span></div><p>Full coach, team and league reviews, HoopFeed and eligible research tools.</p><button className="btn plan-button" disabled={!canBuy || Boolean(busy)} onClick={() => checkout("pro")}>Get Pro — {billingInterval === "month" ? "Monthly" : billingInterval === "6_month" ? "6 Months" : "1 Year"}</button></div> : null}<div className="plan-card featured"><div className="eyebrow">HOOPCHECK PREMIUM</div><h3>Premium</h3><div className="price"><strong>{PLAN_PRICES.premium[billingInterval]}</strong><span>{BILLING_LABELS[billingInterval]}</span></div><p>Pro benefits with eligible Premium tools for your account.</p><button className="btn plan-button" disabled={!canBuy || Boolean(busy)} onClick={() => checkout("premium")}>Get Premium — {billingInterval === "month" ? "Monthly" : billingInterval === "6_month" ? "6 Months" : "1 Year"}</button></div></div>
 
-  return (
-    <main className="hc-membership-page">
-<section className="hero membership-hero">
-        <div className="eyebrow">HoopCheck Membership</div>
-        <h1>
-          Research deeper.
-          <br />
-          Decide smarter.
-        </h1>
-        <p>
-          {accountType === "fan"
-            ? "Follow your teams, join live game chats, connect with fans and unlock deeper team insights."
-            : accountType === "player"
-              ? "Research teams, coaches and leagues with first-hand reviews from players who have already been there."
-              : "Access deeper basketball research, professional reviews and organization insights."}
-        </p>
-        <div className="hero-links">
-          <Link href="/search">Global Research Search →</Link>
-        </div>
-      </section>
-
-      {message && <div className="status success" role="status" aria-live="polite">{message}</div>}
-      {error && <div className="status error" role="alert">{error}</div>}
-
-      <section className="membership-section">
-        {loading ? (
-          <div className="hc-membership-loading" role="status" aria-live="polite">
-            <HoopLoading variant="inline" label="Loading membership..." />
-          </div>
-        ) : showMembershipManagement && subscription ? (
-          <>
-          <div className="active-card" id="manage-subscription" aria-label="Manage your HoopCheck membership">
-            <div className="eyebrow">CURRENT MEMBERSHIP</div>
-            <h2>
-              HoopCheck {accountType === "fan" ? (subscription.plan === "premium" ? "Fan Premium" : "Fan Pro") : (subscription.plan === "premium" ? "Premium" : "Pro")}
-            </h2>
-            <p>
-              Status: <strong>{subscription.status}</strong>
-            </p>
-            {subscription.current_period_end && (
-              <p>
-                Current period ends: <strong>{new Date(subscription.current_period_end).toLocaleDateString()}</strong>
-              </p>
-            )}
-            {subscription.cancel_at_period_end && (
-              <p className="cancel-warning" role="status">
-                Your membership is scheduled to cancel at the end of the current
-                billing period.
-              </p>
-            )}
-            <div className="hc-membership-actions" role="group" aria-label="Subscription actions">
-              {subscription.stripe_subscription_id ? (
-                <>
-                  <button type="button" className="btn" onClick={openCustomerPortal} disabled={portalLoading || cancelLoading}>
-                    {portalLoading ? "Opening billing..." : "Manage Billing"}
-                  </button>
-                  {subscription.cancel_at_period_end ? (
-                    <button type="button" className="btn dark" onClick={resumeMembership} disabled={portalLoading || cancelLoading}>
-                      {cancelLoading ? "Updating..." : "Keep Subscription"}
-                    </button>
-                  ) : (
-                    <button type="button" className="btn dark hc-cancel-subscription" onClick={cancelMembership} disabled={portalLoading || cancelLoading}>
-                      {cancelLoading ? "Canceling..." : "Cancel Subscription"}
-                    </button>
-                  )}
-                </>
-              ) : (
-                <Link href="/support?membershipCancellation=1" className="btn dark hc-cancel-subscription">
-                  Request Membership Cancellation
-                </Link>
-              )}
-            </div>
-            <div className="legal-note">
-              {subscription.stripe_subscription_id
-                ? "Cancel here to stop the next Stripe renewal. Your access continues through the current paid period or trial end; you can also manage billing securely in Stripe."
-                : "This membership has no linked Stripe subscription, so there is no Stripe recurring charge to cancel here. Request a support review to remove access or address billing managed elsewhere."}
-            </div>
-          </div>
-          {isActive && (
-            <MembershipComparison
-              audience={accountType === "fan" ? "fan" : "player"}
-              currentTier={currentTier}
-              billingTerm={billingInterval}
-              premiumOnly={premiumOnlyAccount}
-            />
-          )}
-          </>
-        ) : (
-          <>
-            <div className="section-heading">
-              <div className="eyebrow">CHOOSE YOUR ACCESS</div>
-              <h2>
-                {accountType === "fan" ? <>Built for fans who follow the game.</> : accountType === "player" ? <>Built for players making serious decisions.</> : <>Built for basketball professionals.</>}
-              </h2>
-              <p>{accountType === "fan" ? "Choose the fan access that fits how you follow basketball." : "Start with the level of research access that fits you."}</p>
-            </div>
-
-            <div className="hc-billing-options" role="group" aria-label="Choose billing term">
-              <button type="button" aria-pressed={billingInterval==="month"} className="hc-billing-option" onClick={()=>setBillingInterval("month")}><span>Monthly</span><small>Flexible billing</small></button>
-              <button type="button" aria-pressed={billingInterval==="6_month"} className="hc-billing-option" onClick={()=>setBillingInterval("6_month")}><span>6 months</span><small>Save 10%</small></button>
-              <button type="button" aria-pressed={billingInterval==="year"} className="hc-billing-option" onClick={()=>setBillingInterval("year")}><span>Annual</span><small>Save 15%</small></button>
-            </div>
-            {billingInterval === "month" && (
-              <p className="hc-trial-note" role="note">
-                {trialPubliclyAvailable ? (
-                  <>
-                    <strong>7-day free trial:</strong> Eligible first-time members across all supported HoopCheck account types can start one seven-day trial with a monthly Pro or Premium membership. Coach and Team Manager accounts require Premium. Stripe Checkout will confirm the recurring price, any applicable taxes and the first payment date before you start.
-                  </>
-                ) : (
-                  <>
-                    <strong>7-day trial update:</strong> A one-time seven-day free trial for eligible first-time monthly Pro and Premium memberships across all supported HoopCheck account types is being prepared, but it is not currently available at public checkout. Account-specific plan rules still apply. Your selected monthly price and any applicable taxes or discounts are shown before payment.
-                  </>
-                )}
-              </p>
-            )}
-            <div className="hc-membership-value"><span className="hc-membership-value__mark">★</span><div><strong>Best flexibility, better value.</strong><p>Choose monthly, 6-month, or annual billing. The total shown is the amount charged for the selected term.</p></div></div><div className="plans">
-              <div className="plan-card">
-                <div className="plan-top">
-                  <div>
-                    <div className="eyebrow">{accountType === "fan" ? "HOOPCHECK FAN PRO" : "HOOPCHECK PRO"}</div>
-                    <h3>{accountType === "fan" ? "Fan Pro" : "Pro"}</h3>
-                  </div>
-                  <div className="price">
-                    <strong>{PLAN_PRICES.pro[billingInterval]}</strong>
-                    <span>{BILLING_LABELS[billingInterval]}</span>
-                  </div>
-                </div>
-                <p className="plan-description">
-                  {accountType === "fan"
-                    ? "Join Fan HoopFeed and live game chats, connect with other fans and compare teams."
-                    : "Full access to the core HoopCheck research experience."}
-                </p>
-                <ul>
-                  {accountType === "fan" ? <>
-                    <li>Fan HoopFeed reading and posting</li>
-                    <li>Review previews only; full player-written reviews require Fan Premium</li>
-                    <li>Fan network and connection requests</li>
-                    <li>Live Game Hub and Chat</li>
-                    <li>Team comparison and team alerts</li>
-                  </> : <>
-                    <li>Full coach ratings and reviews</li>
-                    <li>Full team ratings and reviews</li>
-                    <li>Full league ratings and reviews</li>
-                    <li>Coach research</li>
-                    <li>Team research</li>
-                    <li>League research</li>
-                  </>}
-                </ul>
-                <button
-                  className="btn plan-button"
-                  onClick={() => startCheckout("pro")}
-                  disabled={checkoutLoading !== null || loading}
-                >
-                  {checkoutLoading === `pro-${billingInterval}` ? "Opening Checkout..." : `Get ${accountType === "fan" ? "Fan Pro" : "Pro"} — ${billingInterval === "month" ? "Monthly" : billingInterval === "6_month" ? "6 Months" : "1 Year"}`}
-                </button>
-              </div>
-
-              <div className="plan-card featured">
-                <div className="featured-badge">MORE ACCESS</div>
-                <div className="plan-top">
-                  <div>
-                    <div className="eyebrow">{accountType === "fan" ? "HOOPCHECK FAN PREMIUM" : "HOOPCHECK PREMIUM"}</div>
-                    <h3>{accountType === "fan" ? "Fan Premium" : "Premium"}</h3>
-                  </div>
-                  <div className="price">
-                    <strong>{PLAN_PRICES.premium[billingInterval]}</strong>
-                    <span>{billingInterval==="month" ? "billed monthly" : billingInterval==="6_month" ? "billed every 6 months" : "billed annually"}</span>
-                  </div>
-                </div>
-                <p className="plan-description">
-                  {accountType === "fan"
-                    ? "Everything in Fan Pro, plus complete access to player-written reviews and Trust Score details."
-                    : "Everything in Pro plus expanded research capabilities."}
-                </p>
-                <ul>
-                  {accountType === "fan" ? <>
-                    <li>Everything in Fan Pro</li>
-                    <li>Full coach, team and league review details</li>
-                    <li>Full Trust Score details</li>
-                    <li>Expanded team insights</li>
-                    <li>Premium discovery features</li>
-                    <li>Priority access to new features</li>
-                  </> : <>
-                    <li>Everything in Pro</li>
-                    <li>Advanced research tools</li>
-                    <li>Expanded coach insights</li>
-                    <li>Expanded team insights</li>
-                    <li>Expanded league insights</li>
-                    <li>Premium discovery features</li>
-                    <li>Priority access to new features</li>
-                  </>}
-                </ul>
-                <button
-                  className="btn plan-button"
-                  onClick={() => startCheckout("premium")}
-                  disabled={checkoutLoading !== null || loading}
-                >
-                  {checkoutLoading === `premium-${billingInterval}` ? "Opening Checkout..." : `Get ${accountType === "fan" ? "Fan Premium" : "Premium"} — ${billingInterval === "month" ? "Monthly" : billingInterval === "6_month" ? "6 Months" : "1 Year"}`}
-                </button>
-              </div>
-            </div>
-
-            <div className="subscription-legal">
-              <p>
-                By purchasing a HoopCheck membership, you agree to our{" "}
-                <Link href="/terms">Terms of Service</Link> and acknowledge our{" "}
-                <Link href="/privacy">Privacy Policy</Link>. Reviews and
-                user-generated content are governed by our{" "}
-                <Link href="/community-guidelines">Community Guidelines</Link>.
-              </p>
-              <p>
-                Memberships are billed for the selected term at the price shown above. Monthly, 6-month, and annual subscriptions renew on their applicable renewal date until canceled. Cancellation and eligible billing management are
-                available through the Stripe customer portal.
-              </p>
-              <p className="small">
-                Taxes, where applicable, may be calculated and collected according
-                to applicable laws and Stripe's billing configuration.
-              </p>
-            </div>
-          </>
-        )}
-      </section>
-
-      <section className="hero bottom-cta">
-        <div className="eyebrow">KNOW BEFORE YOU GO</div>
-        <h2>
-          {accountType === "fan" ? <>Your next game<br />deserves a closer look.</> : <>Your next contract<br />deserves research.</>}
-        </h2>
-        <p>
-          {accountType === "fan" ? "Follow your teams, catch live conversations, and make every game more engaging." : "Do not rely on one conversation. Research the people, teams, and leagues that could shape your career."}
-        </p>
-        <div className="actions">
-          <Link href="/search" className="btn">
-            Start Research
-          </Link>
-          <Link href="/dashboard" className="btn dark">
-            Go to Dashboard
-          </Link>
-        </div>
-      </section>
-    </main>
-  );
+      </> : null}
+      {!loading && !userId && !error ? <Link href="/login?returnTo=%2Fmembership" className="btn">Sign in to verify membership</Link> : null}
+      <button className="btn dark" disabled={loading || Boolean(busy)} onClick={() => void loadSubscription()}>Refresh membership</button>
+      <div className="subscription-legal"><p>Subscriptions renew for the displayed billing period until cancelled through the original provider. Apple purchase and trial terms are confirmed separately in the iPhone app. Taxes may apply.</p><p>By purchasing, you agree to our <Link href="/terms">Terms of Service</Link>, <Link href="/privacy">Privacy Policy</Link> and <Link href="/community-guidelines">Community Guidelines</Link>.</p></div>
+    </section>
+  </main>;
 }
-
 export default function MembershipPage() {
-  return (
-    <Suspense
-      fallback={
-        <main>
-          <section className="hero membership-hero">
-            <div className="eyebrow">HoopCheck Membership</div>
-            <HoopLoading label="Loading membership..." />
-          </section>
-        </main>
-      }
-    >
-      <MembershipContent />
-    </Suspense>
-  );
+  return <Suspense fallback={<main><HoopLoading label="Loading membership…" /></main>}><MembershipContent /></Suspense>;
 }

@@ -11,22 +11,38 @@ const migration = readFileSync("scripts/sql/stripe-trial-claims-proposal.sql", "
 assert.ok(membership.includes("one-time seven-day free trial") &&
   membership.includes("not currently available at public checkout"),
   "Public membership copy must disclose that the all-user trial is not yet live");
-// The public trial stays disabled. Only the pinned, branch-scoped isolated
-// test environment can issue a trial for authenticated sandbox acceptance.
-for (const required of [
-  'process.env.VERCEL_ENV === "preview"',
-  'process.env.VERCEL_GIT_COMMIT_REF === "fix/website-membership-layout-20261121"',
-  'process.env.HOOPCHECK_STRIPE_SANDBOX_TRIAL_ENABLED === "true"',
-  'process.env.NEXT_PUBLIC_SUPABASE_URL === "https://vcprqpjkyubzzcjatdpx.supabase.co"',
-  'process.env.HOOPCHECK_STRIPE_TEST_SUPABASE_URL === process.env.NEXT_PUBLIC_SUPABASE_URL',
-  'siteUrl === "https://hoopcheck-stripe-sandbox-git-fix-website-membe-b926cc-hoopcheck.vercel.app"',
-  'stripeConfigMatches && configuredMode === "test"',
-]) {
-  assert.ok(checkout.includes(required), `Trial test rollout missing required isolation guard: ${required}`);
+// Support two strictly gated release stages without weakening any Stripe
+// customer-history, atomic reservation, entitlement or webhook assertions below:
+// (1) the Build 9 hard HOLD until real Sandbox acceptance; (2) the separately
+// reviewed preview/production feature flag conditions used by current main.
+const hardHeld = checkout.includes("const trialRolloutEnabled = false;");
+if (hardHeld) {
+  assert.ok(!checkout.includes("const sandboxTrialRolloutEnabled ="),
+    "A hard-held Build 9 checkout must not silently enable the sandbox rollout");
+  assert.ok(!checkout.includes("const productionTrialRolloutEnabled ="),
+    "A hard-held Build 9 checkout must not silently enable production trials");
+  assert.ok(checkout.includes("let trialEligible = trialRolloutEnabled && isSupportedSubscriptionAccountType(checkoutProfile.account_type)"),
+    "Even disabled Build 9 trials must retain identical server-side role guards");
+  assert.ok(checkout.includes("rolloutEnabled: trialRolloutEnabled,"),
+    "Final eligibility must remain gated by the disabled trial flag");
+} else {
+  // The public trial stays disabled unless the pinned, branch-scoped isolated
+  // test environment OR the separately accepted production feature gate passes.
+  for (const required of [
+    'process.env.VERCEL_ENV === "preview"',
+    'process.env.VERCEL_GIT_COMMIT_REF === "fix/website-membership-layout-20261121"',
+    'process.env.HOOPCHECK_STRIPE_SANDBOX_TRIAL_ENABLED === "true"',
+    'process.env.NEXT_PUBLIC_SUPABASE_URL === "https://vcprqpjkyubzzcjatdpx.supabase.co"',
+    'process.env.HOOPCHECK_STRIPE_TEST_SUPABASE_URL === process.env.NEXT_PUBLIC_SUPABASE_URL',
+    'siteUrl === "https://hoopcheck-stripe-sandbox-git-fix-website-membe-b926cc-hoopcheck.vercel.app"',
+    'stripeConfigMatches && configuredMode === "test"',
+  ]) {
+    assert.ok(checkout.includes(required), `Trial test rollout missing required isolation guard: ${required}`);
+  }
+  assert.ok(checkout.includes('const sandboxTrialRolloutEnabled ='), "Sandbox gate must remain explicit");
+  assert.ok(checkout.includes('const productionTrialRolloutEnabled = canEnableProductionSevenDayTrial({'), "Public trial must use the isolated production gate");
+  assert.ok(checkout.includes('const trialRolloutEnabled = sandboxTrialRolloutEnabled || productionTrialRolloutEnabled;'), "Rollout must require one of the separate guarded environments");
 }
-assert.ok(checkout.includes('const sandboxTrialRolloutEnabled ='), "Sandbox gate must remain explicit");
-assert.ok(checkout.includes('const productionTrialRolloutEnabled = canEnableProductionSevenDayTrial({'), "Public trial must use the isolated production gate");
-assert.ok(checkout.includes('const trialRolloutEnabled = sandboxTrialRolloutEnabled || productionTrialRolloutEnabled;'), "Rollout must require one of the separate guarded environments");
 for (const value of [
   'input.vercelEnvironment === "production"',
   'input.featureEnabled === "true"',

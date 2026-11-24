@@ -36,6 +36,14 @@
         {
           "faceIDPermission": "Unlock HoopCheck after five minutes away using Face ID. Normal sign-in is always available."
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Choose photos and videos to share on HoopCheck or customize your profile.",
+          "cameraPermission": "Allow HoopCheck to take basketball photos and record videos when you choose to capture media.",
+          "microphonePermission": "Allow HoopCheck to record audio with videos you choose to capture."
+        }
       ]
     ],
     "experiments": {

@@ -1,0 +1,27 @@
+✔ Apple configuration fails closed and Sandbox cannot target production data (4.650143ms)
+✔ actual Apple verifier rejects a fabricated proof despite plausible decoded claims (6.626972ms)
+✔ verified transaction policy rejects cross-account/bundle/environment/fan/family and invalid trial terms (0.924697ms)
+✔ purchase synchronization persists the independently verified live Apple status and acknowledges only after DB success (2.33868ms)
+✔ unverified proofs, disabled billing and foreign ownership never reach a membership write (0.57056ms)
+✔ trial authorization uses the server account, Apple identity and persistent eligibility decision (1.879594ms)
+✔ unpriced fans, pending deletion, existing Stripe billing, invalid app proof and rate limits prevent new purchases (1.072889ms)
+✔ first-time-payer checks use paid invoice history and deny trials when history is unknown (0.51325ms)
+✔ notifications never reassign purchases or silently create unknown-owner entitlements (1.105914ms)
+✔ bounded JSON parsing rejects oversized chunked input and private replies cannot be cached (10.380854ms)
+✔ a prior Stripe trial consumes cross-provider eligibility even without a paid invoice (0.466514ms)
+✔ a live trial cannot be acknowledged when first-payer history is unknown (0.446982ms)
+✔ unknown history cannot produce an eligible signature even if a stale RPC reports true (0.477543ms)
+✔ accelerated Sandbox trials remain isolated from seven-day production receipt rules (0.406283ms)
+✔ coach and manager purchases retain Premium-only rules while other role entitlements remain unchanged (1.079057ms)
+✔ existing Apple billing blocks another native purchase and is freshly checked before a Stripe transition (1.435402ms)
+✔ a new purchase or refund cannot be acknowledged against an older live Apple API state (0.466279ms)
+✔ disabled catalog is a verified empty response without initializing Apple signing or touching membership rows (0.257987ms)
+✔ missing config and enabled billing without signing remain unavailable (0.264057ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 19
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 50.38545

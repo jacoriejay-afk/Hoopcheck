@@ -1,0 +1,2 @@
+Unified HoopFeed RLS static safeguards passed (not database integration tests).
+HoopFeed comment migration and API static safeguards passed (not live posting tests).

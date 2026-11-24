@@ -1,0 +1,3 @@
+PASS light player: verified role/canonical RPC/current-country opt-in/approved avatar/private-profile denial
+PASS dark player: verified role/canonical RPC/current-country opt-in/approved avatar/private-profile denial
+PASS light fan: verified role/canonical RPC/current-country opt-in/approved avatar/private-profile denial

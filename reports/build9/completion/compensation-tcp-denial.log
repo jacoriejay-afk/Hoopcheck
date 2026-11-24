@@ -1,0 +1,2 @@
+psql:/tmp/compensation.sql:6: ERROR:  Only the isolated socket rehearsal database is permitted
+CONTEXT:  PL/pgSQL function inline_code_block line 3 at RAISE

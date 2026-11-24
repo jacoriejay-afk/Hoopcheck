@@ -117,6 +117,17 @@ export function getGameAvailability({
   };
 }
 
+/**
+ * Fail-closed chat access gate until the separately reviewed postgame RLS
+ * migration is deployed and the public rollout flag is explicitly enabled.
+ * Keep getGameAvailability provider/lifecycle semantics for informational UI.
+ * The database room RPC and RLS must independently authorize every write.
+ */
+export function isGameChatOpen(input: GameAvailabilityInput, postgameEnabled = false): boolean {
+  const availability = getGameAvailability(input);
+  return availability.chatOpen && (availability.phase !== "post-game" || postgameEnabled);
+}
+
 /** Format stored timestamps in the viewer's local timezone. Never expose raw UTC. */
 export function formatViewerLocalTime(value: string | null, options?: Intl.DateTimeFormatOptions): string {
   if (!value || !Number.isFinite(Date.parse(value))) return "Tip-off time not confirmed";

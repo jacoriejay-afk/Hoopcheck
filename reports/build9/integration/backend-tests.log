@@ -1,0 +1,91 @@
+✔ scripts/test-ambassador-stripe.mjs (1242.636058ms)
+✔ scripts/test-apple-app-site-association.mjs (814.25567ms)
+✔ scripts/test-balldontlie-validation.mjs (863.939475ms)
+✔ scripts/test-checkout-membership-policy.mjs (1703.733528ms)
+✔ scripts/test-membership-reader.mjs (647.736248ms)
+✔ scripts/test-membership-tier.mjs (662.824285ms)
+✔ scripts/test-mfa-enforcement.mjs (1421.937006ms)
+file:///workspace/Hoopcheck/scripts/test-mfa-sql-negative.mjs:4
+if (!['127.0.0.1','localhost'].includes(process.env.PGHOST)) throw new Error('Negative SQL fixtures require an isolated localhost database');
+                                                                   ^
+
+Error: Negative SQL fixtures require an isolated localhost database
+    at file:///workspace/Hoopcheck/scripts/test-mfa-sql-negative.mjs:4:68
+    at ModuleJob.run (node:internal/modules/esm/module_job:561:25)
+    at async node:internal/modules/esm/loader:647:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v24.22.3
+✖ scripts/test-mfa-sql-negative.mjs (80.322932ms)
+✔ scripts/test-mobile-bootstrap.mjs (637.893228ms)
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+
+  assert.ok(['127.0.0.1', 'localhost', '::1'].includes(process.env.PGHOST))
+
+    at file:///workspace/Hoopcheck/scripts/test-profile-compatibility-sql-negative.mjs:8:8
+    at ModuleJob.run (node:internal/modules/esm/module_job:561:25)
+    at async node:internal/modules/esm/loader:647:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.22.3
+✖ scripts/test-profile-compatibility-sql-negative.mjs (95.015561ms)
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+
+  assert.ok(['127.0.0.1', 'localhost', '::1'].includes(process.env.PGHOST))
+
+    at file:///workspace/Hoopcheck/scripts/test-profile-private-sql-negative.mjs:8:8
+    at ModuleJob.run (node:internal/modules/esm/module_job:561:25)
+    at async node:internal/modules/esm/loader:647:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.22.3
+✖ scripts/test-profile-private-sql-negative.mjs (73.747244ms)
+✔ scripts/test-storekit-server.mjs (1615.978724ms)
+✔ scripts/test-stripe-trial-eligibility.mjs (560.923747ms)
+✔ scripts/test-stripe-trial-recovery.mjs (608.59519ms)
+✔ scripts/test-theme-color-math.mjs (64.336323ms)
+✔ scripts/test-unified-hoopfeed-rls.mjs (41.948937ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 13
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 11161.198705
+
+✖ failing tests:
+
+test at scripts/test-mfa-sql-negative.mjs:1:1
+✖ scripts/test-mfa-sql-negative.mjs (80.322932ms)
+  'test failed'
+
+test at scripts/test-profile-compatibility-sql-negative.mjs:1:1
+✖ scripts/test-profile-compatibility-sql-negative.mjs (95.015561ms)
+  'test failed'
+
+test at scripts/test-profile-private-sql-negative.mjs:1:1
+✖ scripts/test-profile-private-sql-negative.mjs (73.747244ms)
+  'test failed'

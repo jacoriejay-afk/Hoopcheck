@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { stripeMatchesDeployment } from "../../../../../lib/stripe-key-mode";
 import { createClient } from "@supabase/supabase-js";
+import { applePreventsStripeCheckout } from "../../../../../lib/server/apple/service";
+import { AppleBillingError } from "../../../../../lib/server/apple/proofs";
 import { getActiveMembershipTier, canStartNewMembershipCheckout } from "../../../../../lib/membership-tier";
 import { isEligibleForSevenDayTrial, isSupportedSubscriptionAccountType } from "../../../../../lib/stripe-trial-eligibility";
 import { canReuseOpenTrialSession, isTrustedStripeCheckoutUrl } from "../../../../../lib/stripe-trial-recovery";
-import { canEnableProductionSevenDayTrial } from "../../../../../lib/stripe-trial-production-rollout";
 
 function getAdminSupabase() {
   const supabaseUrl =
@@ -125,6 +126,8 @@ export async function POST(
       );
     }
 
+    if (!user.email_confirmed_at) return NextResponse.json({ error: "Confirm your email before purchasing membership." }, { status: 403 });
+
     const declaredLength = Number(request.headers.get("content-length") ?? "0");
     if (Number.isFinite(declaredLength) && declaredLength > 8_192) {
       return NextResponse.json({ error: "Request body is too large." }, { status: 413 });
@@ -165,7 +168,7 @@ export async function POST(
     // Enforce the coach/manager Premium-only rule on the server, not only in the UI.
     const { data: checkoutProfile, error: checkoutProfileError } = await supabase
       .from("profiles")
-      .select("account_type")
+      .select("account_type,moderation_status")
       .eq("id", user.id)
       .maybeSingle();
     if (checkoutProfileError || !checkoutProfile) {
@@ -174,8 +177,21 @@ export async function POST(
     if (!isSupportedSubscriptionAccountType(checkoutProfile.account_type)) {
       return NextResponse.json({ error: "This account type cannot purchase a membership yet." }, { status: 403 });
     }
+    if (["suspended", "banned", "removed"].includes(checkoutProfile.moderation_status || "")) return NextResponse.json({ error: "Purchasing is unavailable for this account. Existing billing can still be managed." }, { status: 403 });
     if (["coach", "manager"].includes(checkoutProfile.account_type) && plan !== "premium") {
       return NextResponse.json({ error: "Coach and Team Manager accounts require HoopCheck Premium." }, { status: 403 });
+    }
+
+    if (checkoutProfile.account_type === "fan") {
+      return NextResponse.json({ error: "Paid fan products have not been priced and are unavailable for purchase. Existing billing can still be managed." }, { status: 403 });
+    }
+    const deletion = await supabase.from("account_deletion_requests").select("status").eq("user_id", user.id).in("status", ["pending", "processing", "failed"]).limit(1).maybeSingle();
+    if (deletion.error) return NextResponse.json({ error: "Your account status could not be verified. No checkout was started." }, { status: 503 });
+    if (deletion.data) return NextResponse.json({ error: "Cancel your pending account deletion before purchasing membership." }, { status: 409 });
+    try {
+      if (await applePreventsStripeCheckout(supabase, user.id)) return NextResponse.json({ error: "Manage your existing Apple subscription before starting Stripe billing." }, { status: 409 });
+    } catch (error) {
+      return NextResponse.json({ error: error instanceof AppleBillingError ? error.message : "Existing Apple billing could not be verified. No checkout was started." }, { status: 503 });
     }
 
     const submittedPromoCode =
@@ -315,33 +331,14 @@ export async function POST(
       existingSubscription?.stripe_customer_id ||
       undefined;
 
-    // One seven-day trial is available to each eligible first-time monthly member,
-    // regardless of account type, when the isolated rollout is authorized. Check both
+    // The seven-day offer is for first-time monthly members only. Check both
     // the HoopCheck subscription record and Stripe's complete customer history;
     // a canceled subscription must never reset eligibility.
-    // Sandbox only: preserve the exact branch, test Supabase project and Stripe
-    // test credentials. No production feature setting can enable a preview.
-    const sandboxTrialRolloutEnabled =
-      process.env.VERCEL_ENV === "preview" &&
-      process.env.VERCEL_GIT_COMMIT_REF === "fix/website-membership-layout-20261121" &&
-      process.env.HOOPCHECK_STRIPE_SANDBOX_TRIAL_ENABLED === "true" &&
-      process.env.NEXT_PUBLIC_SUPABASE_URL === "https://vcprqpjkyubzzcjatdpx.supabase.co" &&
-      process.env.HOOPCHECK_STRIPE_TEST_SUPABASE_URL === process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      siteUrl === "https://hoopcheck-stripe-sandbox-git-fix-website-membe-b926cc-hoopcheck.vercel.app" &&
-      stripeConfigMatches && configuredMode === "test";
-
-    // Public trials remain OFF until a separate production flag is deliberately
-    // configured after sandbox lifecycle, payment/tax and rollback acceptance.
-    const productionTrialRolloutEnabled = canEnableProductionSevenDayTrial({
-      vercelEnvironment: process.env.VERCEL_ENV,
-      featureEnabled: process.env.HOOPCHECK_SEVEN_DAY_TRIAL_ENABLED,
-      siteUrl,
-      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
-      stripeCheckoutMode: configuredMode,
-      checkoutEnabled,
-      stripeKeyMatches: stripeConfigMatches,
-    });
-    const trialRolloutEnabled = sandboxTrialRolloutEnabled || productionTrialRolloutEnabled;
+    // Explicitly disabled until isolated trial tests and atomic eligibility reservation pass.
+    // Never enable in production merely because this branch is deployed.
+    // Hard stop: do not allow a flag alone to bypass the missing atomic reservation.
+    // Replace this only after the reservation RPC and webhook lifecycle are verified.
+    const trialRolloutEnabled = false;
     let trialEligible = trialRolloutEnabled && isSupportedSubscriptionAccountType(checkoutProfile.account_type) && interval === "month" && !promoCodeId && !existingSubscription?.stripe_subscription_id && Boolean(user.email_confirmed_at);
     if (trialEligible) {
       // Check every customer under this email, even when a customer is already

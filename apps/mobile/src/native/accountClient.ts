@@ -2,7 +2,8 @@ export type NativeAccount = {
   user: { id: string; displayName: string; accountType: string };
   tier: "free" | "pro" | "premium";
   hasPaidMembership: boolean;
-  features: { canReadHoopFeed: boolean; canWriteHoopFeed: boolean; canUseLiveGameHub: boolean; canUseFanGroups: boolean };
+  workspaces?: { owner: boolean; ambassador: boolean };
+  features: { canReadHoopFeed: boolean; canWriteHoopFeed: boolean; canUseLiveGameHub: boolean; canUseLiveGameChat: boolean; canSwitchBasketballSide: boolean; canUseFanGroups: boolean };
 };
 export function parseNativeAccount(input: unknown): NativeAccount {
   if (!input || typeof input !== "object") throw new Error("Invalid account response");
@@ -11,11 +12,13 @@ export function parseNativeAccount(input: unknown): NativeAccount {
   const rights = data.entitlements as Record<string, unknown> | null;
   if (!user || !rights || typeof user.id !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user.id) || typeof user.accountType !== "string" || !["free", "pro", "premium"].includes(String(rights.tier)) || typeof rights.hasPaidMembership !== "boolean") throw new Error("Invalid account response");
   const features = {} as NativeAccount["features"];
-  for (const key of ["canReadHoopFeed", "canWriteHoopFeed", "canUseLiveGameHub", "canUseFanGroups"] as const) {
+  for (const key of ["canReadHoopFeed", "canWriteHoopFeed", "canUseLiveGameHub", "canUseLiveGameChat", "canSwitchBasketballSide", "canUseFanGroups"] as const) {
     if (typeof rights[key] !== "boolean") throw new Error("Invalid account permissions");
     features[key] = rights[key];
   }
-  return { user: { id: user.id, displayName: typeof user.displayName === "string" ? user.displayName.slice(0, 200) : "", accountType: user.accountType }, tier: rights.tier as NativeAccount["tier"], hasPaidMembership: rights.hasPaidMembership, features };
+  const workspace = data.workspaces as Record<string, unknown> | undefined;
+  const workspaces = { owner: workspace?.owner === true, ambassador: workspace?.ambassador === true };
+  return { workspaces, user: { id: user.id, displayName: typeof user.displayName === "string" ? user.displayName.slice(0, 200) : "", accountType: user.accountType }, tier: rights.tier as NativeAccount["tier"], hasPaidMembership: rights.hasPaidMembership, features };
 }
 export async function requestNativeAccount(origin: string, token: string, signal?: AbortSignal, request: typeof fetch = fetch) {
   const url = new URL(origin);

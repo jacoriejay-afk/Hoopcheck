@@ -1,0 +1,36 @@
+✔ a rejected second photo prevents all uploads and publication (18.45339ms)
+HoopFeed moderation provider response did not contain a valid decision.
+✔ an invalid second moderation decision prevents all writes (3.715515ms)
+✔ approved photos upload only after every decision succeeds (4.115526ms)
+✔ failed second upload removes the first uploaded photo (2.836354ms)
+✔ failed post insert removes every uploaded photo (2.713319ms)
+✔ fan-group moderation resolves the authenticated platform role, not a service-role RPC (0.582345ms)
+✔ coach and manager comparison offers Premium, not Pro (11.957607ms)
+✔ priced professional audiences keep both paid choices and current prices (2.25444ms)
+✔ checkout choices are disabled during loading (1.748729ms)
+✔ role selection, server enforcement, and profile constraint remain aligned (0.514112ms)
+✔ membership page uses approved shared prices instead of stale hardcoded totals (0.392169ms)
+✔ current Pro and Premium plans are labeled and cannot be repurchased in comparison (4.628007ms)
+✔ active non-Stripe memberships use the shared tier and do not render checkout cards (0.280552ms)
+✔ team directory list and map send session bearer token for trust scores (0.253792ms)
+✔ checkout rejects the current active plan even without a Stripe subscription ID (16.977514ms)
+✔ unpriced fan comparisons preserve legacy features without prices or purchase controls (2.510805ms)
+✔ only post-scoped trusted legacy and private object paths resolve (1.794538ms)
+✔ official images sign only after the bearer-authenticated viewer can read the post (23.389173ms)
+✔ HoopFeed signs nested reshares against the original uploader under viewer RLS (52.542487ms)
+✔ public endpoint is explicitly server gated (2.256292ms)
+✔ guest form is hidden unless explicitly enabled (0.136335ms)
+✔ CAPTCHA and origin checks precede privileged database call (0.156275ms)
+✔ guest form sends actual honeypot and verification token (0.264247ms)
+✔ database keeps anonymous grants revoked and limits submissions (0.236596ms)
+✔ CAPTCHA failures are explained to visitors (0.116946ms)
+✔ API rejects non-JSON media types (0.090756ms)
+✔ guest inbox relies on admin-gated RPC rather than direct table reads (0.140611ms)
+ℹ tests 27
+ℹ suites 0
+ℹ pass 27
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1654.815685

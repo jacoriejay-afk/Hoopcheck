@@ -1,0 +1,17 @@
+✔ opted-in AAL1 API calls are denied before privileged handlers (40.82718ms)
+✔ AAL2 and non-enrolled AAL1 continue without changing existing route permissions (37.324042ms)
+✔ unverified credentials cannot assert their own AAL2 assurance (16.936733ms)
+✔ public webhooks do not acquire user sessions and keep their own signature checks (13.686608ms)
+✔ SSR cookie API sessions require the same challenge (18.013206ms)
+✔ protected SSR pages redirect to challenge before private profile reads (20.584361ms)
+✔ second-factor verification never bypasses existing pending-signup restrictions (18.487176ms)
+✔ Owner HQ enforces MFA again before any privileged workspace/owner query (81.952274ms)
+✔ AAL2 does not grant the owner role (19.939442ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 448.410549

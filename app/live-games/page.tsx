@@ -1,4 +1,5 @@
 "use client";
+import { getEffectiveMembership } from "../../lib/billing/client-membership";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
@@ -78,10 +79,11 @@ export default function LiveGamesPage() {
       setUserId(null); setAllowed(false); setGames([]); setLoading(false); return;
     }
     setUserId(user.id);
-    const [{ data: profile }, { data: subscription }] = await Promise.all([
+    const [{ data: profile }, { data: subscription, error: membershipError }] = await Promise.all([
       supabase.from("profiles").select("account_type").eq("id", user.id).maybeSingle(),
-      supabase.from("subscriptions").select("plan,status,current_period_end,access_status").eq("user_id", user.id).maybeSingle(),
+      getEffectiveMembership(user.id),
     ]);
+    if (membershipError) { setAllowed(false); setGames([]); setLoading(false); setMessage("Membership could not be verified. Refresh to retry; your billing has not changed."); return; }
     const entitlements = getHoopCheckEntitlements({ accountType: profile?.account_type, subscription });
     const isAllowed = entitlements.canUseLiveGameHub;
     setAllowed(isAllowed);

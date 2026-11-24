@@ -7,6 +7,7 @@ import Link from "next/link";
 import HoopLoading from "../../components/HoopLoading";
 import { supabase } from "../../lib/supabase";
 import { readOwnProfile } from "../../lib/read-own-profile";
+import { getEffectiveMembership } from "../../lib/billing/client-membership";
 import ThemeToast from "../../components/ThemeToast";
 import Surface from "../../components/Surface";
 import { profileCover } from "../../components/SocialProfileHeader";
@@ -90,6 +91,7 @@ export default function AccountPage() {
   const { t, setLanguage: applyLanguage } = useLanguage();
   const [email, setEmail] = useState("");
   const [cover, setCover] = useState(profileCover(null));
+  const [membershipError, setMembershipError] = useState("");
   const [appearanceOpen, setAppearanceOpen] = useState(false);
   useEffect(() => {
     const reveal = () => {
@@ -171,9 +173,9 @@ export default function AccountPage() {
       setCover(profileCover(user.user_metadata?.hoopcheck_profile_cover));
       setEmailConfirmed(Boolean(user.email_confirmed_at));
       setUserId(user.id);
-      const [{ data: profileData, error: profileError }, { data: subscriptionData }, { data: adminRoleData }] = await Promise.all([
+      const [{ data: profileData, error: profileError }, { data: subscriptionData, error: subscriptionError }, { data: adminRoleData }] = await Promise.all([
         readOwnProfile<Profile>(user.id, "account_type,basketball_type,display_name,username,first_name,last_name,professional_experience,bio,position,years_pro,current_country,current_country_public,current_team,favorite_teams,profile_visibility,player_verified,coach_verified,coach_profile_id,experience_summary,profile_claimed,avatar_url,avatar_moderation_status,moderation_status,moderation_note"),
-        supabase.from("subscriptions").select("plan,status,access_status,current_period_end,cancel_at_period_end").eq("user_id", user.id).maybeSingle(),
+        getEffectiveMembership(user.id),
         supabase.rpc("get_current_user_admin_role"),
       ]);
       if (profileError || !profileData) throw new Error("Your profile could not be loaded. Refresh and try again.");
@@ -200,6 +202,7 @@ export default function AccountPage() {
       setSettingsVisibility(nextProfile.profile_visibility === "public" ? "public" : "players_only");
       setAvatarUrl(nextProfile.avatar_url ?? "");
       setAvatarStatus(nextProfile.avatar_moderation_status ?? "approved");
+      setMembershipError(subscriptionError ? "Membership could not be verified. Open Membership and refresh before changing billing." : "");
       setSubscription(subscriptionData ?? null);
       setAdminRole(adminRoleData === "admin" || adminRoleData === "moderator" ? adminRoleData : null);
       setVerified(Boolean(nextProfile.player_verified || (nextProfile as any).coach_verified));
@@ -490,6 +493,7 @@ export default function AccountPage() {
           <SettingsRow icon="star" label="Team reviews" value="Check eligibility when ready" href="#team-review-checklist" />
         </SettingsGroup>}
         <SettingsGroup title="Security & membership">
+          <SettingsRow icon="shield" label="Two-factor authentication" value="Authenticator and recovery" href="/account/security" />
           <SettingsRow icon="lock" label={t("changePassword")} value={t("updatePassword")} onClick={() => { setPasswordMessage(""); setPasswordModal(true); }} />
           <SettingsRow icon="crown" label={t("membershipLabel")} value={subscription?.plan === "premium" ? "Premium" : subscription?.plan === "pro" ? t("pro") : t("freePlan")} href="/membership" />
         </SettingsGroup>
@@ -604,6 +608,7 @@ export default function AccountPage() {
           {profile.account_type === "player" && <PlayerReviewChecklist userId={userId} basketballType={profile.basketball_type || "mens"} teamId={reviewTeamId} onTeamChange={setReviewTeamId} emailConfirmed={emailConfirmed} isAdmin={!!adminRole} />}
         </div>
         <div className="dashboard-card">
+          {membershipError ? <p role="alert">{membershipError}</p> : null}
           <p className="eyebrow">{t("membership")}</p><h2>{subscription?.plan === "premium" ? "HoopCheck " + t("premium") : subscription?.plan === "pro" ? "HoopCheck " + t("pro") : t("free") + " " + t("membership")}</h2><p className="muted">{t("status")}: {t(subscription?.status ?? "inactive")}</p>
           {subscription?.current_period_end && <p className="muted">{t("currentPeriodEnds")} {new Date(subscription.current_period_end).toLocaleDateString()}</p>}
           {subscription?.cancel_at_period_end && <p className="muted">Cancellation is scheduled at the end of the current period.</p>}

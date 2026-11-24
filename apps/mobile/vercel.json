@@ -1,7 +1,25 @@
 {
   "git": {
     "deploymentEnabled": {
-      "reconcile/build8-mobile-705-700-710-711": false
+      "reconcile/build8-mobile-705-700-710-711": false,
+      "reconcile/build9-phase1-20261120": false,
+      "completion/build9-20261120": false,
+      "design/build9-phase3-system": false,
+      "design/build9-phase3-core": false,
+      "feature/build9-phase3-courtside": false,
+      "feature/build9-phase3b-screens": false,
+      "feature/build9-phase3c-profile": false,
+      "feature/build9-phase3d-contracts": false,
+      "integration/build9-backend-completion-20261121": false,
+      "audit/build9-production-catalog-guard-20261122": false,
+      "feature/build9-courtside-phase2-integration-20261122": false,
+      "design/build9-liquid-courtside-v3-20261122": false,
+      "design/build9-v3-compact-motion-20261122": false,
+      "design/build9-arena-home-20261122": false,
+      "integration/build9-arena-ui-20261122": false,
+      "feature/build9-opening-login-motion-20261122": false,
+      "integration/build9-role-hoopchat-completion-20261122": false,
+      "integration/build9-native-final-gates-20261122": false
     }
   }
 }

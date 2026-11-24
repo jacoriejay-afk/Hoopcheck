@@ -1,0 +1,7 @@
+# Build 9 reverse-block regression correction — 2026-11-21
+
+The previous `reverse-block-canonical-rls-failure.md` asserted an incorrect expected result: fan A followed a player, fan B blocked A, then A queried **A's own** following list. Since B was not a participant in A→player, B's block does not require that unrelated follow relationship to disappear. The returned row was not evidence of a reverse-block leak. Likewise `reverse-block-function-owner-diagnostics.md` reproduced the invalid expectation, not a confirmed security-context defect.
+
+Corrected rollback-only integration against canonical `user_blocks` RLS, follow prerequisite and guarded list candidate: fan B follows public player; authenticated fan A initially sees B in the player's followers; fan B inserts a block of A; authenticated A cannot SELECT B's block record and sees **zero** rows in the player's follower list. The diagnostic returned `direct_visible=0`, `after_reverse_block=0` and completed successfully.
+
+**Disposition:** The previously reported reverse-block failure is a test-fixture/expectation error, **not a confirmed product vulnerability**. The candidate passes this corrected reverse-block scenario. It remains review-only pending broader cases, signed JWT HTTP, ACL/ownership, and release compatibility. The SQL transaction rolled back; independent post-check found no follow table, block table or list function. No persistent/production changes.

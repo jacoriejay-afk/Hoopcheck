@@ -14,8 +14,8 @@ function compile(path, imports, globals = {}) {
   new Function("require", "exports", "module", ...Object.keys(globals), js)(imports, compiled.exports, compiled, ...Object.values(globals));
   return compiled.exports;
 }
-const theme = { radius: { control: 16 }, type: { display: {} } };
-function screen(path, { state = [], params = {}, segments = [], pathname = "/", configurationError = null, pendingDestination = null, supabase = {} } = {}) {
+const theme = { radius: { control: 12 }, spacing: { lg: 16 }, roles: {}, entityHero: { background: "#111827", ink: "#FFFFFF", muted: "#E5E7EB" }, type: { display: {} } };
+function screen(path, { state = [], params = {}, segments = [], pathname = "/", configurationError = null, pendingDestination = null, fontsLoaded = true, supabase = {} } = {}) {
   const calls = { push: [], replace: [], alerts: [], oauthUrls: [], freshSignIns: 0, remembered: [] };
   const effects = [];
   let slot = 0;
@@ -23,29 +23,44 @@ function screen(path, { state = [], params = {}, segments = [], pathname = "/", 
   function Stack() {}
   Stack.Screen = "Screen";
   const imports = name => {
-    if (name === "react") return { useState: initial => [state[slot++] ?? initial, () => {}], useEffect: f => effects.push(f) };
-    if (name === "react-native") return { Platform: { OS: "ios" }, StyleSheet: { create: s => s }, Alert: { alert: (...args) => calls.alerts.push(args) }, AccessibilityInfo: { isReduceMotionEnabled: async () => false }, Image: "Image", ScrollView: "ScrollView", Text: "Text", View: "View", Pressable: "Pressable", KeyboardAvoidingView: "KeyboardAvoidingView", ActivityIndicator: "ActivityIndicator" };
+    if (name === "react") return { useRef: value => ({ current: value }), useState: initial => [state[slot++] ?? initial, () => {}], useEffect: f => effects.push(f) };
+    if (name === "react-native") return { Platform: { OS: "ios", select: options => options.ios }, StyleSheet: { create: s => s, absoluteFill: {} }, Alert: { alert: (...args) => calls.alerts.push(args) }, AccessibilityInfo: { isReduceMotionEnabled: async () => false }, Image: "Image", ScrollView: "ScrollView", Text: "Text", View: "View", Pressable: "Pressable", KeyboardAvoidingView: "KeyboardAvoidingView", ActivityIndicator: "ActivityIndicator" };
     if (name === "expo-router") return { Stack, Link: "Link", useRouter: () => router, useLocalSearchParams: () => params, useGlobalSearchParams: () => params, useSegments: () => segments, usePathname: () => pathname };
     if (name === "expo-linking") return { createURL: p => `hoopcheck://${p}`, openURL: async url => calls.oauthUrls.push(url) };
-    if (name === "expo-font") return { useFonts: () => [true, null] };
+    if (name === "expo-font") return { useFonts: () => [fontsLoaded, null] };
     if (name === "expo-status-bar") return { StatusBar: "StatusBar" };
     if (name === "react-native-safe-area-context") return { SafeAreaView: "SafeAreaView", SafeAreaProvider: "SafeAreaProvider" };
     if (name.endsWith("/theme")) return { useEntryTheme: () => theme };
+    if (name === "expo-linear-gradient") return { LinearGradient: "LinearGradient" };
+    if (name.endsWith("/BrandLogo")) return { BrandLogo: "BrandLogo" };
+    if (name.endsWith("/ArenaBrand")) return { ArenaBrand: "ArenaBrand" };
+    if (name.endsWith("/AppOpening")) return { AppOpening: "AppOpening" };
+    if (name === "@expo/vector-icons") return { Ionicons: "Ionicons" };
+    if (name === "react-native-reanimated") return { __esModule: true, default: { View: "AnimatedView" },
+      useSharedValue: initial => ({ get: () => initial, set() {} }),
+      useAnimatedStyle: render => render(), withTiming: value => value };
+
+    if (name.endsWith("/ExploreLinks")) return { ExploreLinks: "ExploreLinks" };
     if (name.endsWith("/primitives")) return { GlassCard: "GlassCard", Input: "Input", Button: "Button" };
     if (name.endsWith("/supabase")) return { supabase, supabaseConfigurationError: configurationError };
+    if (name.endsWith("/native/sessionBootstrap")) return { createSessionBootstrap: () => ({ retry() {}, dispose() {} }) };
     if (name.endsWith("/native/lockPolicy")) return { recordFreshSignIn: () => { calls.freshSignIns++; } };
     if (name.endsWith("/native/pendingDestination")) return { takeDestination: () => pendingDestination, rememberDestination: value => calls.remembered.push(value) };
     if (name === "react-native-gesture-handler") return { GestureHandlerRootView: "GestureHandlerRootView" };
     if (name === "@gorhom/bottom-sheet") return { BottomSheetModalProvider: "BottomSheetModalProvider" };
     if (name === "expo-splash-screen") return { preventAutoHideAsync: async () => {}, setOptions: () => {}, hideAsync: async () => {} };
+    if (name.endsWith("/native/storekit")) return { StoreKitProvider: "StoreKitProvider" };
+    if (name.endsWith("/native/mfa")) return { MfaSessionProvider: "MfaSessionProvider" };
     if (name.endsWith("/native/preferences")) return { DevicePreferences: "DevicePreferences" };
+    if (name.endsWith("/native/drafts")) return { NativeDraftProvider: "NativeDraftProvider" };
     if (name.endsWith("/native/useNativeAccount")) return { NativeAccountProvider: "NativeAccountProvider" };
     if (name.endsWith("/native/network")) return { NetworkProvider: "NetworkProvider" };
-    if (name.endsWith("/motion/Provider")) return { MotionProvider: "MotionProvider" };
+    if (name.endsWith("/motion/Provider")) return { MotionProvider: "MotionProvider", useMotionSetting: () => true };
     if (name.endsWith("/motion/config")) return { motion: { logo: 300, shortFade: 100, splashDeadline: 2000 } };
     if (name.endsWith("/native/telemetry")) return { traceFlow: (_, fn) => fn(), Sentry: { wrap: component => component } };
     if (name.endsWith("/Onboarding")) return { Onboarding: "Onboarding" };
     if (name.endsWith("/AppLock")) return { AppLock: "AppLock" };
+    if (name.endsWith("/NativePageHeader")) return { NativePageHeader: "NativePageHeader" };
     if (name.endsWith("/TabBar")) return { TabBar: "TabBar" };
     if (name.endsWith("/RouteFade")) return { RouteFade: "RouteFade" };
     if (/\.(png|ttf)$/.test(name)) return 1;
@@ -63,11 +78,12 @@ const profile = username => ({ from: () => ({ select: () => ({ eq: () => ({ mayb
 
 test("themed welcome buttons navigate explicitly to sign-in and sign-up", () => {
   const f = screen("app/index.tsx");
-  const buttons = f.nodes.filter(n => n.type === "Button");
+  const buttons = f.nodes.filter(n => n.type === "Button" && ["Sign in", "Create an account"].includes(n.props.accessibilityLabel));
   assert.equal(buttons.length, 2);
-  buttons.forEach(b => b.props.onPress());
+  buttons.find(b => b.props.accessibilityLabel === "Sign in").props.onPress();
+  buttons.find(b => b.props.accessibilityLabel === "Create an account").props.onPress();
   assert.deepEqual(f.calls.push, ["/sign-in", "/sign-up"]);
-  assert.ok(f.nodes.some(n => n.type === "GlassCard"));
+  assert.ok(f.nodes.some(n => n.props.accessibilityRole === "header"));
 });
 
 test("password sign-in normalizes email and retains profile destination selection", async () => {
@@ -106,7 +122,7 @@ test("layout does not interrupt callback exchange, but retains protected-route r
     [["reset-password"], true, []], [["sign-in"], true, []],
     [["dashboard"], false, ["/sign-in"]],
   ]) {
-    const f = screen("app/_layout.tsx", { state: [true, signedIn], segments });
+    const f = screen("app/_layout.tsx", { state: [{ ready: true, userId: signedIn ? "user" : null, error: null }], segments });
     f.effects[2]();
     assert.deepEqual(f.calls.replace, expected);
   }
@@ -174,7 +190,7 @@ test("a provider error without description never exchanges a supplied code", asy
 
 test("OAuth exchange screen does not trigger app lock before fresh sign-in is recorded", () => {
   for (const [segments, expected] of [[["auth", "callback"], false], [["dashboard"], true]]) {
-    const f = screen("app/_layout.tsx", { state: [true, true], segments });
+    const f = screen("app/_layout.tsx", { state: [{ ready: true, userId: "user", error: null }], segments });
     assert.equal(f.nodes.find(node => node.type === "AppLock").props.protectedScreen, expected);
   }
 });
@@ -185,11 +201,27 @@ test("protected native links preserve bounded post/search destinations without r
   for (const [segments, pathname, params, expected] of [
     [["feed"], "/feed", { post: id, code: "secret" }, `/feed?post=${id}`],
     [["feed"], "/feed", { post: "bad" }, "/feed"],
+    [["fan-live"], "/fan-live", { gameId: id, code: "secret" }, `/fan-live?gameId=${id}`],
     [["search"], "/search", { q: "x".repeat(200), token: "secret" }, "/search?q=" + "x".repeat(100)],
   ]) {
-    const f = screen("app/_layout.tsx", { state: [true, false], segments, pathname, params });
+    const f = screen("app/_layout.tsx", { state: [{ ready: true, userId: null, error: null }], segments, pathname, params });
     f.effects[2]();
     assert.deepEqual(f.calls.remembered, [expected]);
     assert.deepEqual(f.calls.replace, ["/sign-in"]);
   }
+});
+
+
+test("protected search retains a bounded query across sign-in without extra URL fields", () => {
+  const f = screen("app/_layout.tsx", { state: [{ ready: true, userId: null, error: null }], segments: ["search"], pathname: "/search", params: { q: "x".repeat(200), token: "discard" } });
+  f.effects[2](); assert.deepEqual(f.calls.remembered, ["/search?q=" + "x".repeat(100)]);
+});
+
+
+test("root navigator mounts before any redirect even if the display font never loads", () => {
+  const f = screen("app/_layout.tsx", { fontsLoaded: false, state: [{ ready: true, userId: null, error: null }], segments: ["dashboard"] });
+  assert.ok(f.nodes.some(node => typeof node.type === "function" && node.type.name === "Stack"));
+  assert.deepEqual(f.calls.replace, []);
+  f.effects[2]();
+  assert.deepEqual(f.calls.replace, ["/sign-in"]);
 });

@@ -216,7 +216,7 @@ export default function AdminTeamLogosPage() {
           {visibleQueue.map(team => <div key={team.tableName + team.id} style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, padding: "5px 1px", borderBottom: "1px solid #272727" }}>
             <TeamLogo name={team.name} logoUrl={team.logo_url} logoBg={team.logo_bg} size={34} />
             <div style={{ flex: 1, minWidth: 0 }}><strong style={{ fontSize: 13, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{team.name}</strong><span style={{ color: "#aaa", fontSize: 11 }}>{team.country || "Country unlisted"} · {team.tableName === "womens_teams" || team.basketball_type === "womens" ? "Women" : "Men"} · {team.logo_url?.trim() ? "Image ready" : "Needs approved crest"}</span></div>
-            <button type="button" onClick={() => selectFromQueue(team)} style={{ flexShrink: 0, border: "1px solid #666", borderRadius: 999, padding: "7px 12px", background: "transparent", color: "#fff", fontSize: 12 }}>{selectedTeam === team.tableName + ":" + team.id ? "Selected" : "Choose"}</button>
+            <button type="button" className="hc-admin-logo-queue-select" onClick={() => selectFromQueue(team)} style={{ flexShrink: 0, border: "1px solid #666", borderRadius: 999, padding: "7px 12px", background: "transparent", color: "#fff", fontSize: 12 }}>{selectedTeam === team.tableName + ":" + team.id ? "Selected" : "Choose"}</button>
           </div>)}
           {visibleQueue.length === 0 && <p role="status" style={{ color: "#aaa" }}>No clubs match these filters.</p>}
         </div>
