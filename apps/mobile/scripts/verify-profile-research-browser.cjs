@@ -39,7 +39,7 @@ async function verify(browser,theme,role){
    await page.getByText('Visible career player',{exact:true}).click();await page.getByText('Connect with this player to view their career history.',{exact:true}).waitFor();
    await page.getByText('Professional player verified',{exact:true}).scrollIntoViewIfNeeded();await require('./compact-layout.cjs').capture(page,{path:`${output}/verification-${theme}.png`,fullPage:true});
   }
-  await page.goto(base+'/account');await page.getByRole('heading',{name:'Your membership access',exact:true}).scrollIntoViewIfNeeded();
+  await page.goto(base+'/account');const benefits=page.getByRole('button',{name:'See membership benefits',exact:true});await benefits.waitFor();assert.equal(await benefits.getAttribute('aria-expanded'),'false');await benefits.click();await page.getByRole('heading',{name:'Your membership access',exact:true}).scrollIntoViewIfNeeded();assert.equal(await page.getByRole('button',{name:'Hide membership benefits',exact:true}).getAttribute('aria-expanded'),'true');
   assert.equal(await page.getByText('Included',{exact:true}).count(),role==='fan'?1:0);
   if(role==='fan')assert.equal(calls.filter(path=>/player_career_stops|team_roster_spots|get_public_player_profile/.test(path)).length,0);
   await require('./compact-layout.cjs').capture(page,{path:`${output}/membership-${role}-${theme}.png`,fullPage:true});

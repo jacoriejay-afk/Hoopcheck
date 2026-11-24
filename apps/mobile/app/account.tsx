@@ -12,11 +12,11 @@ import { useNativeAccount } from "../src/native/useNativeAccount";
 import { supabase } from "../src/lib/supabase";
 
 type AccountGlyph = keyof typeof Ionicons.glyphMap;
-function AccountRow({ icon, title, detail, onPress, last = false }: {
-  icon: AccountGlyph; title: string; detail?: string; onPress: () => void; last?: boolean;
+function AccountRow({ icon, title, detail, onPress, last = false, expanded }: {
+  icon: AccountGlyph; title: string; detail?: string; onPress: () => void; last?: boolean; expanded?: boolean;
 }) {
   const t = useEntryTheme();
-  return <Pressable accessibilityRole="button" accessibilityLabel={title} onPress={onPress}
+  return <Pressable accessibilityRole="button" accessibilityLabel={title} accessibilityState={expanded === undefined ? undefined : { expanded }} onPress={onPress}
     style={({pressed})=>({
       flexDirection:"row",alignItems:"center",gap:12,minHeight:55,paddingHorizontal:13,
       paddingVertical:8,backgroundColor:pressed?t.accentSurface:"transparent",
@@ -122,7 +122,7 @@ export default function AccountScreen() {
           </View>
           <AccountRow icon="card-outline" title="Membership and restore purchases" onPress={()=>router.push("/membership")}/>
           <AccountRow icon="list-outline" title={showBenefits?"Hide membership benefits":"See membership benefits"}
-            onPress={()=>setShowBenefits(value=>!value)} last={!showBenefits}/>
+            onPress={()=>setShowBenefits(value=>!value)} expanded={showBenefits} last={!showBenefits}/>
           {showBenefits?<View style={{padding:10}}><MembershipPreview /></View>:null}
         </AccountGroup>
       </>:error?<View style={{gap:10,marginVertical:10}}>

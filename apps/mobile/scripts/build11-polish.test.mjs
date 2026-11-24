@@ -54,3 +54,5 @@ test("provider sync and prediction queries avoid stale oldest-500 truncation", (
 });
 
 test('account avatar is supplied by verified bootstrap, never a direct profile read',()=>{const account=read('../app/account.tsx');assert.doesNotMatch(account,/\.from\("profiles"\)/);assert.match(account,/account\.user\.avatarUrl/);});
+
+test("compact account exposes membership disclosure accessibly",()=>{const account=read("../app/account.tsx");assert.match(account,/expanded=\{showBenefits\}/);assert.match(account,/accessibilityState=\{expanded === undefined \? undefined : \{ expanded \}\}/);});
