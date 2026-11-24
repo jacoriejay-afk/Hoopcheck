@@ -46,6 +46,11 @@ const rows = {
       page.on('pageerror', error => console.log('PAGEERROR',error.message));
       await page.goto(baseUrl);
       await page.getByText('Explore basketball',{exact:true}).waitFor({timeout:15000}).catch(async e=>{console.log('URL',page.url());console.log('BODY',await page.locator('body').innerText()); console.log('REQUESTS',requests); await require("./compact-layout.cjs").capture(page, {path:'/tmp/hoopcheck-native-ui/failure.png'}); throw e;});
+      await page.getByRole('button',{name:'Search',exact:true}).click();
+      await page.getByRole('textbox',{name:'Search basketball directory'}).waitFor();
+      await page.getByRole('button',{name:'Cancel search',exact:true}).click();
+      await page.getByRole('button',{name:'Open account menu',exact:true}).waitFor();
+      await page.getByRole('button',{name:'Search',exact:true}).click();
       await page.getByRole('textbox',{name:'Search basketball directory'}).fill('Olympia');
       await page.getByRole('textbox',{name:'Search basketball directory'}).press('Enter');
       await page.waitForURL(url => url.pathname === '/search');

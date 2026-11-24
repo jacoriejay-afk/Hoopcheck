@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Text, View } from "react-native";
-import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
+import Animated, { cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
 import { useMotionSetting } from "../src/motion/Provider";
 import { useEntryTheme } from "../src/theme";
 import { BrandLogo } from "./BrandLogo";
@@ -9,10 +9,13 @@ import { BrandLogo } from "./BrandLogo";
 export function HoopCheckLoading({ label = "Loading HoopCheck…", compact = false }: { label?: string; compact?: boolean }) {
   const t = useEntryTheme();
   const reduced = useMotionSetting();
-  const breathe = useSharedValue(0.55);
+  const breathe = useSharedValue(reduced ? 1 : 0.55);
   useEffect(() => {
+    cancelAnimation(breathe);
     if (reduced) { breathe.set(1); return; }
+    breathe.set(0.55);
     breathe.set(withRepeat(withTiming(1, { duration: 900 }), -1, true));
+    return () => cancelAnimation(breathe);
   }, [reduced, breathe]);
   const animated = useAnimatedStyle(() => ({ opacity: breathe.get() }));
   return <View accessible accessibilityRole="progressbar" accessibilityLabel={label}

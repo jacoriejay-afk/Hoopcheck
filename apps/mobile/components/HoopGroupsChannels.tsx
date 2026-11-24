@@ -6,6 +6,7 @@ import { useEntryTheme } from "../src/theme";
 import { supabase } from "../src/lib/supabase";
 import { requireOnline, useNetwork } from "../src/native/network";
 import { useNativeAccount } from "../src/native/useNativeAccount";
+import { GroupModerationPanel } from "./GroupModerationPanel";
 import { HoopCheckLoading } from "./HoopCheckLoading";
 import { readWithDeadline } from "../src/native/readDeadline";
 
@@ -405,6 +406,7 @@ function ScopedHoopGroups({userId,offline,role}:{userId:string;offline:boolean;r
           <Button disabled={busy||offline||editName.trim().length<3||editDescription.trim().length>300}
             onPress={()=>void saveGroup()}>{busy?"Saving…":"Save group settings"}</Button>
         </View>:null}
+        {selected && selected.owner_id===userId && !offline?<GroupModerationPanel key={userId+":"+selected.id} userId={userId} spaceId={selected.id} onChanged={()=>setRevision(value=>value+1)}/>:null}
         {!member?<Button disabled={busy||offline} onPress={()=>void join()}>Join group</Button>:
           <Pressable accessibilityRole="button" accessibilityLabel="Leave group" disabled={busy||offline}
             onPress={()=>void leaveGroup()} style={{minHeight:40,justifyContent:"center",alignItems:"flex-start"}}>

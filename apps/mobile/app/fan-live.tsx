@@ -131,7 +131,7 @@ export default function LiveGames() {
   }
   const rankedGroups=[...leagueGroups].sort(([a,ga],[b,gb])=>{
     const count=(rows:Games["games"])=>rows.reduce((n,g)=>n+(presenceCounts[g.id]||0),0);
-    const live=(rows:Games["games"])=>rows.filter(g=>g.status==="live").length;
+    const live=(rows:Games["games"])=>rows.filter(g=>gameDisplayState(g, clockMs, checkedAtMs).isLive).length;
     return count(gb)-count(ga)||live(gb)-live(ga)||gb.length-ga.length||a.localeCompare(b);
   });
   const sections = (allGroups?rankedGroups:rankedGroups.slice(0,4)).map(([title,rows])=>({
@@ -151,7 +151,7 @@ export default function LiveGames() {
       {gameId ? <Button secondary onPress={() => router.replace("/fan-live")}>All games</Button> : null}
     </View>
     {game ? <View style={{ flex: 1, paddingHorizontal: 12, paddingBottom: 12, gap: 8 }}>
-      <GlassSurface style={{ padding: 8, borderRadius: 12, borderWidth: 0 }}><Scoreboard game={game} teams={data?.teams || {}} checkedAtMs={checkedAtMs ?? undefined} nowMs={clockMs} /></GlassSurface>
+      <GlassSurface style={{ padding: 8, borderRadius: 12, borderWidth: 0 }}><Scoreboard game={game} teams={data?.teams || {}} checkedAtMs={checkedAtMs ?? undefined} nowMs={clockMs} featured active={active} /></GlassSurface>
       <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 20 }}>{(["chat", "predictions"] as const).map(value => <Pressable key={value} accessibilityRole="tab" aria-selected={panel === value} accessibilityState={{ selected: panel === value }} onPress={() => setPanel(value)} style={{ minHeight: 44, justifyContent: "center" }}><Text style={{ color: panel === value ? theme.accent : theme.foreground, fontWeight: "800" }}>{value === "chat" ? "Chat" : "Predictions"}</Text></Pressable>)}</View>
       {panel === "chat" ? <GameChat key={`${uid}:${game.id}`} gameId={game.id} userId={uid!} enabled={chatEnabled} /> : <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 24 }}><GamePrediction key={`${uid}:${game.id}`} game={game} userId={uid!} homeName={data?.teams[game.team_id]?.name || "Home team"} awayName={data?.teams[game.opponent_team_id || ""]?.name || game.opponent_name} active={active} /></ScrollView>}
     </View> : <SectionList sections={sections} stickySectionHeadersEnabled={false} renderSectionHeader={({ section }) => <Text accessibilityRole="header" style={{ ...theme.type.section, color: theme.foreground, paddingVertical: theme.spacing.sm }}>{section.title} · {section.chatting} chatting</Text>}
