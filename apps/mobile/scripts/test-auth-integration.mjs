@@ -44,6 +44,7 @@ function screen(path, { state = [], params = {}, segments = [], pathname = "/", 
     if (name.endsWith("/motion/Provider")) return { MotionProvider: "MotionProvider" };
     if (name.endsWith("/motion/config")) return { motion: { logo: 300, shortFade: 100, splashDeadline: 2000 } };
     if (name.endsWith("/native/telemetry")) return { traceFlow: (_, fn) => fn(), Sentry: { wrap: component => component } };
+    if (name.endsWith("/BrandLockup")) return { BrandLockup: "BrandLockup", BrandMark: "BrandMark", CommunityWordmark: "CommunityWordmark" };
     if (name.endsWith("/Onboarding")) return { Onboarding: "Onboarding" };
     if (name.endsWith("/AppLock")) return { AppLock: "AppLock" };
     if (name.endsWith("/TabBar")) return { TabBar: "TabBar" };
@@ -68,6 +69,7 @@ test("themed welcome buttons navigate explicitly to sign-in and sign-up", () => 
   buttons.forEach(b => b.props.onPress());
   assert.deepEqual(f.calls.push, ["/sign-in", "/sign-up"]);
   assert.ok(f.nodes.some(n => n.type === "GlassCard"));
+  assert.ok(f.nodes.some(n => n.type === "BrandLockup"));
 });
 
 test("password sign-in normalizes email and retains profile destination selection", async () => {
