@@ -3,6 +3,7 @@ import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Button, GlassCard } from "../src/primitives";
+import { HoopCheckLoading } from "../components/HoopCheckLoading";
 import { useEntryTheme } from "../src/theme";
 import { supabase } from "../src/lib/supabase";
 import { requireOnline, useNetwork } from "../src/native/network";
@@ -15,7 +16,7 @@ type ContactRequest = {
 type ContactMessage = { id: string; request_id: string; sender_id: string; body: string; created_at: string };
 type ContactName = { id: string; display_name: string | null; username: string | null };
 
-export default function MessagesScreen() {
+export default function MessagesScreen({ embedded = false, mode = "all" }: { embedded?: boolean; mode?: "all" | "conversations" | "requests" } = {}) {
   const theme = useEntryTheme();
   const router = useRouter();
   const { offline } = useNetwork();
@@ -129,8 +130,13 @@ export default function MessagesScreen() {
   const sorted=useMemo(()=>requests.slice().sort((a,b)=>
     (messages.find(item=>item.request_id===b.id)?.created_at||b.created_at)
       .localeCompare(messages.find(item=>item.request_id===a.id)?.created_at||a.created_at)),[requests,messages]);
-  const selected=requests.find(item=>item.id===selectedId);
-  const history=messages.filter(item=>item.request_id===selectedId).slice().reverse();
+  // The full /messages route still shows all threads. Alerts only narrows
+  // existing owner-scoped records; it does not alter authorization.
+  const visibleThreads = sorted.filter(row => mode === "all"
+    || (mode === "conversations" && row.status === "accepted")
+    || (mode === "requests" && row.status === "pending"));
+  const selected = visibleThreads.find(item => item.id === selectedId) || visibleThreads[0];
+  const history=messages.filter(item=>item.request_id===selected?.id).slice().reverse();
 
   async function respond(status:"accepted"|"rejected") {
     if(!selected || selected.player_id!==userId || selected.status!=="pending" || sending) return;
@@ -161,22 +167,28 @@ export default function MessagesScreen() {
     }catch(failure){setError(failure instanceof Error?failure.message:"Message failed.");}
     finally{setSending(false);}
   }
-  return <SafeAreaView edges={["bottom","left","right"]} style={{flex:1,backgroundColor:theme.background}}>
-    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:16,gap:12,paddingBottom:35}}>
-      <Text accessibilityRole="header" style={{fontSize:27,fontWeight:"900",color:theme.foreground}}>HoopChat</Text>
-      <Text style={{color:theme.muted}}>Private player connections and message requests. Players must accept before messaging opens.</Text>
+  return <SafeAreaView edges={embedded ? ["left","right"] : ["bottom","left","right"]} style={{flex:1,backgroundColor:theme.background}}>
+    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:embedded?12:16,gap:embedded?8:12,paddingBottom:35}}>
+      {!embedded ? <Text accessibilityRole="header" style={{fontSize:27,fontWeight:"900",color:theme.foreground}}>HoopChat</Text> : null}
+      {!embedded ? <Text style={{color:theme.muted}}>Private player connections and message requests. Players must accept before messaging opens.</Text> : null}
       <View style={{flexDirection:"row",flexWrap:"wrap",gap:8}}>
-        <Button secondary onPress={()=>router.push("/notifications")}>Basketball alerts</Button>
+        {!embedded ? <Button secondary onPress={()=>router.push("/notifications")}>Basketball alerts</Button> : null}
         <Button secondary disabled={loading || offline} onPress={()=>void load()}>Refresh</Button>
       </View>
       {error?<Text accessibilityRole="alert" style={{color:theme.accent}}>{error}</Text>:null}
-      {loading?<Text style={{color:theme.muted}}>Loading conversations…</Text>:null}
+      {loading?<HoopCheckLoading compact label="Loading conversations…" />:null}
       {offline?<Text style={{color:theme.muted}}>Reconnect to view or send messages.</Text>:null}
-      {!loading&&!sorted.length?<GlassCard><Text style={{color:theme.foreground,fontWeight:"800"}}>No message threads yet</Text><Text style={{color:theme.muted}}>Approved player connections and incoming requests will appear here.</Text><Button secondary onPress={()=>router.push("/players")}>Find players</Button></GlassCard>:null}
-      {sorted.length>0?<View style={{gap:8}}>
-        <Text style={{color:theme.foreground,fontWeight:"800",fontSize:17}}>Conversations</Text>
+      {!loading&&!visibleThreads.length?<View style={{gap:7,paddingVertical:12}}>
+        <Text style={{color:theme.foreground,fontWeight:"800"}}>
+          {mode==="requests"?"No pending requests":mode==="conversations"?"No conversations yet":"No message threads yet"}
+        </Text>
+        <Text style={{color:theme.muted}}>Approved player connections and incoming requests will appear here.</Text>
+        <Button secondary onPress={()=>router.push("/players")}>Find players</Button>
+      </View>:null}
+      {visibleThreads.length>0?<View style={{gap:8}}>
+        <Text style={{color:theme.foreground,fontWeight:"800",fontSize:17}}>{mode==="requests"?"Contact requests":"Conversations"}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:8}}>
-          {sorted.map(row=>{
+          {visibleThreads.map(row=>{
             const latest=messages.find(message=>message.request_id===row.id);
             return <Pressable key={row.id} accessibilityRole="button" accessibilityState={{selected:row.id===selectedId}}
               accessibilityLabel={`Open ${name(row)} conversation`} onPress={()=>{setSelectedId(row.id);setDraft("");}}
