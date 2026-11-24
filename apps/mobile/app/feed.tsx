@@ -1,4 +1,5 @@
 import { GlassSurface } from "../components/GlassSurface";
+import { CommunityWordmark } from "../components/BrandLockup";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Alert, FlatList, Linking, Pressable, RefreshControl, Share, Text, TextInput, View, type ViewToken } from "react-native";
@@ -249,7 +250,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
   const touch = { minHeight: 44, paddingHorizontal: 6, borderWidth: 0, borderRadius: 9, backgroundColor: "transparent", justifyContent: "center" as const };
   if (accountLoading) return <View style={{ flex: 1, justifyContent: "center", backgroundColor: theme.background }}><HoopCheckLoading label="Checking HoopFeed access…" /></View>;
   if (!account || !canRead) return <View style={{ flex: 1, padding: 24, gap: 20, justifyContent: "center", backgroundColor: theme.background }}>
-    <Text accessibilityRole="header" style={{ ...textStyle, fontSize: 28, fontWeight: "900" }}>HoopFeed</Text>
+    <CommunityWordmark size={24} />
     <Text style={textStyle}>{offline ? "Reconnect to verify community access." : account ? "An active HoopCheck membership is required to use HoopFeed." : accountError}</Text>
     <Button secondary onPress={retry}>Verify access again</Button><Button secondary onPress={() => router.push("/account")}>Your account</Button>
   </View>;
@@ -279,7 +280,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
       style={{ color: theme.muted, paddingHorizontal: 18, marginTop: 56 }}>{loadError || message}</Text> : null}
     {reels ? <View testID="hoopreels-provider-hold" style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 12, padding: 24, paddingBottom: 100 }}>
       <Ionicons name="play-circle-outline" size={36} color={theme.accent} />
-      <Text accessibilityRole="header" style={{ ...textStyle, fontSize: 22, fontWeight: "800" }}>HoopReels</Text>
+      <CommunityWordmark reels size={22} />
       <Text style={{ color: theme.muted, textAlign: "center" }}>HoopReels is not available yet.</Text>
       <Button secondary onPress={() => setReels(false)}>Back to HoopFeed</Button>
     </View> : <FlatList key={reels ? "reels" : "posts"} keyboardDismissMode="on-drag" style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 9, paddingTop: message || loadError ? 9 : 60, paddingBottom: 100, gap: reels ? 0 : 8 }} keyboardShouldPersistTaps="handled" initialNumToRender={reels ? 2 : 4} maxToRenderPerBatch={reels ? 2 : 4} windowSize={reels ? 3 : 5} pagingEnabled={reels} getItemLayout={reels && height > 0 ? (_items, index) => ({ length: height, offset: height * index, index }) : undefined} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
