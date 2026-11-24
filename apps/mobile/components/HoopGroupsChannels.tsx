@@ -7,6 +7,7 @@ import { supabase } from "../src/lib/supabase";
 import { requireOnline, useNetwork } from "../src/native/network";
 import { useNativeAccount } from "../src/native/useNativeAccount";
 import { HoopCheckLoading } from "./HoopCheckLoading";
+import { readWithDeadline } from "../src/native/readDeadline";
 
 type Space = { id:string;slug:string;name:string;category:string;description:string;owner_id:string|null;accent_color:string;icon_key:string };
 type Channel = { id:string;space_id:string;name:string;slug:string;sort_index:number };
@@ -227,22 +228,40 @@ function ScopedHoopGroups({userId,offline,role}:{userId:string;offline:boolean;r
     }catch(failure){setError(failure instanceof Error?failure.message:"Message was not submitted.");}
     finally{setBusy(false);}
   }
+  async function safetyToken() {
+    await requireOnline();
+    const session=await readWithDeadline(()=>supabase.auth.getSession());
+    if(session.error||session.data.session?.user.id!==userId)throw Error("Sign in again.");
+    const token=session.data.session.access_token;
+    const verified=await readWithDeadline(()=>supabase.auth.getUser(token));
+    if(verified.error||verified.data.user?.id!==userId)throw Error("Sign in again.");
+    return token;
+  }
   async function report(item:Post,reason:string) {
-    if(!userId||offline||busy)return;
+    if(!userId||offline||busy||!member||!posts.some(post=>post.id===item.id))return;
     setBusy(true);setError("");
-    const {error:reportError}=await supabase.from("hoop_group_reports")
-      .insert({post_id:item.id,reporter_id:userId,reason});
-    setError(reportError?"This message could not be reported or was already reported.":"Report submitted to HoopCheck moderators.");
-    setBusy(false);
+    try{
+      const token=await safetyToken();
+      const {error:reportError}=await supabase.from("hoop_group_reports")
+        .insert({post_id:item.id,reporter_id:userId,reason})
+        .setHeader("Authorization", "Bearer "+token);
+      if(reportError)throw Error("This message could not be reported or was already reported.");
+      setError("Report submitted to HoopCheck moderators.");
+    }catch(failure){setError(failure instanceof Error?failure.message:"Report could not be confirmed.");}
+    finally{setBusy(false);}
   }
   async function block(item:Post) {
-    if(!userId||offline||busy||item.author_id===userId)return;
+    if(!userId||offline||busy||!member||item.author_id===userId||!posts.some(post=>post.id===item.id))return;
     setBusy(true);setError("");
-    const {error:blockError}=await supabase.from("hoop_group_blocks")
-      .insert({blocker_id:userId,blocked_id:item.author_id});
-    if(blockError)setError("Could not block this account.");
-    else setPostSnapshot(current=>current?{...current,posts:current.posts.filter(post=>post.author_id!==item.author_id)}:null);
-    setBusy(false);
+    try{
+      const token=await safetyToken();
+      const {error:blockError}=await supabase.from("hoop_group_blocks")
+        .insert({blocker_id:userId,blocked_id:item.author_id})
+        .setHeader("Authorization", "Bearer "+token);
+      if(blockError)throw Error("Could not block this account.");
+      setPostSnapshot(current=>current?{...current,posts:current.posts.filter(post=>post.author_id!==item.author_id)}:null);
+    }catch(failure){setError(failure instanceof Error?failure.message:"Block could not be confirmed.");}
+    finally{setBusy(false);}
   }
   function actions(item:Post) {
     Alert.alert("Community safety","Choose an action for this member.",[
