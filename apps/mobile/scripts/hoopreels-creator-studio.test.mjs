@@ -12,7 +12,7 @@ assert.equal(compiled.diagnostics?.length || 0, 0);
 const out = {};
 new Function("require", "exports", compiled.outputText)(id => {
   assert.equal(id, "./mediaClient");
-  return { REEL_TOPICS: ["Practice", "Game Day", "Challenge", "Win", "Teammates", "Culture", "Travel"] };
+  return { REEL_TOPICS: ["Practice", "Challenge", "Win", "Teammates", "Culture", "Travel"] };
 }, out);
 const owner = "11111111-1111-4111-8111-111111111111";
 const other = "22222222-2222-4222-8222-222222222222";
