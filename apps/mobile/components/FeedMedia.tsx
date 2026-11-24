@@ -6,8 +6,9 @@ import { authorizedFeedMedia } from "../src/native/feedClient";
 import { useEntryTheme } from "../src/theme";
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
 const project = process.env.EXPO_PUBLIC_SUPABASE_URL || "";
-export function FeedMedia({ userId, postId, reference, video = false, enabled, loop = false, height = 300 }: { userId: string; height?: number; postId: string; reference: string; video?: boolean; enabled: boolean; loop?: boolean }) {
+export function FeedMedia({ userId, postId, reference, video = false, enabled, preload = false, loop = false, height = 300 }: { userId: string; height?: number; postId: string; reference: string; video?: boolean; enabled: boolean; preload?: boolean; loop?: boolean }) {
   const theme = useEntryTheme();
+  const shouldAuthorize = enabled || (preload && video); // Only the next eligible Reel can preauthorize.
   const [source, setSource] = useState<{ owner: string; reference: string; uri: string } | null>(null);
   const [imageSize, setImageSize] = useState<{ reference: string; ratio: number } | null>(null);
   const [loadedUri, setLoadedUri] = useState<string | null>(null);
@@ -21,7 +22,7 @@ export function FeedMedia({ userId, postId, reference, video = false, enabled, l
     const controller = new AbortController();
     let expiry: ReturnType<typeof setTimeout> | undefined;
     setError(false);
-    if (!enabled) { setSource(null); return () => { active = false; }; }
+    if (!shouldAuthorize) { setSource(null); return () => { active = false; }; }
     const deadline = setTimeout(() => controller.abort(), 15000);
     const load = async () => {
       try {
@@ -34,8 +35,8 @@ export function FeedMedia({ userId, postId, reference, video = false, enabled, l
     };
     void load();
     return () => { active = false; controller.abort(); clearTimeout(deadline); clearTimeout(expiry); };
-  }, [enabled, userId, postId, reference, revision, video]);
-  const uri = enabled && source?.owner === userId && source.reference === reference ? source.uri : null;
+  }, [shouldAuthorize, userId, postId, reference, revision, video]);
+  const uri = shouldAuthorize && source?.owner === userId && source.reference === reference ? source.uri : null;
   useEffect(() => {
     if (!uri || video) return;
     let active = true;
@@ -45,6 +46,6 @@ export function FeedMedia({ userId, postId, reference, video = false, enabled, l
   const ratio = imageSize?.reference === reference ? imageSize.ratio : 4 / 3;
   const mediaHeight = video ? height : Math.min(260, Math.max(120, (width || 320) / ratio));
   return <View onLayout={event => setWidth(event.nativeEvent.layout.width)} style={{ height: mediaHeight, backgroundColor: theme.elevatedSurface, borderRadius: 14, overflow: "hidden", justifyContent: "center" }}>
-    {!enabled ? <Text style={{ color: theme.muted, padding: 16 }}>Media loads when visible.</Text> : error ? <Pressable accessibilityRole="button" onPress={() => setRevision(value => value + 1)} style={{ minHeight: 48, padding: 16 }}><Text style={{ color: theme.accent }}>Media unavailable. Tap to retry.</Text></Pressable> : !uri ? <ActivityIndicator accessibilityLabel="Authorizing media" color={theme.accent} /> : video ? <FeedVideo height={height} uri={uri} enabled={enabled} loop={loop} onFailure={fail} /> : <><Image alt="HoopFeed photo" accessibilityLabel="HoopFeed photo" source={{ uri }} style={{ width: "100%", height: mediaHeight }} resizeMode="contain" onLoad={() => setLoadedUri(uri)} onError={fail} />{loadedUri !== uri ? <ActivityIndicator accessibilityLabel="Loading photo" color={theme.accent} style={{ position: "absolute", alignSelf: "center" }} /> : null}</>}
+    {!shouldAuthorize ? <Text style={{ color: theme.muted, padding: 16 }}>Media loads when visible.</Text> : error ? <Pressable accessibilityRole="button" onPress={() => setRevision(value => value + 1)} style={{ minHeight: 48, padding: 16 }}><Text style={{ color: theme.accent }}>Media unavailable. Tap to retry.</Text></Pressable> : !uri ? <ActivityIndicator accessibilityLabel="Authorizing media" color={theme.accent} /> : video ? <FeedVideo height={height} uri={uri} enabled={enabled} loop={loop} onFailure={fail} /> : <><Image alt="HoopFeed photo" accessibilityLabel="HoopFeed photo" source={{ uri }} style={{ width: "100%", height: mediaHeight }} resizeMode="contain" onLoad={() => setLoadedUri(uri)} onError={fail} />{loadedUri !== uri ? <ActivityIndicator accessibilityLabel="Loading photo" color={theme.accent} style={{ position: "absolute", alignSelf: "center" }} /> : null}</>}
   </View>;
 }
