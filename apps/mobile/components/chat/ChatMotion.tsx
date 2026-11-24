@@ -8,14 +8,15 @@ import { useEntryTheme } from "../../src/theme";
 import { confirmedMessageMotion, type MessageMotionSnapshot, type ConfirmedMessage } from "../../src/native/chatMotion";
 
 const emptyIds = new Set<string>();
-export function useConfirmedMessageMotion(scope: string, rows: readonly ConfirmedMessage[], active: boolean) {
+export function useConfirmedMessageMotion(scope: string, rows: readonly (ConfirmedMessage & { request_id?: string })[], active: boolean, requestId?: string) {
   const previous = useRef<MessageMotionSnapshot | null>(null);
   const [result, setResult] = useState<MessageMotionSnapshot | null>(null);
   useEffect(() => {
-    const next = confirmedMessageMotion(previous.current, scope, rows, active);
+    const visible = requestId === undefined ? rows : rows.filter(row => row.request_id === requestId);
+    const next = confirmedMessageMotion(previous.current, scope, visible, active);
     previous.current = next;
     setResult(next);
-  }, [scope, rows, active]);
+  }, [scope, rows, active, requestId]);
   return active && result?.scope === scope ? result.fresh : emptyIds;
 }
 

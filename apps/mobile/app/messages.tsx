@@ -143,9 +143,9 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
   const opened = Boolean(selected && selected.id === openedId && openedMode === mode);
   useEffect(() => { setOpenedId(""); setDraft(""); }, [mode]);
   const selectedRequestId = selected?.id;
-  const history=useMemo(()=>messages.filter(item=>item.request_id===selectedRequestId).slice().reverse(),[messages,selectedRequestId]);
+  const history=messages.filter(item=>item.request_id===selectedRequestId).slice().reverse();
   const motionActive=Boolean(userId && opened && selected?.status==="accepted" && !offline);
-  const freshIds=useConfirmedMessageMotion(`${userId}:${openedId}:${mode}`,history,motionActive);
+  const freshIds=useConfirmedMessageMotion(`${userId}:${openedId}:${mode}`,messages,motionActive,selectedRequestId);
 
   async function respond(status:"accepted"|"rejected") {
     if(!selected || selected.player_id!==userId || selected.status!=="pending" || !opened || sending) return;

@@ -22,3 +22,5 @@ test("chat motion preserves verified room reads and local-only draft state",()=>
  assert.match(motion,/active && !reduced/);
  assert.match(motion,/LOCAL draft/);
 });
+
+test("private chat motion uses stable verified history and scopes it inside the effect",()=>{const dm=readFileSync(new URL("../app/messages.tsx",import.meta.url),"utf8"),motion=readFileSync(new URL("../components/chat/ChatMotion.tsx",import.meta.url),"utf8");assert.match(dm,/useConfirmedMessageMotion\(`\$\{userId\}:\$\{openedId\}:\$\{mode\}`,messages,motionActive,selectedRequestId\)/);assert.match(motion,/rows\.filter\(row => row\.request_id === requestId\)/);assert.doesNotMatch(dm,/const history=useMemo/);});
