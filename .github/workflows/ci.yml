@@ -88,6 +88,11 @@ jobs:
           PGPASSWORD: postgres
         run: psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_rls_test -f supabase/tests/ambassador_hq_isolated.sql
 
+      - name: Rehearse signed-term ambassador resumption and service-role-only RPC
+        env:
+          PGPASSWORD: postgres
+        run: psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_rls_test -f supabase/tests/ambassador_resume_isolated.sql
+
       - name: Verify isolated Stripe trial reservation uniqueness
         env:
           PGPASSWORD: postgres
