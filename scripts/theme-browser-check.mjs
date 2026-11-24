@@ -347,7 +347,7 @@ try {
       console.log("THEME_BROWSER_PAGE", JSON.stringify({ routeName, theme, url: page.url(), title: await page.title(), body: (await page.locator("body").innerText().catch(() => "")).slice(0, 240) }));
       const wrapperSelector = routeName === "dashboard" ? "main.hc-home3" : routeName === "feed" ? "main.hc-feed-page" : "main.admin-directory-shell";
       try {
-        await page.locator(wrapperSelector).waitFor({ state: "visible", timeout: 30000 });
+        await page.locator(wrapperSelector).filter({ visible: true }).first().waitFor({ state: "visible", timeout: 30000 });
       } catch (error) {
         const diagnostics = await page.evaluate((selector) => {
           const node = document.querySelector(selector);
@@ -370,7 +370,7 @@ try {
       // Give client-side auth redirects a brief chance to complete after the
       // dashboard's initial loading shell becomes visible.
       await page.waitForTimeout(750);
-      await page.locator(wrapperSelector).waitFor({ state: "visible", timeout: 30000 });
+      await page.locator(wrapperSelector).filter({ visible: true }).first().waitFor({ state: "visible", timeout: 30000 });
       if (routeName === "dashboard") {
         await page.locator(".hc-home3-greeting").waitFor({ state: "visible", timeout: 30000 });
         await page.locator(".hc-home3-search").first().waitFor({ state: "visible", timeout: 30000 });

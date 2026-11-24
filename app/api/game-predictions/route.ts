@@ -34,9 +34,15 @@ export async function GET(request: Request) {
     if (!user) return NextResponse.json({ error: "Sign in to view predictions." }, { status: 401 });
     const url = new URL(request.url);
     if (url.searchParams.get("mode") === "games") {
+      // Bound the public-fixture subset BEFORE applying LIMIT. Old historical
+      // finals must not crowd out a free player's upcoming prediction fixtures.
+      const now = Date.now();
+      const since = new Date(now - 36 * 60 * 60_000).toISOString();
+      const until = new Date(now + 14 * 24 * 60 * 60_000).toISOString();
       const { data: games, error } = await db.from("fan_live_games")
         .select("id,team_id,opponent_team_id,opponent_name,status,home_score,away_score,started_at,ends_at,scheduled_at,league_name,country,period_label")
         .in("status", ["scheduled","live","final","finished","cancelled","postponed","abandoned"])
+        .gte("scheduled_at", since).lte("scheduled_at", until)
         .order("scheduled_at", { ascending: true, nullsFirst: false }).limit(500);
       if (error) throw error;
       return NextResponse.json({ games: games || [] }, { headers: { "Cache-Control": "private, no-store" } });
