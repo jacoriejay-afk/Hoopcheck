@@ -103,7 +103,7 @@ export default function DashboardScreen() {
               {label:"Settings",path:"/settings",icon:"settings-outline"},
               {label:"About HoopCheck",path:"/about",icon:"help-circle-outline"},
             ] as const).map(item=><Pressable key={item.path} accessibilityRole="menuitem"
-              accessibilityLabel={item.label} onPress={()=>{setMenuOpen(false); router.push(item.path);}}
+              accessibilityLabel={item.label} onPress={()=>{setMenuOpen(false); if(item.label==="HoopChat") router.push({pathname:"/notifications",params:{tab:"chat"}}); else router.push(item.path);}}
               style={({pressed})=>({flexDirection:"row",alignItems:"center",gap:10,minHeight:47,
                 paddingHorizontal:12,borderRadius:12,backgroundColor:pressed?theme.accentSurface:"transparent"})}>
               <Ionicons name={item.icon} size={19} color={theme.accent}/>
