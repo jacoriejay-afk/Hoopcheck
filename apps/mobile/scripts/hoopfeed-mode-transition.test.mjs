@@ -24,3 +24,12 @@ test("Reels retain owner-scoped blocklist, moderation, and fail-closed bootstrap
     assert.ok(account.includes('"' + field + '"'), "Real account parser must require " + field);
   }
 });
+
+
+test("Legacy Reels cannot read or mount raw storage video while the provider is unavailable", () => {
+  assert.match(feed, /if \(!uid \|\| !canRead \|\| reels\) return;/);
+  assert.match(feed, /if \(canRead && !reels\) void load\(\)/);
+  assert.match(feed, /\{reels \? <View testID="hoopreels-provider-hold"/);
+  assert.match(fixture, /Direct Reel route must fail closed/);
+  assert.match(fixture, /No legacy Reel catalog requests/);
+});
