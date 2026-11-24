@@ -108,7 +108,7 @@ jobs:
         run: node --test scripts/test-ambassador-stripe.mjs
 
       - name: Verify native bootstrap authorization
-        run: node --test scripts/test-mobile-bootstrap.mjs
+        run: node --test scripts/test-mobile-bootstrap.mjs scripts/test-mobile-workspaces.mjs
 
       - name: Verify quota-bounded live score scheduling and freshness
         run: node --test scripts/test-live-score-schedule.mjs
