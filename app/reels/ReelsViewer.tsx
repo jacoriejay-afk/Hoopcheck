@@ -189,7 +189,7 @@ export default function ReelsViewer() {
   async function sharePost(postId: string) {
     const url = `${window.location.origin}/feed#post-${postId}`;
     if (navigator.share) {
-      try { await navigator.share({ title: "HoopCheck Reel", url }); }
+      try { await navigator.share({ title: "HoopReels™", text: "Shared via HoopCheck™", url }); }
       catch { /* The user dismissed the native share sheet. */ }
     } else {
       try { await navigator.clipboard.writeText(url); setMessage("Video link copied."); }

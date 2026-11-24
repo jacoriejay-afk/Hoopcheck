@@ -151,9 +151,9 @@ export function HoopButton({
 }
 
 
-export function VerifiedBadge({ label = "Verified" }: { label?: string }) {
+export function VerifiedBadge({ label = "Verified", celebrate = false }: { label?: string; celebrate?: boolean }) {
   return (
-    <span className="hc-verified-badge" role="img" aria-label={label} title={label}>
+    <span className={`hc-verified-badge${celebrate ? " hc-owner-achievement-reveal" : ""}`} role="img" aria-label={label} title={label}>
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path d="M8 2.8h8L22 12l-6 9.2H8L2 12Z" fill="currentColor" />
         <path d="m7.8 12.2 2.7 2.7 5.9-6" fill="none" stroke="#0A0A0A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

@@ -20,3 +20,6 @@ Native sign-in/sign-up share the lockup; native community headings use traced Ho
 Restore established Reels accessibility name. Add compact web HoopChat/HoopGroups sub-brand emblems, one-shot plan accents, verified-live-only Game Night indicator, passport mark and verified-profile badge reveal. Native account shows official mark for confirmed paid membership. Shared-post/reel watermark, achievement unlock integration and device testing remain follow-up. No entitlement changes.
 
 Marketing: docs/hoopcheck-marketing-motion-kit.html is a self-contained official vector intro/outro preview with portrait and widescreen layouts. It is not an exported video.
+
+## Share and milestone completion candidate
+Authorized native/web feed media and Reels have a static, non-interactive on-screen brand overlay; the original files, signed links, media grants and share visibility are unchanged. Native and web shares carry HoopCheck attribution and existing gated links. The public social preview uses the branded PNG only, never a private post thumbnail. Existing verified profile/passport milestones have a finite reduced-motion-safe reveal; this does not create new awards or fabricate unlock events. No video/photo file export or server-side watermarking is included. Physical iOS/Android and latest CI remain release gates.

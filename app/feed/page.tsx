@@ -397,7 +397,7 @@ export default function Feed(){
     const url = new URL(`/feed#post-${p.id}`, window.location.origin).href;
     try {
       if (typeof navigator.share === "function") {
-        await navigator.share({ title: "HoopFeed™", url });
+        await navigator.share({ title: "HoopFeed™", text: "Shared via HoopCheck™", url });
         return;
       }
       if (navigator.clipboard?.writeText) {
