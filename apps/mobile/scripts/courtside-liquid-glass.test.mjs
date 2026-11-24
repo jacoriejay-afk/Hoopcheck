@@ -45,11 +45,15 @@ test("all five requested screens use the shared design language", () => {
   const player = read("../app/players/[id].tsx");
   assert.match(home, /ArenaHeading/);
   assert.match(home, /LinearGradient/);
-  for (const src of [live, groups]) assert.match(src, /CourtsideBanner/);
+  assert.match(groups, /CourtsideBanner/);
+  assert.doesNotMatch(live, /CourtsideBanner/);
+  assert.match(live, /accessibilityRole="header"[^\n]*fontFamily: "HoopCheckDisplay"[^\n]*GAME CENTER/);
   assert.doesNotMatch(feed, /CourtsideBanner/, "Build 11 uses compact feed tabs instead of a hero");
   assert.match(feed, /GlassSurface/, "Feed tabs preserve shared glass UI");
   assert.match(banner, /HOOPCHECK/);
   assert.match(banner, /HoopCheckDisplay/);
-  assert.match(player, /LinearGradient/);
+  assert.doesNotMatch(player, /LinearGradient/);
+  assert.match(player, /fontFamily: "HoopCheckDisplay"[^\n]*color: theme.foreground/);
+  assert.match(player, /backgroundColor: "transparent",borderWidth:0/);
   assert.match(player, /ProfileAvatar/);
 });
