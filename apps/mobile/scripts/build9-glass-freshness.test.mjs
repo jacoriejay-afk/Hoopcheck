@@ -51,8 +51,11 @@ test("cold-launch configuration avoids conflicting iOS splash style overrides", 
   assert.equal(splash?.dark, undefined, "duplicate same-color dark splash override causes an Expo style warning");
 });
 
-test("Home search glass does not override the system reduce-transparency fallback", () => {
+test("Home search morph uses the shared glass fallback instead of overriding translucency", () => {
   const home = readFileSync(new URL("../app/dashboard.tsx", import.meta.url), "utf8");
-  assert.match(home, /<GlassSurface style=/);
+  const header = readFileSync(new URL("../components/glass/GlassHeader.tsx", import.meta.url), "utf8");
+  assert.match(home, /<GlassHeader homeScrollY=\{scrollY\}/);
+  assert.match(header, /<GlassCard radius=\{999\} padding=\{8\}>/);
   assert.doesNotMatch(home, /backgroundColor:theme.glassFill/);
+  assert.doesNotMatch(header, /backgroundColor:.*glass\.fill/);
 });

@@ -1,8 +1,9 @@
-import { Pressable, Text, View } from "react-native";
+import { useEffect, useRef } from "react";
+import { Keyboard, Pressable, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Animated, { Extrapolation, interpolate, useAnimatedStyle, type SharedValue } from "react-native-reanimated";
+import Animated, { cancelAnimation, Extrapolation, interpolate, useAnimatedStyle, useSharedValue, withTiming, type SharedValue } from "react-native-reanimated";
 import Svg, { Circle, Path } from "react-native-svg";
 import { BrandLogo } from "../BrandLogo";
 import { useMotionSetting } from "../../src/motion/Provider";
@@ -16,40 +17,74 @@ import { glassTokens as glass } from "../../src/glassTheme";
  * Other screens get their original static GlassHeader and Alerts behavior.
  * Inset is applied exactly once; never render inside a top SafeAreaView.
  */
-export function GlassHeader({ homeScrollY, feedMode = false, feedReels = false, onFeedTabChange, onFeedGuide }: {
+type SearchHeaderProps = {
   homeScrollY?: SharedValue<number>;
   feedMode?: boolean;
   feedReels?: boolean;
   onFeedTabChange?: (reels: boolean) => void;
   onFeedGuide?: () => void;
-} = {}) {
+  searchOpen?: boolean;
+  onSearchOpen?: () => void;
+  onSearchCancel?: () => void;
+  searchTerm?: string;
+  onSearchTermChange?: (value: string) => void;
+  onSearchSubmit?: () => void;
+  onSearchBlur?: () => void;
+};
+
+/** Search expands inside the same glass pill. The search screen owns results. */
+export function GlassHeader({
+  homeScrollY, feedMode = false, feedReels = false, onFeedTabChange, onFeedGuide, searchOpen = false, onSearchOpen, onSearchCancel,
+  searchTerm = "", onSearchTermChange, onSearchSubmit, onSearchBlur,
+}: SearchHeaderProps = {}) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const reduced = useMotionSetting();
+  const inputRef = useRef<TextInput>(null);
+  const searchProgress = useSharedValue(searchOpen ? 1 : 0);
+  useEffect(() => {
+    cancelAnimation(searchProgress);
+    searchProgress.set(reduced ? (searchOpen ? 1 : 0) :
+      withTiming(searchOpen ? 1 : 0, { duration: 150 }));
+    return () => cancelAnimation(searchProgress);
+  }, [searchOpen, reduced, searchProgress]);
+  useEffect(() => {
+    if (!searchOpen) { inputRef.current?.blur(); return; }
+    const timer = setTimeout(() => inputRef.current?.focus(), reduced ? 0 : 150);
+    return () => clearTimeout(timer);
+  }, [searchOpen, reduced]);
+  const searchStyle = useAnimatedStyle(() => ({
+    opacity: searchProgress.get(),
+    transform: [{ translateX: (1 - searchProgress.get()) * 10 }],
+  }));
+  const pillGrow = useAnimatedStyle(() => ({
+    transform: [{ scaleX: 1 + searchProgress.get() * 0.015 }],
+  }));
+  const chromeStyle = useAnimatedStyle(() => ({ opacity: 1 - searchProgress.get() }));
   const headerStyle = useAnimatedStyle(() => {
-    const offset = homeScrollY?.get() ?? 0;
+    const offset = searchOpen ? 0 : homeScrollY?.get() ?? 0;
     const short = reduced ? (offset > 55 ? 4 : 8) :
       interpolate(offset, [0, 100], [8, 4], Extrapolation.CLAMP);
     return { paddingTop: insets.top + short, paddingBottom: short };
   });
   const pillStyle = useAnimatedStyle(() => {
-    const offset = homeScrollY?.get() ?? 0;
-    return { height: !homeScrollY ? 46 : reduced ? (offset > 55 ? 40 : 46) :
+    const offset = searchOpen ? 0 : homeScrollY?.get() ?? 0;
+    return { height: searchOpen || !homeScrollY ? 46 : reduced ? (offset > 55 ? 40 : 46) :
       interpolate(offset, [0, 100], [46, 40], Extrapolation.CLAMP) };
   });
   const expandedStyle = useAnimatedStyle(() => {
-    const offset = homeScrollY?.get() ?? 0;
+    const offset = searchOpen ? 0 : homeScrollY?.get() ?? 0;
     return {
-      opacity: !homeScrollY ? 1 : reduced ? (offset > 55 ? 0 : 1) :
-        interpolate(offset, [0, 65], [1, 0], Extrapolation.CLAMP),
+      opacity: (1 - searchProgress.get()) * (!homeScrollY ? 1 : reduced ? (offset > 55 ? 0 : 1) :
+        interpolate(offset, [0, 65], [1, 0], Extrapolation.CLAMP)),
       transform: [{ scale: !homeScrollY || reduced ? 1 :
         interpolate(offset, [0, 100], [1, 0.85], Extrapolation.CLAMP) }],
     };
   });
   const compactStyle = useAnimatedStyle(() => {
-    const offset = homeScrollY?.get() ?? 0;
-    return { opacity: !homeScrollY ? 0 : reduced ? (offset > 55 ? 1 : 0) :
-      interpolate(offset, [35, 90], [0, 1], Extrapolation.CLAMP) };
+    const offset = searchOpen ? 0 : homeScrollY?.get() ?? 0;
+    return { opacity: (1 - searchProgress.get()) * (!homeScrollY ? 0 : reduced ? (offset > 55 ? 1 : 0) :
+      interpolate(offset, [35, 90], [0, 1], Extrapolation.CLAMP)) };
   });
   // HoopFeed has one slim header island instead of the HoopCheck header,
   // a separate tab container and a second page title.
@@ -94,7 +129,7 @@ export function GlassHeader({ homeScrollY, feedMode = false, feedReels = false, 
     homeScrollY ? { position: "absolute", top: 0, left: 0, right: 0 } : null,
     headerStyle,
   ]}>
-    <GlassCard radius={999} padding={8}>
+    <Animated.View style={pillGrow}><GlassCard radius={999} padding={8}>
       <Animated.View style={[{ height: 46, flexDirection: "row", alignItems: "center",
         justifyContent: "space-between", paddingLeft: 9 }, pillStyle]}>
         <Animated.View pointerEvents="none" style={[
@@ -117,7 +152,16 @@ export function GlassHeader({ homeScrollY, feedMode = false, feedReels = false, 
           </Svg>
           <Text style={{ color: glass.foreground, fontSize: 15, fontWeight: "800" }}>HoopCheck</Text>
         </Animated.View> : null}
+        {onSearchOpen ? <Animated.View style={[{ marginLeft: "auto" }, chromeStyle]}
+          pointerEvents={searchOpen ? "none" : "auto"}><Pressable accessibilityRole="button"
+            accessibilityLabel="Search" onPress={onSearchOpen}
+            style={{ width: 44, height: 44, borderRadius: 22,
+              alignItems: "center", justifyContent: "center" }}>
+            <Ionicons name="search-outline" size={23} color={glass.foreground} />
+          </Pressable></Animated.View> : null}
+        <Animated.View style={chromeStyle} pointerEvents={searchOpen ? "none" : "auto"}>
         <Pressable accessibilityRole="button" accessibilityLabel="Alerts"
+          accessibilityState={{ disabled: searchOpen }}
           onPress={() => router.push("/notifications")}
           style={{ width: 44, height: 44, borderRadius: 22, marginLeft: "auto",
             alignItems: "center", justifyContent: "center" }}>
@@ -125,8 +169,28 @@ export function GlassHeader({ homeScrollY, feedMode = false, feedReels = false, 
           <View pointerEvents="none" accessible={false}
             style={{ position: "absolute", right: 9, top: 8, width: 7, height: 7,
               borderRadius: 4, backgroundColor: glass.orange }} />
-        </Pressable>
+        </Pressable></Animated.View>
+        {searchOpen ? <Animated.View pointerEvents="auto"
+          accessibilityElementsHidden={!searchOpen}
+          importantForAccessibility={searchOpen ? "auto" : "no-hide-descendants"}
+          style={[{ position: "absolute", left: 9, right: 0, top: 0, bottom: 0,
+            flexDirection: "row", alignItems: "center", gap: 6 }, searchStyle]}>
+          <Ionicons name="search-outline" size={20} color={glass.orange} />
+          <TextInput ref={inputRef} accessibilityLabel="Search basketball directory"
+            placeholder="Search basketball…" placeholderTextColor={glass.tertiary}
+            autoCapitalize="none" autoCorrect={false} returnKeyType="search"
+            editable={searchOpen} maxLength={100} value={searchTerm}
+            onChangeText={onSearchTermChange} onSubmitEditing={onSearchSubmit}
+            onBlur={onSearchBlur}
+            style={{ flex: 1, minWidth: 0, minHeight: 44, color: glass.foreground,
+              fontSize: 14, paddingVertical: 5 }} />
+          <Pressable accessibilityRole="button" accessibilityLabel="Cancel search"
+            onPress={() => { Keyboard.dismiss(); onSearchCancel?.(); }}
+            style={{ minHeight: 44, paddingHorizontal: 8, justifyContent: "center" }}>
+            <Text style={{ color: glass.orange, fontSize: 13, fontWeight: "700" }}>Cancel</Text>
+          </Pressable>
+        </Animated.View> : null}
       </Animated.View>
-    </GlassCard>
+    </GlassCard></Animated.View>
   </Animated.View>;
 }

@@ -6,7 +6,7 @@ import { glassTokens as glass } from "../src/glassTheme";
 import { Scoreboard } from "../components/Scoreboard";
 import { Skeleton } from "../components/Motion";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { SectionList, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
+import { SectionList, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, Text, View, type ViewToken } from "react-native";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Button, PressableCard } from "../src/primitives";
 import { GameChat } from "../components/GameChat";
@@ -19,6 +19,7 @@ import { supabase } from "../src/lib/supabase";
 import { readBasketballSide, readLiveGames, saveBasketballSide } from "../src/native/liveGames";
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
 type Games = Awaited<ReturnType<typeof readLiveGames>>;
+const GAME_VIEWABILITY_CONFIG = { itemVisiblePercentThreshold: 40 };
 export default function LiveGames() { return <GlassThemeScope><LiveGamesContent /></GlassThemeScope>; }
 function LiveGamesContent() {
   const theme = useEntryTheme();
@@ -27,6 +28,18 @@ function LiveGamesContent() {
   const { account, loading: accountLoading, error: accountError, retry } = useNativeAccount();
   const { offline } = useNetwork();
   const active = useActiveScreen();
+  const [visibleGames, setVisibleGames] = useState<Set<string>>(() => new Set());
+  const onGamesViewable = useCallback(({ viewableItems }: { viewableItems: ViewToken[] }) => {
+    const ids = new Set<string>();
+    for (const viewable of viewableItems) {
+      const id: unknown = viewable.item?.id;
+      if (typeof id === "string" && viewable.isViewable) ids.add(id);
+    }
+    setVisibleGames(previous => {
+      if (previous.size === ids.size && [...previous].every(id => ids.has(id))) return previous;
+      return ids;
+    });
+  }, []);
   useFocusEffect(useCallback(() => { retry(); }, [retry]));
   const uid = account?.user.id;
   const [error, setError] = useState("");
@@ -143,15 +156,16 @@ function LiveGamesContent() {
       {gameId ? <Button secondary onPress={() => router.replace("/fan-live")}>All games</Button> : null}
     </View>
     {game ? <View style={{ flex: 1, paddingHorizontal: 12, paddingBottom: 116, gap: 8 }}>
-      <GlassCard><Scoreboard game={game} teams={data?.teams || {}} /></GlassCard>
+      <GlassCard><Scoreboard game={game} teams={data?.teams || {}} animateLive={active} /></GlassCard>
       <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 20 }}>{(["chat", "predictions"] as const).map(value => <Pressable key={value} accessibilityRole="tab" aria-selected={panel === value} accessibilityState={{ selected: panel === value }} onPress={() => setPanel(value)} style={{ minHeight: 44, justifyContent: "center" }}><Text style={{ color: panel === value ? theme.accent : theme.foreground, fontWeight: "800" }}>{value === "chat" ? "Chat" : "Predictions"}</Text></Pressable>)}</View>
-      {panel === "chat" ? <GameChat key={`${uid}:${game.id}`} gameId={game.id} userId={uid!} enabled={chatEnabled} /> : <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 24 }}><GamePrediction key={`${uid}:${game.id}`} game={game} userId={uid!} homeName={data?.teams[game.team_id]?.name || "Home team"} awayName={data?.teams[game.opponent_team_id || ""]?.name || game.opponent_name} active={active} /></ScrollView>}
-    </View> : <SectionList sections={sections} stickySectionHeadersEnabled={false} renderSectionHeader={({ section }) => <Text accessibilityRole="header" style={{ ...theme.type.section, color: theme.foreground, paddingVertical: theme.spacing.sm }}>{section.title} · {section.chatting} chatting</Text>}
+      {panel === "chat" ? <GameChat key={`${uid}:${game.id}`} gameId={game.id} userId={uid!} enabled={chatEnabled} active={active} /> : <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 24 }}><GamePrediction key={`${uid}:${game.id}`} game={game} userId={uid!} homeName={data?.teams[game.team_id]?.name || "Home team"} awayName={data?.teams[game.opponent_team_id || ""]?.name || game.opponent_name} active={active} /></ScrollView>}
+    </View> : <SectionList sections={sections} stickySectionHeadersEnabled={false}
+    viewabilityConfig={GAME_VIEWABILITY_CONFIG} onViewableItemsChanged={onGamesViewable} renderSectionHeader={({ section }) => <Text accessibilityRole="header" style={{ ...theme.type.section, color: theme.foreground, paddingVertical: theme.spacing.sm }}>{section.title} · {section.chatting} chatting</Text>}
     renderSectionFooter={({section})=>section.total>3?<Pressable accessibilityRole="button" onPress={()=>setExpandedGroups(current=>current.includes(section.title)?current.filter(item=>item!==section.title):[...current,section.title])}
       style={{minHeight:44,justifyContent:"center",alignItems:"center",borderWidth:1,borderColor:theme.border,borderRadius:14,marginTop:8,backgroundColor:theme.surface}}>
       <Text style={{color:theme.accent,fontWeight:"800"}}>{expandedGroups.includes(section.title)?"Show 3 games":`Show all ${section.total} games`}</Text>
     </Pressable>:null} keyExtractor={item => item.id} contentContainerStyle={{ padding: 12, gap: 8, paddingBottom: 145 }} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => setRevision(value => value + 1)} />} renderItem={({ item }) => <PressableCard accessibilityRole="button" onPress={() => router.push({ pathname: "/fan-live", params: { gameId: item.id } })}>
-      <Scoreboard game={item} teams={data?.teams || {}} />
+      <Scoreboard game={item} teams={data?.teams || {}} animateLive={active && visibleGames.has(item.id)} />
     </PressableCard>} ListHeaderComponent={<View style={{gap:10,marginBottom:12}}>
       {featuredGame ? <GlassCard testID="featured-live-game">
         <Text style={{ color: glass.secondary, fontSize: 11, fontWeight: "800", letterSpacing: 1 }}>FEATURED GAME</Text>

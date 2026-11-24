@@ -6,6 +6,8 @@ import { Button, GlassCard } from "../src/primitives";
 import { useEntryTheme } from "../src/theme";
 import { supabase } from "../src/lib/supabase";
 import { requireOnline, useNetwork } from "../src/native/network";
+import { useActiveScreen } from "../src/native/useActiveScreen";
+import { ChatMessageEnter, ChatTypingBasketball } from "../components/chat/ChatMotion";
 
 type ContactRequest = {
   id: string; requester_id: string; player_id: string; message: string | null;
@@ -18,9 +20,12 @@ export default function MessagesScreen() {
   const theme = useEntryTheme();
   const router = useRouter();
   const { offline } = useNetwork();
+  const active = useActiveScreen();
   const [userId, setUserId] = useState("");
   const [requests, setRequests] = useState<ContactRequest[]>([]);
   const [messages, setMessages] = useState<ContactMessage[]>([]);
+  const seenMessages = useRef<{ owner: string; ready: boolean; ids: Set<string> }>({ owner: "", ready: false, ids: new Set() });
+  const [freshMessageIds, setFreshMessageIds] = useState<Set<string>>(() => new Set());
   const [contacts, setContacts] = useState<Record<string,ContactName>>({});
   const [selectedId, setSelectedId] = useState("");
   const [draft, setDraft] = useState("");
@@ -53,7 +58,14 @@ export default function MessagesScreen() {
       ]);
       if (revision!==generation.current) return;
       if (history.error) throw new Error("Conversation history could not be loaded.");
-      setUserId(user.id);setRequests(rows);setMessages((history.data||[]) as ContactMessage[]);
+      const historyRows = (history.data || []) as ContactMessage[];
+      const fresh = new Set<string>();
+      if (seenMessages.current.owner === user.id && seenMessages.current.ready) {
+        for (const item of historyRows) if (!seenMessages.current.ids.has(item.id)) fresh.add(item.id);
+      }
+      seenMessages.current = { owner: user.id, ready: true, ids: new Set(historyRows.map(item => item.id)) };
+      setFreshMessageIds(previous => fresh.size || previous.size ? fresh : previous);
+      setUserId(user.id);setRequests(rows);setMessages(historyRows);
       setContacts(Object.fromEntries(((people.data||[]) as ContactName[]).map(person=>[person.id,person])));
       setSelectedId(current=>rows.some(item=>item.id===current)?current:(rows[0]?.id||""));
     } catch (failure) {
@@ -63,10 +75,12 @@ export default function MessagesScreen() {
 
   useFocusEffect(useCallback(() => {
     void load();
-    return ()=>{generation.current++;setRequests([]);setMessages([]);setContacts({});setUserId("");setSelectedId("");};
+    return ()=>{generation.current++;setRequests([]);setMessages([]);setContacts({});setUserId("");setSelectedId("");
+      seenMessages.current = { owner: "", ready: false, ids: new Set() };setFreshMessageIds(new Set());};
   }, [load]));
   useEffect(()=>{
-    const {data}=supabase.auth.onAuthStateChange(()=>{generation.current++;setRequests([]);setMessages([]);setUserId("");});
+    const {data}=supabase.auth.onAuthStateChange(()=>{generation.current++;setRequests([]);setMessages([]);setUserId("");
+      seenMessages.current = { owner: "", ready: false, ids: new Set() };setFreshMessageIds(new Set());});
     return ()=>data.subscription.unsubscribe();
   },[]);
 
@@ -142,16 +156,17 @@ export default function MessagesScreen() {
         <Text style={{color:theme.muted,fontSize:12}}>{selected.status==="accepted"?"Private HoopChat":"Player contact request"}</Text>
         {selected.message?<View style={{padding:12,borderRadius:12,backgroundColor:theme.chip}}><Text style={{color:theme.foreground}}>Introduction: {selected.message}</Text></View>:null}
         <View accessibilityLabel="Conversation history" style={{gap:10,marginVertical:10}}>
-          {history.map(item=><View key={item.id} style={{padding:12,borderRadius:14,backgroundColor:item.sender_id===userId?theme.accentSurface:theme.surface,borderColor:theme.border,borderWidth:1,alignSelf:item.sender_id===userId?"flex-end":"flex-start",maxWidth:"95%",gap:4}}>
+          {history.map(item=><ChatMessageEnter key={item.id} fresh={freshMessageIds.has(item.id)} incoming={item.sender_id !== userId} active={active}><View style={{padding:12,borderRadius:14,backgroundColor:item.sender_id===userId?theme.accentSurface:theme.surface,borderColor:theme.border,borderWidth:1,alignSelf:item.sender_id===userId?"flex-end":"flex-start",maxWidth:"95%",gap:4}}>
             <Text style={{fontSize:12,fontWeight:"800",color:theme.foreground}}>{item.sender_id===userId?"You":name(selected)}</Text>
             <Text style={{color:theme.foreground}}>{item.body}</Text>
             <Text style={{color:theme.muted,fontSize:11}}>{new Date(item.created_at).toLocaleString()}</Text>
-          </View>)}
+          </View></ChatMessageEnter>)}
         </View>
         {selected.status==="pending"&&selected.player_id===userId?<View style={{gap:8}}><Text style={{color:theme.muted}}>Approve this request to unlock messaging.</Text><Button disabled={sending||offline} onPress={()=>void respond("accepted")}>Accept request</Button><Button secondary disabled={sending||offline} onPress={()=>void respond("rejected")}>Decline</Button></View>:null}
         {selected.status==="accepted"?<View style={{gap:8}}>
           <TextInput accessibilityLabel="Write private HoopChat message" multiline maxLength={2000} value={draft} onChangeText={setDraft} placeholder="Write a message…" placeholderTextColor={theme.muted}
             style={{minHeight:80,textAlignVertical:"top",padding:12,backgroundColor:theme.input,color:theme.foreground,borderWidth:1,borderColor:theme.border,borderRadius:theme.radius.control}} />
+          <ChatTypingBasketball active={active && Boolean(draft.trim()) && !sending && !offline} />
           <Button disabled={sending||offline||!draft.trim()} onPress={()=>void send()}>{sending?"Sending…":"Send"}</Button>
         </View>:selected.status==="pending"?<Text style={{color:theme.muted}}>Messaging opens once the player accepts.</Text>:<Text style={{color:theme.muted}}>This request is no longer active.</Text>}
       </GlassCard>:null}

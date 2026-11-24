@@ -6,13 +6,16 @@ import { supabase } from "../src/lib/supabase";
 import { useEntryTheme } from "../src/theme";
 import { requireOnline } from "../src/native/network";
 import { readGameRoom, reportGameMessage, sendGameMessage, setGameChatControl, type ChatMessage } from "../src/native/liveGames";
+import { ChatMessageEnter, ChatTypingBasketball } from "./chat/ChatMotion";
 type Room = Awaited<ReturnType<typeof readGameRoom>>;
-export function GameChat({ gameId, userId, enabled }: { gameId: string; userId: string; enabled: boolean }) {
+export function GameChat({ gameId, userId, enabled, active = true }: { gameId: string; userId: string; enabled: boolean; active?: boolean }) {
   const theme = useEntryTheme();
   const scope = `${userId}:${gameId}`;
   const current = useRef({ scope, enabled });
   useLayoutEffect(() => { current.current = { scope, enabled }; }, [scope, enabled]);
   const [snapshot, setSnapshot] = useState<{ scope: string; room: Room } | null>(null);
+  const seen = useRef<{ scope: string; ready: boolean; ids: Set<string> }>({ scope, ready: false, ids: new Set() });
+  const [freshIds, setFreshIds] = useState<Set<string>>(() => new Set());
   const [text, setDraft] = useNativeDraft(`game:chat:${gameId}`, userId);
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
@@ -46,6 +49,19 @@ export function GameChat({ gameId, userId, enabled }: { gameId: string; userId: 
     return () => { valid = false; clearInterval(timer); clearTimeout(queued); void supabase.removeChannel(channel); };
   }, [enabled, gameId, userId, scope, revision]);
   const room = enabled && snapshot?.scope === scope ? snapshot.room : null;
+  useEffect(() => {
+    if (seen.current.scope !== scope) {
+      seen.current = { scope, ready: false, ids: new Set() };
+      setFreshIds(new Set());
+    }
+    if (!room) return;
+    const fresh = new Set<string>();
+    if (seen.current.ready) for (const item of room.messages) {
+      if (!seen.current.ids.has(item.id)) fresh.add(item.id);
+    }
+    seen.current = { scope, ready: true, ids: new Set(room.messages.map(item => item.id)) };
+    setFreshIds(previous => fresh.size || previous.size ? fresh : previous);
+  }, [room, scope]);
   const reportTarget = report?.scope === scope ? report.item : null;
   async function action(task: () => Promise<void>) {
     if (request.current || !enabled) return;
@@ -80,12 +96,14 @@ export function GameChat({ gameId, userId, enabled }: { gameId: string; userId: 
   return <View style={{ gap: 12, flex: 1 }}>
     <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 23, fontWeight: "800" }}>Game chat</Text>
     {!enabled ? <Text style={{ color: theme.muted }}>Live chat requires eligible active membership. Free players can still make game predictions.</Text> : !room ? <Text style={{ color: theme.muted }}>Verifying room access…</Text> : !room.open ? <Text style={{ color: theme.muted }}>This room is closed. Chat opens 60 minutes before tip-off and closes when the game ends.</Text> : <>
-      <FlatList style={{ flex: 1, minHeight: 0 }} inverted data={[...room.messages].reverse()} keyExtractor={item => item.id} keyboardShouldPersistTaps="handled" ListEmptyComponent={<Text style={{ color: theme.muted }}>No messages yet.</Text>} renderItem={({ item }) => <View style={{ paddingVertical: 10, gap: 6, borderBottomWidth: 1, borderColor: theme.border }}>
+      <FlatList style={{ flex: 1, minHeight: 0 }} inverted data={[...room.messages].reverse()} keyExtractor={item => item.id} keyboardShouldPersistTaps="handled" ListEmptyComponent={<Text style={{ color: theme.muted }}>No messages yet.</Text>} renderItem={({ item }) => <ChatMessageEnter incoming={item.user_id !== userId} fresh={freshIds.has(item.id)} active={active}>
+        <View style={{ paddingVertical: 10, gap: 6, borderBottomWidth: 1, borderColor: theme.border }}>
         <Text style={{ color: theme.foreground, fontWeight: "800" }}>{room.names[item.user_id] || "HoopCheck member"}</Text>
         <Text style={{ color: theme.foreground }}>{item.body}</Text><Text style={{ color: theme.muted }}>{new Date(item.created_at).toLocaleTimeString()}</Text>
         {item.user_id !== userId ? <View style={{ flexDirection: "row", gap: 12 }}>{["mute", "block", "report"].map(kind => <Pressable key={kind} accessibilityRole="button" accessibilityLabel={`${kind} ${room.names[item.user_id] || "member"}`} disabled={busy} onPress={() => { if (kind === "report") { setReason("harassment"); setDetails(""); setReport({ scope, item }); } else void control(item.user_id, kind as "block" | "mute"); }} style={{ minHeight: 44, justifyContent: "center" }}><Text style={{ color: theme.accent, textTransform: "capitalize" }}>{kind}</Text></Pressable>)}</View> : null}
-      </View>} />
+      </View></ChatMessageEnter>} />
       <TextInput accessibilityLabel="Game chat message" placeholder="Message the room" placeholderTextColor={theme.muted} value={text} maxLength={500} multiline onChangeText={setDraft} style={{ color: theme.foreground, backgroundColor: theme.input, borderColor: theme.border, borderWidth: 1, borderRadius: theme.radius.control, padding: 12, minHeight: 48, maxHeight: 120 }} />
+      <ChatTypingBasketball active={active && Boolean(text.trim()) && !busy} />
       <Button disabled={busy || !text.trim()} onPress={() => void send()}>{busy ? "Sending…" : "Send message"}</Button>
     </>}
     {room?.controls.some(control => control.is_muted || control.is_blocked) ? <Button secondary onPress={() => setManaging(value => !value)}>{managing ? "Close hidden members" : "Manage hidden members"}</Button> : null}
