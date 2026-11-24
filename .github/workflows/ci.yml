@@ -110,6 +110,9 @@ jobs:
       - name: Verify native bootstrap authorization
         run: node --test scripts/test-mobile-bootstrap.mjs
 
+      - name: Verify quota-bounded live score scheduling and freshness
+        run: node --test scripts/test-live-score-schedule.mjs
+
       - name: Rehearse guarded legacy player privacy functions with synthetic PostgreSQL roles
         env:
           PGPASSWORD: postgres
