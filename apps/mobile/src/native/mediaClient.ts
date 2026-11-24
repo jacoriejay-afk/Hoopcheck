@@ -7,7 +7,7 @@ function originUrl(origin: string, path: string) {
 }
 export class PublicationUnconfirmed extends Error {}
 // Existing server-authorized HoopFeed topic categories; this does not create a new taxonomy.
-export const REEL_TOPICS = ["Practice", "Game Day", "Challenge", "Win", "Teammates", "Culture", "Travel"] as const;
+export const REEL_TOPICS = ["Practice", "Challenge", "Win", "Teammates", "Culture", "Travel"] as const;
 export type ReelTopic = "" | typeof REEL_TOPICS[number];
 export type MediaTransport = {
   photoBody: (photo: Photo) => Promise<Blob>;
