@@ -4,7 +4,7 @@ const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const isFeedId = (value: string) => uuid.test(value);
 export type FeedCursor = { id: string; created_at: string };
 export type FeedPost = FeedCursor & { author_id: string; body: string | null; image_url: string | null; image_urls: string[] | null; video_url: string | null; post_kind: string; poll_options: string[] | null; expires_at: string | null; profiles: { display_name: string | null; account_type: string | null; avatar_url?: string | null; avatar_moderation_status?: string | null } | null };
-export type FeedComment = FeedCursor & { author_id: string; body: string; parent_id: string | null; profiles: { display_name: string | null } | null };
+export type FeedComment = FeedCursor & { author_id: string; body: string; parent_id: string | null; profiles: { display_name: string | null; avatar_url?: string | null; avatar_moderation_status?: string | null } | null };
 function apiUrl(origin: string, path: string) {
   const url = new URL(origin);
   if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash || url.pathname !== "/") throw new Error("Invalid API origin");
@@ -46,7 +46,7 @@ export async function readFeedPage(client: SupabaseClient, userId: string, curso
 }
 export async function readFeedComments(client: SupabaseClient, postId: string, offset = 0) {
   if (!uuid.test(postId) || !Number.isSafeInteger(offset) || offset < 0) throw new Error("Invalid comment request");
-  const result = await client.from("feed_post_comments").select("id,author_id,parent_id,body,created_at,profiles:profiles!feed_post_comments_author_id_fkey(display_name)").eq("post_id", postId).order("created_at").order("id").range(offset, offset + 50);
+  const result = await client.from("feed_post_comments").select("id,author_id,parent_id,body,created_at,profiles:profiles!feed_post_comments_author_id_fkey(display_name,avatar_url,avatar_moderation_status)").eq("post_id", postId).order("created_at").order("id").range(offset, offset + 50);
   if (result.error) throw new Error("Comments unavailable");
   const rows = (result.data ?? []) as unknown as FeedComment[];
   if (rows.some(row => !validCursor(row) || typeof row.body !== "string")) throw new Error("Invalid comments");
