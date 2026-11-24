@@ -5,6 +5,7 @@ import { useEntryTheme } from "../src/theme";
 import { capturePhoto, captureVideo, choosePhoto, chooseVideo, MediaPermissionError, photoBody, preparePhoto, uploadVideoFile, type CameraFacing, type Photo, type Video } from "../src/native/mediaSelection";
 import { PublicationUnconfirmed, publishMediaPost } from "../src/native/mediaClient";
 import { FeedVideo } from "./FeedVideo";
+import { CommunityWordmark } from "./BrandLockup";
 
 type Props = { userId: string; enabled: boolean; caption: string; token: () => Promise<string>; onPublished: () => void | Promise<void>; onRefresh: () => void | Promise<void> };
 export function MediaPostComposer({ userId, enabled, caption, token, onPublished, onRefresh }: Props) {
@@ -42,6 +43,7 @@ export function MediaPostComposer({ userId, enabled, caption, token, onPublished
   return <View style={{ gap: 12 }}>
     <Text style={{ color: theme.muted }}>Add up to four photos, or one video up to 50 MB with a caption. Photos can be cropped when selected and rotated below.</Text>
     {Platform.OS !== "web" ? <View style={{ gap: 10, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 16 }}>
+      <CommunityWordmark size={20} />
       <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 17, fontWeight: "800" }}>HoopFeed camera</Text>
       <Text style={{ color: theme.muted }}>Capture a photo or a video up to 60 seconds. Review it before posting.</Text>
       <View accessibilityRole="radiogroup" style={{ flexDirection: "row", gap: 8 }}>
