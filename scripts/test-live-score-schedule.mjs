@@ -103,3 +103,14 @@ test("production prediction listing bounds dates before the limit and falls back
     assert.equal(attempt[5][1],"id");assert.equal(attempt[6][1],500);
   }
 });
+
+test("fixture country comes from provider country object and incomplete matchup diagnostics are bounded",()=>{
+ const source=readFileSync(new URL("../app/api/cron/live-basketball/route.ts",import.meta.url),"utf8");
+ assert.match(source,/country\?: \{ id\?: number; name\?: string \}/);
+ assert.match(source,/country: typeof game\.country\?\.name === "string"/);
+ assert.match(source,/if \(!opponentId && scheduledStatuses\.has\(statusOf\(game\)\)\)/);
+ assert.match(source,/missingMatchupMappings\.length < 20/);
+ assert.match(source,/providerTeamId:Number\.isSafeInteger\(missingId\)/);
+ assert.match(source,/incompleteMatchups,\s*missingMatchupMappings,/);
+ assert.equal((source.match(/await fetch\(/g)||[]).length,1);
+});
