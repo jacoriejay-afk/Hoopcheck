@@ -337,11 +337,7 @@ function FeedContent({ initialReels = false }: { initialReels?: boolean }) {
           blockBusy={Boolean(pending["block:" + post.author_id])}
           onBack={() => { setReels(false); if (initialReels) router.navigate("/feed"); }}
           onViewPlayer={() => router.push({ pathname: "/players/[id]", params: { id: post.author_id } })}
-          onCreate={() => {
-            if (!canWrite) return;
-            setReels(false); setComposerExpanded(true); setMediaMode(true);
-            if (initialReels) router.push({ pathname: "/feed", params: { compose: "media" } });
-          }}
+          onCreate={() => { if (canWrite) router.push("/reels/studio"); }}
           onCheck={() => void checkPost(post)}
           onComments={() => router.push({ pathname: "/feed", params: { post: post.id, comments: "1" } })}
           onShare={() => void action("share:" + post.id, async () => {

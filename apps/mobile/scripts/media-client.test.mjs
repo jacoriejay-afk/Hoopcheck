@@ -15,7 +15,7 @@ const signal=()=>new AbortController().signal;
 const json=(value,status=200)=>Response.json(value,{status});
 const ticket={mode:'private',path:`${owner}/${object}.mov`,bucket:'hoopfeed-private-videos',token:'private-upload-token'};
 const base={photoBody:async()=>new Blob(['photo'],{type:'image/jpeg'}),uploadVideo:async()=>({status:200})};
-const publish=(photos,clip,transport,caption='Caption')=>publishMediaPost('https://api.test','https://fixture.supabase.co',owner,'owner-token',caption,photos,clip,signal(),{...base,...transport});
+const publish=(photos,clip,transport,caption='Caption',topic='')=>publishMediaPost('https://api.test','https://fixture.supabase.co',owner,'owner-token',caption,photos,clip,signal(),{...base,...transport},topic);
 
 test('photos use the existing moderated multipart endpoint without leaking auth in URLs or granting roles',async()=>{
  await publish([photo,photo],null,{request:async(url,init)=>{
@@ -84,4 +84,16 @@ test('avatar ownership failure makes no writes and an uncertain profile response
  let writes=0;const client=authClient();client.auth.getUser=async()=>({data:{user:{id:object}}});
  await assert.rejects(saveOwnAvatar(client,owner,photo,'https://fixture.supabase.co','public-key',base.photoBody,async()=>{writes++;return json({});}),/verified/);assert.equal(writes,0);
  const calls=[];await assert.rejects(saveOwnAvatar(authClient(),owner,photo,'https://fixture.supabase.co','public-key',base.photoBody,async(_,init)=>{calls.push(init.method);if(init.method==='POST')return json({Key:'uploaded'});throw Error('network lost');}));assert.deepEqual(calls,['POST','PATCH']);
+});
+
+test('Creator Studio topic tags reuse the existing moderated post flow',async()=>{
+  await publish([],video,{request:async(url,init)=>{
+    if(String(url).endsWith('/video-upload'))return json(ticket);
+    assert.equal(init.body.get('topic_tag'),'Practice');
+    assert.equal(init.body.get('video_path'),'hoopfeed-private-videos/' + ticket.path);
+    return json({allowed:true});
+  }},'Practice makes progress','Practice');
+  let called=false;
+  await assert.rejects(publish([],video,{request:async()=>{called=true;throw Error('must not run');}},'Caption','Made-up league'),/supported basketball topic/);
+  assert.equal(called,false);
 });

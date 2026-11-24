@@ -6,22 +6,26 @@ function originUrl(origin: string, path: string) {
   url.pathname = path; return url;
 }
 export class PublicationUnconfirmed extends Error {}
+// Existing server-authorized HoopFeed topic categories; this does not create a new taxonomy.
+export const REEL_TOPICS = ["Practice", "Challenge", "Win", "Teammates", "Culture", "Travel"] as const;
+export type ReelTopic = "" | typeof REEL_TOPICS[number];
 export type MediaTransport = {
   photoBody: (photo: Photo) => Promise<Blob>;
   uploadVideo: (url: string, headers: Record<string, string>, video: Video, signal: AbortSignal) => Promise<{ status: number }>;
   request?: typeof fetch;
 };
-export async function publishMediaPost(api: string, project: string, owner: string, token: string, caption: string, photos: Photo[], video: Video | null, signal: AbortSignal, transport: MediaTransport) {
+export async function publishMediaPost(api: string, project: string, owner: string, token: string, caption: string, photos: Photo[], video: Video | null, signal: AbortSignal, transport: MediaTransport, topicTag: ReelTopic = "") {
   const target = originUrl(api, "/api/hoopfeed/moderate");
   const storage = originUrl(project, "/storage/v1/object/upload/sign/");
   if (!uuid.test(owner) || !token || caption.trim().length > 2000 || (video && !caption.trim()) || (!photos.length && !video) || photos.length > 4 || (photos.length && video)) throw new Error("Choose up to four photos or one video with a caption.");
   if (photos.some(photo => photo.type !== "image/jpeg" || !Number.isSafeInteger(photo.size) || photo.size < 1 || photo.size > 750000) || photos.reduce((total, photo) => total + photo.size, 0) > 3000000) throw new Error("Choose smaller photos before posting.");
   if (video && (!["video/mp4", "video/webm", "video/quicktime"].includes(video.type) || !Number.isSafeInteger(video.size) || video.size < 1 || video.size > 50 * 1024 * 1024)) throw new Error("Choose a supported video up to 50 MB.");
+  if (topicTag && !REEL_TOPICS.includes(topicTag as typeof REEL_TOPICS[number])) throw new Error("Choose a supported basketball topic.");
   const request = transport.request ?? fetch;
   const headers = { Authorization: `Bearer ${token}` };
   let uploadPath: string | null = null, moderationStarted = false, definitiveRejection = false;
   try {
-    const form = new FormData(); form.append("kind", "post"); form.append("post_kind", "discussion"); form.append("audience", "community"); form.append("text", caption.trim());
+    const form = new FormData(); form.append("kind", "post"); form.append("post_kind", "discussion"); form.append("audience", "community"); form.append("text", caption.trim()); if (topicTag) form.append("topic_tag", topicTag);
     for (let index = 0; index < photos.length; index++) form.append(index === 0 ? "image" : "images", await transport.photoBody(photos[index]), "photo.jpg");
     if (video) {
       const response = await request(originUrl(api, "/api/hoopfeed/video-upload"), { method: "POST", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ content_type: video.type, size: video.size }), cache: "no-store", redirect: "error", signal });
