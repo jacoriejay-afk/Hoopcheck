@@ -17,3 +17,15 @@ Performance target: 60fps mid-range iPhone and first-segment preloading **not me
 
 ## B and C
 Not started: segmented camera/editor, resumable/background uploads, real-data overlays and cover persistence, licensed sounds, photo quick-post/slideshow, game chip, Instagram sharing. No sounds table/migration. Creation stays off until both provider and SAFE-M1 are confirmed. No livestream, duets, user music uploads or paid service.
+
+
+## Build 15 follow-up: Mux Free controlled pilot
+The owner authorized trying the free Mux plan. This supersedes the static pre-signed catalog for the server route, but does not authorize public creation or a paid plan.
+
+- Mux Free: 10 stored assets, 100,000 delivery minutes and 100,000 Robots units monthly as of November 24, 2026. See https://www.mux.com/pricing and https://www.mux.com/blog/getting-started-with-mux-robots-just-got-easier-and-cheaper.
+- Create a dedicated free Mux environment/account; no billing upgrade. Create access tokens with the necessary read permissions (Video and Robots), and a signing key. Put secrets only in protected server preview environment variables, never source control or EXPO_PUBLIC variables.
+- Keep HOOPREELS_PILOT_ENABLED=false until authorized testing. Server configuration: HOOPREELS_STREAMING_PROVIDER=mux; HOOPREELS_PILOT_VIEWERS (comma-separated verified tester account UUIDs); MUX_TOKEN_ID; MUX_TOKEN_SECRET; MUX_SIGNING_KEY_ID; MUX_SIGNING_PRIVATE_KEY (base64 PEM); HOOPREELS_MUX_PILOT_ASSETS (JSON list with postId, assetId, playbackId, moderationJobId, reviewed:true). Do not invent identifiers or approve a video without manual review. No actual credentials or catalog entries configured.
+- Operator uploads only rights-cleared clips under 60 seconds, max 1080p, signed playback policy only. Create a Robots v1 moderate job for each exact asset with on_flagged.action=delete_playback_ids. Review sampled frames, transcript and the whole original for other policy issues before marking reviewed. No new moderation jobs or assets are created by the catalog endpoint.
+- The catalog checks real asset readiness, signed-only playback IDs, exact completed moderation job/asset match, unflagged result, duration and dimensions, then generates short-lived RS256 HLS and thumbnail tokens. Existing membership, approved-post, RLS, archive and block gates still apply. Provider failure hides affected entries. Preview verification must exercise missing, pending, flagged and unauthorized cases. Automatic playback-ID removal must be tested in the provider; this is not certification of SAFE-M1 for the entire community.
+- Ten stored assets is a pilot limit, not a scalable launch plan. Do not rotate/delete user assets or upgrade billing without explicit approval. Review Mux usage; no automatic public uploads. HOOPREELS_CREATE_ENABLED remains false. Real provider playback and device verification still required.
+- References: https://www.mux.com/docs/guides/secure-video-playback and https://www.mux.com/docs/guides/robots-moderate.
