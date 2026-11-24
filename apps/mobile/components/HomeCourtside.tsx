@@ -3,7 +3,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useCallback, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
-import { Button, PressableCard } from "../src/primitives";
+import { Button } from "../src/primitives";
 import { useEntryTheme } from "../src/theme";
 import { useNativeAccount } from "../src/native/useNativeAccount";
 import { supabase } from "../src/lib/supabase";
@@ -16,8 +16,6 @@ import { Scoreboard } from "./Scoreboard";
 import { MyCourtActions } from "./MyCourtActions";
 import { EntityArtwork } from "./EntityArtwork";
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
-// Existing bundled court art: no real player photograph, team crest, or sponsored asset.
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 type Games = Awaited<ReturnType<typeof readLiveGames>>;
 type HomeData = { scope: string; teams: PublicConnection[] | null; games: Games | null; posts: FeedPost[] | null;
   logos: Record<string, { url: string | null; bg: string | null }>; };
@@ -182,9 +180,9 @@ export function HomeCourtside() {
       {!gameAccess?<Text style={{color:t.muted,fontSize:12}}>Game Center requires an eligible membership.</Text>:
         data.games===null?<Text accessibilityRole="alert" style={{color:t.muted}}>Scores could not load.</Text>:
         !previewGames.length?<Text style={{color:t.muted,fontSize:12}}>No live or upcoming games. See Game Center for past results.</Text>:
-        previewGames.map(game=><PressableCard key={game.id} onPress={()=>router.push({pathname:"/fan-live",params:{gameId:game.id}})}>
+        previewGames.map(game=><Pressable accessibilityRole="button" key={game.id} style={({pressed})=>({minHeight:44,paddingVertical:8,borderBottomWidth:1,borderColor:t.border,opacity:pressed?.72:1})} onPress={()=>router.push({pathname:"/fan-live",params:{gameId:game.id}})}>
           <Scoreboard game={game} teams={data.games!.teams}/>
-        </PressableCard>)}
+        </Pressable>)}
       <ArenaHeading title="FROM HOOPFEED" cta="Open" onPress={()=>router.push("/feed")}/>
       {!feedAccess?<Text style={{color:t.muted,fontSize:12}}>Community posts require an eligible membership.</Text>:
         data.posts===null?<Text accessibilityRole="alert" style={{color:t.muted}}>HoopFeed preview could not load.</Text>:
@@ -196,10 +194,10 @@ export function HomeCourtside() {
             No community posts yet. Start a discussion in HoopFeed →
           </Text>
         </Pressable>:
-        data.posts.map(post=><PressableCard key={post.id} onPress={()=>router.push({pathname:"/feed",params:{post:post.id}})}>
+        data.posts.map(post=><Pressable accessibilityRole="button" key={post.id} style={({pressed})=>({minHeight:44,paddingVertical:8,borderBottomWidth:1,borderColor:t.border,opacity:pressed?.72:1,gap:4})} onPress={()=>router.push({pathname:"/feed",params:{post:post.id}})}>
           <Text style={{color:t.muted,...t.type.caption}}>{post.profiles?.display_name||"HoopCheck member"} · {new Date(post.created_at).toLocaleDateString()}</Text>
           <Text numberOfLines={3} style={{color:t.foreground,...t.type.body}}>{post.body||(post.video_url?"Watch a community highlight":"View community media")}</Text>
-        </PressableCard>)}
+        </Pressable>)}
       <Button secondary onPress={()=>setRevision(v=>v+1)}>Refresh courtside</Button>
     </>}
   </View>;
