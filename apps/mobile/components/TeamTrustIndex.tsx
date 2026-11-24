@@ -35,7 +35,10 @@ export function TeamTrustIndex({ id, entity, refresh }: { id: string; entity: Tr
     const controller = new AbortController();
     setReceipt(null);
     if (!uid || offline || loading || !focused) return;
-    const timeout = setTimeout(() => controller.abort(), 10000);
+    const timeout = setTimeout(() => {
+      controller.abort();
+      if (live && generation.current === epoch) setReceipt({ scope, value: "error" });
+    }, 10000);
     void (async () => {
       try {
         const session = await readWithDeadline(() => supabase.auth.getSession());
@@ -52,7 +55,8 @@ export function TeamTrustIndex({ id, entity, refresh }: { id: string; entity: Tr
     return () => { live = false; controller.abort(); clearTimeout(timeout); };
   }, [uid, offline, loading, focused, scope, id, entity]);
   const value = !offline && !loading && focused && receipt?.scope === scope ? receipt.value : null;
-  const label = offline ? "Reconnect to verify access." : loading || !value ? "Checking access…" :
+  const label = offline ? "Reconnect to verify access." : loading ? "Checking access…" :
+    !uid ? "Sign in or refresh your account to verify Trust Index access." : !value ? "Checking access…" :
     value === "error" ? "Trust Index unavailable. Pull to refresh." :
     value.status === "locked" ? "Trust Index access follows your HoopCheck membership." :
     value.score === null ? "Not enough approved review data for a score." : null;
