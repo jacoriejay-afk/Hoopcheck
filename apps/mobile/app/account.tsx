@@ -10,6 +10,8 @@ import { useEntryTheme } from "../src/theme";
 import { useNativeAccount } from "../src/native/useNativeAccount";
 import { supabase } from "../src/lib/supabase";
 import { useActiveScreen } from "../src/native/useActiveScreen";
+import { readWithDeadline } from "../src/native/readDeadline";
+import { visibleConnections } from "../src/native/connectionPresentation";
 import { profileCovers, readOwnCover, type ProfileCover } from "../src/native/profileEditor";
 
 type AccountGlyph = keyof typeof Ionicons.glyphMap;
@@ -53,6 +55,7 @@ export default function AccountScreen() {
   const activeScreen=useActiveScreen();
   const [appearanceRevision,setAppearanceRevision]=useState(0);
   const [cover,setCover]=useState<{owner:string;value:ProfileCover}|null>(null);
+  const [stats,setStats]=useState<{owner:string;people:number|null;teams:number|null;posts:number|null;reviews:number|null}|null>(null);
   const [avatar,setAvatar] = useState<{owner:string;url:string|null}>({owner:"",url:null});
   useEffect(()=>{
     const uid=account?.user.id;
@@ -71,6 +74,30 @@ export default function AccountScreen() {
       .catch(()=>{if(active)setCover(null);});
     return()=>{active=false;controller.abort();};
   },[account?.user.id,activeScreen,appearanceRevision]);
+  useEffect(()=>{
+    const uid=account?.user.id,role=account?.user.accountType,canRead=account?.features.canReadHoopFeed;
+    if(!uid||!role||!activeScreen){setStats(null);return;}
+    let live=true;const controller=new AbortController();const deadline=setTimeout(()=>controller.abort(),12000);
+    setStats(null);
+    async function load(){
+      try{
+        const session=await readWithDeadline(()=>supabase.auth.getSession());
+        if(session.error||!session.data.session||session.data.session.user.id!==uid) return;
+        const [connections,posts,reviews]=await Promise.allSettled([
+          supabase.rpc("get_public_follow_list",{p_mode:"following",p_target_type:null,p_target_id:null,p_user_id:uid}).abortSignal(controller.signal),
+          canRead?supabase.from("feed_posts").select("id",{count:"exact",head:true}).eq("author_id",uid!).eq("status","approved").or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`).abortSignal(controller.signal):Promise.resolve(null),
+          role==="player"?supabase.from("reviews").select("id",{count:"exact",head:true}).eq("author_id",uid!).abortSignal(controller.signal):Promise.resolve(null),
+        ]);
+        const after=await readWithDeadline(()=>supabase.auth.getSession());
+        if(!live||controller.signal.aborted||after.error||after.data.session?.user.id!==uid)return;
+        let people:number|null=null,teams:number|null=null;
+        if(connections.status==="fulfilled"&&!connections.value.error){try{const rows=visibleConnections(connections.value.data,role!);people=new Set(rows.filter(row=>row.target_type!=="team").map(row=>row.target_id)).size;teams=new Set(rows.filter(row=>row.target_type==="team").map(row=>row.target_id)).size;}catch{/* Unavailable is not zero. */}}
+        const count=(result:typeof posts)=>result.status==="fulfilled"&&result.value&&!result.value.error&&typeof result.value.count==="number"&&Number.isSafeInteger(result.value.count)&&result.value.count>=0?result.value.count:null;
+        setStats({owner:uid!,people,teams,posts:count(posts),reviews:count(reviews)});
+      }catch{/* Hide unverified counts. */}finally{clearTimeout(deadline);}
+    }
+    void load();return()=>{live=false;controller.abort();clearTimeout(deadline);};
+  },[account?.user.id,account?.user.accountType,account?.features.canReadHoopFeed,activeScreen,appearanceRevision]);
   const [signOutError, setSignOutError] = useState("");
   async function signOut() {
     if (signingOut) return;
@@ -106,6 +133,7 @@ export default function AccountScreen() {
                 <View style={{alignSelf:"flex-start",flexDirection:"row",alignItems:"center",gap:5,paddingHorizontal:8,paddingVertical:4,borderRadius:10,backgroundColor:theme.accentSurface}}><Ionicons name={account.hasPaidMembership?"diamond-outline":"person-outline"} size={13} color={theme.accent}/><Text style={{color:theme.accent,fontWeight:"800",fontSize:11}}>{tier.toUpperCase()} MEMBER</Text></View>
               </View>
             </View>
+            {stats?.owner===account.user.id?<View accessibilityLabel="Account activity" style={{flexDirection:"row",flexWrap:"wrap",paddingVertical:6,borderTopWidth:StyleSheet.hairlineWidth,borderColor:theme.border}}>{([{label:"Following",value:stats.people},{label:"Teams followed",value:stats.teams},{label:"Approved posts",value:stats.posts},{label:"Reviews",value:stats.reviews}]).filter(item=>item.value!==null).map(item=><View key={item.label} style={{flex:1,minWidth:65,alignItems:"center",gap:4}}><Text style={{color:theme.foreground,fontSize:17,fontWeight:"900"}}>{item.value}</Text><Text style={{color:theme.muted,fontSize:10,textAlign:"center"}}>{item.label}</Text></View>)}</View>:null}
             <View style={{flexDirection:"row",gap:9}}>
               <Pressable accessibilityRole="button" accessibilityLabel="Edit profile" onPress={()=>router.push("/account/edit")}
                 style={({pressed})=>({flex:1,minHeight:44,borderRadius:13,alignItems:"center",justifyContent:"center",flexDirection:"row",gap:7,
