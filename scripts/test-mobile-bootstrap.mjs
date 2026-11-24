@@ -24,6 +24,7 @@ function fixture(options = {}) {
     if (name === 'next/server') return { NextResponse: { json: (body, init) => Response.json(body, init) } };
     if (name === '@supabase/supabase-js') return { createClient: (...args) => { calls.push(['client',...args]); return db; } };
     if (name === '../../../../lib/membership-tier') return membership;
+    if (name === '../../../../lib/ambassador/mobile-access') return { mobileWorkspaceAccess: async () => ({ owner: false, ambassador: false }) };
     throw new Error(`Unexpected import ${name}`);
   });
   process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://fixture.supabase.co';

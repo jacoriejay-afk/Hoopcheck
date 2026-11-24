@@ -6,7 +6,7 @@ import { motion } from "../src/motion/config";
 import { EntityArtwork } from "./EntityArtwork";
 import { useEntryTheme } from "../src/theme";
 import type { LiveGame, GameTeam } from "../src/native/liveGames";
-import { gameDisplayState } from "../src/native/gameFreshness";
+import { gameDisplayState, providerReceiptLabel } from "../src/native/gameFreshness";
 
 /**
  * Short, one-shot pulse only when a previously rendered LIVE score changes.
@@ -60,6 +60,7 @@ export function Scoreboard({ game, teams, checkedAtMs, nowMs }: { game: LiveGame
       <ScoreValue gameId={game.id} name={team.name} score={team.score} live={live} color={t.foreground} fontSize={t.courtside.typography.score} fontFamily={t.type.ui.fontFamily} />
     </View>)}
     {game.home_score == null || game.away_score == null ? <Text style={{ color: t.muted, ...t.type.caption }}>Score not reported</Text> : null}
+    {game.status === "live" ? <Text style={{ color: t.muted, ...t.type.caption }}>{providerReceiptLabel(game.score_updated_at, nowMs)}</Text> : null}
     {state.needsVerification ? <Text style={{ color: t.muted, ...t.type.caption }}>Provider status not verified. Results may be delayed.</Text> : null}
   </View>;
 }

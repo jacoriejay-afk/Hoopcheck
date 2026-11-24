@@ -2,6 +2,7 @@ export type NativeAccount = {
   user: { id: string; displayName: string; accountType: string };
   tier: "free" | "pro" | "premium";
   hasPaidMembership: boolean;
+  workspaces?: { owner: boolean; ambassador: boolean };
   features: { canReadHoopFeed: boolean; canWriteHoopFeed: boolean; canUseLiveGameHub: boolean; canUseLiveGameChat: boolean; canSwitchBasketballSide: boolean; canUseFanGroups: boolean };
 };
 export function parseNativeAccount(input: unknown): NativeAccount {
@@ -15,7 +16,9 @@ export function parseNativeAccount(input: unknown): NativeAccount {
     if (typeof rights[key] !== "boolean") throw new Error("Invalid account permissions");
     features[key] = rights[key];
   }
-  return { user: { id: user.id, displayName: typeof user.displayName === "string" ? user.displayName.slice(0, 200) : "", accountType: user.accountType }, tier: rights.tier as NativeAccount["tier"], hasPaidMembership: rights.hasPaidMembership, features };
+  const workspace = data.workspaces as Record<string, unknown> | undefined;
+  const workspaces = { owner: workspace?.owner === true, ambassador: workspace?.ambassador === true };
+  return { workspaces, user: { id: user.id, displayName: typeof user.displayName === "string" ? user.displayName.slice(0, 200) : "", accountType: user.accountType }, tier: rights.tier as NativeAccount["tier"], hasPaidMembership: rights.hasPaidMembership, features };
 }
 export async function requestNativeAccount(origin: string, token: string, signal?: AbortSignal, request: typeof fetch = fetch) {
   const url = new URL(origin);

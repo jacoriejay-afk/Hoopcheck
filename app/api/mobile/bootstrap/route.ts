@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { mobileWorkspaceAccess } from "../../../../lib/ambassador/mobile-access";
 import { getHoopCheckEntitlements } from "../../../../lib/membership-tier";
 export const dynamic = "force-dynamic";
 function reply(body: unknown, status = 200) {
@@ -23,6 +24,7 @@ export async function GET(request: Request) {
     if (profile.error || subscription.error || role.error) return reply({ error: "Account access could not be verified." }, 503);
     if (!profile.data) return reply({ error: "Complete your account setup first." }, 409);
     const entitlements = getHoopCheckEntitlements({ accountType: profile.data.account_type, subscription: subscription.data, isAdmin: role.data === "admin", playerVerified: profile.data.player_verified === true });
-    return reply({ user: { id: auth.user.id, displayName: profile.data.display_name, accountType: profile.data.account_type }, entitlements });
+    const workspaces = await mobileWorkspaceAccess(scoped, match[1], auth.user);
+    return reply({ user: { id: auth.user.id, displayName: profile.data.display_name, accountType: profile.data.account_type }, entitlements, workspaces });
   } catch { return reply({ error: "Account access could not be verified." }, 503); }
 }

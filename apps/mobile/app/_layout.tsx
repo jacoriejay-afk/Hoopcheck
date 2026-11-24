@@ -121,6 +121,8 @@ function RootLayout() {
         <Stack.Screen name="membership" options={{ title: "Membership" }} />
         <Stack.Screen name="account/edit" options={{ title: "Edit profile" }} />
         <Stack.Screen name="account/security" options={{ title: "Account security" }} />
+        <Stack.Screen name="account/owner-hq" options={{ title: "Owner HQ" }} />
+        <Stack.Screen name="account/ambassador-hq" options={{ title: "Ambassador HQ" }} />
         <Stack.Screen name="settings" options={{ title: "Settings" }} />
         <Stack.Screen name="web" options={{ title: "HoopCheck" }} />
         <Stack.Screen name="index" options={{ title: "HoopCheck™", headerShown: false }} />

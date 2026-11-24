@@ -6,7 +6,7 @@ export type LiveGame = {
   id: string; team_id: string; opponent_team_id: string | null; opponent_name: string;
   status: string; home_score: number | null; away_score: number | null;
   started_at: string | null; ends_at: string | null; scheduled_at: string | null;
-  league_name: string | null; country: string | null; period_label: string | null;
+  league_name: string | null; country: string | null; period_label: string | null; score_updated_at?: string | null;
 };
 export type GameTeam = { id: string; name: string; logo_url?: string | null; logo_bg?: string | null };
 export type ChatMessage = { id: string; body: string; created_at: string; user_id: string };
@@ -59,20 +59,24 @@ export async function readLiveGames(client: SupabaseClient, side: "mens" | "wome
       if (!response.ok || !Array.isArray(data.games) || data.games.length > 500) throw new Error("Games could not load.");
       games = data.games;
     } else {
-      let query = client.from("fan_live_games").select(fields);
+      const readRows = async (selection: string) => {
+      let query = client.from("fan_live_games").select(selection);
       if (schedule) {
         query = query.eq("status", "scheduled").gte("scheduled_at", now.toISOString()).lte("scheduled_at", until);
         if (schedule.kind === "team") {
           validId(schedule.id);
           query = query.or("team_id.eq." + schedule.id + ",opponent_team_id.eq." + schedule.id);
         } else {
-          if (!schedule.country || !schedule.name.trim()) return { games: [], teams: {} as Record<string, GameTeam> };
+          if (!schedule.country || !schedule.name.trim()) return { data: [], error: null };
           query = query.eq("league_name", schedule.name).eq("country", schedule.country);
         }
       } else query = query.in("status", ["scheduled", "live", "final", "finished", "cancelled", "postponed", "abandoned"]).gte("scheduled_at", since).lte("scheduled_at", until);
-      const result = await query.order("scheduled_at", { ascending: true, nullsFirst: false }).order("id").limit(500).abortSignal(timer.signal);
+      return await query.order("scheduled_at", { ascending: true, nullsFirst: false }).order("id").limit(500).abortSignal(timer.signal);
+      };
+      let result = await readRows(fields + ",score_updated_at");
+      if (result.error?.code === "42703") result = await readRows(fields);
       if (result.error) throw new Error("Games could not load.");
-      games = (result.data ?? []) as LiveGame[];
+      games = (result.data ?? []) as unknown as LiveGame[];
     }
     if (games.some(game => !uuid.test(game.id) || !uuid.test(game.team_id) || (game.opponent_team_id && !uuid.test(game.opponent_team_id)))) throw new Error("Invalid game response");
     // Also enforce the same bound on the player prediction API response. Avoid
