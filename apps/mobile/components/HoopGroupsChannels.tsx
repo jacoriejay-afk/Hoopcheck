@@ -16,17 +16,21 @@ const iconOptions = { basketball:"🏀", flame:"🔥", globe:"🌐", star:"⭐",
 const accent = (name:string) => colorOptions[name as keyof typeof colorOptions] ?? colorOptions.orange;
 const emblem = (name:string) => iconOptions[name as keyof typeof iconOptions] ?? iconOptions.basketball;
 export default function HoopGroupsChannels() {
-  const theme=useEntryTheme();
-  const { offline } = useNetwork();
   const {account}=useNativeAccount();
+  const {offline}=useNetwork();
   const userId=account?.user.id||"";
+  // Never carry a previous account's local membership, drafts or requests across identities.
+  return <ScopedHoopGroups key={JSON.stringify([userId,offline])} userId={userId} offline={offline} role={account?.user.accountType||""} />;
+}
+function ScopedHoopGroups({userId,offline,role}:{userId:string;offline:boolean;role:string}) {
+  const theme=useEntryTheme();
   const [spaces,setSpaces]=useState<Space[]>([]);
   const [channels,setChannels]=useState<Channel[]>([]);
   const [joined,setJoined]=useState<string[]>([]);
   const [spaceId,setSpaceId]=useState("");
   const [channelId,setChannelId]=useState("");
-  const [posts,setPosts]=useState<Post[]>([]);
-  const [draft,setDraft]=useState("");
+  const [postSnapshot,setPostSnapshot]=useState<{channelId:string;posts:Post[]}|null>(null);
+  const [draftState,setDraftState]=useState<{channelId:string;value:string}|null>(null);
   const [loading,setLoading]=useState(true);
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState("");
@@ -39,14 +43,14 @@ export default function HoopGroupsChannels() {
   const [newCategory,setNewCategory]=useState("global");
   const [newChannel,setNewChannel]=useState("");
   const [editing,setEditing]=useState(false);
+  const [editingGroupId,setEditingGroupId]=useState("");
   const [editName,setEditName]=useState("");
   const [editDescription,setEditDescription]=useState("");
   const [editColor,setEditColor]=useState<keyof typeof colorOptions>("orange");
   const [editIcon,setEditIcon]=useState<keyof typeof iconOptions>("basketball");
-  const role=account?.user.accountType||"";
 
   useFocusEffect(useCallback(()=> {
-    if(!userId || offline) {setSpaces([]);setPosts([]);setLoading(false);return;}
+    if(!userId || offline) {setSpaces([]);setPostSnapshot(null);setLoading(false);return;}
     let alive=true;
     async function load() {
       setLoading(true);setError("");
@@ -68,7 +72,7 @@ export default function HoopGroupsChannels() {
       finally{if(alive)setLoading(false);}
     }
     void load();
-    return ()=>{alive=false;setPosts([]);setJoined([]);};
+    return ()=>{alive=false;setPostSnapshot(null);setJoined([]);};
   },[userId,offline,revision]));
 
   const ordered=useMemo(()=>spaces.slice().sort((a,b)=>{
@@ -85,16 +89,20 @@ export default function HoopGroupsChannels() {
   const availableChannels=channels.filter(item=>item.space_id===selected?.id);
   const channel=availableChannels.find(item=>item.id===channelId)||availableChannels[0];
   const member=Boolean(selected&&joined.includes(selected.id));
+  const posts=member&&channel&&postSnapshot?.channelId===channel.id?postSnapshot.posts:[];
+  const draft=member&&channel&&draftState?.channelId===channel.id?draftState.value:"";
+  function setDraft(value:string) {setDraftState(value&&channel?{channelId:channel.id,value}:null);}
+  const managing=editing&&editingGroupId===selected?.id;
   useEffect(()=>{
-    if(!userId||offline||!member||!channel?.id){setPosts([]);return;}
+    if(!userId||offline||!member||!channel?.id){setPostSnapshot(null);return;}
     let alive=true;
     void supabase.from("hoop_group_posts")
       .select("id,author_id,body,moderation_status,created_at")
       .eq("channel_id",channel.id).order("created_at",{ascending:false}).limit(100)
       .then(({data,error:readError})=>{
         if(!alive)return;
-        if(readError){setError("Channel messages could not be loaded.");setPosts([]);}
-        else setPosts(((data||[]) as Post[]).reverse());
+        if(readError){setError("Channel messages could not be loaded.");setPostSnapshot(null);}
+        else setPostSnapshot({channelId:channel.id,posts:((data||[]) as Post[]).reverse()});
       });
     return()=>{alive=false;};
   },[userId,offline,member,channel?.id,revision]);
@@ -104,6 +112,8 @@ export default function HoopGroupsChannels() {
     setBusy(true);setError("");
     try{
       await requireOnline();
+      const {data:{user}}=await supabase.auth.getUser();
+      if(user?.id!==userId)throw Error("Sign in again.");
       const {error:joinError}=await supabase.from("hoop_group_members").insert({space_id:selected.id,user_id:userId});
       if(joinError)throw Error("Could not join community.");
       setJoined(current=>[...new Set([...current,selected.id])]);
@@ -140,12 +150,12 @@ export default function HoopGroupsChannels() {
       ? selected.accent_color as keyof typeof colorOptions : "orange");
     setEditIcon(selected.icon_key in iconOptions
       ? selected.icon_key as keyof typeof iconOptions : "basketball");
-    setEditing(true);
+    setEditingGroupId(selected.id);setEditing(true);
   }
   async function saveGroup() {
     const name=editName.trim();
     const description=editDescription.trim();
-    if(!selected || !userId || selected.owner_id!==userId || offline || busy
+    if(!selected || !managing || !userId || selected.owner_id!==userId || offline || busy
       || name.length<3 || name.length>80 || description.length>300
       || !(editColor in colorOptions) || !(editIcon in iconOptions))return;
     const id=selected.id;
@@ -176,7 +186,7 @@ export default function HoopGroupsChannels() {
       const {error:leaveError}=await supabase.from("hoop_group_members")
         .delete().eq("space_id",selected.id).eq("user_id",userId);
       if(leaveError)throw Error("Could not leave this group.");
-      setJoined(current=>current.filter(id=>id!==selected.id));setPosts([]);setDraft("");
+      setJoined(current=>current.filter(id=>id!==selected.id));setPostSnapshot(null);setDraft("");
     }catch(failure){setError(failure instanceof Error?failure.message:"Could not leave group.");}
     finally{setBusy(false);}
   }
@@ -231,7 +241,7 @@ export default function HoopGroupsChannels() {
     const {error:blockError}=await supabase.from("hoop_group_blocks")
       .insert({blocker_id:userId,blocked_id:item.author_id});
     if(blockError)setError("Could not block this account.");
-    else setPosts(current=>current.filter(post=>post.author_id!==item.author_id));
+    else setPostSnapshot(current=>current?{...current,posts:current.posts.filter(post=>post.author_id!==item.author_id)}:null);
     setBusy(false);
   }
   function actions(item:Post) {
@@ -336,14 +346,14 @@ export default function HoopGroupsChannels() {
           </Pressable>
         </View>
         {selected?.owner_id===userId?<Pressable accessibilityRole="button"
-          accessibilityLabel={editing?"Close group settings":"Manage group appearance"}
-          onPress={()=>editing?setEditing(false):beginManage()}
+          accessibilityLabel={managing?"Close group settings":"Manage group appearance"}
+          onPress={()=>managing?setEditing(false):beginManage()}
           style={{minHeight:42,justifyContent:"center",alignSelf:"flex-start"}}>
           <Text style={{color:theme.accent,fontWeight:"800"}}>
-            {editing?"Close settings":"Customize your group"}
+            {managing?"Close settings":"Customize your group"}
           </Text>
         </Pressable>:null}
-        {editing && selected?.owner_id===userId?<View style={{gap:10,paddingVertical:10,borderTopWidth:1,borderColor:theme.glassBorder}}>
+        {managing && selected?.owner_id===userId?<View style={{gap:10,paddingVertical:10,borderTopWidth:1,borderColor:theme.glassBorder}}>
           <Text style={{color:theme.foreground,fontWeight:"900"}}>Group appearance</Text>
           <TextInput accessibilityLabel="Edit group name" maxLength={80} value={editName} onChangeText={setEditName}
             style={{color:theme.foreground,backgroundColor:theme.input,minHeight:44,borderRadius:11,paddingHorizontal:10}} />
