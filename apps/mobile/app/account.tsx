@@ -9,6 +9,8 @@ import { HoopCheckLoading } from "../components/HoopCheckLoading";
 import { useEntryTheme } from "../src/theme";
 import { useNativeAccount } from "../src/native/useNativeAccount";
 import { supabase } from "../src/lib/supabase";
+import { useActiveScreen } from "../src/native/useActiveScreen";
+import { profileCovers, readOwnCover, type ProfileCover } from "../src/native/profileEditor";
 
 type AccountGlyph = keyof typeof Ionicons.glyphMap;
 function AccountRow({ icon, title, detail, onPress, last = false }: {
@@ -48,10 +50,14 @@ export default function AccountScreen() {
   const { account, loading, error, retry } = useNativeAccount();
   const [showBenefits, setShowBenefits] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const activeScreen=useActiveScreen();
+  const [appearanceRevision,setAppearanceRevision]=useState(0);
+  const [cover,setCover]=useState<{owner:string;value:ProfileCover}|null>(null);
   const [avatar,setAvatar] = useState<{owner:string;url:string|null}>({owner:"",url:null});
   useEffect(()=>{
     const uid=account?.user.id;
-    if(!uid){setAvatar({owner:"",url:null});return;}
+    if(!uid){setAvatar({owner:"",url:null});setCover(null);return;}
+    if(!activeScreen)return;
     let active=true;
     const controller=new AbortController();
     void Promise.resolve(supabase.from("profiles").select("avatar_url,avatar_moderation_status")
@@ -61,8 +67,10 @@ export default function AccountScreen() {
         setAvatar({owner:uid,url:!error && data?.avatar_moderation_status==="approved"
           && typeof data.avatar_url==="string"?data.avatar_url:null});
       }).catch(()=>{if(active)setAvatar({owner:uid,url:null});});
+    void readOwnCover(supabase,uid).then(value=>{if(active)setCover({owner:uid,value});})
+      .catch(()=>{if(active)setCover(null);});
     return()=>{active=false;controller.abort();};
-  },[account?.user.id]);
+  },[account?.user.id,activeScreen,appearanceRevision]);
   const [signOutError, setSignOutError] = useState("");
   async function signOut() {
     if (signingOut) return;
@@ -76,11 +84,12 @@ export default function AccountScreen() {
   }
   const tier=account?.tier==="premium"?"Premium":account?.tier==="pro"?"Pro":"Free";
   const role=account?.user.accountType.replaceAll("_"," ")||"Member";
+  const ownCover=cover?.owner===account?.user.id?profileCovers.find(item=>item.id===cover?.value):undefined;
   return <SafeAreaView edges={["top","left","right","bottom"]} style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{paddingHorizontal:15,paddingTop:9,paddingBottom:100,gap:9,maxWidth:680,width:"100%",alignSelf:"center"}}>
       <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between",marginBottom:1}}>
         <Text accessibilityRole="header" style={{color:theme.foreground,fontSize:25,fontFamily:"HoopCheckDisplay"}}>Your account</Text>
-        <Pressable accessibilityRole="button" accessibilityLabel="Refresh account" onPress={retry}
+        <Pressable accessibilityRole="button" accessibilityLabel="Refresh account" onPress={()=>{retry();setAppearanceRevision(value=>value+1);}}
           style={{minWidth:44,minHeight:44,alignItems:"center",justifyContent:"center"}}>
           <Ionicons name="refresh-outline" size={22} color={theme.muted}/>
         </Pressable>
@@ -88,6 +97,7 @@ export default function AccountScreen() {
       {loading&&!account?<HoopCheckLoading label="Checking your HoopCheck account…" />:account?<>
         <View style={{paddingVertical:12,gap:10,borderBottomWidth:StyleSheet.hairlineWidth,borderColor:theme.border}}>
           <View style={{gap:13}}>
+            {ownCover?<View accessible accessibilityLabel={`${ownCover.label} profile cover`} style={{height:66,borderRadius:14,backgroundColor:ownCover.color}}/>:null}
             <View style={{flexDirection:"row",alignItems:"center",gap:13}}>
               <ProfileAvatar size={72} name={account.user.displayName || "HoopCheck member"} url={avatar.owner===account.user.id?avatar.url:null}/>
               <View style={{flex:1,minWidth:0,gap:5}}>
