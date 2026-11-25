@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loadLicensedStandings } from "../../../../lib/hoopdata-standings-preview-server";
+import { resolveWomensStandingsAlias } from "../../../../lib/hoopdata-womens-directory-alias";
 import { validApiSportsSeason } from "../../../../lib/hoopdata-api-sports-competition";
 export const dynamic="force-dynamic";
 export const maxDuration=15;
@@ -9,6 +10,17 @@ export async function GET(request:NextRequest){
  const params=new URL(request.url).searchParams;
  const leagueId=(params.get("leagueId")??"").toLowerCase(),season=params.get("season")??"",side=params.get("side");
  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(leagueId)||!validApiSportsSeason(season)||(side!=="mens"&&side!=="womens"))return reply({error:"Invalid league"},400);
- const view=await loadLicensedStandings(leagueId,season,"app-display",side);
- return view?reply({state:"available",view:{...view,side}}):reply({state:"unavailable"});
+ let canonical=leagueId;
+ if(side==="womens"){
+  try{
+   const raw=process.env.HOOPDATA_STANDINGS_WOMENS_LEAGUE_ALIASES??"";
+   if(!raw||raw.length>100000)return reply({state:"unavailable"});
+   const aliases=JSON.parse(raw);
+   if(!Array.isArray(aliases)||aliases.length>1000)return reply({state:"unavailable"});
+   const resolved=resolveWomensStandingsAlias(leagueId,aliases,new Date());
+   if(!resolved)return reply({state:"unavailable"});canonical=resolved;
+  }catch{return reply({state:"unavailable"});}
+ }
+ const view=await loadLicensedStandings(canonical,season,"app-display",side,side==="womens"?leagueId:undefined);
+ return view?reply({state:"available",view:{...view,leagueId,side}}):reply({state:"unavailable"});
 }
