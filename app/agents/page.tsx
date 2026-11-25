@@ -2,15 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { filterProfessionalShowcases, type ProfessionalScope } from "../../lib/marketplace-discovery";
 import "./network.css";
 
 type Agent = {
   id: string; display_name: string | null; username: string | null;
   avatar_url: string | null; avatar_moderation_status: string | null;
-  country: string | null; bio: string | null; experience_summary: string | null;
+  country: string | null; bio: string | null; experience_summary: string | null; agency_name: string | null;
   account_type: "agent" | "scout"; identity_checked: boolean; professionally_reviewed:boolean;
 };
-type Scope = "all" | "agent" | "scout" | "verified";
+type Scope = ProfessionalScope;
 
 const badgeText = (a: Agent) => a.professionally_reviewed ? "HoopCheck reviewed" : a.identity_checked ? "Identity checked" : "Not yet reviewed";
 const label = (a: Agent) => a.display_name?.trim() || a.username || "Basketball professional";
@@ -36,11 +37,7 @@ export default function AgentsPage() {
     })().catch(()=>{if(active){setLoading(false);setError("Unable to load the directory.");}});
     return ()=>{active=false;};
   },[retry]);
-  const filtered = useMemo(()=>{
-    const term=q.trim().toLocaleLowerCase();
-    return people.filter(p=>(scope==="all" || scope==="verified" && p.professionally_reviewed || p.account_type===scope)
-      && (!term || [p.display_name,p.username,p.country,p.bio,p.experience_summary].some(v=>v?.toLocaleLowerCase().includes(term))));
-  },[people,q,scope]);
+  const filtered = useMemo(()=>filterProfessionalShowcases(people,scope,q),[people,q,scope]);
   return <main className="hc-network-page">
     <header className="hc-network-hero">
       <div><p className="hc-network-eyebrow">HOOPCHECK™ / PROFESSIONAL NETWORK</p><h1>Agents <span>&amp;</span> Scouts</h1>
@@ -51,12 +48,13 @@ export default function AgentsPage() {
     </header>
     <section className="hc-network-tools" aria-label="Find a professional showcase">
       <label htmlFor="hc-agent-search">Find professionals</label>
-      <input id="hc-agent-search" value={q} onChange={e=>setQ(e.target.value)} placeholder="Search name, agency experience or country" type="search" autoComplete="off"/>
+      <input id="hc-agent-search" value={q} onChange={e=>setQ(e.target.value)} placeholder="Search name, agency, experience or country" type="search" autoComplete="off"/>
       <div className="hc-network-filters" aria-label="Professional type">
-        {([["all","Everyone"],["agent","Agents"],["scout","Scouts"],["verified","HoopCheck reviewed"]] as const).map(([value,text])=>
+        {([["all","Everyone"],["agent","Agents"],["scout","Scouts"],["verified","HoopCheck reviewed"],["identity","Identity checked"]] as const).map(([value,text])=>
           <button key={value} type="button" aria-pressed={scope===value} onClick={()=>setScope(value)}>{text}</button>)}
       </div>
     </section>
+    {!loading && !error && <p className="hc-network-disclaimer" role="status" aria-live="polite">Showing {filtered.length} of {people.length} loaded public showcases. Filters cover the loaded directory (up to 200 recent showcases), not every basketball professional.</p>}
     {loading ? <p className="hc-network-state" role="status">Loading professional profiles…</p>
       : error ? <div className="hc-network-state" role="alert">{error} <button type="button" onClick={()=>setRetry(v=>v+1)}>Retry</button></div>
       : filtered.length ? <section className="hc-network-grid" aria-label="Agents and scouts">
@@ -68,7 +66,7 @@ export default function AgentsPage() {
             <span className="hc-network-role">{p.account_type.toUpperCase()}</span>
           </div>
           <h2>{label(p)}</h2><p className="hc-network-handle">{p.username ? "@"+p.username : p.country || "Basketball network"}</p>
-          <p className="hc-network-verification">{badgeText(p)}</p>
+          <p className="hc-network-verification">{badgeText(p)}</p>{p.agency_name && <p className="hc-network-description">Agency: {p.agency_name}</p>}
           <p className="hc-network-description">{p.experience_summary || p.bio || "Explore this professional's public HoopCheck profile."}</p>
           <div className="hc-network-card-bottom"><span>{p.country || "Location not listed"}</span><Link href={"/agents/"+encodeURIComponent(p.id)}>View profile</Link></div>
         </article>)}
