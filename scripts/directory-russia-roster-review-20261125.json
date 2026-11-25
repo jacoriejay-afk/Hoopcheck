@@ -10,7 +10,8 @@
     "Transliterated working names and localities require operator identity review; some localities are inferred from the listed region.",
     "Match exact official competition identity, verify ongoing participation and rights before import.",
     "Keep reserve teams separate; VTB teams excluded from this lower-tier and women's gap manifest.",
-    "Conditional admissions require explicit re-verification."
+    "Conditional admissions require explicit re-verification.",
+    "Platov-RGEU was excluded on 2026-10-26; retain historical announcement only, never include in active imports."
   ],
   "competitions": [
     {
@@ -408,9 +409,23 @@
           "locality": "Rostov-on-Don",
           "admission": "conditional",
           "canonicalId": null,
-          "currentParticipationVerified": false
+          "currentParticipationVerified": false,
+          "excludedFromActiveImport": true,
+          "exclusionDate": "2026-10-26",
+          "exclusionSource": "https://russiabasket.ru/competitions/whl"
         }
       ]
     }
-  ]
+  ],
+  "currentSeasonSourceReview": {
+    "reviewedOn": "2026-11-25",
+    "scope": "Source discovery and confirmed exclusion; full per-team participation and rights not certified.",
+    "competitionSources": [
+      "https://competitions.russiabasket.ru/superliga/men/games",
+      "https://russiabasket.ru/competitions/mhl?season=2027",
+      "https://competitions.russiabasket.ru/premer-liga/women/",
+      "https://russiabasket.ru/competitions/wsl?season=2026",
+      "https://russiabasket.ru/competitions/whl"
+    ]
+  }
 }
