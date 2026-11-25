@@ -1,4 +1,4 @@
-export type ThemePreference = "system" | "light" | "dark";
+export type ThemePreference = "system" | "light" | "dark" | "midnight";
 let preference: ThemePreference = "system";
 const listeners = new Set<() => void>();
 export const getThemePreference = () => preference;
@@ -13,5 +13,5 @@ export function setThemePreference(next: ThemePreference) {
   for (const listener of listeners) listener();
 }
 export function themeIsDark(selected: ThemePreference, system: string | null | undefined) {
-  return selected === "dark" || (selected === "system" && system !== "light");
+  return selected === "dark" || selected === "midnight" || (selected === "system" && system !== "light");
 }
