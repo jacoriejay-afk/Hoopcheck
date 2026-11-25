@@ -158,3 +158,37 @@ DO $dedupe$ BEGIN
   EXCEPTION WHEN unique_violation THEN NULL; END;
 END $dedupe$;
 RESET ROLE;
+
+\ir ../candidates/hoopdata_competition_preview_review_only.sql
+DO $competition_access$ BEGIN
+  IF has_table_privilege('authenticated','public.hoopdata_competition_preview_snapshots','SELECT') OR
+     has_table_privilege('anon','public.hoopdata_competition_preview_targets','SELECT') OR
+     has_table_privilege('service_role','public.hoopdata_competition_preview_targets','INSERT') OR
+     has_table_privilege('service_role','public.hoopdata_competition_preview_snapshots','UPDATE') THEN
+    RAISE EXCEPTION 'Competition preview privileges too broad';
+  END IF;
+END $competition_access$;
+INSERT INTO public.hoopdata_competition_preview_targets(league_id) VALUES(12);
+DO $target_default$ BEGIN
+  IF EXISTS(SELECT 1 FROM public.hoopdata_competition_preview_targets WHERE enabled) THEN
+    RAISE EXCEPTION 'Preview target enabled by default';
+  END IF;
+END $target_default$;
+UPDATE public.hoopdata_competition_preview_targets SET enabled=true WHERE league_id=12;
+SET ROLE service_role;
+INSERT INTO public.hoopdata_competition_preview_snapshots(league_id,endpoint,season,observed_at,rows)
+VALUES(12,'standings','2025-2026',now(),'[{"teamId":3,"position":2}]');
+DO $competition_stage$ BEGIN
+  IF (SELECT count(*) FROM public.hoopdata_competition_preview_snapshots)<>1 THEN RAISE EXCEPTION 'Snapshot not staged'; END IF;
+  BEGIN
+    INSERT INTO public.hoopdata_competition_preview_snapshots(league_id,endpoint,season,observed_at,rows)
+    VALUES(13,'games','2026',now(),'[]');
+    RAISE EXCEPTION 'Unknown league accepted';
+  EXCEPTION WHEN foreign_key_violation THEN NULL; END;
+  BEGIN
+    INSERT INTO public.hoopdata_competition_preview_snapshots(league_id,endpoint,season,observed_at,rows)
+    VALUES(12,'games',NULL,now(),'[]');
+    RAISE EXCEPTION 'Missing season accepted';
+  EXCEPTION WHEN check_violation THEN NULL; END;
+END $competition_stage$;
+RESET ROLE;
