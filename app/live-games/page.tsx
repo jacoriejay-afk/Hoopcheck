@@ -93,8 +93,8 @@ export default function LiveGamesPage() {
     if (!isAllowed) { setGames([]); setPresenceCounts({}); setJoinedGameIds(new Set()); setPresenceObservedAt(null); setLoading(false); return; }
 
     // Older deployments without the freshness column still show schedules, but never imply a fresh score.
-    const gameFields = "id,team_id,opponent_team_id,opponent_name,status,home_score,away_score,started_at,ends_at,scheduled_at,league_id,league_name,country,period_label";
-    const readGames = (fields: string) => supabase.from("fan_live_games")
+    const gameFields = "id,team_id,opponent_team_id,opponent_name,status,home_score,away_score,started_at,ends_at,scheduled_at,league_id,league_name,country,period_label" as const;
+    const readGames = (fields: typeof gameFields | `${typeof gameFields},score_updated_at`) => supabase.from("fan_live_games")
         .select(fields)
         .in("status", ["scheduled", "live", "final", "cancelled", "postponed", "abandoned"])
         // Query the relevant time window BEFORE applying the row limit.
@@ -113,7 +113,7 @@ export default function LiveGamesPage() {
     ]);
     if (gamesResult.error) setMessage("Game schedules are temporarily unavailable. Please refresh in a moment.");
     else { setLastCheckedAt(new Date()); setMessage(""); }
-    const rawGames = (gamesResult.data || []) as Game[];
+    const rawGames = (gamesResult.data || []) as unknown as Game[]; // Fixed field allowlist; generated types may predate score_updated_at.
     const candidateIds = Array.from(new Set(rawGames.flatMap(game => [game.team_id, game.opponent_team_id].filter((id): id is string => Boolean(id)))));
     const [{ data: sideRows }, { data: womensSideRows }] = await Promise.all([
       candidateIds.length
