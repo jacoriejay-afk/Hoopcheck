@@ -166,7 +166,7 @@ test("competition refresh runs one leased task with a uniquely confirmed season 
   const current={season:"2026-2027",start:"2026-10-01",end:"2027-06-01",games:true,standings:true};
   const job={leagueId:mapping.leagueId,kind:"games",leaseToken:"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",mapping,seasonRows:[current]};
   const calls=[];
-  const deps={now:()=>new Date("2026-11-25T13:00:00Z"),claim:async()=>job,execute:async task=>{calls.push(task);return {state:"staged"}},finish:async(claim,outcome)=>{assert.equal(claim.leaseToken,job.leaseToken);calls.push(outcome);return true}};
+  const deps={now:()=>new Date("2026-11-25T13:00:00Z"),claim:async()=>job,execute:async(task,claim)=>{assert.equal(claim.leaseToken,job.leaseToken);calls.push(task);return {state:"staged"}},finish:async(claim,outcome)=>{assert.equal(claim.leaseToken,job.leaseToken);calls.push(outcome);return true}};
   assert.equal((await runCompetitionRefreshTick(deps)).state,"staged");
   assert.deepEqual(calls,[{kind:"games",mapping,season:"2026-2027"},{state:"staged",reason:"staged"}]);
   for(const seasonRows of [null,[],[current,current],[{...current,games:false}],[{...current,start:"2027-10-01",end:"2028-06-01"}]]){
@@ -194,5 +194,6 @@ test("refresh tick route remains preview-only with isolated credentials and uses
   assert.ok(route.includes('db.rpc("hoopdata_claim_competition_refresh")'));
   assert.ok(route.includes('db.rpc("hoopdata_reserve_request"'));
   assert.ok(route.includes('db.rpc("hoopdata_finish_competition_refresh"'));
+  assert.ok(route.includes('db.rpc("hoopdata_stage_leased_competition_snapshot",{p_token:claim.leaseToken'));
   assert.ok(route.includes("canonicalWrites:false,coverageCertified:false"));
 });
