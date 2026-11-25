@@ -17,6 +17,13 @@ for(const c of manifest.competitions){
   }
 }
 assert.equal(manifest.competitions.flatMap(c=>c.teams).filter(t=>t.admission==='conditional').length,4);
+const excluded=manifest.competitions.flatMap(c=>c.teams).filter(t=>t.excludedFromActiveImport===true);
+assert.equal(excluded.length,1);
+assert.equal(excluded[0].name,'Platov-RGEU');
+assert.equal(excluded[0].exclusionDate,'2026-10-26');
+assert.equal(excluded[0].currentParticipationVerified,false);
+assert.ok(excluded[0].exclusionSource.startsWith('https://russiabasket.ru/'));
+assert.equal(manifest.currentSeasonSourceReview.competitionSources.length,5);
 const sql=read('../supabase/audit-directory-reconciliation-20261125.sql');
 const executable=sql.replace(/^\s*--.*$/gm,'');
 assert.match(executable,/begin transaction isolation level repeatable read read only;/i);
