@@ -33,6 +33,7 @@ export default async function OwnerHQ() {
         <nav className="hc-social-profile-nav" aria-label="Owner workspace shortcuts">
           <Link href="/account">Account</Link>
           <Link href="/admin/directory">Admin Control Center</Link>
+          <Link href="/owner-hq/basketball-data" prefetch={false}>Basketball Data Center</Link>
           <Link href="/admin/ambassadors" prefetch={false}>Ambassador administration</Link>
           {ambassador && <Link href="/ambassador-hq" prefetch={false}>My Ambassador HQ</Link>}
         </nav>
