@@ -1,5 +1,6 @@
 "use client";
 
+import { inspectEvidenceFile } from "../../lib/security/evidence-file";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import HoopLoading from "../../components/HoopLoading";
@@ -61,9 +62,10 @@ export default function VerificationPage() {
     let documentPath: string | null = null;
     if (documentFile) {
       if (documentFile.size > 10 * 1024 * 1024) { setMessage("Document must be 10 MB or smaller."); setSubmitting(false); return; }
-      const ext = documentFile.name.split(".").pop()?.toLowerCase() || "bin";
-      documentPath = `${user.id}/${crypto.randomUUID()}.${ext}`;
-      const { error: uploadError } = await supabase.storage.from("player-verification-documents").upload(documentPath, documentFile, { upsert: false });
+      const inspected = await inspectEvidenceFile(documentFile).catch(() => null);
+      if (!inspected) { setMessage("Upload a valid PDF, JPG, PNG, or WebP document."); setSubmitting(false); return; }
+      documentPath = `${user.id}/${crypto.randomUUID()}.${inspected.extension}`;
+      const { error: uploadError } = await supabase.storage.from("player-verification-documents").upload(documentPath, documentFile, { upsert: false, contentType: inspected.mime });
       if (uploadError) { setMessage("We could not securely upload that document. Please try again."); setSubmitting(false); return; }
     }
     const {error}=await supabase.from("player_verification_requests").insert({

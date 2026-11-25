@@ -33,6 +33,7 @@ const nextConfig: NextConfig = {
     return [
       { source: "/(.*)", headers: securityHeaders },
       { source: "/reset-password", headers: [{ key: "Referrer-Policy", value: "no-referrer" }] },
+      { source: "/account/security", headers: [{ key: "Referrer-Policy", value: "no-referrer" }, { key: "Cache-Control", value: "private, no-store, max-age=0" }] },
     ];
   },
 };

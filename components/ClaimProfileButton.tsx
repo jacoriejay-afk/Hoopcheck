@@ -1,5 +1,6 @@
 "use client";
 
+import { inspectEvidenceFile } from "../lib/security/evidence-file";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
@@ -47,16 +48,14 @@ export default function ClaimProfileButton({entityType,entityId,entityName}:Clai
       setMessage("A supporting organization document is required. Email-only claims are not accepted."); return;
     }
     if (file && file.size > 10*1024*1024) { setMessage("Claim documents must be 10 MB or smaller."); return; }
-    if (file && !["application/pdf","image/jpeg","image/png","image/webp"].includes(file.type)) {
-      setMessage("Upload a PDF, JPG, PNG, or WebP document."); return;
-    }
+    const inspected = await inspectEvidenceFile(file).catch(() => null);
+    if (!inspected) { setMessage("Upload a valid PDF, JPG, PNG, or WebP document."); return; }
 
     setBusy(true); setMessage("");
     let proofDocumentPath:string|null=null;
     if (file) {
-      const safeName=file.name.toLowerCase().replace(/[^a-z0-9._-]+/g,"-").slice(-90);
-      proofDocumentPath=session.user.id+"/"+crypto.randomUUID()+"-"+safeName;
-      const {error:uploadError}=await supabase.storage.from("profile-claim-proofs").upload(proofDocumentPath,file,{upsert:false,contentType:file.type});
+      proofDocumentPath=session.user.id+"/"+crypto.randomUUID()+"."+inspected.extension;
+      const {error:uploadError}=await supabase.storage.from("profile-claim-proofs").upload(proofDocumentPath,file,{upsert:false,contentType:inspected.mime});
       if(uploadError) { setMessage("Document upload failed. Check the file and try again."); setBusy(false); return; }
     }
     const {error}=await supabase.from("profile_claim_requests").insert({

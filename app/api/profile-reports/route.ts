@@ -89,6 +89,9 @@ export async function POST(req: NextRequest) {
     reason,
   });
   if (error) {
+    if (error.code === "P0001" && error.message === "Report submission rate limit reached") {
+      return NextResponse.json({ error: "Too many reports recently. Please try again later." }, { status: 429 });
+    }
     if (error.code === "23503") {
       return NextResponse.json({ error: "Profile not found." }, { status: 404 });
     }
