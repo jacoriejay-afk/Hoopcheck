@@ -383,9 +383,9 @@
       "region": "Iceland",
       "side": "womens",
       "season": "2026-27",
-      "expectedCount": null,
+      "expectedCount": 10,
       "source": "https://kki.is/motamal/leikir-og-urslit/motayfirlit/Deildir-flokkar?league_id=189",
-      "scope": "partial current season fixture and federation evidence; no complete field claimed",
+      "scope": "nine current-season candidates; full field not certified",
       "teams": [
         {
           "name": "Ármann",
@@ -410,9 +410,40 @@
           "country": "Iceland",
           "historicalNames": [],
           "canonicalId": null
+        },
+        {
+          "name": "Tindastóll",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Valur",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Haukar",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "KR",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Stjarnan",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
         }
       ],
-      "corroboration": "https://www.kki.is/frettir/frett/2026/09/25/Spa-formanna-fyrirlida-og-thjalfara-Bonusdeildar-kvenna/"
+      "corroboration": "https://korfufrettir.is/en",
+      "fixtureEvidence": "https://kki.is/motamal/leikir-og-urslit/motayfirlit/Deildir-flokkar?league_id=189"
     },
     {
       "competition": "1. deild kvenna",
@@ -450,10 +481,60 @@
       "region": "Iceland",
       "side": "mens",
       "season": "2026-27",
-      "expectedCount": null,
+      "expectedCount": 12,
       "source": "https://kki.is/motamal/leikir-og-urslit/motayfirlit/Deildir-flokkar?league_id=190",
-      "scope": "source discovery",
-      "teams": []
+      "scope": "eight current-season candidates; full field not certified",
+      "teams": [
+        {
+          "name": "Stjarnan",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Keflavík",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Grindavík",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Höttur",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "KR",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Njarðvík",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Ármann",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Álftanes",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        }
+      ],
+      "corroboration": "https://www.kki.is/motamal/leikir-og-urslit/motayfirlit/Deildir-flokkar?league_id=190"
     },
     {
       "competition": "B.PREMIER",
