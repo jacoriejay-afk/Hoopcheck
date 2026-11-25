@@ -247,3 +247,101 @@ test("standings review rejects stale or future observations and impossible stati
   assert.equal(prepareStandingsForReview({...i,maxAgeMs:0}).state,"invalid");
   assert.equal(prepareStandingsForReview({...i,snapshot:{...i.snapshot,rows:[{...i.snapshot.rows[0],wins:6},...i.snapshot.rows.slice(1)]}}).state,"invalid");
 });
+
+const projectionModule={exports:{}};
+new Function("require","exports",ts.transpileModule(read("lib/hoopdata-standings-projection.ts"),cjsOptions).outputText)(name=>{
+  if(name==="./hoopdata-standings-review")return standingsReviewModule.exports;
+  throw Error(name);
+},projectionModule.exports);
+const {projectAttestedStandings}=projectionModule.exports;
+function projectionFixture(){
+  const i=standingsReviewFixture(),{leagueId,providerLeagueId,season,observedAt,rows}=i.snapshot;
+  const mappingReviewedAt="2026-11-24T12:00:00.000Z";
+  const attestation={leagueId,providerLeagueId,season,observedAt,mappingReviewedAt,reviewedAt:"2026-11-25T13:15:00.000Z",evidence:"private roster reference",reviewedBy:"private reviewer",
+    snapshotRows:rows.map(r=>({...r})),reviewedRoster:rows.map(r=>({teamId:r.teamId,stage:r.stage,group:r.group})),
+    reviewedTeamIds:Object.fromEntries(i.teamMappings.map(m=>[m.providerTeamId,m.teamId]))};
+  return {...i,leagueActive:true,mappingReviewedAt,attestation};
+}
+test("attested standings projection allowlists public data and preserves provider rankings and unknown statistics",()=>{
+  const i=projectionFixture(),r=projectAttestedStandings(i);
+  assert.equal(r.state,"eligible-for-publication");
+  assert.deepEqual(Object.keys(r).sort(),["state","source","leagueId","season","observedAt","rows"].sort());
+  assert.deepEqual(r.rows[0],{teamId:i.teamMappings[0].teamId,stage:"Regular",group:"East",position:1,played:5,wins:3,losses:2,pointsFor:null,pointsAgainst:400});
+  assert.equal(r.rows[2].stage,"Playoffs");
+  assert.doesNotMatch(JSON.stringify(r),/private roster reference|private reviewer|providerLeagueId|canonicalTeamId|reviewedTeamIds/);
+});
+test("attested standings projection fails closed on replaced snapshot, modified rows, or changed mapping",()=>{
+  const i=projectionFixture();
+  for(const x of [
+    {...i,snapshot:{...i.snapshot,observedAt:"2026-11-25T13:10:00.000Z"}},
+    {...i,snapshot:{...i.snapshot,rows:i.snapshot.rows.map((r,n)=>n===0?{...r,position:4}:r)}},
+    {...i,mappingReviewedAt:"2026-11-25T12:00:00.000Z"},
+    {...i,teamMappings:i.teamMappings.map((m,n)=>n===0?{...m,teamId:"dddddddd-dddd-4ddd-8ddd-dddddddddddd"}:m)},
+    {...i,attestation:{...i.attestation,reviewedAt:"2026-11-25T14:00:00.000Z"}},
+    {...i,attestation:{...i.attestation,reviewedTeamIds:{...i.attestation.reviewedTeamIds,3:"unreviewed"}}}
+  ])assert.equal(projectAttestedStandings(x).state,"review-required");
+});
+test("attested standings projection refuses missing, stale or unsupported data without returning rows",()=>{
+  const i=projectionFixture();
+  for(const [x,state] of [
+    [{...i,attestation:null},"unavailable"],
+    [{...i,leagueActive:false},"unavailable"],
+    [{...i,now:new Date("2026-11-25T14:01:00.000Z")},"stale"],
+    [{...i,providerStandingsSupported:false},"unsupported"],
+    [{...i,providerStandingsSupported:null},"review-required"],
+    [{...i,attestation:{...i.attestation,reviewedRoster:i.attestation.reviewedRoster.slice(1)}},"review-required"]
+  ])assert.deepEqual(projectAttestedStandings(x),{state});
+});
+
+test("score display preview is authenticated, isolated and source-labelled",async()=>{
+  const src=read("app/api/cron/hoopdata-score-display-preview/route.ts");
+  const js=ts.transpileModule(src,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+  const mod={exports:{}};
+  const id="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+  let calls=0;
+  let row={game_id:id,status:"live",home_score:91,away_score:98,score_updated_at:new Date(Date.now()-1000).toISOString(),score_source:"balldontlie-nba",private_evidence:"never expose"};
+  new Function("require","exports",js)(name=>{
+    if(name==="next/server")return {NextResponse:{json:(body,init)=>Response.json(body,init)}};
+    if(name==="@supabase/supabase-js")return {createClient:(url,key)=>{
+      assert.equal(url,"https://isolated.invalid");assert.equal(key,"test-isolated");
+      return {rpc:(fn,args)=>{calls++;assert.equal(fn,"hoopdata_read_score_display");assert.deepEqual(args,{p_game:id});return {abortSignal:async()=>({data:[row],error:null})};}};
+    }};
+    throw Error(name);
+  },mod.exports);
+  const env={VERCEL_ENV:"production",HOOPDATA_SCORE_DISPLAY_PREVIEW_ENABLED:"true",HOOPDATA_PREVIEW_CRON_SECRET:"test-secret",HOOPDATA_ISOLATED_SUPABASE_URL:"https://app.invalid",HOOPDATA_ISOLATED_SUPABASE_SERVICE_KEY:"test-isolated",NEXT_PUBLIC_SUPABASE_URL:"https://app.invalid",SUPABASE_SERVICE_ROLE_KEY:"test-app"};
+  const before=Object.fromEntries(Object.keys(env).map(k=>[k,process.env[k]]));
+  const req=(auth=true)=>new Request("https://fixture.invalid/api/cron/hoopdata-score-display-preview?gameId="+id,{headers:auth?{Authorization:"Bearer test-secret"}:{}});
+  try{
+    Object.assign(process.env,env);
+    assert.equal((await mod.exports.GET(req())).status,404);
+    process.env.VERCEL_ENV="preview";
+    assert.equal((await mod.exports.GET(req(false))).status,401);
+    assert.equal((await mod.exports.GET(req())).status,503);
+    assert.equal(calls,0);
+    process.env.HOOPDATA_ISOLATED_SUPABASE_URL="https://isolated.invalid";
+    const result=await mod.exports.GET(req());
+    assert.equal(result.status,200);assert.equal(result.headers.get("cache-control"),"private, no-store");
+    assert.deepEqual(await result.json(),{game:{id,status:"live",home_score:91,away_score:98,score_updated_at:row.score_updated_at,score_source:"balldontlie-nba"},preview:true});
+    row={...row,status:"final"};
+    assert.equal((await mod.exports.GET(req())).status,503);
+    row={...row,status:"live",score_updated_at:new Date(Date.now()-360000).toISOString()};
+    assert.equal((await mod.exports.GET(req())).status,503);
+    row={...row,score_source:"primary",status:"final",home_score:80};
+    assert.equal((await mod.exports.GET(req())).status,200);
+  }finally{for(const [k,v] of Object.entries(before)){if(v===undefined)delete process.env[k];else process.env[k]=v;}}
+});
+
+test("provider expansion requires explicit scoped rights and rejects ambiguous, expired and revoked records",async()=>{
+ const js=ts.transpileModule(read("lib/hoopdata-provider-rights.ts"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+ const {evaluateProviderRights:evaluate}=await import("data:text/javascript;base64,"+Buffer.from(js).toString("base64"));
+ const now=new Date("2026-11-25T12:00:00Z");
+ const req={provider:"highlightly",competitionId:"reviewed-league",kind:"scores",use:"app-display",plan:"free"};
+ const grant={...req,evidenceRef:"private-review-1",reviewerId:"operator",reviewedAt:"2026-11-24T12:00:00Z",validUntil:"2026-12-01T12:00:00Z",uses:["app-display","cache"],status:"approved",retentionHours:24,attribution:"Example source",upstreamRightsConfirmed:true,artworkPermissionConfirmed:false,appStorePermissionConfirmed:true};
+ assert.equal(evaluate(req,[grant],now).allowed,true);
+ for(const grants of [[],[grant,grant],[{...grant,status:"revoked"}],[{...grant,validUntil:now.toISOString()}],[{...grant,upstreamRightsConfirmed:false}],[{...grant,appStorePermissionConfirmed:false}],[{...grant,evidenceRef:""}]])assert.equal(evaluate(req,grants,now).allowed,false);
+ for(const changed of [{provider:"fiba-gdap"},{competitionId:"other"},{plan:"paid"},{use:"notifications"},{kind:"artwork"}])assert.equal(evaluate({...req,...changed},[grant],now).allowed,false);
+ assert.equal(evaluate({...req,kind:"artwork"},[{...grant,kind:"artwork"}],now).allowed,false);
+ assert.equal(evaluate({...req,use:"cache",retentionHours:24},[grant],now).allowed,true);
+ for(const hours of [undefined,0,25,Infinity,NaN])assert.equal(evaluate({...req,use:"cache",retentionHours:hours},[grant],now).allowed,false);
+ assert.equal(evaluate({...req,use:"cache",retentionHours:24},[{...grant,validUntil:"2026-11-25T13:00:00Z"}],now).allowed,false);
+});

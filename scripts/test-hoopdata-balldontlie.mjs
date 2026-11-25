@@ -281,3 +281,69 @@ test("NBA fallback probe persists provider cooldown and does not retry",async()=
   assert.deepEqual(await probeNbaFallback(probeInput,deps),{state:"provider-error",status:429,retryAt:"2026-11-25T22:32:00.000Z"});
   assert.deepEqual(blocks,[["balldontlie","2026-11-25T22:32:00.000Z"]]);assert.equal(attempts,1);
 });
+
+const liveCadenceModule={exports:{}};
+new Function("exports",compile("hoopdata-live-cadence"))(liveCadenceModule.exports);
+const {planLiveCadence}=liveCadenceModule.exports;
+const cadenceNow=Date.parse("2026-11-25T12:00:00Z"), cadenceMinute=60000;
+const cadenceInput={now:cadenceNow,enabled:true,dayLimit:100,usedLast24Hours:80,protectedOtherRequests:8,minIntervalMinutes:1,windows:[{start:cadenceNow,end:cadenceNow+60*cadenceMinute}]};
+test("live cadence preserves protected requests and fits verified capacity",()=>{
+  const r=planLiveCadence(cadenceInput);
+  assert.equal(r.state,"planned");assert.equal(r.intervalMinutes,5);
+  assert.equal(r.availableRequests,12);assert.equal(r.slots.length,12);assert.equal(r.unallocatedRequests,0);
+  assert.equal(r.slots[0],cadenceNow);
+  assert.equal(r.slots[11],cadenceNow+55*cadenceMinute);
+  const one=planLiveCadence({...cadenceInput,dayLimit:89});
+  assert.equal(one.state,"planned");assert.equal(one.slots.length,1);
+});
+test("live cadence merges overlapping windows and excludes inactive or out-of-horizon minutes",()=>{
+  const windows=[{start:cadenceNow-5*cadenceMinute,end:cadenceNow+5*cadenceMinute},{start:cadenceNow+3*cadenceMinute,end:cadenceNow+8*cadenceMinute},{start:cadenceNow+10*cadenceMinute,end:cadenceNow+12*cadenceMinute},{start:cadenceNow+1440*cadenceMinute,end:cadenceNow+1445*cadenceMinute}];
+  const r=planLiveCadence({...cadenceInput,windows});
+  assert.equal(r.state,"planned");assert.equal(r.intervalMinutes,1);
+  assert.deepEqual(r.slots,[0,1,2,3,4,5,6,7,10,11].map(n=>cadenceNow+n*cadenceMinute));
+  assert.equal(new Set(r.slots).size,r.slots.length);
+});
+test("live cadence fails closed for missing capacity, disabled plans and malformed windows",()=>{
+  assert.equal(planLiveCadence({...cadenceInput,enabled:false}).state,"disabled");
+  assert.equal(planLiveCadence({...cadenceInput,dayLimit:88}).state,"no-capacity");
+  assert.equal(planLiveCadence({...cadenceInput,windows:[]}).state,"no-active-window");
+  assert.equal(planLiveCadence({...cadenceInput,windows:[{start:cadenceNow,end:cadenceNow}]}).state,"invalid");
+  assert.equal(planLiveCadence({...cadenceInput,minIntervalMinutes:0}).state,"invalid");
+  assert.equal(planLiveCadence({...cadenceInput,dayLimit:NaN}).state,"invalid");
+});
+
+const rightsModule={exports:{}};
+new Function("exports",compile("hoopdata-provider-rights"))(rightsModule.exports);
+const wnbaProbeModule={exports:{}};
+new Function("require","exports",compile("hoopdata-wnba-fallback-probe"))(name=>{
+ const modules={"./hoopdata-balldontlie":mod.exports,"./hoopdata-fallback":fallbackModule.exports,"./hoopdata-nba-fallback-probe":nbaProbeModule.exports,"./hoopdata-provider-fetch":fetchModule.exports,"./hoopdata-ingestion":helper.exports,"./hoopdata-provider-rights":rightsModule.exports};
+ if(!Object.hasOwn(modules,name))throw Error(name);
+ return modules[name];
+},wnbaProbeModule.exports);
+const {probeWnbaFallback}=wnbaProbeModule.exports;
+const wnbaNow=()=>new Date("2026-09-25T22:30:00Z");
+const wnbaRights={provider:"balldontlie",competitionId:"wnba",kind:"scores",plan:"reviewed-pilot",evidenceRef:"synthetic-grant",reviewerId:"synthetic-reviewer",reviewedAt:"2026-09-24T00:00:00Z",validUntil:"2026-09-26T00:00:00Z",uses:["evaluate"],status:"approved",retentionHours:0,attribution:"fixture",upstreamRightsConfirmed:true,artworkPermissionConfirmed:false,appStorePermissionConfirmed:false};
+const wnbaInput={...probeInput,providerDate:"2026-09-25",season:2026,plan:"reviewed-pilot",rights:[wnbaRights],canonical:{...probeInput.canonical,scheduled_at:wnba.date,score_updated_at:"2026-09-25T21:00:00Z",home_score:80,away_score:75},gameAliases:probeInput.gameAliases.map(a=>({...a,provider:"balldontlie-wnba"})),teamAliases:probeInput.teamAliases.map(a=>({...a,provider:"balldontlie-wnba"}))};
+const wnbaLive={...wnba,status_state:"in_progress"};
+test("WNBA fallback requires current rights and reviewed aliases before quota or network work",async()=>{
+ let calls=0;
+ const deps={now:wnbaNow,reserve:async()=>{calls++;return false},blockUntil:async()=>assert.fail("unexpected cooldown"),fetcher:async()=>assert.fail("unexpected fetch")};
+ assert.equal((await probeWnbaFallback({...wnbaInput,rights:[]},deps)).state,"rights-blocked");
+ assert.equal((await probeWnbaFallback({...wnbaInput,rights:[{...wnbaRights,status:"revoked"}]},deps)).state,"rights-blocked");
+ assert.equal((await probeWnbaFallback({...wnbaInput,gameAliases:probeInput.gameAliases},deps)).state,"review-required");
+ assert.equal((await probeWnbaFallback({...wnbaInput,providerDate:"2026-09-31"},deps)).state,"review-required");
+ assert.equal(calls,0);
+ assert.equal((await probeWnbaFallback(wnbaInput,deps)).state,"budget-blocked");assert.equal(calls,1);
+});
+test("WNBA fallback uses one documented date-filtered page and rejects ambiguous and final data",async()=>{
+ const calls=[];
+ const deps={now:wnbaNow,reserve:async()=>{calls.push("reserve");return true},blockUntil:async()=>assert.fail("unexpected cooldown"),fetcher:async(url,opts)=>{
+  calls.push("fetch");assert.equal(url.origin,"https://api.balldontlie.io");assert.equal(url.pathname,"/wnba/v1/games");assert.equal(url.searchParams.get("dates[]"),"2026-09-25");assert.equal(url.searchParams.get("seasons[]"),"2026");assert.equal(opts.redirect,"error");return Response.json({data:[wnbaLive],meta:{}});
+ }};
+ assert.deepEqual(await probeWnbaFallback(wnbaInput,deps),{state:"candidate",canonicalGameId:probeId,homeScore:87,awayScore:82,observedAt:wnbaNow().toISOString()});
+ assert.deepEqual(calls,["reserve","fetch"]);
+ for(const payload of [{data:[wnbaLive,wnbaLive],meta:{}},{data:[wnbaLive],meta:{next_cursor:3}}])assert.equal((await probeWnbaFallback(wnbaInput,{...deps,fetcher:async()=>Response.json(payload)})).state,"invalid-response");
+ assert.equal((await probeWnbaFallback(wnbaInput,{...deps,fetcher:async()=>Response.json({data:[wnba],meta:{}})})).state,"not-eligible");
+ assert.equal((await probeWnbaFallback(wnbaInput,{...deps,fetcher:async()=>Response.json({data:[{...wnbaLive,id:43}],meta:{}})})).state,"review-required");
+ assert.equal((await probeWnbaFallback(wnbaInput,{...deps,fetcher:async()=>new Response(" ".repeat(256*1024+1))})).state,"invalid-response");
+});
