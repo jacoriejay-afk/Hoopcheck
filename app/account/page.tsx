@@ -490,6 +490,7 @@ export default function AccountPage() {
           <SettingsRow icon="star" label="Team reviews" value="Check eligibility when ready" href="#team-review-checklist" />
         </SettingsGroup>}
         <SettingsGroup title="Security & membership">
+          <SettingsRow icon="lock" label="Two-factor authentication" value="Manage authenticator" href="/account/security" />
           <SettingsRow icon="lock" label={t("changePassword")} value={t("updatePassword")} onClick={() => { setPasswordMessage(""); setPasswordModal(true); }} />
           <SettingsRow icon="crown" label={t("membershipLabel")} value={subscription?.plan === "premium" ? "Premium" : subscription?.plan === "pro" ? t("pro") : t("freePlan")} href="/membership" />
         </SettingsGroup>
