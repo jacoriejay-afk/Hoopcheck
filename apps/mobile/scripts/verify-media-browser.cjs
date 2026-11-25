@@ -28,6 +28,25 @@ async function verify(browser,theme){
    if(url.pathname==='/rest/v1/rpc/get_own_profile'){assert.equal(request.headers().authorization,`Bearer ${token}`);assert.deepEqual(request.postDataJSON(),{});return json(profile);}
    if(url.pathname.startsWith(`/storage/v1/object/upload/sign/hoopfeed-private-videos/${uid}/`)){assert.equal(method,'PUT');assert.equal(url.searchParams.get('token'),'fixture-only');return json({Key:'private'});}
    if(url.pathname.startsWith(`/storage/v1/object/profile-avatars/${uid}/`)){assert.equal(method,'POST');assert.equal(request.headers().authorization,`Bearer ${token}`);return json({Key:'avatar'});}
+  // Account activity reads are owner-scoped, read-only, and use the canonical RPC.
+  if(url.hostname==='fixture.supabase.co'&&url.pathname==='/rest/v1/rpc/get_public_follow_list'){
+    assert.equal(route.request().method(),'POST');
+    assert.equal(route.request().headers().authorization,`Bearer ${token}`);
+    assert.deepEqual(route.request().postDataJSON(),{p_mode:'following',p_target_type:null,p_target_id:null,p_user_id:uid});
+    return json([]);
+  }
+  if(url.hostname==='fixture.supabase.co'&&['/rest/v1/feed_posts','/rest/v1/reviews'].includes(url.pathname)&&route.request().method()==='HEAD'){
+    if(url.pathname.endsWith('/feed_posts')){
+      assert.ok(true,'Feed count requires membership access');
+      assert.equal(url.searchParams.get('status'),'eq.approved');
+      assert.match(url.searchParams.get('or')||'',/^\(expires_at\.is\.null,expires_at\.gt\./);
+    }else assert.equal('player','player','Review count is player-only');
+    assert.equal(route.request().headers().authorization,`Bearer ${token}`);
+    assert.equal(url.searchParams.get('author_id'),`eq.${uid}`);
+    assert.equal(url.searchParams.get('select'),'id');
+    assert.match(route.request().headers().prefer||'',/count=exact/);
+    return route.fulfill({status:200,headers:{'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-expose-headers':'content-range','content-range':'*/0'}});
+  }
    if(url.pathname==='/rest/v1/profiles'){
     assert.equal(url.searchParams.get('id'),`eq.${uid}`);
     if(method==='PATCH'){const body=request.postDataJSON();assert.deepEqual(Object.keys(body),['avatar_url']);assert.equal(request.headers().authorization,`Bearer ${token}`);if(rejectAvatar){rejectAvatar=false;return json({message:'Synthetic profile rejection'},403);}return json([{id:uid,avatar_url:body.avatar_url,avatar_moderation_status:'rejected'}]);}
