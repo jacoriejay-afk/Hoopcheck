@@ -45,7 +45,7 @@ console.log("PASS: Live quarter, stale final, delayed score and room labels rema
 const availabilityJs = ts.transpileModule(read("lib/game-availability.ts"), {
   compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
 }).outputText;
-const { formatPregameCountdown: countdown } = await import(
+const { formatPregameCountdown: countdown, formatViewerLocalTime, getViewerUpcomingTimeBucket: bucket } = await import(
   "data:text/javascript;base64," + Buffer.from(availabilityJs).toString("base64")
 );
 assert.equal(countdown("scheduled", "2026-11-22T12:00:01Z", now), "Tip-off in 1m");
@@ -112,3 +112,24 @@ assert.equal(rank(rankPicks.map(p=>({...p,updated_at:"2026-11-01T08:00:00Z"})),[
 assert.doesNotMatch(JSON.stringify(ranked),/fan[0-9]|not-fan/);
 assert.match(fanApi,/\.select\("id"\)\.in\("id",users.slice\(i,i\+50\)\)\.eq\("account_type","fan"\)/);
 console.log("PASS: private fan rank, ties, minimum cohort and rolling-window filtering.");
+
+// Viewer-local grouping must remain correct on 23- and 25-hour calendar days.
+const priorTz = process.env.TZ;
+try {
+  process.env.TZ = "America/New_York";
+  assert.equal(bucket("2026-03-08T12:00:00Z", new Date("2026-03-08T04:30:00Z")), "Tomorrow");
+  assert.equal(bucket("2026-11-02T12:00:00Z", new Date("2026-11-01T04:30:00Z")), "Tomorrow");
+  assert.equal(bucket("2026-11-01T15:00:00Z", new Date("2026-11-01T04:30:00Z")), "Tonight / Today");
+  assert.equal(bucket("2026-11-01T05:00:00Z", new Date("2026-11-01T04:30:00Z")), "Starting within the hour");
+  assert.equal(bucket(null, now), "Time unconfirmed");
+  assert.equal(formatViewerLocalTime("invalid"), "Tip-off time not confirmed");
+  assert.equal(formatViewerLocalTime("2026-11-22T12:00:00Z"), new Date("2026-11-22T12:00:00Z").toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" }));
+  process.env.TZ = "Asia/Baku";
+  assert.equal(bucket("2026-11-22T21:30:00Z", new Date("2026-11-22T18:00:00Z")), "Tomorrow");
+} finally {
+  if (priorTz === undefined) delete process.env.TZ;
+  else process.env.TZ = priorTz;
+}
+assert.ok(hub.includes("getViewerUpcomingTimeBucket(entry.game.scheduled_at, clock)"));
+assert.ok(chat.includes("formatViewerLocalTime(selected.scheduled_at)"));
+console.log("PASS: viewer-local fixture time labels and daylight-saving-safe date grouping.");
