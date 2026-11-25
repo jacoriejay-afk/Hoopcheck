@@ -56,7 +56,7 @@ function NetworkContent({ kind }: { kind: NetworkKind | "safety" }) {
       <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 27, fontWeight: "900" }}>Protect your basketball career</Text>
       <Text style={muted}>Review suspicious offers and report them confidentially. A public incident feed is not available yet; unreviewed accusations are not published.</Text>
       {safetyTips.map(([label, detail]) => <GlassCard key={label} style={{ gap: 6 }}><Text style={{ color: theme.foreground, fontWeight: "800", fontSize: 16 }}>{label}</Text><Text style={muted}>{detail}</Text></GlassCard>)}
-      <Button onPress={() => go("/support?scamAlert=1")}>Submit confidential report (website)</Button>
+      <Button onPress={() => router.push({pathname:"/account/support",params:{topic:"scam"}})}>Submit confidential report</Button>
       <Button secondary onPress={() => router.push("/teams")}>Research a team</Button>
       <Text style={muted}>Do not include passwords, banking details or confidential documents in your report.</Text>
     </ScrollView>
