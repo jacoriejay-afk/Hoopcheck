@@ -32,11 +32,11 @@ CREATE FUNCTION public.hoopdata_purge_expired_competition_snapshots()
 RETURNS boolean LANGUAGE plpgsql SECURITY INVOKER SET search_path='' AS $purge$
 DECLARE t timestamptz:=clock_timestamp();
 BEGIN
- DELETE FROM public.hoopdata_standings_attestations a WHERE (a.league_id,a.provider_league_id,a.season,a.observed_at) IN (
+ DELETE FROM public.hoopdata_standings_attestations a WHERE a.retention_expires_at<=t AND (a.league_id,a.provider_league_id,a.season,a.observed_at) IN (
  SELECT league_id,provider_league_id,season,observed_at FROM public.hoopdata_standings_attestations
- WHERE retention_expires_at<=t ORDER BY retention_expires_at LIMIT 100 FOR UPDATE SKIP LOCKED);
- DELETE FROM public.hoopdata_competition_snapshots s WHERE (s.league_id,s.kind,s.season) IN (
- SELECT league_id,kind,season FROM public.hoopdata_competition_snapshots WHERE retention_expires_at<=t ORDER BY retention_expires_at LIMIT 100 FOR UPDATE SKIP LOCKED);
+ WHERE retention_expires_at<=t ORDER BY retention_expires_at LIMIT 100);
+ DELETE FROM public.hoopdata_competition_snapshots s WHERE s.retention_expires_at<=t AND (s.league_id,s.kind,s.season) IN (
+ SELECT league_id,kind,season FROM public.hoopdata_competition_snapshots WHERE retention_expires_at<=t ORDER BY retention_expires_at LIMIT 100);
  RETURN NOT EXISTS(SELECT 1 FROM public.hoopdata_standings_attestations WHERE retention_expires_at<=t)
  AND NOT EXISTS(SELECT 1 FROM public.hoopdata_competition_snapshots WHERE retention_expires_at<=t);
 END;
