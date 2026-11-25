@@ -6,6 +6,7 @@ import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import TeamLogo from "../../components/TeamLogo";
 import TeamFanGroupEntry from "../../components/TeamFanGroupEntry";
+import FanPredictionXp from "../../components/FanPredictionXp";
 import FanBasketballSideSwitch, { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
 import { useLanguage } from "../../components/LanguageProvider";
 import { teamHubCopy } from "./i18n";
@@ -114,6 +115,7 @@ export default function TeamHubPage(){
   return <main className="page-shell hc-fan-feed-page hc-role-hq"><div className="page-container">
     <section className="hero-card hc-feed-hero"><div><p className="eyebrow">{labels.kicker}</p><h1>{labels.title}</h1><p className="muted">{labels.description}</p></div><p className="hc-feed-expiry-note">{labels.yourTeams}<span>{labels.refreshNote}</span></p></section>
     {signedIn&&<FanBasketballSideSwitch lockedHint/>}
+    {signedIn&&activeUser.current&&<FanPredictionXp key={activeUser.current} accountId={activeUser.current}/> }
     {!signedIn&&!message&&<section className="dashboard-card hc-feed-empty"><h2>{labels.signInTitle}</h2><p>{labels.signInBody}</p><Link className="btn" href="/login">{labels.signIn}</Link></section>}
     {signedIn&&!message&&!teams.length&&<section className="dashboard-card hc-feed-empty"><p className="eyebrow">{labels.startFollowing}</p><h2>{labels.emptyTitle}</h2><p>{labels.emptyBody}</p><Link className="btn" href={directoryHref}>{labels.findTeams}</Link></section>}
     {!!message&&<p className="hc-feed-message" role="status">{message}</p>}
