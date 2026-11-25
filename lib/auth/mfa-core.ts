@@ -78,3 +78,30 @@ export async function removeTotp(client: MfaClient, owner: string, factorId: str
   if (refreshed.error || refreshed.data.user?.id !== owner) throw new Error("Sign in again to refresh your security settings.");
   return readMfaState(client, owner);
 }
+
+/** Revoke other refresh sessions for the verified owner, retaining this session.
+ * Previously issued access JWTs can remain usable until their own expiration.
+ * The fixed token prevents mutable client state from redirecting this request.
+ */
+export async function revokeOtherSessions(client: MfaClient, owner: string, projectOrigin: string, publishableKey: string, request: typeof fetch = fetch) {
+  const url = new URL(projectOrigin);
+  if (url.protocol !== "https:" || url.username || url.password || url.pathname !== "/" || url.search || url.hash || !publishableKey) throw new Error("Invalid security service configuration.");
+  if (!uuid.test(owner)) throw new Error("Your account could not be verified.");
+  const before = await boundedRead(() => client.auth.getSession());
+  if (before.error || before.data.session?.user.id !== owner) throw new Error("Your account changed. Sign in again.");
+  const token = before.data.session.access_token;
+  const verified = await boundedRead(() => client.auth.getUser(token));
+  if (verified.error || verified.data.user?.id !== owner) throw new Error("Your session could not be verified. Sign in again.");
+  const assurance = assuranceForVerifiedUser(token, verified.data.user);
+  if (assurance.required) throw new Error("Verify your authenticator before signing out other sessions.");
+  const current = await boundedRead(() => client.auth.getSession());
+  if (current.error || current.data.session?.user.id !== owner || current.data.session.access_token !== token) throw new Error("Your account changed. Refresh security settings.");
+  url.pathname = "/auth/v1/logout";
+  url.searchParams.set("scope", "others");
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
+  try {
+    const response = await request(url.toString(), { method: "POST", headers: { Authorization: `Bearer ${token}`, apikey: publishableKey }, redirect: "error", cache: "no-store", signal: controller.signal });
+    if (!response.ok) throw new Error("Other sessions could not be signed out. Please try again.");
+  } finally { clearTimeout(timer); }
+}
