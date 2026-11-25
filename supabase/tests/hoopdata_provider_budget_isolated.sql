@@ -395,3 +395,37 @@ BEGIN
   IF EXISTS(SELECT 1 FROM public.hoopdata_read_score_display('99999999-9999-4999-8999-999999999999')) THEN RAISE EXCEPTION 'Unknown game fabricated'; END IF;
 END $display_test$;
 RESET ROLE;
+
+\ir ../candidates/hoopdata_standings_read_review_only.sql
+GRANT SELECT ON public.teams TO service_role;
+DO $standings_read_access$ BEGIN
+ IF has_function_privilege('anon','public.hoopdata_read_standings_review(uuid,text)','EXECUTE') OR
+ has_function_privilege('authenticated','public.hoopdata_read_standings_review(uuid,text)','EXECUTE') THEN RAISE EXCEPTION 'Private standings evidence exposed'; END IF;
+END $standings_read_access$;
+DO $standings_read_setup$ DECLARE
+ l uuid:='33333333-3333-4333-8333-333333333333';
+ reviewer uuid:='11111111-1111-4111-8111-111111111111';
+ stamp timestamptz:=clock_timestamp();
+ payload jsonb:='[{"teamId":2,"stage":"Regular","group":null,"position":1,"played":5,"wins":4,"losses":1,"pointsFor":400,"pointsAgainst":350},{"teamId":3,"stage":"Regular","group":null,"position":2,"played":5,"wins":3,"losses":2,"pointsFor":350,"pointsAgainst":400}]';
+ roster jsonb:='[{"teamId":2,"stage":"Regular","group":null},{"teamId":3,"stage":"Regular","group":null}]';
+BEGIN
+ IF NOT public.hoopdata_stage_competition_snapshot(l,12,'mens','standings','2026-2027',stamp,payload) THEN RAISE EXCEPTION 'Standings read fixture not staged'; END IF;
+ IF NOT public.hoopdata_attest_standings(l,12,'2026-2027',stamp,payload,roster,reviewer,'synthetic review') THEN RAISE EXCEPTION 'Standings read fixture not attested'; END IF;
+ UPDATE public.hoopdata_standings_attestations SET reviewed_at=clock_timestamp() WHERE league_id=l AND season='2026-2027';
+END $standings_read_setup$;
+SET ROLE service_role;
+DO $standings_read_valid$ DECLARE
+ l uuid:='33333333-3333-4333-8333-333333333333'; r jsonb;
+BEGIN
+ r:=public.hoopdata_read_standings_review(l,'2026-2027');
+ IF r IS NULL OR r->'providerStandingsSupported'<>'true'::jsonb OR jsonb_array_length(r->'teamMappings')<>2 THEN RAISE EXCEPTION 'Current reviewed standings bundle missing'; END IF;
+ IF public.hoopdata_read_standings_review(l,'2026') IS NOT NULL THEN RAISE EXCEPTION 'Superseded standings read accepted'; END IF;
+END $standings_read_valid$;
+RESET ROLE;
+UPDATE public.teams SET active=false WHERE id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+SET ROLE service_role;
+DO $standings_read_invalid$ BEGIN
+ IF public.hoopdata_read_standings_review('33333333-3333-4333-8333-333333333333','2026-2027') IS NOT NULL THEN RAISE EXCEPTION 'Inactive team accepted at read boundary'; END IF;
+END $standings_read_invalid$;
+RESET ROLE;
+UPDATE public.teams SET active=true WHERE id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
