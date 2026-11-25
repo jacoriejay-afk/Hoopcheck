@@ -225,3 +225,44 @@ BEGIN
   IF NOT EXISTS(SELECT 1 FROM public.hoopdata_competition_snapshots WHERE league_id=l AND rows='[{"teamId":2,"position":1}]') THEN RAISE EXCEPTION 'Latest valid snapshot not retained'; END IF;
 END $mapped_stage$;
 RESET ROLE;
+
+\ir ../candidates/hoopdata_sync_jobs_review_only.sql
+DO $job_access$ BEGIN
+  IF has_table_privilege('anon','public.hoopdata_sync_jobs','SELECT') OR
+     has_table_privilege('authenticated','public.hoopdata_sync_jobs','SELECT') OR
+     has_table_privilege('service_role','public.hoopdata_sync_jobs','INSERT') OR
+     has_column_privilege('service_role','public.hoopdata_sync_jobs','approved','UPDATE') OR
+     has_function_privilege('authenticated','public.hoopdata_claim_sync_job(text,text,text)','EXECUTE') OR
+     has_function_privilege('anon','public.hoopdata_finish_sync_job(text,uuid,text,timestamptz)','EXECUTE') THEN
+    RAISE EXCEPTION 'Sync job privileges too broad';
+  END IF;
+END $job_access$;
+INSERT INTO public.hoopdata_sync_jobs(id,pool,kind) VALUES('unapproved','balldontlie','live');
+INSERT INTO public.hoopdata_sync_jobs(id,pool,kind,approved) VALUES
+('active','balldontlie','live',true),('disabled-pool','api-sports-basketball','live',true),
+('expired','balldontlie','live',true);
+UPDATE public.hoopdata_sync_jobs SET lease_token='11111111-1111-4111-8111-111111111111',
+lease_expires_at=clock_timestamp()-interval '1 second',last_attempt_at=clock_timestamp()-interval '2 minutes' WHERE id='expired';
+SET ROLE service_role;
+DO $job_claim$ DECLARE
+  tok uuid; replacement uuid;
+BEGIN
+  IF EXISTS(SELECT 1 FROM public.hoopdata_claim_sync_job('unapproved','balldontlie','live')) OR
+     EXISTS(SELECT 1 FROM public.hoopdata_claim_sync_job('disabled-pool','api-sports-basketball','live')) OR
+     EXISTS(SELECT 1 FROM public.hoopdata_claim_sync_job('active','balldontlie','schedule')) THEN
+    RAISE EXCEPTION 'Unapproved or wrong job claimed';
+  END IF;
+  SELECT token INTO tok FROM public.hoopdata_claim_sync_job('active','balldontlie','live');
+  IF tok IS NULL THEN RAISE EXCEPTION 'Approved job not claimed'; END IF;
+  IF EXISTS(SELECT 1 FROM public.hoopdata_claim_sync_job('active','balldontlie','live')) THEN RAISE EXCEPTION 'Duplicate claim'; END IF;
+  IF public.hoopdata_finish_sync_job('active','22222222-2222-4222-8222-222222222222','staged',NULL) THEN RAISE EXCEPTION 'Wrong token accepted'; END IF;
+  IF NOT public.hoopdata_finish_sync_job('active',tok,'deferred',clock_timestamp()+interval '10 minutes') THEN RAISE EXCEPTION 'Valid completion rejected'; END IF;
+  IF public.hoopdata_finish_sync_job('active',tok,'staged',NULL) OR
+     EXISTS(SELECT 1 FROM public.hoopdata_claim_sync_job('active','balldontlie','live')) THEN RAISE EXCEPTION 'Completion replay or cooldown bypass'; END IF;
+  IF NOT EXISTS(SELECT 1 FROM public.hoopdata_sync_jobs WHERE id='active' AND last_outcome='deferred' AND retry_at>clock_timestamp()+interval '9 minutes' AND lease_token IS NULL) THEN RAISE EXCEPTION 'Retry checkpoint missing'; END IF;
+  IF public.hoopdata_finish_sync_job('expired','11111111-1111-4111-8111-111111111111','staged',NULL) THEN RAISE EXCEPTION 'Expired lease finished'; END IF;
+  SELECT token INTO replacement FROM public.hoopdata_claim_sync_job('expired','balldontlie','live');
+  IF replacement IS NULL OR replacement='11111111-1111-4111-8111-111111111111' THEN RAISE EXCEPTION 'Lease not recovered'; END IF;
+  IF NOT public.hoopdata_finish_sync_job('expired',replacement,'staged',NULL) THEN RAISE EXCEPTION 'Recovered lease could not finish'; END IF;
+END $job_claim$;
+RESET ROLE;
