@@ -108,3 +108,48 @@ test("season rollover requires unique verified provider date window",()=>{
   assert.equal(selectActiveCompetitionSeason(seasons,"2027-07-01"),null);
   assert.equal(selectActiveCompetitionSeason([seasons[0],seasons[0]],"2026-11-25"),null);
 });
+
+const competitionFetchModule={exports:{}};
+new Function("require","exports",ts.transpileModule(read("lib/hoopdata-competition-fetch.ts"),cjsOptions).outputText)(name=>{
+  if(name==="./hoopdata-api-sports-competition")return competitionModule.exports;
+  if(name==="./hoopdata-provider-fetch")return {retryAfterTime:()=> "2026-11-25T13:01:00.000Z"};
+  throw Error(name);
+},competitionFetchModule.exports);
+const competitionWorkerModule={exports:{}};
+new Function("require","exports",ts.transpileModule(read("lib/hoopdata-competition-worker.ts"),cjsOptions).outputText)(name=>{
+  if(name==="./hoopdata-api-sports-competition")return competitionModule.exports;
+  if(name==="./hoopdata-competition-fetch")return competitionFetchModule.exports;
+  throw Error(name);
+},competitionWorkerModule.exports);
+const {runCompetitionTask}=competitionWorkerModule.exports;
+test("competition worker requires reviewed identity, reserves budget before fetching, and stages only validated data",async()=>{
+  const mapping={leagueId:"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",providerLeagueId:12,side:"womens",reviewed:true,evidence:"verified competition fixture"};
+  const task={kind:"seasons",mapping};
+  const operations=[];
+  const deps={now:()=>new Date("2026-11-25T13:00:00Z"),reserve:async()=>{operations.push("reserve");return true},blockUntil:async()=>{operations.push("cooldown")},fetcher:async(url,init)=>{operations.push("fetch");assert.equal(url.hostname,"v1.basketball.api-sports.io");assert.equal(init.redirect,"error");return Response.json(envelope("leagues",[{id:12,seasons:[{season:"2026-2027",start:"2026-10-01",end:"2027-06-01"}]}]))},stage:async(snapshot)=>{operations.push("stage");assert.equal(snapshot.mapping.side,"womens");assert.equal(snapshot.rows[0].season,"2026-2027");return true}};
+  assert.equal((await runCompetitionTask({...task,mapping:{...mapping,reviewed:false}},"test",deps)).state,"mapping-required");
+  assert.deepEqual(operations,[]);
+  assert.equal((await runCompetitionTask(task,"test",{...deps,reserve:async()=>false})).state,"budget-blocked");
+  assert.deepEqual(operations,[]);
+  assert.equal((await runCompetitionTask(task,"test",deps)).state,"staged");
+  assert.deepEqual(operations,["reserve","fetch","stage"]);
+  operations.length=0;
+  assert.equal((await runCompetitionTask(task,"test",{...deps,fetcher:async()=>Response.json(envelope("leagues",[]))})).state,"invalid-response");
+  assert.deepEqual(operations,["reserve"]);
+  assert.equal((await runCompetitionTask(task,"test",{...deps,fetcher:async()=>new Response(null,{status:429})})).state,"provider-error");
+  assert.deepEqual(operations,["reserve","reserve","cooldown"]);
+  assert.equal((await runCompetitionTask(task,"test",{...deps,stage:async()=>false})).state,"stage-failed");
+});
+
+test("mapped competition preview cannot activate in production or use primary credentials",()=>{
+  const route=read("app/api/cron/hoopdata-mapped-competition-preview/route.ts");
+  const gate=route.indexOf('process.env.VERCEL_ENV!=="preview"');
+  const auth=route.indexOf('request.headers.get("authorization")');
+  const database=route.indexOf("const db=createClient");
+  assert.ok(gate>0&&gate<auth&&auth<database);
+  assert.ok(route.indexOf("key===appKey||providerKey===appProvider")<database);
+  assert.ok(route.includes('new URL(url).origin===new URL(appUrl).origin'));
+  assert.ok(route.indexOf('.eq("reviewed",true)')<route.indexOf("await runCompetitionTask"));
+  assert.ok(route.indexOf('league.basketball_type!==m.side')<route.indexOf("await runCompetitionTask"));
+  assert.ok(route.includes("canonicalWrites:false,coverageCertified:false"));
+});
