@@ -33,32 +33,33 @@ export const tokens = {
     fontFamily: Platform.select({ ios: "System", android: "sans-serif", default: "Arial" }),
   },
 };
-export function getEntryTheme(dark: boolean) {
+export function getEntryTheme(dark: boolean, midnight = false) {
+  midnight = dark && midnight;
   return {
-    ...tokens, dark,
-    background: dark ? "#080D16" : "#F5F7FB",
-    surface: dark ? "#151E2D" : "#FFFFFF",
-    elevatedSurface: dark ? "#1D2939" : "#F8FAFD",
-    foreground: dark ? "#F6F8FF" : "#131B2B",
-    muted: dark ? "#BCC9D8" : "#526275",
-    border: dark ? "#354354" : "#DCE3ED",
-    input: dark ? "#142034" : "#FFFFFF",
-    accent: dark ? "#FF9A63" : "#AF4218",
-    accentSurface: dark ? "#46291E" : "#FFEEE3",
-    chip: dark ? "#243247" : "#EDF1F8",
-    onChip: dark ? "#EBF1F8" : "#3E5064",
+    ...tokens, dark, midnight,
+    background: midnight ? "#000000" : dark ? "#080D16" : "#F5F7FB",
+    surface: midnight ? "#111111" : dark ? "#151E2D" : "#FFFFFF",
+    elevatedSurface: midnight ? "#1B1B1B" : dark ? "#1D2939" : "#F8FAFD",
+    foreground: midnight ? "#FFFFFF" : dark ? "#F6F8FF" : "#131B2B",
+    muted: midnight ? "#BDBDBD" : dark ? "#BCC9D8" : "#526275",
+    border: midnight ? "#373737" : dark ? "#354354" : "#DCE3ED",
+    input: midnight ? "#151515" : dark ? "#142034" : "#FFFFFF",
+    accent: midnight ? "#FF9A63" : dark ? "#FF9A63" : "#AF4218",
+    accentSurface: midnight ? "#321D14" : dark ? "#46291E" : "#FFEEE3",
+    chip: midnight ? "#242424" : dark ? "#243247" : "#EDF1F8",
+    onChip: midnight ? "#F0F0F0" : dark ? "#EBF1F8" : "#3E5064",
     button: "#FF5A1F", onButton: "#111111", cardRadius: tokens.radius.card,
     error: dark ? "#FFD7D7" : "#171717",
     success: dark ? "#86E3B2" : "#176B46",
     successSurface: dark ? "#193328" : "#DDF7E8",
     errorSurface: dark ? "#351616" : "#F8F8F6",
-    glassFill: dark ? "rgba(19,30,47,0.65)" : "rgba(255,255,255,0.64)",
-    glassBorder: dark ? "rgba(225,235,255,0.23)" : "rgba(255,255,255,0.94)",
+    glassFill: midnight ? "rgba(15,15,15,0.88)" : dark ? "rgba(19,30,47,0.65)" : "rgba(255,255,255,0.64)",
+    glassBorder: midnight ? "rgba(255,255,255,0.24)" : dark ? "rgba(225,235,255,0.23)" : "rgba(255,255,255,0.94)",
     shadow: { shadowColor: "#000000", shadowOffset: { width: 0, height: 12 }, shadowRadius: 32, shadowOpacity: dark ? .32 : .12, elevation: 8 },
   };
 }
 export function useEntryTheme() {
   const preference = useSyncExternalStore(subscribeThemePreference, getThemePreference, getServerThemePreference);
-  return getEntryTheme(themeIsDark(preference, useColorScheme()));
+  return getEntryTheme(themeIsDark(preference, useColorScheme()), preference === "midnight");
 }
 export type EntryTheme = ReturnType<typeof getEntryTheme>;
