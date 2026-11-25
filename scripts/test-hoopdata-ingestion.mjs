@@ -405,3 +405,21 @@ test("licensed standings view preserves group and rank, requires complete names 
  assert.equal(view([grant],teams,new Date("2026-11-25T13:45:00Z")),null);
  assert.equal(view([{...grant,validUntil:"2026-12-01T00:00:00Z"}]).expiresAt,"2026-11-25T14:00:00.000Z");
 });
+
+test("mobile standings require explicit app display and app store permission independently of web rights",()=>{
+ const i=projectionFixture(),p=projectAttestedStandings(i),leagueId=i.mapping.leagueId,teams=i.teamMappings.map(m=>({id:m.teamId,name:"Verified team"}));
+ const grant={provider:"api-sports",competitionId:leagueId,kind:"standings",plan:"pilot",uses:["web-display"],status:"approved",evidenceRef:"fixture",reviewerId:"operator",reviewedAt:"2026-11-24T00:00:00Z",validUntil:"2026-12-01T00:00:00Z",retentionHours:0,upstreamRightsConfirmed:true,artworkPermissionConfirmed:false,appStorePermissionConfirmed:false,attribution:"API-Sports"};
+ const app=(g)=>licensedStandingsModule.exports.licensedStandingsView(p,leagueId,"pilot",[g],teams,i.now,"app-display");
+ assert.equal(app(grant),null);
+ assert.equal(app({...grant,uses:["app-display"]}),null);
+ assert.ok(app({...grant,uses:["app-display"],appStorePermissionConfirmed:true}));
+});
+const womensAliasModule={exports:{}};
+new Function("exports",ts.transpileModule(read("lib/hoopdata-womens-directory-alias.ts"),cjsOptions).outputText)(womensAliasModule.exports);
+test("women's legacy directory requires a unique current reviewed canonical alias",()=>{
+ const legacyLeagueId="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",canonicalLeagueId="bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",now=new Date("2026-11-25T13:30:00Z");
+ const a={legacyLeagueId,canonicalLeagueId,status:"approved",evidence:"synthetic mapping",reviewedAt:"2026-11-24T00:00:00Z",validUntil:"2026-11-25T13:45:00Z"};
+ const resolve=(rows)=>womensAliasModule.exports.resolveWomensStandingsAlias(legacyLeagueId,rows,now);
+ assert.deepEqual(resolve([a]),{canonicalLeagueId,expiresAt:"2026-11-25T13:45:00.000Z"});
+ for(const rows of [[],[a,a],[{...a,status:"revoked"}],[{...a,evidence:""}],[{...a,validUntil:now.toISOString()}],[a,{...a,legacyLeagueId:canonicalLeagueId}]])assert.equal(resolve(rows),null);
+});
