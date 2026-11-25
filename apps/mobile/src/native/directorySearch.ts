@@ -13,26 +13,29 @@ export function searchResultPath(kind: SearchKind, id: string): string | null {
   if (kind === "coaches") return `/web?path=${encodeURIComponent(`/coaches/${id}`)}`;
   return `/${kind}/${id}`;
 }
-export async function searchDirectory(client: SupabaseClient, input: string, includePlayers = false): Promise<SearchGroup[]> {
+export async function searchDirectory(client: SupabaseClient, input: string, includePlayers = false, offsets: Partial<Record<SearchKind, number>> = {}): Promise<SearchGroup[]> {
   const clean = cleanDirectorySearch(input);
   if (clean.length < 2) return [];
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 15000);
   const requests = SEARCH_KINDS.map(async kind => {
     const table = kind === "women" ? "womens_teams" : kind === "womens-leagues" ? "womens_leagues" : kind === "players" ? "profiles" : kind;
+    const requestedOffset = offsets[kind] ?? 0;
+    const offset = Number.isSafeInteger(requestedOffset) && requestedOffset >= 0 ? requestedOffset : 0;
     let query;
     if (kind === "players") {
       if (!includePlayers) return { kind, rows: [], failed: false };
       // Shared server-side visibility, role, location and avatar moderation rules.
       const username = clean.replace(/[^\p{L}\p{N}_]/gu, "").toLowerCase();
       if (username.length < 2) return { kind, rows: [], failed: false };
-      const result = await client.rpc("search_public_players_by_username", { p_username: username, p_country: null, p_limit: 6, p_offset: 0 }).abortSignal(controller.signal);
+      const result = await client.rpc("search_public_players_by_username", { p_username: username, p_country: null, p_limit: 6, p_offset: offset }).abortSignal(controller.signal);
       const rows: SearchRow[] = Array.isArray(result.data) ? result.data.filter((row): row is SearchRow => Boolean(row && typeof row.id === "string")) : [];
       return { kind, rows: result.error ? [] : rows, failed: Boolean(result.error) || !Array.isArray(result.data) };
     } else {
       query = client.from(table).select("id,name,country").eq("active", true);
       if (kind === "teams" || kind === "leagues") query = query.eq("basketball_type", "mens");
       query = query.or(`name.ilike.%${clean}%,country.ilike.%${clean}%`).order("name").order("id").limit(6);
+      if (offset) query = query.range(offset, offset + 5);
     }
     const result = await query.abortSignal(controller.signal).returns<SearchRow[]>();
     return { kind, rows: result.error ? [] : (result.data ?? []), failed: Boolean(result.error) };
