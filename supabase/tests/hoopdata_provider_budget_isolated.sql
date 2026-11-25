@@ -269,3 +269,24 @@ DO $refresh_retry$ DECLARE j jsonb; t uuid; l uuid:='33333333-3333-4333-8333-333
   IF EXISTS(SELECT 1 FROM public.hoopdata_competition_refresh_jobs WHERE next_due_at<now()+interval '2 hours') THEN RAISE EXCEPTION 'Provider cooldown shortened'; END IF;
 END $refresh_retry$;
 RESET ROLE;
+
+RESET ROLE;
+UPDATE public.hoopdata_competition_refresh_jobs SET next_due_at=now()-interval '1 minute';
+SET ROLE service_role;
+DO $refresh_fencing$ DECLARE
+  j jsonb; t uuid;
+  l uuid:='33333333-3333-4333-8333-333333333333';
+  observed timestamptz;
+  payload jsonb:='[{"season":"2026-2027","start":"2026-10-01","end":"2027-06-01","games":true,"standings":true}]';
+BEGIN
+  j:=public.hoopdata_claim_competition_refresh(); t:=(j->>'leaseToken')::uuid; observed:=clock_timestamp();
+  IF t IS NULL THEN RAISE EXCEPTION 'Fencing test lease missing'; END IF;
+  IF public.hoopdata_stage_leased_competition_snapshot(l,'seasons',gen_random_uuid(),12,'mens','',observed,payload) THEN RAISE EXCEPTION 'Wrong token staged snapshot'; END IF;
+  IF public.hoopdata_stage_leased_competition_snapshot(l,'seasons',t,12,'mens','',observed-interval '10 minutes',payload) THEN RAISE EXCEPTION 'Pre-lease snapshot staged'; END IF;
+  IF NOT public.hoopdata_stage_leased_competition_snapshot(l,'seasons',t,12,'mens','',observed,payload) THEN RAISE EXCEPTION 'Valid lease could not stage'; END IF;
+  IF NOT public.hoopdata_finish_competition_refresh(l,'seasons',t,'staged',NULL) THEN RAISE EXCEPTION 'Valid lease could not finish'; END IF;
+  IF public.hoopdata_stage_leased_competition_snapshot(l,'seasons',t,12,'mens','',clock_timestamp(),payload) THEN RAISE EXCEPTION 'Released lease staged snapshot'; END IF;
+  IF NOT EXISTS(SELECT 1 FROM public.hoopdata_competition_snapshots WHERE league_id=l AND kind='seasons' AND rows=payload) THEN RAISE EXCEPTION 'Fenced snapshot missing'; END IF;
+  IF has_function_privilege('authenticated','public.hoopdata_stage_leased_competition_snapshot(uuid,text,uuid,bigint,text,text,timestamptz,jsonb)','EXECUTE') THEN RAISE EXCEPTION 'Leased snapshot exposed'; END IF;
+END $refresh_fencing$;
+RESET ROLE;
