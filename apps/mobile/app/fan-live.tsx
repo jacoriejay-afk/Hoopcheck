@@ -148,7 +148,7 @@ export default function LiveGames() {
         {lastCheckedLabel(checkedAtMs!, clockMs)} · {activeLiveCount ? `${activeLiveCount} reported live` : "No games currently reported live"} · Provider scores may lag
       </Text> : null}
       {error ? <View style={{ gap: 8 }}><Text accessibilityRole="alert" style={{ color: theme.muted }}>{error}</Text><Button secondary onPress={() => setRevision(value => value + 1)}>Retry game refresh</Button></View> : null}
-      {gameId ? <Button secondary onPress={() => router.replace("/fan-live")}>All games</Button> : null}
+      {gameId ? <Button secondary onPress={() => router.replace({pathname:"/fan-live",params:{side}})}>All games</Button> : null}
     </View>
     {game ? <View style={{ flex: 1, paddingHorizontal: 12, paddingBottom: 12, gap: 8 }}>
       <GlassSurface style={{ padding: 8, borderRadius: 12, borderWidth: 0 }}><Scoreboard game={game} teams={data?.teams || {}} checkedAtMs={checkedAtMs ?? undefined} nowMs={clockMs} featured active={active} /></GlassSurface>
@@ -158,7 +158,7 @@ export default function LiveGames() {
     renderSectionFooter={({section})=>section.total>3?<Pressable accessibilityRole="button" onPress={()=>setExpandedGroups(current=>current.includes(section.title)?current.filter(item=>item!==section.title):[...current,section.title])}
       style={{minHeight:44,justifyContent:"center",alignItems:"center",borderWidth:1,borderColor:theme.border,borderRadius:14,marginTop:8,backgroundColor:theme.surface}}>
       <Text style={{color:theme.accent,fontWeight:"800"}}>{expandedGroups.includes(section.title)?"Show 3 games":`Show all ${section.total} games`}</Text>
-    </Pressable>:null} keyExtractor={item => item.id} contentContainerStyle={{ padding: 12, gap: 4 }} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => setRevision(value => value + 1)} />} renderItem={({ item }) => <Pressable accessibilityRole="button" style={({ pressed }) => ({ minHeight: 44, opacity: pressed ? .72 : 1, backgroundColor: "transparent", borderBottomWidth: 1, borderColor: theme.border, padding: 8 })} onPress={() => router.push({ pathname: "/fan-live", params: { gameId: item.id } })}>
+    </Pressable>:null} keyExtractor={item => item.id} contentContainerStyle={{ padding: 12, gap: 4 }} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => setRevision(value => value + 1)} />} renderItem={({ item }) => <Pressable accessibilityRole="button" style={({ pressed }) => ({ minHeight: 44, opacity: pressed ? .72 : 1, backgroundColor: "transparent", borderBottomWidth: 1, borderColor: theme.border, padding: 8 })} onPress={() => router.push({ pathname: "/fan-live", params: { gameId: item.id, side } })}>
       <Scoreboard game={item} teams={data?.teams || {}} checkedAtMs={checkedAtMs ?? undefined} nowMs={clockMs} />
     </Pressable>} ListHeaderComponent={<View style={{gap:10,marginBottom:12}}>
       <Text style={{fontSize:18,fontWeight:"900",color:theme.foreground}}>Browse by activity</Text>
@@ -172,7 +172,7 @@ export default function LiveGames() {
         {[["","All leagues"],...discovery.leagues.slice(0,6).map(([name,count])=>[name,`${name} (${count})`])].map(([value,label])=><Pressable key={value||"all"} accessibilityRole="button" accessibilityState={{selected:leagueFocus===value}} onPress={()=>{setLeagueFocus(value);setExpandedGroups([]);}} style={{paddingHorizontal:12,minHeight:44,justifyContent:"center",borderRadius:14,borderWidth:1,borderColor:leagueFocus===value?theme.accent:theme.border,backgroundColor:leagueFocus===value?theme.accentSurface:theme.surface}}><Text style={{color:theme.foreground,fontSize:12,fontWeight:"700"}}>{label}</Text></Pressable>)}
       </ScrollView>
       {rankedGroups.length>4?<Button secondary onPress={()=>setAllGroups(value=>!value)}>{allGroups?"Show compact groups":`Show all ${rankedGroups.length} country / league groups`}</Button>:null}
-      {gameId&&!loading?<Text style={{color:theme.muted}}>Requested game unavailable in this basketball side. Choose a game or switch sides.</Text>:null}
+      {gameId&&!loading&&data?<Text style={{color:theme.muted}}>Requested game unavailable in this basketball side. Choose a game or switch sides.</Text>:null}
     </View>} ListEmptyComponent={loading ? <HoopCheckLoading label="Checking current fixtures…" /> : <View style={{ gap: 12 }}><Text style={textStyle}>{error || "No current games are available in this basketball side. The provider may not have published new fixtures yet."}</Text><Button secondary onPress={() => setRevision(value => value + 1)}>Refresh games</Button></View>} />}
   </KeyboardAvoidingView>;
 }
