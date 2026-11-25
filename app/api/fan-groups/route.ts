@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "crypto";
+import { inspectEvidenceFile } from "../../../lib/security/evidence-file";
 import { getHoopCheckEntitlements } from "../../../lib/membership-tier";
 
 export const runtime = "nodejs";
@@ -20,6 +21,9 @@ async function moderate(text: string, image: File | null) {
   if (image) {
     if (!["image/jpeg", "image/png", "image/webp"].includes(image.type) || image.size > MAX_IMAGE_BYTES)
       return { allowed: false, status: 400, message: "Choose a JPG, PNG, or WebP image up to 4 MB." };
+    const detected = await inspectEvidenceFile(image);
+    if (!detected || detected.mime !== image.type || detected.mime === "application/pdf")
+      return { allowed: false, status: 400, message: "The image content does not match a supported image format." };
     const bytes = Buffer.from(await image.arrayBuffer());
     input.push({ type: "image_url", image_url: { url: "data:" + image.type + ";base64," + bytes.toString("base64") } });
   }
