@@ -144,3 +144,34 @@ test("server rejects incomplete, cancelled and expired matchups consistently for
  assert.match(src,/if\(predictionLocked\(game\)\)/);
  assert.match(src,/if\(!completeMatchup\(game\)\|\|!\[game.team_id,game.opponent_team_id\]/);
 });
+
+test("fan XP endpoint authenticates, scopes history to caller and fails closed on truncated results",async()=>{
+ const src=readFileSync(new URL("../app/api/game-predictions/route.ts",import.meta.url),"utf8");
+ const code=ts.transpileModule(src,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+ const home="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",away="bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+ const past=hours=>new Date(Date.now()-hours*3600000).toISOString();
+ const picks=[{game_id:"game",picked_team_id:home,updated_at:past(6)}];
+ const game={id:"game",team_id:home,opponent_team_id:away,status:"final",period_label:null,home_score:80,away_score:70,scheduled_at:past(5),ends_at:past(3)};
+ let role="fan",truncated=false,reads=0;
+ const db={from(table){
+   if(table==="profiles")return {select(){return this},eq(key,value){assert.equal(key,"id");assert.equal(value,"fan-self");return this},maybeSingle:async()=>({data:{account_type:role},error:null})};
+   if(table==="game_winner_picks"){reads++;return {select(_value,options){assert.equal(options.count,"exact");return this},eq(key,value){assert.equal(key,"user_id");assert.equal(value,"fan-self");return this},gte(){return this},lte(){return this},limit:async()=>({data:picks,error:null,count:truncated?2:1})};}
+   assert.equal(table,"fan_live_games");
+   return {select(){return this},in(key,values){if(key==="id"){assert.deepEqual(values,["game"]);return this}assert.equal(key,"status");return Promise.resolve({data:[game],error:null});}};
+ }};
+ const mod={exports:{}};
+ new Function("require","module","exports",code)(name=>{
+   if(name==="next/server")return {NextResponse:{json:(data,init)=>Response.json(data,init)}};
+   if(name==="@supabase/supabase-js")return {createClient:(_url,key)=>key==="fixture-service"?db:{auth:{getUser:async()=>({data:{user:{id:"fan-self"}}})}}};
+   return loadPredictionHelper(name);
+ },mod,mod.exports);
+ const url="https://fixture.example/api/game-predictions?mode=fan-xp";
+ const request=()=>new Request(url,{headers:{Authorization:"Bearer fixture-token"}});
+ assert.equal((await mod.exports.GET(new Request(url))).status,401);
+ assert.equal(reads,0);
+ role="player";assert.equal((await mod.exports.GET(request())).status,403);assert.equal(reads,0);
+ role="fan";const response=await mod.exports.GET(request());
+ assert.equal(response.status,200);assert.equal(response.headers.get("cache-control"),"private, no-store");
+ assert.equal((await response.json()).xp,10);
+ truncated=true;assert.equal((await mod.exports.GET(request())).status,500);
+});
