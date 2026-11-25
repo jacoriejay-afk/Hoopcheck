@@ -18,6 +18,7 @@ export function rememberDestination(path: string) {
     if (url.pathname === "/notifications") {
       const tab=url.searchParams.get("tab"); if(tab==="activity"||tab==="chat"||tab==="requests")query.set("tab",tab);
     }
+    if (url.pathname === "/account/support" && url.searchParams.get("topic")==="scam") query.set("topic","scam");
     if (url.pathname === "/search") {
       const term = url.searchParams.get("q"); if (term) query.set("q", term.slice(0, 100));
     }
