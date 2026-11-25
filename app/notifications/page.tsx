@@ -7,6 +7,7 @@ import HoopLoading from "../../components/HoopLoading";
 import WatchButton from "../../components/WatchButton";
 import { HoopIcon } from "../../components/HoopCheckUI";
 import HoopChatInbox from "../../components/HoopChatInbox";
+import { ALERT_FILTERS, ALERT_LIST_LIMIT, matchesAlertFilter, matchesAlertSearch, type AlertFilter } from "../../lib/alert-list";
 import "./notifications-threads.css";
 
 type Notice={id:string;target_type:"team"|"coach"|"league"|"game";target_id:string;notification_type:"review"|"rating"|"update"|"trust_score"|"roster_spot"|"pay_warning"|"game_reminder";title:string;body:string;read_at:string|null;created_at:string};
@@ -18,7 +19,8 @@ export default function NotificationsPage(){
   const [loadFailed,setLoadFailed]=useState(false);
   const [marking,setMarking]=useState(false);
   const [retryKey,setRetryKey]=useState(0);
-  const [filter,setFilter]=useState<"all"|"games"|"clubs"|"reviews"|"unread">("all");
+  const [filter,setFilter]=useState<AlertFilter>("all");
+  const [query,setQuery]=useState("");
   const [section,setSection]=useState<"alerts"|"messages">("alerts");
   useEffect(()=>{if(new URLSearchParams(window.location.search).get("tab")==="messages")setSection("messages");},[]);
   useEffect(()=>{
@@ -31,7 +33,7 @@ export default function NotificationsPage(){
         if(sessionError)throw sessionError;
         const user=session?.user;
         if(!user){window.location.href="/login";return;}
-        const {data,error}=await supabase.from("notifications").select("id,target_type,target_id,notification_type,title,body,read_at,created_at").eq("user_id",user.id).order("created_at",{ascending:false}).limit(100);
+        const {data,error}=await supabase.from("notifications").select("id,target_type,target_id,notification_type,title,body,read_at,created_at").eq("user_id",user.id).order("created_at",{ascending:false}).limit(ALERT_LIST_LIMIT);
         if(!active)return;
         if(error)throw error;
         setItems(data||[]);
@@ -59,12 +61,13 @@ export default function NotificationsPage(){
     finally{setMarking(false);}
   }
   const unreadCount=items.filter(n=>!n.read_at).length;
-  const filtered=items.filter(n=>filter==="all" || (filter==="unread"&&!n.read_at) || (filter==="games"&&n.target_type==="game") || (filter==="clubs"&&n.target_type!=="game"&&!["review","rating","trust_score","pay_warning"].includes(n.notification_type)) || (filter==="reviews"&&["review","rating","trust_score","pay_warning"].includes(n.notification_type)));
+  const searched=items.filter(n=>matchesAlertSearch(n,query));
+  const filtered=searched.filter(n=>matchesAlertFilter(n,filter));
   // Messages own their independent auth and query lifecycle: slow/failed Alerts must not block HoopChat.
   if(loading&&section==="alerts")return <main className="page-shell hc-notifications-page"><div className="page-container"><HoopLoading label="Loading notifications..." /></div></main>;
   return <main className="page-shell hc-notifications-page"><div className="page-container">
     <header className="hc-alerts-heading">
-      <div className="hc-alerts-heading__title"><HoopIcon name="bell" size={21} /><h1>Alerts</h1>{unreadCount>0&&<span className="hc-alerts-heading__count" aria-label="Unread alerts">{unreadCount}</span>}</div>
+      <div className="hc-alerts-heading__title"><HoopIcon name="bell" size={21} /><h1>Alerts</h1>{unreadCount>0&&<span className="hc-alerts-heading__count" aria-label="Unread alerts in loaded list">{unreadCount}</span>}</div>
       {section==="alerts"&&unreadCount>0&&<button className="hc-alerts-heading__read" type="button" onClick={markAll} disabled={marking||loadFailed}>{marking?"Updating…":"Mark all read"}</button>}
     </header>
     <nav className="hc-notifications-main-tabs" aria-label="Inbox sections">
@@ -74,7 +77,8 @@ export default function NotificationsPage(){
     </nav>
     {section==="messages"&&<><div className="hc-notifications-messages-link"><span>PRIVATE HOOPCHAT</span><Link href="/messages">Open full Courtside inbox</Link></div><HoopChatInbox /></>}
     {section==="alerts"&&errorMessage&&<div role="alert" className="hc-smooth-inbox-error"><span>{errorMessage}</span> {loadFailed&&<button type="button" onClick={()=>setRetryKey(v=>v+1)}>Retry loading alerts</button>}</div>}
-    {section==="alerts"&&!loadFailed&&<nav className="hc-smooth-inbox-tabs hc-alerts-filters" aria-label="Filter alerts">{([["all","All"],["unread","Unread"],["games","Games"],["clubs","Clubs"],["reviews","Reviews"]] as const).map(([key,label])=><button key={key} type="button" aria-pressed={filter===key} className={filter===key?"is-active":""} onClick={()=>setFilter(key)}>{label}<span>{items.filter(n=>key==="all" || (key==="unread"&&!n.read_at) || (key==="games"&&n.target_type==="game") || (key==="clubs"&&n.target_type!=="game"&&!["review","rating","trust_score","pay_warning"].includes(n.notification_type)) || (key==="reviews"&&["review","rating","trust_score","pay_warning"].includes(n.notification_type))).length}</span></button>)}</nav>}
+    {section==="alerts"&&!loadFailed&&<><div className="hc-alert-search"><label htmlFor="alert-search">Search loaded alerts</label><div><input id="alert-search" type="search" value={query} maxLength={120} placeholder="Search titles and messages" onChange={event=>setQuery(event.target.value)} />{query&&<button type="button" onClick={()=>setQuery("")}>Clear</button>}</div><small role="status">{filtered.length} matching {filtered.length===1?"alert":"alerts"} · {items.length===ALERT_LIST_LIMIT?"Latest 100 loaded; older alerts are not included.":items.length+" loaded"}</small></div>
+    <nav className="hc-smooth-inbox-tabs hc-alerts-filters" aria-label="Filter alerts">{ALERT_FILTERS.map(([key,label])=><button key={key} type="button" aria-pressed={filter===key} className={filter===key?"is-active":""} onClick={()=>setFilter(key)}>{label}<span>{searched.filter(n=>matchesAlertFilter(n,key)).length}</span></button>)}</nav></>}
     {section==="alerts"&&!loadFailed&&<section className="hc-alert-list" aria-label="Basketball notifications">
       {filtered.length ? filtered.map(n => {
         const path = n.target_type === "team" ? "teams" : n.target_type === "coach" ? "coaches" : n.target_type === "game" ? "fan-live?gameId=" + n.target_id : "leagues";
@@ -96,7 +100,7 @@ export default function NotificationsPage(){
           </Link>
           {n.target_type !== "game" && <div className="hc-alert-card__controls"><WatchButton targetType={n.target_type} targetId={n.target_id} targetName={n.title} /></div>}
         </article>;
-      }) : <div className="hc-alerts-empty" role="status"><strong>{items.length?"No alerts in this category":"No notifications yet"}</strong><p>{items.length?"Try a different filter.":"Follow a team to get updates here."}</p>{!items.length&&<Link href="/teams">Explore teams</Link>}</div>}
+      }) : <div className="hc-alerts-empty" role="status"><strong>{items.length?(query.trim()?"No matching alerts":"No alerts in this category"):"No notifications yet"}</strong><p>{items.length?(query.trim()?"Try another search or filter.":"Try a different filter."):"Follow a team to get updates here."}</p>{!items.length&&<Link href="/teams">Explore teams</Link>}</div>}
     </section>}
   </div></main>;
 }
