@@ -247,3 +247,48 @@ test("standings review rejects stale or future observations and impossible stati
   assert.equal(prepareStandingsForReview({...i,maxAgeMs:0}).state,"invalid");
   assert.equal(prepareStandingsForReview({...i,snapshot:{...i.snapshot,rows:[{...i.snapshot.rows[0],wins:6},...i.snapshot.rows.slice(1)]}}).state,"invalid");
 });
+
+const projectionModule={exports:{}};
+new Function("require","exports",ts.transpileModule(read("lib/hoopdata-standings-projection.ts"),cjsOptions).outputText)(name=>{
+  if(name==="./hoopdata-standings-review")return standingsReviewModule.exports;
+  throw Error(name);
+},projectionModule.exports);
+const {projectAttestedStandings}=projectionModule.exports;
+function projectionFixture(){
+  const i=standingsReviewFixture(),{leagueId,providerLeagueId,season,observedAt,rows}=i.snapshot;
+  const mappingReviewedAt="2026-11-24T12:00:00.000Z";
+  const attestation={leagueId,providerLeagueId,season,observedAt,mappingReviewedAt,reviewedAt:"2026-11-25T13:15:00.000Z",evidence:"private roster reference",reviewedBy:"private reviewer",
+    snapshotRows:rows.map(r=>({...r})),reviewedRoster:rows.map(r=>({teamId:r.teamId,stage:r.stage,group:r.group})),
+    reviewedTeamIds:Object.fromEntries(i.teamMappings.map(m=>[m.providerTeamId,m.teamId]))};
+  return {...i,leagueActive:true,mappingReviewedAt,attestation};
+}
+test("attested standings projection allowlists public data and preserves provider rankings and unknown statistics",()=>{
+  const i=projectionFixture(),r=projectAttestedStandings(i);
+  assert.equal(r.state,"eligible-for-publication");
+  assert.deepEqual(Object.keys(r).sort(),["state","source","leagueId","season","observedAt","rows"].sort());
+  assert.deepEqual(r.rows[0],{teamId:i.teamMappings[0].teamId,stage:"Regular",group:"East",position:1,played:5,wins:3,losses:2,pointsFor:null,pointsAgainst:400});
+  assert.equal(r.rows[2].stage,"Playoffs");
+  assert.doesNotMatch(JSON.stringify(r),/private roster reference|private reviewer|providerLeagueId|canonicalTeamId|reviewedTeamIds/);
+});
+test("attested standings projection fails closed on replaced snapshot, modified rows, or changed mapping",()=>{
+  const i=projectionFixture();
+  for(const x of [
+    {...i,snapshot:{...i.snapshot,observedAt:"2026-11-25T13:10:00.000Z"}},
+    {...i,snapshot:{...i.snapshot,rows:i.snapshot.rows.map((r,n)=>n===0?{...r,position:4}:r)}},
+    {...i,mappingReviewedAt:"2026-11-25T12:00:00.000Z"},
+    {...i,teamMappings:i.teamMappings.map((m,n)=>n===0?{...m,teamId:"dddddddd-dddd-4ddd-8ddd-dddddddddddd"}:m)},
+    {...i,attestation:{...i.attestation,reviewedAt:"2026-11-25T14:00:00.000Z"}},
+    {...i,attestation:{...i.attestation,reviewedTeamIds:{...i.attestation.reviewedTeamIds,3:"unreviewed"}}}
+  ])assert.equal(projectAttestedStandings(x).state,"review-required");
+});
+test("attested standings projection refuses missing, stale or unsupported data without returning rows",()=>{
+  const i=projectionFixture();
+  for(const [x,state] of [
+    [{...i,attestation:null},"unavailable"],
+    [{...i,leagueActive:false},"unavailable"],
+    [{...i,now:new Date("2026-11-25T14:01:00.000Z")},"stale"],
+    [{...i,providerStandingsSupported:false},"unsupported"],
+    [{...i,providerStandingsSupported:null},"review-required"],
+    [{...i,attestation:{...i.attestation,reviewedRoster:i.attestation.reviewedRoster.slice(1)}},"review-required"]
+  ])assert.deepEqual(projectAttestedStandings(x),{state});
+});
