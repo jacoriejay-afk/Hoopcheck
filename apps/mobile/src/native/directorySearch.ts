@@ -10,7 +10,6 @@ export function searchResultPath(kind: SearchKind, id: string): string | null {
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(id)) return null;
   if (kind === "women") return `/womens/${id}`;
   if (kind === "womens-leagues") return `/womens/leagues/${id}`;
-  if (kind === "coaches") return `/web?path=${encodeURIComponent(`/coaches/${id}`)}`;
   return `/${kind}/${id}`;
 }
 export async function searchDirectory(client: SupabaseClient, input: string, includePlayers = false, offsets: Partial<Record<SearchKind, number>> = {}): Promise<SearchGroup[]> {
