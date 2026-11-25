@@ -28,7 +28,7 @@ export default function AccountSecurityPage() {
     if (userError || !user) {
       userId.current = null;
       setSignedIn(false); setReady(true); setFactors([]); setAssurance(null);
-      setPending(null); setCode(""); return;
+      setPending(null); setCode(""); setSelected(""); return;
     }
     userId.current = user.id;
     setSignedIn(true);
@@ -63,14 +63,16 @@ export default function AccountSecurityPage() {
   async function run(action: () => Promise<void>) {
     if (operation.current) return;
     operation.current = true; setBusy(true); setMessage("");
+    const version = generation.current;
     try {
       const { data: { user }, error } = await supabase.auth.getUser();
+      if (version !== generation.current) return;
       if (error || !user || user.id !== userId.current) {
         setPending(null); setCode(""); setMessage("Your session changed. Sign in again to continue."); return;
       }
       await action();
     } catch {
-      setMessage("The security operation could not be completed. Please try again.");
+      if (version === generation.current) setMessage("The security operation could not be completed. Please try again.");
     } finally {
       operation.current = false; setBusy(false);
     }
@@ -101,14 +103,16 @@ export default function AccountSecurityPage() {
       if (result.error) { setMessage("The code could not be verified. Check your authenticator and try again."); return; }
       setPending(null);
       await refresh();
-      setMessage("Authenticator verified for this session.");
+      if (version === generation.current && userId.current) setMessage("Authenticator verified for this session.");
     });
   }
 
   async function cancelSetup() {
     await run(async () => {
       if (!pending) return;
+      const version = generation.current;
       const result = await supabase.auth.mfa.unenroll({ factorId: pending.id });
+      if (version !== generation.current) return;
       if (result.error) { setMessage("Could not cancel this unfinished setup. Try again."); return; }
       setPending(null); setCode(""); await refresh();
     });
