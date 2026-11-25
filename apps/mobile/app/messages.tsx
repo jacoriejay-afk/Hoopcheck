@@ -10,13 +10,14 @@ import { useEntryTheme } from "../src/theme";
 import { supabase } from "../src/lib/supabase";
 import { requireOnline, useNetwork } from "../src/native/network";
 import { hoopChatAuthAction, withHoopChatDeadline } from "../src/native/hoopChatLoad";
+import { appendConversationPage, CHAT_HISTORY_PAGE_SIZE, matchesConversationSearch, readConversationPage, type ContactMessage } from "../src/native/hoopChatHistory";
 
 type ContactRequest = {
   id: string; requester_id: string; player_id: string; message: string | null;
   status: string; created_at: string;
 };
-type ContactMessage = { id: string; request_id: string; sender_id: string; body: string; created_at: string };
 type ContactName = { id: string; display_name: string | null; username: string | null };
+const EMPTY_THREAD_MESSAGES: ContactMessage[] = [];
 
 export default function MessagesScreen({ embedded = false, mode = "all" }: { embedded?: boolean; mode?: "all" | "conversations" | "requests" } = {}) {
   const theme = useEntryTheme();
@@ -33,6 +34,12 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+  const [threadPage, setThreadPage] = useState<{scope:string;rows:ContactMessage[];hasMore:boolean}|null>(null);
+  const [threadError,setThreadError] = useState<{scope:string;message:string}|null>(null);
+  const [historyBusy,setHistoryBusy] = useState(false);
+  const historyRequest = useRef(0);
+  const historyPaging = useRef(false);
   const generation = useRef(0);
   const authIdentity = useRef<string | null>(null);
   const focused = useRef(false);
@@ -89,7 +96,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       if (reloadTimer.current !== null) clearTimeout(reloadTimer.current);
       reloadTimer.current = null;
       generation.current++;
-      setRequests([]); setMessages([]); setContacts({}); setUserId(""); setSelectedId(""); setOpenedId(""); setDraft("");
+      setRequests([]); setMessages([]); setContacts({}); setUserId(""); setSelectedId(""); setOpenedId(""); setDraft(""); setSearch(""); setThreadPage(null); setThreadError(null); historyRequest.current++; historyPaging.current=false; setHistoryBusy(false);
     };
   }, [load]));
 
@@ -102,7 +109,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       reloadTimer.current = null;
       generation.current++;
       authIdentity.current = nextUserId;
-      setRequests([]); setMessages([]); setContacts({}); setUserId(""); setSelectedId(""); setOpenedId(""); setDraft("");
+      setRequests([]); setMessages([]); setContacts({}); setUserId(""); setSelectedId(""); setOpenedId(""); setDraft(""); setSearch(""); setThreadPage(null); setThreadError(null); historyRequest.current++; historyPaging.current=false; setHistoryBusy(false);
       if (action === "clear") {
         setLoading(false);
         setError("Sign in to view your messages.");
@@ -141,11 +148,43 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
     || (mode === "requests" && row.status === "pending"));
   const selected = visibleThreads.find(item => item.id === selectedId) || visibleThreads[0];
   const opened = Boolean(selected && selected.id === openedId && openedMode === mode);
-  useEffect(() => { setOpenedId(""); setDraft(""); }, [mode]);
+  useEffect(() => { setOpenedId(""); setDraft(""); setSearch(""); }, [mode]);
   const selectedRequestId = selected?.id;
-  const history=messages.filter(item=>item.request_id===selectedRequestId).slice().reverse();
-  const motionActive=Boolean(userId && opened && selected?.status==="accepted" && !offline);
-  const freshIds=useConfirmedMessageMotion(`${userId}:${openedId}:${mode}`,messages,motionActive,selectedRequestId);
+  const threadScope = userId && opened && selected?.status==="accepted" && !offline ? JSON.stringify([userId,selected.id,mode]) : "";
+  const currentPage=threadScope && threadPage?.scope===threadScope ? threadPage : null;
+  const currentThreadError=threadScope && threadError?.scope===threadScope ? threadError.message : "";
+  const verifiedThreadRows = currentPage?.rows ?? EMPTY_THREAD_MESSAGES;
+  const history=verifiedThreadRows.slice().reverse();
+  const motionActive=Boolean(threadScope && currentPage);
+  const freshIds=useConfirmedMessageMotion(`${userId}:${openedId}:${mode}`,verifiedThreadRows,motionActive,selectedRequestId);
+  const matchingThreads=visibleThreads.filter(row=>matchesConversationSearch(search,name(row),contacts[peerId(row)]?.username));
+  const loadThread=useCallback(async (scope:string,requestId:string,viewerId:string,older?:ContactMessage) => {
+    if (historyPaging.current || !scope || !focused.current) return;
+    const revision=++historyRequest.current;
+    const accountRevision=generation.current;
+    historyPaging.current=true;setHistoryBusy(true);setThreadError(null);
+    const active=()=>revision===historyRequest.current && accountRevision===generation.current && focused.current && authIdentity.current===viewerId;
+    try {
+      const rows=await withHoopChatDeadline(async signal=>{
+        await requireOnline();
+        const {data:{user},error:authError}=await supabase.auth.getUser();
+        if (authError || user?.id!==viewerId || !active()) throw Error("Your session changed.");
+        return readConversationPage(supabase,requestId,signal,older);
+      });
+      if (!active()) return;
+      setThreadPage(previous=>({scope,rows:older && previous?.scope===scope ? appendConversationPage(previous.rows,rows) : rows,hasMore:rows.length===CHAT_HISTORY_PAGE_SIZE}));
+    } catch (failure) {
+      if(active())setThreadError({scope,message:failure instanceof Error?failure.message:"Conversation history could not load."});
+    } finally {
+      if (revision===historyRequest.current){historyPaging.current=false;setHistoryBusy(false);}
+    }
+  },[]);
+  useEffect(()=>{
+    historyRequest.current++;historyPaging.current=false;setHistoryBusy(false);setThreadError(null);
+    if (!threadScope || !selectedRequestId){setThreadPage(null);return;}
+    if (!loading) void loadThread(threadScope,selectedRequestId,userId);
+    return ()=>{historyRequest.current++;historyPaging.current=false;};
+  },[threadScope,selectedRequestId,userId,loading,loadThread]);
 
   async function respond(status:"accepted"|"rejected") {
     if(!selected || selected.player_id!==userId || selected.status!=="pending" || !opened || sending) return;
@@ -170,7 +209,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
     try{
       await requireOnline();
       const {data:{user}}=await supabase.auth.getUser();
-      if(user?.id!==userId)throw new Error("Your session changed.");
+      if(user?.id!==userId || actionGeneration!==generation.current || !focused.current)throw new Error("Your session changed.");
       const {error:sendError}=await supabase.from("player_contact_messages")
         .insert({request_id:selected.id,sender_id:userId,body:draft.trim().slice(0,2000)});
       if(sendError)throw new Error("The message was not sent.");
@@ -198,8 +237,10 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       </View>:null}
       {!opened&&visibleThreads.length>0?<View style={{gap:4}}>
         <Text style={{color:theme.foreground,fontWeight:"800",fontSize:17}}>{mode==="requests"?"Contact requests":"Conversations"}</Text>
+        <TextInput accessibilityLabel="Search conversations by name or username" value={search} onChangeText={setSearch} maxLength={80} placeholder="Search by name or @username" placeholderTextColor={theme.muted} style={{minHeight:44,paddingHorizontal:12,backgroundColor:theme.input,color:theme.foreground,borderColor:theme.border,borderWidth:1,borderRadius:theme.radius.control}} />
+        {!matchingThreads.length?<Text style={{color:theme.muted,paddingVertical:10}}>No matching conversations in your loaded inbox.</Text>:null}
         <View style={{gap:0}}>
-          {visibleThreads.map(row=>{
+          {matchingThreads.map(row=>{
             const latest=messages.find(message=>message.request_id===row.id);
             return <Pressable key={row.id} accessibilityRole="button" accessibilityState={{selected:row.id===selectedId}}
               accessibilityLabel={`Open ${name(row)} conversation`} disabled={sending} onPress={()=>{setSelectedId(row.id);setOpenedMode(mode);setOpenedId(row.id);setDraft("");}}
@@ -220,6 +261,10 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
         <Text style={{color:theme.muted,fontSize:12}}>{selected.status==="accepted"?"Private HoopChat":"Player contact request"}</Text>
         {selected.message?<View style={{padding:12,borderRadius:12,backgroundColor:theme.chip}}><Text style={{color:theme.foreground}}>Introduction: {selected.message}</Text></View>:null}
         <View accessibilityLabel="Conversation history" style={{gap:10,marginVertical:10}}>
+          {threadScope && !currentPage && !currentThreadError ? <HoopCheckLoading compact label="Loading conversation history…" /> : null}
+          {currentThreadError ? <Text accessibilityRole="alert" style={{color:theme.accent}}>{currentThreadError}</Text> : null}
+          {threadScope && selectedRequestId && (currentPage?.hasMore || currentThreadError) ? <Button secondary disabled={historyBusy || loading || offline || sending} onPress={()=>void loadThread(threadScope,selectedRequestId,userId,currentPage?.hasMore?currentPage.rows[currentPage.rows.length-1]:undefined)}>{historyBusy?"Loading history…":currentThreadError?"Retry history":"Load older messages"}</Button> : null}
+          {currentPage && !history.length && !historyBusy && !currentThreadError ? <Text style={{color:theme.muted}}>No messages yet.</Text> : null}
           {history.map(item=><ChatMessageEnter key={item.id} fresh={freshIds.has(item.id)} incoming={item.sender_id!==userId} active={motionActive}><View style={{padding:10,borderRadius:18,backgroundColor:item.sender_id===userId?theme.accentSurface:theme.surface,alignSelf:item.sender_id===userId?"flex-end":"flex-start",maxWidth:"95%",gap:4}}>
             <Text style={{fontSize:12,fontWeight:"800",color:theme.foreground}}>{item.sender_id===userId?"You":name(selected)}</Text>
             <Text style={{color:theme.foreground}}>{item.body}</Text>

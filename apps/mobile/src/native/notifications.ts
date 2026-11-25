@@ -1,9 +1,18 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export type Notice = { id: string; target_type: string; target_id: string; notification_type: string; title: string; body: string; read_at: string | null; created_at: string };
-export async function readNotifications(client: SupabaseClient, userId: string) {
+export const NOTIFICATION_PAGE_SIZE = 100;
+export type NotificationCursor = Pick<Notice, "created_at" | "id">;
+// Keep the original database timestamp, including microseconds, for stable keyset paging.
+const cursorTimestamp = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})$/;
+export async function readNotifications(client: SupabaseClient, userId: string, before?: NotificationCursor) {
   if (!uuid.test(userId)) throw new Error("Invalid notification request");
-  const result = await client.from("notifications").select("id,target_type,target_id,notification_type,title,body,read_at,created_at").eq("user_id", userId).order("created_at", { ascending: false }).order("id", { ascending: false }).limit(100);
+  let query = client.from("notifications").select("id,target_type,target_id,notification_type,title,body,read_at,created_at").eq("user_id", userId).order("created_at", { ascending: false }).order("id", { ascending: false }).limit(NOTIFICATION_PAGE_SIZE);
+  if (before) {
+    if (!uuid.test(before.id) || !cursorTimestamp.test(before.created_at) || !Number.isFinite(Date.parse(before.created_at))) throw new Error("Invalid notification history cursor");
+    query = query.or(`created_at.lt.${before.created_at},and(created_at.eq.${before.created_at},id.lt.${before.id})`);
+  }
+  const result = await query;
   if (result.error) throw new Error("Alerts could not load. Try again.");
   return (result.data ?? []) as Notice[];
 }

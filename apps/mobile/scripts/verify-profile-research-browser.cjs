@@ -15,7 +15,7 @@ async function verify(browser,theme,role){
   if(req.method()==='OPTIONS')return json({});calls.push(url.pathname);
   if(url.hostname==='api.test'&&url.pathname==='/api/trust-score'){
    assert.equal(req.method(),'GET');assert.equal(req.headers().authorization,`Bearer ${token}`);
-   assert.equal(url.searchParams.get('entityType'),'team');assert.equal(url.searchParams.get('entityIds'),team);
+   assert.equal(url.searchParams.get('entityType'),'team');assert.equal(url.searchParams.get('entityIds'),team);assert.equal(url.searchParams.has('entityId'),false);
    return json({scores:{[team]:{locked:true}}});
   }
   if(url.hostname==='api.test'&&url.pathname==='/api/game-predictions'){assert.equal(role,'player');assert.equal(url.searchParams.get('mode'),'games');return json({games:[]});}

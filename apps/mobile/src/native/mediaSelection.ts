@@ -12,17 +12,32 @@ function localUri(uri: string) {
   if (!/^(file:|content:|blob:|data:image\/)/.test(uri)) throw new Error("Choose media from your device library.");
   return uri;
 }
-export async function preparePhoto(input: { uri: string; width: number; height: number }, avatar = false, rotate = false): Promise<Photo> {
+export type PhotoCrop = "square" | "portrait" | "landscape";
+export function centerCrop(width: number, height: number, preset: PhotoCrop) {
+  if (!Number.isSafeInteger(width) || !Number.isSafeInteger(height) || width < 1 || height < 1) throw new Error("Invalid photo dimensions.");
+  const [w, h] = preset === "square" ? [1, 1] : preset === "portrait" ? [4, 5] : [4, 3];
+  const cropWidth = Math.min(width, Math.max(1, Math.floor(height * w / h)));
+  const cropHeight = Math.min(height, Math.max(1, Math.floor(width * h / w)));
+  return { originX: Math.floor((width - cropWidth) / 2), originY: Math.floor((height - cropHeight) / 2), width: cropWidth, height: cropHeight };
+}
+export function movePhoto<T>(items: T[], index: number, direction: -1 | 1): T[] {
+  const next = index + direction;
+  if (!Number.isInteger(index) || index < 0 || index >= items.length || next < 0 || next >= items.length) return items;
+  const copy = [...items];
+  [copy[index], copy[next]] = [copy[next], copy[index]];
+  return copy;
+}
+export async function preparePhoto(input: { uri: string; width: number; height: number }, avatar = false, rotate = false, crop?: PhotoCrop): Promise<Photo> {
   localUri(input.uri);
   if (!Number.isFinite(input.width) || !Number.isFinite(input.height) || input.width < 1 || input.height < 1 || input.width * input.height > 80_000_000) throw new Error("Choose a smaller photo (up to 80 megapixels).");
   const context = ImageManipulator.manipulate(input.uri);
   try {
     if (rotate) context.rotate(90);
     let width = rotate ? input.height : input.width, height = rotate ? input.width : input.height;
-    if (avatar) {
-      const size = Math.min(width, height);
-      context.crop({ originX: Math.floor((width - size) / 2), originY: Math.floor((height - size) / 2), width: size, height: size });
-      width = size; height = size;
+    if (avatar || crop) {
+      const region = centerCrop(width, height, avatar ? "square" : crop!);
+      context.crop(region);
+      width = region.width; height = region.height;
     }
     const maximum = avatar ? 720 : 1440;
     if (Math.max(width, height) > maximum) context.resize(width >= height ? { width: maximum } : { height: maximum });
