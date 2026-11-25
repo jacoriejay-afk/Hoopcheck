@@ -15,6 +15,21 @@ async function verify(browser,theme,role){
     assert.equal(url.searchParams.get('select'),'avatar_url,avatar_moderation_status');
     return json({avatar_url:null,avatar_moderation_status:'approved'});
   }
+  if(url.hostname==='fixture.supabase.co'&&url.pathname==='/rest/v1/rpc/get_public_follow_list'){
+    assert.equal(route.request().method(),'POST');
+    assert.deepEqual(route.request().postDataJSON(),{p_mode:'following',p_target_type:null,p_target_id:null,p_user_id:uid});
+    return json([]);
+  }
+  if(url.hostname==='fixture.supabase.co'&&['/rest/v1/feed_posts','/rest/v1/reviews'].includes(url.pathname)){
+    assert.equal(route.request().method(),'HEAD','Account activity is count-only');
+    assert.equal(url.searchParams.get('select'),'id');
+    assert.equal(url.searchParams.get('author_id'),'eq.'+uid);
+    if(url.pathname==='/rest/v1/feed_posts'){
+      assert.equal(url.searchParams.get('status'),'eq.approved');
+      assert.match(url.searchParams.get('or')||'',/^\(expires_at\.is\.null,expires_at\.gt\./);
+    }else assert.equal(role,'player');
+    return route.fulfill({status:200,headers:{'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-expose-headers':'content-range','content-range':'*/0'},body:''});
+  }
   if(url.hostname==='api.test'&&url.pathname==='/api/mobile/bootstrap')return json({user:{id:uid,displayName:'Fixture member',accountType:role},entitlements:{tier:'pro',hasPaidMembership:true,canReadHoopFeed:true,canWriteHoopFeed:true,canUseLiveGameHub:role==='player'||role==='fan',canUseLiveGameChat:role==='player'||role==='fan',canSwitchBasketballSide:role==='fan',canUseFanGroups:role==='fan'}});
   if(url.hostname==='api.test'&&url.pathname==='/api/membership')return json({owner:uid,subscription:{plan:'pro',status:'active',access_status:'pro',current_period_end:'2099-01-01T00:00:00Z',cancel_at_period_end:false,billing_interval:'month',provider:'stripe'}});
   throw Error('Unexpected external request '+url.origin+url.pathname);
