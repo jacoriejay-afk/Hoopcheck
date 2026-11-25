@@ -13,6 +13,11 @@ async function verify(browser,theme,role){
   const req=route.request(),url=new URL(req.url());if(url.origin===new URL(base).origin)return route.continue();
   const json=data=>route.fulfill({status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*','access-control-allow-headers':'*'},body:JSON.stringify(data)});
   if(req.method()==='OPTIONS')return json({});calls.push(url.pathname);
+  if(url.hostname==='api.test'&&url.pathname==='/api/trust-score'){
+   assert.equal(req.method(),'GET');assert.equal(req.headers().authorization,`Bearer ${token}`);
+   assert.equal(url.searchParams.get('entityType'),'team');assert.equal(url.searchParams.get('entityIds'),team);
+   return json({scores:{[team]:{locked:true}}});
+  }
   if(url.hostname==='api.test'&&url.pathname==='/api/game-predictions'){assert.equal(role,'player');assert.equal(url.searchParams.get('mode'),'games');return json({games:[]});}
   if(url.hostname==='api.test'&&url.pathname==='/api/mobile/bootstrap')return json({user:{id:uid,displayName:'Research member',accountType:role},entitlements:{tier:'free',hasPaidMembership:false,canReadHoopFeed:false,canWriteHoopFeed:false,canUseLiveGameHub:false,canUseLiveGameChat:false,canSwitchBasketballSide:false,canUseFanGroups:role==='fan'}});
   if(url.hostname==='fixture.supabase.co'){
@@ -24,6 +29,8 @@ async function verify(browser,theme,role){
     return json({avatar_url:null,avatar_moderation_status:'approved'});
    }
    if(table==='teams')return json({id:team,name:'Research Club',country:'Spain',city:'Madrid',league_name:'Research League',website:null});
+   if(table==='get_public_follow_list'){assert.equal(req.method(),'POST');assert.deepEqual(req.postDataJSON(),{p_mode:'following',p_target_type:null,p_target_id:null,p_user_id:uid});return json([]);}
+   if(table==='reviews'&&req.method()==='HEAD'){assert.equal(role,'player');assert.equal(url.searchParams.get('author_id'),'eq.'+uid);assert.equal(url.searchParams.get('select'),'id');return route.fulfill({status:200,headers:{'access-control-allow-origin':'*','access-control-expose-headers':'content-range','content-range':'*/0'}});}
    if(table==='reviews')return json([]);
    if(['player_career_stops','team_roster_spots','get_public_player_profile','is_player_country_public','player_contact_requests'].includes(table))assert.notEqual(role,'fan','Fan must not query player research');
    if(table==='player_career_stops'){assert.equal(url.searchParams.get('team_id'),'eq.'+team);assert.equal(url.searchParams.get('is_public'),'eq.true');return json([{player_id:player,team_name:'Research Club',seasons:'2025–26'},{player_id:hidden,team_name:'Research Club',seasons:'PRIVATE'}]);}
@@ -38,6 +45,7 @@ async function verify(browser,theme,role){
  const page=await context.newPage();page.on('pageerror',error=>errors.push(error.message));
  try{
   await page.goto(base+'/teams/'+team);await page.getByRole('heading',{name:'Research Club',exact:true}).waitFor();
+  await page.getByText('Trust Index access follows your HoopCheck membership.',{exact:true}).waitFor();
   if(role==='player'){
    await page.getByText('Visible career player',{exact:true}).scrollIntoViewIfNeeded();await page.getByText('Import guard opening',{exact:true}).waitFor();
    assert.equal(await page.getByText('PRIVATE',{exact:true}).count(),0);assert.equal(await page.getByText('HIDDEN LOCATION',{exact:true}).count(),0);

@@ -15,6 +15,22 @@ async function verify(browser,theme,role){
     assert.equal(url.searchParams.get('select'),'avatar_url,avatar_moderation_status');
     return json({avatar_url:null,avatar_moderation_status:'approved'});
   }
+  if(url.hostname==='fixture.supabase.co'&&url.pathname==='/rest/v1/rpc/get_public_follow_list'){
+    assert.equal(route.request().method(),'POST');
+    assert.deepEqual(route.request().postDataJSON(),{p_mode:'following',p_target_type:null,p_target_id:null,p_user_id:uid});
+    return json([]);
+  }
+  if(url.hostname==='fixture.supabase.co'&&['/rest/v1/feed_posts','/rest/v1/reviews'].includes(url.pathname)){
+    assert.equal(route.request().method(),'HEAD','Account activity requests counts only');
+    assert.equal(url.searchParams.get('select'),'id');
+    assert.equal(url.searchParams.get('author_id'),'eq.'+uid,'Counts stay owner-scoped');
+    assert.ok((route.request().headers().prefer||'').includes('count=exact'));
+    if(url.pathname.endsWith('/feed_posts')){
+      assert.equal(url.searchParams.get('status'),'eq.approved');
+      assert.match(url.searchParams.get('or')||'',/^\(expires_at\.is\.null,expires_at\.gt\./);
+    }else assert.equal(role,'player','Only player accounts query review counts');
+    return route.fulfill({status:200,headers:{'access-control-allow-origin':'*','access-control-expose-headers':'content-range','content-range':'*/0'}});
+  }
   if(url.hostname==='api.test'&&url.pathname==='/api/mobile/bootstrap')return json({user:{id:uid,displayName:'Fixture member',accountType:role},entitlements:{tier:'pro',hasPaidMembership:true,canReadHoopFeed:true,canWriteHoopFeed:true,canUseLiveGameHub:role==='player'||role==='fan',canUseLiveGameChat:role==='player'||role==='fan',canSwitchBasketballSide:role==='fan',canUseFanGroups:role==='fan'}});
   if(url.hostname==='api.test'&&url.pathname==='/api/membership')return json({owner:uid,subscription:{plan:'pro',status:'active',access_status:'pro',current_period_end:'2099-01-01T00:00:00Z',cancel_at_period_end:false,billing_interval:'month',provider:'stripe'}});
   throw Error('Unexpected external request '+url.origin+url.pathname);
@@ -32,6 +48,14 @@ async function verify(browser,theme,role){
   const fill=await page.getByText('HoopCheck Membership',{exact:true}).evaluate(el=>{while(el){const value=getComputedStyle(el).backgroundColor;if(value!=='rgba(0, 0, 0, 0)'&&value!=='transparent')return value;el=el.parentElement;}return null;});assert.equal(fill,expected);
   assert.equal(calls.some(path=>path.startsWith('/api/mobile/purchases/')||path.startsWith('/api/stripe/')),false,'web/old native module absence must not begin billing');assert.deepEqual(errors,[]);
   await require("./compact-layout.cjs").capture(page, {path:`/tmp/hoopcheck-native-ui/${theme}-membership-${role}.png`,fullPage:true});
+  for(const workspace of ['owner-hq','ambassador-hq']){
+    await page.goto(base+'/account/'+workspace);
+    await page.getByText('This private workspace is not available to your account.',{exact:true}).waitFor();
+    assert.equal(await page.getByRole('button',{name:'Admin Control Center (web)',exact:true}).count(),0);
+    assert.equal(await page.getByRole('button',{name:'Share referral link',exact:true}).count(),0);
+  }
+  assert.equal(calls.includes('/api/mobile/workspaces'),false,'Direct navigation must not fetch a workspace without a verified grant');
+  assert.deepEqual(errors,[]);
  }finally{await context.close();}
 }
 (async()=>{fs.mkdirSync('/tmp/hoopcheck-native-ui',{recursive:true});const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',args:['--no-sandbox']});try{for(const theme of ['light','dark'])for(const role of ['player','fan']){await verify(browser,theme,role);console.log('PASS: native membership unsupported-module/restore safeguards, '+role+' '+theme);}}finally{await browser.close();}})().catch(error=>{console.error(error);process.exit(1);});

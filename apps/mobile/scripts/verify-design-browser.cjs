@@ -67,8 +67,8 @@ const uid='11111111-1111-4111-8111-111111111111', team='22222222-2222-4222-8222-
   await page.goto(base+'/account');
   await page.getByRole('button',{name:'Membership and restore purchases',exact:true}).waitFor();
   await require("./compact-layout.cjs").capture(page, {path:`${output}/account-${theme}.png`,fullPage:true});
-  assert.equal(await page.getByRole('button',{name:'Owner HQ on website',exact:true}).count(),0);
-  assert.equal(await page.getByRole('button',{name:'Ambassador HQ on website',exact:true}).count(),0);
+  assert.equal(await page.getByRole('button',{name:'Owner HQ',exact:true}).count(),0);
+  assert.equal(await page.getByRole('button',{name:'Ambassador HQ',exact:true}).count(),0);
   await page.getByRole('button',{name:'HoopChat · messages and requests',exact:true}).click();
   await page.waitForURL(url=>url.pathname==='/notifications'&&url.searchParams.get('tab')==='chat');
   await page.goto(base+'/account');
