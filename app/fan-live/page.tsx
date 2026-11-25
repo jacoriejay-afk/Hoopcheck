@@ -29,6 +29,12 @@ const roomOpen = (game:Game, now=new Date()) => getGameAvailability({
   status:game.status, scheduledAt:game.scheduled_at, startedAt:game.started_at, endsAt:game.ends_at, now
 }).chatOpen;
 
+const canPostToRoom = (game:Game, now=new Date()) => {
+  const status=getLiveGameStatusPresentation(game,now);
+  return !status.isUnverified && roomOpen(game,now) &&
+    (!status.isVerifiedFinal || process.env.NEXT_PUBLIC_LIVE_POSTGAME_CHAT_ENABLED==="true");
+};
+
 export default function FanLivePage() {
   const [games,setGames]=useState<Game[]>([]);
   const [roomSearch,setRoomSearch]=useState("");
@@ -65,6 +71,7 @@ export default function FanLivePage() {
   const activeRoomRef = useRef<string|null>(null);
   const composerRef = useRef<HTMLInputElement|null>(null);
   const followLatestRef = useRef(true);
+  const sendingRef = useRef(false);
 
   const load = useCallback(async (showLoader=false) => {
     if(showLoader) setLoading(true);
@@ -168,7 +175,7 @@ export default function FanLivePage() {
     if(error){setMessage("Chat history couldn't load. Reconnecting…");return;}
     const incoming=(data||[]) as ChatMessage[];
     setMessages(current=>{
-      const pending=current.filter(x=>x.pending);
+      const pending=current.filter(x=>x.pending||x.failed);
       const byId=new Map(incoming.map(x=>[x.id,x]));
       for(const p of pending) byId.set(p.id,p);
       return Array.from(byId.values()).sort((a,b)=>Date.parse(a.created_at)-Date.parse(b.created_at)).slice(-200);
@@ -291,20 +298,25 @@ export default function FanLivePage() {
     if(list && followLatestRef.current)list.scrollTop=list.scrollHeight; // Never jump the viewport or interrupt readers of older messages.
   },[messages.length,selected?.id]);
 
-  async function send(textOverride?:string){
+  async function send(textOverride?:string, retryId?:string){
     const text=(textOverride??body).trim();
-    if(!text||!selected||!userId||sending)return;
-    if(serverRoomOpen?.gameId!==selected.id||serverRoomOpen.open!==true||!roomOpen(selected,new Date())){setMessage("This game chat is read-only or still connecting.");return;}
+    if(!text||text.length>500||!selected||!userId||!chatEnabled||sendingRef.current)return;
+    if(serverRoomOpen?.gameId!==selected.id||serverRoomOpen.open!==true||!canPostToRoom(selected,new Date())){setMessage("This game chat is read-only or still connecting.");return;}
     const gameId=selected.id;
     const localId="pending-"+crypto.randomUUID();
     const optimistic:ChatMessage={id:localId,body:text,created_at:new Date().toISOString(),user_id:userId,pending:true};
-    setMessages(current=>[...current,optimistic].slice(-200));setBody("");setSending(true);setMessage("");
-    const {data,error}=await supabase.from("fan_live_chat_messages").insert({game_id:selected.id,user_id:userId,body:text}).select("id,body,created_at,user_id").single();
-    setSending(false);
+    sendingRef.current=true;
+    setMessages(current=>[...current.filter(m=>m.id!==retryId),optimistic].slice(-200));
+    if(textOverride===undefined)setBody("");
+    setSending(true);setMessage("");
+    const result=await supabase.from("fan_live_chat_messages").insert({game_id:selected.id,user_id:userId,body:text}).select("id,body,created_at,user_id").single()
+      .then(response=>({data:response.data,error:response.error}),()=>({data:null,error:{message:"Connection interrupted"}}));
+    const {data,error}=result;
+    sendingRef.current=false;setSending(false);
     if(activeRoomRef.current!==gameId)return;
-    if(error){
+    if(error||!data){
       setMessages(current=>current.map(m=>m.id===localId?{...m,failed:true,pending:false}:m));
-      setMessage(error.message.includes("SLOW_MODE")?"Slow mode: wait two seconds between messages.":error.message.includes("CHAT_CLOSED")?"Chat closed — final score.":"Message failed to send. Tap Retry to try again.");
+      setMessage(error?.message.includes("SLOW_MODE")?"Slow mode: wait two seconds between messages.":error?.message.includes("CHAT_CLOSED")?"Chat closed — final score.":"Message failed to send. Tap Retry to try again.");
       return;
     }
     const saved=data as ChatMessage;
@@ -312,8 +324,8 @@ export default function FanLivePage() {
   }
 
   async function retry(item:ChatMessage){
-    setMessages(current=>current.filter(m=>m.id!==item.id));
-    await send(item.body);
+    if(!item.failed||item.user_id!==userId)return;
+    await send(item.body,item.id);
   }
 
   async function controlUser(targetId:string,kind:"is_blocked"|"is_muted"){
@@ -340,7 +352,7 @@ export default function FanLivePage() {
   const isClosed=availability?.state==="CLOSED";
   const presenceCount=chatEnabled&&presenceSample&&presenceSample.gameId===selected?.id&&clock.getTime()-presenceSample.observedAt<75_000?presenceSample.count:null;
   const countdown=selected&&!selectedStatus?.isUnverified?formatPregameCountdown(selected.status,selected.scheduled_at,clock):null;
-  const canSend=Boolean(chatEnabled&&serverRoomOpen?.gameId===selected?.id&&serverRoomOpen?.open&&selected&&roomOpen(selected,clock));
+  const canSend=Boolean(chatEnabled&&serverRoomOpen?.gameId===selected?.id&&serverRoomOpen?.open&&selected&&canPostToRoom(selected,clock));
   const shownMessages=useMemo(()=>messages.filter(m=>!blockedUsers.has(m.user_id)&&!mutedUsers.has(m.user_id)),[messages,blockedUsers,mutedUsers]);
   const roomPresenceFresh=chatEnabled&&roomPresenceObservedAt!==null&&clock.getTime()-roomPresenceObservedAt<75_000;
   const listedGames=useMemo(()=>{
@@ -381,12 +393,12 @@ export default function FanLivePage() {
           <div className="hc-live-chat-toolbar"><span><i className="hc-live-pulse-dot"/> {presenceCount===null?"Presence unavailable":`${presenceCount} ${presenceCount===1?"member":"members"} here`} · {chatStream==="live"?"Live messages":"Recovering messages"}</span><span>1 message / 2 seconds</span></div>
           <div ref={scrollRef} className="hc-live-chat-messages" onScroll={event=>{const el=event.currentTarget;followLatestRef.current=el.scrollHeight-el.scrollTop-el.clientHeight<140;}} role="log" aria-live="polite" aria-relevant="additions text" aria-label="Live chat messages">
             {!shownMessages.length?<div className="hc-live-empty-state"><div className="hc-live-empty-ball">●</div><h2>{isClosed?"No messages recorded":"You're first in — start the conversation"}</h2><p>{isClosed?"This room has ended.":"Kick off the conversation while you watch."}</p></div>:shownMessages.map(item=><article key={item.id} className={"hc-live-chat-message"+(item.user_id===userId?" is-own":"")+(item.failed?" is-failed":"")}>
-              <div className="hc-live-chat-avatar">{profiles[item.user_id]?.avatar_url?<img src={profiles[item.user_id].avatar_url!} alt=""/>:initials(profiles[item.user_id]?.display_name||"HoopCheck member")}</div><div className="hc-live-chat-message-body"><div className="hc-live-chat-message-meta"><strong>{item.user_id===userId?"You":profiles[item.user_id]?.display_name||"Fan"}</strong><time>{new Date(item.created_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</time>{item.pending&&<span>Sending…</span>}{item.failed&&<button type="button" onClick={()=>void retry(item)}>Retry</button>}</div><p>{item.body}</p>{item.user_id!==userId&&!item.pending&&<details className="hc-live-message-menu"><summary aria-label="Message moderation options">•••</summary><div><button type="button" onClick={()=>void controlUser(item.user_id,"is_muted")}>{mutedUsers.has(item.user_id)?"Unmute member":"Mute member"}</button><button type="button" onClick={()=>void controlUser(item.user_id,"is_blocked")}>{blockedUsers.has(item.user_id)?"Unblock member":"Block member"}</button><button type="button" onClick={()=>setReporting(item.id)}>Report message</button></div></details>}</div>
+              <div className="hc-live-chat-avatar">{profiles[item.user_id]?.avatar_url?<img src={profiles[item.user_id].avatar_url!} alt=""/>:initials(profiles[item.user_id]?.display_name||"HoopCheck member")}</div><div className="hc-live-chat-message-body"><div className="hc-live-chat-message-meta"><strong>{item.user_id===userId?"You":profiles[item.user_id]?.display_name||"Fan"}</strong><time>{new Date(item.created_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</time>{item.pending&&<span>Sending…</span>}{item.failed&&<button type="button" disabled={!canSend||sending} onClick={()=>void retry(item)}>Retry</button>}</div><p>{item.body}</p>{item.user_id!==userId&&!item.pending&&<details className="hc-live-message-menu"><summary aria-label="Message moderation options">•••</summary><div><button type="button" onClick={()=>void controlUser(item.user_id,"is_muted")}>{mutedUsers.has(item.user_id)?"Unmute member":"Mute member"}</button><button type="button" onClick={()=>void controlUser(item.user_id,"is_blocked")}>{blockedUsers.has(item.user_id)?"Unblock member":"Block member"}</button><button type="button" onClick={()=>setReporting(item.id)}>Report message</button></div></details>}</div>
             </article>)}
 
           </div>
           {!canSend&&!isClosed&&<p className="hc-live-chat-readonly" role="status">{serverRoomOpen?.gameId!==selected?.id?"Checking game-room access…":"The room is read-only until the game database opens chat."}</p>}
-          {canSend&&<div className="hc-live-reaction-rail" aria-label="Quick game reactions"><span>React</span>{["🔥","🏀","👏","😮"].map(reaction=><button key={reaction} type="button" aria-label={"Add "+reaction+" reaction"} onClick={()=>{setBody(current=>((current?current+" ":"")+reaction).slice(0,500));composerRef.current?.focus();}}>{reaction}</button>)}</div>}
+          {canSend&&<div className="hc-live-reaction-rail" aria-label="Quick game reactions"><span>Quick reactions · sends to chat</span>{["🔥","🏀","👏","😮"].map(reaction=><button key={reaction} type="button" aria-label={"Send "+reaction+" reaction"} disabled={sending} onClick={()=>void send(reaction)}>{reaction}</button>)}</div>}
           {canSend&&<form className="hc-live-chat-compose" onSubmit={e=>{e.preventDefault();void send();}}><input ref={composerRef} value={body} maxLength={500} onChange={e=>setBody(e.target.value)} placeholder="React to the game…" aria-label="Chat message" disabled={isClosed}/><span>{body.length}/500</span><button className="btn" type="submit" disabled={!body.trim()||sending||isClosed}>{sending?"Sending…":"Send"}</button></form>}
           {canSend&&<p className="hc-live-chat-rules">Keep it respectful. Links are displayed as plain text. Slow mode: one message every two seconds.</p>}
         </div>}
