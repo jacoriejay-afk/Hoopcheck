@@ -59,3 +59,12 @@ assert.match(sql,/interval '2 hours'/,"Database room window must agree with UI")
 assert.match(sql,/fan_live_chat_room_open/,"Postgres room guard must remain the authority");
 assert.doesNotMatch(sql,/grant\s+(?:all|insert|update)\s+on\s+public\.fan_live_chat_messages\s+to\s+anon/i,"Never expose anonymous writes");
 console.log("PASS: Persistent live room directory, membership gates, realtime recovery and final +2h window.");
+
+assert.match(chat,/formatPregameCountdown\(selected.status,selected.scheduled_at,clock\)/,"Dedicated rooms use the same scheduled-tip countdown as the hub");
+assert.match(chat,/select\("user_id",\{count:"exact",head:true\}\)/,"Presence reads an exact server-side count without downloading identities");
+assert.match(chat,/presenceSample.gameId===selected\?\.id/,"Room counts cannot carry over to another game");
+assert.match(chat,/clock.getTime\(\)-presenceSample.observedAt<75_000/,"Expired participation samples must not be displayed");
+assert.match(chat,/presenceCount===null\?"Live participation unavailable"/,"Unknown participation must not appear as a fabricated zero");
+assert.match(chat,/canSend&&selectedStatus&&!selectedStatus.isUnverified&&availability\?\.chatOpen&&\(!selectedStatus.isVerifiedFinal\|\|process.env.NEXT_PUBLIC_LIVE_POSTGAME_CHAT_ENABLED==="true"\)/,"New room panel honors authoritative room access and the postgame rollout flag");
+assert.match(chat,/not arena attendance/,"Online room participation must not claim physical attendance");
+console.log("PASS: countdown, room participation freshness, and game-day lobby gates.");
