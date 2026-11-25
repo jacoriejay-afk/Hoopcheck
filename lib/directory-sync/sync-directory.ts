@@ -4,6 +4,14 @@ import { clean, normalizedKey } from "./sync-record";
 
 type Result={seen:number;created:number;updated:number;skipped:number};
 
+// PostgREST ilike accepts SQL wildcards and "*" as an alias for "%". Do not
+// silently interpret a provider's literal name as a search pattern.
+function literalName(name:string):string{
+ if(/[%_*\\]/.test(name))throw new Error("Directory identity requires manual review: name contains pattern characters");
+ return name;
+}
+
+
 export async function syncNormalizedDirectory(
  supabase:SupabaseClient,
  sourceId:string,
@@ -18,8 +26,8 @@ export async function syncNormalizedDirectory(
   const name=clean(r.name); if(!name){result.skipped++;continue;}
   result.seen++;
   let existing:any=null;
-  if(clean(r.externalId)){const q=await supabase.from("leagues").select("id").eq("source_id",sourceId).eq("external_id",clean(r.externalId)).limit(1).maybeSingle();if(q.error)throw q.error;existing=q.data;}
-  if(!existing){const q=await supabase.from("leagues").select("id").ilike("name",name).eq("country",clean(r.country)).limit(1).maybeSingle();if(q.error&&q.error.code!=="PGRST116")throw q.error;existing=q.data;}
+  if(clean(r.externalId)){const q=await supabase.from("leagues").select("id").eq("source_id",sourceId).eq("external_id",clean(r.externalId)).limit(2).maybeSingle();if(q.error)throw q.error;existing=q.data;}
+  if(!existing){const q=await supabase.from("leagues").select("id").ilike("name",literalName(name)).eq("country",clean(r.country)).limit(2).maybeSingle();if(q.error)throw q.error;existing=q.data;}
   const payload={name,country:clean(r.country),level:clean(r.level),season:clean(r.season),external_id:clean(r.externalId),source_id:sourceId,last_synced_at:new Date().toISOString(),active:true};
   if(existing){const q=await supabase.from("leagues").update(payload).eq("id",existing.id).select("id").single();if(q.error)throw q.error;leagueIds.set(normalizedKey(name,r.country),existing.id);result.updated++;await supabase.from("directory_change_log").insert({entity_type:"league",entity_id:existing.id,source_id:sourceId,action:"updated"});}
   else{const q=await supabase.from("leagues").insert(payload).select("id").single();if(q.error)throw q.error;leagueIds.set(normalizedKey(name,r.country),q.data.id);result.created++;await supabase.from("directory_change_log").insert({entity_type:"league",entity_id:q.data.id,source_id:sourceId,action:"created"});}
@@ -27,14 +35,14 @@ export async function syncNormalizedDirectory(
  for(const r of directory.teams){
   const name=clean(r.name);if(!name){result.skipped++;continue;}result.seen++;
   let leagueId=r.leagueExternalId?null:leagueIds.get(normalizedKey(r.leagueName||"",r.country));
-  if(r.leagueExternalId){const q=await supabase.from("leagues").select("id").eq("source_id",sourceId).eq("external_id",clean(r.leagueExternalId)).limit(1).maybeSingle();if(q.error)throw q.error;leagueId=q.data?.id??null;}
+  if(r.leagueExternalId){const q=await supabase.from("leagues").select("id").eq("source_id",sourceId).eq("external_id",clean(r.leagueExternalId)).limit(2).maybeSingle();if(q.error)throw q.error;leagueId=q.data?.id??null;}
   let existing:any=null;
-  if(clean(r.externalId)){const q=await supabase.from("teams").select("id").eq("source_id",sourceId).eq("external_id",clean(r.externalId)).limit(1).maybeSingle();if(q.error)throw q.error;existing=q.data;}
+  if(clean(r.externalId)){const q=await supabase.from("teams").select("id").eq("source_id",sourceId).eq("external_id",clean(r.externalId)).limit(2).maybeSingle();if(q.error)throw q.error;existing=q.data;}
   if(!existing){
-    let q= supabase.from("teams").select("id,name,city,basketball_type").ilike("name",name).eq("country",clean(r.country)).eq("basketball_type","mens").limit(1);
+    let q= supabase.from("teams").select("id,name,city,basketball_type").ilike("name",literalName(name)).eq("country",clean(r.country)).eq("basketball_type","mens").limit(2);
     q=clean(r.city)?q.eq("city",clean(r.city)):q.is("city",null);
     const match=await q.maybeSingle();
-    if(match.error&&match.error.code!=="PGRST116")throw match.error;
+    if(match.error)throw match.error;
     existing=match.data;
   }
   const payload:any={name,country:clean(r.country),city:clean(r.city),league_id:leagueId,league_name:clean(r.leagueName),external_id:clean(r.externalId),source_id:sourceId,last_synced_at:new Date().toISOString(),active:true};
@@ -54,10 +62,10 @@ export async function syncNormalizedDirectory(
  for(const r of directory.coaches){
   const name=clean(r.name);if(!name){result.skipped++;continue;}result.seen++;
   let teamId=r.teamExternalId?null:teamIds.get(normalizedKey(r.teamName||"",r.country));
-  if(r.teamExternalId){const q=await supabase.from("teams").select("id").eq("source_id",sourceId).eq("external_id",clean(r.teamExternalId)).limit(1).maybeSingle();if(q.error)throw q.error;teamId=q.data?.id??null;}
+  if(r.teamExternalId){const q=await supabase.from("teams").select("id").eq("source_id",sourceId).eq("external_id",clean(r.teamExternalId)).limit(2).maybeSingle();if(q.error)throw q.error;teamId=q.data?.id??null;}
   let existing:any=null;
-  if(clean(r.externalId)){const q=await supabase.from("coaches").select("id").eq("source_id",sourceId).eq("external_id",clean(r.externalId)).limit(1).maybeSingle();if(q.error)throw q.error;existing=q.data;}
-  if(!existing){const q=await supabase.from("coaches").select("id").ilike("name",name).eq("country",clean(r.country)).limit(1).maybeSingle();if(q.error&&q.error.code!=="PGRST116")throw q.error;existing=q.data;}
+  if(clean(r.externalId)){const q=await supabase.from("coaches").select("id").eq("source_id",sourceId).eq("external_id",clean(r.externalId)).limit(2).maybeSingle();if(q.error)throw q.error;existing=q.data;}
+  if(!existing){const q=await supabase.from("coaches").select("id").ilike("name",literalName(name)).eq("country",clean(r.country)).limit(2).maybeSingle();if(q.error)throw q.error;existing=q.data;}
   const payload:any={name,country:clean(r.country),city:clean(r.city),current_team_id:teamId,external_id:clean(r.externalId),source_id:sourceId,last_synced_at:new Date().toISOString(),active:true};
   if(existing){const q=await supabase.from("coaches").update(payload).eq("id",existing.id).select("id").single();if(q.error)throw q.error;result.updated++;await supabase.from("directory_change_log").insert({entity_type:"coach",entity_id:existing.id,source_id:sourceId,action:"updated"});}
   else{const q=await supabase.from("coaches").insert(payload).select("id").single();if(q.error)throw q.error;existing=q.data;result.created++;await supabase.from("directory_change_log").insert({entity_type:"coach",entity_id:existing.id,source_id:sourceId,action:"created"});}

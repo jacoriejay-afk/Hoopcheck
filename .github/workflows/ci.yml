@@ -259,6 +259,9 @@ jobs:
       - name: Verify licensed logo matches are explicitly reviewed
         run: node --test scripts/test-team-logo-review-policy.mjs
 
+      - name: Reject ambiguous directory identity writes
+        run: node scripts/test-directory-ambiguous-write.mjs
+
       - name: Lint
         run: npm run lint
 

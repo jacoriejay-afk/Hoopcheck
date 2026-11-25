@@ -48,3 +48,5 @@ assert.match(admin, /\!rightsReviewed/);
 console.log("PASS: 40 missing men + 14 missing women, two source-reviewed crests, idempotent mirror-safe seed, guarded logo review queue.");
 
 await import('./test-directory-reconciliation.mjs');
+
+await import('./test-directory-korea-oceania.mjs');
