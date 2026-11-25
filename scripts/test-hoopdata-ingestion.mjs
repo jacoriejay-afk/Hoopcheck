@@ -384,3 +384,24 @@ test("coverage audit rejects wrong side, duplicate provider identity, ambiguous 
  assert.equal(auditLeagueCoverage({...i,observations:[]})[0].fixtures.state,"no-observation");
  assert.equal(auditLeagueCoverage({...i,observations:i.observations.map(o=>({...o,observedAt:"2026-11-25T11:00:00Z"}))})[0].standings.state,"stale-observation");
 });
+
+const licensedStandingsModule={exports:{}};
+new Function("require","exports",ts.transpileModule(read("lib/hoopdata-licensed-standings.ts"),cjsOptions).outputText)(name=>{
+ if(name==="./hoopdata-provider-rights")return coverageRightsModule.exports;
+ throw Error(name);
+},licensedStandingsModule.exports);
+test("licensed standings view preserves group and rank, requires complete names and limits display expiry",()=>{
+ const input=projectionFixture(),projection=projectAttestedStandings(input),leagueId=input.mapping.leagueId;
+ const grant={provider:"api-sports",competitionId:leagueId,kind:"standings",plan:"pilot",uses:["web-display"],status:"approved",evidenceRef:"private evidence",reviewerId:"reviewer",reviewedAt:"2026-11-24T00:00:00Z",validUntil:"2026-11-25T13:45:00Z",retentionHours:0,upstreamRightsConfirmed:true,artworkPermissionConfirmed:false,appStorePermissionConfirmed:false,attribution:"Licensed by API-Sports"};
+ const teams=input.teamMappings.map((m,i)=>({id:m.teamId,name:"Team "+i}));
+ const view=(grants=[grant],rows=teams,now=input.now)=>licensedStandingsModule.exports.licensedStandingsView(projection,leagueId,"pilot",grants,rows,now);
+ const r=view();
+ assert.equal(r.groups.length,2);assert.equal(r.groups[0].rows[0].position,1);assert.equal(r.groups[0].rows[0].pointsFor,null);
+ assert.equal(r.expiresAt,"2026-11-25T13:45:00.000Z");
+ assert.equal(r.attribution,grant.attribution);
+ assert.doesNotMatch(JSON.stringify(r),/private evidence|reviewer|providerLeagueId/);
+ assert.equal(view([]),null);assert.equal(view([{...grant,status:"revoked"}]),null);
+ assert.equal(view([grant],teams.slice(1)),null);assert.equal(view([grant],[...teams,teams[0]]),null);
+ assert.equal(view([grant],teams,new Date("2026-11-25T13:45:00Z")),null);
+ assert.equal(view([{...grant,validUntil:"2026-12-01T00:00:00Z"}]).expiresAt,"2026-11-25T14:00:00.000Z");
+});
