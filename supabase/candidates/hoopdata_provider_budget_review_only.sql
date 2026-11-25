@@ -44,4 +44,17 @@ END;
 $$;
 REVOKE ALL ON FUNCTION public.hoopdata_reserve_request(text) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.hoopdata_reserve_request(text) TO service_role;
+-- A later retry response cannot shorten a cooldown already persisted by another worker.
+CREATE FUNCTION public.hoopdata_block_provider(p_pool text,p_until timestamptz)
+RETURNS boolean LANGUAGE plpgsql SECURITY INVOKER SET search_path = '' AS $
+BEGIN
+  IF p_until IS NULL OR p_until <= clock_timestamp() THEN RETURN false; END IF;
+  UPDATE public.hoopdata_quota_pools
+    SET blocked_until=greatest(blocked_until,p_until)
+    WHERE pool=p_pool AND enabled;
+  RETURN FOUND;
+END;
+$;
+REVOKE ALL ON FUNCTION public.hoopdata_block_provider(text,timestamptz) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.hoopdata_block_provider(text,timestamptz) TO service_role;
 COMMIT;
