@@ -2,12 +2,12 @@ import { evaluateProviderRights, type RightsGrant } from "./hoopdata-provider-ri
 import { projectAttestedStandings } from "./hoopdata-standings-projection";
 type Projection=ReturnType<typeof projectAttestedStandings>;
 type Team={id:string;name:string};
-export function standingsDisplayRights(leagueId:string,plan:string,grants:readonly RightsGrant[],now:Date){
- return evaluateProviderRights({provider:"api-sports",competitionId:leagueId,kind:"standings",use:"web-display",plan},grants,now);
+export function standingsDisplayRights(leagueId:string,plan:string,grants:readonly RightsGrant[],now:Date,channel:"web-display"|"app-display"="web-display"){
+ return evaluateProviderRights({provider:"api-sports",competitionId:leagueId,kind:"standings",use:channel,plan},grants,now);
 }
 /** Allowlist only reviewed rows with an authorized display window. No ranking recomputation. */
-export function licensedStandingsView(projection:Projection,leagueId:string,plan:string,grants:readonly RightsGrant[],teams:readonly Team[],now:Date){
- const rights=standingsDisplayRights(leagueId,plan,grants,now);
+export function licensedStandingsView(projection:Projection,leagueId:string,plan:string,grants:readonly RightsGrant[],teams:readonly Team[],now:Date,channel:"web-display"|"app-display"="web-display"){
+ const rights=standingsDisplayRights(leagueId,plan,grants,now,channel);
  if(!rights.allowed||projection.state!=="eligible-for-publication"||projection.leagueId!==leagueId)return null;
  const observed=Date.parse(projection.observedAt),time=now.getTime(),expiry=Math.min(Date.parse(rights.expiresAt),observed+3600000);
  if(!Number.isFinite(observed)||observed>time||expiry<=time||projection.rows.length<1||projection.rows.length>1000)return null;
