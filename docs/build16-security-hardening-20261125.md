@@ -58,3 +58,6 @@ No release submission, paid plan upgrade, public Reels activation or new paid st
 ## Follow eligibility least privilege
 - Production migration 20261125044650 changes can_user_follow_target(uuid,text,uuid) to SECURITY INVOKER. Rollback comparisons covered all 19 production profiles and forged identities; all valid follow eligibility outcomes matched. Catalog verified invoker. Production warnings now 38, zero critical errors. Review eligibility invoker candidate not applied because the current comparison had no positive eligible-review cases.
 - Vercel status checks for revision 91845c957b2dd8fffc69be9afae5909b7dce154a all succeeded; later revisions require fresh verification. Owner MFA still zero verified factors. No merge or release submission.
+
+## Additional anti-flood acceptance
+- Isolated daily-cap tests now pass for profile reports and review comments. Two simultaneous transactions competing for the last slot resulted in 10 reports and 20 comments respectively (not 11 or 21). Test schema removed and verified absent. No production records modified in this test. Application/device acceptance remains open.
