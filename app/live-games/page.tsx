@@ -103,7 +103,7 @@ export default function LiveGamesPage() {
         .lte("scheduled_at", new Date(Date.now() + 7 * 86_400_000).toISOString())
         .order("scheduled_at", { ascending: true, nullsFirst: false }).limit(1000);
     const readGamesWithFreshness = async () => {
-      const result = await readGames(gameFields + ",score_updated_at");
+      const result = await readGames((gameFields + ",score_updated_at") as `${typeof gameFields},score_updated_at`);
       return result.error?.code === "42703" ? readGames(gameFields) : result;
     };
     const [followsResult, gamesResult, remindersResult] = await Promise.all([
