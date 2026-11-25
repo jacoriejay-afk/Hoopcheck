@@ -1,6 +1,7 @@
 import { useNativeAccount } from "../src/native/useNativeAccount";
 import { AlternateIcons } from "../components/AlternateIcons";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { clearPublicCache } from "../src/native/cache";
 import { useRouter } from "expo-router";
 import { Pressable, ScrollView, Switch, Text, View } from "react-native";
 import * as LocalAuthentication from "expo-local-authentication";
@@ -15,6 +16,24 @@ export default function Settings() {
   const [themeBusy, setThemeBusy] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const clearingCache = useRef(false);
+  const [cacheBusy, setCacheBusy] = useState(false);
+  const [cacheMessage, setCacheMessage] = useState("");
+  async function clearCachedDirectoryData() {
+    if (clearingCache.current) return;
+    clearingCache.current = true;
+    setCacheBusy(true);
+    setCacheMessage("");
+    try {
+      await clearPublicCache();
+      setCacheMessage("Cached directory data cleared. It will be downloaded again as needed.");
+    } catch {
+      setCacheMessage("Could not clear cached directory data. Please try again.");
+    } finally {
+      clearingCache.current = false;
+      setCacheBusy(false);
+    }
+  }
   async function setLock(enabled: boolean) {
     if (busy) return;
     setBusy(true); setError("");
@@ -58,6 +77,14 @@ export default function Settings() {
         style={{ minHeight: 44, justifyContent: "center", borderBottomWidth: 1, borderColor: theme.border }}><Text style={{ color: theme.foreground }}>Career Passport · My Journey</Text></Pressable> : null}
       <Pressable accessibilityRole="link" onPress={() => router.push("/teams")} style={{ minHeight: 44, justifyContent: "center", borderBottomWidth: 1, borderColor: theme.border }}><Text style={{ color: theme.foreground }}>Find a team to review</Text></Pressable>
       <Pressable accessibilityRole="link" onPress={() => router.push("/membership")} style={{ minHeight: 44, justifyContent: "center" }}><Text style={{ color: theme.foreground }}>Membership & billing</Text></Pressable>
+    </View>
+    <View style={{ gap: 10 }}>
+      <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 21, fontFamily: "HoopCheckDisplay" }}>Storage</Text>
+      <Text style={{ color: theme.muted, lineHeight: 20 }}>Clear downloaded public directory data on this device. Your account, saved posts, drafts and preferences are not deleted. Directory pages may need an internet connection to reload.</Text>
+      <Pressable accessibilityRole="button" accessibilityLabel="Clear cached directory data" accessibilityState={{ disabled: cacheBusy, busy: cacheBusy }} disabled={cacheBusy} onPress={() => void clearCachedDirectoryData()} style={{ minHeight: 48, justifyContent: "center", borderWidth: 1, borderColor: theme.border, backgroundColor: theme.surface, paddingHorizontal: 14, borderRadius: theme.radius.control }}>
+        <Text style={{ color: theme.foreground, fontWeight: "700" }}>{cacheBusy ? "Clearing cached data…" : "Clear cached directory data"}</Text>
+      </Pressable>
+      {cacheMessage ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ color: theme.foreground }}>{cacheMessage}</Text> : null}
     </View>
     <AlternateIcons />
     {error ? <Text accessibilityRole="alert" style={{ color: theme.accent }}>{error}</Text> : null}
