@@ -225,3 +225,148 @@ BEGIN
   IF NOT EXISTS(SELECT 1 FROM public.hoopdata_competition_snapshots WHERE league_id=l AND rows='[{"teamId":2,"position":1}]') THEN RAISE EXCEPTION 'Latest valid snapshot not retained'; END IF;
 END $mapped_stage$;
 RESET ROLE;
+
+\ir ../candidates/hoopdata_competition_refresh_review_only.sql
+INSERT INTO public.hoopdata_competition_refresh_jobs(league_id,kind)
+VALUES('33333333-3333-4333-8333-333333333333','seasons');
+DO $refresh_access$ BEGIN
+  IF has_table_privilege('authenticated','public.hoopdata_competition_refresh_jobs','SELECT') OR
+     has_function_privilege('anon','public.hoopdata_claim_competition_refresh()','EXECUTE') OR
+     has_column_privilege('service_role','public.hoopdata_competition_refresh_jobs','enabled','UPDATE') THEN RAISE EXCEPTION 'Refresh access too broad'; END IF;
+END $refresh_access$;
+SET ROLE service_role;
+DO $disabled_refresh$ BEGIN
+  IF public.hoopdata_claim_competition_refresh() IS NOT NULL THEN RAISE EXCEPTION 'Disabled quota accepted'; END IF;
+END $disabled_refresh$;
+UPDATE public.hoopdata_quota_pools SET enabled=true WHERE pool='api-sports-basketball';
+DO $disabled_job$ BEGIN
+  IF public.hoopdata_claim_competition_refresh() IS NOT NULL THEN RAISE EXCEPTION 'Disabled job accepted'; END IF;
+END $disabled_job$;
+RESET ROLE;
+UPDATE public.hoopdata_competition_refresh_jobs SET enabled=true;
+SET ROLE service_role;
+DO $refresh$ DECLARE
+  j jsonb;
+  l uuid:='33333333-3333-4333-8333-333333333333';
+  token uuid;
+BEGIN
+  j:=public.hoopdata_claim_competition_refresh();
+  IF j IS NULL OR j->>'kind'<>'seasons' THEN RAISE EXCEPTION 'Reviewed job not leased'; END IF;
+  token:=(j->>'leaseToken')::uuid;
+  IF public.hoopdata_claim_competition_refresh() IS NOT NULL THEN RAISE EXCEPTION 'Job claimed twice'; END IF;
+  IF public.hoopdata_finish_competition_refresh(l,'seasons',gen_random_uuid(),'staged',NULL) THEN RAISE EXCEPTION 'Wrong token completed lease'; END IF;
+  IF NOT public.hoopdata_finish_competition_refresh(l,'seasons',token,'staged',NULL) THEN RAISE EXCEPTION 'Valid token rejected'; END IF;
+  IF public.hoopdata_claim_competition_refresh() IS NOT NULL THEN RAISE EXCEPTION 'Cadence ignored'; END IF;
+  IF NOT EXISTS(SELECT 1 FROM public.hoopdata_competition_refresh_jobs WHERE league_id=l AND last_state='staged' AND last_success_at IS NOT NULL AND next_due_at>now()+interval '23 hours' AND lease_token IS NULL) THEN RAISE EXCEPTION 'Completion not persisted'; END IF;
+END $refresh$;
+RESET ROLE;
+UPDATE public.hoopdata_competition_refresh_jobs SET next_due_at=now()-interval '1 minute';
+SET ROLE service_role;
+DO $refresh_retry$ DECLARE j jsonb; t uuid; l uuid:='33333333-3333-4333-8333-333333333333'; BEGIN
+  j:=public.hoopdata_claim_competition_refresh(); t:=(j->>'leaseToken')::uuid;
+  IF t IS NULL THEN RAISE EXCEPTION 'Retry test claim missing'; END IF;
+  IF NOT public.hoopdata_finish_competition_refresh(l,'seasons',t,'failed',now()+interval '2 hours') THEN RAISE EXCEPTION 'Failure completion rejected'; END IF;
+  IF EXISTS(SELECT 1 FROM public.hoopdata_competition_refresh_jobs WHERE next_due_at<now()+interval '2 hours') THEN RAISE EXCEPTION 'Provider cooldown shortened'; END IF;
+END $refresh_retry$;
+RESET ROLE;
+
+RESET ROLE;
+UPDATE public.hoopdata_competition_refresh_jobs SET next_due_at=now()-interval '1 minute';
+SET ROLE service_role;
+DO $refresh_fencing$ DECLARE
+  j jsonb; t uuid;
+  l uuid:='33333333-3333-4333-8333-333333333333';
+  observed timestamptz;
+  payload jsonb:='[{"season":"2026-2027","start":"2026-10-01","end":"2027-06-01","games":true,"standings":true}]';
+BEGIN
+  j:=public.hoopdata_claim_competition_refresh(); t:=(j->>'leaseToken')::uuid; observed:=clock_timestamp();
+  IF t IS NULL THEN RAISE EXCEPTION 'Fencing test lease missing'; END IF;
+  IF public.hoopdata_stage_leased_competition_snapshot(l,'seasons',gen_random_uuid(),12,'mens','',observed,payload) THEN RAISE EXCEPTION 'Wrong token staged snapshot'; END IF;
+  IF public.hoopdata_stage_leased_competition_snapshot(l,'seasons',t,12,'mens','',observed-interval '10 minutes',payload) THEN RAISE EXCEPTION 'Pre-lease snapshot staged'; END IF;
+  IF NOT public.hoopdata_stage_leased_competition_snapshot(l,'seasons',t,12,'mens','',observed,payload) THEN RAISE EXCEPTION 'Valid lease could not stage'; END IF;
+  IF NOT public.hoopdata_finish_competition_refresh(l,'seasons',t,'staged',NULL) THEN RAISE EXCEPTION 'Valid lease could not finish'; END IF;
+  IF public.hoopdata_stage_leased_competition_snapshot(l,'seasons',t,12,'mens','',clock_timestamp(),payload) THEN RAISE EXCEPTION 'Released lease staged snapshot'; END IF;
+  IF NOT EXISTS(SELECT 1 FROM public.hoopdata_competition_snapshots WHERE league_id=l AND kind='seasons' AND rows=payload) THEN RAISE EXCEPTION 'Fenced snapshot missing'; END IF;
+  IF has_function_privilege('authenticated','public.hoopdata_stage_leased_competition_snapshot(uuid,text,uuid,bigint,text,text,timestamptz,jsonb)','EXECUTE') THEN RAISE EXCEPTION 'Leased snapshot exposed'; END IF;
+END $refresh_fencing$;
+RESET ROLE;
+
+\ir ../candidates/hoopdata_standings_attestation_review_only.sql
+DO $attestation_access$ BEGIN
+  IF has_table_privilege('authenticated','public.hoopdata_standings_attestations','SELECT')
+    OR has_table_privilege('anon','public.hoopdata_standings_team_mappings','SELECT')
+    OR has_table_privilege('service_role','public.hoopdata_standings_attestations','INSERT')
+    OR has_table_privilege('service_role','public.hoopdata_standings_team_mappings','UPDATE')
+    OR has_function_privilege('service_role','public.hoopdata_attest_standings(uuid,bigint,text,timestamptz,jsonb,jsonb,uuid,text)','EXECUTE')
+    OR has_function_privilege('authenticated','public.hoopdata_attest_standings(uuid,bigint,text,timestamptz,jsonb,jsonb,uuid,text)','EXECUTE')
+  THEN RAISE EXCEPTION 'Attestation privileges too broad'; END IF;
+END $attestation_access$;
+DO $attest$ DECLARE
+  l uuid:='33333333-3333-4333-8333-333333333333';
+  reviewer uuid:='11111111-1111-4111-8111-111111111111';
+  stamp timestamptz:=clock_timestamp();
+  payload jsonb:='[{"teamId":2,"stage":"Regular","group":null,"position":1},{"teamId":3,"stage":"Regular","group":null,"position":2}]';
+  roster jsonb:='[{"teamId":3,"stage":"Regular","group":null},{"teamId":2,"stage":"Regular","group":null}]';
+BEGIN
+  IF NOT public.hoopdata_stage_competition_snapshot(l,12,'mens','standings','2026',stamp,payload) THEN RAISE EXCEPTION 'Test snapshot not staged'; END IF;
+  IF public.hoopdata_attest_standings(l,12,'2026',stamp,payload,roster,reviewer,'independent roster') THEN RAISE EXCEPTION 'Missing mappings accepted'; END IF;
+  INSERT INTO public.hoopdata_standings_team_mappings(league_id,provider_league_id,provider_team_id,team_id,reviewed_by,evidence)
+    VALUES(l,12,2,'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',reviewer,'synthetic'),
+          (l,12,3,'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',reviewer,'synthetic');
+  IF public.hoopdata_attest_standings(l,12,'2026',stamp,payload,'[{"teamId":2,"stage":"Regular","group":null}]',reviewer,'partial roster') THEN RAISE EXCEPTION 'Partial roster accepted'; END IF;
+  IF public.hoopdata_attest_standings(l,12,'2026',stamp,payload,jsonb_set(roster,'{0,stage}','"Playoffs"'),reviewer,'wrong stage') THEN RAISE EXCEPTION 'Wrong stage accepted'; END IF;
+  IF public.hoopdata_attest_standings(l,12,'2026',stamp,jsonb_set(payload,'{0,position}','2'),roster,reviewer,'changed payload') THEN RAISE EXCEPTION 'Changed snapshot accepted'; END IF;
+  UPDATE public.teams SET active=false WHERE id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+  IF public.hoopdata_attest_standings(l,12,'2026',stamp,payload,roster,reviewer,'inactive team') THEN RAISE EXCEPTION 'Inactive team accepted'; END IF;
+  UPDATE public.teams SET active=true WHERE id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+  IF NOT public.hoopdata_attest_standings(l,12,'2026',stamp,payload,roster,reviewer,'independent roster') THEN RAISE EXCEPTION 'Valid attestation rejected'; END IF;
+  IF public.hoopdata_attest_standings(l,12,'2026',stamp,payload,roster,reviewer,'duplicate') THEN RAISE EXCEPTION 'Existing attestation replaced'; END IF;
+  IF NOT EXISTS(SELECT 1 FROM public.hoopdata_standings_attestations WHERE league_id=l AND snapshot_rows=payload AND reviewed_roster=roster AND reviewed_team_ids->>'2'='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa') THEN RAISE EXCEPTION 'Audit evidence missing'; END IF;
+  IF NOT public.hoopdata_stage_competition_snapshot(l,12,'mens','standings','2026',clock_timestamp(),jsonb_set(payload,'{0,position}','2')) THEN RAISE EXCEPTION 'Newer snapshot rejected'; END IF;
+  IF public.hoopdata_attest_standings(l,12,'2026',stamp,payload,roster,reviewer,'superseded') THEN RAISE EXCEPTION 'Superseded snapshot accepted'; END IF;
+END $attest$;
+
+-- Expand the synthetic fixture table only inside the disposable CI database.
+ALTER TABLE public.fan_live_games ADD COLUMN team_id uuid,ADD COLUMN opponent_team_id uuid,
+ADD COLUMN status text,ADD COLUMN provider_source text,ADD COLUMN score_updated_at timestamptz,
+ADD COLUMN scheduled_at timestamptz,ADD COLUMN home_score integer,ADD COLUMN away_score integer;
+GRANT SELECT,UPDATE ON public.fan_live_games TO service_role;
+UPDATE public.fan_live_games SET team_id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+opponent_team_id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',status='live',provider_source='api-sports-basketball',
+score_updated_at=now()-interval '40 minutes',scheduled_at='2026-11-25T20:00:00Z',home_score=80,away_score=90
+WHERE id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+\ir ../candidates/hoopdata_fallback_overlay_review_only.sql
+INSERT INTO public.hoopdata_fallback_team_aliases(provider,provider_team_id,team_id,reviewed_by,evidence) VALUES
+('balldontlie-nba','1','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','11111111-1111-4111-8111-111111111111','fixture review'),
+('balldontlie-nba','2','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','11111111-1111-4111-8111-111111111111','fixture review');
+DO $overlay_access$ BEGIN
+  IF has_table_privilege('authenticated','public.hoopdata_fallback_overlays','SELECT') OR
+    has_table_privilege('service_role','public.hoopdata_fallback_team_aliases','INSERT') OR
+    has_function_privilege('anon','public.hoopdata_read_fallback_overlay(uuid)','EXECUTE') OR
+    has_function_privilege('authenticated','public.hoopdata_stage_fallback_overlay(uuid,text,text,text,timestamptz,integer,integer,timestamptz,timestamptz)','EXECUTE') THEN
+    RAISE EXCEPTION 'Fallback access too broad';
+  END IF;
+END $overlay_access$;
+SET ROLE service_role;
+DO $overlay_test$ DECLARE
+  g uuid:='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+  t timestamptz:=clock_timestamp();
+  primary_at timestamptz;
+  tip timestamptz:='2026-11-25T20:00:00Z';
+BEGIN
+  SELECT score_updated_at INTO primary_at FROM public.fan_live_games WHERE id=g;
+  IF public.hoopdata_stage_fallback_overlay(g,'43','1','2',tip,98,91,primary_at,t) OR
+     public.hoopdata_stage_fallback_overlay(g,'42','1','3',tip,98,91,primary_at,t) OR
+     public.hoopdata_stage_fallback_overlay(g,'42','1','2',tip,85,91,primary_at,t) OR
+     public.hoopdata_stage_fallback_overlay(g,'42','1','2',tip,98,91,primary_at-interval '1 second',t) THEN
+    RAISE EXCEPTION 'Unsafe fallback accepted';
+  END IF;
+  IF NOT public.hoopdata_stage_fallback_overlay(g,'42','1','2',tip,98,91,primary_at,t) THEN RAISE EXCEPTION 'Valid fallback rejected'; END IF;
+  IF NOT EXISTS(SELECT 1 FROM public.hoopdata_read_fallback_overlay(g) WHERE home_score=91 AND away_score=98) THEN RAISE EXCEPTION 'Overlay missing or wrong orientation'; END IF;
+  IF NOT EXISTS(SELECT 1 FROM public.fan_live_games WHERE id=g AND home_score=80 AND away_score=90) THEN RAISE EXCEPTION 'Canonical score modified'; END IF;
+  IF public.hoopdata_stage_fallback_overlay(g,'42','1','2',tip,98,91,primary_at,t) THEN RAISE EXCEPTION 'Replay accepted'; END IF;
+  UPDATE public.fan_live_games SET score_updated_at=clock_timestamp() WHERE id=g;
+  IF EXISTS(SELECT 1 FROM public.hoopdata_read_fallback_overlay(g)) THEN RAISE EXCEPTION 'Overlay survived primary recovery'; END IF;
+  IF public.hoopdata_stage_fallback_overlay(g,'42','1','2',tip,99,92,primary_at,clock_timestamp()) THEN RAISE EXCEPTION 'Old primary accepted'; END IF;
+END $overlay_test$;
+RESET ROLE;
