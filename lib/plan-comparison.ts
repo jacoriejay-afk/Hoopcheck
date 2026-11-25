@@ -26,3 +26,12 @@ export const PLAN_PERKS: Record<MembershipAudience, readonly { label: string; mi
     { label: "League research", minimum: "pro" },
   ],
 };
+
+/** Informational only: match the lowest listed tier for a user-selected perk.
+ * This is not an entitlement check, checkout decision, or billing instruction. */
+export function getListedPlanFit(audience: MembershipAudience, goal: string, premiumOnly = false): PlanTier | null {
+  if (goal === "free") return "free";
+  const perk = PLAN_PERKS[audience].find(item => item.label === goal);
+  if (!perk) return null;
+  return premiumOnly ? "premium" : perk.minimum;
+}
