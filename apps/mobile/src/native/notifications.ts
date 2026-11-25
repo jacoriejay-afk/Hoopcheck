@@ -36,3 +36,11 @@ export function noticeMatches(notice: Notice, filter: string) {
   const review = ["review", "rating", "trust_score", "pay_warning"].includes(notice.notification_type);
   return filter === "all" || (filter === "unread" && !notice.read_at) || (filter === "games" && notice.target_type === "game") || (filter === "reviews" && review) || (filter === "clubs" && notice.target_type !== "game" && !review);
 }
+
+// Search only the already authorized, loaded activity rows. No query is sent to the server.
+export function noticeSearchMatches(notice: Pick<Notice, "title" | "body" | "notification_type">, query: string) {
+  const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (!terms.length) return true;
+  const text = [notice.title, notice.body, notice.notification_type.replaceAll("_", " ")].join(" ").toLowerCase();
+  return terms.every(term => text.includes(term));
+}

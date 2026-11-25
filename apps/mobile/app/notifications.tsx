@@ -3,7 +3,7 @@ import { HoopCheckLoading } from "../components/HoopCheckLoading";
 import MessagesScreen from "./messages";
 import { hoopChatAuthAction } from "../src/native/hoopChatLoad";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { FlatList, Pressable, RefreshControl, Text, View } from "react-native";
+import { FlatList, Pressable, RefreshControl, Text, TextInput, View } from "react-native";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -12,7 +12,7 @@ import { useEntryTheme } from "../src/theme";
 import { supabase } from "../src/lib/supabase";
 import { requireOnline, useNetwork } from "../src/native/network";
 import { nativeDestination } from "../src/native/deepLinks";
-import { markNotificationsRead, noticeMatches, notificationPath, readNotifications, NOTIFICATION_PAGE_SIZE, type Notice } from "../src/native/notifications";
+import { markNotificationsRead, noticeMatches, noticeSearchMatches, notificationPath, readNotifications, NOTIFICATION_PAGE_SIZE, type Notice } from "../src/native/notifications";
 
 export default function Notifications() {
   const theme = useEntryTheme();
@@ -33,6 +33,7 @@ export default function Notifications() {
   const [error, setError] = useState("");
   const [failed, setFailed] = useState(false);
   const [filter, setFilter] = useState("all");
+  const [query, setQuery] = useState("");
   const [section, setSection] = useState<"activity" | "chat" | "requests">(
     tab === "chat" ? "chat" : tab === "requests" ? "requests" : "activity",
   );
@@ -56,14 +57,14 @@ export default function Notifications() {
   }, [offline]);
   useFocusEffect(useCallback(() => {
     focused.current = true; void load();
-    return () => { focused.current = false; generation.current++; owner.current = null; setRows([]); };
+    return () => { focused.current = false; generation.current++; owner.current = null; setRows([]); setQuery(""); setFilter("all"); };
   }, [load]));
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       const action = hoopChatAuthAction(event, owner.current, session?.user.id ?? null);
       if (action === "ignore") return;
-      generation.current++; owner.current = null; setRows([]);
+      generation.current++; owner.current = null; setRows([]); setQuery(""); setFilter("all");
       clearTimeout(timer);
       if (action === "clear") {
         setLoading(false); setFailed(true); setError("Sign in to view your alerts.");
@@ -130,6 +131,7 @@ export default function Notifications() {
     finally { marking.current = false; setBusy(false); }
   }
   const items = offline ? [] : rows;
+  const visibleItems = items.filter(item => noticeMatches(item, filter) && noticeSearchMatches(item, query));
   const canMarkAll = !loading && !loadingOlder && !busy && !failed && !offline && (hasMore || items.some(item => !item.read_at));
   return <SafeAreaView edges={["top","left","right"]} style={{ flex: 1, backgroundColor: theme.background }}>
     <View style={{ paddingHorizontal: 14, paddingTop: 10, paddingBottom: 7, gap: 8 }}>
@@ -160,8 +162,14 @@ export default function Notifications() {
       : <FlatList ListHeaderComponent={<View style={{ gap: 8, paddingBottom: 9 }}>
       <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:8}}><Text style={{ color: theme.muted, fontSize: 12,flex:1 }}>{loading ? "Checking activity…" : `${items.filter(item => !item.read_at).length} unread · ${items.length} loaded${hasMore ? " · more available" : ""}`}</Text><Pressable accessibilityRole="button" disabled={!canMarkAll} accessibilityState={{disabled:!canMarkAll}} onPress={()=>void markAll()} style={{minHeight:44,justifyContent:"center",paddingHorizontal:5}}><Text style={{color:canMarkAll?theme.accent:theme.muted,fontSize:12,fontWeight:"700"}}>{busy?"Updating…":"Mark all as read"}</Text></Pressable></View>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{["all", "unread", "games", "clubs", "reviews"].map(value => <Pressable key={value} accessibilityRole="button" aria-pressed={filter === value} accessibilityState={{ selected: filter === value }} onPress={() => setFilter(value)} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 9, borderRadius: 14, backgroundColor: filter === value ? theme.accentSurface : theme.chip }}><Text style={{ color: filter === value ? theme.accent : theme.foreground, fontSize: 12, textTransform: "capitalize" }}>{value}</Text></Pressable>)}</View>
+      <View style={{flexDirection:"row",alignItems:"center",gap:8,borderWidth:1,borderColor:theme.glassBorder,borderRadius:12,paddingHorizontal:10}}>
+        <Ionicons name="search-outline" size={18} color={theme.muted}/>
+        <TextInput accessibilityLabel="Search loaded alerts" placeholder="Search loaded alerts" placeholderTextColor={theme.muted} value={query} onChangeText={setQuery} autoCorrect={false} autoCapitalize="none" maxLength={160} returnKeyType="search" style={{flex:1,minHeight:44,color:theme.foreground,fontSize:14}}/>
+        {query.length > 0 ? <Pressable accessibilityRole="button" accessibilityLabel="Clear alert search" onPress={()=>setQuery("")} style={{minHeight:44,minWidth:44,alignItems:"center",justifyContent:"center"}}><Ionicons name="close-circle-outline" size={19} color={theme.muted}/></Pressable> : null}
+      </View>
+      {query.trim() ? <Text accessibilityLiveRegion="polite" style={{color:theme.muted,fontSize:12}}>{visibleItems.length} matching loaded alerts{hasMore ? " · load older alerts to search more" : ""}</Text> : null}
       {error ? <Text accessibilityRole="alert" style={{ color: theme.muted }}>{error}</Text> : null}
-    </View>} data={items.filter(item => noticeMatches(item, filter))} keyExtractor={item => item.id} contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 5, paddingBottom: 20, gap: 2 }} ListFooterComponent={hasMore && !offline && !failed ? <View style={{ paddingVertical: 12, gap: 6 }}><Button secondary disabled={loadingOlder || loading || busy} onPress={() => void loadOlder()}>{loadingOlder ? "Loading older alerts…" : "Load older alerts"}</Button>{error ? <Text accessibilityRole="alert" style={{color:theme.muted}}>{error}</Text> : null}</View> : null} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void load()} />} renderItem={({ item }) => {
+    </View>} data={visibleItems} keyboardShouldPersistTaps="handled" keyExtractor={item => item.id} contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 5, paddingBottom: 20, gap: 2 }} ListFooterComponent={hasMore && !offline && !failed ? <View style={{ paddingVertical: 12, gap: 6 }}><Button secondary disabled={loadingOlder || loading || busy} onPress={() => void loadOlder()}>{loadingOlder ? "Loading older alerts…" : "Load older alerts"}</Button>{error ? <Text accessibilityRole="alert" style={{color:theme.muted}}>{error}</Text> : null}</View> : null} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void load()} />} renderItem={({ item }) => {
       const path = notificationPath(item);
       return <View style={{ borderBottomWidth: 1, borderColor: theme.glassBorder }}><Pressable accessibilityRole="button" disabled={!path || busy || loadingOlder} accessibilityState={{ disabled: !path || busy || loadingOlder }} onPress={() => void openNotice(item)} style={({ pressed }) => ({ minHeight: 61, gap: 4, paddingHorizontal: 8, paddingVertical: 10, opacity: pressed ? .7 : 1 })}>
         <View style={{flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name={item.read_at?"notifications-outline":"notifications"} size={16} color={theme.accent}/><Text style={{ color: theme.accent, fontWeight: "700",fontSize:11 }}>{item.read_at ? "" : "● "}{item.notification_type.replaceAll("_", " ").toUpperCase()}</Text></View>
@@ -169,6 +177,6 @@ export default function Notifications() {
         <Text style={{ color: theme.foreground }}>{item.body}</Text>
         <Text style={{ color: theme.muted }}>{new Date(item.created_at).toLocaleString()}</Text>
       </Pressable>{!item.read_at ? <Pressable accessibilityRole="button" accessibilityLabel={`Mark ${item.title} as read`} disabled={busy || loadingOlder || offline} accessibilityState={{disabled:busy || loadingOlder || offline}} onPress={() => void openNotice(item, false)} style={{ minHeight:44, alignSelf:"flex-end", justifyContent:"center", paddingHorizontal:8 }}><Text style={{ color:theme.accent, fontWeight:"700", fontSize:12 }}>Mark as read</Text></Pressable> : null}</View>;
-    }} ListEmptyComponent={loading ? <HoopCheckLoading compact label="Checking activity…" /> : <View style={{ gap: 12, padding: 20,alignItems:"center" }}><Ionicons name="notifications-outline" size={30} color={theme.muted}/><Text style={{ color: theme.foreground,textAlign:"center" }}>{offline ? "Reconnect to view alerts." : failed ? "Alerts are unavailable." : items.length ? (hasMore ? "No matching alerts in the loaded history. Load older alerts or change the filter." : "Nothing in this category.") : "No notifications yet."}</Text>{failed ? <Button secondary onPress={() => void load()}>Retry loading alerts</Button> : <Button secondary onPress={() => router.push("/teams")}>Find teams</Button>}</View>} />}
+    }} ListEmptyComponent={loading ? <HoopCheckLoading compact label="Checking activity…" /> : <View style={{ gap: 12, padding: 20,alignItems:"center" }}><Ionicons name="notifications-outline" size={30} color={theme.muted}/><Text style={{ color: theme.foreground,textAlign:"center" }}>{offline ? "Reconnect to view alerts." : failed ? "Alerts are unavailable." : items.length ? (hasMore ? "No matching alerts in the loaded history. Load older alerts or change the search or filter." : query.trim() ? "No loaded alerts match your search." : "Nothing in this category.") : "No notifications yet."}</Text>{failed ? <Button secondary onPress={() => void load()}>Retry loading alerts</Button> : <Button secondary onPress={() => router.push("/teams")}>Find teams</Button>}</View>} />}
   </SafeAreaView>;
 }
