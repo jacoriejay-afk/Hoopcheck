@@ -65,4 +65,20 @@ END;
 $finish$;
 REVOKE ALL ON FUNCTION public.hoopdata_claim_competition_refresh(),public.hoopdata_finish_competition_refresh(uuid,text,uuid,text,timestamptz) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.hoopdata_claim_competition_refresh(),public.hoopdata_finish_competition_refresh(uuid,text,uuid,text,timestamptz) TO service_role;
+
+-- Guard the actual snapshot write as well as the final job acknowledgement.
+-- The locked job row prevents lease reassignment until the snapshot transaction ends.
+CREATE FUNCTION public.hoopdata_stage_leased_competition_snapshot(p_league uuid,p_kind text,p_token uuid,p_provider bigint,p_side text,p_season text,p_observed timestamptz,p_rows jsonb)
+RETURNS boolean LANGUAGE plpgsql SECURITY INVOKER SET search_path='' AS $leased_stage$
+BEGIN
+  PERFORM 1 FROM public.hoopdata_competition_refresh_jobs
+    WHERE league_id=p_league AND kind=p_kind AND enabled AND lease_token=p_token
+      AND lease_until>clock_timestamp() AND p_observed>=last_attempt_at
+    FOR UPDATE;
+  IF NOT FOUND THEN RETURN false; END IF;
+  RETURN public.hoopdata_stage_competition_snapshot(p_league,p_provider,p_side,p_kind,p_season,p_observed,p_rows);
+END;
+$leased_stage$;
+REVOKE ALL ON FUNCTION public.hoopdata_stage_leased_competition_snapshot(uuid,text,uuid,bigint,text,text,timestamptz,jsonb) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.hoopdata_stage_leased_competition_snapshot(uuid,text,uuid,bigint,text,text,timestamptz,jsonb) TO service_role;
 COMMIT;
