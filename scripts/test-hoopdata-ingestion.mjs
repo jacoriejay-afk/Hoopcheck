@@ -330,3 +330,18 @@ test("score display preview is authenticated, isolated and source-labelled",asyn
     assert.equal((await mod.exports.GET(req())).status,200);
   }finally{for(const [k,v] of Object.entries(before)){if(v===undefined)delete process.env[k];else process.env[k]=v;}}
 });
+
+test("provider expansion requires explicit scoped rights and rejects ambiguous, expired and revoked records",async()=>{
+ const js=ts.transpileModule(read("lib/hoopdata-provider-rights.ts"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+ const {evaluateProviderRights:evaluate}=await import("data:text/javascript;base64,"+Buffer.from(js).toString("base64"));
+ const now=new Date("2026-11-25T12:00:00Z");
+ const req={provider:"highlightly",competitionId:"reviewed-league",kind:"scores",use:"app-display",plan:"free"};
+ const grant={...req,evidenceRef:"private-review-1",reviewerId:"operator",reviewedAt:"2026-11-24T12:00:00Z",validUntil:"2026-12-01T12:00:00Z",uses:["app-display","cache"],status:"approved",retentionHours:24,attribution:"Example source",upstreamRightsConfirmed:true,artworkPermissionConfirmed:false,appStorePermissionConfirmed:true};
+ assert.equal(evaluate(req,[grant],now).allowed,true);
+ for(const grants of [[],[grant,grant],[{...grant,status:"revoked"}],[{...grant,validUntil:now.toISOString()}],[{...grant,upstreamRightsConfirmed:false}],[{...grant,appStorePermissionConfirmed:false}],[{...grant,evidenceRef:""}]])assert.equal(evaluate(req,grants,now).allowed,false);
+ for(const changed of [{provider:"fiba-gdap"},{competitionId:"other"},{plan:"paid"},{use:"notifications"},{kind:"artwork"}])assert.equal(evaluate({...req,...changed},[grant],now).allowed,false);
+ assert.equal(evaluate({...req,kind:"artwork"},[{...grant,kind:"artwork"}],now).allowed,false);
+ assert.equal(evaluate({...req,use:"cache",retentionHours:24},[grant],now).allowed,true);
+ for(const hours of [undefined,0,25,Infinity,NaN])assert.equal(evaluate({...req,use:"cache",retentionHours:hours},[grant],now).allowed,false);
+ assert.equal(evaluate({...req,use:"cache",retentionHours:24},[{...grant,validUntil:"2026-11-25T13:00:00Z"}],now).allowed,false);
+});
