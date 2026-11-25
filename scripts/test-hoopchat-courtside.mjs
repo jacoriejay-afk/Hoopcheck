@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {test} from "node:test";
+import ts from "typescript";
 const read=path=>readFileSync(new URL("../"+path,import.meta.url),"utf8");
 
 test("Courtside routes share one private messenger",()=>{
@@ -94,4 +95,25 @@ test("Phone chat no longer forces oversized empty conversation blocks",()=>{
  assert.match(css,/@media\(max-width:700px\)[\s\S]*\.hc-courtside-stage\{min-height:0\}/);
  assert.doesNotMatch(css,/\.hc-courtside-shell\{min-height:610px/);
  assert.match(css,/max-height:42dvh/);
+});
+
+test("Alert search and category counts stay within the loaded caller-owned list",async()=>{
+ const compiled=ts.transpileModule(read("lib/alert-list.ts"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+ const {ALERT_LIST_LIMIT,matchesAlertFilter:filter,matchesAlertSearch:search}=await import("data:text/javascript;base64,"+Buffer.from(compiled).toString("base64"));
+ const warning={title:"Pay warning",body:"Club review in Portugal",target_type:"team",notification_type:"pay_warning",read_at:null};
+ assert.equal(ALERT_LIST_LIMIT,100);
+ assert.equal(search(warning,"PORTUGAL pay"),true);
+ assert.equal(search(warning,"  "),true);
+ assert.equal(search(warning,"missing"),false);
+ assert.equal(filter(warning,"trust"),true);
+ assert.equal(filter(warning,"reviews"),true);
+ assert.equal(filter(warning,"clubs"),false);
+ assert.equal(filter(warning,"unread"),true);
+ assert.equal(filter({...warning,read_at:"2026-11-25"},"unread"),false);
+ assert.equal(filter({...warning,target_type:"game",notification_type:"game_reminder"},"games"),true);
+ const page=read("app/notifications/page.tsx");
+ assert.ok(page.includes('.eq("user_id",user.id).order("created_at",{ascending:false}).limit(ALERT_LIST_LIMIT)'));
+ assert.ok(page.includes("searched.filter(n=>matchesAlertFilter(n,key))"));
+ assert.ok(page.includes("Latest 100 loaded; older alerts are not included."));
+ assert.ok(page.includes('Unread alerts in loaded list'));
 });

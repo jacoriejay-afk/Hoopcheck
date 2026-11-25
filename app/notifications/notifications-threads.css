@@ -105,3 +105,10 @@ html:is(.theme-light,.theme-dark) .hc-notifications-page .hc-alert-list .hc-aler
   .hc-notifications-page .hc-alert-list .hc-alert-card{gap:8px}
   .hc-notifications-page .hc-alert-list .hc-alert-card__controls .btn{padding:6px 8px}
 }
+
+.hc-notifications-page .hc-alert-search{display:grid;gap:5px;margin:10px 0;color:var(--hc-foreground)}
+.hc-notifications-page .hc-alert-search label{font-size:12px;font-weight:700}
+.hc-notifications-page .hc-alert-search>div{display:flex;gap:8px;align-items:center}
+.hc-notifications-page .hc-alert-search input{flex:1;min-width:0;min-height:44px;padding:8px 12px;border:1px solid var(--hc-card-border,var(--border));border-radius:12px;background:var(--hc-card-surface,var(--surface));color:var(--hc-on-card,var(--hc-foreground));font:inherit}
+.hc-notifications-page .hc-alert-search button{min-height:44px;padding:6px 10px;background:transparent;border:1px solid var(--hc-card-border,var(--border));border-radius:10px;color:var(--hc-foreground);cursor:pointer}
+.hc-notifications-page .hc-alert-search small{color:var(--hc-foreground-muted);font-size:12px}
