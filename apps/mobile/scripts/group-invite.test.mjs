@@ -33,3 +33,9 @@ test("native and sign-in navigation preserve only safe game side, alerts tab and
  assert.equal(nativeDestination(input),expected);rememberDestination(input);assert.equal(takeDestination(),expected);assert.equal(takeDestination(),null);
  }
 });
+
+test("coach and support screens have canonical native routes and safe sign-in return",()=>{
+ assert.equal(nativeDestination("/coaches/coach-123"),"/coaches/coach-123");
+ assert.equal(nativeDestination("/account/support?topic=scam&token=secret"),"/account/support?topic=scam");
+ rememberDestination("/account/support?topic=scam&token=secret");assert.equal(takeDestination(),"/account/support?topic=scam");
+});
