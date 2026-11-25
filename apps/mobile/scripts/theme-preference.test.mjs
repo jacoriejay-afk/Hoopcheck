@@ -6,6 +6,7 @@ test('explicit appearance overrides the device and system appearance follows it'
   for (const system of ['light','dark',null,undefined]) {
     assert.equal(themeIsDark('light',system),false);
     assert.equal(themeIsDark('dark',system),true);
+    assert.equal(themeIsDark('midnight',system),true);
     assert.equal(themeIsDark('system',system),system!=='light');
   }
 });
@@ -21,6 +22,7 @@ test('legacy and malformed saved appearance default to system', () => {
   assert.equal(restorePreferences('{}').theme,'system');
   assert.equal(restorePreferences('{"theme":"dark"}').theme,'dark');
   assert.equal(restorePreferences('{"theme":"light"}').theme,'light');
+  assert.equal(restorePreferences('{"theme":"midnight"}').theme,'midnight');
   assert.equal(restorePreferences('{"theme":"unknown"}').theme,'system');
 });
 test('failed theme save cannot change a later unrelated persisted setting', async () => {
@@ -29,4 +31,16 @@ test('failed theme save cannot change a later unrelated persisted setting', asyn
   await assert.rejects(writer.update({theme:'dark'}));
   const next=await writer.update({haptics:false});
   assert.equal(next.theme,'system');
+});
+
+test('Midnight appearance persists without changing the app lock', async () => {
+  let stored;
+  const writer = createPreferenceWriter({...defaultPreferences,appLock:true}, async next => { stored=JSON.stringify(next); });
+  await writer.update({theme:'midnight'});
+  const restored=restorePreferences(stored);
+  assert.equal(restored.theme,'midnight');
+  assert.equal(restored.appLock,true);
+  setThemePreference('midnight');
+  assert.equal(getThemePreference(),'midnight');
+  setThemePreference('system');
 });
