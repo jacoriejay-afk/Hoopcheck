@@ -10,5 +10,5 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function TeamSeoLayout({ children, params }: Props) {
   const { id } = await params;
   const profile = await getProfileSeo("team", id);
-  return <>{profile?.jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(profile.jsonLd).replace(/</g, "\\u003c") }} />}<PublicTeamProvider identity={profile ? { name: profile.name, location: profile.location } : null}>{children}</PublicTeamProvider></>;
+  return <>{profile?.jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(profile.jsonLd).replace(/</g, "\\u003c") }} />}<PublicTeamProvider identity={profile ? { name: profile.name, location: profile.location, leagueName: profile.leagueName, leagueId: profile.leagueId } : null}>{children}</PublicTeamProvider></>;
 }
