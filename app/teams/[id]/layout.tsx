@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PublicTeamProvider } from "./PublicTeamContext";
 import { getProfileSeo, profileMetadata } from "../../../lib/seo-metadata";
 
 type Props = { children: React.ReactNode; params: Promise<{ id: string }> };
@@ -9,5 +10,5 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function TeamSeoLayout({ children, params }: Props) {
   const { id } = await params;
   const profile = await getProfileSeo("team", id);
-  return <>{profile?.jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(profile.jsonLd).replace(/</g, "\\u003c") }} />}{children}</>;
+  return <>{profile?.jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(profile.jsonLd).replace(/</g, "\\u003c") }} />}<PublicTeamProvider identity={profile ? { name: profile.name, location: profile.location } : null}>{children}</PublicTeamProvider></>;
 }

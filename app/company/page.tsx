@@ -5,7 +5,8 @@ import { HoopIcon } from "../../components/HoopCheckUI";
 import styles from "./company.module.css";
 
 export const metadata: Metadata = {
-  title: "Company & Business | HoopCheck™",
+  title: "Company & Business",
+  alternates: { canonical: "/company" },
   description: "HoopCheck™ company information, business partnerships, and community commitments.",
 };
 
