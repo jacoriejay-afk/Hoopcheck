@@ -97,7 +97,7 @@ export async function getProfileSeo(type: EntityType, id: string): Promise<SeoPr
 
 export function profileMetadata(profile: SeoProfile | null, fallbackPath: string): Metadata {
   if (!profile) {
-    return { robots: { index: false, follow: true }, alternates: { canonical: new URL(fallbackPath, siteUrl).toString() } };
+    return { ...(fallbackPath.startsWith("/players/") ? { robots: { index: false, follow: true } } : {}), alternates: { canonical: new URL(fallbackPath, siteUrl).toString() } };
   }
   const title = `${profile.name} Reviews`;
   return {
