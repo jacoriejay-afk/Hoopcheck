@@ -12,3 +12,9 @@ test('welcome personalization is device-scoped and role choice only prefills reg
   assert.match(lock, /!needsLock \? <Onboarding key=\{userId \?\? "guest"\} signedIn=\{Boolean\(userId\)\}/);
   for (const role of ['player','fan','coach','agent','scout','manager']) assert.ok(screen.includes('role: "'+role+'"'));
 });
+
+test('welcome uses the canonical theme resolver and exposes Midnight Black', () => {
+  const screen=read('../components/Onboarding.tsx');
+  assert.match(screen, /getEntryTheme\(themeIsDark\(appearance, system\), appearance === "midnight"\)/);
+  assert.match(screen, /value: "midnight", label: "Midnight Black"/);
+});

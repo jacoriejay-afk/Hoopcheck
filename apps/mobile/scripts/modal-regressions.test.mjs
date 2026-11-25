@@ -8,6 +8,7 @@ import React from 'react';
 import { act, create } from 'react-test-renderer';
 import { lockScreenRequired } from '../src/native/lockPolicy.ts';
 import { readWithDeadline } from '../src/native/readDeadline.ts';
+import { themeIsDark } from '../src/native/themePreference.ts';
 
 // Real component/hooks, stubbed native bridges. UIKit touch delivery needs a device.
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
@@ -22,7 +23,8 @@ function load(name, state, overrides = {}) {
     'react-native': { Modal: 'Modal', Pressable: 'Pressable', Text: 'Text', View: 'View', Image: 'Image', ScrollView: 'ScrollView', Switch: 'Switch', useColorScheme: () => 'dark', AppState: { addEventListener: () => ({ remove() {} }) } },
     'react-native-safe-area-context': { SafeAreaView: 'SafeAreaView' },
     '../src/native/preferences': { useDevicePreferences: () => state },
-    '../src/theme': { useEntryTheme: () => ({}), getEntryTheme: dark => ({ background: dark ? '#080D16' : '#F5F7FB', surface: dark ? '#151E2D' : '#FFFFFF', foreground: dark ? '#F6F8FF' : '#131B2B', border: '#777777', muted: '#999999', accent: '#FF9A63' }) },
+    '../src/native/themePreference': { themeIsDark },
+    '../src/theme': { useEntryTheme: () => ({}), getEntryTheme: (dark, midnight) => ({ background: midnight && dark ? '#000000' : dark ? '#080D16' : '#F5F7FB', surface: midnight && dark ? '#111111' : dark ? '#151E2D' : '#FFFFFF', foreground: dark ? '#F6F8FF' : '#131B2B', border: '#777777', muted: '#999999', accent: '#FF9A63' }) },
     '../src/native/mfa': { useMfaSession: () => ({ phase: 'ready', state: null, error: '', verifiedRevision: 0, retry() {} }) },
     './MfaChallenge': { MfaChallenge: 'MfaChallenge' },
     './Motion': { Reveal: ({ children }) => children },
@@ -277,10 +279,29 @@ test('signed-in welcome does not expose registration role or change account role
   const tree=await render(load('Onboarding',state),{signedIn:true});
   await pressLabel(tree,'Continue');
   assert.equal(tree.root.findAllByType('Switch').length,1);
-  assert.equal(tree.root.findAllByType('Pressable').filter(node=>node.props.accessibilityRole==='radio').length,3);
+  assert.equal(tree.root.findAllByType('Pressable').filter(node=>node.props.accessibilityRole==='radio').length,4);
   await pressLabel(tree,'Enter HoopCheck');
   assert.equal(writes.length,1);
   assert.equal(Object.hasOwn(writes[0],'role'),false);
   assert.equal(state.preferences.role,'agent');
+  await act(async()=>tree.unmount());
+});
+
+test('Midnight Black previews and persists without changing app lock or role', async () => {
+  const writes=[];
+  const state={ready:true,preferences:{onboardingDone:false,appLock:true,role:'agent',theme:'midnight'},update:async value=>{writes.push(value);state.preferences={...state.preferences,...value};}};
+  const tree=await render(load('Onboarding',state),{signedIn:true});
+  await pressLabel(tree,'Continue');
+  const preview=()=>tree.root.findAllByType('View').find(node=>node.props.testID==='welcome-theme-preview').props.style.backgroundColor;
+  assert.equal(preview(),'#000000');
+  await pressLabel(tree,'Light');
+  assert.equal(preview(),'#F5F7FB');
+  await pressLabel(tree,'Midnight Black');
+  assert.equal(preview(),'#000000');
+  await pressLabel(tree,'Enter HoopCheck');
+  assert.equal(writes.length,1);
+  assert.equal(writes[0].theme,'midnight');
+  assert.equal(Object.hasOwn(writes[0],'role'),false);
+  assert.equal(state.preferences.appLock,true);
   await act(async()=>tree.unmount());
 });

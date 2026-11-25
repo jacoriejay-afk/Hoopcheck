@@ -137,8 +137,21 @@ export function formatViewerLocalTime(value: string | null, options?: Intl.DateT
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
+    timeZoneName: "short",
     ...options,
   });
+}
+
+/** Group upcoming fixtures by viewer-local calendar dates, not fixed 24-hour days. */
+export function getViewerUpcomingTimeBucket(value: string | null, now: Date): string {
+  const tip = value ? Date.parse(value) : Number.NaN;
+  if (!Number.isFinite(tip)) return "Time unconfirmed";
+  if (tip <= now.getTime() + 60 * MINUTE) return "Starting within the hour";
+  const localTip = new Date(tip);
+  if (localTip.toDateString() === now.toDateString()) return "Tonight / Today";
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return localTip.toDateString() === tomorrow.toDateString() ? "Tomorrow" : "Later";
 }
 
 /** Countdown is informational: only a provider-scheduled future tip-off qualifies. */

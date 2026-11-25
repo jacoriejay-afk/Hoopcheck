@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Pressable, ScrollView, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDevicePreferences, type Role } from "../src/native/preferences";
-import type { ThemePreference } from "../src/native/themePreference";
+import { themeIsDark, type ThemePreference } from "../src/native/themePreference";
 import { useEntryTheme, getEntryTheme } from "../src/theme";
 import { useColorScheme } from "react-native";
 import { Reveal } from "./Motion";
@@ -32,7 +32,7 @@ export function Onboarding({ signedIn = false }: { signedIn?: boolean }) {
   const isRole = !signedIn && step === 1;
   const isAppearance = step === total - 1;
   const selected = roles.find(item => item.role === role);
-  const preview = getEntryTheme(appearance === "dark" || (appearance === "system" && system !== "light"));
+  const preview = getEntryTheme(themeIsDark(appearance, system), appearance === "midnight");
   async function finish(skip = false) {
     if (busy) return;
     setBusy(true); setError("");
@@ -47,7 +47,7 @@ export function Onboarding({ signedIn = false }: { signedIn?: boolean }) {
   // AppLock owns the sole native modal. Existing completed installs are unchanged.
   if (!ready || preferences.onboardingDone) return null;
   const choices: { value: ThemePreference; label: string }[] = [
-    { value: "system", label: "Device" }, { value: "light", label: "Light" }, { value: "dark", label: "Dark" },
+    { value: "system", label: "Device" }, { value: "light", label: "Light" }, { value: "dark", label: "Dark" }, { value: "midnight", label: "Midnight Black" },
   ];
   const heading = isRole ? "How do you join the game?" : isAppearance ? "Make it your court." : "Welcome to your court.";
   return <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
@@ -74,7 +74,7 @@ export function Onboarding({ signedIn = false }: { signedIn?: boolean }) {
         <View accessibilityRole="radiogroup" accessibilityLabel="Appearance preview" style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
           {choices.map(item => <Pressable key={item.value} disabled={busy} accessibilityRole="radio" accessibilityState={{ checked: appearance === item.value }} onPress={() => setAppearance(item.value)} style={{ flexGrow: 1, minHeight: 48, justifyContent: "center", alignItems: "center", paddingHorizontal: 12, borderRadius: 12, borderWidth: 1, borderColor: appearance === item.value ? theme.accent : theme.border, backgroundColor: appearance === item.value ? theme.accentSurface : theme.surface }}><Text style={{ color: theme.foreground, fontWeight: "700" }}>{item.label}</Text></Pressable>)}
         </View>
-        <View accessible={false} style={{ backgroundColor: preview.background, borderColor: preview.border, borderWidth: 1, borderRadius: 18, padding: 16, gap: 12 }}>
+        <View testID="welcome-theme-preview" accessible={false} style={{ backgroundColor: preview.background, borderColor: preview.border, borderWidth: 1, borderRadius: 18, padding: 16, gap: 12 }}>
           <Text style={{ color: preview.accent, fontFamily: "HoopCheckDisplay", fontSize: 21 }}>MY COURT</Text>
           <View style={{ borderRadius: 12, backgroundColor: preview.surface, padding: 12 }}><Text style={{ color: preview.foreground, fontWeight: "700" }}>{selected?.label ?? "Your basketball world"}</Text><Text style={{ color: preview.muted, marginTop: 5 }}>{selected?.detail ?? "Explore your teams, games and profile."}</Text></View>
         </View>
