@@ -3,6 +3,7 @@
 import { FormEvent, useRef, useState } from "react";
 import UsernameField, { type UsernameFieldHandle } from "../../components/UsernameField";
 import Link from "next/link";
+import { AuthCaptcha, useAuthCaptcha } from "../../components/AuthCaptcha";
 import AuthPasswordField from "../../components/AuthPasswordField";
 import GoogleSignInButton from "../../components/GoogleSignInButton";
 import { useRouter } from "next/navigation";
@@ -26,6 +27,7 @@ const ACCOUNT_TYPES: {value:AccountType; title:string; description:string; icon:
 export default function SignupForm({ googleEmail, referralToken, referralUnavailable = false }: { googleEmail?: string; referralToken?: string; referralUnavailable?: boolean }) {
   const isGoogleSignup = googleEmail !== undefined;
   const router = useRouter();
+  const captcha = useAuthCaptcha();
   const { language, setLanguage } = useLanguage();
   const [accountType, setAccountType] = useState<AccountType | null>(null);
   const [firstName,setFirstName]=useState(""); const [lastName,setLastName]=useState("");
@@ -85,7 +87,7 @@ export default function SignupForm({ googleEmail, referralToken, referralUnavail
       return;
     }
     const {data,error}=await supabase.auth.signUp({
-      email:email.trim().toLowerCase(), password, options:{data:metadata, emailRedirectTo: new URL("/auth/confirm", window.location.origin).href}
+      email:email.trim().toLowerCase(), password, options:{data:metadata, captchaToken:captcha.takeToken(), emailRedirectTo: new URL("/auth/confirm", window.location.origin).href}
     });
     if(error) throw error;
     // Supabase can return an obfuscated success for an existing email.
@@ -176,8 +178,9 @@ export default function SignupForm({ googleEmail, referralToken, referralUnavail
             <p className="form-hint">Your birthdate is required to verify that you are 18 or older and is stored securely on your HoopCheck profile.</p>
             <label className="checkbox-row"><input type="checkbox" checked={agreedToTerms} onChange={e=>setAgreedToTerms(e.target.checked)}/><span>I agree to the <Link href="/terms">Terms of Service</Link> and acknowledge the <Link href="/privacy">Privacy Policy</Link> and <Link href="/community-guidelines">Community Guidelines</Link>.</span></label>
           </div>
+          {!isGoogleSignup && <AuthCaptcha key={captcha.revision} onToken={captcha.onToken} />}
           {error&&<p className="hc-auth-feedback" role="alert">{error}</p>}
-          <button type="submit" className="btn submit" disabled={loading}>{loading?"Creating Account...":`Create ${ACCOUNT_TYPES.find(x=>x.value===accountType)?.title} Account`}</button>
+          <button type="submit" className="btn submit" disabled={loading || (!isGoogleSignup && !captcha.ready)}>{loading?"Creating Account...":`Create ${ACCOUNT_TYPES.find(x=>x.value===accountType)?.title} Account`}</button>
         </form>}
         <div className="login-link">Already have an account? <Link href="/login">Log in</Link></div>
       </div>
