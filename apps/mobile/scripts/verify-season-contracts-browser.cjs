@@ -12,6 +12,11 @@ async function verify(browser,theme){
   const json=(data,status=200)=>route.fulfill({status,contentType:'application/json',headers:{'access-control-allow-origin':'*','access-control-allow-headers':'*'},body:JSON.stringify(data)});
   if(req.method()==='OPTIONS')return json({});calls.push(u.pathname);
   if(u.hostname==='api.test'&&u.pathname==='/api/mobile/bootstrap')return json({user:{id:uid,displayName:'Season member',accountType:'player'},entitlements:{tier:'free',hasPaidMembership:false,canReadHoopFeed:false,canWriteHoopFeed:false,canUseLiveGameHub:false,canUseLiveGameChat:false,canSwitchBasketballSide:false,canUseFanGroups:false}});
+  if(u.hostname==='api.test'&&u.pathname==='/api/trust-score'){
+   assert.equal(req.method(),'GET');assert.equal(req.headers().authorization,'Bearer '+token);
+   assert.equal(u.searchParams.get('entityType'),'team');assert.equal(u.searchParams.get('entityIds'),current);assert.equal(u.searchParams.has('entityId'),false);
+   return json({scores:{[current]:{locked:true}}});
+  }
   if(u.hostname==='api.test'&&u.pathname==='/api/game-predictions'){
    assert.equal(req.method(),'GET');assert.equal(req.headers().authorization,'Bearer '+token);
    assert.deepEqual([...u.searchParams.entries()],[['mode','games']]);
@@ -47,7 +52,7 @@ async function verify(browser,theme){
   await input.fill('1900–01');await page.getByRole('button',{name:'Apply season',exact:true}).click();await page.getByText('No active directory clubs recorded for this season.',{exact:true}).waitFor();
   await input.fill('unavailable');await page.getByRole('button',{name:'Apply season',exact:true}).click();await page.getByText('League clubs could not load.',{exact:true}).waitFor();failSeason=false;await page.getByRole('button',{name:'Retry league clubs',exact:true}).click();await page.getByText('No active directory clubs recorded for this season.',{exact:true}).waitFor();
   await page.getByRole('button',{name:'Current clubs',exact:true}).click();await page.getByText('Current Club',{exact:true}).waitFor();
-  await page.goto(base+'/teams/'+current);await page.getByText('Roster research is unavailable in this release.',{exact:true}).scrollIntoViewIfNeeded();await require('./compact-layout.cjs').capture(page,{path:`${output}/default-roster-${theme}.png`,fullPage:true});
+  await page.goto(base+'/teams/'+current);await page.getByText('Roster research is unavailable in this release.',{exact:true}).scrollIntoViewIfNeeded();await page.getByText('Trust Index access follows your HoopCheck membership.',{exact:true}).waitFor();await require('./compact-layout.cjs').capture(page,{path:`${output}/default-roster-${theme}.png`,fullPage:true});
   await page.goto(base+'/players/'+uid);await page.getByText('Career history is unavailable in this release.',{exact:true}).scrollIntoViewIfNeeded();await page.getByText('Verified current link',{exact:true}).scrollIntoViewIfNeeded();await require('./compact-layout.cjs').capture(page,{path:`${output}/owner-team-links-${theme}.png`,fullPage:true});await page.getByRole('button',{name:'Preview Player Passport',exact:true}).click();await page.getByRole('button',{name:'Export & share PDF',exact:true}).click();await page.getByText('Passport file sharing is available in the iOS and Android app.',{exact:true}).waitFor();
   await require('./compact-layout.cjs').capture(page,{path:`${output}/default-passport-${theme}.png`,fullPage:true});
   assert.ok(!calls.some(path=>/player_career_stops|team_roster_spots|fan_live_team_provider_map|player_contact_requests/.test(path)));assert.ok(!calls.includes('/rest/v1/profiles'));assert.ok(calls.includes('/api/game-predictions'),'Native schedule must use authenticated free-player fixture access');assert.ok(!calls.includes('/rest/v1/fan_live_games'),'Free player must not read the paid live-game table');assert.deepEqual(errors,[]);
