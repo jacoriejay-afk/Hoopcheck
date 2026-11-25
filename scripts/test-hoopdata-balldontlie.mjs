@@ -185,3 +185,33 @@ test("competition preview refuses production, shared credentials and unapproved 
     assert.equal(dbCalls,1);assert.equal(providerCalls,0);
   }finally{for(const [key,value] of Object.entries(before)){if(value===undefined)delete process.env[key];else process.env[key]=value;}}
 });
+
+const syncPolicy={exports:{}};
+new Function("exports",compile("hoopdata-sync-policy"))(syncPolicy.exports);
+const {planBasketballSync}=syncPolicy.exports;
+const planNow=Date.parse("2026-11-25T12:00:00Z");
+const syncJob=(id,kind,extra={})=>({id,kind,pool:"api-sports-basketball",approved:true,lastAttemptAt:null,retryAt:null,inFlight:false,...extra});
+const syncQuota=(minuteRemaining,dayRemaining,extra={})=>({enabled:true,minuteRemaining,dayRemaining,blockedUntil:null,...extra});
+test("sync planner prioritizes active queries, counts shared budget and independently allows another provider",()=>{
+  const jobs=[syncJob("standings","standings"),syncJob("live-b","live"),syncJob("live-a","live"),syncJob("nba","schedule",{pool:"balldontlie"})];
+  const pools={"api-sports-basketball":syncQuota(5,1),balldontlie:syncQuota(1,20)};
+  const result=planBasketballSync(jobs,pools,planNow);
+  assert.deepEqual(result.selected,["live-a","nba"]);
+  assert.deepEqual(result.deferred,[{id:"live-b",reason:"quota"},{id:"standings",reason:"quota"}]);
+  assert.deepEqual(planBasketballSync([...jobs].reverse(),pools,planNow).selected,result.selected);
+  assert.deepEqual(planBasketballSync(jobs,pools,planNow,1).selected,["live-a"]);
+});
+test("sync planner skips duplicates, unapproved jobs, retries, in-flight and recent attempts",()=>{
+  const jobs=[syncJob("duplicate","live"),syncJob("duplicate","schedule"),syncJob("unapproved","live",{approved:false}),syncJob("retry","live",{retryAt:planNow+1}),syncJob("running","live",{inFlight:true}),syncJob("recent","live",{lastAttemptAt:planNow-59999}),syncJob("future","live",{lastAttemptAt:planNow+1}),syncJob("due","live",{lastAttemptAt:planNow-60000})];
+  const result=planBasketballSync(jobs,{"api-sports-basketball":syncQuota(20,20)},planNow);
+  assert.deepEqual(result.selected,["due"]);
+  assert.deepEqual(result.deferred.map(x=>x.reason),["duplicate","duplicate","unapproved","cooldown","in-flight","not-due","invalid"]);
+});
+test("sync planner fails closed for missing, disabled, invalid and blocked quota",()=>{
+  const jobs=[syncJob("live","live")];
+  for(const quota of [undefined,syncQuota(1,1,{enabled:false}),syncQuota(NaN,1),syncQuota(1,0),syncQuota(1,1,{blockedUntil:planNow+1})]){
+    assert.deepEqual(planBasketballSync(jobs,{"api-sports-basketball":quota},planNow).selected,[]);
+  }
+  assert.throws(()=>planBasketballSync(jobs,{},planNow,21));
+  assert.deepEqual(planBasketballSync(jobs,{"api-sports-basketball":syncQuota(1,1)},planNow,0).selected,[]);
+});
