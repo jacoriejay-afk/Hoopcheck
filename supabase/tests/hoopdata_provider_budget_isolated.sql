@@ -134,3 +134,27 @@ DO $unverified$ BEGIN
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 END $unverified$;
 RESET ROLE;
+
+\ir ../candidates/hoopdata_game_push_outbox_review_only.sql
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
+INSERT INTO public.hoopdata_game_push_preferences(user_id,enabled) VALUES('11111111-1111-4111-8111-111111111111',true);
+DO $pref$ BEGIN
+  BEGIN
+    INSERT INTO public.hoopdata_game_push_preferences(user_id,enabled) VALUES('22222222-2222-4222-8222-222222222222',true);
+    RAISE EXCEPTION 'Other account opted in';
+  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+  IF has_table_privilege('authenticated','public.hoopdata_game_push_outbox','SELECT') OR has_table_privilege('authenticated','public.hoopdata_game_push_outbox','INSERT') THEN RAISE EXCEPTION 'Outbox exposed'; END IF;
+END $pref$;
+RESET ROLE;
+SET ROLE service_role;
+INSERT INTO public.hoopdata_game_push_outbox(user_id,game_id,event_kind,scheduled_tipoff,available_at)
+VALUES('11111111-1111-4111-8111-111111111111','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','game-day',now()+interval '1 hour',now());
+DO $dedupe$ BEGIN
+  BEGIN
+    INSERT INTO public.hoopdata_game_push_outbox(user_id,game_id,event_kind,scheduled_tipoff,available_at)
+    VALUES('11111111-1111-4111-8111-111111111111','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','game-day',now()+interval '1 hour',now());
+    RAISE EXCEPTION 'Duplicate notification accepted';
+  EXCEPTION WHEN unique_violation THEN NULL; END;
+END $dedupe$;
+RESET ROLE;
