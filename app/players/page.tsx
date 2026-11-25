@@ -8,6 +8,7 @@ import HoopLoading from "../../components/HoopLoading";
 import FollowButton from "../../components/FollowButton";
 import SearchBar from "../../components/SearchBar";
 import { VerifiedBadge } from "../../components/HoopCheckUI";
+import { availablePlayerMatches } from "../../lib/marketplace-discovery";
 
 type Player = {
   id: string;
@@ -32,6 +33,7 @@ export default function PlayersPage() {
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
   const [country, setCountry] = useState("");
+  const [onlyAvailable, setOnlyAvailable] = useState(false);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [searchError, setSearchError] = useState("");
@@ -63,7 +65,8 @@ export default function PlayersPage() {
 
   useEffect(() => {
     let mounted = true;
-    if (!roleReady) return;
+    const visiblePlayers = availablePlayerMatches(players, onlyAvailable);
+  if (!roleReady) return;
     const username = query.trim();
 
     if (!username) {
@@ -127,8 +130,10 @@ export default function PlayersPage() {
                 aria-label="Filter matching players by country"
                 autoComplete="country-name"
               />
-              {(query || country) && <button type="button" className="btn dark" onClick={() => { setQuery(""); setCountry(""); setPage(0); }} aria-label="Clear player search">Clear search</button>}
+              {(query || country) && <button type="button" className="btn dark" onClick={() => { setQuery(""); setCountry(""); setPage(0); setOnlyAvailable(false); }} aria-label="Clear player search">Clear search</button>}
             </div>
+            <label style={{display:"flex",alignItems:"center",gap:8,minHeight:44}}><input type="checkbox" checked={onlyAvailable} onChange={event=>setOnlyAvailable(event.target.checked)}/> Show self-listed free agents on this results page</label>
+            <p className="muted">Availability is self-reported, not a verified recruiting or contract status. Search by username first; this filter does not list private profiles or search all players.</p>
           </div>
         </section>
 
@@ -149,9 +154,9 @@ export default function PlayersPage() {
           </div>
         ) : (
           <>
-          <div className="hc-player-result-count" role="status" aria-live="polite">{players.length ? `Showing ${players.length} player${players.length === 1 ? "" : "s"}` : "No matching players"}</div>
+          <div className="hc-player-result-count" role="status" aria-live="polite">{onlyAvailable ? `Showing ${visiblePlayers.length} self-listed free agent${visiblePlayers.length === 1 ? "" : "s"} on this results page` : players.length ? `Showing ${players.length} player${players.length === 1 ? "" : "s"}` : "No matching players"}</div>
           <section className="grid hc-player-results" style={{ marginTop: 18 }}>
-            {players.map((player) => {
+            {visiblePlayers.map((player) => {
               const name =
                 player.display_name ||
                 [player.first_name, player.last_name].filter(Boolean).join(" ") ||
@@ -191,7 +196,7 @@ export default function PlayersPage() {
                     {player.years_pro == null ? "Years pro not listed" : `${player.years_pro} years pro`}
                   </p>
                   <p>
-                    {player.free_agent ? "🟠 Free Agent" : player.current_team || "Team not listed"}
+                    {player.free_agent === true ? "🟠 Free agent · self-listed" : player.current_team || "Team not listed"}
                     {player.current_country ? ` · ${player.current_country}` : ""}
                   </p>
                   <div className="actions">
@@ -201,10 +206,10 @@ export default function PlayersPage() {
                 </article>
               );
             })}
-            {!players.length && (
+            {!visiblePlayers.length && (
               <div className="dashboard-card">
-                <h2>No players found.</h2>
-                <p className="muted">Try another username or adjust the country filter.</p>
+                <h2>{onlyAvailable ? "No self-listed free agents on this page." : "No players found."}</h2>
+                <p className="muted">{onlyAvailable ? "Clear the availability filter or browse another results page if available." : "Try another username or adjust the country filter."}</p>
               </div>
             )}
           </section>
