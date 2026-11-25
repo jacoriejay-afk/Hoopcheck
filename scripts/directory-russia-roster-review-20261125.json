@@ -1,0 +1,431 @@
+{
+  "purpose": "Private review-only roster discovery; NOT a seed or current-season certification.",
+  "country": "Russia",
+  "season": "2026-27",
+  "source": "https://russiabasket.ru/post/213341",
+  "sourceDate": "2026-07-21",
+  "reviewDate": "2026-11-25",
+  "rightsApproved": false,
+  "notes": [
+    "Transliterated working names and localities require operator identity review; some localities are inferred from the listed region.",
+    "Match exact official competition identity, verify ongoing participation and rights before import.",
+    "Keep reserve teams separate; VTB teams excluded from this lower-tier and women's gap manifest.",
+    "Conditional admissions require explicit re-verification.",
+    "Platov-RGEU was excluded on 2026-10-26; retain historical announcement only, never include in active imports."
+  ],
+  "competitions": [
+    {
+      "side": "mens",
+      "competition": "Russian Super League",
+      "tier": 2,
+      "teams": [
+        {
+          "name": "Chelbasket",
+          "locality": "Chelyabinsk",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Khimki",
+          "locality": "Khimki",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Dynamo Grozny",
+          "locality": "Grozny",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Novosibirsk",
+          "locality": "Novosibirsk",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Temp-SUMZ",
+          "locality": "Revda",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Universitet Yugra",
+          "locality": "Surgut",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Dynamo Ufa",
+          "locality": "Ufa",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "CSKA-2",
+          "locality": "Moscow",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Kupol-Rodniki",
+          "locality": "Izhevsk",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Metallurg",
+          "locality": "Magnitogorsk",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Barnaul",
+          "locality": "Barnaul",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Tambov",
+          "locality": "Tambov",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Rusichi",
+          "locality": "Kursk",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Desna",
+          "locality": "Bryansk",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        }
+      ]
+    },
+    {
+      "side": "mens",
+      "competition": "Russian Higher League",
+      "tier": 3,
+      "teams": [
+        {
+          "name": "Dynamo Ufa-2",
+          "locality": "Ufa",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Metallurg-2",
+          "locality": "Magnitogorsk",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "TSK-Ural",
+          "locality": "Yekaterinburg",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Khimki-2",
+          "locality": "Khimki",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Neftekhimik",
+          "locality": "Tobolsk",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Stavbasket",
+          "locality": "Stavropol",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Dynamo-MGTU",
+          "locality": "Maykop",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Tver",
+          "locality": "Tver",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        }
+      ]
+    },
+    {
+      "side": "womens",
+      "competition": "Russian Women's Premier League",
+      "tier": 1,
+      "teams": [
+        {
+          "name": "UMMC",
+          "locality": "Yekaterinburg",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Dynamo Kursk",
+          "locality": "Kursk",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Nadezhda",
+          "locality": "Orenburg",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Dynamo Moscow",
+          "locality": "Moscow",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Sparta&K",
+          "locality": "Vidnoye",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "MBA-MGUSiT",
+          "locality": "Moscow",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Enisey",
+          "locality": "Krasnoyarsk",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Neftyanik-Titan",
+          "locality": "Omsk",
+          "admission": "conditional",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Samara",
+          "locality": "Samara",
+          "admission": "conditional",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Energiya",
+          "locality": "Ivanovo",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Dynamo Novosibirsk",
+          "locality": "Novosibirsk",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Vladimir Lionesses-VlGU",
+          "locality": "Vladimir",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        }
+      ]
+    },
+    {
+      "side": "womens",
+      "competition": "Russian Women's Super League",
+      "tier": 2,
+      "teams": [
+        {
+          "name": "Dynamo-Farm",
+          "locality": "Kursk",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Sparta&K-2",
+          "locality": "Vidnoye",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Chevakata",
+          "locality": "Vologda",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Spartak Saint Petersburg",
+          "locality": "Saint Petersburg",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "MBA-MGUSiT-2",
+          "locality": "Moscow",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Kazanochka",
+          "locality": "Kazan",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "UMMC-Junior",
+          "locality": "Yekaterinburg",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Nevinnomyssk",
+          "locality": "Nevinnomyssk",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Samara-2",
+          "locality": "Samara",
+          "admission": "conditional",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Metallurg",
+          "locality": "Magnitogorsk",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Slavyanka-ChKPZ",
+          "locality": "Chelyabinsk",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        }
+      ]
+    },
+    {
+      "side": "womens",
+      "competition": "Russian Women's Higher League",
+      "tier": 3,
+      "teams": [
+        {
+          "name": "Spartak Noginsk",
+          "locality": "Noginsk",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Yunost",
+          "locality": "Penza region",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Neftyanik-Titan-2",
+          "locality": "Omsk",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Enisey-2",
+          "locality": "Krasnoyarsk",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Nadezhda-2",
+          "locality": "Orenburg",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Dynamo Novosibirsk-2",
+          "locality": "Novosibirsk",
+          "admission": "announced",
+          "canonicalId": null,
+          "currentParticipationVerified": false
+        },
+        {
+          "name": "Platov-RGEU",
+          "locality": "Rostov-on-Don",
+          "admission": "conditional",
+          "canonicalId": null,
+          "currentParticipationVerified": false,
+          "excludedFromActiveImport": true,
+          "exclusionDate": "2026-10-26",
+          "exclusionSource": "https://russiabasket.ru/competitions/whl"
+        }
+      ]
+    }
+  ],
+  "currentSeasonSourceReview": {
+    "reviewedOn": "2026-11-25",
+    "scope": "Source discovery and confirmed exclusion; full per-team participation and rights not certified.",
+    "competitionSources": [
+      "https://competitions.russiabasket.ru/superliga/men/games",
+      "https://russiabasket.ru/competitions/mhl?season=2027",
+      "https://competitions.russiabasket.ru/premer-liga/women/",
+      "https://russiabasket.ru/competitions/wsl?season=2026",
+      "https://russiabasket.ru/competitions/whl"
+    ]
+  }
+}
