@@ -2,6 +2,7 @@ import { BrandLockup } from "../components/BrandLockup";
 import { recordFreshSignIn } from "../src/native/lockPolicy";
 import { takeDestination } from "../src/native/pendingDestination";
 import { GlassCard, Input, Button } from "../src/primitives";
+import { useNativeCaptcha } from "../components/NativeCaptcha";
 import { useEntryTheme, type EntryTheme } from "../src/theme";
 import { useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from "react-native";
@@ -13,18 +14,21 @@ import { supabase, supabaseConfigurationError } from "../src/lib/supabase";
 export default function SignInScreen() {
   const theme = useEntryTheme();
   const styles = createStyles(theme);
+  const captcha = useNativeCaptcha();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function signIn() {
+    if (busy) return;
     if (supabaseConfigurationError) { Alert.alert("Setup required", supabaseConfigurationError); return; }
     if (!email.trim() || !password) { Alert.alert("Missing details", "Enter your email and password."); return; }
     setBusy(true);
     let stage: "authentication" | "profile" = "authentication";
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+      const captchaToken = await captcha.requestToken();
+      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password, ...(captchaToken ? { options: { captchaToken } } : {}) });
       if (error) throw error;
       stage = "profile";
       const profile = data.user ? await supabase.from("profiles").select("username").eq("id", data.user.id).maybeSingle() : null;
@@ -75,6 +79,7 @@ export default function SignInScreen() {
         </GlassCard>
         </ScrollView>
       </KeyboardAvoidingView>
+      {captcha.challenge}
     </SafeAreaView>
   );
 }
