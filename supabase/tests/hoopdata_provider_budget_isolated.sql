@@ -69,3 +69,27 @@ DO $$ BEGIN
   EXCEPTION WHEN foreign_key_violation THEN NULL; END;
 END $$;
 RESET ROLE;
+
+\ir ../candidates/hoopdata_season_import_review_only.sql
+DO $access$ BEGIN
+  IF has_table_privilege('authenticated','public.hoopdata_fixture_stage','SELECT') OR
+     has_function_privilege('anon','public.hoopdata_commit_season_page(text,integer,bigint,bigint,jsonb)','EXECUTE') THEN
+    RAISE EXCEPTION 'Season import exposed to clients';
+  END IF;
+END $access$;
+SET ROLE service_role;
+DO $import$ DECLARE
+  page1 jsonb := '[{"provider":"balldontlie-nba","season":2026,"id":"42"}]';
+  page2 jsonb := '[{"provider":"balldontlie-nba","season":2026,"id":"43"}]';
+BEGIN
+  IF public.hoopdata_commit_season_page('balldontlie-nba',2026,NULL,10,page1||page1) THEN RAISE EXCEPTION 'Duplicate page accepted'; END IF;
+  IF NOT public.hoopdata_commit_season_page('balldontlie-nba',2026,NULL,10,page1) THEN RAISE EXCEPTION 'First page rejected'; END IF;
+  IF public.hoopdata_commit_season_page('balldontlie-nba',2026,NULL,10,page1) THEN RAISE EXCEPTION 'Old cursor accepted'; END IF;
+  IF public.hoopdata_commit_season_page('balldontlie-nba',2026,10,10,page2) THEN RAISE EXCEPTION 'Nonadvancing cursor accepted'; END IF;
+  IF public.hoopdata_commit_season_page('balldontlie-wnba',2026,NULL,NULL,page1) THEN RAISE EXCEPTION 'Wrong league accepted'; END IF;
+  IF NOT public.hoopdata_commit_season_page('balldontlie-nba',2026,10,NULL,page2) THEN RAISE EXCEPTION 'Last page rejected'; END IF;
+  IF public.hoopdata_commit_season_page('balldontlie-nba',2026,NULL,NULL,page1) THEN RAISE EXCEPTION 'Completed job overwritten'; END IF;
+  IF NOT EXISTS(SELECT 1 FROM public.hoopdata_season_imports WHERE provider='balldontlie-nba' AND season=2026 AND completed AND pages=2 AND next_cursor IS NULL) THEN RAISE EXCEPTION 'Checkpoint incorrect'; END IF;
+  IF (SELECT count(*) FROM public.hoopdata_fixture_stage)<>2 THEN RAISE EXCEPTION 'Page persistence incorrect'; END IF;
+END $import$;
+RESET ROLE;
