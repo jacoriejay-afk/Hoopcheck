@@ -345,3 +345,63 @@ test("provider expansion requires explicit scoped rights and rejects ambiguous, 
  for(const hours of [undefined,0,25,Infinity,NaN])assert.equal(evaluate({...req,use:"cache",retentionHours:hours},[grant],now).allowed,false);
  assert.equal(evaluate({...req,use:"cache",retentionHours:24},[{...grant,validUntil:"2026-11-25T13:00:00Z"}],now).allowed,false);
 });
+
+const coverageRightsModule={exports:{}};
+new Function("exports",ts.transpileModule(read("lib/hoopdata-provider-rights.ts"),cjsOptions).outputText)(coverageRightsModule.exports);
+const coverageAuditModule={exports:{}};
+new Function("require","exports",ts.transpileModule(read("lib/hoopdata-coverage-audit.ts"),cjsOptions).outputText)(name=>{
+ if(name==="./hoopdata-competition-worker")return competitionWorkerModule.exports;
+ if(name==="./hoopdata-api-sports-competition")return competitionModule.exports;
+ if(name==="./hoopdata-provider-rights")return coverageRightsModule.exports;
+ throw Error(name);
+},coverageAuditModule.exports);
+const {auditLeagueCoverage}=coverageAuditModule.exports;
+function coverageFixture(){
+ const leagueId="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",providerLeagueId=12,season="2026-2027";
+ const now=new Date("2026-11-25T13:30:00Z"),observedAt="2026-11-25T13:00:00Z";
+ return {leagues:[{id:leagueId,active:true,side:"womens"},{id:"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",active:true,side:"mens"}],
+ mappings:[{leagueId,providerLeagueId,side:"womens",reviewed:true,evidence:"private",reviewedAt:"2026-11-24T12:00:00Z"}],
+ seasons:[{leagueId,providerLeagueId,observedAt,rows:[{season,start:"2026-10-01",end:"2027-06-01",games:true,standings:true}]}],
+ observations:[{leagueId,providerLeagueId,season,kind:"games",observedAt,rowCount:20},{leagueId,providerLeagueId,season,kind:"standings",observedAt,rowCount:8}],
+ rights:[],plan:"reviewed-pilot",now};
+}
+test("coverage audit distinguishes catalog, observed snapshots and verified display rights without certifying completeness",()=>{
+ const i=coverageFixture(),r=auditLeagueCoverage(i);
+ assert.equal(r[0].side,"womens");assert.equal(r[1].side,"mens");
+ assert.equal(r[0].fixtures.state,"rights-unconfirmed");assert.equal(r[0].standings.state,"rights-unconfirmed");assert.equal(r[1].fixtures.state,"unmapped");
+ const grant={provider:"api-sports",competitionId:i.leagues[0].id,kind:"fixtures",plan:i.plan,uses:["web-display"],status:"approved",evidenceRef:"private evidence",reviewerId:"operator",reviewedAt:"2026-11-24T00:00:00Z",validUntil:"2026-12-01T00:00:00Z",retentionHours:0,upstreamRightsConfirmed:true,artworkPermissionConfirmed:false,appStorePermissionConfirmed:false,attribution:"API-Sports"};
+ const approved=auditLeagueCoverage({...i,rights:[grant]});
+ assert.equal(approved[0].fixtures.state,"observed-not-certified");assert.equal(approved[0].standings.state,"rights-unconfirmed");
+ assert.doesNotMatch(JSON.stringify(approved),/private evidence|operator/);
+});
+test("coverage audit rejects wrong side, duplicate provider identity, ambiguous seasons and stale snapshots",()=>{
+ const i=coverageFixture(),m=i.mappings[0],s=i.seasons[0];
+ assert.equal(auditLeagueCoverage({...i,mappings:[{...m,side:"mens"}]})[0].fixtures.state,"mapping-review-required");
+ assert.equal(auditLeagueCoverage({...i,mappings:[m,{...m,leagueId:i.leagues[1].id,side:"mens"}]})[0].fixtures.state,"mapping-review-required");
+ assert.equal(auditLeagueCoverage({...i,seasons:[{...s,rows:[...s.rows,...s.rows]}]})[0].fixtures.state,"season-unverified");
+ const unsupported=auditLeagueCoverage({...i,seasons:[{...s,rows:[{...s.rows[0],games:null,standings:false}]}]});
+ assert.equal(unsupported[0].fixtures.state,"support-unconfirmed");assert.equal(unsupported[0].standings.state,"unsupported");
+ assert.equal(auditLeagueCoverage({...i,observations:[]})[0].fixtures.state,"no-observation");
+ assert.equal(auditLeagueCoverage({...i,observations:i.observations.map(o=>({...o,observedAt:"2026-11-25T11:00:00Z"}))})[0].standings.state,"stale-observation");
+});
+
+const licensedStandingsModule={exports:{}};
+new Function("require","exports",ts.transpileModule(read("lib/hoopdata-licensed-standings.ts"),cjsOptions).outputText)(name=>{
+ if(name==="./hoopdata-provider-rights")return coverageRightsModule.exports;
+ throw Error(name);
+},licensedStandingsModule.exports);
+test("licensed standings view preserves group and rank, requires complete names and limits display expiry",()=>{
+ const input=projectionFixture(),projection=projectAttestedStandings(input),leagueId=input.mapping.leagueId;
+ const grant={provider:"api-sports",competitionId:leagueId,kind:"standings",plan:"pilot",uses:["web-display"],status:"approved",evidenceRef:"private evidence",reviewerId:"reviewer",reviewedAt:"2026-11-24T00:00:00Z",validUntil:"2026-11-25T13:45:00Z",retentionHours:0,upstreamRightsConfirmed:true,artworkPermissionConfirmed:false,appStorePermissionConfirmed:false,attribution:"Licensed by API-Sports"};
+ const teams=input.teamMappings.map((m,i)=>({id:m.teamId,name:"Team "+i}));
+ const view=(grants=[grant],rows=teams,now=input.now)=>licensedStandingsModule.exports.licensedStandingsView(projection,leagueId,"pilot",grants,rows,now);
+ const r=view();
+ assert.equal(r.groups.length,2);assert.equal(r.groups[0].rows[0].position,1);assert.equal(r.groups[0].rows[0].pointsFor,null);
+ assert.equal(r.expiresAt,"2026-11-25T13:45:00.000Z");
+ assert.equal(r.attribution,grant.attribution);
+ assert.doesNotMatch(JSON.stringify(r),/private evidence|reviewer|providerLeagueId/);
+ assert.equal(view([]),null);assert.equal(view([{...grant,status:"revoked"}]),null);
+ assert.equal(view([grant],teams.slice(1)),null);assert.equal(view([grant],[...teams,teams[0]]),null);
+ assert.equal(view([grant],teams,new Date("2026-11-25T13:45:00Z")),null);
+ assert.equal(view([{...grant,validUntil:"2026-12-01T00:00:00Z"}]).expiresAt,"2026-11-25T14:00:00.000Z");
+});
