@@ -65,8 +65,7 @@ export default function PlayersPage() {
 
   useEffect(() => {
     let mounted = true;
-    const visiblePlayers = availablePlayerMatches(players, onlyAvailable);
-  if (!roleReady) return;
+    if (!roleReady) return;
     const username = query.trim();
 
     if (!username) {
@@ -108,6 +107,7 @@ export default function PlayersPage() {
     };
   }, [query, country, page, retryCount, roleReady]);
 
+  const visiblePlayers = availablePlayerMatches(players, onlyAvailable);
   if (!roleReady) return <main className="page-shell"><div className="page-container"><HoopLoading label="Loading directory…"/></div></main>;
 
   return (

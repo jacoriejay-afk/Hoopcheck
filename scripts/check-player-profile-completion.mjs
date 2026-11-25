@@ -47,3 +47,5 @@ assert.match(professionalDirectory,/filterProfessionalShowcases\(people,scope,q\
 assert.match(professionalDirectory,/up to 200 recent showcases/);
 assert.match(professionalDirectory,/identity check confirms a person's identity, not agency authorization/);
 console.log("PASS: existing consent-aware marketplace discovery, bounded results and independent review labels.");
+
+assert.match(playerDirectory,/\}, \[query, country, page, retryCount, roleReady\]\);\s+const visiblePlayers = availablePlayerMatches\(players, onlyAvailable\);\s+if \(!roleReady\) return <main/, "filtered results must be in component render scope, outside the effect");

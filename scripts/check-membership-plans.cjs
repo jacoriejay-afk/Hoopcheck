@@ -241,3 +241,28 @@ test("membership loading does not flash purchase choices during subscription ref
     assert.ok(css.includes(".hc-membership-page .hc-membership-loading {"), "Loading state must use shared card styling");
   }
 });
+
+test("plan fit derives from the existing listed perks, never fabricates a match", () => {
+  const {getListedPlanFit, PLAN_PERKS} = require("../lib/plan-comparison.ts");
+  for (const audience of ["player", "fan"]) {
+    assert.equal(getListedPlanFit(audience, ""), null);
+    assert.equal(getListedPlanFit(audience, "unknown benefit"), null);
+    assert.equal(getListedPlanFit(audience, "free"), "free");
+    for (const perk of PLAN_PERKS[audience]) {
+      assert.equal(getListedPlanFit(audience, perk.label), perk.minimum);
+      assert.equal(getListedPlanFit(audience, perk.label, true), "premium");
+    }
+  }
+});
+test("plan fit is informational and does not expose unavailable fan checkout", () => {
+  const html = render({audience:"fan", showPlanFit:true});
+  assert.match(html, /Find your plan fit/);
+  assert.match(html, /Which listed benefit matters most to you/);
+  assert.match(html, /I do not need paid features right now/);
+  assert.match(html, /Nothing is purchased or changed here/);
+  assert.doesNotMatch(html, /Choose Pro|Choose Premium/);
+  assert.doesNotMatch(render({showPlanFit:true, blockedFeature:"Team research"}), /Find your plan fit/);
+  const page=read("app/membership/page.tsx");
+  assert.match(page, /!loading && !error && userId && accountType/);
+  assert.ok(page.includes('key={userId + ":" + accountType}'));
+});

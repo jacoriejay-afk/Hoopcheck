@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { calculateFanPredictionXp, FAN_XP_WINDOW_DAYS } from "../../../lib/fan-prediction-xp";
+import { calculateFanPredictionXp, calculateFanPredictionRank, FAN_XP_WINDOW_DAYS, FAN_RANK_WINDOW_DAYS } from "../../../lib/fan-prediction-xp";
 import { getLiveGameStatusPresentation } from "../../../lib/live-game-status";
 
 export const dynamic = "force-dynamic";
@@ -45,21 +45,32 @@ export async function GET(request: Request) {
     const user = await currentUser(request, auth);
     if (!user) return NextResponse.json({ error: "Sign in to view predictions." }, { status: 401 });
     const url = new URL(request.url);
-    if (url.searchParams.get("mode") === "fan-xp") {
+    if (url.searchParams.get("mode") === "fan-xp" || url.searchParams.get("mode") === "fan-rank") {
+      const ranking=url.searchParams.get("mode")==="fan-rank";
       const headers={"Cache-Control":"private, no-store"};
       const {data:profile,error:profileError}=await db.from("profiles").select("account_type").eq("id",user.id).maybeSingle();
       if(profileError)throw profileError;
       if(profile?.account_type!=="fan")return NextResponse.json({error:"Fan XP is available to fan accounts."},{status:403,headers});
       const now=new Date();
-      const cutoff=new Date(now.getTime()-FAN_XP_WINDOW_DAYS*86400000).toISOString();
-      const {data:picks,error:pickError,count}=await db.from("game_winner_picks")
-        .select("game_id,picked_team_id,updated_at",{count:"exact"}).eq("user_id",user.id)
+      const cutoff=new Date(now.getTime()-(ranking?FAN_RANK_WINDOW_DAYS:FAN_XP_WINDOW_DAYS)*86400000).toISOString();
+      const base=db.from("game_winner_picks").select("game_id,user_id,picked_team_id,updated_at",{count:"exact"});
+      const {data:picks,error:pickError,count}=await (ranking?base:base.eq("user_id",user.id))
         .gte("updated_at",cutoff).lte("updated_at",now.toISOString()).limit(1000);
       if(pickError||!picks||count!==picks.length)throw new Error("Fan prediction history unavailable or incomplete");
-      const ids=Array.from(new Set(picks.map(p=>p.game_id)));
+      const fanIds=new Set<string>();
+      if(ranking){
+        const users=Array.from(new Set(picks.map(p=>p.user_id)));
+        for(let i=0;i<users.length;i+=50){
+          const {data,error}=await db.from("profiles").select("id").in("id",users.slice(i,i+50)).eq("account_type","fan");
+          if(error||!data)throw new Error("Fan ranking eligibility unavailable");
+          for(const row of data)fanIds.add(row.id);
+        }
+      }
+      const eligiblePicks=ranking?picks.filter(p=>fanIds.has(p.user_id)):picks;
+      const ids=Array.from(new Set(eligiblePicks.map(p=>p.game_id)));
       const games=[];
       for(let i=0;i<ids.length;i+=50){
-        const {data,error}=await db.from("fan_live_games").select("id,team_id,opponent_team_id,status,period_label,home_score,away_score,scheduled_at,ends_at")
+        const {data,error}=await db.from("fan_live_games").select("id,team_id,opponent_team_id,status,period_label,home_score,away_score,scheduled_at,ends_at,country,league_name")
           .in("id",ids.slice(i,i+50)).in("status",["final","finished"]);
         if(error||!data)throw new Error("Fan prediction settlement unavailable");
         for(const game of data){
@@ -69,7 +80,7 @@ export async function GET(request: Request) {
           if(winnerId)games.push({...game,winner_team_id:winnerId});
         }
       }
-      return NextResponse.json(calculateFanPredictionXp(picks,games,now),{headers});
+      return NextResponse.json(ranking?calculateFanPredictionRank(eligiblePicks,games,fanIds,user.id,now):calculateFanPredictionXp(eligiblePicks,games,now),{headers});
     }
     if (url.searchParams.get("mode") === "games") {
       // Bound the public-fixture subset BEFORE applying LIMIT. Old historical
