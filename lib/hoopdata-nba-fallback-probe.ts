@@ -11,7 +11,7 @@ type Dependencies={
   fetcher:typeof fetch; now:()=>Date;
 };
 const maxBytes=256*1024;
-async function boundedBody(response:Response):Promise<unknown>{
+export async function boundedBody(response:Response):Promise<unknown>{
   if(!response.body)throw Error("Missing response");
   const reader=response.body.getReader(),decoder=new TextDecoder("utf-8",{fatal:true});
   let size=0,body="";
