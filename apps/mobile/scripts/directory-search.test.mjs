@@ -51,7 +51,7 @@ test('results navigate to canonical native routes and reject path injection', ()
   assert.equal(searchResultPath('women', 'fixture'), '/womens/fixture');
   assert.equal(searchResultPath('womens-leagues', 'fixture'), '/womens/leagues/fixture');
   assert.equal(searchResultPath('players', 'fixture'), '/players/fixture');
-  assert.equal(searchResultPath('coaches', 'fixture'), '/web?path=%2Fcoaches%2Ffixture');
+  assert.equal(searchResultPath('coaches', 'fixture'), '/coaches/fixture');
   for (const value of ['../other', 'https://evil.example', 'fixture?x=1']) assert.equal(searchResultPath('teams', value), null);
 });
 
