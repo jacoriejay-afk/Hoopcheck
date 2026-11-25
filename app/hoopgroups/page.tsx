@@ -6,6 +6,7 @@ import { supabase } from "../../lib/supabase";
 import HoopGroupsManage, { GROUP_COLORS, GROUP_ICONS, type GroupSpace, type GroupChannel } from "../../components/HoopGroupsManage";
 import HoopGroupsChatSettings, { type ChatPrefs } from "../../components/HoopGroupsChatSettings";
 import HoopGroupsOwnerModeration from "../../components/HoopGroupsOwnerModeration";
+import { orderGroupsForRole, recommendedGroupIds } from "../../lib/hoopgroups-discovery";
 import "./hoopgroups.css";
 
 type Space = GroupSpace;
@@ -38,7 +39,7 @@ export default function HoopGroupsPage() {
   const [sessionRevision, setSessionRevision] = useState(0);
   const [returnTo,setReturnTo] = useState("/hoopgroups");
   const [discoverQuery,setDiscoverQuery] = useState("");
-  const [discoverFilter,setDiscoverFilter] = useState<"all"|"joined"|"mine">("all");
+  const [discoverFilter,setDiscoverFilter] = useState<"all"|"joined"|"mine"|"recommended">("all");
   const [chatPrefs,setChatPrefs] = useState<ChatPrefs>({density:"cozy",style:"cards",scale:"normal"});
   const loadGeneration = useRef(0);
   const channelRef = useRef("");
@@ -99,16 +100,16 @@ export default function HoopGroupsPage() {
       setReady(false); setBackendReady(false); setUserId(""); setPosts([]);
       setMemberships([]); setDraft(""); setAccountRole(""); setSpaces([]); setChannels([]);
       setSpaceId(""); setChannelId(""); setFeedback(""); setBusy(false);
+      setDiscoverQuery(""); setDiscoverFilter("all");
       setSessionRevision(value => value + 1);
     });
     return () => subscription.unsubscribe();
   }, []);
 
-  const ordered = useMemo(() => [...spaces].sort((a,b) =>
-    Number(b.category === accountRole || accountRole === "scout" && b.category === "agents") -
-    Number(a.category === accountRole || accountRole === "scout" && a.category === "agents") ||
-    a.name.localeCompare(b.name)), [spaces,accountRole]);
+  const ordered = useMemo(() => orderGroupsForRole(spaces, accountRole), [spaces,accountRole]);
+  const recommendations = useMemo(() => recommendedGroupIds(spaces, accountRole, userId, memberships), [spaces,accountRole,userId,memberships]);
   const visibleSpaces=ordered.filter(space=>{
+    if(discoverFilter==="recommended" && !recommendations.has(space.id)) return false;
     if(discoverFilter==="joined" && !memberships.includes(space.id)) return false;
     if(discoverFilter==="mine" && space.owner_id!==userId) return false;
     const q=discoverQuery.trim().toLocaleLowerCase();
@@ -228,16 +229,17 @@ export default function HoopGroupsPage() {
         <div><strong>Discover your people</strong><span>Find basketball communities and create your own group.</span></div>
         <label>Search groups<input value={discoverQuery} onChange={event=>setDiscoverQuery(event.target.value)} type="search" placeholder="Search groups or topics"/></label>
         <div className="hc-hoopgroups-discovery-tabs" role="group" aria-label="Show communities">
-          {(["all","joined","mine"] as const).map(filter=><button key={filter} type="button" aria-pressed={discoverFilter===filter} onClick={()=>{setDiscoverFilter(filter);setSpaceId("");}}>{filter==="all"?"Discover groups":filter==="joined"?"Joined groups":"My groups"}</button>)}
+          {(["all","recommended","joined","mine"] as const).map(filter=><button key={filter} type="button" aria-pressed={discoverFilter===filter} onClick={()=>{if(discoverFilter===filter)return;setDraft("");setDiscoverFilter(filter);setSpaceId("");setChannelId("");}}>{filter==="all"?"Discover groups":filter==="recommended"?"For your role":filter==="joined"?"Joined groups":"My groups"}</button>)}
         </div>
       </div>
+      {discoverFilter==="recommended" && <p className="muted">Suggestions are based only on your account role and groups available in this directory that you have not joined or created. They are not popularity rankings.</p>}
       <HoopGroupsManage userId={userId} selected={selected} channels={availableChannels}
         onCreated={async created=>{await load();setDiscoverFilter("all");setDiscoverQuery("");setSpaceId(created.id);setChannelId("");}}
         onUpdated={updated=>setSpaces(items=>items.map(item=>item.id===updated.id?updated:item))}
         onChannelCreated={created=>{setChannels(items=>[...items,created]);setChannelId(created.id);}}
         onChannelUpdated={(id,name)=>setChannels(items=>items.map(item=>item.id===id?{...item,name}:item))}/>
       <HoopGroupsOwnerModeration userId={userId} spaceId={selected?.id||""} isOwner={Boolean(selected?.owner_id===userId)}/>
-      {!visibleSpaces.length&&<p role="status" className="hc-hoopgroups-empty">No groups match. Try another search or create a group.</p>}
+      {!visibleSpaces.length&&<p role="status" className="hc-hoopgroups-empty">{discoverFilter==="recommended" ? "No role-matched groups found in this directory. Try Discover groups to explore other communities." : "No groups match. Try another search or create a group."}</p>}
       {visibleSpaces.length>0&&<div className="hc-hoopgroups-shell" style={{"--hc-group-accent":GROUP_COLORS[selected?.accent_color||"orange"]||GROUP_COLORS.orange} as CSSProperties}>
       <nav className="hc-hoopgroups-servers" aria-label="Discover and select HoopGroups">{visibleSpaces.map(space =>
         <button key={space.id} type="button" aria-pressed={selected?.id===space.id} onClick={()=>{setSpaceId(space.id);setChannelId("");setFeedback("");}}><strong aria-hidden="true">{GROUP_ICONS[space.icon_key]||"🏀"}</strong><span>{space.name}<small>{space.owner_id===userId?"Your group":memberships.includes(space.id)?"Joined":"Explore group"}</small></span></button>)}</nav>
