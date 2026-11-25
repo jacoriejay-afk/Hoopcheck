@@ -1,0 +1,906 @@
+{
+  "reviewedOn": "2026-11-25",
+  "rightsApproved": false,
+  "publicationApproved": false,
+  "competitions": [
+    {
+      "competition": "NBA G League",
+      "region": "Americas",
+      "side": "mens",
+      "season": "2026-27",
+      "expectedCount": 31,
+      "source": "https://gleague.nba.com/tip-off-tournament-regions",
+      "corroboration": "https://gleague.nba.com/expansion",
+      "scope": "complete announced competition field, not certified database coverage",
+      "teams": [
+        {
+          "name": "Austin Spurs",
+          "country": "United States",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Capital City Go-Go",
+          "country": "United States",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Cleveland Charge",
+          "country": "United States",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Coachella Valley Lakers",
+          "country": "United States",
+          "historicalNames": [
+            "South Bay Lakers"
+          ],
+          "canonicalId": null
+        },
+        {
+          "name": "College Park Skyhawks",
+          "country": "United States",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Delaware Blue Coats",
+          "country": "United States",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Grand Rapids Gold",
+          "country": "United States",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Greensboro Swarm",
+          "country": "United States",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Iowa Wolves",
+          "country": "United States",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Laketown Squadron",
+          "country": "United States",
+          "historicalNames": [
+            "Birmingham Squadron"
+          ],
+          "canonicalId": null
+        },
+        {
+          "name": "Long Island Nets",
+          "country": "United States",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Maine Celtics",
+          "country": "United States",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Memphis Hustle",
+          "country": "United States",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Mexico City Capitanes",
+          "country": "Mexico",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Motor City Cruise",
+          "country": "United States",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Noblesville Boom",
+          "country": "United States",
+          "historicalNames": [
+            "Indiana Mad Ants",
+            "Fort Wayne Mad Ants"
+          ],
+          "canonicalId": null
+        },
+        {
+          "name": "Oklahoma City Blue",
+          "country": "United States",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Osceola Magic",
+          "country": "United States",
+          "historicalNames": [
+            "Lakeland Magic"
+          ],
+          "canonicalId": null
+        },
+        {
+          "name": "Raptors 905",
+          "country": "Canada",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Rio Grande Valley Vipers",
+          "country": "United States",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Rip City Remix",
+          "country": "United States",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Salt Lake City Stars",
+          "country": "United States",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "San Diego Clippers",
+          "country": "United States",
+          "historicalNames": [
+            "Ontario Clippers",
+            "Agua Caliente Clippers"
+          ],
+          "canonicalId": null
+        },
+        {
+          "name": "Santa Cruz Warriors",
+          "country": "United States",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Sioux Falls Skyforce",
+          "country": "United States",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Stockton Kings",
+          "country": "United States",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Texas Legends",
+          "country": "United States",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Valley Suns",
+          "country": "United States",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Westchester Knicks",
+          "country": "United States",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Windy City Bulls",
+          "country": "United States",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Wisconsin Herd",
+          "country": "United States",
+          "historicalNames": [],
+          "canonicalId": null
+        }
+      ]
+    },
+    {
+      "competition": "Super League Basketball",
+      "region": "United Kingdom",
+      "side": "mens",
+      "season": "2026-27",
+      "expectedCount": 10,
+      "source": "https://www.thelondonlions.com/news/london-lions-men-announce-2026-27-super-league-basketball-fixtures",
+      "scope": "10 current-season fixture participants; canonical matching and rights pending",
+      "teams": [
+        {
+          "name": "Bristol Flyers",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Caledonia Gladiators",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Cheshire Phoenix",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Leicester Riders",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Liverpool Basketball",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "London Lions",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Manchester Basketball",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Newcastle Eagles",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Sheffield Sharks",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Surrey 89ers",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        }
+      ],
+      "corroboration": "https://newcastle-eagles.com/news/2026-27-mens-super-league-basketball-fixtures/",
+      "fixtureEvidence": "https://www.flashscore.co.uk/basketball/united-kingdom/slb/fixtures/"
+    },
+    {
+      "competition": "Women's Super League Basketball",
+      "region": "United Kingdom",
+      "side": "womens",
+      "season": "2026-27",
+      "expectedCount": 10,
+      "source": "https://newcastle-eagles.com/news/2026-27-womens-super-league-basketball-fixtures/",
+      "scope": "10 current-season fixture participants; canonical matching and rights pending",
+      "teams": [
+        {
+          "name": "BA London Lions",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Caledonia Gladiators",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Cardiff Met Archers",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Essex Rebels",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Leicester Riders",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Manchester Basketball",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Newcastle Eagles",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Nottingham Wildcats",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Oaklands Wolves",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Sheffield Hatters",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        }
+      ],
+      "corroboration": "https://www.flashscore.co.uk/basketball/united-kingdom/slb-women/fixtures/"
+    },
+    {
+      "competition": "British Championship Basketball",
+      "region": "United Kingdom",
+      "side": "mens",
+      "season": "2026-27",
+      "expectedCount": null,
+      "source": "https://basketballengland.co.uk/news/nbl-fixtures-structures-and-key-dates-for-2026-27-season",
+      "scope": "second tier source discovery",
+      "teams": []
+    },
+    {
+      "competition": "Women's National Basketball League Division One",
+      "region": "England",
+      "side": "womens",
+      "season": "2026-27",
+      "expectedCount": null,
+      "source": "https://basketballengland.co.uk/news/nbl-fixtures-structures-and-key-dates-for-2026-27-season",
+      "scope": "source discovery",
+      "teams": []
+    },
+    {
+      "competition": "Bónus deild kvenna",
+      "region": "Iceland",
+      "side": "womens",
+      "season": "2026-27",
+      "expectedCount": 10,
+      "source": "https://kki.is/motamal/leikir-og-urslit/motayfirlit/Deildir-flokkar?league_id=189",
+      "scope": "nine current-season candidates; full field not certified",
+      "teams": [
+        {
+          "name": "Ármann",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Njarðvík",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Keflavík",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Grindavík",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Tindastóll",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Valur",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Haukar",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "KR",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Stjarnan",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        }
+      ],
+      "corroboration": "https://korfufrettir.is/en",
+      "fixtureEvidence": "https://kki.is/motamal/leikir-og-urslit/motayfirlit/Deildir-flokkar?league_id=189"
+    },
+    {
+      "competition": "1. deild kvenna",
+      "region": "Iceland",
+      "side": "womens",
+      "season": "2026-27",
+      "expectedCount": null,
+      "announcedCount": 12,
+      "announcedSeniorFirstTeams": 9,
+      "source": "https://www.kki.is/frettir/frett/2026/06/26/Metthatttaka-og-ny-felog-/",
+      "scope": "June announcement includes 3 B/U squads; current senior field not yet certified",
+      "teams": [
+        {
+          "name": "Breiðablik",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Skallagrímur",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Þór Þorlákshöfn",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        }
+      ]
+    },
+    {
+      "competition": "Bónus deild karla",
+      "region": "Iceland",
+      "side": "mens",
+      "season": "2026-27",
+      "expectedCount": 12,
+      "source": "https://kki.is/motamal/leikir-og-urslit/motayfirlit/Deildir-flokkar?league_id=190",
+      "scope": "eight current-season candidates; full field not certified",
+      "teams": [
+        {
+          "name": "Stjarnan",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Keflavík",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Grindavík",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Höttur",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "KR",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Njarðvík",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Ármann",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Álftanes",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        }
+      ],
+      "corroboration": "https://www.kki.is/motamal/leikir-og-urslit/motayfirlit/Deildir-flokkar?league_id=190"
+    },
+    {
+      "competition": "B.PREMIER",
+      "region": "Japan",
+      "side": "mens",
+      "season": "2026-27",
+      "expectedCount": 26,
+      "source": "https://www.bleague.jp/en/new-bleague/club/",
+      "scope": "official announced entrants; exact current participation and identity pending",
+      "teams": [
+        {
+          "name": "Levanga Hokkaido",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Sendai 89ers",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Akita Northern Happinets",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Ibaraki Robots",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Utsunomiya Brex",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Gunma Crane Thunders",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Altiri Chiba",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Chiba Jets",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Alvark Tokyo",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Tokyo Sunrockers",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Kawasaki Brave Thunders",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Yokohama B-Corsairs",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Toyama Grouses",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Shinshu Brave Warriors",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "San-en NeoPhoenix",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "SeaHorses Mikawa",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Nagoya Diamond Dolphins",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Shiga Lakes",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Kyoto Hannaryz",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Osaka Evessa",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Kobe Storks",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Shimane Susanoo Magic",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Hiroshima Dragonflies",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Saga Ballooners",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Nagasaki Velca",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Ryukyu Golden Kings",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        }
+      ],
+      "corroboration": "https://www.bleague.jp/news_detail/id%3D620570"
+    },
+    {
+      "competition": "B.ONE",
+      "region": "Japan",
+      "side": "mens",
+      "season": "2026-27",
+      "expectedCount": 25,
+      "source": "https://www.bleague.jp/en/new-bleague/club/",
+      "scope": "complete announced 2026-27 field; canonical matching and rights pending",
+      "teams": [
+        {
+          "name": "Vertex Shizuoka",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Fighting Eagles Nagoya",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Bambitious Nara",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "TryHoop Okayama",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Tokushima Gambarous",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Kagawa Five Arrows",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Ehime Orange Vikings",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Rizing Zephyr Fukuoka",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Kumamoto Volters",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Kagoshima Rebnise",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Aomori Wat's",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Iwate Big Bulls",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Yamagata Wyverns",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Fukushima Firebonds",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Koshigaya Alphas",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Saitama Broncos",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Tokyo United Basketball Club",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Earthfriends Tokyo Z",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Tachikawa Dice",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Tokyo Hachioji Bee Trains",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Yokohama Excellence",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Niigata Albirex BB",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Kanazawa Samuraiz",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Fukui Blowinds",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Gifu Swoops",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        }
+      ],
+      "corroboration": "https://www.bleague.jp/news_detail/id=541287"
+    },
+    {
+      "competition": "B.NEXT",
+      "region": "Japan",
+      "side": "mens",
+      "season": "2026-27",
+      "expectedCount": 4,
+      "source": "https://www.bleague.jp/en/new-bleague/club/",
+      "scope": "official announced entrants; exact current participation and identity pending",
+      "teams": [
+        {
+          "name": "Shinagawa City Basketball Club",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Wolga Shonan",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Veertien Mie",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Yamaguchi Patsfive",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        }
+      ],
+      "corroboration": "https://www.bleague.jp/news_detail/id%3D620570"
+    }
+  ]
+}

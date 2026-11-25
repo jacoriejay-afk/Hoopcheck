@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createClient } from '@supabase/supabase-js';
-import { readFeedPage, readSharedFeedPost, readFeedComments, moderateFeedText, publishFeedPoll, validatedPollOptions, authorizedFeedMedia, toggleFeedCheck, readFeedChecks, readFeedSaved, feedAction, deleteOwnedFeedPost, sendFeedShare } from '../src/native/feedClient.ts';
+import { readFeedPage, readSavedFeedPage, readSharedFeedPost, readFeedComments, moderateFeedText, publishFeedPoll, validatedPollOptions, authorizedFeedMedia, toggleFeedCheck, readFeedChecks, readFeedSaved, feedAction, deleteOwnedFeedPost, sendFeedShare } from '../src/native/feedClient.ts';
 const uid = '11111111-1111-4111-8111-111111111111';
 const id = n => `22222222-2222-4222-8222-${String(n).padStart(12, '0')}`;
 const now = new Date('2026-11-18T12:00:00Z');
@@ -199,4 +199,48 @@ test("optional post location is explicitly entered, bounded, and never attached 
   await assert.rejects(moderateFeedText("https://api.test","token","comment","Reply",id(1),request,undefined,"City"));
   await assert.rejects(publishFeedPoll("https://api.test","token","Question?",["A","B"],request,"x".repeat(101)));
   assert.equal(requests.length,2);
+});
+
+test('saved library uses owner bookmarks and rechecks current post access without storing bodies',async()=>{
+ const calls=[];const bookmark=(n)=>({post_id:id(n),created_at:post(n).created_at});
+ const db=client(async(input,options)=>{
+  const url=new URL(String(input));calls.push({url,options});
+  const table=url.pathname.split('/').pop();
+  if(table==='feed_post_bookmarks')return Response.json(Array.from({length:21},(_,i)=>bookmark(i)));
+  if(table==='feed_posts')return Response.json([post(0),{...post(1),expires_at:now.toISOString()},post(2),{...post(3),author_id:id(99)},post(4)]);
+  if(table==='feed_post_archives')return Response.json([{post_id:id(2)}]);
+  if(table==='user_blocks')return Response.json([{blocked_id:id(99)}]);
+  throw Error('Unexpected request');
+ });
+ db.auth.getSession=async()=>({data:{session:{user:{id:uid},access_token:'fixture-owner-token'}},error:null});
+ const page=await readSavedFeedPage(db,uid,undefined,now);
+ assert.deepEqual(page.posts.map(row=>row.id),[id(0),id(4)]);
+ assert.deepEqual(page.next,{id:id(19),created_at:post(19).created_at});
+ assert.equal(calls[0].url.searchParams.get('user_id'),'eq.'+uid);
+ assert.equal(calls[0].url.searchParams.get('order'),'created_at.desc,post_id.desc');
+ assert.equal(calls[0].url.searchParams.get('limit'),'21');
+ assert.equal(calls[1].url.searchParams.get('status'),'eq.approved');
+ assert.ok(!calls[1].url.searchParams.get('id').includes(id(20)));
+ assert.ok(calls.every(call=>call.options.headers.get('Authorization')==='Bearer fixture-owner-token'));
+ assert.equal(calls.find(call=>call.url.pathname.endsWith('/feed_post_archives')).url.searchParams.get('user_id'),'eq.'+uid);
+ assert.equal(calls.find(call=>call.url.pathname.endsWith('/user_blocks')).url.searchParams.get('blocker_id'),'eq.'+uid);
+ calls.length=0;await readSavedFeedPage(db,uid,page.next,now);
+ assert.ok(calls[0].url.searchParams.get('or').includes('post_id.lt.'+id(19)));
+});
+test('saved library fails closed for missing sessions, identity switches and blocked-list errors',async()=>{
+ let calls=0;const db=client(async input=>{
+  calls++;const table=new URL(String(input)).pathname.split('/').pop();
+  if(table==='feed_post_bookmarks')return Response.json([{post_id:id(1),created_at:post(1).created_at}]);
+  if(table==='feed_posts')return Response.json([post(1)]);
+  if(table==='feed_post_archives')return Response.json([]);
+  if(table==='user_blocks')return Response.json({message:'denied'},{status:403});
+  throw Error('Unexpected request');
+ });
+ db.auth.getSession=async()=>({data:{session:null},error:null});
+ await assert.rejects(readSavedFeedPage(db,uid,undefined,now));assert.equal(calls,0);
+ db.auth.getSession=async()=>({data:{session:{user:{id:uid},access_token:'fixture-owner-token'}},error:null});
+ await assert.rejects(readSavedFeedPage(db,uid,undefined,now),/access could not be verified/);
+ const empty=client(async()=>Response.json([]));let reads=0;
+ empty.auth.getSession=async()=>({data:{session:{user:{id:++reads===1?uid:id(99)},access_token:'fixture-owner-token'}},error:null});
+ await assert.rejects(readSavedFeedPage(empty,uid,undefined,now),/Account changed/);
 });

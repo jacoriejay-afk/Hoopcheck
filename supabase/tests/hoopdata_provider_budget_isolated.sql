@@ -429,3 +429,37 @@ DO $standings_read_invalid$ BEGIN
 END $standings_read_invalid$;
 RESET ROLE;
 UPDATE public.teams SET active=true WHERE id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+
+-- Synthetic names/country only; no deployed migration.
+ALTER TABLE public.leagues ADD COLUMN name text, ADD COLUMN country text;
+UPDATE public.leagues SET name='Fixture League',country='Fixture Country';
+INSERT INTO public.leagues(id,active,basketball_type,name,country) VALUES
+('44444444-4444-4444-8444-444444444444',true,'mens','Unmapped League','Fixture Country'),
+('55555555-5555-4555-8555-555555555555',true,'womens','Women League','Fixture Country'),
+('66666666-6666-4666-8666-666666666666',false,'mens','Inactive League','Fixture Country');
+\ir ../candidates/hoopdata_owner_coverage_read_review_only.sql
+DO $coverage_access$ BEGIN
+ IF has_function_privilege('anon','public.hoopdata_read_owner_coverage_page(text,uuid,integer)','EXECUTE') OR
+ has_function_privilege('authenticated','public.hoopdata_read_owner_coverage_page(text,uuid,integer)','EXECUTE') THEN RAISE EXCEPTION 'Private coverage read exposed'; END IF;
+END $coverage_access$;
+DO $coverage_setup$ DECLARE
+ l uuid:='33333333-3333-4333-8333-333333333333'; season text:=to_char(now() AT TIME ZONE 'UTC','YYYY'); stamp timestamptz:=clock_timestamp();
+BEGIN
+ IF NOT public.hoopdata_stage_competition_snapshot(l,12,'mens','seasons','',stamp,jsonb_build_array(jsonb_build_object('season',season,'start',to_char(now()-interval '1 day','YYYY-MM-DD'),'end',to_char(now()+interval '1 day','YYYY-MM-DD'),'games',true,'standings',true))) THEN RAISE EXCEPTION 'Coverage metadata fixture not staged'; END IF;
+ IF NOT public.hoopdata_stage_competition_snapshot(l,12,'mens','games',season,clock_timestamp(),'[{"id":1,"private_payload":"not returned"}]') THEN RAISE EXCEPTION 'Coverage game fixture not staged'; END IF;
+END $coverage_setup$;
+SET ROLE service_role;
+DO $coverage_read$ DECLARE r jsonb; c uuid; BEGIN
+ r:=public.hoopdata_read_owner_coverage_page('mens',NULL,1);
+ IF r IS NULL OR jsonb_array_length(r->'leagues')<>1 OR jsonb_array_length(r->'mappings')<>1 OR jsonb_array_length(r->'seasons')<>1 OR jsonb_array_length(r->'quotas')<>2 OR
+ NOT EXISTS(SELECT 1 FROM jsonb_array_elements(r->'observations') x(o) WHERE o->>'kind'='games' AND o->>'rowCount'='1') OR
+ r::text LIKE '%private_payload%' THEN RAISE EXCEPTION 'Coverage bundle wrong or raw fixture exposed'; END IF;
+ c:=(r->>'nextCursor')::uuid;
+ IF c IS DISTINCT FROM '33333333-3333-4333-8333-333333333333'::uuid THEN RAISE EXCEPTION 'Coverage next cursor wrong'; END IF;
+ r:=public.hoopdata_read_owner_coverage_page('mens',c,1);
+ IF jsonb_array_length(r->'leagues')<>1 OR jsonb_array_length(r->'mappings')<>0 OR r->>'nextCursor' IS NOT NULL THEN RAISE EXCEPTION 'Unmapped page or inactive league handling wrong'; END IF;
+ r:=public.hoopdata_read_owner_coverage_page('womens',NULL,40);
+ IF jsonb_array_length(r->'leagues')<>1 OR r->'leagues'->0->>'side'<>'womens' THEN RAISE EXCEPTION 'Side isolation wrong'; END IF;
+ IF public.hoopdata_read_owner_coverage_page('other',NULL,40) IS NOT NULL OR public.hoopdata_read_owner_coverage_page('mens',NULL,41) IS NOT NULL THEN RAISE EXCEPTION 'Invalid coverage request accepted'; END IF;
+END $coverage_read$;
+RESET ROLE;
