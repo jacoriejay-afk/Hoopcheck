@@ -20,6 +20,11 @@ async function verify(browser,theme,role='player'){
     if(method==='PUT'){assert.equal(request.headers().authorization,`Bearer ${token}`);const body=request.postDataJSON();assert.deepEqual(Object.keys(body.data),['hoopcheck_profile_cover']);user={...user,user_metadata:{...user.user_metadata,...body.data}};}
     return json(user);
    }
+   if(url.pathname==='/rest/v1/rpc/get_public_follow_list'){assert.equal(method,'POST');assert.deepEqual(request.postDataJSON(),{p_mode:'following',p_target_type:null,p_target_id:null,p_user_id:uid});return json([]);}
+   if(['/rest/v1/feed_posts','/rest/v1/reviews'].includes(url.pathname)){
+    assert.equal(method,'HEAD');assert.equal(role,'player');assert.equal(url.searchParams.get('author_id'),'eq.'+uid);assert.equal(url.searchParams.get('select'),'id');
+    return route.fulfill({status:200,headers:{'access-control-allow-origin':'*','access-control-expose-headers':'content-range','content-range':'*/0'}});
+   }
    if(url.pathname==='/rest/v1/rpc/get_own_profile'){assert.equal(request.headers().authorization,`Bearer ${token}`);assert.deepEqual(request.postDataJSON(),{});return json(profile);}
    if(url.pathname==='/rest/v1/profiles'){
     assert.equal(url.searchParams.get('id'),`eq.${uid}`);
