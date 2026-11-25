@@ -187,6 +187,7 @@ export default function AccountScreen() {
       <AccountGroup>
         <AccountRow icon="lock-closed-outline" title="Two-factor authentication" onPress={()=>router.push("/account/security")}/>
         <AccountRow icon="settings-outline" title="Device settings" onPress={()=>router.push("/settings")}/>
+        <AccountRow icon="help-circle-outline" title="Help & Support" onPress={()=>router.push("/account/support")}/>
         <AccountRow icon="information-circle-outline" title="About HoopCheck" onPress={()=>router.push("/about")} last/>
       </AccountGroup>
       {account?.user.accountType === "player" ? <>
