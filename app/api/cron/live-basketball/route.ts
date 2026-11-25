@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { GAME_CHAT_OPEN_EARLY_MINUTES } from "../../../../lib/game-availability";
 import { selectFixtureSyncDay } from "../../../../lib/live-score-schedule";
+import { validatedProviderScore, validateProviderSnapshot, providerTipoff } from "../../../../lib/hoopdata-ingestion";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 20;
@@ -22,7 +23,7 @@ type ProviderResponse = { response?: ProviderGame[]; errors?: unknown; results?:
 
 function score(value?: ProviderScore): number | null {
   const n = value?.total ?? value?.points;
-  return typeof n === "number" && Number.isFinite(n) ? n : null;
+  return validatedProviderScore(n);
 }
 
 export async function GET(request: NextRequest) {
@@ -61,6 +62,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Basketball data provider returned an invalid response." }, { status: 502, headers: { "Cache-Control": "no-store" } });
     }
 
+    // Reject duplicate/malformed provider identities before any mapping or fixture write.
+    if (!validateProviderSnapshot(payload.response)) {
+      return NextResponse.json({ error: "Basketball provider snapshot contains invalid or duplicate game identities." }, { status: 502, headers: { "Cache-Control": "no-store" } });
+    }
     const receivedAt = new Date().toISOString();
     const mappings: {team_id:string;provider_team_id:number}[] = [];
     for (let offset = 0; offset < 10000; offset += 500) {
@@ -181,14 +186,16 @@ export async function GET(request: NextRequest) {
         if (missingMatchupMappings.length < 20) missingMatchupMappings.push({providerGameId:String(game.id),providerTeamId:Number.isSafeInteger(missingId)&&missingId>0?missingId:null,providerTeamName:opponentName.slice(0,120),leagueId:typeof game.league?.id==="number"?game.league.id:null});
       }
 
-      const startDate = game.timestamp ? new Date(game.timestamp * 1000).toISOString()
-        : (game.date && !Number.isNaN(Date.parse(game.date)) ? new Date(game.date).toISOString() : null);
+      const startDate = providerTipoff(game.timestamp, game.date);
+      // Do not create an undated fixture or overwrite a known tip-off with bad input.
+      if (!startDate) continue;
       const providerLeagueId = game.league?.id;
       const providerStatus = statusOf(game);
       const storedStatus = liveStatuses.has(providerStatus) ? "live"
         : scheduledStatuses.has(providerStatus) ? "scheduled"
         : finalStatuses.has(providerStatus) ? "final"
-        : "cancelled";
+        : providerStatus === "POST" || providerStatus === "SUSP" ? "postponed"
+        : providerStatus === "ABD" ? "abandoned" : "cancelled";
       rows.push({
         team_id: primaryId,
         opponent_team_id: opponentId,
@@ -198,9 +205,9 @@ export async function GET(request: NextRequest) {
         provider_league_id: typeof providerLeagueId === "number" && Number.isSafeInteger(providerLeagueId) && providerLeagueId > 0 ? providerLeagueId : null,
         status: storedStatus,
         score_updated_at: receivedAt,
-        home_score: storedStatus === "scheduled" ? null : primaryScore,
-        away_score: storedStatus === "scheduled" ? null : opponentScore,
-        started_at: storedStatus === "scheduled" ? null : startDate,
+        home_score: storedStatus === "scheduled" || storedStatus === "postponed" || storedStatus === "cancelled" || storedStatus === "abandoned" ? null : primaryScore,
+        away_score: storedStatus === "scheduled" || storedStatus === "postponed" || storedStatus === "cancelled" || storedStatus === "abandoned" ? null : opponentScore,
+        started_at: storedStatus === "live" || storedStatus === "final" ? startDate : null,
         // Only a genuine provider terminal event receives a completion time.
         // A later provider correction to live/scheduled clears a stale end.
         ends_at: null as string | null,
