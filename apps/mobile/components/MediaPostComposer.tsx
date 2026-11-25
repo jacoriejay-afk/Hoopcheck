@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { Image, Linking, Platform, Pressable, Text, View } from "react-native";
 import { Button } from "../src/primitives";
 import { useEntryTheme } from "../src/theme";
-import { capturePhoto, captureVideo, choosePhoto, chooseVideo, MediaPermissionError, photoBody, preparePhoto, uploadVideoFile, type CameraFacing, type Photo, type Video } from "../src/native/mediaSelection";
+import { capturePhoto, captureVideo, choosePhoto, chooseVideo, MediaPermissionError, photoBody, preparePhoto, movePhoto, uploadVideoFile, type CameraFacing, type Photo, type PhotoCrop, type Video } from "../src/native/mediaSelection";
 import { PublicationUnconfirmed, publishMediaPost } from "../src/native/mediaClient";
 import { FeedVideo } from "./FeedVideo";
 import { CommunityWordmark } from "./BrandLockup";
@@ -36,6 +36,21 @@ export function MediaPostComposer({ userId, enabled, caption, token, onPublished
     } catch (error) { if (current === generation.current) { setMessage(error instanceof Error ? error.message : "Media selection failed. Try again."); setPermissionDenied(error instanceof MediaPermissionError); } }
     finally { if (current === generation.current) { working.current = false; setBusy(false); } }
   }
+  async function cropPhoto(index: number, preset: PhotoCrop) {
+    const photo = photos[index];
+    if (!photo || working.current || !enabled) return;
+    const current = generation.current; const scope = captureScope.current.revision;
+    const canAccept = () => current === generation.current && captureScope.current.enabled && captureScope.current.revision === scope;
+    working.current = true; setBusy(true); setMessage("");
+    try {
+      const selected = await preparePhoto(photo, false, false, preset);
+      if (canAccept()) setPhotos(previous => previous.map((item, i) => i === index && item.uri === photo.uri ? selected : item));
+    } catch (error) {
+      if (canAccept()) setMessage(error instanceof Error ? error.message : "Crop failed. Your photo is unchanged.");
+    } finally {
+      if (current === generation.current) { working.current = false; setBusy(false); }
+    }
+  }
   async function publish() {
     if (working.current || !enabled || unconfirmed) return;
     const current = generation.current; working.current = true; setBusy(true); setUploading(true); setTransfer(null); setMessage("");
@@ -51,7 +66,7 @@ export function MediaPostComposer({ userId, enabled, caption, token, onPublished
     finally { clearTimeout(deadline); if (current === generation.current) { controller.current = null; working.current = false; setBusy(false); setUploading(false); setTransfer(null); } }
   }
   return <View style={{ gap: 12 }}>
-    <Text style={{ color: theme.muted }}>Add up to four photos, or one video up to 50 MB with a caption. Photos can be cropped when selected and rotated below.</Text>
+    <Text style={{ color: theme.muted }}>Add up to four photos, or one video up to 50 MB with a caption. Crop, rotate or reorder photos before posting.</Text>
     {Platform.OS !== "web" ? <View style={{ gap: 10, padding: 12, borderWidth: 1, borderColor: preferredSource === "camera" ? theme.accent : theme.border, borderRadius: 16 }}>
       <CommunityWordmark size={20} />
       <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 17, fontWeight: "800" }}>HoopCheck™ Camera</Text>
@@ -67,7 +82,7 @@ export function MediaPostComposer({ userId, enabled, caption, token, onPublished
       </View>
     </View> : null}
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}><Button secondary disabled={busy || !enabled || photos.length >= 4 || Boolean(video)} onPress={() => void choose("photo")}>Add photo</Button><Button secondary disabled={busy || !enabled || photos.length > 0} onPress={() => void choose("video")}>{video ? "Replace video" : "Choose video"}</Button></View>
-    {photos.map((photo, index) => <View key={`${photo.uri}:${index}`} style={{ gap: 8 }}><Image alt={`Selected photo ${index + 1}`} accessibilityLabel={`Selected photo ${index + 1}`} source={{ uri: photo.uri }} style={{ height: 180, width: "100%", borderRadius: 12 }} resizeMode="contain" /><View style={{ flexDirection: "row", gap: 8 }}><Button secondary disabled={busy || !enabled} onPress={() => void choose("photo", index)}>Rotate photo {index + 1}</Button>{Platform.OS !== "web" ? <Button secondary disabled={busy || !enabled} onPress={() => void choose("photo", undefined, true, index)}>Retake photo {index + 1}</Button> : null}<Button secondary disabled={busy} onPress={() => { setPhotos(previous => previous.filter((_, i) => i !== index)); setUnconfirmed(false); }}>Remove photo {index + 1}</Button></View></View>)}
+    {photos.map((photo, index) => <View key={`${photo.uri}:${index}`} style={{ gap: 8 }}><Text accessibilityRole="header" style={{ color: theme.foreground, fontWeight: "700" }}>Photo {index + 1} of {photos.length}</Text><Image alt={`Selected photo ${index + 1}`} accessibilityLabel={`Selected photo ${index + 1}`} source={{ uri: photo.uri }} style={{ height: 180, width: "100%", borderRadius: 12 }} resizeMode="contain" /><View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}><Button secondary disabled={busy || !enabled} onPress={() => void choose("photo", index)}>Rotate photo {index + 1}</Button>{Platform.OS !== "web" ? <Button secondary disabled={busy || !enabled} onPress={() => void choose("photo", undefined, true, index)}>Retake photo {index + 1}</Button> : null}<Button secondary disabled={busy} onPress={() => { setPhotos(previous => previous.filter((_, i) => i !== index)); setUnconfirmed(false); }}>Remove photo {index + 1}</Button></View><Text style={{ color: theme.muted }}>Center crop (applies to the current photo)</Text><View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{([{id:"square",label:"1:1"},{id:"portrait",label:"4:5"},{id:"landscape",label:"4:3"}] as const).map(preset => <Button key={preset.id} secondary accessibilityLabel={`Crop photo ${index + 1} to ${preset.label}`} disabled={busy || !enabled || unconfirmed} onPress={() => void cropPhoto(index, preset.id)}>{preset.label}</Button>)}</View>{photos.length > 1 ? <View style={{ flexDirection:"row", flexWrap:"wrap", gap:8 }}><Button secondary accessibilityLabel={`Move photo ${index + 1} earlier`} disabled={busy || !enabled || unconfirmed || index === 0} onPress={() => { if (!working.current) setPhotos(previous => movePhoto(previous, index, -1)); }}>Move earlier</Button><Button secondary accessibilityLabel={`Move photo ${index + 1} later`} disabled={busy || !enabled || unconfirmed || index === photos.length - 1} onPress={() => { if (!working.current) setPhotos(previous => movePhoto(previous, index, 1)); }}>Move later</Button></View> : null}</View>)}
     {video ? <View style={{ gap: 8 }}>{enabled && !busy ? <FeedVideo key={video.uri} uri={video.uri} enabled={false} loop={false} height={220} onFailure={previewFailure} /> : null}<Text style={{ color: theme.foreground }}>Selected video · {(video.size / 1024 / 1024).toFixed(1)} MB. Use the system editor when choosing a video to trim it.</Text><Button secondary disabled={busy} onPress={() => { setVideo(null); setUnconfirmed(false); }}>Remove video</Button></View> : null}
     <Button disabled={busy || !enabled || unconfirmed || (!photos.length && !video) || (Boolean(video) && !caption.trim())} onPress={() => void publish()}>{busy ? "Preparing and checking media…" : "Post to HoopFeed"}</Button>
     {uploading ? <View style={{ gap: 6 }}>
