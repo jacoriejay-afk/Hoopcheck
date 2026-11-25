@@ -9,7 +9,7 @@ import { useNativeAccount } from "../src/native/useNativeAccount";
 import { GroupModerationPanel } from "./GroupModerationPanel";
 import { HoopCheckLoading } from "./HoopCheckLoading";
 import { readWithDeadline } from "../src/native/readDeadline";
-import { findInvitedGroup } from "../src/native/groupInvite";
+import { findInvitedGroup } from "../src/native/deepLinks";
 
 type Space = { id:string;slug:string;name:string;category:string;description:string;owner_id:string|null;accent_color:string;icon_key:string };
 type Channel = { id:string;space_id:string;name:string;slug:string;sort_index:number };

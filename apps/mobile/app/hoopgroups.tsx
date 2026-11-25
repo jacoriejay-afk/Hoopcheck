@@ -1,6 +1,6 @@
 import { ScrollView, Text, View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import { parseGroupInvite } from "../src/native/groupInvite";
+import { parseGroupInvite } from "../src/native/deepLinks";
 import { SafeAreaView } from "react-native-safe-area-context";
 import HoopGroupsChannels from "../components/HoopGroupsChannels";
 import { useEntryTheme } from "../src/theme";
