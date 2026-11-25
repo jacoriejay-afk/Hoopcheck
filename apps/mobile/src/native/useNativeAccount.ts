@@ -51,7 +51,10 @@ function useAccountRequest() {
     void load();
     return () => { active = false; clearTimeout(deadline); controller.abort(); };
   }, [offline, revision, refresh, security.phase, security.owner]);
-  return { account: offline || security.phase !== "ready" ? null : account, loading, error, retry };
+  // The security owner can change before the account request effect runs.
+  // Never render the previous account's entitlements or private workspace grants.
+  const verifiedAccount = !offline && security.phase === "ready" && account?.user.id === security.owner ? account : null;
+  return { account: verifiedAccount, loading, error, retry };
 }
 
 const AccountContext = createContext<ReturnType<typeof useAccountRequest>>({ account: null, loading: true, error: "", retry: () => {} });
