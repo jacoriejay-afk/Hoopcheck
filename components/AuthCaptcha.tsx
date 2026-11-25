@@ -11,7 +11,8 @@ export function useAuthCaptcha() {
   const [revision, setRevision] = useState(0);
   const [ready, setReady] = useState(false);
   const onToken = useCallback((value: string) => {
-    setReady(store.accept(revision, value));
+    const accepted = store.accept(revision, value);
+    if (accepted !== null) setReady(accepted);
   }, [store, revision]);
   const takeToken = useCallback(() => {
     if (!siteKey) return undefined;
