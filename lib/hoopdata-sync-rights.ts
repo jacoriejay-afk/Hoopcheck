@@ -13,5 +13,5 @@ export function authorizeCompetitionRefresh(task:CompetitionTask,plan:string,gra
  if(!evaluation.allowed||!cache.allowed)return null;
  const expiry=Math.min(Date.parse(cache.expiresAt),now.getTime()+p.hours*3600000);
  if(!Number.isFinite(expiry)||expiry<=now.getTime())return null;
- return {expiresAt:new Date(expiry).toISOString()};
+ return {hours:p.hours,expiresAt:new Date(expiry).toISOString()};
 }
