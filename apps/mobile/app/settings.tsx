@@ -1,4 +1,3 @@
-import { useNativeAccount } from "../src/native/useNativeAccount";
 import { AlternateIcons } from "../components/AlternateIcons";
 import { useState } from "react";
 import { useRouter } from "expo-router";
@@ -10,7 +9,6 @@ import { useEntryTheme } from "../src/theme";
 export default function Settings() {
   const theme = useEntryTheme();
   const router = useRouter();
-  const { account } = useNativeAccount();
   const { preferences, update } = useDevicePreferences();
   const [themeBusy, setThemeBusy] = useState(false);
   const [error, setError] = useState("");
@@ -42,22 +40,14 @@ export default function Settings() {
       </Pressable>)}
     </View>
     <View style={{gap:10}}><Text style={{color:theme.foreground,fontSize:21,fontFamily:"HoopCheckDisplay"}}>Account & community</Text>
-      {([{title:"Account and profile",path:"/account"},{title:"Alerts, HoopChat & requests",path:"/notifications"},{title:"Account security",path:"/account/security"}] as const).map(item=><Pressable key={item.path} accessibilityRole="button" onPress={()=>router.push(item.path)}
+      {([{title:"Account and profile",path:"/account"},{title:"Alerts, HoopChat & requests",path:"/notifications"},{title:"Account security",path:"/account/security"},{title:"Help & Support",path:"/account/support"}] as const).map(item=><Pressable key={item.path} accessibilityRole="button" onPress={()=>router.push(item.path)}
         style={{minHeight:48,justifyContent:"center",borderWidth:1,borderColor:theme.border,backgroundColor:theme.surface,paddingHorizontal:14,borderRadius:theme.radius.control}}>
           <Text style={{color:theme.foreground,fontWeight:"700"}}>{item.title}</Text>
       </Pressable>)}
       <Pressable accessibilityRole="button" onPress={()=>router.push("/account/edit")}
         style={{minHeight:48,justifyContent:"center",borderWidth:1,borderColor:theme.border,backgroundColor:theme.surface,paddingHorizontal:14,borderRadius:theme.radius.control}}>
-        <Text style={{color:theme.foreground,fontWeight:"700"}}>Profile privacy settings</Text>
+        <Text style={{color:theme.foreground,fontWeight:"700"}}>Edit profile & privacy</Text>
       </Pressable>
-    </View>
-    <View style={{ gap: 10 }}>
-      <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 21, fontFamily: "HoopCheckDisplay" }}>Career & team reviews</Text>
-      <Text style={{ color: theme.muted, lineHeight: 20 }}>Save playing history first. Reviews are optional and require verification.</Text>
-      {account?.user.accountType === "player" ? <Pressable accessibilityRole="link" onPress={() => router.push({ pathname: "/players/[id]", params: { id: account.user.id } })}
-        style={{ minHeight: 44, justifyContent: "center", borderBottomWidth: 1, borderColor: theme.border }}><Text style={{ color: theme.foreground }}>Career Passport · My Journey</Text></Pressable> : null}
-      <Pressable accessibilityRole="link" onPress={() => router.push("/teams")} style={{ minHeight: 44, justifyContent: "center", borderBottomWidth: 1, borderColor: theme.border }}><Text style={{ color: theme.foreground }}>Find a team to review</Text></Pressable>
-      <Pressable accessibilityRole="link" onPress={() => router.push("/membership")} style={{ minHeight: 44, justifyContent: "center" }}><Text style={{ color: theme.foreground }}>Membership & billing</Text></Pressable>
     </View>
     <AlternateIcons />
     {error ? <Text accessibilityRole="alert" style={{ color: theme.accent }}>{error}</Text> : null}
