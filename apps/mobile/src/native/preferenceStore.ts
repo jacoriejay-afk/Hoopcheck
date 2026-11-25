@@ -14,7 +14,7 @@ export function restorePreferences(value: string | null): Preferences {
       // A malformed saved security setting is not evidence that lock was disabled.
       appLock: data.appLock === undefined ? false : typeof data.appLock === "boolean" ? data.appLock : true,
       onboardingDone: data.onboardingDone === true,
-      theme: data.theme === "light" || data.theme === "dark" ? data.theme : "system",
+      theme: data.theme === "light" || data.theme === "dark" || data.theme === "midnight" ? data.theme : "system",
       ...(typeof data.role === "string" && roles.includes(data.role as Role) ? { role: data.role as Role } : {}),
     };
   } catch { return { ...defaultPreferences, appLock: true }; }
