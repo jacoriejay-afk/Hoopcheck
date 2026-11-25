@@ -74,3 +74,17 @@ test("Dashboard Court Space does not inherit illustration aspect ratio or perspe
   }
   assert.match(court,/body:has\(main\.hc-home3\)::before/);
 });
+
+test("Fan HQ shortcut reaches the personal team dashboard and restores saved legacy links",()=>{
+  const source=read("components/RoleQuickLinks.tsx");
+  assert.match(source,/href:"\/team-hub",label:"Fan HQ"/);
+  assert.match(source,/role==="fan"&&href==="\/fan-feed"\?"\/team-hub"/);
+  const hub=read("app/team-hub/page.tsx");
+  assert.match(hub,/<h1>\{labels.title\}<\/h1>/);
+  assert.match(hub,/href=\{directoryHref\}>\{labels.findTeams\}/);
+  assert.match(hub,/getLiveGameStatusPresentation\(game,clock\)/);
+  assert.match(hub,/presentation.showPeriod&&game.period_label/);
+  assert.match(hub,/formatPregameCountdown\(game.status,game.scheduled_at,clock\)/);
+  assert.match(hub,/signedIn&&!message&&!teams.length/);
+  assert.match(hub,/window.clearInterval\(id\);requestSequence.current\+\+/);
+});
