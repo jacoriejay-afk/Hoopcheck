@@ -1,0 +1,193 @@
+{
+  "reviewedOn": "2026-11-26",
+  "rightsApproved": false,
+  "publicationApproved": false,
+  "competitions": [
+    {
+      "competition": "KBL",
+      "region": "South Korea",
+      "side": "mens",
+      "season": "2026-27",
+      "expectedCount": 10,
+      "source": "https://www.kbl.or.kr/",
+      "corroboration": "https://news.sbs.co.kr/english/article.do?cooper=SBSNEWSAMP&news_id=N1008751704",
+      "scope": "Ten clubs identified by current-season media day; exact provider IDs and current participation require separate review.",
+      "teams": [
+        {
+          "name": "Wonju DB Promy",
+          "country": "South Korea",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Seoul Samsung Thunders",
+          "country": "South Korea",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Goyang Sono Skygunners",
+          "country": "South Korea",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Seoul SK Knights",
+          "country": "South Korea",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Changwon LG Sakers",
+          "country": "South Korea",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Anyang Jung Kwan Jang Red Boosters",
+          "country": "South Korea",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Busan KCC Egis",
+          "country": "South Korea",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Suwon KT Sonicboom",
+          "country": "South Korea",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Daegu KOGAS Pegasus",
+          "country": "South Korea",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Ulsan Hyundai Mobis Phoebus",
+          "country": "South Korea",
+          "historicalNames": [],
+          "canonicalId": null
+        }
+      ]
+    },
+    {
+      "competition": "WKBL",
+      "region": "South Korea",
+      "side": "womens",
+      "season": "2026-27",
+      "expectedCount": 6,
+      "source": "https://www.wkbl.or.kr/eng/",
+      "corroboration": "https://koreawhatson.com/events/kr-066/",
+      "scope": "Official club directory plus 2026-27 six-club season corroboration; naming variants require identity review.",
+      "teams": [
+        {
+          "name": "Yongin Samsung Life Blueminx",
+          "country": "South Korea",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Incheon Shinhan Bank S-Birds",
+          "country": "South Korea",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Asan Woori Bank Woori WON",
+          "country": "South Korea",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Bucheon Hana Bank",
+          "country": "South Korea",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Busan BNK Sum",
+          "country": "South Korea",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Cheongju KB Stars",
+          "country": "South Korea",
+          "historicalNames": [],
+          "canonicalId": null
+        }
+      ]
+    },
+    {
+      "competition": "WNBL",
+      "region": "Australia",
+      "side": "womens",
+      "season": "2026-27",
+      "expectedCount": 9,
+      "source": "https://www.wnbl.com.au/news/wnbl-releases-2026-27-schedule-for-biggest-season-yet",
+      "corroboration": "https://www.wnbl.com.au/news/crunch-time-the-key-storylines-from-round-6-wnbl27",
+      "scope": "All nine named in official season schedule, including expansion Tasmania; canonical identity and rights pending.",
+      "teams": [
+        {
+          "name": "Adelaide Lightning",
+          "country": "Australia",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Bendigo Spirit",
+          "country": "Australia",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "UC Capitals",
+          "country": "Australia",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Geelong Venom",
+          "country": "Australia",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Perth Lynx",
+          "country": "Australia",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Southside Melbourne Flyers",
+          "country": "Australia",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Sydney Flames",
+          "country": "Australia",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Tasmania Jewels",
+          "country": "Australia",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Townsville Fire",
+          "country": "Australia",
+          "historicalNames": [],
+          "canonicalId": null
+        }
+      ]
+    }
+  ]
+}
