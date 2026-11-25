@@ -26,3 +26,27 @@ test('denied alert reads and writes report failures without pretending success',
   const db=createClient('https://fixture.supabase.co','key',{auth:{persistSession:false,autoRefreshToken:false},global:{fetch:async()=>Response.json({message:'denied'},{status:403})}});
   await assert.rejects(readNotifications(db,uid));await assert.rejects(markNotificationsRead(db,uid));
 });
+
+test('notification history uses viewer-scoped stable timestamp and ID keyset; rejects unsafe cursors',async()=>{
+  const calls=[];
+  const db=createClient('https://fixture.supabase.co','key',{auth:{persistSession:false,autoRefreshToken:false},global:{fetch:async(input)=>{calls.push(new URL(String(input)));return Response.json([]);}}});
+  const before={id:'22222222-2222-4222-8222-222222222222',created_at:'2026-11-24T10:20:30.123456+00:00'};
+  await readNotifications(db,uid,before);
+  assert.equal(calls[0].searchParams.get('user_id'),`eq.${uid}`);
+  assert.equal(calls[0].searchParams.get('limit'),'100');
+  assert.equal(calls[0].searchParams.get('order'),'created_at.desc,id.desc');
+  assert.equal(calls[0].searchParams.get('or'),`(created_at.lt.${before.created_at},and(created_at.eq.${before.created_at},id.lt.${before.id}))`);
+  await assert.rejects(readNotifications(db,uid,{...before,id:'bad,or'}));
+  await assert.rejects(readNotifications(db,uid,{...before,created_at:'2026-11-24T10:20:30Z),id.gt.0'}));
+  assert.equal(calls.length,1);
+});
+test('marking a single alert keeps user scope and preserves other unread alerts',async()=>{
+  const id='22222222-2222-4222-8222-222222222222';
+  const calls=[];
+  const db=createClient('https://fixture.supabase.co','key',{auth:{persistSession:false,autoRefreshToken:false},global:{fetch:async(input)=>{calls.push(new URL(String(input)));return Response.json([{id}]);}}});
+  const now=new Date('2026-11-24T10:20:30Z');
+  assert.deepEqual(await markNotificationsRead(db,uid,now,id),{ids:[id],readAt:now.toISOString()});
+  assert.equal(calls[0].searchParams.get('user_id'),`eq.${uid}`);
+  assert.equal(calls[0].searchParams.get('id'),`eq.${id}`);
+  assert.equal(calls[0].searchParams.get('read_at'),'is.null');
+});
