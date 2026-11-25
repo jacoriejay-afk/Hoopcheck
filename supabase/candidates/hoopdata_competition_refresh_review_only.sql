@@ -42,7 +42,8 @@ BEGIN
   IF j.kind<>'seasons' THEN
     SELECT s.rows INTO season_rows FROM public.hoopdata_competition_snapshots s
     WHERE s.league_id=j.league_id AND s.provider_league_id=m.provider_league_id AND s.kind='seasons'
-      AND s.season='' AND s.observed_at>=t-interval '48 hours' AND s.observed_at<=t;
+      AND s.season='' AND s.observed_at>=t-interval '48 hours' AND s.observed_at<=t
+      AND (s.retention_expires_at IS NULL OR s.retention_expires_at>t);
   END IF;
   RETURN jsonb_build_object('leagueId',j.league_id,'kind',j.kind,'leaseToken',j.lease_token,
     'mapping',jsonb_build_object('leagueId',m.league_id,'providerLeagueId',m.provider_league_id,'side',m.side,'reviewed',m.reviewed,'evidence',m.evidence),
