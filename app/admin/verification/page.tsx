@@ -1,5 +1,7 @@
 "use client";
 
+import EvidenceDownload from "../../../components/EvidenceDownload";
+import { safeExternalEvidenceUrl } from "../../../lib/security/evidence-download";
 import HoopLoading from "../../../components/HoopLoading";
 import { useEffect, useState } from "react";
 import Logo from "../../../components/Logo";
@@ -18,7 +20,6 @@ export default function VerificationAdminPage(){
  const [filter,setFilter]=useState<"all"|"pending"|"approved"|"rejected">("pending");
  const [loading,setLoading]=useState(true); const [authorized,setAuthorized]=useState(false); const [error,setError]=useState("");
  const [saving,setSaving]=useState<string|null>(null);
- const [docLinks,setDocLinks]=useState<Record<string,string>>({});
 
  async function load(){
    const {data:role,error:roleError}=await supabase.rpc("is_current_user_admin_or_moderator");
@@ -33,11 +34,6 @@ export default function VerificationAdminPage(){
  }
  useEffect(()=>{(async()=>{const {data:{session}}=await supabase.auth.getSession();if(!session){window.location.href="/login";return;}await load();})();},[]);
 
- async function openDocument(row:Request){
-   if(!row.document_path) return;
-   const {data,error}=await supabase.storage.from("player-verification-documents").createSignedUrl(row.document_path,300);
-   if(!error&&data?.signedUrl) setDocLinks(v=>({...v,[row.id]:data.signedUrl}));
- }
 
  async function moderate(row:Request,status:"approved"|"rejected"){
    setSaving(row.id);setError("");
@@ -68,8 +64,8 @@ export default function VerificationAdminPage(){
     <div style={{display:"flex",justifyContent:"space-between",gap:16,flexWrap:"wrap"}}><div><p className="eyebrow">REQUEST</p><h2>{profiles[row.user_id]?.display_name||"Unnamed player"}</h2></div><strong>{row.status.toUpperCase()}</strong></div>
     <p className="muted">Team: {row.current_team||"Not provided"} · Country: {row.current_country||"Not provided"} · League: {row.league||"Not provided"}</p>
     {row.note&&<p>{row.note}</p>}
-    {row.evidence_url&&<p><a href={row.evidence_url} target="_blank" rel="noreferrer" className="btn">Open proof link</a></p>}
-    {row.document_path&&<p><button className="btn" type="button" onClick={()=>openDocument(row)}>Open uploaded document</button>{docLinks[row.id]&&<> <a href={docLinks[row.id]} target="_blank" rel="noreferrer">View</a></>}</p>}
+    {row.evidence_url && (safeExternalEvidenceUrl(row.evidence_url) ? <p><a href={safeExternalEvidenceUrl(row.evidence_url)!} target="_blank" rel="noopener noreferrer" className="btn">Open external proof link</a> <small>Untrusted external site</small></p> : <p>Unsafe proof link blocked.</p>)}
+    {row.document_path && <p><EvidenceDownload bucket="player-verification-documents" path={row.document_path} /></p>}
     <p className="muted">{new Date(row.created_at).toLocaleString()}</p>
     {row.status==="pending"&&<div style={{display:"flex",gap:12}}><button className="btn" disabled={saving===row.id} onClick={()=>moderate(row,"approved")}>{saving===row.id?"Saving...":"Approve"}</button><button className="btn dark" disabled={saving===row.id} onClick={()=>moderate(row,"rejected")}>Reject</button></div>}
    </article>)}
