@@ -215,13 +215,76 @@
     },
     {
       "competition": "Super League Basketball",
-      "region": "United Kingdom and Ireland",
+      "region": "United Kingdom",
       "side": "mens",
       "season": "2026-27",
       "expectedCount": 10,
       "source": "https://www.thelondonlions.com/news/london-lions-men-announce-2026-27-super-league-basketball-fixtures",
-      "scope": "partial source discovery",
-      "teams": []
+      "scope": "10 current-season fixture participants; canonical matching and rights pending",
+      "teams": [
+        {
+          "name": "Bristol Flyers",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Caledonia Gladiators",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Cheshire Phoenix",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Leicester Riders",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Liverpool Basketball",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "London Lions",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Manchester Basketball",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Newcastle Eagles",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Sheffield Sharks",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Surrey 89ers",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        }
+      ],
+      "corroboration": "https://newcastle-eagles.com/news/2026-27-mens-super-league-basketball-fixtures/",
+      "fixtureEvidence": "https://www.flashscore.co.uk/basketball/united-kingdom/slb/fixtures/"
     },
     {
       "competition": "Women's Super League Basketball",
@@ -230,8 +293,70 @@
       "season": "2026-27",
       "expectedCount": 10,
       "source": "https://newcastle-eagles.com/news/2026-27-womens-super-league-basketball-fixtures/",
-      "scope": "partial source discovery",
-      "teams": []
+      "scope": "10 current-season fixture participants; canonical matching and rights pending",
+      "teams": [
+        {
+          "name": "BA London Lions",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Caledonia Gladiators",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Cardiff Met Archers",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Essex Rebels",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Leicester Riders",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Manchester Basketball",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Newcastle Eagles",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Nottingham Wildcats",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Oaklands Wolves",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Sheffield Hatters",
+          "country": "United Kingdom",
+          "historicalNames": [],
+          "canonicalId": null
+        }
+      ],
+      "corroboration": "https://www.flashscore.co.uk/basketball/united-kingdom/slb-women/fixtures/"
     },
     {
       "competition": "British Championship Basketball",
@@ -505,7 +630,7 @@
       "season": "2026-27",
       "expectedCount": 25,
       "source": "https://www.bleague.jp/en/new-bleague/club/",
-      "scope": "partial announced entrants; remaining names and current participation pending",
+      "scope": "complete announced 2026-27 field; canonical matching and rights pending",
       "teams": [
         {
           "name": "Vertex Shizuoka",
@@ -566,9 +691,99 @@
           "country": "Japan",
           "historicalNames": [],
           "canonicalId": null
+        },
+        {
+          "name": "Aomori Wat's",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Iwate Big Bulls",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Yamagata Wyverns",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Fukushima Firebonds",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Koshigaya Alphas",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Saitama Broncos",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Tokyo United Basketball Club",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Earthfriends Tokyo Z",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Tachikawa Dice",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Tokyo Hachioji Bee Trains",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Yokohama Excellence",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Niigata Albirex BB",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Kanazawa Samuraiz",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Fukui Blowinds",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Gifu Swoops",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
         }
       ],
-      "corroboration": "https://www.bleague.jp/news_detail/id%3D620570"
+      "corroboration": "https://www.bleague.jp/news_detail/id=541287"
     },
     {
       "competition": "B.NEXT",
