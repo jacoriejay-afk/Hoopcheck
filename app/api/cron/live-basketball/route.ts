@@ -14,6 +14,7 @@ type ProviderGame = {
   timestamp?: number;
   status?: { short?: string; long?: string };
   league?: { id?: number; name?: string; country?: string };
+  country?: { id?: number; name?: string };
   teams?: { home?: ProviderTeam; away?: ProviderTeam; visitors?: ProviderTeam };
   scores?: { home?: ProviderScore; away?: ProviderScore; visitors?: ProviderScore };
 };
@@ -156,6 +157,8 @@ export async function GET(request: NextRequest) {
     );
 
     const rows = [];
+    const missingMatchupMappings: {providerGameId:string; providerTeamId:number|null; providerTeamName:string|null; leagueId:number|null}[] = [];
+    let incompleteMatchups = 0;
     for (const game of trackedGames) {
       const homeProviderId = Number(game.teams?.home?.id);
       const awayProviderId = Number((game.teams?.away ?? game.teams?.visitors)?.id);
@@ -172,6 +175,11 @@ export async function GET(request: NextRequest) {
       const primaryScore = primaryIsHome ? score(game.scores?.home) : score((game.scores?.away ?? game.scores?.visitors));
       const opponentScore = primaryIsHome ? score((game.scores?.away ?? game.scores?.visitors)) : score(game.scores?.home);
       if (!primaryId || !opponentName || !game.id) continue;
+      if (!opponentId && scheduledStatuses.has(statusOf(game))) {
+        incompleteMatchups++;
+        const missingId = primaryIsHome ? awayProviderId : homeProviderId;
+        if (missingMatchupMappings.length < 20) missingMatchupMappings.push({providerGameId:String(game.id),providerTeamId:Number.isSafeInteger(missingId)&&missingId>0?missingId:null,providerTeamName:opponentName.slice(0,120),leagueId:typeof game.league?.id==="number"?game.league.id:null});
+      }
 
       const startDate = game.timestamp ? new Date(game.timestamp * 1000).toISOString()
         : (game.date && !Number.isNaN(Date.parse(game.date)) ? new Date(game.date).toISOString() : null);
@@ -198,7 +206,7 @@ export async function GET(request: NextRequest) {
         ends_at: null as string | null,
         scheduled_at: startDate,
         league_name: game.league?.name || null,
-        country: game.league?.country || null,
+        country: typeof game.country?.name === "string" && game.country.name.trim() ? game.country.name.trim() : typeof game.league?.country === "string" && game.league.country.trim() ? game.league.country.trim() : null,
         period_label: liveStatuses.has(providerStatus) ? (game.status?.long || providerStatus) : null
       });
     }
@@ -295,6 +303,8 @@ export async function GET(request: NextRequest) {
       providerScheduledGames: rows.filter(row => row.status === "scheduled").length,
       providerFinishedGames: rows.filter(row => row.status === "final").length,
       matchedGames: rows.length,
+      incompleteMatchups,
+      missingMatchupMappings,
       unmatchedLiveGames
     }, {
       headers: { "Cache-Control": "no-store" }

@@ -10,6 +10,16 @@ const compiled = ts.transpileModule(source, {
 const exports = {};
 new Function("exports", compiled)(exports);
 const { selectFixtureSyncDay } = exports;
+function loadPredictionHelper(name){
+  const paths={"../../../lib/fan-prediction-xp":"../lib/fan-prediction-xp.ts","../../../lib/live-game-status":"../lib/live-game-status.ts"};
+  if(!Object.hasOwn(paths,name))throw Error(name);
+  const source=readFileSync(new URL(paths[name],import.meta.url),"utf8");
+  const code=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+  const loaded={exports:{}};
+  new Function("exports",code)(loaded.exports);
+  return loaded.exports;
+}
+
 const bakuDate = (day, hour, minute = 7) =>
   new Date(`2026-11-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00+04:00`);
 
@@ -63,4 +73,105 @@ test("provider snapshots record actual receipt times and scan the full mapped te
   assert.equal((source.match(/\.range\(offset,offset\+499\)/g)||[]).length,2);
   assert.match(source,/Object.keys\(payload.errors\).length > 0/);
   assert.match(source,/if \(insertMappingsError\) throw insertMappingsError/);
+});
+
+test("production prediction listing bounds dates before the limit and falls back only for missing freshness column", async () => {
+  const src=readFileSync(new URL("../app/api/game-predictions/route.ts",import.meta.url),"utf8");
+  const code=ts.transpileModule(src,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+  const calls=[],fixture={id:"fixture-game"},token="fixture-token";
+  const db={from(table){assert.equal(table,"fan_live_games");const attempt=[];calls.push(attempt);return {
+    select(value){attempt.push(["select",value]);return this;},
+    in(key,value){attempt.push(["in",key,value]);return this;},
+    gte(key,value){attempt.push(["gte",key,value]);return this;},
+    lte(key,value){attempt.push(["lte",key,value]);return this;},
+    order(key,options){attempt.push(["order",key,options]);return this;},
+    limit(value){attempt.push(["limit",value]);return Promise.resolve(attempt[0][1].includes("score_updated_at")?{data:null,error:{code:"42703"}}:{data:[fixture],error:null});}
+  };}};
+  let verified=false;
+  const auth={auth:{getUser:async value=>{assert.equal(value,token);verified=true;return {data:{user:{id:"fixture-user"}}};}}};
+  process.env.NEXT_PUBLIC_SUPABASE_URL="https://fixture.example";
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="fixture-publishable";
+  process.env.SUPABASE_SERVICE_ROLE_KEY="fixture-service";
+  const mod={exports:{}};
+  new Function("require","module","exports",code)(name=>{
+    if(name==="next/server")return {NextResponse:{json:(data,init)=>Response.json(data,init)}};
+    if(name==="@supabase/supabase-js")return {createClient:(_url,key)=>key==="fixture-service"?db:auth};
+    return loadPredictionHelper(name);
+  },mod,mod.exports);
+  const denied=await mod.exports.GET(new Request("https://fixture.example/api/game-predictions?mode=games"));
+  assert.equal(denied.status,401);assert.equal(calls.length,0);
+  const before=Date.now();
+  const result=await mod.exports.GET(new Request("https://fixture.example/api/game-predictions?mode=games",{headers:{Authorization:"Bearer "+token}}));
+  assert.equal(result.status,200);assert.equal(result.headers.get("cache-control"),"private, no-store");
+  assert.deepEqual(await result.json(),{games:[fixture]});assert.equal(verified,true);
+  assert.equal(calls.length,2);assert.ok(!calls[1][0][1].includes("score_updated_at"));
+  for(const attempt of calls){
+    assert.deepEqual(attempt.map(row=>row[0]),["select","in","gte","lte","order","order","limit"]);
+    assert.equal(attempt[2][1],"scheduled_at");assert.equal(attempt[3][1],"scheduled_at");
+    assert.ok(Math.abs(Date.parse(attempt[2][2])-(before-36*3600000))<10000);
+    assert.ok(Math.abs(Date.parse(attempt[3][2])-(before+14*86400000))<10000);
+    assert.equal(attempt[5][1],"id");assert.equal(attempt[6][1],500);
+  }
+});
+
+test("fixture country comes from provider country object and incomplete matchup diagnostics are bounded",()=>{
+ const source=readFileSync(new URL("../app/api/cron/live-basketball/route.ts",import.meta.url),"utf8");
+ assert.match(source,/country\?: \{ id\?: number; name\?: string \}/);
+ assert.match(source,/country: typeof game\.country\?\.name === "string"/);
+ assert.match(source,/if \(!opponentId && scheduledStatuses\.has\(statusOf\(game\)\)\)/);
+ assert.match(source,/missingMatchupMappings\.length < 20/);
+ assert.match(source,/providerTeamId:Number\.isSafeInteger\(missingId\)/);
+ assert.match(source,/incompleteMatchups,\s*missingMatchupMappings,/);
+ assert.equal((source.match(/await fetch\(/g)||[]).length,1);
+});
+
+test("server rejects incomplete, cancelled and expired matchups consistently for both prediction reads and writes", async()=>{
+ const src=readFileSync(new URL("../app/api/game-predictions/route.ts",import.meta.url),"utf8");
+ const code=ts.transpileModule(src+"\nexport {predictionLocked,completeMatchup};",{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+ const m={exports:{}};
+ new Function("require","module","exports",code)(name=>{
+   if(name==="next/server")return {NextResponse:{json:(data,init)=>Response.json(data,init)}};
+   if(name==="@supabase/supabase-js")return {};
+   return loadPredictionHelper(name);
+ },m,m.exports);
+ const home="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",away="bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+ const valid={team_id:home,opponent_team_id:away,status:"scheduled",scheduled_at:new Date(Date.now()+3600000).toISOString()};
+ assert.equal(m.exports.predictionLocked(valid),false);
+ for(const status of ["cancelled","postponed","abandoned","live","final","unknown",null])assert.equal(m.exports.predictionLocked({...valid,status}),true);
+ for(const opponent_team_id of [null,"invalid",home,home.toUpperCase()])assert.equal(m.exports.predictionLocked({...valid,opponent_team_id}),true);
+ for(const scheduled_at of [null,"invalid",new Date(Date.now()-1000).toISOString()])assert.equal(m.exports.predictionLocked({...valid,scheduled_at}),true);
+ assert.match(src,/const locked=predictionLocked\(game\)/);
+ assert.match(src,/if\(predictionLocked\(game\)\)/);
+ assert.match(src,/if\(!completeMatchup\(game\)\|\|!\[game.team_id,game.opponent_team_id\]/);
+});
+
+test("fan XP endpoint authenticates, scopes history to caller and fails closed on truncated results",async()=>{
+ const src=readFileSync(new URL("../app/api/game-predictions/route.ts",import.meta.url),"utf8");
+ const code=ts.transpileModule(src,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+ const home="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",away="bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+ const past=hours=>new Date(Date.now()-hours*3600000).toISOString();
+ const picks=[{game_id:"game",picked_team_id:home,updated_at:past(6)}];
+ const game={id:"game",team_id:home,opponent_team_id:away,status:"final",period_label:null,home_score:80,away_score:70,scheduled_at:past(5),ends_at:past(3)};
+ let role="fan",truncated=false,reads=0;
+ const db={from(table){
+   if(table==="profiles")return {select(){return this},eq(key,value){assert.equal(key,"id");assert.equal(value,"fan-self");return this},maybeSingle:async()=>({data:{account_type:role},error:null})};
+   if(table==="game_winner_picks"){reads++;return {select(_value,options){assert.equal(options.count,"exact");return this},eq(key,value){assert.equal(key,"user_id");assert.equal(value,"fan-self");return this},gte(){return this},lte(){return this},limit:async()=>({data:picks,error:null,count:truncated?2:1})};}
+   assert.equal(table,"fan_live_games");
+   return {select(){return this},in(key,values){if(key==="id"){assert.deepEqual(values,["game"]);return this}assert.equal(key,"status");return Promise.resolve({data:[game],error:null});}};
+ }};
+ const mod={exports:{}};
+ new Function("require","module","exports",code)(name=>{
+   if(name==="next/server")return {NextResponse:{json:(data,init)=>Response.json(data,init)}};
+   if(name==="@supabase/supabase-js")return {createClient:(_url,key)=>key==="fixture-service"?db:{auth:{getUser:async()=>({data:{user:{id:"fan-self"}}})}}};
+   return loadPredictionHelper(name);
+ },mod,mod.exports);
+ const url="https://fixture.example/api/game-predictions?mode=fan-xp";
+ const request=()=>new Request(url,{headers:{Authorization:"Bearer fixture-token"}});
+ assert.equal((await mod.exports.GET(new Request(url))).status,401);
+ assert.equal(reads,0);
+ role="player";assert.equal((await mod.exports.GET(request())).status,403);assert.equal(reads,0);
+ role="fan";const response=await mod.exports.GET(request());
+ assert.equal(response.status,200);assert.equal(response.headers.get("cache-control"),"private, no-store");
+ assert.equal((await response.json()).xp,10);
+ truncated=true;assert.equal((await mod.exports.GET(request())).status,500);
 });

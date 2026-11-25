@@ -140,3 +140,16 @@ export function formatViewerLocalTime(value: string | null, options?: Intl.DateT
     ...options,
   });
 }
+
+/** Countdown is informational: only a provider-scheduled future tip-off qualifies. */
+export function formatPregameCountdown(status: GameStatus, scheduledAt: string | null, now: Date): string | null {
+  if (status.trim().toLowerCase() !== "scheduled" || !scheduledAt) return null;
+  const remaining = Date.parse(scheduledAt) - now.getTime();
+  if (!Number.isFinite(remaining) || remaining <= 0) return null;
+  const minutes = Math.ceil(remaining / MINUTE);
+  const days = Math.floor(minutes / 1440);
+  const hours = Math.floor((minutes % 1440) / 60);
+  const mins = minutes % 60;
+  const parts = [days ? `${days}d` : "", hours ? `${hours}h` : "", mins ? `${mins}m` : ""].filter(Boolean);
+  return `Tip-off in ${parts.join(" ")}`;
+}
