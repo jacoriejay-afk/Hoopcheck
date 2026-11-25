@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import ts from "typescript";
 
 const read=path=>readFileSync(new URL("../"+path,import.meta.url),"utf8");
 
@@ -82,4 +83,24 @@ test("Community owner moderation never exposes service keys or grants client UPD
   assert.match(sql,/grant execute on function public\.moderate_hoop_group_post\(uuid,uuid,text\) to service_role/);
   assert.doesNotMatch(owner,/SUPABASE_SERVICE_ROLE_KEY|service_role/);
   assert.doesNotMatch(page,/SUPABASE_SERVICE_ROLE_KEY/);
+});
+
+test("role-based discovery matches real group categories and excludes already joined or owned groups", async()=>{
+  const code=ts.transpileModule(read("lib/hoopgroups-discovery.ts"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+  const {groupCategoryForRole,orderGroupsForRole,recommendedGroupIds}=await import("data:text/javascript;base64,"+Buffer.from(code).toString("base64"));
+  for(const [role,category] of [["player","players"],["fan","fans"],["coach","coaches"],["agent","agents"],["scout","agents"],["manager",null],["",null]]) assert.equal(groupCategoryForRole(role),category);
+  const group=(id,category,owner_id=null)=>({id,category,owner_id,name:id});
+  const groups=[group("a","global"),group("z","fans"),group("c","fans","viewer"),group("b","fans"),group("d","coaches")];
+  assert.deepEqual(orderGroupsForRole(groups,"fan").map(g=>g.id),["b","c","z","a","d"]);
+  assert.deepEqual(groups.map(g=>g.id),["a","z","c","b","d"],"sort must not mutate viewer results");
+  assert.deepEqual([...recommendedGroupIds(groups,"fan","viewer",["b"])],["z"]);
+  assert.deepEqual([...recommendedGroupIds(groups,"fan","",[])],[]);
+  assert.deepEqual([...recommendedGroupIds(groups,"manager","viewer",[])],[]);
+  assert.deepEqual([...recommendedGroupIds([],"fan","viewer",[])],[]);
+  const page=read("app/hoopgroups/page.tsx");
+  assert.match(page,/ready && userId && backendReady/);
+  assert.match(page,/recommendedGroupIds\(spaces, accountRole, userId, memberships\)/);
+  assert.match(page,/discoverFilter==="recommended" && !recommendations.has\(space.id\)/);
+  assert.match(page,/setDiscoverQuery\(""\); setDiscoverFilter\("all"\)/);
+  assert.match(page,/not popularity rankings/);
 });
