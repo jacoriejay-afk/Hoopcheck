@@ -16,16 +16,16 @@ function SecuritySettings({ owner }: { owner: string }) {
   const theme = useEntryTheme(); const security = useMfaSession(); const factors = security.state?.factors ?? []; const verified = factors.filter(factor => factor.verified && factor.type === "totp");
   const [name, setName] = useState("HoopCheck authenticator"); const [setup, setSetup] = useState<Setup | null>(null); const [showSecret, setShowSecret] = useState(false);
   const [code, setCode] = useState(""); const [remove, setRemove] = useState(""); const [verifyWith, setVerifyWith] = useState(verified[0]?.id ?? ""); const [confirmDisable, setConfirmDisable] = useState(false);
-  const [busy, setBusy] = useState(false); const pending = busy || security.phase !== "ready"; const [message, setMessage] = useState(""); const active = useRef(true); const working = useRef(false);
+  const [busy, setBusy] = useState(false); const pending = busy || security.phase !== "ready"; const [message, setMessage] = useState(""); const active = useRef(true); const working = useRef(false); const visibilityEpoch = useRef(0);
   useEffect(() => {
     active.current = true;
-    const listener = AppState.addEventListener("change", state => { if (state !== "active") { setCode(""); setShowSecret(false); setSetup(current => current ? { ...current, qr: "", secret: "" } : null); } });
+    const listener = AppState.addEventListener("change", state => { if (state !== "active") { visibilityEpoch.current++; setCode(""); setShowSecret(false); setSetup(current => current ? { ...current, qr: "", secret: "" } : null); } });
     return () => { active.current = false; listener.remove(); };
   }, []);
   async function action(kind: "enroll" | "verify" | "cancel" | "remove", factorId = "") {
-    if (working.current || security.phase !== "ready") return; working.current = true; setBusy(true); setMessage(""); const input = code; setCode("");
+    if (working.current || security.phase !== "ready") return; working.current = true; setBusy(true); setMessage(""); const input = code; const enrollmentEpoch = visibilityEpoch.current; setCode("");
     try {
-      if (kind === "enroll") { const result = await enrollTotp(supabase, owner, name); if (active.current) { setSetup(result); setShowSecret(false); } }
+      if (kind === "enroll") { const result = await enrollTotp(supabase, owner, name); if (active.current) { setSetup(visibilityEpoch.current === enrollmentEpoch && AppState.currentState === "active" ? result : { id: result.id, qr: "", secret: "" }); setShowSecret(false); } }
       if (kind === "verify" && setup) { await verifyTotp(supabase, owner, setup.id, input); if (active.current) { setSetup(null); setShowSecret(false); setMessage("Authenticator enabled. Add a backup on another device for recovery."); } security.retry(); }
       if (kind === "cancel") { await cancelTotpEnrollment(supabase, owner, factorId || setup?.id || ""); if (active.current) { setSetup(null); setShowSecret(false); setMessage("Incomplete setup cancelled."); } security.retry(); }
       if (kind === "remove") { await removeTotp(supabase, owner, remove, verifyWith, input, confirmDisable); if (active.current) { setRemove(""); setConfirmDisable(false); setMessage("Authenticator removed. Security settings refreshed."); } security.retry(); }
