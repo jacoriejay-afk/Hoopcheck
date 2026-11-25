@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { GAME_CHAT_OPEN_EARLY_MINUTES } from "../../../../lib/game-availability";
 import { selectFixtureSyncDay } from "../../../../lib/live-score-schedule";
+import { validatedProviderScore, validateProviderSnapshot, providerTipoff } from "../../../../lib/hoopdata-ingestion";
+import { retryAfterTime } from "../../../../lib/hoopdata-provider-fetch";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 20;
@@ -22,7 +24,7 @@ type ProviderResponse = { response?: ProviderGame[]; errors?: unknown; results?:
 
 function score(value?: ProviderScore): number | null {
   const n = value?.total ?? value?.points;
-  return typeof n === "number" && Number.isFinite(n) ? n : null;
+  return validatedProviderScore(n);
 }
 
 export async function GET(request: NextRequest) {
@@ -45,12 +47,27 @@ export async function GET(request: NextRequest) {
     // A small number of existing 15-minute slots fetch future fixtures
     // and yesterday's corrected finals; the rest refresh today's scores.
     const { date: fixtureDate, dayOffset } = selectFixtureSyncDay();
+    // Activation is explicit and separate from deployment. Never increase the legacy
+    // schedule until the durable quota ledger has been rehearsed and approved.
+    const quotaGuard = process.env.HOOPDATA_QUOTA_GUARD_ENABLED === "true";
+    if (quotaGuard) {
+      const { data: reserved, error: reservationError } = await db.rpc("hoopdata_reserve_request", { p_pool: "api-sports-basketball" });
+      if (reservationError) return NextResponse.json({ error: "Provider quota unavailable." }, { status: 503, headers: { "Cache-Control": "no-store" } });
+      if (reserved !== true) return NextResponse.json({ error: "Provider quota or cooldown blocked this request." }, { status: 429, headers: { "Cache-Control": "no-store" } });
+    }
+    const persistCooldown = async (header: string | null) => {
+      if (!quotaGuard) return;
+      const { data, error } = await db.rpc("hoopdata_block_provider", { p_pool: "api-sports-basketball", p_until: retryAfterTime(header, new Date()) });
+      if (error || data !== true) throw Error("Provider cooldown unavailable");
+    };
     const response = await fetch(`https://v1.basketball.api-sports.io/games?date=${fixtureDate}&timezone=Asia%2FBaku`, {
       headers: { "x-apisports-key": apiKey, "Accept": "application/json" },
       cache: "no-store",
-      signal: AbortSignal.timeout(12000)
-    });
+      signal: AbortSignal.timeout(12000),
+      redirect: "error"
+    }).catch(async () => { await persistCooldown(null); throw Error("Provider request failed"); });
     if (!response.ok) {
+      if (response.status === 408 || response.status === 429 || response.status >= 500) await persistCooldown(response.headers.get("Retry-After"));
       return NextResponse.json({ error: "Basketball data provider returned an error." }, { status: 502, headers: { "Cache-Control": "no-store" } });
     }
 
@@ -61,6 +78,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Basketball data provider returned an invalid response." }, { status: 502, headers: { "Cache-Control": "no-store" } });
     }
 
+    // Reject duplicate/malformed provider identities before any mapping or fixture write.
+    if (!validateProviderSnapshot(payload.response)) {
+      return NextResponse.json({ error: "Basketball provider snapshot contains invalid or duplicate game identities." }, { status: 502, headers: { "Cache-Control": "no-store" } });
+    }
     const receivedAt = new Date().toISOString();
     const mappings: {team_id:string;provider_team_id:number}[] = [];
     for (let offset = 0; offset < 10000; offset += 500) {
@@ -181,14 +202,16 @@ export async function GET(request: NextRequest) {
         if (missingMatchupMappings.length < 20) missingMatchupMappings.push({providerGameId:String(game.id),providerTeamId:Number.isSafeInteger(missingId)&&missingId>0?missingId:null,providerTeamName:opponentName.slice(0,120),leagueId:typeof game.league?.id==="number"?game.league.id:null});
       }
 
-      const startDate = game.timestamp ? new Date(game.timestamp * 1000).toISOString()
-        : (game.date && !Number.isNaN(Date.parse(game.date)) ? new Date(game.date).toISOString() : null);
+      const startDate = providerTipoff(game.timestamp, game.date);
+      // Do not create an undated fixture or overwrite a known tip-off with bad input.
+      if (!startDate) continue;
       const providerLeagueId = game.league?.id;
       const providerStatus = statusOf(game);
       const storedStatus = liveStatuses.has(providerStatus) ? "live"
         : scheduledStatuses.has(providerStatus) ? "scheduled"
         : finalStatuses.has(providerStatus) ? "final"
-        : "cancelled";
+        : providerStatus === "POST" || providerStatus === "SUSP" ? "postponed"
+        : providerStatus === "ABD" ? "abandoned" : "cancelled";
       rows.push({
         team_id: primaryId,
         opponent_team_id: opponentId,
@@ -198,9 +221,9 @@ export async function GET(request: NextRequest) {
         provider_league_id: typeof providerLeagueId === "number" && Number.isSafeInteger(providerLeagueId) && providerLeagueId > 0 ? providerLeagueId : null,
         status: storedStatus,
         score_updated_at: receivedAt,
-        home_score: storedStatus === "scheduled" ? null : primaryScore,
-        away_score: storedStatus === "scheduled" ? null : opponentScore,
-        started_at: storedStatus === "scheduled" ? null : startDate,
+        home_score: storedStatus === "scheduled" || storedStatus === "postponed" || storedStatus === "cancelled" || storedStatus === "abandoned" ? null : primaryScore,
+        away_score: storedStatus === "scheduled" || storedStatus === "postponed" || storedStatus === "cancelled" || storedStatus === "abandoned" ? null : opponentScore,
+        started_at: storedStatus === "live" || storedStatus === "final" ? startDate : null,
         // Only a genuine provider terminal event receives a completion time.
         // A later provider correction to live/scheduled clears a stale end.
         ends_at: null as string | null,
