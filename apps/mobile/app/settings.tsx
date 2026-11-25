@@ -49,6 +49,7 @@ export default function Settings() {
         <Text style={{color:theme.foreground,fontWeight:"700"}}>Edit profile & privacy</Text>
       </Pressable>
     </View>
+    <Pressable accessibilityRole="link" onPress={()=>router.push("/membership")} style={{minHeight:48,justifyContent:"center",borderWidth:1,borderColor:theme.border,backgroundColor:theme.surface,paddingHorizontal:14,borderRadius:theme.radius.control}}><Text style={{color:theme.foreground,fontWeight:"700"}}>Membership & billing</Text></Pressable>
     <AlternateIcons />
     {error ? <Text accessibilityRole="alert" style={{ color: theme.accent }}>{error}</Text> : null}
   </ScrollView>;
