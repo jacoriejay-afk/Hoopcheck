@@ -41,3 +41,21 @@ assert.match(hub, /presentation\.isUnverified/, "Hub needs an honest unverified 
 assert.match(chat, /selectedStatus\?\.isUnverified/, "Game chat needs an honest unverified state");
 assert.match(chat, /status\.showPeriod\?game\.period_label/, "Room picker must not show Q1 beside FINAL");
 console.log("PASS: Live quarter, stale final, delayed score and room labels remain consistent.");
+
+const availabilityJs = ts.transpileModule(read("lib/game-availability.ts"), {
+  compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
+}).outputText;
+const { formatPregameCountdown: countdown } = await import(
+  "data:text/javascript;base64," + Buffer.from(availabilityJs).toString("base64")
+);
+assert.equal(countdown("scheduled", "2026-11-22T12:00:01Z", now), "Tip-off in 1m");
+assert.equal(countdown("scheduled", "2026-11-22T13:00:00Z", now), "Tip-off in 1h");
+assert.equal(countdown("scheduled", "2026-11-23T13:30:00Z", now), "Tip-off in 1d 1h 30m");
+for (const state of ["live", "final", "cancelled", "postponed", "abandoned"]) {
+  assert.equal(countdown(state, "2026-11-23T13:30:00Z", now), null);
+}
+for (const date of [null, "invalid", "2026-11-22T12:00:00Z", "2026-11-22T11:59:00Z"]) {
+  assert.equal(countdown("scheduled", date, now), null);
+}
+assert.match(hub, /isUpcoming && !presentation\.isUnverified \? formatPregameCountdown/);
+console.log("PASS: pregame countdown only displays for valid future scheduled fixtures.");
