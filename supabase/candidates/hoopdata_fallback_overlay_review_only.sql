@@ -68,10 +68,10 @@ LANGUAGE sql SECURITY INVOKER SET search_path='' AS $read$
   SELECT o.home_score,o.away_score,o.observed_at,o.provider FROM public.hoopdata_fallback_overlays o
   JOIN public.fan_live_games g ON g.id=o.canonical_game_id
   WHERE o.canonical_game_id=p_game AND g.status='live' AND g.provider_source='api-sports-basketball'
-    AND g.score_updated_at=o.primary_observed_at AND g.score_updated_at<statement_timestamp()-interval '25 minutes'
+    AND g.score_updated_at=o.primary_observed_at AND g.score_updated_at<clock_timestamp()-interval '25 minutes'
     AND g.home_score IS NOT DISTINCT FROM o.primary_home_score AND g.away_score IS NOT DISTINCT FROM o.primary_away_score
     AND g.team_id=o.team_id AND g.opponent_team_id=o.opponent_team_id AND g.scheduled_at=o.scheduled_at
-    AND o.observed_at BETWEEN statement_timestamp()-interval '5 minutes' AND statement_timestamp()
+    AND o.observed_at BETWEEN clock_timestamp()-interval '5 minutes' AND clock_timestamp()
 $read$;
 REVOKE ALL ON FUNCTION public.hoopdata_stage_fallback_overlay(uuid,text,text,text,timestamptz,integer,integer,timestamptz,timestamptz),public.hoopdata_read_fallback_overlay(uuid) FROM PUBLIC,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION public.hoopdata_stage_fallback_overlay(uuid,text,text,text,timestamptz,integer,integer,timestamptz,timestamptz),public.hoopdata_read_fallback_overlay(uuid) TO service_role;
