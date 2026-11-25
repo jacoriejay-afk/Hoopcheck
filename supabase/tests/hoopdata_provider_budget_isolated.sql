@@ -225,3 +225,47 @@ BEGIN
   IF NOT EXISTS(SELECT 1 FROM public.hoopdata_competition_snapshots WHERE league_id=l AND rows='[{"teamId":2,"position":1}]') THEN RAISE EXCEPTION 'Latest valid snapshot not retained'; END IF;
 END $mapped_stage$;
 RESET ROLE;
+
+\ir ../candidates/hoopdata_competition_refresh_review_only.sql
+INSERT INTO public.hoopdata_competition_refresh_jobs(league_id,kind)
+VALUES('33333333-3333-4333-8333-333333333333','seasons');
+DO $refresh_access$ BEGIN
+  IF has_table_privilege('authenticated','public.hoopdata_competition_refresh_jobs','SELECT') OR
+     has_function_privilege('anon','public.hoopdata_claim_competition_refresh()','EXECUTE') OR
+     has_column_privilege('service_role','public.hoopdata_competition_refresh_jobs','enabled','UPDATE') THEN RAISE EXCEPTION 'Refresh access too broad'; END IF;
+END $refresh_access$;
+SET ROLE service_role;
+DO $disabled_refresh$ BEGIN
+  IF public.hoopdata_claim_competition_refresh() IS NOT NULL THEN RAISE EXCEPTION 'Disabled quota accepted'; END IF;
+END $disabled_refresh$;
+UPDATE public.hoopdata_quota_pools SET enabled=true WHERE pool='api-sports-basketball';
+DO $disabled_job$ BEGIN
+  IF public.hoopdata_claim_competition_refresh() IS NOT NULL THEN RAISE EXCEPTION 'Disabled job accepted'; END IF;
+END $disabled_job$;
+RESET ROLE;
+UPDATE public.hoopdata_competition_refresh_jobs SET enabled=true;
+SET ROLE service_role;
+DO $refresh$ DECLARE
+  j jsonb;
+  l uuid:='33333333-3333-4333-8333-333333333333';
+  token uuid;
+BEGIN
+  j:=public.hoopdata_claim_competition_refresh();
+  IF j IS NULL OR j->>'kind'<>'seasons' THEN RAISE EXCEPTION 'Reviewed job not leased'; END IF;
+  token:=(j->>'leaseToken')::uuid;
+  IF public.hoopdata_claim_competition_refresh() IS NOT NULL THEN RAISE EXCEPTION 'Job claimed twice'; END IF;
+  IF public.hoopdata_finish_competition_refresh(l,'seasons',gen_random_uuid(),'staged',NULL) THEN RAISE EXCEPTION 'Wrong token completed lease'; END IF;
+  IF NOT public.hoopdata_finish_competition_refresh(l,'seasons',token,'staged',NULL) THEN RAISE EXCEPTION 'Valid token rejected'; END IF;
+  IF public.hoopdata_claim_competition_refresh() IS NOT NULL THEN RAISE EXCEPTION 'Cadence ignored'; END IF;
+  IF NOT EXISTS(SELECT 1 FROM public.hoopdata_competition_refresh_jobs WHERE league_id=l AND last_state='staged' AND last_success_at IS NOT NULL AND next_due_at>now()+interval '23 hours' AND lease_token IS NULL) THEN RAISE EXCEPTION 'Completion not persisted'; END IF;
+END $refresh$;
+RESET ROLE;
+UPDATE public.hoopdata_competition_refresh_jobs SET next_due_at=now()-interval '1 minute';
+SET ROLE service_role;
+DO $refresh_retry$ DECLARE j jsonb; t uuid; l uuid:='33333333-3333-4333-8333-333333333333'; BEGIN
+  j:=public.hoopdata_claim_competition_refresh(); t:=(j->>'leaseToken')::uuid;
+  IF t IS NULL THEN RAISE EXCEPTION 'Retry test claim missing'; END IF;
+  IF NOT public.hoopdata_finish_competition_refresh(l,'seasons',t,'failed',now()+interval '2 hours') THEN RAISE EXCEPTION 'Failure completion rejected'; END IF;
+  IF EXISTS(SELECT 1 FROM public.hoopdata_competition_refresh_jobs WHERE next_due_at<now()+interval '2 hours') THEN RAISE EXCEPTION 'Provider cooldown shortened'; END IF;
+END $refresh_retry$;
+RESET ROLE;
