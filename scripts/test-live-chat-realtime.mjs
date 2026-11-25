@@ -75,3 +75,12 @@ assert.match(chat,/presenceTotal===present.length/,"Directory presence requires 
 assert.match(chat,/roomPresenceFresh\?[^\n]*Presence unavailable/,"Directory does not invent zero on failure");
 assert.match(chat,/chatEnabled&&<small>\{roomPresenceFresh/,"Directory occupancy remains membership-gated");
 console.log("PASS: directory and hub participation completeness and visibility checks.");
+
+assert.match(chat,/const sendingRef = useRef\(false\)/,"Rapid reaction taps share an immediate in-flight send lock");
+assert.match(chat,/\|\|!chatEnabled\|\|sendingRef.current\)return/,"All sends require an eligible membership and no in-flight message");
+assert.match(chat,/disabled=\{sending\} onClick=\{\(\)=>void send\(reaction\)\}/,"Quick reactions send through existing moderated chat");
+assert.match(chat,/if\(textOverride===undefined\)setBody\(""\)/,"Reactions and retries must preserve unsent composer text");
+assert.match(chat,/current.filter\(x=>x.pending\|\|x.failed\)/,"History refresh keeps unsent failures available for retry");
+assert.match(chat,/await send\(item.body,item.id\)/,"Retry replaces the failed item only after the send guard succeeds");
+assert.match(chat,/!status.isUnverified && roomOpen\(game,now\) &&\s*\(!status.isVerifiedFinal \|\| process.env.NEXT_PUBLIC_LIVE_POSTGAME_CHAT_ENABLED==="true"\)/,"Unverified and unactivated postgame rooms remain read-only");
+console.log("PASS: reaction send path, draft preservation, retry and postgame safeguards.");
