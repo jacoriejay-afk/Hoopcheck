@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { GAME_CHAT_OPEN_EARLY_MINUTES } from "../../../../lib/game-availability";
 import { selectFixtureSyncDay } from "../../../../lib/live-score-schedule";
 import { validatedProviderScore, validateProviderSnapshot, providerTipoff } from "../../../../lib/hoopdata-ingestion";
+import { retryAfterTime } from "../../../../lib/hoopdata-provider-fetch";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 20;
@@ -46,12 +47,27 @@ export async function GET(request: NextRequest) {
     // A small number of existing 15-minute slots fetch future fixtures
     // and yesterday's corrected finals; the rest refresh today's scores.
     const { date: fixtureDate, dayOffset } = selectFixtureSyncDay();
+    // Activation is explicit and separate from deployment. Never increase the legacy
+    // schedule until the durable quota ledger has been rehearsed and approved.
+    const quotaGuard = process.env.HOOPDATA_QUOTA_GUARD_ENABLED === "true";
+    if (quotaGuard) {
+      const { data: reserved, error: reservationError } = await db.rpc("hoopdata_reserve_request", { p_pool: "api-sports-basketball" });
+      if (reservationError) return NextResponse.json({ error: "Provider quota unavailable." }, { status: 503, headers: { "Cache-Control": "no-store" } });
+      if (reserved !== true) return NextResponse.json({ error: "Provider quota or cooldown blocked this request." }, { status: 429, headers: { "Cache-Control": "no-store" } });
+    }
+    const persistCooldown = async (header: string | null) => {
+      if (!quotaGuard) return;
+      const { data, error } = await db.rpc("hoopdata_block_provider", { p_pool: "api-sports-basketball", p_until: retryAfterTime(header, new Date()) });
+      if (error || data !== true) throw Error("Provider cooldown unavailable");
+    };
     const response = await fetch(`https://v1.basketball.api-sports.io/games?date=${fixtureDate}&timezone=Asia%2FBaku`, {
       headers: { "x-apisports-key": apiKey, "Accept": "application/json" },
       cache: "no-store",
-      signal: AbortSignal.timeout(12000)
-    });
+      signal: AbortSignal.timeout(12000),
+      redirect: "error"
+    }).catch(async () => { await persistCooldown(null); throw Error("Provider request failed"); });
     if (!response.ok) {
+      if (response.status === 408 || response.status === 429 || response.status >= 500) await persistCooldown(response.headers.get("Retry-After"));
       return NextResponse.json({ error: "Basketball data provider returned an error." }, { status: 502, headers: { "Cache-Control": "no-store" } });
     }
 
