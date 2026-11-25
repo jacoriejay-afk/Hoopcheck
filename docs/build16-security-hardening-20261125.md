@@ -54,3 +54,7 @@ No release submission, paid plan upgrade, public Reels activation or new paid st
   - fan-group-images: 4 MiB; image/jpeg, image/png, image/webp; preserve private status.
   Check native upload compatibility, rejection of oversized/disallowed files, and private download authorization before final sign-off. MIME checks are not equivalent to malware scanning. Bucket configuration action is not available in the current Supabase connector; no storage setting changed.
 - Vercel firewall reconnect, Auth CAPTCHA configuration, verified owner factor and recovery enrollment, full application/device acceptance, and review of remaining privileged RPCs are still open. No paid upgrades or submission.
+
+## Follow eligibility least privilege
+- Production migration 20261125044650 changes can_user_follow_target(uuid,text,uuid) to SECURITY INVOKER. Rollback comparisons covered all 19 production profiles and forged identities; all valid follow eligibility outcomes matched. Catalog verified invoker. Production warnings now 38, zero critical errors. Review eligibility invoker candidate not applied because the current comparison had no positive eligible-review cases.
+- Vercel status checks for revision 91845c957b2dd8fffc69be9afae5909b7dce154a all succeeded; later revisions require fresh verification. Owner MFA still zero verified factors. No merge or release submission.
