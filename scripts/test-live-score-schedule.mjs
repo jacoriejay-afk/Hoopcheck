@@ -172,6 +172,8 @@ test("fan XP endpoint authenticates, scopes history to caller and fails closed o
  role="player";assert.equal((await mod.exports.GET(request())).status,403);assert.equal(reads,0);
  role="fan";const response=await mod.exports.GET(request());
  assert.equal(response.status,200);assert.equal(response.headers.get("cache-control"),"private, no-store");
- assert.equal((await response.json()).xp,10);
+ const summary=await response.json();assert.equal(summary.xp,10);
+ assert.equal(summary.passport.recent.length,1);assert.equal(summary.passport.recent[0].correct,true);
+ assert.equal(summary.passport.milestones.find(m=>m.id==="first-pick").earned,true);
  truncated=true;assert.equal((await mod.exports.GET(request())).status,500);
 });
