@@ -1,4 +1,5 @@
 import { GlassCard, Input, Button } from "../src/primitives";
+import { useNativeCaptcha } from "../components/NativeCaptcha";
 import { useEntryTheme, type EntryTheme } from "../src/theme";
 import { useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from "react-native";
@@ -9,15 +10,18 @@ import { supabase, supabaseConfigurationError } from "../src/lib/supabase";
 export default function ForgotPasswordScreen() {
   const theme = useEntryTheme();
   const styles = createStyles(theme);
+  const captcha = useNativeCaptcha();
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function sendReset() {
+    if (busy) return;
     if (supabaseConfigurationError) { Alert.alert("Setup required", supabaseConfigurationError); return; }
     if (!email.trim()) { Alert.alert("Email required", "Enter the email address associated with your account."); return; }
     setBusy(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), { redirectTo: "hoopcheck://reset-password" });
+      const captchaToken = await captcha.requestToken();
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), { redirectTo: "hoopcheck://reset-password", ...(captchaToken ? { captchaToken } : {}) });
       if (error) throw error;
       Alert.alert("Check your email", "If an account exists for that address, password recovery instructions will be sent. Open the recovery link on this device to choose a new password.");
     } catch {
@@ -39,6 +43,7 @@ export default function ForgotPasswordScreen() {
         </GlassCard>
         </ScrollView>
       </KeyboardAvoidingView>
+      {captcha.challenge}
     </SafeAreaView>
   );
 }
