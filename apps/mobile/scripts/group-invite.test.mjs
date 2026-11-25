@@ -25,3 +25,11 @@ test("group share links open the native route and invalid hints are discarded",(
  assert.equal(nativeDestination("/hoopgroups?group=../account"),"/hoopgroups");
  assert.equal(nativeDestination("https://evil.test/hoopgroups?group=global-hoops"),"/");
 });
+
+import {rememberDestination,takeDestination} from "../src/native/pendingDestination.ts";
+test("native and sign-in navigation preserve only safe game side, alerts tab and visible group hints",()=>{
+ const id="11111111-1111-4111-8111-111111111111";
+ for(const [input,expected] of [[`/fan-live?gameId=${id}&side=womens&token=secret`,`/fan-live?gameId=${id}&side=womens`],["/hoopgroups?group=global-hoops&token=secret","/hoopgroups?group=global-hoops"],["/notifications?tab=requests&token=secret","/notifications?tab=requests"],["/connections","/connections"],["/fan-live?side=bad","/fan-live"]]){
+ assert.equal(nativeDestination(input),expected);rememberDestination(input);assert.equal(takeDestination(),expected);assert.equal(takeDestination(),null);
+ }
+});
