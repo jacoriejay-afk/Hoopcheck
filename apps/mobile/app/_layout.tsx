@@ -44,7 +44,7 @@ function RootLayout() {
   const sessionReady = session.ready;
   const signedIn = Boolean(session.userId);
   const pathname = usePathname();
-  const routeParams = useGlobalSearchParams<{ post?: string | string[]; q?: string | string[]; gameId?: string | string[]; side?: string | string[]; group?: string | string[]; tab?: string | string[] }>();
+  const routeParams = useGlobalSearchParams<{ post?: string | string[]; q?: string | string[]; gameId?: string | string[]; side?: string | string[]; group?: string | string[]; tab?: string | string[]; topic?: string | string[] }>();
 
   useEffect(() => {
     bootstrap.current = createSessionBootstrap(
@@ -86,11 +86,12 @@ function RootLayout() {
       if (currentRoute === "fan-live" && (routeParams.side === "mens" || routeParams.side === "womens")) query.set("side",routeParams.side);
       if (currentRoute === "hoopgroups" && typeof routeParams.group === "string" && /^[a-z0-9][a-z0-9-]{0,59}$/.test(routeParams.group)) query.set("group",routeParams.group);
       if (currentRoute === "notifications" && (routeParams.tab === "chat" || routeParams.tab === "requests" || routeParams.tab === "activity")) query.set("tab",routeParams.tab);
+      if (pathname === "/account/support" && routeParams.topic === "scam") query.set("topic","scam");
       if (currentRoute === "search" && typeof routeParams.q === "string") query.set("q", routeParams.q.slice(0, 100));
       const suffix = query.toString();
       rememberDestination(pathname + (suffix ? `?${suffix}` : "")); router.replace("/sign-in");
     }
-  }, [sessionReady, signedIn, segments, router, pathname, routeParams.post, routeParams.q, routeParams.gameId, routeParams.side, routeParams.group, routeParams.tab]);
+  }, [sessionReady, signedIn, segments, router, pathname, routeParams.post, routeParams.q, routeParams.gameId, routeParams.side, routeParams.group, routeParams.tab, routeParams.topic]);
 
   // Mount the navigator on the first render. Font loading must never prevent
   // Router from mounting or leave a blank screen after the splash deadline.
