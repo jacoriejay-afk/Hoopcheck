@@ -240,6 +240,9 @@ jobs:
       - name: Check rounded-corner design tokens
         run: npm run check:rounded-corners
 
+      - name: Verify HOOPDATA ingestion and freshness contracts
+        run: node --test scripts/test-hoopdata-ingestion.mjs
+
       - name: Verify read-only NBA validation authorization and error handling
         run: node --test scripts/test-balldontlie-validation.mjs
 
