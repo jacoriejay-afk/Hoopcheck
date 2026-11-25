@@ -25,7 +25,8 @@ export async function runCompetitionTask(task:CompetitionTask, apiKey:string|und
   const mapping=task.mapping,league=mapping.providerLeagueId;
   const query:CompetitionQuery=task.kind==="seasons"?{endpoint:"leagues",league}:{endpoint:task.kind,league,season:task.season};
   const result=await fetchCompetitionSnapshot(query,apiKey,deps);
-  if(result.state!=="ok")return result.state==="invalid-query"?{state:"invalid-task"}:result;
+  if(result.state==="provider-error")return result;
+  if(result.state!=="ok")return {state:result.state==="invalid-query"?"invalid-task":result.state};
   if(!result.rows.length)return {state:"invalid-response"};
   let snapshot:CompetitionSnapshot;
   if(task.kind==="seasons"&&result.endpoint==="leagues")snapshot={kind:"seasons",mapping,observedAt:result.observedAt,rows:result.rows};
