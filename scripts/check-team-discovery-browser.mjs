@@ -47,11 +47,22 @@ try {
       });
       await page.goto(`${baseURL}/coaches`);
       await page.locator(`html.theme-${theme}`).waitFor();
-      const directoryNav = page.locator('.hc-shared-directory-tile-grid');
-      const directoryLinks = directoryNav.getByRole('link');
-      assert.equal(await directoryLinks.count(), 4, 'Guest directory switcher has four accessible routes');
-      assert.equal(await directoryNav.locator('[aria-current="page"]').getAttribute('href'), '/coaches');
+      // Next/React can briefly keep a hidden or departing route tree during hydration.
+      // Require exactly one visible, complete switcher after the route settles; do not
+      // pick the first duplicate or relax the four-link/current-route assertions.
+      await page.getByRole('heading', { name: 'No coaches yet', exact: true }).waitFor({ state: 'visible' });
+      const directoryNav = page.locator('.hc-shared-directory-tile-grid:visible');
+      await page.waitForFunction(() => {
+        const grids = [...document.querySelectorAll('.hc-shared-directory-tile-grid')].filter(el =>
+          el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden');
+        return grids.length === 1 && grids[0].querySelectorAll('a').length === 4 &&
+          grids[0].querySelectorAll('[aria-current="page"]').length === 1 &&
+          grids[0].querySelector('[aria-current="page"]').getAttribute('href') === '/coaches';
+      });
+      assert.equal(await directoryNav.count(), 1, 'Exactly one visible directory switcher');
       const layout = await directoryNav.evaluate(grid => ({
+        linkCount: grid.querySelectorAll('a').length,
+        currentRoutes: [...grid.querySelectorAll('[aria-current="page"]')].map(link => link.getAttribute('href')),
         backdrop: getComputedStyle(grid.parentElement).backgroundColor,
         width: grid.clientWidth,
         scrollWidth: grid.scrollWidth,
@@ -61,6 +72,8 @@ try {
           return { right, height, shadow: getComputedStyle(link).boxShadow };
         }),
       }));
+      assert.equal(layout.linkCount, 4, 'Guest directory switcher has four accessible routes');
+      assert.deepEqual(layout.currentRoutes, ['/coaches'], 'Exactly one current route');
       assert.equal(layout.backdrop, 'rgba(0, 0, 0, 0)', 'Directory navigation leaves the page visible between links');
       assert.equal(layout.width, layout.scrollWidth, 'Directory links fit without horizontal scrolling');
       assert.ok(layout.links.every(link => link.height >= 44), 'Directory links retain mobile-sized targets');
