@@ -59,3 +59,14 @@ test("Basketball Data Center uses verified owner access before any privileged re
   assert.ok(page.includes("Directory counts are not verified provider coverage"));
   assert.doesNotMatch(page,/\.insert\(|\.upsert\(|\.update\(|\.delete\(|\.rpc\(/);
 });
+
+test("primary score ingestion only invokes provider after optional durable quota reservation",()=>{
+  const route=read("app/api/cron/live-basketball/route.ts");
+  assert.ok(route.includes('process.env.HOOPDATA_QUOTA_GUARD_ENABLED === "true"'));
+  const reserve=route.indexOf('await db.rpc("hoopdata_reserve_request"');
+  const fetchAt=route.indexOf("await fetch(");
+  assert.ok(reserve>0&&reserve<fetchAt);
+  assert.ok(route.indexOf("if (reserved !== true)")<fetchAt);
+  assert.ok(route.includes('await persistCooldown(response.headers.get("Retry-After"))'));
+  assert.ok(route.includes('await persistCooldown(null)'));
+});
