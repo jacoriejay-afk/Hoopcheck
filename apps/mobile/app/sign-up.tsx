@@ -2,6 +2,7 @@ import { BrandLockup } from "../components/BrandLockup";
 import { recordFreshSignIn } from "../src/native/lockPolicy";
 import { useDevicePreferences } from "../src/native/preferences";
 import { Input, Button } from "../src/primitives";
+import { useNativeCaptcha } from "../components/NativeCaptcha";
 import { useEntryTheme, type EntryTheme } from "../src/theme";
 import { useEffect, useRef, useState } from "react";
 import { Alert, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -38,6 +39,7 @@ function ageAtDate(value: string): number {
 export default function SignUpScreen() {
   const theme = useEntryTheme();
   const styles = createStyles(theme);
+  const captcha = useNativeCaptcha();
   const router = useRouter();
   const { preferences } = useDevicePreferences();
   const [accountType, setAccountType] = useState<(typeof ACCOUNT_TYPES)[number]["value"]>("player");
@@ -57,6 +59,7 @@ export default function SignUpScreen() {
   const [errorMessage, setErrorMessage] = useState("");
 
   async function createAccount() {
+    if (busy) return;
     setErrorMessage("");
     if (supabaseConfigurationError) { setErrorMessage(supabaseConfigurationError); return; }
     if (firstName.trim().length < 2 || lastName.trim().length < 2) { setErrorMessage("Enter your first and last name."); return; }
@@ -72,11 +75,12 @@ export default function SignUpScreen() {
 
     setBusy(true);
     try {
+      const captchaToken = await captcha.requestToken();
       const normalizedEmail = email.trim().toLowerCase();
       const { data, error } = await supabase.auth.signUp({
         email: normalizedEmail,
         password,
-        options: { data: {
+        options: { ...(captchaToken ? { captchaToken } : {}), data: {
           full_name: `${firstName.trim()} ${lastName.trim()}`,
           first_name: firstName.trim(),
           last_name: lastName.trim(),
@@ -178,6 +182,7 @@ export default function SignUpScreen() {
           <Text style={styles.bottomText}>Already have an account? <Link href="/sign-in" style={styles.link}>Sign in</Link></Text>
         </ScrollView>
       </KeyboardAvoidingView>
+      {captcha.challenge}
     </SafeAreaView>
   );
 }
