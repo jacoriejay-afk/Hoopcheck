@@ -9,6 +9,8 @@ import TeamFanGroupEntry from "../../components/TeamFanGroupEntry";
 import FanBasketballSideSwitch, { useFanBasketballSide } from "../../components/FanBasketballSideSwitch";
 import { useLanguage } from "../../components/LanguageProvider";
 import { teamHubCopy } from "./i18n";
+import { getLiveGameStatusPresentation } from "../../lib/live-game-status";
+import { formatPregameCountdown } from "../../lib/game-availability";
 import "../fan-feed/fan-feed.css";
 
 type Team = { id:string; name:string; logo_url:string|null; logo_bg?:"transparent"|"light"|"dark"|null; league_name:string|null; country:string|null; city:string|null };
@@ -23,6 +25,7 @@ export default function TeamHubPage(){
   const [teams,setTeams]=useState<Team[]>([]);
   const [games,setGames]=useState<Game[]>([]);
   const [message,setMessage]=useState("");
+  const [clock,setClock]=useState(()=>new Date());
   const requestSequence=useRef(0);
 
   const load=useCallback(async()=>{
@@ -66,15 +69,16 @@ export default function TeamHubPage(){
     }
   },[basketballSide]);
 
-  useEffect(()=>{void load();const id=window.setInterval(()=>void load(),30000);return()=>window.clearInterval(id);},[load]);
+  useEffect(()=>{void load();const id=window.setInterval(()=>{setClock(new Date());void load();},30000);return()=>{window.clearInterval(id);requestSequence.current++;};},[load]);
 
   if(loading)return <main className="page-shell hc-fan-feed-page"><div className="page-container"><HoopLoading label={labels.loading}/></div></main>;
   const directoryHref=basketballSide==="womens"?"/womens":"/teams";
   return <main className="page-shell hc-fan-feed-page hc-role-hq"><div className="page-container">
-    <section className="hero-card hc-feed-hero"><div><p className="eyebrow">FAN HQ · PERSONAL DASHBOARD</p><h1>Your Team Hub</h1><p className="muted">Your favorite teams, upcoming matchups, live scores and the latest fan conversations—all in one place.</p></div><p className="hc-feed-expiry-note">YOUR TEAMS<span>Scores and schedules refresh automatically.</span></p></section>
-    {!signedIn&&<section className="dashboard-card hc-feed-empty"><h2>Sign in to see your teams</h2><p>Follow your favorite teams to build your personalized Team Hub.</p><Link className="btn" href="/login">Sign in</Link></section>}
-    {signedIn&&!teams.length&&<section className="dashboard-card hc-feed-empty"><p className="eyebrow">START FOLLOWING</p><h2>Your Team Hub starts here.</h2><p>Follow teams to see upcoming games, live scores and team-tagged fan updates.</p><Link className="btn" href="/teams">Find teams</Link></section>}
+    <section className="hero-card hc-feed-hero"><div><p className="eyebrow">{labels.kicker}</p><h1>{labels.title}</h1><p className="muted">{labels.description}</p></div><p className="hc-feed-expiry-note">{labels.yourTeams}<span>{labels.refreshNote}</span></p></section>
+    {!signedIn&&<section className="dashboard-card hc-feed-empty"><h2>{labels.signInTitle}</h2><p>{labels.signInBody}</p><Link className="btn" href="/login">{labels.signIn}</Link></section>}
+    {signedIn&&!message&&!teams.length&&<section className="dashboard-card hc-feed-empty"><p className="eyebrow">{labels.startFollowing}</p><h2>{labels.emptyTitle}</h2><p>{labels.emptyBody}</p><Link className="btn" href={directoryHref}>{labels.findTeams}</Link></section>}
     {!!message&&<p className="hc-feed-message" role="status">{message}</p>}
+    {signedIn&&<nav className="actions" aria-label={labels.title}><Link className="btn" href="/live-games">{labels.nextGames}</Link><Link className="btn" href="/feed">{labels.fanFeed}</Link><Link className="btn" href={directoryHref}>{labels.discover}</Link></nav>}
     <section style={{display:"grid",gap:16,marginTop:18}}>{teams.map(team=>{
       const teamGames=games.filter(g=>g.team_id===team.id).slice(0,3);
       const teamHref=(basketballSide==="womens"?"/womens/":"/teams/")+team.id;
@@ -82,7 +86,7 @@ export default function TeamHubPage(){
         <div style={{display:"flex",alignItems:"center",gap:14}}><TeamLogo name={team.name} logoUrl={team.logo_url} logoBg={team.logo_bg} size={52} className="hc-live-team-logo" /><div style={{minWidth:0,flex:1}}><h2 style={{margin:"0 0 4px"}}>{team.name}</h2><p className="muted" style={{margin:0}}>{[team.league_name,team.city,team.country].filter(Boolean).join(" · ")||labels.basketballTeam}</p></div><Link className="btn" href={teamHref}>{labels.teamPage}</Link></div>
         {basketballSide==="mens"&&<TeamFanGroupEntry teamId={team.id}/>}
         <div style={{marginTop:16}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12}}><h3 style={{margin:0}}>{labels.nextGames}</h3><Link href={teamHref} style={{color:"var(--orange)",fontWeight:900}}>{labels.teamUpdates} →</Link></div>
-        {basketballSide==="womens"?<p className="muted" style={{marginBottom:0}}>{labels.womensScheduleUnavailable}</p>:!teamGames.length?<p className="muted" style={{marginBottom:0}}>{labels.noGames}</p>:<div style={{display:"grid",gap:8,marginTop:10}}>{teamGames.map(game=><div key={game.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,padding:"12px",border:"1px solid var(--border)",borderRadius:12}}><div><strong>{["live","in_progress"].includes(game.status.toLowerCase())?"● "+labels.liveNow:labels.versus+" "+game.opponent_name}</strong><p className="muted" style={{fontSize:12,margin:"4px 0 0"}}>{game.league_name||team.league_name||t("basketball")}{game.scheduled_at?" · "+formatDate(game.scheduled_at,{dateStyle:"medium",timeStyle:"short"}):""}{game.period_label?" · "+game.period_label:""}</p></div><strong style={{whiteSpace:"nowrap"}}>{game.home_score!=null&&game.away_score!=null?String(game.home_score)+" – "+String(game.away_score):labels.upNext}</strong></div>)}</div>}</div>
+        {basketballSide==="womens"?<p className="muted" style={{marginBottom:0}}>{labels.womensScheduleUnavailable}</p>:!teamGames.length?<p className="muted" style={{marginBottom:0}}>{labels.noGames}</p>:<div style={{display:"grid",gap:8,marginTop:10}}>{teamGames.map(game=>{const presentation=getLiveGameStatusPresentation(game,clock);const countdown=formatPregameCountdown(game.status,game.scheduled_at,clock);return <div key={game.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,padding:"12px",border:"1px solid var(--border)",borderRadius:12}}><div><strong>{presentation.isVerifiedLive?"● "+labels.liveNow:presentation.isUnverified?presentation.label:labels.versus+" "+game.opponent_name}</strong><p className="muted" style={{fontSize:12,margin:"4px 0 0"}}>{game.league_name||team.league_name||t("basketball")}{game.scheduled_at?" · "+formatDate(game.scheduled_at,{dateStyle:"medium",timeStyle:"short"}):""}{presentation.showPeriod&&game.period_label?" · "+game.period_label:""}</p>{countdown&&<small>{countdown}</small>}</div><strong style={{whiteSpace:"nowrap"}}>{game.home_score!=null&&game.away_score!=null?String(game.home_score)+" – "+String(game.away_score):presentation.isUnverified?"—":labels.upNext}</strong></div>})}</div>}</div>
       </article>;
     })}</section>
   </div></main>;
