@@ -91,7 +91,7 @@ export function AppLock({ authReady, protectedScreen, userId, startupError, retr
   const recoveryMessage = startupError || restoreError || (userId && security.phase === "error" ? security.error : "");
   // One native presentation owns hydration, recovery, locking and onboarding.
   if (!needsLock && !needsOnboarding) return null;
-  return <Modal visible={true} animationType="none" onRequestClose={() => {}}>{authReady && ready && userId && security.phase === "challenge" && security.state?.owner === userId ? <MfaChallenge key={userId} state={security.state} onVerified={security.retry} /> : !needsLock ? <Onboarding /> : <View style={{ flex: 1, justifyContent: "center", backgroundColor: theme.background, padding: 28, gap: 24 }}>
+  return <Modal visible={true} animationType="none" onRequestClose={() => {}}>{authReady && ready && userId && security.phase === "challenge" && security.state?.owner === userId ? <MfaChallenge key={userId} state={security.state} onVerified={security.retry} /> : !needsLock ? <Onboarding key={userId ?? "guest"} signedIn={Boolean(userId)} /> : <View style={{ flex: 1, justifyContent: "center", backgroundColor: theme.background, padding: 28, gap: 24 }}>
     {bootstrapping ? <>
       <Text accessibilityLiveRegion="polite" style={{ color: theme.foreground }}>{recoveryMessage || "Preparing HoopCheck…"}</Text>
       {recoveryMessage ? <Pressable accessibilityRole="button" onPress={() => { if (startupError) retryStartup?.(); if (restoreError) void retryRestore(); if (security.phase === "error") security.retry(); }} style={{ minHeight: 48, justifyContent: "center" }}><Text style={{ color: theme.accent, fontSize: 18 }}>Try again</Text></Pressable> : null}
