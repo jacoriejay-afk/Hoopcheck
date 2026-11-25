@@ -197,3 +197,53 @@ test("refresh tick route remains preview-only with isolated credentials and uses
   assert.ok(route.includes('db.rpc("hoopdata_stage_leased_competition_snapshot",{p_token:claim.leaseToken'));
   assert.ok(route.includes("canonicalWrites:false,coverageCertified:false"));
 });
+
+const standingsReviewModule={exports:{}};
+new Function("require","exports",ts.transpileModule(read("lib/hoopdata-standings-review.ts"),cjsOptions).outputText)(name=>{
+  if(name==="./hoopdata-api-sports-competition")return competitionModule.exports;
+  if(name==="./hoopdata-competition-worker")return competitionWorkerModule.exports;
+  throw Error(name);
+},standingsReviewModule.exports);
+const {prepareStandingsForReview}=standingsReviewModule.exports;
+function standingsReviewFixture(){
+  const leagueId="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",providerLeagueId=12,side="womens",season="2026-2027",observedAt="2026-11-25T13:00:00.000Z";
+  const mapping={leagueId,providerLeagueId,side,reviewed:true,evidence:"verified league"};
+  const row={teamId:1,stage:"Regular",group:"East",position:1,played:5,wins:3,losses:2,pointsFor:null,pointsAgainst:400};
+  const rows=[row,{...row,teamId:2,position:2},{...row,stage:"Playoffs",group:null,played:null,wins:null,losses:null}];
+  const snapshot={leagueId,providerLeagueId,season,observedAt,rows};
+  const review={leagueId,providerLeagueId,season,observedAt,reviewed:true,evidence:"independently reviewed full roster",groups:[{stage:"Regular",group:"East",providerTeamIds:[1,2]},{stage:"Playoffs",group:null,providerTeamIds:[1]}]};
+  const teamMappings=[{leagueId,providerLeagueId,side,providerTeamId:1,teamId:"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",reviewed:true},{leagueId,providerLeagueId,side,providerTeamId:2,teamId:"cccccccc-cccc-4ccc-8ccc-cccccccccccc",reviewed:true}];
+  return {mapping,snapshot,review,teamMappings,now:new Date("2026-11-25T13:30:00Z"),maxAgeMs:3600000,providerStandingsSupported:true};
+}
+test("standings review preserves provider stage, group, rank and null statistics with reviewed team identities",()=>{
+  const input=standingsReviewFixture();
+  const result=prepareStandingsForReview(input);
+  assert.equal(result.state,"eligible-for-review");
+  assert.equal(result.rows.length,3);
+  assert.equal(result.rows[0].canonicalTeamId,input.teamMappings[0].teamId);
+  assert.equal(result.rows[0].pointsFor,null);
+  assert.equal(result.rows[1].position,2);
+  assert.equal(result.rows[2].stage,"Playoffs");
+  assert.equal(result.rows[2].group,null);
+  assert.equal(result.source,"api-sports-basketball");
+});
+test("standings review fails closed for incomplete groups, duplicate teams, wrong identity, changed snapshot or missing certification",()=>{
+  const i=standingsReviewFixture(),rows=i.snapshot.rows;
+  for(const changed of [[rows[0],rows[1]],[rows[0],rows[0],rows[2]],[rows[0],{...rows[1],group:"West"},rows[2]]]){
+    assert.equal(prepareStandingsForReview({...i,snapshot:{...i.snapshot,rows:changed}}).state,"incomplete");
+  }
+  assert.equal(prepareStandingsForReview({...i,review:{...i.review,observedAt:"2026-11-25T12:00:00.000Z"}}).state,"review-required");
+  assert.equal(prepareStandingsForReview({...i,review:{...i.review,season:"2025-2026"}}).state,"review-required");
+  assert.equal(prepareStandingsForReview({...i,review:{...i.review,reviewed:false}}).state,"review-required");
+  assert.equal(prepareStandingsForReview({...i,teamMappings:[i.teamMappings[0],{...i.teamMappings[1],side:"mens"}]}).state,"review-required");
+  assert.equal(prepareStandingsForReview({...i,teamMappings:[i.teamMappings[0],{...i.teamMappings[1],teamId:i.teamMappings[0].teamId}]}).state,"review-required");
+  assert.equal(prepareStandingsForReview({...i,providerStandingsSupported:null}).state,"review-required");
+  assert.equal(prepareStandingsForReview({...i,providerStandingsSupported:false}).state,"unsupported");
+});
+test("standings review rejects stale or future observations and impossible statistics",()=>{
+  const i=standingsReviewFixture();
+  assert.equal(prepareStandingsForReview({...i,now:new Date("2026-11-25T14:00:01Z")}).state,"stale");
+  assert.equal(prepareStandingsForReview({...i,now:new Date("2026-11-25T12:59:59Z")}).state,"invalid");
+  assert.equal(prepareStandingsForReview({...i,maxAgeMs:0}).state,"invalid");
+  assert.equal(prepareStandingsForReview({...i,snapshot:{...i.snapshot,rows:[{...i.snapshot.rows[0],wins:6},...i.snapshot.rows.slice(1)]}}).state,"invalid");
+});
