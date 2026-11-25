@@ -15,7 +15,16 @@ Scope: development-only integration/build16-launch-candidate. No production cron
 - Live Games web display uses observed snapshot receipt time and labels delayed (>25 minutes) and unknown freshness. This threshold is a policy choice based on the current 15-minute scheduler, not a provider SLA. Older schemas fall back only on missing-column error.
 - Regression tests in CI. No new provider calls or secret requirements.
 
-## Remaining gates — do not mark complete on the strength of Phase A
+## Phase B development foundations (not active)
+- Corrected the Phase A TypeScript build error in the fixed-field freshness projection.
+- BALLDONTLIE NBA/WNBA fixtures are normalized separately, including explicit lifecycle, season, postseason, UTC tip-off and nullable scores. Bounded cursor pages reject duplicate identities, inconsistent seasons and nonadvancing cursors.
+- Reviewed canonical aliases preserve existing fan_live_games IDs, with provider namespace uniqueness and no fuzzy-match writes. SQL is review-only and not applied.
+- Shared quota reservation SQL serializes requests per credential pool and enforces rolling minute/day limits; no enabled quota seeded. Monotonic cooldown prevents concurrent responses from shortening a block. No production route invokes it yet.
+- Budget-first page-fetch helper reserves before any HTTP attempt, honors Retry-After, never retries implicitly, and stops when the quota store is unavailable. Synthetic CI fixtures exercise this contract.
+- Provider docs: https://docs.balldontlie.io/ and https://wnba.balldontlie.io/. NBA free tier includes games (5 requests/min), not official standings. WNBA availability must still be verified against our account; no subscription changes authorized.
+- Actual importer checkpoints, provider fallback writes, alias review UI, quota RPC wiring, concurrency stress test and complete-season certification remain gated.
+
+## Remaining gates — do not mark complete on the strength of Phases A/B
 1. Faster sync: confirm actual free limits and scheduler capacity, use shared durable atomic request reservation per provider/time window, count failed requests and manual invocations, honor Retry-After, bounded backoff and circuit-breaker. Preserve existing production workflow until rollout approval. Realtime delivery is not upstream polling.
 2. Full schedules: verified league+season IDs, paginated bounded import with resumable checkpoint, include postponed/rescheduled games, avoid partial import silently appearing complete.
 3. Standings: import official tables with phase/group and timestamp, or calculate clearly labeled provisional tables only from complete verified results and competition-specific tiebreak rules. No guessed rank.
