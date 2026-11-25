@@ -7,6 +7,8 @@ test('native loader retains the website orbit, brand and indeterminate track str
   assert.match(web, /hc-brand-loader__orbit/);
   assert.match(web, /hc-brand-loader__track/);
   assert.match(native, /<BrandLockup size=\{32\}/);
+  assert.match(native, /compact \? <BrandMark size=\{17\}/);
+  assert.match(native, /translateX: reduced \|\| !foreground \? 29 :/);
   assert.match(native, /accessibilityRole="progressbar"/);
   assert.match(native, /accessibilityState=\{\{ busy: true \}\}/);
   assert.doesNotMatch(native, /accessibilityValue=|setTimeout\(/);

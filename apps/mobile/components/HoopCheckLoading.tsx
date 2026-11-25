@@ -3,7 +3,7 @@ import { AppState, Text, View } from "react-native";
 import Animated, { cancelAnimation, Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
 import { useMotionSetting } from "../src/motion/Provider";
 import { useEntryTheme } from "../src/theme";
-import { BrandLockup } from "./BrandLockup";
+import { BrandLockup, BrandMark } from "./BrandLockup";
 
 /** Native counterpart of components/HoopLoading.tsx: orbit, official wordmark
  * and indeterminate track. No fake percentage or minimum loading delay. */
@@ -25,15 +25,15 @@ export function HoopCheckLoading({ label = "Loading HoopCheck…", compact = fal
   const outer = useAnimatedStyle(() => ({ transform: [{ rotate: `${phase.get() * 360}deg` }] }));
   const middle = useAnimatedStyle(() => ({ transform: [{ rotate: `${-phase.get() * 720}deg` }] }));
   const inner = useAnimatedStyle(() => ({ transform: [{ rotate: `${phase.get() * 1080}deg` }] }));
-  const track = useAnimatedStyle(() => ({ transform: [{ translateX: reduced ? 0 : -30 + phase.get() * 118 }] }));
-  const size = compact ? 28 : 44;
+  const track = useAnimatedStyle(() => ({ transform: [{ translateX: reduced || !foreground ? 29 : -30 + phase.get() * 118 }] }));
+  const size = compact ? 34 : 44;
   return <View accessible accessibilityRole="progressbar" accessibilityLabel={label}
     accessibilityState={{ busy: true }} style={{ minHeight: compact ? 48 : 110, flexDirection: compact ? "row" : "column", alignItems: "center", justifyContent: "center", gap: compact ? 9 : 10, padding: compact ? 7 : 16 }}>
     <View accessible={false} importantForAccessibility="no-hide-descendants" pointerEvents="none"
       style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
       <Animated.View style={[{ position: "absolute", width: size, height: size, borderRadius: size / 2, borderWidth: 2, borderColor: t.border, borderTopColor: t.accent }, outer]} />
       <Animated.View style={[{ position: "absolute", width: size * .72, height: size * .72, borderRadius: size, borderWidth: 1.5, borderColor: "transparent", borderRightColor: t.foreground }, middle]} />
-      <Animated.View style={[{ position: "absolute", width: size * .42, height: size * .42, borderRadius: size, borderWidth: 1.5, borderColor: "transparent", borderBottomColor: t.accent }, inner]} />
+      {compact ? <BrandMark size={17} /> : <Animated.View style={[{ position: "absolute", width: size * .42, height: size * .42, borderRadius: size, borderWidth: 1.5, borderColor: "transparent", borderBottomColor: t.accent }, inner]} />}
     </View>
     <View style={{ flexShrink: 1, maxWidth: "100%", alignItems: compact ? "flex-start" : "center", gap: 5 }}>
       {!compact ? <View accessible={false} importantForAccessibility="no-hide-descendants" pointerEvents="none"><BrandLockup size={32} /></View> : null}
