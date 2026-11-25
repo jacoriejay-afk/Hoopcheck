@@ -114,3 +114,19 @@ test("preview importer refuses production, missing credentials and the existing 
     assert.equal(dbCalls,0);assert.equal(providerCalls,0);
   }finally{for(const [key,value] of Object.entries(before)){if(value===undefined)delete process.env[key];else process.env[key]=value;}}
 });
+
+const fallbackModule={exports:{}};
+new Function("require","exports",compile("hoopdata-fallback"))(name=>{if(name==="./hoopdata-balldontlie")return mod.exports;if(name==="./hoopdata-ingestion")return helper.exports;throw Error(name)},fallbackModule.exports);
+const {fallbackScoreProposal}=fallbackModule.exports;
+test("fallback proposals preserve canonical ID and existing score orientation without overriding a fresh source",()=>{
+  const fixture=normalizeBdlGame("nba",{...nba,status:"2nd Qtr"});
+  const gameId="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",now=new Date("2026-11-25T22:30:00Z");
+  const canonical={id:gameId,team_id:"away",opponent_team_id:"home",scheduled_at:fixture.tipoff,status:"live",score_updated_at:"2026-11-25T21:00:00Z",home_score:80,away_score:90};
+  const input={fixture,canonical,gameAliases:[{provider:fixture.provider,providerGameId:fixture.id,canonicalGameId:gameId}],teamAliases:[{provider:fixture.provider,providerTeamId:"1",canonicalTeamId:"home"},{provider:fixture.provider,providerTeamId:"2",canonicalTeamId:"away"}],observedAt:now.toISOString(),now};
+  assert.deepEqual(fallbackScoreProposal(input),{state:"candidate",canonicalGameId:gameId,homeScore:91,awayScore:98,observedAt:now.toISOString()});
+  assert.equal(fallbackScoreProposal({...input,gameAliases:[]}).state,"review-required");
+  assert.equal(fallbackScoreProposal({...input,teamAliases:[]}).state,"review-required");
+  assert.equal(fallbackScoreProposal({...input,canonical:{...canonical,status:"final"}}).state,"not-eligible");
+  assert.equal(fallbackScoreProposal({...input,canonical:{...canonical,score_updated_at:now.toISOString()}}).state,"primary-fresh");
+  assert.equal(fallbackScoreProposal({...input,canonical:{...canonical,away_score:100}}).state,"review-required");
+});
