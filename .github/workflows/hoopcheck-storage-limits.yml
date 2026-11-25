@@ -1,0 +1,47 @@
+name: HoopCheck Storage Limits
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/hoopcheck-storage-limits.yml'
+      - 'scripts/harden-storage-buckets.mjs'
+      - 'scripts/test-storage-bucket-limits.mjs'
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Apply reviewed limits to four production buckets (false = dry run)"
+        required: true
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: hoopcheck-storage-limits
+  cancel-in-progress: false
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --test scripts/test-storage-bucket-limits.mjs
+  storage:
+    needs: test
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Reconcile reviewed Storage settings
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://ucbdceaieyenljcwlhnj.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          HOOPCHECK_STORAGE_LIMITS_APPROVED: ${{ inputs.apply && 'YES' || 'NO' }}
+        run: node scripts/harden-storage-buckets.mjs
