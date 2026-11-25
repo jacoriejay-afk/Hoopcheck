@@ -10,6 +10,7 @@ import HoopLoading from "../../components/HoopLoading";
 import CourtLines from "../../components/CourtLines";
 import { getGameAvailability, formatViewerLocalTime, formatPregameCountdown, getViewerUpcomingTimeBucket } from "../../lib/game-availability";
 import { getLiveGameStatusPresentation } from "../../lib/live-game-status";
+import { scoreSnapshotFreshness } from "../../lib/hoopdata-ingestion";
 import { HoopIcon } from "../../components/HoopCheckUI";
 import TeamLogo from "../../components/TeamLogo";
 import GameWinnerPrediction from "../../components/GameWinnerPrediction";
@@ -32,6 +33,7 @@ type Game = {
   league_name: string | null;
   country: string | null;
   period_label: string | null;
+  score_updated_at?: string | null;
 };
 type Team = { id: string; name: string; logo_url?: string | null; logo_bg?: "transparent" | "light" | "dark" | null; country?: string | null; league_name?: string | null };
 type Filter = "live" | "upcoming" | "my-teams";
@@ -90,21 +92,28 @@ export default function LiveGamesPage() {
     setAllowed(isAllowed);
     if (!isAllowed) { setGames([]); setPresenceCounts({}); setJoinedGameIds(new Set()); setPresenceObservedAt(null); setLoading(false); return; }
 
-    const [followsResult, gamesResult, remindersResult] = await Promise.all([
-      supabase.from("follow_relationships").select("target_id").eq("follower_id", user.id).eq("target_type", "team").limit(500),
-      supabase.from("fan_live_games")
-        .select("id,team_id,opponent_team_id,opponent_name,status,home_score,away_score,started_at,ends_at,scheduled_at,league_id,league_name,country,period_label")
+    // Older deployments without the freshness column still show schedules, but never imply a fresh score.
+    const gameFields = "id,team_id,opponent_team_id,opponent_name,status,home_score,away_score,started_at,ends_at,scheduled_at,league_id,league_name,country,period_label" as const;
+    const readGames = (fields: typeof gameFields | `${typeof gameFields},score_updated_at`) => supabase.from("fan_live_games")
+        .select(fields)
         .in("status", ["scheduled", "live", "final", "cancelled", "postponed", "abandoned"])
         // Query the relevant time window BEFORE applying the row limit.
         // Otherwise older historical fixtures crowd out today's live games.
         .gte("scheduled_at", new Date(Date.now() - 48 * 3_600_000).toISOString())
         .lte("scheduled_at", new Date(Date.now() + 7 * 86_400_000).toISOString())
-        .order("scheduled_at", { ascending: true, nullsFirst: false }).limit(1000),
+        .order("scheduled_at", { ascending: true, nullsFirst: false }).limit(1000);
+    const readGamesWithFreshness = async () => {
+      const result = await readGames((gameFields + ",score_updated_at") as `${typeof gameFields},score_updated_at`);
+      return result.error?.code === "42703" ? readGames(gameFields) : result;
+    };
+    const [followsResult, gamesResult, remindersResult] = await Promise.all([
+      supabase.from("follow_relationships").select("target_id").eq("follower_id", user.id).eq("target_type", "team").limit(500),
+      readGamesWithFreshness(),
       supabase.from("fan_live_game_reminders").select("game_id").eq("user_id", user.id),
     ]);
     if (gamesResult.error) setMessage("Game schedules are temporarily unavailable. Please refresh in a moment.");
     else { setLastCheckedAt(new Date()); setMessage(""); }
-    const rawGames = (gamesResult.data || []) as Game[];
+    const rawGames = (gamesResult.data || []) as unknown as Game[]; // Fixed field allowlist; generated types may predate score_updated_at.
     const candidateIds = Array.from(new Set(rawGames.flatMap(game => [game.team_id, game.opponent_team_id].filter((id): id is string => Boolean(id)))));
     const [{ data: sideRows }, { data: womensSideRows }] = await Promise.all([
       candidateIds.length
@@ -314,7 +323,7 @@ export default function LiveGamesPage() {
           {countdown && <span>{countdown}</span>}
           {isRecent && <span><HoopIcon name="check" size={15} /> {presentation.isUnverified ? "Waiting for provider-confirmed result" : availability.chatOpen ? "Post-game conversation" : "Final score"}</span>}
           {variant === "postgame" && <span><HoopIcon name="message-square" size={15} /> Post-game chat remains open</span>}
-          {isLive && <span aria-label="Score source">Provider-reported live score</span>}
+          {isLive && <span aria-label="Score source">{scoreSnapshotFreshness(game.score_updated_at, clock) === "delayed" ? "Score update delayed" : scoreSnapshotFreshness(game.score_updated_at, clock) === "unknown" ? "Score freshness unavailable" : "Provider-reported live score"}</span>}
         </div>
         {presentation.isUnverified && <p className="hc-live-card__muted">Last reported score · Result/status not verified</p>}
         {isUpcoming && availability.opensAt && <p className="hc-live-card__muted">{availability.minutesUntilOpen && availability.minutesUntilOpen > 0 ? `Chat opens in ${availability.minutesUntilOpen} min` : "Chat open"} · {formatViewerLocalTime(availability.opensAt.toISOString(), { weekday: undefined })}</p>}
