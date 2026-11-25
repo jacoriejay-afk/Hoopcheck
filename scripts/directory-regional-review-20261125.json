@@ -260,8 +260,34 @@
       "season": "2026-27",
       "expectedCount": null,
       "source": "https://kki.is/motamal/leikir-og-urslit/motayfirlit/Deildir-flokkar?league_id=189",
-      "scope": "source discovery; former joint Hamar/Þór side dissolved",
-      "teams": []
+      "scope": "partial current season fixture and federation evidence; no complete field claimed",
+      "teams": [
+        {
+          "name": "Ármann",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Njarðvík",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Keflavík",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Grindavík",
+          "country": "Iceland",
+          "historicalNames": [],
+          "canonicalId": null
+        }
+      ],
+      "corroboration": "https://www.kki.is/frettir/frett/2026/09/25/Spa-formanna-fyrirlida-og-thjalfara-Bonusdeildar-kvenna/"
     },
     {
       "competition": "1. deild kvenna",
@@ -309,30 +335,276 @@
       "region": "Japan",
       "side": "mens",
       "season": "2026-27",
-      "expectedCount": null,
+      "expectedCount": 26,
       "source": "https://www.bleague.jp/en/new-bleague/club/",
-      "scope": "restructured competition; exact current field and historical memberships need review",
-      "teams": []
+      "scope": "official announced entrants; exact current participation and identity pending",
+      "teams": [
+        {
+          "name": "Levanga Hokkaido",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Sendai 89ers",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Akita Northern Happinets",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Ibaraki Robots",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Utsunomiya Brex",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Gunma Crane Thunders",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Altiri Chiba",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Chiba Jets",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Alvark Tokyo",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Tokyo Sunrockers",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Kawasaki Brave Thunders",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Yokohama B-Corsairs",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Toyama Grouses",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Shinshu Brave Warriors",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "San-en NeoPhoenix",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "SeaHorses Mikawa",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Nagoya Diamond Dolphins",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Shiga Lakes",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Kyoto Hannaryz",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Osaka Evessa",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Kobe Storks",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Shimane Susanoo Magic",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Hiroshima Dragonflies",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Saga Ballooners",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Nagasaki Velca",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Ryukyu Golden Kings",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        }
+      ],
+      "corroboration": "https://www.bleague.jp/news_detail/id%3D620570"
     },
     {
       "competition": "B.ONE",
       "region": "Japan",
       "side": "mens",
       "season": "2026-27",
-      "expectedCount": null,
+      "expectedCount": 25,
       "source": "https://www.bleague.jp/en/new-bleague/club/",
-      "scope": "restructured competition; exact current field and historical memberships need review",
-      "teams": []
+      "scope": "partial announced entrants; remaining names and current participation pending",
+      "teams": [
+        {
+          "name": "Vertex Shizuoka",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Fighting Eagles Nagoya",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Bambitious Nara",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "TryHoop Okayama",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Tokushima Gambarous",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Kagawa Five Arrows",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Ehime Orange Vikings",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Rizing Zephyr Fukuoka",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Kumamoto Volters",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Kagoshima Rebnise",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        }
+      ],
+      "corroboration": "https://www.bleague.jp/news_detail/id%3D620570"
     },
     {
       "competition": "B.NEXT",
       "region": "Japan",
       "side": "mens",
       "season": "2026-27",
-      "expectedCount": null,
+      "expectedCount": 4,
       "source": "https://www.bleague.jp/en/new-bleague/club/",
-      "scope": "restructured competition; exact current field and historical memberships need review",
-      "teams": []
+      "scope": "official announced entrants; exact current participation and identity pending",
+      "teams": [
+        {
+          "name": "Shinagawa City Basketball Club",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Wolga Shonan",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Veertien Mie",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        },
+        {
+          "name": "Yamaguchi Patsfive",
+          "country": "Japan",
+          "historicalNames": [],
+          "canonicalId": null
+        }
+      ],
+      "corroboration": "https://www.bleague.jp/news_detail/id%3D620570"
     }
   ]
 }

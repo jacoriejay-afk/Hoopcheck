@@ -56,3 +56,31 @@ assert.ok(audit.rows.every(r=>r.writeAuthorized===false));
 assert.throws(()=>reviewRoster(g,[...fixtures,fixtures[0]],{complete:true}));
 assert.equal(regional.competitions.find(c=>c.competition==='1. deild kvenna').announcedSeniorFirstTeams,9);
 console.log('PASS: regional source registry and non-writing roster reconciliation');
+
+const {planDirectoryImport}=await import('./directory-import-preflight.mjs');
+const japan=regional.competitions.filter(c=>c.region==='Japan');
+assert.deepEqual(japan.map(c=>c.expectedCount),[26,25,4]);
+assert.deepEqual(japan.map(c=>c.teams.length),[26,10,4]);
+const now=new Date('2026-11-25T12:00:00Z');
+const source={id:'source',active:true,license_status:'approved',commercial_use_allowed:true,redistribution_allowed:true};
+const attestation={name:'Laketown Squadron',country:'United States',competition:'NBA G League',season:'2026-27',side:'mens',sourceId:'source',reviewerId:'reviewer',evidenceRef:'review-1',currentParticipationVerified:true,directoryRightsVerified:true,reviewedAt:'2026-11-24T12:00:00Z',validUntil:'2026-12-01T12:00:00Z',identityDecision:'existing',canonicalId:'2'};
+const blocked=planDirectoryImport(g,fixtures,{...source,active:false},[attestation],now);
+assert.equal(blocked.rightsBlocked,31);
+assert.equal(blocked.proposedCount,0);
+const proposed=planDirectoryImport(g,fixtures,source,[attestation],now);
+assert.equal(proposed.proposedCount,1);
+assert.deepEqual(proposed.rows.find(r=>r.name==='Laketown Squadron').proposal,{kind:'propose-season-membership',canonicalId:'2'});
+assert.equal(proposed.writeAuthorized,false);
+for(const a of [{...attestation,canonicalId:'wrong'},{...attestation,validUntil:'2026-11-24T12:00:00Z'},{...attestation,side:'womens'},{...attestation,directoryRightsVerified:false}]){
+ assert.equal(planDirectoryImport(g,fixtures,source,[a],now).proposedCount,0);
+}
+assert.equal(planDirectoryImport(g,fixtures,source,[attestation,attestation],now).proposedCount,0);
+const exclusion={...g,teams:[{...g.teams.find(t=>t.name==='Laketown Squadron'),excludedFromActiveImport:true}]};
+assert.equal(planDirectoryImport(exclusion,fixtures,source,[attestation],now).rows[0].reason,'excluded');
+const impact=read('../supabase/audit-directory-reference-impact-20261125.sql').replace(/^\s*--.*$/gm,'');
+assert.match(impact,/begin transaction isolation level repeatable read read only;/i);
+assert.match(impact,/rollback;\s*$/i);
+assert.doesNotMatch(impact,/\b(insert|update|delete|alter|drop|truncate|grant|revoke|commit)\b/i);
+assert.equal((impact.match(/join candidates d on/g)||[]).length,22);
+assert.match(impact,/actual except select \* from expected/);
+console.log('PASS: import preflight denies unlicensed, stale, wrong-side and unreviewed identities; 22 reference checks');
