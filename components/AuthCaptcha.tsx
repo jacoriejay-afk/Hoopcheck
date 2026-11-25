@@ -2,26 +2,25 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Script from "next/script";
+import { createCaptchaTokenStore } from "../lib/security/captcha-token";
 
 // Deliberately independent of the public business inquiry widget configuration.
 const siteKey = process.env.NEXT_PUBLIC_AUTH_TURNSTILE_SITE_KEY?.trim();
 export function useAuthCaptcha() {
-  const token = useRef("");
+  const [store] = useState(() => createCaptchaTokenStore(Boolean(siteKey)));
   const [revision, setRevision] = useState(0);
   const [ready, setReady] = useState(false);
   const onToken = useCallback((value: string) => {
-    token.current = value;
-    setReady(Boolean(value));
-  }, []);
+    setReady(store.accept(revision, value));
+  }, [store, revision]);
   const takeToken = useCallback(() => {
     if (!siteKey) return undefined;
-    const value = token.current;
-    if (!value) throw new Error("Complete the security check before continuing.");
-    token.current = "";
+    const result = store.take();
     setReady(false);
-    setRevision(previous => previous + 1);
-    return value;
-  }, []);
+    setRevision(result.revision);
+    if (!result.token) throw new Error("Complete a fresh security check before continuing.");
+    return result.token;
+  }, [store]);
   return { enabled: Boolean(siteKey), ready: !siteKey || ready, revision, onToken, takeToken };
 }
 export function AuthCaptcha({ onToken }: { onToken: (token: string) => void }) {
