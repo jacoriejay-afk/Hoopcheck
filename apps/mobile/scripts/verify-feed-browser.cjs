@@ -48,6 +48,25 @@ async function fixture(browser,theme,allowed=true){
       if(url.pathname==='/auth/v1/user')return json(user);
       if(url.pathname.startsWith('/storage/v1/object/sign/'))return route.fulfill({status:200,contentType:url.pathname.endsWith('.webm')?'video/webm':'image/png',headers:{'access-control-allow-origin':'*'},body:url.pathname.endsWith('.webm')?fs.readFileSync(videoPath):png});
       const table=url.pathname.split('/').pop();
+  // Account activity reads are owner-scoped, read-only, and use the canonical RPC.
+  if(url.hostname==='fixture.supabase.co'&&url.pathname==='/rest/v1/rpc/get_public_follow_list'&&JSON.parse(body||'{}').p_mode==='following'){
+    assert.equal(route.request().method(),'POST');
+    assert.equal(route.request().headers().authorization,`Bearer ${token}`);
+    assert.deepEqual(route.request().postDataJSON(),{p_mode:'following',p_target_type:null,p_target_id:null,p_user_id:uid});
+    return json([]);
+  }
+  if(url.hostname==='fixture.supabase.co'&&['/rest/v1/feed_posts','/rest/v1/reviews'].includes(url.pathname)&&route.request().method()==='HEAD'){
+    if(url.pathname.endsWith('/feed_posts')){
+      assert.ok(allowed,'Feed count requires membership access');
+      assert.equal(url.searchParams.get('status'),'eq.approved');
+      assert.match(url.searchParams.get('or')||'',/^\(expires_at\.is\.null,expires_at\.gt\./);
+    }else assert.equal('player','player','Review count is player-only');
+    assert.equal(route.request().headers().authorization,`Bearer ${token}`);
+    assert.equal(url.searchParams.get('author_id'),`eq.${uid}`);
+    assert.equal(url.searchParams.get('select'),'id');
+    assert.match(route.request().headers().prefer||'',/count=exact/);
+    return route.fulfill({status:200,headers:{'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-expose-headers':'content-range','content-range':'*/0'}});
+  }
       if(table==='feed_posts'){
         assert.ok(allowed,'Denied viewer must never query protected posts');
         return json(url.searchParams.has('video_url')?posts.filter(p=>p.video_url):posts);
