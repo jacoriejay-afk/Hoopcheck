@@ -108,7 +108,9 @@ test("Build 11 does not flash Account loading on harmless token refresh",()=>{
 test("Build 11 loading animations resolve statically with reduced motion enabled",()=>{
   const loading=read("../components/HoopCheckLoading.tsx");
   assert.match(loading,/useMotionSetting\(\)/);
-  assert.match(loading,/if \(reduced\) \{ breathe\.set\(1\); return; \}/);
+  assert.match(loading,/cancelAnimation\(phase\);\s*phase\.set\(0\);\s*if \(!reduced && foreground\) phase\.set\(withRepeat/);
+  assert.match(loading,/translateX: reduced \|\| !foreground \? 29 :/);
+  assert.match(loading,/return \(\) => cancelAnimation\(phase\)/);
   assert.match(loading,/withRepeat\(withTiming\(1,/);
   assert.match(loading,/accessibilityRole="progressbar"/);
 });

@@ -17,7 +17,9 @@ test("shared headers and loading use the approved mark and stop repeating animat
  const logo=read("../components/BrandLogo.tsx"),loading=read("../components/HoopCheckLoading.tsx");
  assert.match(logo,/<BrandMark size=\{32\} ink=\{ink\} animated=\{animated\}/);
  assert.doesNotMatch(logo,/M50 5 88 27/);
- assert.match(loading,/<BrandLogo compact/);
- assert.match(loading,/return \(\) => cancelAnimation\(breathe\)/);
- assert.match(loading,/if \(reduced\) \{ breathe.set\(1\); return; \}/);
+ assert.match(loading,/compact \? <BrandMark size=\{17\}/);
+ assert.match(loading,/<BrandLockup size=\{32\}/);
+ assert.match(read("../components/BrandLockup.tsx"),/<BrandMark size=\{size\} animated=\{animated\}/);
+ assert.match(loading,/return \(\) => cancelAnimation\(phase\)/);
+ assert.match(loading,/cancelAnimation\(phase\);\s*phase\.set\(0\);\s*if \(!reduced && foreground\) phase\.set\(withRepeat/);
 });
