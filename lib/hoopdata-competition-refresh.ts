@@ -4,7 +4,7 @@ import { reviewedCompetitionMapping, type CompetitionMapping, type CompetitionTa
 export type RefreshClaim={leagueId:string;kind:CompetitionTask["kind"];leaseToken:string;mapping:CompetitionMapping;seasonRows:unknown};
 type Outcome={state:"staged"|"deferred"|"failed";retryAt?:string;reason:string};
 type WorkerResult={state:string;retryAt?:string|null};
-type Dependencies={claim:()=>Promise<RefreshClaim|null>;execute:(task:CompetitionTask)=>Promise<WorkerResult>;finish:(claim:RefreshClaim,outcome:Outcome)=>Promise<boolean>;now:()=>Date};
+type Dependencies={claim:()=>Promise<RefreshClaim|null>;execute:(task:CompetitionTask,claim:RefreshClaim)=>Promise<WorkerResult>;finish:(claim:RefreshClaim,outcome:Outcome)=>Promise<boolean>;now:()=>Date};
 const uuid=(v:unknown):v is string=>typeof v==="string"&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
 function activeSeason(rows:unknown,now:Date):CompetitionSeason|null{
   if(!Array.isArray(rows)||rows.length>150||rows.length===0)return null;
@@ -32,7 +32,7 @@ export async function runCompetitionRefreshTick(deps:Dependencies){
         outcome={state:"deferred",reason:"active-season-or-coverage-unconfirmed"};
       }else{
         const task:CompetitionTask=claim.kind==="seasons"?{kind:"seasons",mapping}:{kind:claim.kind,mapping,season:season!.season};
-        const result=await deps.execute(task);
+        const result=await deps.execute(task,claim);
         outcome={state:result.state==="staged"?"staged":["budget-blocked","budget-unavailable","mapping-required","not-configured"].includes(result.state)?"deferred":"failed",reason:result.state};
         if(typeof result.retryAt==="string"&&Number.isFinite(Date.parse(result.retryAt)))outcome.retryAt=result.retryAt;
       }
