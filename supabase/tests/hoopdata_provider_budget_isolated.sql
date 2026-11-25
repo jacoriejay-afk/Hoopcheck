@@ -325,3 +325,48 @@ BEGIN
   IF NOT public.hoopdata_stage_competition_snapshot(l,12,'mens','standings','2026',clock_timestamp(),jsonb_set(payload,'{0,position}','2')) THEN RAISE EXCEPTION 'Newer snapshot rejected'; END IF;
   IF public.hoopdata_attest_standings(l,12,'2026',stamp,payload,roster,reviewer,'superseded') THEN RAISE EXCEPTION 'Superseded snapshot accepted'; END IF;
 END $attest$;
+
+-- Expand the synthetic fixture table only inside the disposable CI database.
+ALTER TABLE public.fan_live_games ADD COLUMN team_id uuid,ADD COLUMN opponent_team_id uuid,
+ADD COLUMN status text,ADD COLUMN provider_source text,ADD COLUMN score_updated_at timestamptz,
+ADD COLUMN scheduled_at timestamptz,ADD COLUMN home_score integer,ADD COLUMN away_score integer;
+GRANT SELECT,UPDATE ON public.fan_live_games TO service_role;
+UPDATE public.fan_live_games SET team_id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+opponent_team_id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',status='live',provider_source='api-sports-basketball',
+score_updated_at=now()-interval '40 minutes',scheduled_at='2026-11-25T20:00:00Z',home_score=80,away_score=90
+WHERE id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+\ir ../candidates/hoopdata_fallback_overlay_review_only.sql
+INSERT INTO public.hoopdata_fallback_team_aliases(provider,provider_team_id,team_id,reviewed_by,evidence) VALUES
+('balldontlie-nba','1','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','11111111-1111-4111-8111-111111111111','fixture review'),
+('balldontlie-nba','2','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','11111111-1111-4111-8111-111111111111','fixture review');
+DO $overlay_access$ BEGIN
+  IF has_table_privilege('authenticated','public.hoopdata_fallback_overlays','SELECT') OR
+    has_table_privilege('service_role','public.hoopdata_fallback_team_aliases','INSERT') OR
+    has_function_privilege('anon','public.hoopdata_read_fallback_overlay(uuid)','EXECUTE') OR
+    has_function_privilege('authenticated','public.hoopdata_stage_fallback_overlay(uuid,text,text,text,timestamptz,integer,integer,timestamptz,timestamptz)','EXECUTE') THEN
+    RAISE EXCEPTION 'Fallback access too broad';
+  END IF;
+END $overlay_access$;
+SET ROLE service_role;
+DO $overlay_test$ DECLARE
+  g uuid:='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+  t timestamptz:=clock_timestamp();
+  primary_at timestamptz;
+  tip timestamptz:='2026-11-25T20:00:00Z';
+BEGIN
+  SELECT score_updated_at INTO primary_at FROM public.fan_live_games WHERE id=g;
+  IF public.hoopdata_stage_fallback_overlay(g,'43','1','2',tip,98,91,primary_at,t) OR
+     public.hoopdata_stage_fallback_overlay(g,'42','1','3',tip,98,91,primary_at,t) OR
+     public.hoopdata_stage_fallback_overlay(g,'42','1','2',tip,85,91,primary_at,t) OR
+     public.hoopdata_stage_fallback_overlay(g,'42','1','2',tip,98,91,primary_at-interval '1 second',t) THEN
+    RAISE EXCEPTION 'Unsafe fallback accepted';
+  END IF;
+  IF NOT public.hoopdata_stage_fallback_overlay(g,'42','1','2',tip,98,91,primary_at,t) THEN RAISE EXCEPTION 'Valid fallback rejected'; END IF;
+  IF NOT EXISTS(SELECT 1 FROM public.hoopdata_read_fallback_overlay(g) WHERE home_score=91 AND away_score=98) THEN RAISE EXCEPTION 'Overlay missing or wrong orientation'; END IF;
+  IF NOT EXISTS(SELECT 1 FROM public.fan_live_games WHERE id=g AND home_score=80 AND away_score=90) THEN RAISE EXCEPTION 'Canonical score modified'; END IF;
+  IF public.hoopdata_stage_fallback_overlay(g,'42','1','2',tip,98,91,primary_at,t) THEN RAISE EXCEPTION 'Replay accepted'; END IF;
+  UPDATE public.fan_live_games SET score_updated_at=clock_timestamp() WHERE id=g;
+  IF EXISTS(SELECT 1 FROM public.hoopdata_read_fallback_overlay(g)) THEN RAISE EXCEPTION 'Overlay survived primary recovery'; END IF;
+  IF public.hoopdata_stage_fallback_overlay(g,'42','1','2',tip,99,92,primary_at,clock_timestamp()) THEN RAISE EXCEPTION 'Old primary accepted'; END IF;
+END $overlay_test$;
+RESET ROLE;
