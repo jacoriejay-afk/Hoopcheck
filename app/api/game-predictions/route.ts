@@ -59,7 +59,7 @@ export async function GET(request: Request) {
       const ids=Array.from(new Set(picks.map(p=>p.game_id)));
       const games=[];
       for(let i=0;i<ids.length;i+=50){
-        const {data,error}=await db.from("fan_live_games").select("id,team_id,opponent_team_id,status,period_label,home_score,away_score,scheduled_at,ends_at")
+        const {data,error}=await db.from("fan_live_games").select("id,team_id,opponent_team_id,status,period_label,home_score,away_score,scheduled_at,ends_at,country,league_name")
           .in("id",ids.slice(i,i+50)).in("status",["final","finished"]);
         if(error||!data)throw new Error("Fan prediction settlement unavailable");
         for(const game of data){

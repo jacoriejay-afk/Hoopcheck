@@ -4,7 +4,9 @@ import { useEffect,useState } from "react";
 import { supabase } from "../lib/supabase";
 import { FAN_XP_PER_CORRECT_PICK,FAN_XP_WINDOW_DAYS } from "../lib/fan-prediction-xp";
 
-type Summary={xp:number;level:string;next_level:string|null;next_level_xp:number|null;correct_picks:number;settled_picks:number;window_days:number};
+import type { calculateFanPredictionXp } from "../lib/fan-prediction-xp";
+
+type Summary=ReturnType<typeof calculateFanPredictionXp>;
 
 export default function FanPredictionXp({accountId}:{accountId:string}){
   const [summary,setSummary]=useState<Summary|null>(null);
@@ -39,6 +41,18 @@ export default function FanPredictionXp({accountId}:{accountId:string}){
       {summary.next_level_xp!==null&&<><progress aria-label="XP toward next level" value={summary.xp} max={summary.next_level_xp} style={{width:"100%"}}/><p className="muted">{summary.next_level_xp-summary.xp} XP to {summary.next_level}</p></>}
       {summary.next_level_xp===null&&<p className="muted">Highest activity level reached.</p>}
     </div>:<p role="status">Fan XP is temporarily unavailable.</p>}
+    {summary?.passport&&<div style={{marginTop:16,borderTop:"1px solid var(--border)",paddingTop:12}}>
+      <p className="eyebrow">FAN PASSPORT · PREDICTION ACTIVITY</p>
+      <h3>Your basketball journey</h3>
+      <p className="muted">Private record of your settled picks in the last {summary.window_days} days. Fixture countries and leagues reflect games, not your location, travel or arena attendance.</p>
+      <p><strong>{summary.passport.countries.length}</strong> fixture countries · <strong>{summary.passport.league_count}</strong> fixture leagues</p>
+      {!!summary.passport.countries.length&&<p className="muted">{summary.passport.countries.join(" · ")}</p>}
+      <h3>Activity milestones</h3>
+      <ul style={{paddingInlineStart:20}}>{summary.passport.milestones.map(m=><li key={m.id}>{m.name} · {m.earned?"Reached":m.current+" / "+m.target}</li>)}</ul>
+      <p className="muted">Milestones are non-redeemable and reset as activity ages out of the rolling window.</p>
+      <h3>Recent settled picks</h3>
+      {summary.passport.recent.length?<ul style={{paddingInlineStart:20}}>{summary.passport.recent.map(entry=><li key={entry.game_id}><strong>{entry.correct?"Correct pick":"Pick missed"}</strong> · {entry.league||"League not listed"}{entry.country?" · "+entry.country:""} · <time dateTime={entry.settled_at}>{new Date(entry.settled_at).toLocaleDateString()}</time></li>)}</ul>:<p className="muted">Settled pregame picks will appear here.</p>}
+    </div>}
     <button type="button" className="btn" disabled={loading} onClick={()=>setAttempt(n=>n+1)}>Refresh XP</button>
   </section>;
 }

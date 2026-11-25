@@ -82,3 +82,17 @@ assert.match(fanApi,/getLiveGameStatusPresentation\(game,now\).isVerifiedFinal/)
 assert.match(read("app/team-hub/page.tsx"),/key=\{fanAccountId\} accountId=\{fanAccountId\}/);
 assert.match(read("components/FanPredictionXp.tsx"),/session\?\.user.id!==accountId/);
 console.log("PASS: bounded, private, non-redeemable fan XP from settled pregame picks.");
+
+const passportGames=[{...game,id:"one",country:"Portugal",league_name:"Liga A"},{...game,id:"two",country:" portugal ",league_name:"liga a"},{...game,id:"three",country:"Austria",league_name:"Liga A"},{...game,id:"four",country:null,league_name:null}];
+const passportPicks=passportGames.map(g=>({...pick,game_id:g.id}));
+const passport=xp([...passportPicks,passportPicks[0]],passportGames,now).passport;
+assert.deepEqual(passport.countries,["Austria","Portugal"]);
+assert.equal(passport.league_count,2);
+assert.equal(passport.recent.length,4);
+assert.equal(passport.milestones.find(m=>m.id==="first-pick").earned,true);
+assert.equal(passport.milestones.find(m=>m.id==="international").earned,false);
+assert.equal(xp([{...pick,game_id:"one",updated_at:"2025-01-01T00:00:00Z"}],passportGames,now).passport.recent.length,0);
+const large=Array.from({length:15},(_,i)=>({...game,id:"x"+i}));
+assert.equal(xp(large.map(g=>({...pick,game_id:g.id})),large,now).passport.recent.length,12);
+assert.match(read("components/FanPredictionXp.tsx"),/not your location, travel or arena attendance/);
+console.log("PASS: private prediction passport and rolling-window milestones.");
