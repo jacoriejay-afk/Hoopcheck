@@ -16,6 +16,7 @@ CREATE TABLE public.hoopdata_competition_snapshots (
   kind text NOT NULL CHECK(kind IN ('seasons','games','standings')),
   season text NOT NULL,
   observed_at timestamptz NOT NULL,
+  retention_expires_at timestamptz,
   rows jsonb NOT NULL CHECK(jsonb_typeof(rows)='array' AND jsonb_array_length(rows) BETWEEN 1 AND 10000),
   PRIMARY KEY(league_id,kind,season),
   CHECK((kind='seasons' AND season='') OR (kind<>'seasons' AND season ~ '^[0-9]{4}(-[0-9]{4})?$'))
@@ -38,7 +39,8 @@ BEGIN
   INSERT INTO public.hoopdata_competition_snapshots(league_id,provider_league_id,kind,season,observed_at,rows)
   VALUES(p_league,p_provider,p_kind,p_season,p_observed,p_rows)
   ON CONFLICT(league_id,kind,season) DO UPDATE SET provider_league_id=excluded.provider_league_id,observed_at=excluded.observed_at,rows=excluded.rows
-  WHERE public.hoopdata_competition_snapshots.observed_at<excluded.observed_at;
+  WHERE public.hoopdata_competition_snapshots.observed_at<excluded.observed_at
+    AND public.hoopdata_competition_snapshots.retention_expires_at IS NULL;
   RETURN FOUND;
 END;
 $snapshot$;

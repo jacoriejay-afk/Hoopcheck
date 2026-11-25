@@ -347,3 +347,29 @@ test("WNBA fallback uses one documented date-filtered page and rejects ambiguous
  assert.equal((await probeWnbaFallback(wnbaInput,{...deps,fetcher:async()=>Response.json({data:[{...wnbaLive,id:43}],meta:{}})})).state,"review-required");
  assert.equal((await probeWnbaFallback(wnbaInput,{...deps,fetcher:async()=>new Response(" ".repeat(256*1024+1))})).state,"invalid-response");
 });
+
+const syncRightsModule={exports:{}};
+new Function("require","exports",compile("hoopdata-sync-rights"))(name=>{assert.equal(name,"./hoopdata-provider-rights");return rightsModule.exports;},syncRightsModule.exports);
+test("automatic competition refresh requires both evaluation and full bounded cache permission",()=>{
+ const now=new Date("2026-11-25T12:00:00Z"),leagueId="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+ const task={kind:"standings",mapping:{leagueId,providerLeagueId:12,side:"womens",reviewed:true,evidence:"fixture"},season:"2026-2027"};
+ const grant={provider:"api-sports",competitionId:leagueId,kind:"standings",plan:"pilot",uses:["evaluate","cache"],status:"approved",evidenceRef:"fixture",reviewerId:"operator",reviewedAt:"2026-11-24T12:00:00Z",validUntil:"2026-12-01T12:00:00Z",retentionHours:1,upstreamRightsConfirmed:true,artworkPermissionConfirmed:false,appStorePermissionConfirmed:false,attribution:"API-Sports"};
+ const check=(grants)=>syncRightsModule.exports.authorizeCompetitionRefresh(task,"pilot",grants,now);
+ assert.deepEqual(check([grant]),{hours:1,expiresAt:"2026-11-25T13:00:00.000Z"});
+ for(const rows of [[],[grant,grant],[{...grant,uses:["evaluate"]}],[{...grant,uses:["cache"]}],[{...grant,retentionHours:0.5}],[{...grant,validUntil:"2026-11-25T12:30:00Z"}],[{...grant,status:"revoked"}]])assert.equal(check(rows),null);
+ assert.equal(syncRightsModule.exports.authorizeCompetitionRefresh({...task,kind:"games"},"pilot",[grant],now),null);
+});
+const strictRefreshModule={exports:{}};
+new Function("require","exports",compile("hoopdata-competition-refresh"))(name=>{
+ if(name==="./hoopdata-api-sports-competition")return competitionModule.exports;
+ if(name==="./hoopdata-competition-worker")return {reviewedCompetitionMapping:()=>true};
+ throw Error(name);
+},strictRefreshModule.exports);
+test("automatic refresh never treats unknown provider capability as supported and defers rights-blocked jobs",async()=>{
+ const leagueId="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",mapping={leagueId,providerLeagueId:12,side:"womens",reviewed:true,evidence:"fixture"},season={season:"2026-2027",start:"2026-10-01",end:"2027-06-01",games:null,standings:true},job={leagueId,mapping,kind:"games",leaseToken:"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",seasonRows:[season]};
+ const outcomes=[],deps={now:()=>new Date("2026-11-25T12:00:00Z"),claim:async()=>job,execute:async()=>assert.fail("unknown support must not fetch"),finish:async(_c,o)=>{outcomes.push(o);return true}};
+ assert.equal((await strictRefreshModule.exports.runCompetitionRefreshTick(deps)).state,"deferred");
+ assert.deepEqual(outcomes.pop(),{state:"deferred",reason:"active-season-or-coverage-unconfirmed"});
+ assert.equal((await strictRefreshModule.exports.runCompetitionRefreshTick({...deps,claim:async()=>({...job,seasonRows:[{...season,games:true}]}),execute:async()=>({state:"rights-blocked"})})).state,"deferred");
+ assert.deepEqual(outcomes.pop(),{state:"deferred",reason:"rights-blocked"});
+});

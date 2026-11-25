@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { authorizeCompetitionRefresh } from "../../../../lib/hoopdata-sync-rights";
+import type { RightsGrant } from "../../../../lib/hoopdata-provider-rights";
 import { runCompetitionTask } from "../../../../lib/hoopdata-competition-worker";
 import { runCompetitionRefreshTick } from "../../../../lib/hoopdata-competition-refresh";
 
@@ -14,19 +16,31 @@ export async function POST(request:NextRequest){
   const url=process.env.HOOPDATA_ISOLATED_SUPABASE_URL,key=process.env.HOOPDATA_ISOLATED_SUPABASE_SERVICE_KEY,providerKey=process.env.HOOPDATA_PREVIEW_API_SPORTS_KEY;
   const appUrl=process.env.NEXT_PUBLIC_SUPABASE_URL,appKey=process.env.SUPABASE_SERVICE_ROLE_KEY,appProvider=process.env.API_SPORTS_BASKETBALL_KEY;
   if(!url||!key||!appUrl||!providerKey||!appKey||!appProvider||key===appKey||providerKey===appProvider)return reply({error:"Isolated configuration required"},503);
-  try{if(new URL(url).origin===new URL(appUrl).origin)return reply({error:"Isolated configuration required"},503);}catch{return reply({error:"Invalid configuration"},503);}
+  try{const u=new URL(url);if(new URL(url).origin===new URL(appUrl).origin||u.protocol!=="https:"||u.username||u.password||u.pathname!=="/"||u.search||u.hash)return reply({error:"Isolated configuration required"},503);}catch{return reply({error:"Invalid configuration"},503);}
   try{
+    const plan=process.env.HOOPDATA_COMPETITION_REFRESH_PLAN??"",raw=process.env.HOOPDATA_COMPETITION_REFRESH_RIGHTS??"";
+    if(!plan||!raw||raw.length>100000)return reply({error:"Reviewed rights required"},503);
+    const grants:RightsGrant[]=JSON.parse(raw);
+    if(!Array.isArray(grants)||grants.length<1||grants.length>1000)return reply({error:"Reviewed rights required"},503);
     const db=createClient(url,key,{auth:{autoRefreshToken:false,persistSession:false}});
+    const signal=AbortSignal.timeout(22000);
+    const purge=await db.rpc("hoopdata_purge_expired_competition_snapshots").abortSignal(signal);
+    if(purge.error||purge.data!==true)return reply({error:"Retention cleanup incomplete"},503);
     const result=await runCompetitionRefreshTick({
       now:()=>new Date(),
-      claim:async()=>{const {data,error}=await db.rpc("hoopdata_claim_competition_refresh");if(error)throw Error("Queue unavailable");return data;},
-      finish:async(claim,outcome)=>{const {data,error}=await db.rpc("hoopdata_finish_competition_refresh",{p_league:claim.leagueId,p_kind:claim.kind,p_token:claim.leaseToken,p_state:outcome.state,p_retry_at:outcome.retryAt??null});return !error&&data===true;},
-      execute:(task,claim)=>runCompetitionTask(task,providerKey,{
-        fetcher:fetch,now:()=>new Date(),
-        reserve:async pool=>{const {data,error}=await db.rpc("hoopdata_reserve_request",{p_pool:pool});if(error)throw Error("Quota unavailable");return data===true;},
-        blockUntil:async(pool,until)=>{const {data,error}=await db.rpc("hoopdata_block_provider",{p_pool:pool,p_until:until});if(error||data!==true)throw Error("Cooldown unavailable");},
-        stage:async snapshot=>{const {data,error}=await db.rpc("hoopdata_stage_leased_competition_snapshot",{p_token:claim.leaseToken,p_league:snapshot.mapping.leagueId,p_provider:snapshot.mapping.providerLeagueId,p_side:snapshot.mapping.side,p_kind:snapshot.kind,p_season:snapshot.kind==="seasons"?"":snapshot.season,p_observed:snapshot.observedAt,p_rows:snapshot.rows});return !error&&data===true;},
-      }),
+      claim:async()=>{const {data,error}=await db.rpc("hoopdata_claim_competition_refresh").abortSignal(signal);if(error)throw Error("Queue unavailable");return data;},
+      finish:async(claim,outcome)=>{const {data,error}=await db.rpc("hoopdata_finish_competition_refresh",{p_league:claim.leagueId,p_kind:claim.kind,p_token:claim.leaseToken,p_state:outcome.state,p_retry_at:outcome.retryAt??null}).abortSignal(signal);return !error&&data===true;},
+      execute:async(task,claim)=>{
+        if(!authorizeCompetitionRefresh(task,plan,grants,new Date()))return {state:"rights-blocked"};
+        return runCompetitionTask(task,providerKey,{
+        fetcher:(input,init)=>fetch(input,{...init,signal:AbortSignal.any([signal,init?.signal??signal])}),now:()=>new Date(),
+        reserve:async pool=>{const {data,error}=await db.rpc("hoopdata_reserve_request",{p_pool:pool}).abortSignal(signal);if(error)throw Error("Quota unavailable");return data===true;},
+        blockUntil:async(pool,until)=>{const {data,error}=await db.rpc("hoopdata_block_provider",{p_pool:pool,p_until:until}).abortSignal(signal);if(error||data!==true)throw Error("Cooldown unavailable");},
+        stage:async snapshot=>{const approved=authorizeCompetitionRefresh(task,plan,grants,new Date());if(!approved)return false;
+          const expires=Date.parse(snapshot.observedAt)+approved.hours*3600000;
+          if(!Number.isFinite(expires)||expires>Date.parse(approved.expiresAt)||expires<=Date.now())return false;
+          const {data,error}=await db.rpc("hoopdata_stage_leased_competition_snapshot",{p_token:claim.leaseToken,p_league:snapshot.mapping.leagueId,p_provider:snapshot.mapping.providerLeagueId,p_side:snapshot.mapping.side,p_kind:snapshot.kind,p_season:snapshot.kind==="seasons"?"":snapshot.season,p_observed:snapshot.observedAt,p_rows:snapshot.rows,p_retention_expires_at:new Date(expires).toISOString()}).abortSignal(signal);return !error&&data===true;},
+      });},
     });
     return reply({...result,canonicalWrites:false,coverageCertified:false},["failed","lease-lost","invalid-claim"].includes(result.state)?503:200);
   }catch{return reply({error:"Isolated competition refresh unavailable"},503);}
