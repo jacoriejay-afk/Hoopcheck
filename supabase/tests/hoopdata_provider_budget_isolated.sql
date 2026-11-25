@@ -93,3 +93,44 @@ BEGIN
   IF (SELECT count(*) FROM public.hoopdata_fixture_stage)<>2 THEN RAISE EXCEPTION 'Page persistence incorrect'; END IF;
 END $import$;
 RESET ROLE;
+
+-- Minimal synthetic organization/claim schema for manager proposal RLS.
+CREATE SCHEMA auth;
+CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $uid$ SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $uid$;
+GRANT USAGE ON SCHEMA auth TO authenticated;
+CREATE TABLE public.profiles(id uuid PRIMARY KEY,account_type text NOT NULL);
+CREATE TABLE public.leagues(id uuid PRIMARY KEY,active boolean,basketball_type text);
+CREATE TABLE public.teams(id uuid PRIMARY KEY,active boolean,league_id uuid REFERENCES public.leagues(id),basketball_type text);
+CREATE TABLE public.profile_claim_requests(requester_id uuid,entity_type text,entity_id uuid,status text);
+INSERT INTO public.profiles VALUES('11111111-1111-4111-8111-111111111111','manager'),('22222222-2222-4222-8222-222222222222','manager');
+INSERT INTO public.leagues VALUES('33333333-3333-4333-8333-333333333333',true,'mens');
+INSERT INTO public.teams VALUES('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',true,'33333333-3333-4333-8333-333333333333','mens'),('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',true,'33333333-3333-4333-8333-333333333333','mens');
+INSERT INTO public.profile_claim_requests VALUES('11111111-1111-4111-8111-111111111111','team','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','approved'),('22222222-2222-4222-8222-222222222222','team','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','pending');
+GRANT SELECT ON public.profiles,public.teams,public.leagues,public.profile_claim_requests TO authenticated;
+\ir ../candidates/hoopdata_manager_submissions_review_only.sql
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
+INSERT INTO public.hoopdata_manager_submissions(team_id,opponent_team_id,league_id,scheduled_at,kind,evidence,request_id)
+VALUES('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','33333333-3333-4333-8333-333333333333',now()+interval '2 days','schedule','official fixture reference','44444444-4444-4444-8444-444444444444');
+DO $manager$ BEGIN
+  IF (SELECT count(*) FROM public.hoopdata_manager_submissions WHERE status='pending')<>1 THEN RAISE EXCEPTION 'Verified manager pending proposal missing'; END IF;
+  BEGIN
+    UPDATE public.hoopdata_manager_submissions SET status='approved';
+    RAISE EXCEPTION 'Manager self-approved';
+  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+  BEGIN
+    INSERT INTO public.hoopdata_manager_submissions(team_id,opponent_team_id,league_id,scheduled_at,kind,evidence,request_id)
+    VALUES('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','33333333-3333-4333-8333-333333333333',now()+interval '2 days','schedule','other club','55555555-5555-4555-8555-555555555555');
+    RAISE EXCEPTION 'Other club accepted';
+  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+END $manager$;
+SELECT set_config('request.jwt.claim.sub','22222222-2222-4222-8222-222222222222',false);
+DO $unverified$ BEGIN
+  IF EXISTS(SELECT 1 FROM public.hoopdata_manager_submissions) THEN RAISE EXCEPTION 'Other manager private proposals leaked'; END IF;
+  BEGIN
+    INSERT INTO public.hoopdata_manager_submissions(team_id,opponent_team_id,league_id,scheduled_at,kind,evidence,request_id)
+    VALUES('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','33333333-3333-4333-8333-333333333333',now()+interval '2 days','schedule','pending club','66666666-6666-4666-8666-666666666666');
+    RAISE EXCEPTION 'Unverified manager accepted';
+  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+END $unverified$;
+RESET ROLE;
