@@ -396,9 +396,7 @@
         {
           "name": "Tokyo Sunrockers",
           "country": "Japan",
-          "historicalNames": [
-            "Sunrockers Shibuya"
-          ],
+          "historicalNames": [],
           "canonicalId": null
         },
         {
@@ -464,9 +462,7 @@
         {
           "name": "Kobe Storks",
           "country": "Japan",
-          "historicalNames": [
-            "Nishinomiya Storks"
-          ],
+          "historicalNames": [],
           "canonicalId": null
         },
         {
@@ -586,17 +582,13 @@
         {
           "name": "Shinagawa City Basketball Club",
           "country": "Japan",
-          "historicalNames": [
-            "Shinagawa City"
-          ],
+          "historicalNames": [],
           "canonicalId": null
         },
         {
           "name": "Wolga Shonan",
           "country": "Japan",
-          "historicalNames": [
-            "Shonan United BC"
-          ],
+          "historicalNames": [],
           "canonicalId": null
         },
         {
@@ -608,9 +600,7 @@
         {
           "name": "Yamaguchi Patsfive",
           "country": "Japan",
-          "historicalNames": [
-            "Yamaguchi Patriots"
-          ],
+          "historicalNames": [],
           "canonicalId": null
         }
       ],
