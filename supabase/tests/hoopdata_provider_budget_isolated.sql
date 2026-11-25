@@ -35,3 +35,37 @@ DO $$ BEGIN
   IF NOT public.hoopdata_reserve_request('balldontlie') THEN RAISE EXCEPTION 'Rolling daily budget failed to reset'; END IF;
 END $$;
 RESET ROLE;
+
+-- Synthetic canonical game table in this isolated DB only.
+CREATE TABLE public.fan_live_games(id uuid PRIMARY KEY);
+INSERT INTO public.fan_live_games(id) VALUES ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
+\ir ../candidates/hoopdata_game_aliases_review_only.sql
+DO $$ BEGIN
+  IF has_table_privilege('authenticated','public.hoopdata_game_aliases','SELECT') OR
+     has_table_privilege('anon','public.hoopdata_game_aliases','INSERT') OR
+     has_table_privilege('service_role','public.hoopdata_game_aliases','UPDATE') THEN
+    RAISE EXCEPTION 'Alias privileges too broad';
+  END IF;
+END $$;
+SET ROLE service_role;
+INSERT INTO public.hoopdata_game_aliases(provider,provider_game_id,canonical_game_id,reviewed_by,evidence) VALUES
+('balldontlie-nba','42','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','11111111-1111-4111-8111-111111111111','synthetic evidence'),
+('balldontlie-wnba','42','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','11111111-1111-4111-8111-111111111111','synthetic evidence');
+DO $$ BEGIN
+  BEGIN
+    INSERT INTO public.hoopdata_game_aliases(provider,provider_game_id,canonical_game_id,reviewed_by,evidence)
+    VALUES ('balldontlie-nba','42','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','11111111-1111-4111-8111-111111111111','duplicate provider identity');
+    RAISE EXCEPTION 'Duplicate provider identity accepted';
+  EXCEPTION WHEN unique_violation THEN NULL; END;
+  BEGIN
+    INSERT INTO public.hoopdata_game_aliases(provider,provider_game_id,canonical_game_id,reviewed_by,evidence)
+    VALUES ('balldontlie-nba','43','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','11111111-1111-4111-8111-111111111111','duplicate canonical identity');
+    RAISE EXCEPTION 'Duplicate canonical identity accepted';
+  EXCEPTION WHEN unique_violation THEN NULL; END;
+  BEGIN
+    INSERT INTO public.hoopdata_game_aliases(provider,provider_game_id,canonical_game_id,reviewed_by,evidence)
+    VALUES ('balldontlie-nba','44','cccccccc-cccc-4ccc-8ccc-cccccccccccc','11111111-1111-4111-8111-111111111111','unknown canonical identity');
+    RAISE EXCEPTION 'Missing canonical fixture accepted';
+  EXCEPTION WHEN foreign_key_violation THEN NULL; END;
+END $$;
+RESET ROLE;
