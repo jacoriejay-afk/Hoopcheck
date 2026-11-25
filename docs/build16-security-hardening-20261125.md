@@ -22,3 +22,12 @@ Acceptance:
 8. Review auth and API logs for evidence of prior unauthorized use; no breach conclusion from advisor results alone.
 
 No release submission, paid plan upgrade, public Reels activation or new paid staging branch is authorized by this change.
+
+## Follow-up verification
+- Removed TRUNCATE, TRIGGER and REFERENCES grants for anonymous/authenticated roles from all public tables in both environments. Before: production 20 tables with TRIGGER/REFERENCES; test two tables with all three. After: zero tables with any of these effective client grants in either environment.
+- Hardened postgres-owned application-table defaults in both projects. Managed supabase_admin defaults remain unchanged and require provider-side review.
+- Isolated rollback test of support throttle passed: 10 own submissions, client timestamp normalization, blocked 11th submission, rejected forged requester, denied cross-user visibility, independent second account. Verified fixture columns, grant and trigger did not persist. Full-schema and concurrent execution tests are outstanding; the throttle remains staged, not deployed.
+- Production owner MFA enrollment audit: one approved owner, zero verified MFA factors. Do not force MFA before verified enrollment and recovery.
+- Production Vercel firewall configuration read denied; reconnect required. No firewall settings changed.
+- Test edge logs search for feed/support REST paths in Nov 24 04:20Z–Nov 25 04:20Z matched zero among 509 events. This limited text search cannot establish whether earlier access occurred or whether any breach occurred.
+- Latest Supabase advisors: zero critical errors in both projects; production 41 warnings, test 7 warnings. No paid resources or release submission.
