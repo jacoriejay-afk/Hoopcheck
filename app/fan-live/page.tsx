@@ -8,7 +8,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
-import { GAME_CHAT_OPEN_EARLY_MINUTES, getGameAvailability, isGameChatOpen } from "../../lib/game-availability";
+import { GAME_CHAT_OPEN_EARLY_MINUTES, getGameAvailability, isGameChatOpen, formatPregameCountdown } from "../../lib/game-availability";
 import { getLiveGameStatusPresentation } from "../../lib/live-game-status";
 import "./fan-live.css";
 import "../game-predictions.css";
@@ -31,6 +31,12 @@ const roomOpen = (game:Game, now=new Date()) => isGameChatOpen({
   status:game.status, scheduledAt:game.scheduled_at, startedAt:game.started_at, endsAt:game.ends_at, now
 }, POSTGAME_CHAT_ENABLED);
 
+const canPostToRoom = (game:Game, now=new Date()) => {
+  const status=getLiveGameStatusPresentation(game,now);
+  return !status.isUnverified && roomOpen(game,now) &&
+    (!status.isVerifiedFinal || process.env.NEXT_PUBLIC_LIVE_POSTGAME_CHAT_ENABLED==="true");
+};
+
 export default function FanLivePage() {
   const [games,setGames]=useState<Game[]>([]);
   const [roomSearch,setRoomSearch]=useState("");
@@ -47,8 +53,9 @@ export default function FanLivePage() {
   const [sending,setSending]=useState(false);
   const [message,setMessage]=useState("");
   const [gamesLoadError,setGamesLoadError]=useState(false);
-  const [presenceCount,setPresenceCount]=useState(0);
+  const [presenceSample,setPresenceSample]=useState<{gameId:string;count:number;observedAt:number}|null>(null);
   const [roomPresenceCounts,setRoomPresenceCounts]=useState<Record<string,number>>({});
+  const [roomPresenceObservedAt,setRoomPresenceObservedAt]=useState<number|null>(null);
   const [gameStream,setGameStream]=useState<"connecting"|"live"|"fallback">("connecting");
   const [chatStream,setChatStream]=useState<"connecting"|"live"|"fallback">("connecting");
   const [serverRoomOpen,setServerRoomOpen]=useState<{gameId:string;open:boolean}|null>(null);
@@ -66,19 +73,20 @@ export default function FanLivePage() {
   const activeRoomRef = useRef<string|null>(null);
   const composerRef = useRef<HTMLInputElement|null>(null);
   const followLatestRef = useRef(true);
+  const sendingRef = useRef(false);
 
   const load = useCallback(async (showLoader=false) => {
     if(showLoader) setLoading(true);
     const {data:{session}}=await supabase.auth.getSession();
     const user=session?.user;
-    if(!user){setUserId(null);setAccountType("");setAllowed(false);setGames([]);setSelected(null);setLoading(false);return;}
+    if(!user){setUserId(null);setAccountType("");setAllowed(false);setChatEnabled(false);setGames([]);setSelected(null);setRoomPresenceCounts({});setRoomPresenceObservedAt(null);setPresenceSample(null);setLoading(false);return;}
     setUserId(user.id);
     const [{data:profile},{data:subscription,error:membershipError},{data:isAdmin}] = await Promise.all([
       supabase.from("profiles").select("account_type").eq("id",user.id).maybeSingle(),
       getEffectiveMembership(user.id),
       supabase.rpc("is_current_user_admin_or_moderator")
     ]);
-    if (membershipError) { setAllowed(false); setChatEnabled(false); setGames([]); setSelected(null); setLoading(false); setMessage("Membership could not be verified. Refresh to retry; your billing has not changed."); return; }
+    if (membershipError) { setAllowed(false); setChatEnabled(false); setGames([]); setSelected(null); setRoomPresenceCounts({}); setRoomPresenceObservedAt(null); setPresenceSample(null); setLoading(false); setMessage("Membership could not be verified. Refresh to retry; your billing has not changed."); return; }
     setAccountType(profile?.account_type || "");
     const entitlements = getHoopCheckEntitlements({ accountType: profile?.account_type, subscription, isAdmin: isAdmin === true });
     const fanCanChat = profile?.account_type === "fan" && entitlements.canUseLiveGameChat;
@@ -138,17 +146,19 @@ export default function FanLivePage() {
     setGames(next);
     if (fanCanChat || playerCanChat || moderatorCanChat) {
       const freshAfter=new Date(Date.now()-75_000).toISOString();
-      const {data:present}=await supabase.from("fan_live_chat_presence")
-        .select("game_id,user_id").gte("last_seen_at",freshAfter).limit(2000);
+      const observedAt=Date.now();
+      const {data:present,error:presenceError,count:presenceTotal}=await supabase.from("fan_live_chat_presence")
+        .select("game_id,user_id",{count:"exact"}).gte("last_seen_at",freshAfter).limit(2000);
+      const complete=!presenceError&&present!==null&&presenceTotal===present.length;
       const counts:Record<string,number>={};
       const seen=new Set<string>();
-      for(const row of present||[]){
+      for(const row of complete?(present||[]):[]){
         const key=row.game_id+":"+row.user_id;
         if(seen.has(key))continue;
         seen.add(key);counts[row.game_id]=(counts[row.game_id]||0)+1;
       }
-      setRoomPresenceCounts(counts);
-    } else setRoomPresenceCounts({});
+      setRoomPresenceCounts(counts);setRoomPresenceObservedAt(complete?observedAt:null);
+    } else {setRoomPresenceCounts({});setRoomPresenceObservedAt(null);}
     setMutedUsers(new Set((controls||[]).filter((x:any)=>x.is_muted).map((x:any)=>x.target_user_id)));
     setBlockedUsers(new Set((controls||[]).filter((x:any)=>x.is_blocked).map((x:any)=>x.target_user_id)));
     const ids=Array.from(new Set(next.flatMap(g=>[g.team_id,g.opponent_team_id].filter((x):x is string=>Boolean(x)))));
@@ -168,7 +178,7 @@ export default function FanLivePage() {
     if(error){setMessage("Chat history couldn't load. Reconnecting…");return;}
     const incoming=(data||[]) as ChatMessage[];
     setMessages(current=>{
-      const pending=current.filter(x=>x.pending);
+      const pending=current.filter(x=>x.pending||x.failed);
       const byId=new Map(incoming.map(x=>[x.id,x]));
       for(const p of pending) byId.set(p.id,p);
       return Array.from(byId.values()).sort((a,b)=>Date.parse(a.created_at)-Date.parse(b.created_at)).slice(-200);
@@ -182,8 +192,9 @@ export default function FanLivePage() {
 
   const refreshPresence=useCallback(async(gameId:string)=>{
     const freshAfter=new Date(Date.now()-75_000).toISOString();
-    const {data,error}=await supabase.from("fan_live_chat_presence").select("user_id,last_seen_at").eq("game_id",gameId).gt("last_seen_at",freshAfter);
-    if(!error && activeRoomRef.current===gameId) setPresenceCount(new Set((data||[]).map((x:any)=>x.user_id)).size);
+    const observedAt=Date.now();
+    const {count,error}=await supabase.from("fan_live_chat_presence").select("user_id",{count:"exact",head:true}).eq("game_id",gameId).gt("last_seen_at",freshAfter);
+    if(activeRoomRef.current===gameId) setPresenceSample(current=>current?.gameId===gameId&&current.observedAt>observedAt?current:error||count===null?null:{gameId,count,observedAt});
   },[]);
 
   useEffect(()=>{void load(true);},[load]);
@@ -196,7 +207,7 @@ export default function FanLivePage() {
   useEffect(()=>{
     activeRoomRef.current=selected?.id||null;
     followLatestRef.current=true;
-    setMessages([]);setProfiles({});setPresenceCount(0);setReporting(null);setMessage("");setBody("");
+    setMessages([]);setProfiles({});setPresenceSample(null);setReporting(null);setMessage("");setBody("");
   },[selected?.id]);
   useEffect(()=>{
     const timer=window.setInterval(()=>{setClock(new Date());void load();},20_000);
@@ -254,7 +265,7 @@ export default function FanLivePage() {
   },[selected?.id,selected?.status,selected?.scheduled_at,selected?.ends_at,chatEnabled,userId,serverRoomOpen?.gameId,serverRoomOpen?.open,refreshPresence]);
 
   useEffect(()=>{
-    if(!selected||!chatEnabled){setMessages([]);setPresenceCount(0);return;}
+    if(!selected||!chatEnabled){setMessages([]);setPresenceSample(null);return;}
     const gameId=selected.id; void loadMessages(gameId); void refreshPresence(gameId);
     const channel=supabase.channel("fan-live-chat-messages-"+gameId)
       .on("postgres_changes",{event:"INSERT",schema:"public",table:"fan_live_chat_messages",filter:"game_id=eq."+gameId},payload=>{
@@ -290,20 +301,25 @@ export default function FanLivePage() {
     if(list && followLatestRef.current)list.scrollTop=list.scrollHeight; // Never jump the viewport or interrupt readers of older messages.
   },[messages.length,selected?.id]);
 
-  async function send(textOverride?:string){
+  async function send(textOverride?:string, retryId?:string){
     const text=(textOverride??body).trim();
-    if(!text||!selected||!userId||sending)return;
-    if(serverRoomOpen?.gameId!==selected.id||serverRoomOpen.open!==true||!roomOpen(selected,new Date())){setMessage("This game chat is read-only or still connecting.");return;}
+    if(!text||text.length>500||!selected||!userId||!chatEnabled||sendingRef.current)return;
+    if(serverRoomOpen?.gameId!==selected.id||serverRoomOpen.open!==true||!canPostToRoom(selected,new Date())){setMessage("This game chat is read-only or still connecting.");return;}
     const gameId=selected.id;
     const localId="pending-"+crypto.randomUUID();
     const optimistic:ChatMessage={id:localId,body:text,created_at:new Date().toISOString(),user_id:userId,pending:true};
-    setMessages(current=>[...current,optimistic].slice(-200));setBody("");setSending(true);setMessage("");
-    const {data,error}=await supabase.from("fan_live_chat_messages").insert({game_id:selected.id,user_id:userId,body:text}).select("id,body,created_at,user_id").single();
-    setSending(false);
+    sendingRef.current=true;
+    setMessages(current=>[...current.filter(m=>m.id!==retryId),optimistic].slice(-200));
+    if(textOverride===undefined)setBody("");
+    setSending(true);setMessage("");
+    const result=await supabase.from("fan_live_chat_messages").insert({game_id:selected.id,user_id:userId,body:text}).select("id,body,created_at,user_id").single()
+      .then(response=>({data:response.data,error:response.error}),()=>({data:null,error:{message:"Connection interrupted"}}));
+    const {data,error}=result;
+    sendingRef.current=false;setSending(false);
     if(activeRoomRef.current!==gameId)return;
-    if(error){
+    if(error||!data){
       setMessages(current=>current.map(m=>m.id===localId?{...m,failed:true,pending:false}:m));
-      setMessage(error.message.includes("SLOW_MODE")?"Slow mode: wait two seconds between messages.":error.message.includes("CHAT_CLOSED")?"Chat closed — final score.":"Message failed to send. Tap Retry to try again.");
+      setMessage(error?.message.includes("SLOW_MODE")?"Slow mode: wait two seconds between messages.":error?.message.includes("CHAT_CLOSED")?"Chat closed — final score.":"Message failed to send. Tap Retry to try again.");
       return;
     }
     const saved=data as ChatMessage;
@@ -311,8 +327,8 @@ export default function FanLivePage() {
   }
 
   async function retry(item:ChatMessage){
-    setMessages(current=>current.filter(m=>m.id!==item.id));
-    await send(item.body);
+    if(!item.failed||item.user_id!==userId)return;
+    await send(item.body,item.id);
   }
 
   async function controlUser(targetId:string,kind:"is_blocked"|"is_muted"){
@@ -337,8 +353,11 @@ export default function FanLivePage() {
   const away=selected?(teams[selected.opponent_team_id||""]||{id:"",name:selected.opponent_name}):null;
   const availability=selected?getGameAvailability({status:selected.status,scheduledAt:selected.scheduled_at,startedAt:selected.started_at,endsAt:selected.ends_at,now:clock}):null;
   const isClosed=availability?.state==="CLOSED" || (availability?.phase==="post-game" && !POSTGAME_CHAT_ENABLED);
-  const canSend=Boolean(chatEnabled&&serverRoomOpen?.gameId===selected?.id&&serverRoomOpen?.open&&selected&&roomOpen(selected,clock));
+  const presenceCount=chatEnabled&&presenceSample&&presenceSample.gameId===selected?.id&&clock.getTime()-presenceSample.observedAt<75_000?presenceSample.count:null;
+  const countdown=selected&&!selectedStatus?.isUnverified?formatPregameCountdown(selected.status,selected.scheduled_at,clock):null;
+  const canSend=Boolean(chatEnabled&&serverRoomOpen?.gameId===selected?.id&&serverRoomOpen?.open&&selected&&canPostToRoom(selected,clock));
   const shownMessages=useMemo(()=>messages.filter(m=>!blockedUsers.has(m.user_id)&&!mutedUsers.has(m.user_id)),[messages,blockedUsers,mutedUsers]);
+  const roomPresenceFresh=chatEnabled&&roomPresenceObservedAt!==null&&clock.getTime()-roomPresenceObservedAt<75_000;
   const listedGames=useMemo(()=>{
     const q=roomSearch.trim().toLocaleLowerCase();
     const matches=!q?games:games.filter(game=>[
@@ -346,9 +365,9 @@ export default function FanLivePage() {
       game.opponent_name,game.league_name||"",game.country||""
     ].some(value=>value.toLocaleLowerCase().includes(q)));
     return [...matches].sort((a,b)=>Number(b.status==="live")-Number(a.status==="live")||
-      (roomPresenceCounts[b.id]||0)-(roomPresenceCounts[a.id]||0)||
+      (roomPresenceFresh?(roomPresenceCounts[b.id]||0)-(roomPresenceCounts[a.id]||0):0)||
       (Date.parse(a.scheduled_at||"")||0)-(Date.parse(b.scheduled_at||"")||0));
-  },[games,roomSearch,teams,roomPresenceCounts]);
+  },[games,roomSearch,teams,roomPresenceCounts,roomPresenceFresh]);
 
   if(loading)return <main className="page-shell hc-live-room"><div className="page-container"><HoopLoading label="Loading Live Game Hub…" /></div></main>;
   if(!userId)return <main className="page-shell hc-live-room"><div className="page-container"><section className="hero-card"><p className="eyebrow">LIVE GAME HUB</p><h1>LIVE GAME CHAT</h1><p className="muted">Sign in to access Live Game Hub features available to your account.</p><Link className="btn" href="/login">Sign in</Link></section></div></main>;
@@ -356,7 +375,7 @@ export default function FanLivePage() {
   return <main className={"page-shell hc-live-room "+(inRoom?"hc-live-room--chat":"hc-live-room--directory")}>
       {!inRoom&&<FanBasketballSideSwitch />}<div className="page-container">
     <nav className="hc-live-room-nav" aria-label="Live game navigation"><Link href="/live-games">← Live Games</Link>{inRoom&&<Link href="/fan-live">All chat rooms</Link>}</nav>
-    <header className="hc-live-room-heading"><div><p className="eyebrow">HOOPCHECK · COURTSIDE</p><h1>{inRoom?"Game chat":"Game chat rooms"}</h1><p>{inRoom?"One game. One conversation.":"Pick a matchup and join its dedicated live conversation."}</p></div>{inRoom&&selected&&roomOpen(selected,clock)&&<span className="hc-live-presence-chip"><i className="hc-live-pulse-dot"/> {presenceCount} here</span>}</header>
+    <header className="hc-live-room-heading"><div><p className="eyebrow">HOOPCHECK · COURTSIDE</p><h1>{inRoom?"Game chat":"Game chat rooms"}</h1><p>{inRoom?"One game. One conversation.":"Pick a matchup and join its dedicated live conversation."}</p></div>{inRoom&&selected&&roomOpen(selected,clock)&&<span className="hc-live-presence-chip"><i className="hc-live-pulse-dot"/> {chatEnabled&&presenceCount!==null?`${presenceCount} here`:"Presence unavailable"}</span>}</header>
     {allowed&&<p className="hc-live-room-sync" role="status">{gameStream==="live"?"Game database connected · scores follow provider updates":"Game updates reconnecting · checking every 20 seconds"}{inRoom&&chatEnabled?" · "+(chatStream==="live"?"Chat connected live":"Chat recovering from stored messages"):""}</p>}
     {allowed && gamesLoadError && <section className="dashboard-card" role="alert"><h2>Game list temporarily unavailable</h2><p className="muted">Your membership is recognized, but the game service could not load. Please retry rather than upgrading again.</p><button type="button" className="btn" onClick={()=>void load(true)}>Retry games</button></section>}
     {!allowed ? <section className="dashboard-card hc-live-empty-state">
@@ -364,23 +383,25 @@ export default function FanLivePage() {
         : !userId ? <><h2>Sign in to view Live Games</h2><Link href="/login" className="btn">Sign In</Link></>
         : <><h2>Live Games are available to players and fans</h2><p className="muted">An active Pro or Premium membership is required for the full Live Game Hub.</p><Link href="/membership" className="btn">View Membership</Link></>}
     </section> : !games.length&&!inRoom?<section className="dashboard-card"><h2>No games available</h2><p className="muted">Check back when the game schedule is updated.</p><Link href="/live-games" className="btn">Browse Games</Link></section>:<section className={"hc-live-room-grid "+(inRoom?"hc-live-room-grid--solo":"hc-live-room-grid--directory")}>
-      {!inRoom&&<aside className="hc-live-room-list" aria-label="Choose a game chat room"><div className="hc-live-room-list-heading"><span className="card-kicker">COURTSIDE · CHAT DIRECTORY</span><span>{listedGames.length} rooms</span><input className="hc-live-room-search" type="search" value={roomSearch} onChange={event=>setRoomSearch(event.target.value)} placeholder="Find a team or league…" aria-label="Search game chat rooms" /></div>{listedGames.length===0&&<p role="status">No game rooms match this search.</p>}{listedGames.map(game=>{const a=teams[game.team_id],b=teams[game.opponent_team_id||""]||{id:"",name:game.opponent_name},status=getLiveGameStatusPresentation(game,clock),joining=chatEnabled&&roomOpen(game,clock);return <Link key={game.id} href={"/fan-live/room/"+encodeURIComponent(game.id)} className="hc-live-room-game" aria-label={"Open chat for "+(a?.name||"Home")+" versus "+b.name}><div className="hc-live-room-game-teams">{renderTeamLogo(a)}<div><strong>{a?.name||"Team"} vs {b.name}</strong><span>{game.home_score??"—"} : {game.away_score??"—"} · {status.showPeriod?game.period_label:status.label}</span></div></div><span className={"hc-live-room-game-status"+(game.status==="live"?" is-live":"")}>{!chatEnabled?"MEMBERS ONLY":status.isUnverified?status.label:status.isVerifiedLive?"● LIVE":status.isVerifiedFinal?"FINAL":joining?"CHAT OPEN":"UPCOMING"}</span><span className="hc-live-room-game-join"><small>{roomPresenceCounts[game.id]||0} here</small><strong>{joining?"JOIN CHAT":"VIEW ROOM"} <span aria-hidden="true">→</span></strong></span></Link>})}</aside>}
+      {!inRoom&&<aside className="hc-live-room-list" aria-label="Choose a game chat room"><div className="hc-live-room-list-heading"><span className="card-kicker">COURTSIDE · CHAT DIRECTORY</span><span>{listedGames.length} rooms</span><input className="hc-live-room-search" type="search" value={roomSearch} onChange={event=>setRoomSearch(event.target.value)} placeholder="Find a team or league…" aria-label="Search game chat rooms" /></div>{listedGames.length===0&&<p role="status">No game rooms match this search.</p>}{listedGames.map(game=>{const a=teams[game.team_id],b=teams[game.opponent_team_id||""]||{id:"",name:game.opponent_name},status=getLiveGameStatusPresentation(game,clock),postgame=["final","finished"].includes(game.status.toLowerCase()),joining=chatEnabled&&roomOpen(game,clock)&&(!postgame||process.env.NEXT_PUBLIC_LIVE_POSTGAME_CHAT_ENABLED==="true");return <Link key={game.id} href={"/fan-live/room/"+encodeURIComponent(game.id)} className="hc-live-room-game" aria-label={"Open chat for "+(a?.name||"Home")+" versus "+b.name}><div className="hc-live-room-game-teams">{renderTeamLogo(a)}<div><strong>{a?.name||"Team"} vs {b.name}</strong><span>{game.home_score??"—"} : {game.away_score??"—"} · {status.showPeriod?game.period_label:status.label}</span></div></div><span className={"hc-live-room-game-status"+(game.status==="live"?" is-live":"")}>{!chatEnabled?"MEMBERS ONLY":status.isUnverified?status.label:status.isVerifiedLive?"● LIVE":status.isVerifiedFinal?"FINAL":joining?"CHAT OPEN":"UPCOMING"}</span><span className="hc-live-room-game-join">{chatEnabled&&<small>{roomPresenceFresh?`${roomPresenceCounts[game.id]||0} here`:"Presence unavailable"}</small>}<strong>{joining?"JOIN CHAT":"VIEW ROOM"} <span aria-hidden="true">→</span></strong></span></Link>})}</aside>}
       {inRoom&&!selected&&<section className="hc-live-room-state" role="status"><h2>Room unavailable</h2><p>This matchup could not be found for this basketball category, or it is no longer on the current schedule.</p><Link href="/fan-live">Browse chat rooms</Link></section>}
       {inRoom&&selected&&<section id="live-chat-room" className="hc-live-room-panel" aria-label="Selected game chat room">
         <header className="hc-live-room-scoreboard"><div className="hc-live-room-team">{renderTeamLogo(home)}<strong>{home?.name||"Team"}</strong></div><div className="hc-live-room-score"><span className={"hc-live-badge"+(selectedStatus?.isVerifiedLive?" is-live":"")}>{selectedStatus?.isUnverified?selectedStatus.label:selectedStatus?.isVerifiedLive?<><i/> LIVE</>:selectedStatus?.isVerifiedFinal?"FINAL":availability?.state||"UPCOMING"}</span><strong>{selected.home_score??"—"} <span>:</span> {selected.away_score??"—"}</strong><small>{selectedStatus?.showPeriod?selected.period_label:selectedStatus?.isUnverified?"Provider update pending":selected.league_name||"Score updates automatically"}</small></div><div className="hc-live-room-team">{renderTeamLogo(away)}<strong>{away?.name||selected.opponent_name}</strong></div></header>
+        {countdown&&<p className="hc-live-room-notice">{countdown}</p>}
+        {canSend&&selectedStatus&&!selectedStatus.isUnverified&&availability?.chatOpen&&(!selectedStatus.isVerifiedFinal||process.env.NEXT_PUBLIC_LIVE_POSTGAME_CHAT_ENABLED==="true")&&<div className="hc-live-room-notice" aria-label="Game atmosphere"><strong>{availability.phase==="pre-game"?"Pregame fan lobby":selectedStatus.isVerifiedFinal?"Postgame discussion":"Game atmosphere"}</strong><p>{presenceCount===null?"Live participation unavailable":`${presenceCount} active ${presenceCount===1?"member":"members"} in this HoopCheck game room`}. Counts reflect online room participation, not arena attendance.</p></div>}
         {selected.opponent_team_id&&<details className="hc-live-room-predictions"><summary>Game predictions</summary><GameWinnerPrediction game={selected} homeName={home?.name||"Home"} awayName={away?.name||selected.opponent_name}/></details>}
 
         {isClosed&&<div className="hc-live-closed-state"><span className="hc-live-closed-icon">✓</span><h2>{selectedStatus?.isUnverified?"Game result not confirmed":selectedStatus?.isVerifiedFinal?"Game finished · chat closed":"Chat unavailable"}</h2><small>Previous messages remain read-only. The provider has not confirmed this result if the status is pending.</small></div>}
         {!chatEnabled?<div className="hc-live-empty-state"><div className="hc-live-empty-ball">●</div>{accountType==="fan"?<><h2>Fan Pro or Premium required for Live Game Chat</h2><p>Existing eligible fan memberships can join the live conversation. New paid fan products are unavailable.</p><Link href="/membership" className="btn">Membership status</Link></>:accountType==="player"?<><h2>Player Pro or Premium required for Live Game Chat</h2><p>An active Pro or Premium player membership unlocks live game chat for men's and women's fixtures.</p><Link href="/membership" className="btn">View Membership</Link></>:!userId?<><h2>Sign in to join Live Game Chat</h2><Link href="/login" className="btn">Sign In</Link></>:<><h2>Live Game Chat is for eligible players and fans</h2><p>Active Pro and Premium player and fan memberships can join the live conversation.</p></>}</div>:!isClosed&&!roomOpen(selected,clock)?<div className="hc-live-empty-state"><h2>Chat opens {GAME_CHAT_OPEN_EARLY_MINUTES} minutes before tip-off</h2><p>{selected.scheduled_at?new Date(selected.scheduled_at).toLocaleString():"Tip-off time is not confirmed yet."}</p></div>:<div className="hc-live-chat-shell">
-          <div className="hc-live-chat-toolbar"><span><i className="hc-live-pulse-dot"/> {presenceCount} {presenceCount===1?"member":"members"} here · {chatStream==="live"?"Live messages":"Recovering messages"}</span><span>1 message / 2 seconds</span></div>
+          <div className="hc-live-chat-toolbar"><span><i className="hc-live-pulse-dot"/> {presenceCount===null?"Presence unavailable":`${presenceCount} ${presenceCount===1?"member":"members"} here`} · {chatStream==="live"?"Live messages":"Recovering messages"}</span><span>1 message / 2 seconds</span></div>
           <div ref={scrollRef} className="hc-live-chat-messages" onScroll={event=>{const el=event.currentTarget;followLatestRef.current=el.scrollHeight-el.scrollTop-el.clientHeight<140;}} role="log" aria-live="polite" aria-relevant="additions text" aria-label="Live chat messages">
             {!shownMessages.length?<div className="hc-live-empty-state"><div className="hc-live-empty-ball">●</div><h2>{isClosed?"No messages recorded":"You're first in — start the conversation"}</h2><p>{isClosed?"This room has ended.":"Kick off the conversation while you watch."}</p></div>:shownMessages.map(item=><article key={item.id} className={"hc-live-chat-message"+(item.user_id===userId?" is-own":"")+(item.failed?" is-failed":"")}>
-              <div className="hc-live-chat-avatar">{profiles[item.user_id]?.avatar_url?<img src={profiles[item.user_id].avatar_url!} alt=""/>:initials(profiles[item.user_id]?.display_name||"HoopCheck member")}</div><div className="hc-live-chat-message-body"><div className="hc-live-chat-message-meta"><strong>{item.user_id===userId?"You":profiles[item.user_id]?.display_name||"Fan"}</strong><time>{new Date(item.created_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</time>{item.pending&&<span>Sending…</span>}{item.failed&&<button type="button" onClick={()=>void retry(item)}>Retry</button>}</div><p>{item.body}</p>{item.user_id!==userId&&!item.pending&&<details className="hc-live-message-menu"><summary aria-label="Message moderation options">•••</summary><div><button type="button" onClick={()=>void controlUser(item.user_id,"is_muted")}>{mutedUsers.has(item.user_id)?"Unmute member":"Mute member"}</button><button type="button" onClick={()=>void controlUser(item.user_id,"is_blocked")}>{blockedUsers.has(item.user_id)?"Unblock member":"Block member"}</button><button type="button" onClick={()=>setReporting(item.id)}>Report message</button></div></details>}</div>
+              <div className="hc-live-chat-avatar">{profiles[item.user_id]?.avatar_url?<img src={profiles[item.user_id].avatar_url!} alt=""/>:initials(profiles[item.user_id]?.display_name||"HoopCheck member")}</div><div className="hc-live-chat-message-body"><div className="hc-live-chat-message-meta"><strong>{item.user_id===userId?"You":profiles[item.user_id]?.display_name||"Fan"}</strong><time>{new Date(item.created_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</time>{item.pending&&<span>Sending…</span>}{item.failed&&<button type="button" disabled={!canSend||sending} onClick={()=>void retry(item)}>Retry</button>}</div><p>{item.body}</p>{item.user_id!==userId&&!item.pending&&<details className="hc-live-message-menu"><summary aria-label="Message moderation options">•••</summary><div><button type="button" onClick={()=>void controlUser(item.user_id,"is_muted")}>{mutedUsers.has(item.user_id)?"Unmute member":"Mute member"}</button><button type="button" onClick={()=>void controlUser(item.user_id,"is_blocked")}>{blockedUsers.has(item.user_id)?"Unblock member":"Block member"}</button><button type="button" onClick={()=>setReporting(item.id)}>Report message</button></div></details>}</div>
             </article>)}
 
           </div>
           {!canSend&&!isClosed&&<p className="hc-live-chat-readonly" role="status">{serverRoomOpen?.gameId!==selected?.id?"Checking game-room access…":"The room is read-only until the game database opens chat."}</p>}
-          {canSend&&<div className="hc-live-reaction-rail" aria-label="Quick game reactions"><span>React</span>{["🔥","🏀","👏","😮"].map(reaction=><button key={reaction} type="button" aria-label={"Add "+reaction+" reaction"} onClick={()=>{setBody(current=>((current?current+" ":"")+reaction).slice(0,500));composerRef.current?.focus();}}>{reaction}</button>)}</div>}
+          {canSend&&<div className="hc-live-reaction-rail" aria-label="Quick game reactions"><span>Quick reactions · sends to chat</span>{["🔥","🏀","👏","😮"].map(reaction=><button key={reaction} type="button" aria-label={"Send "+reaction+" reaction"} disabled={sending} onClick={()=>void send(reaction)}>{reaction}</button>)}</div>}
           {canSend&&<form className="hc-live-chat-compose" onSubmit={e=>{e.preventDefault();void send();}}><input ref={composerRef} value={body} maxLength={500} onChange={e=>setBody(e.target.value)} placeholder="React to the game…" aria-label="Chat message" disabled={isClosed}/><span>{body.length}/500</span><button className="btn" type="submit" disabled={!body.trim()||sending||isClosed}>{sending?"Sending…":"Send"}</button></form>}
           {canSend&&<p className="hc-live-chat-rules">Keep it respectful. Links are displayed as plain text. Slow mode: one message every two seconds.</p>}
         </div>}
