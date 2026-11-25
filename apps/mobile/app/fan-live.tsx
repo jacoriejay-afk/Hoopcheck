@@ -26,6 +26,7 @@ export default function LiveGames() {
   useFocusEffect(useCallback(() => { retry(); }, [retry]));
   const uid = account?.user.id;
   const [error, setError] = useState("");
+  const [sideRevision,setSideRevision]=useState(0);
   const [sideChoice, setSideChoice] = useState<{ owner: string; side: "mens" | "womens" } | null>(null);
   const side = sideChoice && sideChoice.owner === uid ? sideChoice.side : "mens";
   const [savingSide, setSavingSide] = useState(false);
@@ -38,7 +39,7 @@ export default function LiveGames() {
     let valid = true;
     void readBasketballSide(supabase, uid).then(value => { if (valid) setSideChoice({ owner: uid, side: account?.features.canSwitchBasketballSide && (requestedSide === "mens" || requestedSide === "womens") ? requestedSide : value }); }).catch(() => { if (valid) setError("Game preferences could not load. Verify access again."); });
     return () => { valid = false; };
-  }, [allowed, uid, requestedSide, account?.features.canSwitchBasketballSide]);
+  }, [allowed, uid, requestedSide, account?.features.canSwitchBasketballSide, sideRevision]);
   const viewer = useRef({ scope, allowed });
   useLayoutEffect(() => { viewer.current = { scope, allowed }; }, [scope, allowed]);
   const [snapshot, setSnapshot] = useState<{ scope: string; data: Games; checkedAtMs: number } | null>(null);
@@ -147,7 +148,7 @@ export default function LiveGames() {
       {data ? <Text testID="game-data-checked" style={{ color: theme.muted, fontSize: 12 }}>
         {lastCheckedLabel(checkedAtMs!, clockMs)} · {activeLiveCount ? `${activeLiveCount} reported live` : "No games currently reported live"} · Provider scores may lag
       </Text> : null}
-      {error ? <View style={{ gap: 8 }}><Text accessibilityRole="alert" style={{ color: theme.muted }}>{error}</Text><Button secondary onPress={() => setRevision(value => value + 1)}>Retry game refresh</Button></View> : null}
+      {error ? <View style={{ gap: 8 }}><Text accessibilityRole="alert" style={{ color: theme.muted }}>{error}</Text><Button secondary onPress={() => { if(sideChoice?.owner!==uid)setSideRevision(v=>v+1); else setRevision(value => value + 1); }}>Retry game refresh</Button></View> : null}
       {gameId ? <Button secondary onPress={() => router.replace({pathname:"/fan-live",params:{side}})}>All games</Button> : null}
     </View>
     {game ? <View style={{ flex: 1, paddingHorizontal: 12, paddingBottom: 12, gap: 8 }}>
@@ -173,6 +174,6 @@ export default function LiveGames() {
       </ScrollView>
       {rankedGroups.length>4?<Button secondary onPress={()=>setAllGroups(value=>!value)}>{allGroups?"Show compact groups":`Show all ${rankedGroups.length} country / league groups`}</Button>:null}
       {gameId&&!loading&&data?<Text style={{color:theme.muted}}>Requested game unavailable in this basketball side. Choose a game or switch sides.</Text>:null}
-    </View>} ListEmptyComponent={loading ? <HoopCheckLoading label="Checking current fixtures…" /> : <View style={{ gap: 12 }}><Text style={textStyle}>{error || "No current games are available in this basketball side. The provider may not have published new fixtures yet."}</Text><Button secondary onPress={() => setRevision(value => value + 1)}>Refresh games</Button></View>} />}
+    </View>} ListEmptyComponent={loading ? <HoopCheckLoading label="Checking current fixtures…" /> : <View style={{ gap: 12 }}><Text style={textStyle}>{error || "No current games are available in this basketball side. The provider may not have published new fixtures yet."}</Text><Button secondary onPress={() => { if(sideChoice?.owner!==uid)setSideRevision(v=>v+1); else setRevision(value => value + 1); }}>Refresh games</Button></View>} />}
   </KeyboardAvoidingView>;
 }
