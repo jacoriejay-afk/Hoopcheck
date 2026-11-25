@@ -292,3 +292,41 @@ test("attested standings projection refuses missing, stale or unsupported data w
     [{...i,attestation:{...i.attestation,reviewedRoster:i.attestation.reviewedRoster.slice(1)}},"review-required"]
   ])assert.deepEqual(projectAttestedStandings(x),{state});
 });
+
+test("score display preview is authenticated, isolated and source-labelled",async()=>{
+  const src=read("app/api/cron/hoopdata-score-display-preview/route.ts");
+  const js=ts.transpileModule(src,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+  const mod={exports:{}};
+  const id="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+  let calls=0;
+  let row={game_id:id,status:"live",home_score:91,away_score:98,score_updated_at:new Date(Date.now()-1000).toISOString(),score_source:"balldontlie-nba",private_evidence:"never expose"};
+  new Function("require","exports",js)(name=>{
+    if(name==="next/server")return {NextResponse:{json:(body,init)=>Response.json(body,init)}};
+    if(name==="@supabase/supabase-js")return {createClient:(url,key)=>{
+      assert.equal(url,"https://isolated.invalid");assert.equal(key,"test-isolated");
+      return {rpc:(fn,args)=>{calls++;assert.equal(fn,"hoopdata_read_score_display");assert.deepEqual(args,{p_game:id});return {abortSignal:async()=>({data:[row],error:null})};}};
+    }};
+    throw Error(name);
+  },mod.exports);
+  const env={VERCEL_ENV:"production",HOOPDATA_SCORE_DISPLAY_PREVIEW_ENABLED:"true",HOOPDATA_PREVIEW_CRON_SECRET:"test-secret",HOOPDATA_ISOLATED_SUPABASE_URL:"https://app.invalid",HOOPDATA_ISOLATED_SUPABASE_SERVICE_KEY:"test-isolated",NEXT_PUBLIC_SUPABASE_URL:"https://app.invalid",SUPABASE_SERVICE_ROLE_KEY:"test-app"};
+  const before=Object.fromEntries(Object.keys(env).map(k=>[k,process.env[k]]));
+  const req=(auth=true)=>new Request("https://fixture.invalid/api/cron/hoopdata-score-display-preview?gameId="+id,{headers:auth?{Authorization:"Bearer test-secret"}:{}});
+  try{
+    Object.assign(process.env,env);
+    assert.equal((await mod.exports.GET(req())).status,404);
+    process.env.VERCEL_ENV="preview";
+    assert.equal((await mod.exports.GET(req(false))).status,401);
+    assert.equal((await mod.exports.GET(req())).status,503);
+    assert.equal(calls,0);
+    process.env.HOOPDATA_ISOLATED_SUPABASE_URL="https://isolated.invalid";
+    const result=await mod.exports.GET(req());
+    assert.equal(result.status,200);assert.equal(result.headers.get("cache-control"),"private, no-store");
+    assert.deepEqual(await result.json(),{game:{id,status:"live",home_score:91,away_score:98,score_updated_at:row.score_updated_at,score_source:"balldontlie-nba"},preview:true});
+    row={...row,status:"final"};
+    assert.equal((await mod.exports.GET(req())).status,503);
+    row={...row,status:"live",score_updated_at:new Date(Date.now()-360000).toISOString()};
+    assert.equal((await mod.exports.GET(req())).status,503);
+    row={...row,score_source:"primary",status:"final",home_score:80};
+    assert.equal((await mod.exports.GET(req())).status,200);
+  }finally{for(const [k,v] of Object.entries(before)){if(v===undefined)delete process.env[k];else process.env[k]=v;}}
+});
