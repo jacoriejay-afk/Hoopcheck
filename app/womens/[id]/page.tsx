@@ -1,4 +1,5 @@
 "use client";
+import { usePublicTeamIdentity } from "../../teams/[id]/PublicTeamContext";
 import HoopFeedFromEntity from "../../../components/HoopFeedFromEntity";
 import {useEffect,useState} from "react";
 import {useParams} from "next/navigation";
@@ -17,6 +18,7 @@ import TeamPlayersHistory from "../../../components/TeamPlayersHistory";
 import FanTeamPosts from "../../../components/FanTeamPosts";
 
 export default function WomensTeam(){
+ const publicIdentity = usePublicTeamIdentity();
  const {formatDate,formatNumber,t}=useLanguage();
  const [activeSection,setActiveSection]=useState<"overview"|"roster"|"coaches"|"reviews"|"fan-group">("overview");
  useEffect(()=>{
@@ -103,7 +105,7 @@ export default function WomensTeam(){
    })().catch(error => { console.error("Unable to load women’s team review access:", error); if (active) setLoading(false); });
    return () => { active = false; };
  }, [id]);
- if(loading)return <main className="page-shell hc-womens-profile-page"><div className="page-container"><HoopLoading label={t("loadingWomensTeam")} /></div></main>;
+ if(loading)return <main className="page-shell hc-womens-profile-page"><div className="page-container">{publicIdentity && <section className="hero-card"><h1>{publicIdentity.name}</h1>{publicIdentity.location && <p>{publicIdentity.location}</p>}{publicIdentity.leagueName && <p>League: {publicIdentity.leagueId ? <Link href={`/leagues/${encodeURIComponent(publicIdentity.leagueId)}`}>{publicIdentity.leagueName}</Link> : publicIdentity.leagueName}</p>}<p>Discover this women’s basketball club, roster information and available player feedback on HoopCheck. Membership rules apply to reviews.</p><Link href="/womens">Browse women’s basketball teams</Link></section>}<HoopLoading label={t("loadingWomensTeam")} /></div></main>;
  if(!team)return <main className="page-shell hc-womens-profile-page"><div className="page-container"><Surface as="section" className="hero-card"><h1>{t("womenTeamNotFound")}</h1><Link href="/womens" className="btn">{t("backToWomensBasketball")}</Link></Surface></div></main>;
  const average=ratingAverage;
  return <main className="page-shell hc-womens-profile-page"><div className="page-container">

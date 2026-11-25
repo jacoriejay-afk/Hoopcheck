@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Basketball Team, Coach & League Reviews",
-  description: "Discover the HoopCheck reviews directory. Research professional basketball organizations and learn about firsthand player experiences; access depends on membership.",
+  description: "Research basketball teams, coaches and leagues with firsthand player experiences on HoopCheck. Review access depends on membership.",
   alternates: { canonical: "/reviews" },
 };
 

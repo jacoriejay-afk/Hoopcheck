@@ -338,7 +338,7 @@ export default function LiveGamesPage() {
     );
   }
 
-  if (loading) return <main className="page-shell hc-live-hub-page"><div className="page-container"><HoopLoading label="Loading Live Games..." /></div></main>;
+  if (loading) return <main className="page-shell hc-live-hub-page"><div className="page-container"><section className="hero-card"><h1>Live Basketball Games</h1><p>Follow upcoming fixtures and live game updates. Sign in with an eligible Pro or Premium membership to access the Live Game Hub and game conversations.</p><Link href="/leagues">Explore basketball leagues</Link><HoopLoading label="Loading Live Games..." /></section></div></main>;
   if (!userId) return <main className="page-shell hc-live-hub-page"><div className="page-container"><section className="hero-card"><p className="eyebrow">LIVE GAME HUB</p><h1>LIVE GAME CHAT</h1><p className="muted">Sign in to discover live and upcoming games and join game conversations.</p><Link href="/login" className="btn">Sign in</Link></section></div></main>;
   if (!allowed) return <main className="page-shell hc-live-hub-page"><div className="page-container"><section className="hero-card"><p className="eyebrow">PRO & PREMIUM MEMBERS</p><h1>MEMBERSHIP REQUIRED</h1><p className="muted">Watch together. Follow live and upcoming games, and join the conversation.</p><p className="muted">An active Pro or Premium membership is required to open the Live Game Hub and join game chats.</p><Link href="/membership" className="btn">Explore Membership</Link></section></div></main>;
 

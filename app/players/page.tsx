@@ -115,7 +115,7 @@ export default function PlayersPage() {
     };
   }, [query, country, page, retryCount, roleReady]);
 
-  if (!roleReady) return <main className="page-shell"><div className="page-container"><HoopLoading label="Loading directory…"/></div></main>;
+  if (!roleReady) return <main className="page-shell"><div className="page-container"><section className="hero-card"><h1>Professional Basketball Players</h1><p>Find public basketball profiles by username and explore career information that players choose to share. Profile visibility and account access rules apply.</p><HoopLoading label="Loading directory…"/></section></div></main>;
 
   return (
     <main className="page-shell hc-player-directory-page">

@@ -2,7 +2,7 @@
 
 import { createContext, useContext, type ReactNode } from "react";
 
-type PublicTeamIdentity = { name: string; location: string };
+type PublicTeamIdentity = { name: string; location: string; leagueName?: string; leagueId?: string };
 const Context = createContext<PublicTeamIdentity | null>(null);
 
 export function PublicTeamProvider({ identity, children }: { identity: PublicTeamIdentity | null; children: ReactNode }) {

@@ -487,7 +487,8 @@ export default function TeamDetailPage() {
           {publicIdentity && <>
             <h1>{publicIdentity.name}</h1>
             {publicIdentity.location && <p>{publicIdentity.location}</p>}
-            <p>Explore this basketball team on HoopCheck. Membership and review access rules apply.</p>
+            {publicIdentity.leagueName && <p>League: {publicIdentity.leagueId ? <Link href={`/leagues/${encodeURIComponent(publicIdentity.leagueId)}`}>{publicIdentity.leagueName}</Link> : publicIdentity.leagueName}</p>}
+            <p>Explore this basketball club and its available roster information on HoopCheck. Eligible members can research firsthand player experiences before making a career decision.</p>
             <Link href="/teams">Browse basketball teams</Link>
           </>}
           <HoopLoading label={t("loadingTeamIntelligence")} />

@@ -28,6 +28,8 @@ const config: Record<EntityType, { table: string; label: string; summaryType: st
 export type SeoProfile = {
   name: string;
   location: string;
+  leagueName?: string;
+  leagueId?: string;
   rating: number | null;
   reviewCount: number;
   canonical: string;
@@ -38,7 +40,12 @@ export async function getProfileSeo(type: EntityType, id: string): Promise<SeoPr
   const client = db();
   if (!client || !id) return null;
   const cfg = config[type];
-  const { data, error } = await client.from(cfg.table).select("*").eq("id", id).maybeSingle();
+  const isTeam = type === "team" || type === "womens_team";
+  const { data, error } = isTeam
+    ? await client.from(cfg.table).select("id,name,city,country,league_name,league_id").eq("id", id).maybeSingle()
+    : type === "player"
+      ? await client.from(cfg.table).select("*").eq("id", id).eq("account_type", "player").eq("profile_visibility", "public").eq("moderation_status", "normal").maybeSingle()
+      : await client.from(cfg.table).select("*").eq("id", id).maybeSingle();
   if (error || !data) return null;
   const row = data as EntityRow;
   const name = String(row.name || row.display_name || row.full_name || row.username || id);
@@ -85,12 +92,14 @@ export async function getProfileSeo(type: EntityType, id: string): Promise<SeoPr
     },
   } : undefined;
 
-  return { name, location, rating, reviewCount, canonical, jsonLd };
+  const leagueName = isTeam && typeof row.league_name === "string" ? row.league_name.trim() : undefined;
+  const leagueId = isTeam && typeof row.league_id === "string" ? row.league_id : undefined;
+  return { name, location, leagueName, leagueId, rating, reviewCount, canonical, jsonLd };
 }
 
 export function profileMetadata(profile: SeoProfile | null, fallbackPath: string): Metadata {
   if (!profile) {
-    return { alternates: { canonical: new URL(fallbackPath, siteUrl).toString() } };
+    return { ...(fallbackPath.startsWith("/players/") ? { robots: { index: false, follow: true } } : {}), alternates: { canonical: new URL(fallbackPath, siteUrl).toString() } };
   }
   const title = `${profile.name} Reviews`;
   return {
