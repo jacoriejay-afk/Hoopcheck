@@ -28,7 +28,7 @@ async function getRows(table: string, columns: string, configure?: (query: any) 
     for (let from = 0; ; from += pageSize) {
       let query: any = client.from(table).select(columns);
       if (configure) query = configure(query);
-      const { data, error } = await query.range(from, from + pageSize - 1);
+      const { data, error } = await query.order("id", { ascending: true }).range(from, from + pageSize - 1);
       if (error) {
         console.error(`Sitemap: unable to read ${table}`, error.message);
         return rows;
@@ -44,13 +44,12 @@ async function getRows(table: string, columns: string, configure?: (query: any) 
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const lastModified = new Date();
   const staticPaths = [
     { ...entry("/", 1), changeFrequency: "weekly" as const },
     entry("/directory", 0.9), entry("/teams", 0.9), entry("/womens", 0.9),
     entry("/coaches", 0.9), entry("/agents", 0.8), entry("/creators", 0.8), entry("/leagues", 0.9), entry("/players", 0.9),
-    entry("/search", 0.7), entry("/reviews", 0.8), entry("/pre-sign", 0.8),
-    entry("/live-games", 0.8), entry("/membership", 0.6), entry("/signup", 0.7),
+    entry("/reviews", 0.8), entry("/pre-sign", 0.8),
+    entry("/live-games", 0.8), entry("/membership", 0.6),
     entry("/about", 0.7), entry("/founder", 0.5), entry("/company", 0.5), entry("/partners", 0.5),
     entry("/terms", 0.3), entry("/privacy", 0.3), entry("/community-guidelines", 0.3),
   ];
@@ -78,5 +77,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // dynamic showcase URLs await a reviewed public sitemap projection.
   const allEntries = [...staticPaths, ...profileEntries];
   const uniqueEntries = Array.from(new Map(allEntries.map(item => [item.url, item])).values());
-  return uniqueEntries.map(item => ({ ...item, lastModified }));
+  return uniqueEntries;
 }
