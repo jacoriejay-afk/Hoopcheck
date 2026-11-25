@@ -31,12 +31,15 @@ RETURNS timestamptz LANGUAGE sql STABLE SECURITY INVOKER SET search_path='' AS $
  JOIN public.hoopdata_game_push_preferences p ON p.user_id=p_user AND p.enabled
  JOIN public.user_preferences up ON up.user_id=p_user AND up.notifications_enabled
  JOIN pg_catalog.pg_timezone_names z ON z.name=p.timezone
- JOIN public.hoopdata_competition_mappings m ON m.league_id=g.league_id AND m.reviewed
+ JOIN public.hoopdata_competition_mappings m ON m.league_id=g.league_id AND m.provider_league_id=g.provider_league_id AND m.reviewed
  JOIN public.leagues l ON l.id=g.league_id AND l.active AND l.basketball_type=m.side
+ JOIN public.teams home ON home.id=g.team_id AND home.active AND home.league_id=l.id AND home.basketball_type=m.side
+ JOIN public.teams away ON away.id=g.opponent_team_id AND away.active AND away.league_id=l.id AND away.basketball_type=m.side
  CROSS JOIN LATERAL (SELECT CASE p_kind WHEN 'game-day' THEN (date_trunc('day',g.scheduled_at AT TIME ZONE z.name)+interval '9 hours') AT TIME ZONE z.name
  WHEN 'tip-off' THEN g.scheduled_at-interval '30 minutes' ELSE NULL END AS at) ev
  WHERE g.id=p_game AND g.status='scheduled' AND g.provider_source='api-sports-basketball' AND g.scheduled_at=p_tipoff
- AND g.team_id IS NOT NULL AND g.opponent_team_id IS NOT NULL AND ev.at<=g.scheduled_at-interval '30 minutes'
+ AND g.team_id<>g.opponent_team_id AND ev.at<=g.scheduled_at-interval '30 minutes'
+ AND (p_kind<>'game-day' OR ev.at<=g.scheduled_at-interval '1 hour')
  AND public.hoopdata_push_time_allowed(p.timezone,p.quiet_start_minute,p.quiet_end_minute,ev.at) IS TRUE
  AND EXISTS(SELECT 1 FROM public.user_watchlists w WHERE w.user_id=p_user AND w.notify AND
  ((w.target_type='team' AND w.target_id IN (g.team_id,g.opponent_team_id)) OR (w.target_type='league' AND w.target_id=g.league_id)));
