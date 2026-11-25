@@ -7,7 +7,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
-import { GAME_CHAT_OPEN_EARLY_MINUTES, getGameAvailability } from "../../lib/game-availability";
+import { GAME_CHAT_OPEN_EARLY_MINUTES, getGameAvailability, formatPregameCountdown } from "../../lib/game-availability";
 import { getLiveGameStatusPresentation } from "../../lib/live-game-status";
 import "./fan-live.css";
 import "../game-predictions.css";
@@ -45,7 +45,7 @@ export default function FanLivePage() {
   const [sending,setSending]=useState(false);
   const [message,setMessage]=useState("");
   const [gamesLoadError,setGamesLoadError]=useState(false);
-  const [presenceCount,setPresenceCount]=useState(0);
+  const [presenceSample,setPresenceSample]=useState<{gameId:string;count:number;observedAt:number}|null>(null);
   const [roomPresenceCounts,setRoomPresenceCounts]=useState<Record<string,number>>({});
   const [gameStream,setGameStream]=useState<"connecting"|"live"|"fallback">("connecting");
   const [chatStream,setChatStream]=useState<"connecting"|"live"|"fallback">("connecting");
@@ -179,8 +179,9 @@ export default function FanLivePage() {
 
   const refreshPresence=useCallback(async(gameId:string)=>{
     const freshAfter=new Date(Date.now()-75_000).toISOString();
-    const {data,error}=await supabase.from("fan_live_chat_presence").select("user_id,last_seen_at").eq("game_id",gameId).gt("last_seen_at",freshAfter);
-    if(!error && activeRoomRef.current===gameId) setPresenceCount(new Set((data||[]).map((x:any)=>x.user_id)).size);
+    const observedAt=Date.now();
+    const {count,error}=await supabase.from("fan_live_chat_presence").select("user_id",{count:"exact",head:true}).eq("game_id",gameId).gt("last_seen_at",freshAfter);
+    if(activeRoomRef.current===gameId) setPresenceSample(current=>current?.gameId===gameId&&current.observedAt>observedAt?current:error||count===null?null:{gameId,count,observedAt});
   },[]);
 
   useEffect(()=>{void load(true);},[load]);
@@ -193,7 +194,7 @@ export default function FanLivePage() {
   useEffect(()=>{
     activeRoomRef.current=selected?.id||null;
     followLatestRef.current=true;
-    setMessages([]);setProfiles({});setPresenceCount(0);setReporting(null);setMessage("");setBody("");
+    setMessages([]);setProfiles({});setPresenceSample(null);setReporting(null);setMessage("");setBody("");
   },[selected?.id]);
   useEffect(()=>{
     const timer=window.setInterval(()=>{setClock(new Date());void load();},20_000);
@@ -251,7 +252,7 @@ export default function FanLivePage() {
   },[selected?.id,selected?.status,selected?.scheduled_at,selected?.ends_at,chatEnabled,userId,serverRoomOpen?.gameId,serverRoomOpen?.open,refreshPresence]);
 
   useEffect(()=>{
-    if(!selected||!chatEnabled){setMessages([]);setPresenceCount(0);return;}
+    if(!selected||!chatEnabled){setMessages([]);setPresenceSample(null);return;}
     const gameId=selected.id; void loadMessages(gameId); void refreshPresence(gameId);
     const channel=supabase.channel("fan-live-chat-messages-"+gameId)
       .on("postgres_changes",{event:"INSERT",schema:"public",table:"fan_live_chat_messages",filter:"game_id=eq."+gameId},payload=>{
@@ -334,6 +335,8 @@ export default function FanLivePage() {
   const away=selected?(teams[selected.opponent_team_id||""]||{id:"",name:selected.opponent_name}):null;
   const availability=selected?getGameAvailability({status:selected.status,scheduledAt:selected.scheduled_at,startedAt:selected.started_at,endsAt:selected.ends_at,now:clock}):null;
   const isClosed=availability?.state==="CLOSED";
+  const presenceCount=chatEnabled&&presenceSample&&presenceSample.gameId===selected?.id&&clock.getTime()-presenceSample.observedAt<75_000?presenceSample.count:null;
+  const countdown=selected&&!selectedStatus?.isUnverified?formatPregameCountdown(selected.status,selected.scheduled_at,clock):null;
   const canSend=Boolean(chatEnabled&&serverRoomOpen?.gameId===selected?.id&&serverRoomOpen?.open&&selected&&roomOpen(selected,clock));
   const shownMessages=useMemo(()=>messages.filter(m=>!blockedUsers.has(m.user_id)&&!mutedUsers.has(m.user_id)),[messages,blockedUsers,mutedUsers]);
   const listedGames=useMemo(()=>{
@@ -353,7 +356,7 @@ export default function FanLivePage() {
   return <main className={"page-shell hc-live-room "+(inRoom?"hc-live-room--chat":"hc-live-room--directory")}>
       {!inRoom&&<FanBasketballSideSwitch />}<div className="page-container">
     <nav className="hc-live-room-nav" aria-label="Live game navigation"><Link href="/live-games">← Live Games</Link>{inRoom&&<Link href="/fan-live">All chat rooms</Link>}</nav>
-    <header className="hc-live-room-heading"><div><p className="eyebrow">HOOPCHECK · COURTSIDE</p><h1>{inRoom?"Game chat":"Game chat rooms"}</h1><p>{inRoom?"One game. One conversation.":"Pick a matchup and join its dedicated live conversation."}</p></div>{inRoom&&selected&&roomOpen(selected,clock)&&<span className="hc-live-presence-chip"><i className="hc-live-pulse-dot"/> {presenceCount} here</span>}</header>
+    <header className="hc-live-room-heading"><div><p className="eyebrow">HOOPCHECK · COURTSIDE</p><h1>{inRoom?"Game chat":"Game chat rooms"}</h1><p>{inRoom?"One game. One conversation.":"Pick a matchup and join its dedicated live conversation."}</p></div>{inRoom&&selected&&roomOpen(selected,clock)&&<span className="hc-live-presence-chip"><i className="hc-live-pulse-dot"/> {chatEnabled&&presenceCount!==null?`${presenceCount} here`:"Presence unavailable"}</span>}</header>
     {allowed&&<p className="hc-live-room-sync" role="status">{gameStream==="live"?"Game database connected · scores follow provider updates":"Game updates reconnecting · checking every 20 seconds"}{inRoom&&chatEnabled?" · "+(chatStream==="live"?"Chat connected live":"Chat recovering from stored messages"):""}</p>}
     {allowed && gamesLoadError && <section className="dashboard-card" role="alert"><h2>Game list temporarily unavailable</h2><p className="muted">Your membership is recognized, but the game service could not load. Please retry rather than upgrading again.</p><button type="button" className="btn" onClick={()=>void load(true)}>Retry games</button></section>}
     {!allowed ? <section className="dashboard-card hc-live-empty-state">
@@ -365,11 +368,13 @@ export default function FanLivePage() {
       {inRoom&&!selected&&<section className="hc-live-room-state" role="status"><h2>Room unavailable</h2><p>This matchup could not be found for this basketball category, or it is no longer on the current schedule.</p><Link href="/fan-live">Browse chat rooms</Link></section>}
       {inRoom&&selected&&<section id="live-chat-room" className="hc-live-room-panel" aria-label="Selected game chat room">
         <header className="hc-live-room-scoreboard"><div className="hc-live-room-team">{renderTeamLogo(home)}<strong>{home?.name||"Team"}</strong></div><div className="hc-live-room-score"><span className={"hc-live-badge"+(selectedStatus?.isVerifiedLive?" is-live":"")}>{selectedStatus?.isUnverified?selectedStatus.label:selectedStatus?.isVerifiedLive?<><i/> LIVE</>:selectedStatus?.isVerifiedFinal?"FINAL":availability?.state||"UPCOMING"}</span><strong>{selected.home_score??"—"} <span>:</span> {selected.away_score??"—"}</strong><small>{selectedStatus?.showPeriod?selected.period_label:selectedStatus?.isUnverified?"Provider update pending":selected.league_name||"Score updates automatically"}</small></div><div className="hc-live-room-team">{renderTeamLogo(away)}<strong>{away?.name||selected.opponent_name}</strong></div></header>
+        {countdown&&<p className="hc-live-room-notice">{countdown}</p>}
+        {chatEnabled&&selectedStatus&&!selectedStatus.isUnverified&&availability?.chatOpen&&<div className="hc-live-room-notice" aria-label="Game atmosphere"><strong>{availability.phase==="pre-game"?"Pregame fan lobby":selectedStatus.isVerifiedFinal?"Postgame discussion":"Game atmosphere"}</strong><p>{presenceCount===null?"Live participation unavailable":`${presenceCount} active ${presenceCount===1?"member":"members"} in this HoopCheck game room`}. Counts reflect online room participation, not arena attendance.</p></div>}
         {selected.opponent_team_id&&<details className="hc-live-room-predictions"><summary>Game predictions</summary><GameWinnerPrediction game={selected} homeName={home?.name||"Home"} awayName={away?.name||selected.opponent_name}/></details>}
 
         {isClosed&&<div className="hc-live-closed-state"><span className="hc-live-closed-icon">✓</span><h2>{selectedStatus?.isUnverified?"Game result not confirmed":selectedStatus?.isVerifiedFinal?"Game finished · chat closed":"Chat unavailable"}</h2><small>Previous messages remain read-only. The provider has not confirmed this result if the status is pending.</small></div>}
         {!chatEnabled?<div className="hc-live-empty-state"><div className="hc-live-empty-ball">●</div>{accountType==="fan"?<><h2>Fan Pro or Premium required for Live Game Chat</h2><p>Upgrade your fan membership to join the live conversation for men's and women's fixtures.</p><Link href="/membership" className="btn">View Fan Membership</Link></>:accountType==="player"?<><h2>Player Pro or Premium required for Live Game Chat</h2><p>An active Pro or Premium player membership unlocks live game chat for men's and women's fixtures.</p><Link href="/membership" className="btn">View Membership</Link></>:!userId?<><h2>Sign in to join Live Game Chat</h2><Link href="/login" className="btn">Sign In</Link></>:<><h2>Live Game Chat is for eligible players and fans</h2><p>Active Pro and Premium player and fan memberships can join the live conversation.</p></>}</div>:!isClosed&&!roomOpen(selected,clock)?<div className="hc-live-empty-state"><h2>Chat opens {GAME_CHAT_OPEN_EARLY_MINUTES} minutes before tip-off</h2><p>{selected.scheduled_at?new Date(selected.scheduled_at).toLocaleString():"Tip-off time is not confirmed yet."}</p></div>:<div className="hc-live-chat-shell">
-          <div className="hc-live-chat-toolbar"><span><i className="hc-live-pulse-dot"/> {presenceCount} {presenceCount===1?"member":"members"} here · {chatStream==="live"?"Live messages":"Recovering messages"}</span><span>1 message / 2 seconds</span></div>
+          <div className="hc-live-chat-toolbar"><span><i className="hc-live-pulse-dot"/> {presenceCount===null?"Presence unavailable":`${presenceCount} ${presenceCount===1?"member":"members"} here`} · {chatStream==="live"?"Live messages":"Recovering messages"}</span><span>1 message / 2 seconds</span></div>
           <div ref={scrollRef} className="hc-live-chat-messages" onScroll={event=>{const el=event.currentTarget;followLatestRef.current=el.scrollHeight-el.scrollTop-el.clientHeight<140;}} role="log" aria-live="polite" aria-relevant="additions text" aria-label="Live chat messages">
             {!shownMessages.length?<div className="hc-live-empty-state"><div className="hc-live-empty-ball">●</div><h2>{isClosed?"No messages recorded":"You're first in — start the conversation"}</h2><p>{isClosed?"This room has ended.":"Kick off the conversation while you watch."}</p></div>:shownMessages.map(item=><article key={item.id} className={"hc-live-chat-message"+(item.user_id===userId?" is-own":"")+(item.failed?" is-failed":"")}>
               <div className="hc-live-chat-avatar">{profiles[item.user_id]?.avatar_url?<img src={profiles[item.user_id].avatar_url!} alt=""/>:initials(profiles[item.user_id]?.display_name||"HoopCheck member")}</div><div className="hc-live-chat-message-body"><div className="hc-live-chat-message-meta"><strong>{item.user_id===userId?"You":profiles[item.user_id]?.display_name||"Fan"}</strong><time>{new Date(item.created_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</time>{item.pending&&<span>Sending…</span>}{item.failed&&<button type="button" onClick={()=>void retry(item)}>Retry</button>}</div><p>{item.body}</p>{item.user_id!==userId&&!item.pending&&<details className="hc-live-message-menu"><summary aria-label="Message moderation options">•••</summary><div><button type="button" onClick={()=>void controlUser(item.user_id,"is_muted")}>{mutedUsers.has(item.user_id)?"Unmute member":"Mute member"}</button><button type="button" onClick={()=>void controlUser(item.user_id,"is_blocked")}>{blockedUsers.has(item.user_id)?"Unblock member":"Block member"}</button><button type="button" onClick={()=>setReporting(item.id)}>Report message</button></div></details>}</div>
