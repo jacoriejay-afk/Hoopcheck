@@ -1,4 +1,6 @@
 import { ScrollView, Text, View } from "react-native";
+import { useLocalSearchParams } from "expo-router";
+import { parseGroupInvite } from "../src/native/groupInvite";
 import { SafeAreaView } from "react-native-safe-area-context";
 import HoopGroupsChannels from "../components/HoopGroupsChannels";
 import { useEntryTheme } from "../src/theme";
@@ -13,6 +15,8 @@ const planned = [
 
 export default function HoopGroups() {
   const theme = useEntryTheme();
+  const {group} = useLocalSearchParams<{group?:string}>();
+  const inviteSlug = parseGroupInvite(group);
   const enabled = process.env.EXPO_PUBLIC_HOOPGROUPS_CHANNELS_ENABLED === "true";
   return <SafeAreaView edges={["bottom","left","right"]} style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{
@@ -21,7 +25,7 @@ export default function HoopGroups() {
       <Text style={{color:theme.muted,fontSize:13,lineHeight:20}}>
         Find your basketball people. Discover independent communities, create your own group, and join discussion channels.
       </Text>
-      {enabled ? <HoopGroupsChannels /> : <>
+      {enabled ? <HoopGroupsChannels inviteSlug={inviteSlug} /> : <>
         <View style={{paddingVertical:9,gap:7,borderTopWidth:1,borderColor:theme.glassBorder}}>
           <Text accessibilityRole="header" style={{color:theme.foreground,fontFamily:"HoopCheckDisplay",fontSize:18}}>
             Community spaces are preparing for launch

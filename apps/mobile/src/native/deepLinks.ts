@@ -1,3 +1,4 @@
+import { parseGroupInvite } from "./groupInvite";
 const host = "hoopcheck.online";
 const safeId = /^[A-Za-z0-9_-]{1,100}$/;
 
@@ -31,6 +32,10 @@ export function nativeDestination(path: string): string {
       return "/fan-live" + (id && /^[0-9a-f-]{36}$/i.test(id) ? `?gameId=${id}` : "");
     }
     if (url.pathname === "/reels") return "/reels";
+    if (url.pathname === "/hoopgroups") {
+      const slug = parseGroupInvite(url.searchParams.get("group"));
+      return "/hoopgroups" + (slug ? `?group=${encodeURIComponent(slug)}` : "");
+    }
     if (url.pathname === "/search") {
       const query = new URLSearchParams();
       const term = url.searchParams.get("q");

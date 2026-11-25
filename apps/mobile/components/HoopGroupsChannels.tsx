@@ -9,6 +9,7 @@ import { useNativeAccount } from "../src/native/useNativeAccount";
 import { GroupModerationPanel } from "./GroupModerationPanel";
 import { HoopCheckLoading } from "./HoopCheckLoading";
 import { readWithDeadline } from "../src/native/readDeadline";
+import { findInvitedGroup } from "../src/native/groupInvite";
 
 type Space = { id:string;slug:string;name:string;category:string;description:string;owner_id:string|null;accent_color:string;icon_key:string };
 type Channel = { id:string;space_id:string;name:string;slug:string;sort_index:number };
@@ -17,19 +18,21 @@ const colorOptions = { orange:"#FF873C", blue:"#60A5FA", purple:"#A78BFA", green
 const iconOptions = { basketball:"🏀", flame:"🔥", globe:"🌐", star:"⭐", trophy:"🏆", users:"👥" } as const;
 const accent = (name:string) => colorOptions[name as keyof typeof colorOptions] ?? colorOptions.orange;
 const emblem = (name:string) => iconOptions[name as keyof typeof iconOptions] ?? iconOptions.basketball;
-export default function HoopGroupsChannels() {
+export default function HoopGroupsChannels({inviteSlug = null}:{inviteSlug?:string|null}) {
   const {account}=useNativeAccount();
   const {offline}=useNetwork();
   const userId=account?.user.id||"";
   // Never carry a previous account's local membership, drafts or requests across identities.
-  return <ScopedHoopGroups key={JSON.stringify([userId,offline])} userId={userId} offline={offline} role={account?.user.accountType||""} />;
+  return <ScopedHoopGroups key={JSON.stringify([userId,offline])} userId={userId} offline={offline} role={account?.user.accountType||""} inviteSlug={inviteSlug} />;
 }
-function ScopedHoopGroups({userId,offline,role}:{userId:string;offline:boolean;role:string}) {
+function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offline:boolean;role:string;inviteSlug:string|null}) {
   const theme=useEntryTheme();
   const [spaces,setSpaces]=useState<Space[]>([]);
   const [channels,setChannels]=useState<Channel[]>([]);
   const [joined,setJoined]=useState<string[]>([]);
   const [spaceId,setSpaceId]=useState("");
+  const [handledInvite,setHandledInvite]=useState<string|null>(null);
+  const [inviteUnavailable,setInviteUnavailable]=useState(false);
   const [channelId,setChannelId]=useState("");
   const [postSnapshot,setPostSnapshot]=useState<{channelId:string;posts:Post[]}|null>(null);
   const [draftState,setDraftState]=useState<{channelId:string;value:string}|null>(null);
@@ -76,6 +79,15 @@ function ScopedHoopGroups({userId,offline,role}:{userId:string;offline:boolean;r
     void load();
     return ()=>{alive=false;setPostSnapshot(null);setJoined([]);};
   },[userId,offline,revision]));
+
+  useEffect(()=>{
+    if(!inviteSlug){setHandledInvite(null);setInviteUnavailable(false);return;}
+    if(loading||error||offline||!userId||handledInvite===inviteSlug)return;
+    const invited=findInvitedGroup(spaces,inviteSlug);
+    setHandledInvite(inviteSlug);
+    setInviteUnavailable(!invited);
+    if(invited){setQuery("");setFilter("discover");setSpaceId(invited.id);setChannelId("");setPostSnapshot(null);setDraftState(null);setEditing(false);}
+  },[inviteSlug,spaces,loading,error,offline,userId,handledInvite]);
 
   const ordered=useMemo(()=>spaces.slice().sort((a,b)=>{
     const priority=(s:Space)=>Number(s.category===role || (role==="scout"&&s.category==="agents"));
@@ -212,7 +224,8 @@ function ScopedHoopGroups({userId,offline,role}:{userId:string;offline:boolean;r
   }
   async function shareGroup() {
     if(!selected)return;
-    await Share.share({message:`Join ${selected.name} on HoopGroups: https://hoopcheck.online/hoopgroups?group=${encodeURIComponent(selected.slug)}`});
+    try { await Share.share({message:`Join ${selected.name} on HoopGroups: https://hoopcheck.online/hoopgroups?group=${encodeURIComponent(selected.slug)}`}); }
+    catch { setError("Could not share the group invitation. Please try again."); }
   }
 
   async function send() {
@@ -278,6 +291,7 @@ function ScopedHoopGroups({userId,offline,role}:{userId:string;offline:boolean;r
       Independent basketball communities, member-created groups and moderated discussion channels.
     </Text>
     {loading?<HoopCheckLoading label="Finding HoopGroups…" />:null}
+    {inviteUnavailable?<Text accessibilityRole="alert" style={{color:theme.muted}}>This invited community is unavailable or you do not have access. You can browse other groups below.</Text>:null}
     {error?<Text accessibilityRole="alert" style={{color:theme.accent}}>{error}</Text>:null}
     {offline?<Text style={{color:theme.muted}}>Reconnect to see your groups.</Text>:null}
     {!userId&&!loading?<Text style={{color:theme.muted}}>Sign in to discover HoopGroups.</Text>:null}
