@@ -51,3 +51,34 @@ export function calculateFanPredictionXp(picks:Pick[],games:SettledGame[],now:Da
   };
   return {passport,xp,level:FAN_LEVELS[index].name,next_level:next?.name??null,next_level_xp:next?.xp??null,correct_picks:correct,settled_picks:settled,window_days:FAN_XP_WINDOW_DAYS};
 }
+
+export const FAN_RANK_WINDOW_DAYS=7;
+export const FAN_RANK_MIN_PARTICIPANTS=10;
+
+/** Private comparison, with no participant names or IDs in the returned payload. */
+export function calculateFanPredictionRank(picks:(Pick&{user_id:string})[],games:SettledGame[],fanIds:ReadonlySet<string>,callerId:string,now:Date){
+  const cutoff=now.getTime()-FAN_RANK_WINDOW_DAYS*86400000;
+  const grouped=new Map<string,Pick[]>();
+  for(const pick of picks){
+    const submitted=Date.parse(pick.updated_at||"");
+    if(!fanIds.has(pick.user_id)||!Number.isFinite(submitted)||submitted<cutoff||submitted>now.getTime())continue;
+    const group=grouped.get(pick.user_id)||[];
+    group.push(pick);
+    grouped.set(pick.user_id,group);
+  }
+  const scores=new Map<string,number>();
+  for(const [id,group] of grouped){
+    const result=calculateFanPredictionXp(group,games,now);
+    if(result.settled_picks>0)scores.set(id,result.correct_picks);
+  }
+  const own=scores.get(callerId);
+  const enough=scores.size>=FAN_RANK_MIN_PARTICIPANTS;
+  return {
+    window_days:FAN_RANK_WINDOW_DAYS,
+    minimum_participants:FAN_RANK_MIN_PARTICIPANTS,
+    status:!enough?"insufficient-participation":own===undefined?"no-settled-picks":"ranked",
+    rank:enough&&own!==undefined?1+Array.from(scores.values()).filter(score=>score>own).length:null,
+    participants:enough?scores.size:null,
+    correct_picks:own??null,
+  };
+}
