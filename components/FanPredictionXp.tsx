@@ -4,14 +4,18 @@ import { useEffect,useState } from "react";
 import { supabase } from "../lib/supabase";
 import { FAN_XP_PER_CORRECT_PICK,FAN_XP_WINDOW_DAYS } from "../lib/fan-prediction-xp";
 
-import type { calculateFanPredictionXp } from "../lib/fan-prediction-xp";
+import type { calculateFanPredictionXp, calculateFanPredictionRank } from "../lib/fan-prediction-xp";
 
 type Summary=ReturnType<typeof calculateFanPredictionXp>;
+type Rank=ReturnType<typeof calculateFanPredictionRank>;
 
 export default function FanPredictionXp({accountId}:{accountId:string}){
   const [summary,setSummary]=useState<Summary|null>(null);
   const [loading,setLoading]=useState(true);
   const [attempt,setAttempt]=useState(0);
+  const [rankAttempt,setRankAttempt]=useState(0);
+  const [rank,setRank]=useState<Rank|null>(null);
+  const [rankLoading,setRankLoading]=useState(false);
   useEffect(()=>{
     let active=true;
     const controller=new AbortController();
@@ -32,6 +36,24 @@ export default function FanPredictionXp({accountId}:{accountId:string}){
     void load();
     return()=>{active=false;controller.abort();};
   },[accountId,attempt]);
+  useEffect(()=>{
+    if(!rankAttempt)return;
+    let active=true;
+    const controller=new AbortController();
+    async function loadRank(){
+      try{
+        const {data:{session}}=await supabase.auth.getSession();
+        if(!active||session?.user.id!==accountId)return;
+        const response=await fetch("/api/game-predictions?mode=fan-rank",{headers:{Authorization:"Bearer "+session.access_token},cache:"no-store",signal:controller.signal});
+        if(!response.ok)return;
+        const value=await response.json() as Rank;
+        if(active&&["ranked","no-settled-picks","insufficient-participation"].includes(value.status))setRank(value);
+      }catch{/* Keep unavailable status. */}
+      finally{if(active)setRankLoading(false);}
+    }
+    void loadRank();
+    return()=>{active=false;controller.abort();};
+  },[accountId,rankAttempt]);
   return <section className="dashboard-card" aria-label="Fan prediction XP">
     <p className="eyebrow">FAN LOYALTY · PREDICTION XP</p>
     <h2>{summary?summary.level:"Your fan activity"}</h2>
@@ -53,6 +75,12 @@ export default function FanPredictionXp({accountId}:{accountId:string}){
       <h3>Recent settled picks</h3>
       {summary.passport.recent.length?<ul style={{paddingInlineStart:20}}>{summary.passport.recent.map(entry=><li key={entry.game_id}><strong>{entry.correct?"Correct pick":"Pick missed"}</strong> · {entry.league||"League not listed"}{entry.country?" · "+entry.country:""} · <time dateTime={entry.settled_at}>{new Date(entry.settled_at).toLocaleDateString()}</time></li>)}</ul>:<p className="muted">Settled pregame picks will appear here.</p>}
     </div>}
+    <div style={{marginTop:16,borderTop:"1px solid var(--border)",paddingTop:12}}>
+      <h3>Weekly fan leaderboard</h3>
+      <p className="muted">Compare your correct settled picks from the last seven days. Your rank is private; other fans' names and identities are not shown. Ties share the same rank.</p>
+      {rankLoading?<p role="status">Checking your rank…</p>:rank?.status==="ranked"?<p><strong>#{rank.rank}</strong> of {rank.participants} eligible participants · {rank.correct_picks} correct</p>:rank?.status==="insufficient-participation"?<p role="status">Not enough settled participants to display a private ranking yet.</p>:rank?.status==="no-settled-picks"?<p>Make a pregame pick and wait for a confirmed result to enter the ranking.</p>:rankAttempt>0?<p role="status">Ranking temporarily unavailable.</p>:null}
+      <button type="button" className="btn" disabled={rankLoading} onClick={()=>{setRank(null);setRankLoading(true);setRankAttempt(n=>n+1);}}>{rankAttempt?"Refresh my rank":"Check my rank"}</button>
+    </div>
     <button type="button" className="btn" disabled={loading} onClick={()=>setAttempt(n=>n+1)}>Refresh XP</button>
   </section>;
 }
