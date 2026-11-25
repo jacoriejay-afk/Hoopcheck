@@ -140,3 +140,16 @@ test("competition worker requires reviewed identity, reserves budget before fetc
   assert.deepEqual(operations,["reserve","reserve","cooldown"]);
   assert.equal((await runCompetitionTask(task,"test",{...deps,stage:async()=>false})).state,"stage-failed");
 });
+
+test("mapped competition preview cannot activate in production or use primary credentials",()=>{
+  const route=read("app/api/cron/hoopdata-mapped-competition-preview/route.ts");
+  const gate=route.indexOf('process.env.VERCEL_ENV!=="preview"');
+  const auth=route.indexOf('request.headers.get("authorization")');
+  const database=route.indexOf("const db=createClient");
+  assert.ok(gate>0&&gate<auth&&auth<database);
+  assert.ok(route.indexOf("key===appKey||providerKey===appProvider")<database);
+  assert.ok(route.includes('new URL(url).origin===new URL(appUrl).origin'));
+  assert.ok(route.indexOf('.eq("reviewed",true)')<route.indexOf("await runCompetitionTask"));
+  assert.ok(route.indexOf('league.basketball_type!==m.side')<route.indexOf("await runCompetitionTask"));
+  assert.ok(route.includes("canonicalWrites:false,coverageCertified:false"));
+});
