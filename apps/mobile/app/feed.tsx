@@ -18,7 +18,7 @@ import { supabase } from "../src/lib/supabase";
 import { useEntryTheme } from "../src/theme";
 import { useNativeAccount } from "../src/native/useNativeAccount";
 import { useNetwork, requireOnline } from "../src/native/network";
-import { deleteOwnedFeedPost, feedAction, isFeedId, moderateFeedText, publishFeedPoll, readFeedChecks, readFeedComments, readFeedPage, readFeedSaved, readSharedFeedPost, toggleFeedCheck, validatedPollOptions, type FeedComment, type FeedCursor, type FeedPost } from "../src/native/feedClient";
+import { deleteOwnedFeedPost, feedAction, isFeedId, moderateFeedText, publishFeedPoll, readFeedChecks, readFeedComments, readFeedPage, readSavedFeedPage, readFeedSaved, readSharedFeedPost, toggleFeedCheck, validatedPollOptions, type FeedComment, type FeedCursor, type FeedPost } from "../src/native/feedClient";
 function relativeTime(value: string, now: number) { const time=Date.parse(value); if(!Number.isFinite(time))return "Unknown time";const minutes=Math.max(0,Math.floor((now-time)/60000));if(minutes<1)return "Just now";if(minutes<60)return `${minutes}m ago`;if(minutes<1440)return `${Math.floor(minutes/60)}h ago`;if(minutes<10080)return `${Math.floor(minutes/1440)}d ago`;return new Date(time).toLocaleDateString(); }
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
 type CommentPage = { rows: FeedComment[]; more: boolean; offset: number; loading: boolean; error: string };
@@ -38,7 +38,10 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
   const [mediaMode, setMediaMode] = useState(false);
   const [mediaSource,setMediaSource]=useState<"camera"|"library">("library");
   const [reels, setReels] = useState(initialReels);
-  const scope = `${uid ?? ""}:${reels}`;
+  const [savedMode, setSavedMode] = useState<{ owner: string; enabled: boolean }>({ owner: "", enabled: false });
+  const savedOnly = !reels && savedMode.owner === uid && savedMode.enabled;
+  useEffect(() => { if (linkedId) setSavedMode({ owner: "", enabled: false }); }, [linkedId]);
+  const scope = `${uid ?? ""}:${reels}:${savedOnly}`;
   const viewer = useRef({ uid, canRead, scope });
   useLayoutEffect(() => { viewer.current = { uid, canRead, scope }; }, [uid, canRead, scope]);
   const [focused, setFocused] = useState(false);
@@ -121,7 +124,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
     const current = ++generation.current;
     setLoading(true); setLoadError("");
     try {
-      const [page, shared] = await Promise.all([readFeedPage(supabase, uid, cursor, reels), !cursor && linkedId ? readSharedFeedPost(supabase, uid, linkedId) : null]);
+      const [page, shared] = await Promise.all([savedOnly ? readSavedFeedPage(supabase, uid, cursor) : readFeedPage(supabase, uid, cursor, reels), !savedOnly && !cursor && linkedId ? readSharedFeedPost(supabase, uid, linkedId) : null]);
       const posts = shared && (!reels || shared.video_url) && !page.posts.some(post => post.id === shared.id) ? [shared, ...page.posts] : page.posts;
       const [checkResult, savedResult] = await Promise.allSettled([readFeedChecks(supabase, posts.map(post => post.id)), readFeedSaved(supabase, uid, posts.map(post => post.id))]);
       const activity = checkResult.status === "fulfilled" ? checkResult.value : [];
@@ -141,10 +144,10 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
         return result;
       });
       if (activityFailed) setMessage("Posts loaded. Check totals could not be verified.");
-      else if (!cursor && linkedId && !shared) setMessage("The shared post is unavailable for this account.");
+      else if (!savedOnly && !cursor && linkedId && !shared) setMessage("The shared post is unavailable for this account.");
     } catch { if (current === generation.current) setLoadError("HoopFeed could not load. Try again."); }
     finally { if (current === generation.current) setLoading(false); }
-  }, [uid, canRead, reels, linkedId, scope]);
+  }, [uid, canRead, reels, linkedId, scope, savedOnly]);
   useEffect(() => {
     setRows({ scope, posts: [] }); setNext(null); setChecks({}); setCheckPulses({ scope, values: {} }); setSaved({}); setOpenComments({}); setMessage("");
     if (canRead && !reels) void load(); else setLoading(false);
@@ -194,6 +197,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
   }, [params.comments, linkedId, reels, autoOpened, rows, scope, loadComments]);
   const posts = canRead && rows.scope === scope ? rows.posts.filter(post =>
     (!post.expires_at || Date.parse(post.expires_at) > now) &&
+    (!savedOnly || (saved[post.id] === true && blockedCreators.owner === uid && blockedCreators.ready && !blockedCreators.failed && !blockedCreators.ids.includes(post.author_id))) &&
     (!reels || (
       (hiddenReels.owner !== uid || !hiddenReels.ids.includes(post.id)) &&
       (mutedCreators.owner !== uid || !mutedCreators.ids.includes(post.author_id)) &&
@@ -284,6 +288,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
         </Pressable>)}
       </View>
     </GlassSurface>
+    {!reels && <View accessibilityRole="tablist" style={{flexDirection:"row",gap:8,paddingHorizontal:14,paddingBottom:4}}>{[false,true].map(value => <Pressable key={String(value)} accessibilityRole="tab" accessibilityState={{selected:savedOnly===value}} onPress={()=>setSavedMode({owner:uid!,enabled:value})} style={{minHeight:44,paddingHorizontal:16,justifyContent:"center",borderRadius:22,borderWidth:1,borderColor:savedOnly===value?theme.accent:theme.border}}><Text style={{color:savedOnly===value?theme.accent:theme.foreground,fontWeight:"700"}}>{value?"Saved posts":"All posts"}</Text></Pressable>)}</View>}
     {message || loadError ? <Text accessibilityLiveRegion="polite"
       style={{ color: theme.muted, paddingHorizontal: 18, marginTop: 4 }}>{loadError || message}</Text> : null}
     {reels ? <View testID="hoopreels-provider-hold" style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 12, padding: 24, paddingBottom: 100 }}>
@@ -291,8 +296,8 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
       <CommunityWordmark reels size={22} />
       <Text style={{ color: theme.muted, textAlign: "center" }}>HoopReels is not available yet.</Text>
       <Button secondary onPress={() => setReels(false)}>Back to HoopFeed</Button>
-    </View> : <FlatList key={reels ? "reels" : "posts"} keyboardDismissMode="on-drag" style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 9, paddingTop: 4, paddingBottom: 20, gap: reels ? 0 : 8 }} keyboardShouldPersistTaps="handled" initialNumToRender={reels ? 2 : 4} maxToRenderPerBatch={reels ? 2 : 4} windowSize={reels ? 3 : 5} pagingEnabled={reels} getItemLayout={reels && height > 0 ? (_items, index) => ({ length: height, offset: height * index, index }) : undefined} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
-      ListHeaderComponent={!reels ? <View style={{ marginBottom: 2, gap: 7 }}>
+    </View> : <FlatList key={reels ? "reels" : savedOnly ? "saved-posts" : "posts"} keyboardDismissMode="on-drag" style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 9, paddingTop: 4, paddingBottom: 20, gap: reels ? 0 : 8 }} keyboardShouldPersistTaps="handled" initialNumToRender={reels ? 2 : 4} maxToRenderPerBatch={reels ? 2 : 4} windowSize={reels ? 3 : 5} pagingEnabled={reels} getItemLayout={reels && height > 0 ? (_items, index) => ({ length: height, offset: height * index, index }) : undefined} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
+      ListHeaderComponent={!reels && !savedOnly ? <View style={{ marginBottom: 2, gap: 7 }}>
         {!composerExpanded ? <View style={{flexDirection:"row",alignItems:"center",gap:4,borderBottomWidth:1,borderColor:theme.border,paddingHorizontal:6}}>
           <Pressable accessibilityRole="button" accessibilityLabel="Create HoopFeed post" disabled={!canWrite} onPress={()=>{setComposerExpanded(true);setMediaMode(false);}} style={{flex:1,minHeight:44,flexDirection:"row",alignItems:"center",gap:7}}><Ionicons name="create-outline" size={20} color={theme.accent}/><Text numberOfLines={1} style={{color:theme.muted,fontSize:13,flex:1}}>Share a basketball update…</Text></Pressable>
           {Platform.OS!=="web"?<Pressable accessibilityRole="button" testID="hoopfeed-quick-camera" accessibilityLabel="Open HoopCheck Camera and media composer" disabled={!canWrite||pending.post} onPress={()=>{setMediaSource("camera");setComposerExpanded(true);setMediaMode(true);setPoll(current=>({...current,owner:uid!,enabled:false}));}} style={{minWidth:44,minHeight:44,alignItems:"center",justifyContent:"center"}}><Ionicons name="camera-outline" size={22} color={theme.accent}/></Pressable>:null}
@@ -311,7 +316,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
         {!canWrite ? <Text style={{ color: theme.muted, marginTop: 8 }}>Your membership does not include posting.</Text> : null}
       </View> : null}
       refreshControl={<RefreshControl refreshing={loading} onRefresh={() => { setBlocksVersion(version => version + 1); void load(); }} />}
-      ListEmptyComponent={loading || (reels && blockedCreators.owner === uid && !blockedCreators.ready) ? <HoopCheckLoading label="Loading HoopFeed…" /> : <View style={{ padding: 24, gap: 12 }}><Text style={textStyle}>{loadError || (reels && blockedCreators.failed ? "Blocked accounts could not be verified. Retry before viewing Reels." : reels ? "No video posts are available in this page." : "No posts are available in this page.")}</Text><Button secondary onPress={() => { setBlocksVersion(version => version + 1); void load(); }}>Refresh</Button></View>}
+      ListEmptyComponent={loading || ((reels || savedOnly) && blockedCreators.owner === uid && !blockedCreators.ready) ? <HoopCheckLoading label="Loading HoopFeed…" /> : <View style={{ padding: 24, gap: 12 }}><Text style={textStyle}>{loadError || ((reels || savedOnly) && blockedCreators.failed ? "Blocked accounts could not be verified. Refresh to retry." : savedOnly ? (next ? "No accessible saved posts in this page. Load more to check the next page." : "No accessible saved posts found.") : reels ? "No video posts are available in this page." : "No posts are available in this page.")}</Text><Button secondary onPress={() => { setBlocksVersion(version => version + 1); void load(); }}>Refresh</Button></View>}
       renderItem={({ item: post }) => {
         const page = comments.owner === uid ? comments.values[post.id] : undefined;
         const replyTarget = reply && reply.owner === uid && reply.postId === post.id ? reply : null;
