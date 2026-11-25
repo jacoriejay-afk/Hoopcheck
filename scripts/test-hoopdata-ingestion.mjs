@@ -50,3 +50,12 @@ test("live games distinguish source freshness from UI refresh and support legacy
   assert.ok(hub.includes("Score update delayed"));
   assert.ok(hub.includes("Score freshness unavailable"));
 });
+
+test("Basketball Data Center uses verified owner access before any privileged reads",()=>{
+  const page=read("app/owner-hq/basketball-data/page.tsx");
+  assert.ok(page.indexOf('await requireAmbassadorSession("/owner-hq/basketball-data",true)')>0);
+  assert.ok(page.indexOf('await requireAmbassadorSession("/owner-hq/basketball-data",true)')<page.indexOf("const db="));
+  assert.ok(page.includes("Unavailable"));
+  assert.ok(page.includes("Directory counts are not verified provider coverage"));
+  assert.doesNotMatch(page,/\.insert\(|\.upsert\(|\.update\(|\.delete\(|\.rpc\(/);
+});
