@@ -66,3 +66,9 @@ test('username search preserves underscores and strips the display @ prefix',asy
  await searchDirectory(fixture(async(input,options)=>{if(String(input).includes('/rpc/'))body=JSON.parse(options.body);return Response.json([]);}), '@Hooper_23',true);
  assert.equal(body.p_username,'hooper_23');
 });
+
+test('subsequent global search pages retain stable ordering, offset and role gates',async()=>{
+ const requests=[];await searchDirectory(fixture(async(input,options)=>{requests.push({url:new URL(String(input)),body:options.body?JSON.parse(options.body):null});return Response.json([]);}), 'Olympia',true,{teams:6,players:12});
+ const team=requests.find(r=>r.url.pathname.endsWith('/teams'));assert.equal(team.url.searchParams.get('offset'),'6');assert.equal(team.url.searchParams.get('limit'),'6');assert.equal(team.url.searchParams.get('order'),'name.asc,id.asc');
+ assert.equal(requests.find(r=>r.body)?.body.p_offset,12);
+});
