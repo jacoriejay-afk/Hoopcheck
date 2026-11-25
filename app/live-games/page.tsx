@@ -7,7 +7,7 @@ import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import CourtLines from "../../components/CourtLines";
-import { getGameAvailability, formatViewerLocalTime } from "../../lib/game-availability";
+import { getGameAvailability, formatViewerLocalTime, formatPregameCountdown } from "../../lib/game-availability";
 import { getLiveGameStatusPresentation } from "../../lib/live-game-status";
 import { HoopIcon } from "../../components/HoopCheckUI";
 import TeamLogo from "../../components/TeamLogo";
@@ -273,6 +273,7 @@ export default function LiveGamesPage() {
     const canJoin = availability.chatOpen && !presentation.isUnverified && !["cancelled","canceled","postponed","abandoned"].includes(game.status.toLowerCase()) && (!presentation.isVerifiedFinal || process.env.NEXT_PUBLIC_LIVE_POSTGAME_CHAT_ENABLED === "true");
     const score = scoreText(game);
     const tip = game.scheduled_at || game.started_at;
+    const countdown = isUpcoming && !presentation.isUnverified ? formatPregameCountdown(game.status, game.scheduled_at, clock) : null;
     return (
       <article className={`hc-live-hub-card ${isLive ? "is-live hc-owner-game-night" : ""} ${isRecent ? "is-recent" : ""}`}>
         <div className="hc-live-hub-card__top">
@@ -301,6 +302,7 @@ export default function LiveGamesPage() {
         <div className="hc-live-card__meta">
           {availability.chatOpen && allowed && presenceCounts[game.id] > 0 && <span><HoopIcon name="users" size={15} /> {presenceCounts[game.id]} {presenceCounts[game.id] === 1 ? "member chatting" : "members chatting"}</span>}
           {isUpcoming && <span><HoopIcon name="calendar" size={15} /> {formatViewerLocalTime(tip)}</span>}
+          {countdown && <span>{countdown}</span>}
           {isRecent && <span><HoopIcon name="check" size={15} /> {presentation.isUnverified ? "Waiting for provider-confirmed result" : availability.chatOpen ? "Post-game conversation" : "Final score"}</span>}
           {variant === "postgame" && <span><HoopIcon name="message-square" size={15} /> Post-game chat remains open</span>}
           {isLive && <span aria-label="Score source">Provider-reported live score</span>}
