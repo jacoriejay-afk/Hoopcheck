@@ -15,7 +15,7 @@ function compile(path, imports, globals = {}) {
   return compiled.exports;
 }
 const theme = { radius: { control: 16 }, type: { display: {} } };
-function screen(path, { state = [], params = {}, segments = [], pathname = "/", configurationError = null, pendingDestination = null, supabase = {} } = {}) {
+function screen(path, { state = [], params = {}, segments = [], pathname = "/", configurationError = null, pendingDestination = null, supabase = {}, captchaToken, captchaError = false } = {}) {
   const calls = { push: [], replace: [], alerts: [], oauthUrls: [], freshSignIns: 0, remembered: [] };
   const effects = [];
   let slot = 0;
@@ -32,6 +32,7 @@ function screen(path, { state = [], params = {}, segments = [], pathname = "/", 
     if (name === "react-native-safe-area-context") return { SafeAreaView: "SafeAreaView", SafeAreaProvider: "SafeAreaProvider" };
     if (name.endsWith("/theme")) return { useEntryTheme: () => theme };
     if (name.endsWith("/primitives")) return { GlassCard: "GlassCard", Input: "Input", Button: "Button" };
+    if (name.endsWith("/NativeCaptcha")) return { useNativeCaptcha: () => ({ challenge: null, requestToken: async () => { if (captchaError) throw new Error("Security check cancelled"); return captchaToken; } }) };
     if (name.endsWith("/supabase")) return { supabase, supabaseConfigurationError: configurationError };
     if (name.endsWith("/native/lockPolicy")) return { recordFreshSignIn: () => { calls.freshSignIns++; } };
     if (name.endsWith("/native/pendingDestination")) return { takeDestination: () => pendingDestination, rememberDestination: value => calls.remembered.push(value) };
@@ -194,4 +195,26 @@ test("protected native links preserve bounded post/search destinations without r
     assert.deepEqual(f.calls.remembered, [expected]);
     assert.deepEqual(f.calls.replace, ["/sign-in"]);
   }
+});
+
+test("native password login forwards a fresh CAPTCHA response and never signs in on cancellation", async () => {
+  const requests = [];
+  for (const cancel of [false, true]) {
+    const f = screen("app/sign-in.tsx", { state: ["player@example.com", "password"], captchaToken: "fixture-response", captchaError: cancel, supabase: {
+      ...profile("player"), auth: { signInWithPassword: async args => { requests.push(args); return { data: { user: { id: "user" } }, error: null }; } },
+    } });
+    await f.nodes.find(n => n.type === "Button" && !n.props.secondary).props.onPress();
+    assert.deepEqual(f.calls.replace, cancel ? [] : ["/dashboard"]);
+  }
+  assert.deepEqual(requests, [{ email: "player@example.com", password: "password", options: { captchaToken: "fixture-response" } }]);
+});
+test("native password recovery forwards CAPTCHA and preserves the recovery redirect", async () => {
+  const requests = [];
+  for (const cancel of [false, true]) {
+    const f = screen("app/forgot-password.tsx", { state: ["player@example.com"], captchaToken: "fixture-response", captchaError: cancel, supabase: {
+      auth: { resetPasswordForEmail: async (...args) => { requests.push(args); return { error: null }; } },
+    } });
+    await f.nodes.find(n => n.type === "Button").props.onPress();
+  }
+  assert.deepEqual(requests, [["player@example.com", { redirectTo: "hoopcheck://reset-password", captchaToken: "fixture-response" }]]);
 });
