@@ -6,7 +6,7 @@ export function createCaptchaTokenStore(enabled: boolean, now: () => number = Da
   const maxAgeMs = 290_000;
   return {
     accept(revision: number, token: string) {
-      if (!enabled || revision !== generation) return false;
+      if (!enabled || revision !== generation) return null;
       value = typeof token === "string" && token.length <= 2048 ? token.trim() : "";
       issuedAt = now();
       return Boolean(value);
