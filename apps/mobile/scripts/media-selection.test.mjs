@@ -85,3 +85,25 @@ test('HoopFeed capture has explicit retake and preview without enabling Reel pub
  assert.match(composer,/Post to HoopFeed/);
  assert.doesNotMatch(composer,/HOOPREELS_CREATE_ENABLED\s*=/);
 });
+
+test('center crop presets retain bounds and native crop occurs before resize',async()=>{
+ const f=native();
+ assert.deepEqual(f.api.centerCrop(4000,3000,'square'),{originX:500,originY:0,width:3000,height:3000});
+ assert.deepEqual(f.api.centerCrop(4000,3000,'portrait'),{originX:800,originY:0,width:2400,height:3000});
+ assert.deepEqual(f.api.centerCrop(3000,4000,'landscape'),{originX:0,originY:875,width:3000,height:2250});
+ assert.deepEqual(f.api.centerCrop(1,1,'portrait'),{originX:0,originY:0,width:1,height:1});
+ assert.throws(()=>f.api.centerCrop(0,30,'square'),/dimensions/);
+ await f.api.preparePhoto(f.image,false,false,'portrait');
+ assert.deepEqual(f.calls.find(c=>c[0]==='crop')[1],{originX:800,originY:0,width:2400,height:3000});
+ assert.deepEqual(f.calls.find(c=>c[0]==='resize')[1],{height:1440});
+ assert.ok(f.calls.findIndex(c=>c[0]==='crop') < f.calls.findIndex(c=>c[0]==='resize'));
+});
+test('photo order swaps are immutable and bounded',()=>{
+ const f=native();const photos=['a','b','c'];
+ assert.deepEqual(f.api.movePhoto(photos,1,-1),['b','a','c']);
+ assert.deepEqual(f.api.movePhoto(photos,1,1),['a','c','b']);
+ assert.deepEqual(photos,['a','b','c']);
+ assert.equal(f.api.movePhoto(photos,0,-1),photos);
+ assert.equal(f.api.movePhoto(photos,2,1),photos);
+ assert.equal(f.api.movePhoto(photos,-1,1),photos);
+});
