@@ -70,3 +70,41 @@ test("primary score ingestion only invokes provider after optional durable quota
   assert.ok(route.includes('await persistCooldown(response.headers.get("Retry-After"))'));
   assert.ok(route.includes('await persistCooldown(null)'));
 });
+
+const competitionModule={exports:{}};
+const ingestionModule={exports:{}};
+const cjsOptions={compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}};
+new Function("exports",ts.transpileModule(read("lib/hoopdata-ingestion.ts"),cjsOptions).outputText)(ingestionModule.exports);
+new Function("require","exports",ts.transpileModule(read("lib/hoopdata-api-sports-competition.ts"),cjsOptions).outputText)(name=>{assert.equal(name,"./hoopdata-ingestion");return ingestionModule.exports;},competitionModule.exports);
+const {apiSportsCompetitionUrl,parseApiSportsSeasonGames,parseApiSportsStandings,parseApiSportsCompetitionSeasons,selectActiveCompetitionSeason}=competitionModule.exports;
+const envelope=(get,response)=>({get,response,errors:[],results:response.length});
+test("international provider competition endpoints use explicit league and season and UTC",()=>{
+  assert.equal(apiSportsCompetitionUrl("games",12,"2026-2027").searchParams.get("timezone"),"UTC");
+  assert.equal(apiSportsCompetitionUrl("standings",12,"2026").searchParams.get("league"),"12");
+  assert.equal(apiSportsCompetitionUrl("leagues",12).searchParams.has("season"),false);
+  assert.throws(()=>apiSportsCompetitionUrl("games",12));
+  assert.throws(()=>apiSportsCompetitionUrl("games",12,"2026-2028"));
+});
+test("season fixtures reject duplicate or mismatched IDs and malformed final scores",()=>{
+  const game={id:1,league:{id:12,season:"2026-2027"},teams:{home:{id:2},away:{id:3}},date:"2026-11-25T19:00:00Z",status:{short:"FT"},scores:{home:{total:90},away:{total:80}}};
+  const parsed=parseApiSportsSeasonGames(envelope("games",[game]),12,"2026-2027");
+  assert.equal(parsed[0].status,"final");assert.equal(parsed[0].homeScore,90);
+  assert.equal(parseApiSportsSeasonGames(envelope("games",[game,game]),12,"2026-2027"),null);
+  assert.equal(parseApiSportsSeasonGames(envelope("games",[game]),13,"2026-2027"),null);
+  assert.equal(parseApiSportsSeasonGames(envelope("games",[{...game,scores:{home:{total:90},away:{total:90}}}]),12,"2026-2027"),null);
+  assert.equal(parseApiSportsSeasonGames({...envelope("games",[game]),errors:{requests:"quota"}},12,"2026-2027"),null);
+});
+test("official provider ranking preserves separate stages and groups rather than recomputing rank",()=>{
+  const row={league:{id:12,season:"2026-2027"},team:{id:2},position:3,stage:"Regular",group:{name:"Eastern"},games:{played:5,win:{total:3},lose:{total:2}},points:{for:450,against:430}};
+  const rows=parseApiSportsStandings(envelope("standings",[[row],[{...row,group:{name:"Atlantic"},position:1}]]),12,"2026-2027");
+  assert.equal(rows.length,2);assert.equal(rows[0].position,3);assert.equal(rows[1].position,1);
+  assert.equal(parseApiSportsStandings(envelope("standings",[[row,row]]),12,"2026-2027"),null);
+});
+test("season rollover requires unique verified provider date window",()=>{
+  const raw=envelope("leagues",[{id:12,seasons:[{season:"2026-2027",start:"2026-10-01",end:"2027-06-01",coverage:{standings:true,games:{statistics:{teams:true}}}},{season:"2027-2028",start:"2027-10-01",end:"2028-06-01"}]}]);
+  const seasons=parseApiSportsCompetitionSeasons(raw,12);
+  assert.equal(seasons[0].standings,true);assert.equal(seasons[0].games,null);
+  assert.equal(selectActiveCompetitionSeason(seasons,"2026-11-25"),"2026-2027");
+  assert.equal(selectActiveCompetitionSeason(seasons,"2027-07-01"),null);
+  assert.equal(selectActiveCompetitionSeason([seasons[0],seasons[0]],"2026-11-25"),null);
+});
