@@ -6,7 +6,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNativeAccount } from "../src/native/useNativeAccount";
 import { supabase } from "../src/lib/supabase";
-import { connectionPath, visibleConnections, type PublicConnection } from "../src/native/connectionPresentation";
+import { connectionPath, visibleConnections, visibleFollowers, type PublicConnection } from "../src/native/connectionPresentation";
 import { Skeleton } from "../components/Motion";
 import { Button } from "../src/primitives";
 import { useEntryTheme } from "../src/theme";
@@ -24,14 +24,15 @@ export default function ConnectionsScreen() {
     const deadline = setTimeout(() => controller.abort(), 15000);
     const load = async () => {
       if (!uid || !role) return;
+      if (mode === "followers" && role !== "fan" && role !== "player") { if (alive) setResult({ scope, rows: [], failed: false }); clearTimeout(deadline); return; }
       try {
         const before = await readWithDeadline(() => supabase.auth.getSession());
         if (before.error || before.data.session?.user.id !== uid) throw new Error("Session changed");
         // Existing website RPC: read-only, no new tables, permissions or mutations.
-        const response = await supabase.rpc("get_public_follow_list", { p_mode: mode, p_target_type: mode === "followers" ? role === "fan" ? "fan" : "player" : null, p_target_id: mode === "followers" ? uid : null, p_user_id: mode === "following" ? uid : null }).abortSignal(controller.signal);
+        const response = await supabase.rpc("get_public_follow_list", { p_mode: mode, p_target_type: mode === "followers" ? role === "fan" ? "fan" : "player" : null, p_target_id: mode === "followers" ? uid : null, p_user_id: mode === "following" ? uid : null }).setHeader("Authorization", `Bearer ${before.data.session.access_token}`).abortSignal(controller.signal);
         const after = await readWithDeadline(() => supabase.auth.getSession());
-        if (controller.signal.aborted || response.error || after.error || after.data.session?.user.id !== uid) throw new Error("Connections unavailable");
-        const rows = visibleConnections(response.data, role);
+        if (controller.signal.aborted || response.error || after.error || after.data.session?.user.id !== uid || after.data.session.access_token !== before.data.session.access_token) throw new Error("Connections unavailable");
+        const rows = mode === "followers" ? visibleFollowers(response.data, uid, role) : visibleConnections(response.data, role);
         if (alive) setResult({ scope, rows, failed: false });
       } catch { if (alive) setResult({ scope, rows: [], failed: true }); }
       finally { clearTimeout(deadline); }
