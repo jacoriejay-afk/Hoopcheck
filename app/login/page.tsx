@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { AuthCaptcha, useAuthCaptcha } from "../../components/AuthCaptcha";
 import AuthPasswordField from "../../components/AuthPasswordField";
 import GoogleSignInButton from "../../components/GoogleSignInButton";
 import { googleAuthMessage } from "../../lib/google-auth";
@@ -10,6 +11,7 @@ import { supabase } from "../../lib/supabase";
 
 export default function LoginPage() {
   const router = useRouter();
+  const captcha = useAuthCaptcha();
   const emailInput = useRef<HTMLInputElement>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -40,7 +42,7 @@ export default function LoginPage() {
       // A stalled auth request must never leave the submit button spinning forever.
       // Redirect only after Supabase confirms an authenticated user.
       const authResult = await Promise.race([
-        supabase.auth.signInWithPassword({ email: normalizedEmail, password }),
+        supabase.auth.signInWithPassword({ email: normalizedEmail, password, options: { captchaToken: captcha.takeToken() } }),
         new Promise<never>((_, reject) => {
           window.setTimeout(() => reject(new Error("Login is taking too long. Please check your connection and try again.")), 15000);
         }),
@@ -86,6 +88,7 @@ export default function LoginPage() {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
         redirectTo: new URL("/reset-password", window.location.origin).href,
+        captchaToken: captcha.takeToken(),
       });
       if (error) throw error;
       setMessageIsSuccess(true);
@@ -115,11 +118,12 @@ export default function LoginPage() {
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Your password" autoComplete="current-password" required />
 
-            <button type="button" onClick={handlePasswordReset} disabled={loading || resetLoading} className="hc-auth-action hc-reset-link">
+            <AuthCaptcha key={captcha.revision} onToken={captcha.onToken} />
+            <button type="button" onClick={handlePasswordReset} disabled={loading || resetLoading || !captcha.ready} className="hc-auth-action hc-reset-link">
               {resetLoading ? "Sending reset link…" : "Forgot password?"}
             </button>
 
-            <button type="submit" className="btn hc-auth-submit" disabled={loading || resetLoading}>
+            <button type="submit" className="btn hc-auth-submit" disabled={loading || resetLoading || !captcha.ready}>
               {loading ? "Signing in..." : "Sign in"}
             </button>
           </form>
