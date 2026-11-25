@@ -100,6 +100,6 @@ test("Fan HQ includes home and away fixtures on both sides and clears cross-acco
   assert.match(hub,/!scheduleAvailable\?<p/);
   assert.match(hub,/event!=="SIGNED_OUT"/);
   assert.match(hub,/requestSequence.current\+\+;activeUser.current=next/);
-  assert.match(hub,/setSignedIn\(false\);setTeams\(\[\]\);setGames\(\[\]\);setTeamNames\(\{\}\)/);
+  assert.match(hub,/setSignedIn\(false\);setFanAccountId\(null\);setTeams\(\[\]\);setGames\(\[\]\);setTeamNames\(\{\}\)/);
   assert.match(hub,/signedIn&&teams.map/);
 });
