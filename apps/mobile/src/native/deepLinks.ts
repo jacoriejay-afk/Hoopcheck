@@ -22,7 +22,8 @@ export function nativeDestination(path: string): string {
     }
     if (url.protocol !== "https:" || url.hostname !== host || url.username || url.password || url.port) return "/";
     const parts = url.pathname.split("/").filter(Boolean);
-    if (url.pathname === "/account/edit" || url.pathname === "/account/security" || url.pathname === "/account/support") return url.pathname;
+    if (url.pathname === "/account/edit" || url.pathname === "/account/security") return url.pathname;
+    if (url.pathname === "/account/support") return "/account/support" + (url.searchParams.get("topic")==="scam" ? "?topic=scam" : "");
     if (parts[0] === "team-hub" && parts[1] === "groups") {
       if (parts.length === 2) return "/team-hub/groups";
       if (parts.length === 3 && safeId.test(parts[2])) return `/team-hub/groups/${parts[2]}`;
