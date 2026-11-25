@@ -47,3 +47,28 @@ test("existing canonical IDs require exactly one approved provider-scoped alias"
   assert.equal(resolveExistingCanonicalGame(fixture,[alias,alias]),null);
   assert.equal(resolveExistingCanonicalGame(fixture,[{...alias,canonicalGameId:"not-a-uuid"}]),null);
 });
+
+const fetchModule={exports:{}};
+new Function("require","exports",compile("hoopdata-provider-fetch"))(name=>{assert.equal(name,"./hoopdata-balldontlie");return mod.exports;},fetchModule.exports);
+const {fetchBdlSeasonPage,retryAfterTime}=fetchModule.exports;
+test("every request reserves shared quota, and failed reservation never invokes fetch",async()=>{
+  const calls=[],now=()=>new Date("2026-11-25T12:00:00Z");
+  const input={league:"nba",season:2026,apiKey:"fixture-only"};
+  const deps={now,reserve:async()=>{calls.push("reserve");return false},blockUntil:async()=>{calls.push("block")},fetcher:async()=>{calls.push("fetch");return Response.json({data:[nba],meta:{}})}};
+  assert.equal((await fetchBdlSeasonPage(input,deps)).state,"budget-blocked");
+  assert.deepEqual(calls,["reserve"]);
+  assert.equal((await fetchBdlSeasonPage(input,{...deps,reserve:async()=>{throw Error("offline")}})).state,"budget-unavailable");
+  assert.deepEqual(calls,["reserve"]);
+  const accepted=await fetchBdlSeasonPage(input,{...deps,reserve:async()=>{calls.push("reserve-ok");return true}});
+  assert.equal(accepted.state,"ok");assert.deepEqual(calls,["reserve","reserve-ok","fetch"]);
+});
+test("rate limits persist Retry-After without an extra request or exposing credentials",async()=>{
+  const calls=[],now=()=>new Date("2026-11-25T12:00:00Z");
+  const deps={now,reserve:async()=>true,blockUntil:async(pool,until)=>calls.push([pool,until]),fetcher:async()=>{calls.push("fetch");return new Response("",{status:429,headers:{"Retry-After":"120"}})}};
+  const result=await fetchBdlSeasonPage({league:"wnba",season:2026,apiKey:"fixture-only"},deps);
+  assert.deepEqual(result,{state:"provider-error",status:429,retryAt:"2026-11-25T12:02:00.000Z"});
+  assert.deepEqual(calls,["fetch",["balldontlie","2026-11-25T12:02:00.000Z"]]);
+  assert.equal(retryAfterTime(null,now()),"2026-11-25T12:01:00.000Z");
+  assert.equal(retryAfterTime("Wed, 25 Nov 2026 12:03:00 GMT",now()),"2026-11-25T12:03:00.000Z");
+  assert.equal((await fetchBdlSeasonPage({league:"nba",season:2026,apiKey:"fixture-only"},{...deps,fetcher:async()=>new Response("",{status:403})})).retryAt,null);
+});
