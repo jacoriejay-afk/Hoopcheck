@@ -53,6 +53,7 @@ export default function LiveGamesPage() {
   const [followedIds, setFollowedIds] = useState<string[]>([]);
   const [reminders, setReminders] = useState<string[]>([]);
   const [presenceCounts, setPresenceCounts] = useState<Record<string, number>>({});
+  const [presenceObservedAt, setPresenceObservedAt] = useState<number | null>(null);
   const [joinedGameIds, setJoinedGameIds] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<Filter>("live");
   const [collapsedLeagues, setCollapsedLeagues] = useState<string[]>([]);
@@ -75,7 +76,7 @@ export default function LiveGamesPage() {
     const { data: { session } } = await supabase.auth.getSession();
     const user = session?.user;
     if (!user) {
-      setUserId(null); setAllowed(false); setGames([]); setLoading(false); return;
+      setUserId(null); setAllowed(false); setGames([]); setPresenceCounts({}); setJoinedGameIds(new Set()); setPresenceObservedAt(null); setLoading(false); return;
     }
     setUserId(user.id);
     const [{ data: profile }, { data: subscription }] = await Promise.all([
@@ -85,7 +86,7 @@ export default function LiveGamesPage() {
     const entitlements = getHoopCheckEntitlements({ accountType: profile?.account_type, subscription });
     const isAllowed = entitlements.canUseLiveGameHub;
     setAllowed(isAllowed);
-    if (!isAllowed) { setGames([]); setLoading(false); return; }
+    if (!isAllowed) { setGames([]); setPresenceCounts({}); setJoinedGameIds(new Set()); setPresenceObservedAt(null); setLoading(false); return; }
 
     const [followsResult, gamesResult, remindersResult] = await Promise.all([
       supabase.from("follow_relationships").select("target_id").eq("follower_id", user.id).eq("target_type", "team").limit(500),
@@ -130,8 +131,13 @@ export default function LiveGamesPage() {
     } else setTeams({});
 
     const freshAfter = new Date(Date.now() - 75_000).toISOString();
-    const { data: presenceRows } = await supabase.from("fan_live_chat_presence")
-      .select("game_id,user_id,last_seen_at").gt("last_seen_at", freshAfter);
+    const observedAt = Date.now();
+    const { data: presenceRows, error: presenceError, count: presenceTotal } = await supabase.from("fan_live_chat_presence")
+      .select("game_id,user_id,last_seen_at", { count: "exact" }).gt("last_seen_at", freshAfter);
+    if (presenceError || !presenceRows || presenceTotal !== presenceRows.length) {
+      setPresenceCounts({}); setJoinedGameIds(new Set()); setPresenceObservedAt(null); setLoading(false); return;
+    }
+    setPresenceObservedAt(observedAt);
     const counts: Record<string, number> = {};
     for (const row of presenceRows || []) counts[row.game_id] = (counts[row.game_id] || 0) + 1;
     setPresenceCounts(counts);
@@ -170,6 +176,7 @@ export default function LiveGamesPage() {
     return () => { window.clearInterval(refresh); document.removeEventListener("visibilitychange", onVisible); void supabase.removeChannel(presenceChannel); void supabase.removeChannel(gameChangesChannel); };
   }, [load]);
 
+  const presenceFresh = presenceObservedAt !== null && clock.getTime() - presenceObservedAt < 75_000;
   const prepared = useMemo(() => games.map(game => ({
     game,
     presentation: getLiveGameStatusPresentation(game, clock),
@@ -300,7 +307,7 @@ export default function LiveGamesPage() {
           </div>
         </div>
         <div className="hc-live-card__meta">
-          {availability.chatOpen && allowed && presenceCounts[game.id] > 0 && <span><HoopIcon name="users" size={15} /> {presenceCounts[game.id]} {presenceCounts[game.id] === 1 ? "member chatting" : "members chatting"}</span>}
+          {availability.chatOpen && allowed && presenceFresh && presenceCounts[game.id] > 0 && <span><HoopIcon name="users" size={15} /> {presenceCounts[game.id]} {presenceCounts[game.id] === 1 ? "member chatting" : "members chatting"}</span>}
           {isUpcoming && <span><HoopIcon name="calendar" size={15} /> {formatViewerLocalTime(tip)}</span>}
           {countdown && <span>{countdown}</span>}
           {isRecent && <span><HoopIcon name="check" size={15} /> {presentation.isUnverified ? "Waiting for provider-confirmed result" : availability.chatOpen ? "Post-game conversation" : "Final score"}</span>}
@@ -310,7 +317,7 @@ export default function LiveGamesPage() {
         {presentation.isUnverified && <p className="hc-live-card__muted">Last reported score · Result/status not verified</p>}
         {isUpcoming && availability.opensAt && <p className="hc-live-card__muted">{availability.minutesUntilOpen && availability.minutesUntilOpen > 0 ? `Chat opens in ${availability.minutesUntilOpen} min` : "Chat open"} · {formatViewerLocalTime(availability.opensAt.toISOString(), { weekday: undefined })}</p>}
         <div className="hc-live-card__actions">
-          <Link href={`/fan-live/room/${encodeURIComponent(game.id)}`} className={canJoin?"btn hc-live-join":"hc-live-room-view"} aria-label={(canJoin?"Join":"View")+" game chat for "+(home?.name||"Home")+" versus "+(away?.name||game.opponent_name)}>{canJoin?(joinedGameIds.has(game.id)?"IN CHAT ✓":"JOIN CHAT"):"VIEW ROOM"} <span aria-hidden="true">→</span></Link>
+          <Link href={`/fan-live/room/${encodeURIComponent(game.id)}`} className={canJoin?"btn hc-live-join":"hc-live-room-view"} aria-label={(canJoin?"Join":"View")+" game chat for "+(home?.name||"Home")+" versus "+(away?.name||game.opponent_name)}>{canJoin?(presenceFresh && joinedGameIds.has(game.id)?"IN CHAT ✓":"JOIN CHAT"):"VIEW ROOM"} <span aria-hidden="true">→</span></Link>
           {isUpcoming && <button type="button" className={`hc-remind-button ${reminders.includes(game.id) ? "is-set" : ""}`} disabled={reminding === game.id} onClick={() => void toggleReminder(game.id)}>
             <HoopIcon name="bell" size={16} /> {reminding === game.id ? "Saving…" : reminders.includes(game.id) ? "REMINDER SET" : "REMIND ME"}
           </button>}
@@ -338,21 +345,21 @@ export default function LiveGamesPage() {
   return <main className="page-shell hc-live-hub-page">
       <FanBasketballSideSwitch /><div className="page-container">
     <section aria-label="Courtside pulse" className="hc-live-hub-section">
-      <div className="hc-live-section-heading"><div><p className="eyebrow">COURTSIDE PULSE</p><h2>{live.length} live {live.length === 1 ? "game" : "games"} · {live.reduce((total, entry) => total + (presenceCounts[entry.game.id] || 0), 0)} fans in live chats</h2><p className="muted">LIVE reflects the game provider, not just an open chat. Schedules and conversations update independently.</p></div>
+      <div className="hc-live-section-heading"><div><p className="eyebrow">COURTSIDE PULSE</p><h2>{live.length} live {live.length === 1 ? "game" : "games"} · {presenceFresh ? `${live.reduce((total, entry) => total + (presenceCounts[entry.game.id] || 0), 0)} fans in live chats` : "Fan activity unavailable"}</h2><p className="muted">LIVE reflects the game provider, not just an open chat. Schedules and conversations update independently.</p></div>
         <button type="button" className="btn dark" disabled={refreshing} onClick={() => void refreshNow()}>{refreshing ? "Checking…" : "Refresh games"}</button></div>
       <p className="muted" role="status">{lastCheckedAt ? "Scores last checked " + lastCheckedAt.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }) + " · Individual score freshness depends on the provider." : "Score source not checked yet."}</p>
     </section>
     <section aria-label="Happening Now" className="hc-live-hub-section hc-live-active-rooms">
       <div className="hc-live-section-heading"><div><p className="eyebrow">ACTIVE CHAT ROOMS</p><h2>Happening now</h2></div><Link href="/fan-live" className="hc-live-directory-link">Browse rooms →</Link></div>
       <div className="hc-live-conversations-rail">
-        {filtered.filter(({game,availability,presentation}) => !presentation.isUnverified && availability.chatOpen && (presenceCounts[game.id] || 0) > 0)
+        {filtered.filter(({game,availability,presentation}) => presenceFresh && !presentation.isUnverified && availability.chatOpen && (presenceCounts[game.id] || 0) > 0)
           .sort((a,b) => (presenceCounts[b.game.id] || 0) - (presenceCounts[a.game.id] || 0))
           .slice(0,8).map(({game,home,away}) =>
             <Link key={game.id} href={`/fan-live/room/${encodeURIComponent(game.id)}`} className="hc-live-conversation-link">
               <span>{home?.name||"Home"} vs {away?.name||game.opponent_name}</span>
               <small>{presenceCounts[game.id]} chatting · Open →</small>
             </Link>)}
-        {!filtered.some(({game,availability,presentation}) => !presentation.isUnverified && availability.chatOpen && (presenceCounts[game.id] || 0)>0) &&
+        {!filtered.some(({game,availability,presentation}) => presenceFresh && !presentation.isUnverified && availability.chatOpen && (presenceCounts[game.id] || 0)>0) &&
           <p className="muted">No active rooms yet. Start the conversation from a matchup below.</p>}
       </div>
     </section>
