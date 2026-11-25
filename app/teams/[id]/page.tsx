@@ -1,5 +1,6 @@
 "use client";
 
+import { usePublicTeamIdentity } from "./PublicTeamContext";
 import HoopFeedFromEntity from "../../../components/HoopFeedFromEntity";
 import { useEffect, useState } from "react";
 import { useLanguage } from "../../../components/LanguageProvider";
@@ -154,6 +155,7 @@ function RatingBar({
 }
 
 export default function TeamDetailPage() {
+  const publicIdentity = usePublicTeamIdentity();
   const { formatDate, t, language } = useLanguage();
   const params = useParams();
 
@@ -482,6 +484,12 @@ export default function TeamDetailPage() {
             HoopCheck
           </div>
 
+          {publicIdentity && <>
+            <h1>{publicIdentity.name}</h1>
+            {publicIdentity.location && <p>{publicIdentity.location}</p>}
+            <p>Explore this basketball team on HoopCheck. Membership and review access rules apply.</p>
+            <Link href="/teams">Browse basketball teams</Link>
+          </>}
           <HoopLoading label={t("loadingTeamIntelligence")} />
         </section>
       </main>
