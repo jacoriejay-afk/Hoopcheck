@@ -25,3 +25,15 @@ test('rejects empty, truncated and oversized input', async () => {
   assert.equal(await inspectEvidenceFile(new Blob(['%PDF-'])), null);
   assert.equal(await inspectEvidenceFile(new Blob(['%PDF-1.7',new Uint8Array(MAX_EVIDENCE_BYTES)])), null);
 });
+
+import { safeExternalEvidenceUrl, evidenceDownloadName } from '../lib/security/evidence-download.ts';
+test('external proof links must use credential-free HTTPS', () => {
+  assert.equal(safeExternalEvidenceUrl('https://example.com/proof'), 'https://example.com/proof');
+  for (const url of [null, '/relative', 'http://example.com/proof', 'javascript:alert(1)', 'data:text/html,hi', 'https://trusted.example@other.example/proof', 'https://example.com/'+'x'.repeat(4096)]) assert.equal(safeExternalEvidenceUrl(url), null);
+});
+test('evidence download filenames never preserve arbitrary uploaded names or executable suffixes', () => {
+  assert.equal(evidenceDownloadName('user/custom.jpeg'), 'hoopcheck-evidence.jpg');
+  assert.equal(evidenceDownloadName('user/a.PDF'), 'hoopcheck-evidence.pdf');
+  assert.equal(evidenceDownloadName('user/a.pdf.html'), 'hoopcheck-evidence.bin');
+  assert.equal(evidenceDownloadName('user/unknown.svg'), 'hoopcheck-evidence.bin');
+});
