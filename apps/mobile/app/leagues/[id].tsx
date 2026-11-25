@@ -1,3 +1,4 @@
+import { LeagueStandings } from "../../components/LeagueStandings";
 import { EntitySchedule } from "../../components/EntitySchedule";
 import { LeagueClubs } from "../../components/EntityCompetition";
 import { EntityHero } from "../../components/EntityHero";
@@ -99,6 +100,7 @@ export default function LeagueDetailScreen() {
               <Text style={styles.label}>COUNTRY</Text><Text style={styles.value}>{league.country || "Not listed"}</Text>
             </GlassCard>
             {safeWebsite(league.website) ? <Button onPress={openWebsite} style={styles.button}><Text style={styles.buttonText}>Open league website ↗</Text></Button> : null}
+            <LeagueStandings key={league.id} id={league.id} season={league.season} side="mens" />
             <LeagueClubs key={league.id} id={league.id} />
             <View style={styles.reviewsSection}>
               <Text style={styles.reviewsTitle}>Latest reviews</Text>

@@ -60,7 +60,8 @@ console.log('PASS: regional source registry and non-writing roster reconciliatio
 const {planDirectoryImport}=await import('./directory-import-preflight.mjs');
 const japan=regional.competitions.filter(c=>c.region==='Japan');
 assert.deepEqual(japan.map(c=>c.expectedCount),[26,25,4]);
-assert.deepEqual(japan.map(c=>c.teams.length),[26,10,4]);
+assert.deepEqual(japan.map(c=>c.teams.length),[26,25,4]);
+assert.equal(new Set(japan.flatMap(c=>c.teams.map(t=>t.name))).size,55);
 const now=new Date('2026-11-25T12:00:00Z');
 const source={id:'source',active:true,license_status:'approved',commercial_use_allowed:true,redistribution_allowed:true};
 const attestation={name:'Laketown Squadron',country:'United States',competition:'NBA G League',season:'2026-27',side:'mens',sourceId:'source',reviewerId:'reviewer',evidenceRef:'review-1',currentParticipationVerified:true,directoryRightsVerified:true,reviewedAt:'2026-11-24T12:00:00Z',validUntil:'2026-12-01T12:00:00Z',identityDecision:'existing',canonicalId:'2'};
@@ -84,3 +85,18 @@ assert.doesNotMatch(impact,/\b(insert|update|delete|alter|drop|truncate|grant|re
 assert.equal((impact.match(/join candidates d on/g)||[]).length,22);
 assert.match(impact,/actual except select \* from expected/);
 console.log('PASS: import preflight denies unlicensed, stale, wrong-side and unreviewed identities; 22 reference checks');
+
+for(const name of ['Super League Basketball',"Women's Super League Basketball"]){
+ const comp=regional.competitions.find(c=>c.competition===name);
+ assert.equal(comp.teams.length,10);
+ assert.equal(new Set(comp.teams.map(t=>t.name)).size,10);
+ assert.ok(comp.teams.every(t=>t.country==='United Kingdom' && t.canonicalId===null));
+}
+for(const [name,count,expected] of [['Bónus deild kvenna',9,10],['Bónus deild karla',8,12]]){
+ const comp=regional.competitions.find(c=>c.competition===name);
+ assert.equal(comp.teams.length,count);
+ assert.equal(comp.expectedCount,expected);
+ assert.ok(comp.teams.every(t=>t.canonicalId===null));
+ assert.match(comp.scope,/not certified/);
+}
+console.log('PASS: 55 Japanese announced teams, 20 British fixture participants, partial Iceland review; no canonical IDs or publication rights assumed');

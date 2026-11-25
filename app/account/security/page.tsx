@@ -3,8 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useMfaSession } from "../../../components/MfaSession";
-import { supabase } from "../../../lib/supabase";
-import { enrollTotp, cancelTotpEnrollment, removeTotp, verifyTotp } from "../../../lib/auth/mfa-core";
+import { supabase, supabaseUrl, supabaseKey } from "../../../lib/supabase";
+import { enrollTotp, cancelTotpEnrollment, removeTotp, verifyTotp, revokeOtherSessions } from "../../../lib/auth/mfa-core";
 type Setup = { id: string; qr: string; secret: string };
 export default function SecurityPage() {
   const security = useMfaSession();
@@ -31,6 +31,14 @@ function SecuritySettings({ owner }: { owner: string }) {
     } catch (error) { if (active.current) setMessage(error instanceof Error ? error.message : "Security change could not be confirmed. Refresh before trying again."); }
     finally { if (active.current) { working.current = false; setBusy(false); } }
   }
+  const [confirmSessions, setConfirmSessions] = useState(false);
+  async function signOutOthers() {
+    if (!confirmSessions || working.current || security.phase !== "ready" || security.state?.required) return;
+    working.current = true; setBusy(true); setMessage(""); setConfirmSessions(false);
+    try { await revokeOtherSessions(supabase, owner, supabaseUrl, supabaseKey); if (active.current) setMessage("Other refresh sessions revoked. Existing access tokens may remain valid until they expire."); }
+    catch { if (active.current) setMessage("Other sessions could not be confirmed as revoked. Verify your account and try again."); }
+    finally { if (active.current) { working.current = false; setBusy(false); } }
+  }
   const codeInput = <><label htmlFor="security-code">Six-digit authenticator code</label><input id="security-code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} disabled={pending} onChange={event => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))} /></>;
   return <section className="hc-security-page"><Link href="/account">Back to account</Link><h1>Two-factor authentication</h1>
     <p>Protect password and Google sign-ins with an authenticator app. Register a backup authenticator on another device for recovery. Password reset does not bypass this protection.</p>
@@ -40,6 +48,7 @@ function SecuritySettings({ owner }: { owner: string }) {
       <Image unoptimized className="hc-security-qr" src={setup.qr} width={220} height={220} alt="Authenticator setup QR code" /><button className="btn btn-secondary" disabled={pending} onClick={() => setShowSecret(value => !value)}>{showSecret ? "Hide setup key" : "Show setup key"}</button>{showSecret ? <code>{setup.secret}</code> : null}{codeInput}<button className="btn" disabled={pending || code.length !== 6} onClick={() => void action("verify")}>Verify and enable authenticator</button></> : <p>The setup key was cleared when this page left the foreground. Cancel incomplete setup and start again.</p>}<button className="btn btn-secondary" disabled={pending} onClick={() => void action("cancel")}>Cancel incomplete setup</button></div> : null}
     {!setup && !remove ? factors.map(factor => <div className="hc-security-factor" key={factor.id}><strong>{factor.name}</strong><p>{factor.verified ? "Verified" : "Setup incomplete"}</p>{factor.type === "totp" ? <button className="btn btn-secondary" disabled={pending} onClick={() => { if (factor.verified) { setRemove(factor.id); setCode(""); setVerifyWith(verified[0]?.id ?? ""); } else void action("cancel", factor.id); }}>{factor.verified ? `Remove ${factor.name}` : `Cancel setup for ${factor.name}`}</button> : <p>Keep this verification method until it can be managed securely.</p>}</div>) : null}
     {remove ? <div className="hc-security-actions"><p>Verify using a current code from a registered authenticator before removing this device.</p><label htmlFor="security-verify-with">Verify removal with</label><select id="security-verify-with" disabled={pending} value={verifyWith} onChange={event => { setVerifyWith(event.target.value); setCode(""); }}>{verified.map(factor => <option key={factor.id} value={factor.id}>{factor.name}</option>)}</select>{codeInput}{factors.filter(factor => factor.verified).length === 1 ? <label><input type="checkbox" checked={confirmDisable} disabled={pending} onChange={event => setConfirmDisable(event.target.checked)} /> I understand this disables two-factor protection.</label> : null}<button className="btn" disabled={pending || code.length !== 6} onClick={() => void action("remove")}>Verify and remove authenticator</button><button className="btn btn-secondary" disabled={pending} onClick={() => { setRemove(""); setCode(""); setConfirmDisable(false); }}>Keep authenticator</button></div> : null}
+    <div className="hc-security-actions"><h2>Other devices</h2><p>Revoke refresh sessions on other devices without signing out this one. Existing access tokens may remain valid until expiration.</p><label><input type="checkbox" checked={confirmSessions} disabled={pending} onChange={event => setConfirmSessions(event.target.checked)} /> Confirm sign-out of other sessions.</label><button className="btn btn-secondary" disabled={pending || !confirmSessions || !!security.state?.required} onClick={() => void signOutOthers()}>Sign out other sessions</button><Link href="/support?accountCompromised=1">Report a compromised account</Link></div>
     <button className="btn btn-secondary" disabled={pending} onClick={() => { setSetup(null); setShowSecret(false); setCode(""); security.retry(); }}>Refresh security settings</button>{busy ? <p>Confirming security change…</p> : null}{message ? <p role="status">{message}</p> : null}
   </section>;
 }
