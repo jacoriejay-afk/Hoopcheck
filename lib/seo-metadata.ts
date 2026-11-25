@@ -41,9 +41,11 @@ export async function getProfileSeo(type: EntityType, id: string): Promise<SeoPr
   if (!client || !id) return null;
   const cfg = config[type];
   const isTeam = type === "team" || type === "womens_team";
-  let query = client.from(cfg.table).select(isTeam ? "id,name,city,country,league_name,league_id" : "*").eq("id", id);
-  if (type === "player") query = query.eq("account_type", "player").eq("profile_visibility", "public").eq("moderation_status", "normal");
-  const { data, error } = await query.maybeSingle();
+  const { data, error } = isTeam
+    ? await client.from(cfg.table).select("id,name,city,country,league_name,league_id").eq("id", id).maybeSingle()
+    : type === "player"
+      ? await client.from(cfg.table).select("*").eq("id", id).eq("account_type", "player").eq("profile_visibility", "public").eq("moderation_status", "normal").maybeSingle()
+      : await client.from(cfg.table).select("*").eq("id", id).maybeSingle();
   if (error || !data) return null;
   const row = data as EntityRow;
   const name = String(row.name || row.display_name || row.full_name || row.username || id);
