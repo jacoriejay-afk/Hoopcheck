@@ -290,3 +290,38 @@ BEGIN
   IF has_function_privilege('authenticated','public.hoopdata_stage_leased_competition_snapshot(uuid,text,uuid,bigint,text,text,timestamptz,jsonb)','EXECUTE') THEN RAISE EXCEPTION 'Leased snapshot exposed'; END IF;
 END $refresh_fencing$;
 RESET ROLE;
+
+\ir ../candidates/hoopdata_standings_attestation_review_only.sql
+DO $attestation_access$ BEGIN
+  IF has_table_privilege('authenticated','public.hoopdata_standings_attestations','SELECT')
+    OR has_table_privilege('anon','public.hoopdata_standings_team_mappings','SELECT')
+    OR has_table_privilege('service_role','public.hoopdata_standings_attestations','INSERT')
+    OR has_table_privilege('service_role','public.hoopdata_standings_team_mappings','UPDATE')
+    OR has_function_privilege('service_role','public.hoopdata_attest_standings(uuid,bigint,text,timestamptz,jsonb,jsonb,uuid,text)','EXECUTE')
+    OR has_function_privilege('authenticated','public.hoopdata_attest_standings(uuid,bigint,text,timestamptz,jsonb,jsonb,uuid,text)','EXECUTE')
+  THEN RAISE EXCEPTION 'Attestation privileges too broad'; END IF;
+END $attestation_access$;
+DO $attest$ DECLARE
+  l uuid:='33333333-3333-4333-8333-333333333333';
+  reviewer uuid:='11111111-1111-4111-8111-111111111111';
+  stamp timestamptz:=clock_timestamp();
+  payload jsonb:='[{"teamId":2,"stage":"Regular","group":null,"position":1},{"teamId":3,"stage":"Regular","group":null,"position":2}]';
+  roster jsonb:='[{"teamId":3,"stage":"Regular","group":null},{"teamId":2,"stage":"Regular","group":null}]';
+BEGIN
+  IF NOT public.hoopdata_stage_competition_snapshot(l,12,'mens','standings','2026',stamp,payload) THEN RAISE EXCEPTION 'Test snapshot not staged'; END IF;
+  IF public.hoopdata_attest_standings(l,12,'2026',stamp,payload,roster,reviewer,'independent roster') THEN RAISE EXCEPTION 'Missing mappings accepted'; END IF;
+  INSERT INTO public.hoopdata_standings_team_mappings(league_id,provider_league_id,provider_team_id,team_id,reviewed_by,evidence)
+    VALUES(l,12,2,'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',reviewer,'synthetic'),
+          (l,12,3,'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',reviewer,'synthetic');
+  IF public.hoopdata_attest_standings(l,12,'2026',stamp,payload,'[{"teamId":2,"stage":"Regular","group":null}]',reviewer,'partial roster') THEN RAISE EXCEPTION 'Partial roster accepted'; END IF;
+  IF public.hoopdata_attest_standings(l,12,'2026',stamp,payload,jsonb_set(roster,'{0,stage}','"Playoffs"'),reviewer,'wrong stage') THEN RAISE EXCEPTION 'Wrong stage accepted'; END IF;
+  IF public.hoopdata_attest_standings(l,12,'2026',stamp,jsonb_set(payload,'{0,position}','2'),roster,reviewer,'changed payload') THEN RAISE EXCEPTION 'Changed snapshot accepted'; END IF;
+  UPDATE public.teams SET active=false WHERE id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+  IF public.hoopdata_attest_standings(l,12,'2026',stamp,payload,roster,reviewer,'inactive team') THEN RAISE EXCEPTION 'Inactive team accepted'; END IF;
+  UPDATE public.teams SET active=true WHERE id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+  IF NOT public.hoopdata_attest_standings(l,12,'2026',stamp,payload,roster,reviewer,'independent roster') THEN RAISE EXCEPTION 'Valid attestation rejected'; END IF;
+  IF public.hoopdata_attest_standings(l,12,'2026',stamp,payload,roster,reviewer,'duplicate') THEN RAISE EXCEPTION 'Existing attestation replaced'; END IF;
+  IF NOT EXISTS(SELECT 1 FROM public.hoopdata_standings_attestations WHERE league_id=l AND snapshot_rows=payload AND reviewed_roster=roster AND reviewed_team_ids->>'2'='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa') THEN RAISE EXCEPTION 'Audit evidence missing'; END IF;
+  IF NOT public.hoopdata_stage_competition_snapshot(l,12,'mens','standings','2026',clock_timestamp(),jsonb_set(payload,'{0,position}','2')) THEN RAISE EXCEPTION 'Newer snapshot rejected'; END IF;
+  IF public.hoopdata_attest_standings(l,12,'2026',stamp,payload,roster,reviewer,'superseded') THEN RAISE EXCEPTION 'Superseded snapshot accepted'; END IF;
+END $attest$;

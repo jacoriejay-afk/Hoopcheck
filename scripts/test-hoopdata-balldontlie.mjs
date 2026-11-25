@@ -244,3 +244,40 @@ test("dispatcher records failure without an immediate retry and refuses expired 
   assert.deepEqual(await dispatchBasketballSync(jobs,pools,deps),[{id:"a",state:"failed"}]);assert.equal(attempts,1);
   assert.deepEqual(await dispatchBasketballSync(jobs,pools,{...deps,execute:async()=>{now+=60001;return {state:"staged"};},finish:async()=>{assert.fail("expired lease must not finish");}}),[{id:"a",state:"lease-lost"}]);
 });
+
+const nbaProbeModule={exports:{}};
+new Function("require","exports",compile("hoopdata-nba-fallback-probe"))(name=>{
+  if(name==="./hoopdata-balldontlie")return mod.exports;
+  if(name==="./hoopdata-fallback")return fallbackModule.exports;
+  if(name==="./hoopdata-provider-fetch")return fetchModule.exports;
+  if(name==="./hoopdata-ingestion")return helper.exports;
+  throw Error(name);
+},nbaProbeModule.exports);
+const {probeNbaFallback}=nbaProbeModule.exports;
+const probeFixture={...nba,status:"2nd Qtr"};
+const probeId="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+const probeInput={providerGameId:"42",apiKey:"fixture-only",canonical:{id:probeId,team_id:"home",opponent_team_id:"away",scheduled_at:nba.datetime,status:"live",score_updated_at:"2026-11-25T21:00:00Z",home_score:90,away_score:80},gameAliases:[{provider:"balldontlie-nba",providerGameId:"42",canonicalGameId:probeId}],teamAliases:[{provider:"balldontlie-nba",providerTeamId:"1",canonicalTeamId:"home"},{provider:"balldontlie-nba",providerTeamId:"2",canonicalTeamId:"away"}]};
+const probeNow=()=>new Date("2026-11-25T22:30:00Z");
+test("NBA fallback probe skips fresh or unreviewed fixtures before spending quota",async()=>{
+  const calls=[];
+  const deps={now:probeNow,reserve:async()=>{calls.push("reserve");return false},blockUntil:async()=>assert.fail("unexpected cooldown"),fetcher:async()=>assert.fail("unexpected fetch")};
+  assert.equal((await probeNbaFallback({...probeInput,canonical:{...probeInput.canonical,score_updated_at:probeNow().toISOString()}},deps)).state,"primary-fresh");
+  assert.equal((await probeNbaFallback({...probeInput,gameAliases:[]},deps)).state,"review-required");
+  assert.equal((await probeNbaFallback({...probeInput,providerGameId:"../42"},deps)).state,"review-required");
+  assert.deepEqual(calls,[]);
+  assert.equal((await probeNbaFallback(probeInput,deps)).state,"budget-blocked");assert.deepEqual(calls,["reserve"]);
+});
+test("NBA fallback probe returns only a reviewed score proposal and rejects mismatched or oversized responses",async()=>{
+  const calls=[];
+  const deps={now:probeNow,reserve:async()=>{calls.push("reserve");return true},blockUntil:async()=>assert.fail("unexpected cooldown"),fetcher:async(url,opts)=>{calls.push("fetch");assert.equal(url.href,"https://api.balldontlie.io/v1/games/42");assert.equal(opts.redirect,"error");return Response.json({data:probeFixture});}};
+  assert.deepEqual(await probeNbaFallback(probeInput,deps),{state:"candidate",canonicalGameId:probeId,homeScore:98,awayScore:91,observedAt:probeNow().toISOString()});
+  assert.deepEqual(calls,["reserve","fetch"]);
+  assert.equal((await probeNbaFallback(probeInput,{...deps,fetcher:async()=>Response.json({data:{...probeFixture,id:43}})})).state,"invalid-response");
+  assert.equal((await probeNbaFallback(probeInput,{...deps,fetcher:async()=>new Response(" ".repeat(256*1024+1))})).state,"invalid-response");
+});
+test("NBA fallback probe persists provider cooldown and does not retry",async()=>{
+  let attempts=0;const blocks=[];
+  const deps={now:probeNow,reserve:async()=>true,blockUntil:async(pool,until)=>blocks.push([pool,until]),fetcher:async()=>{attempts++;return new Response("",{status:429,headers:{"Retry-After":"120"}});}};
+  assert.deepEqual(await probeNbaFallback(probeInput,deps),{state:"provider-error",status:429,retryAt:"2026-11-25T22:32:00.000Z"});
+  assert.deepEqual(blocks,[["balldontlie","2026-11-25T22:32:00.000Z"]]);assert.equal(attempts,1);
+});
