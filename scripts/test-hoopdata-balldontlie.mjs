@@ -72,3 +72,19 @@ test("rate limits persist Retry-After without an extra request or exposing crede
   assert.equal(retryAfterTime("Wed, 25 Nov 2026 12:03:00 GMT",now()),"2026-11-25T12:03:00.000Z");
   assert.equal((await fetchBdlSeasonPage({league:"nba",season:2026,apiKey:"fixture-only"},{...deps,fetcher:async()=>new Response("",{status:403})})).retryAt,null);
 });
+
+const recordModule={exports:{}};
+new Function("exports",compile("hoopdata-season-records"))(recordModule.exports);
+const {regularSeasonRecords}=recordModule.exports;
+test("provisional team records require certified coverage and exclude playoff games",()=>{
+  const fixture=normalizeBdlGame("nba",nba);
+  const input={provider:"balldontlie-nba",season:2026,paginationComplete:true,coverageCertified:true,fixtures:[fixture,{...fixture,id:"43",postseason:true}]};
+  const summary=regularSeasonRecords(input);
+  assert.equal(summary.state,"provisional");assert.equal(summary.finalGames,1);
+  assert.deepEqual(summary.records,[{teamId:"1",played:1,wins:1,losses:0,pointsFor:98,pointsAgainst:91},{teamId:"2",played:1,wins:0,losses:1,pointsFor:91,pointsAgainst:98}]);
+  assert.equal(regularSeasonRecords({...input,coverageCertified:false}).state,"unavailable");
+  assert.equal(regularSeasonRecords({...input,paginationComplete:false}).state,"unavailable");
+  assert.equal(regularSeasonRecords({...input,fixtures:[fixture,fixture]}).state,"unavailable");
+  assert.equal(regularSeasonRecords({...input,fixtures:[{...fixture,postseason:null}]}).state,"unavailable");
+  assert.equal(regularSeasonRecords({...input,fixtures:[{...fixture,homeScore:null}]}).state,"unavailable");
+});
