@@ -68,3 +68,10 @@ assert.match(chat,/presenceCount===null\?"Live participation unavailable"/,"Unkn
 assert.match(chat,/canSend&&selectedStatus&&!selectedStatus.isUnverified&&availability\?\.chatOpen&&\(!selectedStatus.isVerifiedFinal\|\|process.env.NEXT_PUBLIC_LIVE_POSTGAME_CHAT_ENABLED==="true"\)/,"New room panel honors authoritative room access and the postgame rollout flag");
 assert.match(chat,/not arena attendance/,"Online room participation must not claim physical attendance");
 console.log("PASS: countdown, room participation freshness, and game-day lobby gates.");
+
+assert.match(hub,/presenceTotal !== presenceRows.length/,"Truncated or unavailable live-hub presence is not counted as complete");
+assert.match(hub,/presenceFresh \? .*Fan activity unavailable/,"Hub distinguishes unknown participation from zero");
+assert.match(chat,/presenceTotal===present.length/,"Directory presence requires a complete snapshot");
+assert.match(chat,/roomPresenceFresh\?[^\n]*Presence unavailable/,"Directory does not invent zero on failure");
+assert.match(chat,/chatEnabled&&<small>\{roomPresenceFresh/,"Directory occupancy remains membership-gated");
+console.log("PASS: directory and hub participation completeness and visibility checks.");
