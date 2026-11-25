@@ -8,7 +8,7 @@ import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import CourtLines from "../../components/CourtLines";
-import { getGameAvailability, formatViewerLocalTime, formatPregameCountdown } from "../../lib/game-availability";
+import { getGameAvailability, formatViewerLocalTime, formatPregameCountdown, getViewerUpcomingTimeBucket } from "../../lib/game-availability";
 import { getLiveGameStatusPresentation } from "../../lib/live-game-status";
 import { HoopIcon } from "../../components/HoopCheckUI";
 import TeamLogo from "../../components/TeamLogo";
@@ -413,8 +413,7 @@ export default function LiveGamesPage() {
       for (const entry of ordered) {
         const country = entry.game.country || entry.home?.country || "Other countries";
         const league = entry.game.league_name || entry.home?.league_name || "Other leagues";
-        const tip = entry.game.scheduled_at ? Date.parse(entry.game.scheduled_at) : NaN;
-        const timeBucket = filter !== "upcoming" ? "" : !Number.isFinite(tip) ? "Time unconfirmed" : tip <= nowMs + 3_600_000 ? "Starting within the hour" : new Date(tip).toDateString() === clock.toDateString() ? "Tonight / Today" : new Date(tip).toDateString() === new Date(nowMs + 86_400_000).toDateString() ? "Tomorrow" : "Later";
+        const timeBucket = filter === "upcoming" ? getViewerUpcomingTimeBucket(entry.game.scheduled_at, clock) : "";
         const key = (timeBucket ? timeBucket + " · " : "") + country + " / " + league;
         groups.set(key, [...(groups.get(key) || []), entry]);
       }
