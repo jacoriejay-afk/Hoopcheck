@@ -88,3 +88,18 @@ test("Fan HQ shortcut reaches the personal team dashboard and restores saved leg
   assert.match(hub,/signedIn&&!message&&!teams.length/);
   assert.match(hub,/window.clearInterval\(id\);requestSequence.current\+\+/);
 });
+
+test("Fan HQ includes home and away fixtures on both sides and clears cross-account state",()=>{
+  const hub=read("app/team-hub/page.tsx");
+  assert.match(hub,/\.in\("team_id",followedTeamIds\)/);
+  assert.match(hub,/\.in\("opponent_team_id",followedTeamIds\)/);
+  assert.match(hub,/g\.team_id===team\.id\|\|g\.opponent_team_id===team\.id/);
+  assert.doesNotMatch(hub,/if\(basketballSide==="mens" && followedTeamIds.length\)/);
+  assert.match(hub,/new Map\(\[\.\.\.\(homeRows.data\|\|\[\]\),\.\.\.\(awayRows.data\|\|\[\]\)\]/);
+  assert.match(hub,/homeRows.error\|\|awayRows.error/);
+  assert.match(hub,/!scheduleAvailable\?<p/);
+  assert.match(hub,/event!=="SIGNED_OUT"/);
+  assert.match(hub,/requestSequence.current\+\+;activeUser.current=next/);
+  assert.match(hub,/setSignedIn\(false\);setTeams\(\[\]\);setGames\(\[\]\);setTeamNames\(\{\}\)/);
+  assert.match(hub,/signedIn&&teams.map/);
+});
