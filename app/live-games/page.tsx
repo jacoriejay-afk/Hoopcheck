@@ -199,7 +199,7 @@ export default function LiveGamesPage() {
     for (const { game, home, presentation } of prepared) {
       const country = game.country || home?.country || "";
       const league = game.league_name || home?.league_name || "";
-      const activity = (presenceCounts[game.id] || 0) * 4 + (presentation.isVerifiedLive ? 8 : 0);
+      const activity = (presenceFresh ? (presenceCounts[game.id] || 0) * 4 : 0) + (presentation.isVerifiedLive ? 8 : 0);
       for (const [name, map] of [[country, countries], [league, leagues]] as const) {
         if (!name) continue;
         const existing = map.get(name) || { games: 0, activity: 0 };
@@ -210,7 +210,7 @@ export default function LiveGamesPage() {
       [...items.entries()].sort((a,b) => b[1].activity - a[1].activity || b[1].games - a[1].games || a[0].localeCompare(b[0]))
         .slice(0, 7).map(([name, counts]) => ({ name, games: counts.games }));
     return { countries: top(countries), leagues: top(leagues) };
-  }, [prepared, presenceCounts]);
+  }, [prepared, presenceCounts, presenceFresh]);
 
   const filtered = useMemo(() => prepared.filter(({game,home,away,availability}) => {
     const leagueName = game.league_name || teams[game.team_id]?.league_name || "";
@@ -360,7 +360,7 @@ export default function LiveGamesPage() {
               <small>{presenceCounts[game.id]} chatting · Open →</small>
             </Link>)}
         {!filtered.some(({game,availability,presentation}) => presenceFresh && !presentation.isUnverified && availability.chatOpen && (presenceCounts[game.id] || 0)>0) &&
-          <p className="muted">No active rooms yet. Start the conversation from a matchup below.</p>}
+          <p className="muted">{presenceFresh ? "No active rooms yet. Start the conversation from a matchup below." : "Room activity is temporarily unavailable. You can still browse matchups below."}</p>}
       </div>
     </section>
     <section className="hc-live-hub-filters" aria-label="Browse game conversations">
@@ -404,7 +404,7 @@ export default function LiveGamesPage() {
         const mineA = followedIds.includes(a.game.team_id) || Boolean(a.game.opponent_team_id && followedIds.includes(a.game.opponent_team_id));
         const mineB = followedIds.includes(b.game.team_id) || Boolean(b.game.opponent_team_id && followedIds.includes(b.game.opponent_team_id));
         return Number(mineB) - Number(mineA)
-          || (presenceCounts[b.game.id] || 0) - (presenceCounts[a.game.id] || 0)
+          || (presenceFresh ? (presenceCounts[b.game.id] || 0) - (presenceCounts[a.game.id] || 0) : 0)
           || Date.parse(a.game.scheduled_at || "") - Date.parse(b.game.scheduled_at || "");
       });
       const groups = new Map<string, typeof prepared>();
