@@ -10,10 +10,10 @@ export function validApiSportsSeason(season:string):boolean {
   const [a,b]=season.split("-").map(Number);
   return a>=1900&&a<=2200&&(b===undefined||b===a+1&&b<=2200);
 }
-export function apiSportsCompetitionUrl(endpoint:"leagues"|"games"|"standings",league:number,season:string):URL{
-  if(!positive(league)||!validApiSportsSeason(season)||!["leagues","games","standings"].includes(endpoint))throw Error("Invalid competition query");
+export function apiSportsCompetitionUrl(endpoint:"leagues"|"games"|"standings",league:number,season?:string):URL{
+  if(!positive(league)||!["leagues","games","standings"].includes(endpoint)||(season===undefined?endpoint!=="leagues":!validApiSportsSeason(season)))throw Error("Invalid competition query");
   const url=new URL("https://v1.basketball.api-sports.io/"+endpoint);
-  url.searchParams.set(endpoint==="leagues"?"id":"league",String(league));url.searchParams.set("season",season);
+  url.searchParams.set(endpoint==="leagues"?"id":"league",String(league));if(season!==undefined)url.searchParams.set("season",season);
   if(endpoint==="games")url.searchParams.set("timezone","UTC");
   return url;
 }
@@ -30,14 +30,14 @@ export function parseApiSportsSeasonGames(value:unknown,league:number,season:str
   const seen=new Set<number>(),result:CompetitionGame[]=[];
   for(const value of rows){
     const g=obj(value),l=obj(g?.league),teams=obj(g?.teams),h=positive(obj(teams?.home)?.id),a=positive(obj(teams?.away)?.id),id=positive(g?.id);
-    if(!g||!id||!h||!a||h===a||seen.has(id)||l?.id!==league||l.season!==season)return null;
+    if(!g||!id||!h||!a||h===a||seen.has(id)||l?.id!==league||String(l.season)!==season)return null;
     seen.add(id);
     const raw=text(obj(g.status)?.short);
     const status=raw&&["Q1","Q2","Q3","Q4","OT","BT","HT"].includes(raw)?"live":raw==="NS"||raw==="TBD"?"scheduled":raw==="FT"||raw==="AOT"||raw==="AWD"?"final":raw==="POST"||raw==="SUSP"?"postponed":raw==="CANC"?"cancelled":raw==="ABD"?"abandoned":"unknown";
     const scores=obj(g.scores),withScores=status==="live"||status==="final";
-    const hs=withScores?validatedProviderScore(obj(scores?.home)?.total):null,as=withScores?validatedProviderScore(obj(scores?.away)?.total):null;
-    if(status==="final"&&(hs===null||as===null||hs===as))return null;
-    result.push({id,leagueId:league,season,homeId:h,awayId:a,tipoff:providerTipoff(g.timestamp,g.date),status,homeScore:hs,awayScore:as,stage:text(g.stage)});
+    const hs=withScores?validatedProviderScore(obj(scores?.home)?.total):null,awayScore=withScores?validatedProviderScore(obj(scores?.away)?.total):null;
+    if(status==="final"&&(hs===null||awayScore===null||hs===awayScore))return null;
+    result.push({id,leagueId:league,season,homeId:h,awayId:a,tipoff:providerTipoff(g.timestamp,g.date),status,homeScore:hs,awayScore,stage:text(g.stage)});
   }
   return result;
 }
@@ -49,7 +49,7 @@ export function parseApiSportsStandings(value:unknown,league:number,season:strin
     if(!Array.isArray(group)||group.length>1000)return null;
     for(const value of group){
       const r=obj(value),l=obj(r?.league),id=positive(obj(r?.team)?.id),position=positive(r?.position);
-      if(!r||!id||!position||l?.id!==league||l.season!==season)return null;
+      if(!r||!id||!position||l?.id!==league||String(l.season)!==season)return null;
       const stage=text(r.stage),name=text(obj(r.group)?.name);
       const key=JSON.stringify([stage,name,id]);if(seen.has(key))return null;seen.add(key);
       const games=obj(r.games),points=obj(r.points);
@@ -74,4 +74,11 @@ export function parseApiSportsCompetitionSeasons(value:unknown,league:number):Co
     result.push({season,start,end,standings:typeof coverage?.standings==="boolean"?coverage.standings:null,games:typeof coverage?.games==="boolean"?coverage.games:null});
   }
   return result;
+}
+
+/** Only roll to a provider-declared season whose documented date window uniquely covers today. */
+export function selectActiveCompetitionSeason(seasons:readonly CompetitionSeason[],todayUtc:string):string|null{
+  if(!day(todayUtc))return null;
+  const matches=seasons.filter(s=>s.start!==null&&s.end!==null&&day(s.start)&&day(s.end)&&s.start<=todayUtc&&s.end>=todayUtc&&validApiSportsSeason(s.season));
+  return matches.length===1?matches[0].season:null;
 }
