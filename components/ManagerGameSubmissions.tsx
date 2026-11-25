@@ -53,12 +53,12 @@ export default function ManagerGameSubmissions({teamId}:{teamId:string}){
   const payload={p_team:club.id,p_opponent:opponent,p_league:club.league_id,p_tipoff:parsed.toISOString(),p_kind:kind,p_team_score:a,p_opponent_score:b,p_evidence:evidence.trim()};
   const fingerprint=JSON.stringify(payload);
   if(attempt.current?.fingerprint!==fingerprint)attempt.current={fingerprint,id:crypto.randomUUID()};
-  const uid=owner.current,ctl=new AbortController();inFlight.current=ctl;setSubmitting(true);setMessage("");
-  const timer=setTimeout(()=>ctl.abort(),12000);
+  const requestId=attempt.current.id,uid=owner.current,ctl=new AbortController();inFlight.current=ctl;setSubmitting(true);setMessage("");
+  const timer=setTimeout(()=>{ctl.abort();if(inFlight.current===ctl){inFlight.current=null;setSubmitting(false);setMessage("Submission could not be confirmed. Retry unchanged to check the same request.");}},12000);
   try{
    const {data:{user},error:authError}=await supabase.auth.getUser();
    if(authError||user?.id!==uid||owner.current!==uid||ctl.signal.aborted)throw Error("Session unavailable");
-   const {data,error}=await supabase.rpc("hoopdata_submit_manager_game",{...payload,p_request:attempt.current.id}).abortSignal(ctl.signal);
+   const {data,error}=await supabase.rpc("hoopdata_submit_manager_game",{...payload,p_request:requestId}).abortSignal(ctl.signal);
    if(owner.current!==uid||inFlight.current!==ctl)return;
    if(error||!data||!uuid.test(data.id)||!["pending","approved","rejected"].includes(data.status))throw Error("Proposal not confirmed");
    attempt.current=null;setEvidence("");setTip("");setScore("");setOtherScore("");setOpponent("");
