@@ -15,9 +15,9 @@ function loadPredictionHelper(name){
   if(!Object.hasOwn(paths,name))throw Error(name);
   const source=readFileSync(new URL(paths[name],import.meta.url),"utf8");
   const code=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
-  const module={exports:{}};
-  new Function("exports",code)(module.exports);
-  return module.exports;
+  const loaded={exports:{}};
+  new Function("exports",code)(loaded.exports);
+  return loaded.exports;
 }
 
 const bakuDate = (day, hour, minute = 7) =>
