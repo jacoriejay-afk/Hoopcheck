@@ -61,3 +61,6 @@ No release submission, paid plan upgrade, public Reels activation or new paid st
 
 ## Additional anti-flood acceptance
 - Isolated daily-cap tests now pass for profile reports and review comments. Two simultaneous transactions competing for the last slot resulted in 10 reports and 20 comments respectively (not 11 or 21). Test schema removed and verified absent. No production records modified in this test. Application/device acceptance remains open.
+
+## Firewall access restored
+- Vercel production project firewall read and write access restored. Initial active config was default-only; active-attack status returned no anomalies for the queried last-day window. Added one custom log-only exploit-probe rule (rule_hoop_check_exploit_probe_monitoring_ib0AOE); verified active config version 1, firewall enabled, rule active/valid, action log. The API applied the log-only rule directly; no production blocking or challenge enabled. Review matching traffic before staging preview-only enforcement and obtaining owner approval for production enforcement. No plan changes or new paid features. No claim that attack traffic is absent historically.
