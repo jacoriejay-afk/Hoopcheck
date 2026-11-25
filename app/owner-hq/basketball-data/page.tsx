@@ -28,12 +28,20 @@ export default async function BasketballDataCenter(){
     count(db?.from("fan_live_team_provider_map").select("team_id",opt).eq("active",true)),
     latest(),
   ]);
+  // Count catalog sides separately; the legacy women's table may contain mirrors.
+  const directoryCounts=await Promise.all([
+    count(db?.from("leagues").select("id",opt).eq("active",true).eq("basketball_type","mens")),
+    count(db?.from("leagues").select("id",opt).eq("active",true).eq("basketball_type","womens")),
+    count(db?.from("womens_leagues").select("id",opt).eq("active",true)),
+    count(db?.from("fan_live_games").select("id",opt).is("league_id",null)),
+  ]);
   const labels=["API-Sports stored fixture records","Provider-marked live records","Live records with delayed snapshots","Live records without a snapshot timestamp","Scheduled fixtures in next 7 days","Upcoming fixtures missing opponent mapping","Active existing provider team mappings","Latest observed fixture snapshot (UTC)"];
   return <main className="page-shell"><div className="page-container" style={{display:"grid",gap:16,paddingBlock:24}}>
     <header className="hero-card"><p>HoopCheck™ · Private owner workspace</p><h1>Basketball Data Center</h1><p>Read-only database observations. A stored fixture or a recent snapshot is not proof of complete league coverage or live provider health.</p><Link href="/owner-hq" prefetch={false}>Back to Owner HQ</Link></header>
     <section aria-label="Basketball data observations" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:12}}>
       {labels.map((label,i)=><div className="dashboard-card" key={label}><p>{label}</p><strong>{values[i]}</strong></div>)}
     </section>
+    <section className="dashboard-card"><h2>Men’s and women’s directory audit</h2><p>Active men’s league directory records: <strong>{directoryCounts[0]}</strong></p><p>Active women’s league directory records: <strong>{directoryCounts[1]}</strong></p><p>Legacy women’s league records: <strong>{directoryCounts[2]}</strong> (reported separately; may overlap)</p><p>Stored fixtures without an internal league mapping: <strong>{directoryCounts[3]}</strong></p><p>Directory counts are not verified provider coverage. Official schedules and standings require reviewed provider competition mappings.</p></section>
     <section className="dashboard-card"><h2>Provider operations</h2><p>API-Sports scheduled cadence: 15 minutes, best effort. The configured schedule is not a measured upstream refresh interval.</p><p>BALLDONTLIE live writes, shared quota counters and complete-season coverage certification are not activated by this dashboard. Unavailable metrics are not zero.</p><Link href="/admin/directory/providers" prefetch={false}>Directory provider records</Link></section>
   </div></main>;
 }
