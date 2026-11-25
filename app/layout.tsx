@@ -141,7 +141,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     alternateName: "HoopCheck™",
     url: siteUrl,
     description: defaultDescription,
-    logo: new URL("/favicon.svg", siteUrl).toString(),
+    logo: new URL(socialImage, siteUrl).toString(),
     image: new URL(socialImage, siteUrl).toString(),
   };
   const websiteJsonLd = {
@@ -189,6 +189,15 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
                 <Link href="/partners">Partnerships</Link>
                 <span className="muted">Account required for member access.</span>
                 <Link href="/membership">Membership</Link>
+              </div>
+              <div>
+                <strong>Basketball directory</strong>
+                <Link href="/teams">Professional basketball teams</Link>
+                <Link href="/womens">Women’s basketball teams</Link>
+                <Link href="/leagues">Basketball leagues</Link>
+                <Link href="/players">Basketball players</Link>
+                <Link href="/coaches">Basketball coaches</Link>
+                <Link href="/live-games">Live basketball games</Link>
               </div>
               <div>
                 <strong>Account</strong>
