@@ -22,14 +22,14 @@ export function nativeDestination(path: string): string {
     }
     if (url.protocol !== "https:" || url.hostname !== host || url.username || url.password || url.port) return "/";
     const parts = url.pathname.split("/").filter(Boolean);
-    if (url.pathname === "/account/edit" || url.pathname === "/account/security") return url.pathname;
+    if (url.pathname === "/account/edit" || url.pathname === "/account/security" || url.pathname === "/account/support") return url.pathname;
     if (parts[0] === "team-hub" && parts[1] === "groups") {
       if (parts.length === 2) return "/team-hub/groups";
       if (parts.length === 3 && safeId.test(parts[2])) return `/team-hub/groups/${parts[2]}`;
     }
     if (url.pathname === "/") return "/";
     if (parts.length === 3 && parts[0] === "womens" && parts[1] === "leagues" && safeId.test(parts[2])) return `/womens/leagues/${parts[2]}`;
-    if (parts.length === 2 && ["teams", "womens", "leagues", "players"].includes(parts[0]) && safeId.test(parts[1])) return `/${parts[0]}/${parts[1]}`;
+    if (parts.length === 2 && ["teams", "womens", "leagues", "players", "coaches"].includes(parts[0]) && safeId.test(parts[1])) return `/${parts[0]}/${parts[1]}`;
     if (parts.length === 1 && ["account", "teams", "womens", "leagues", "players", "coaches", "dashboard", "settings", "membership"].includes(parts[0])) return url.pathname;
     if (url.pathname === "/feed" || url.pathname === "/fan-feed") {
       const post = url.searchParams.get("post") || /^#post-([0-9a-f-]{36})$/i.exec(url.hash)?.[1];
@@ -40,7 +40,8 @@ export function nativeDestination(path: string): string {
       const id = url.searchParams.get("gameId"), side = url.searchParams.get("side");
       if (id && /^[0-9a-f-]{36}$/i.test(id)) query.set("gameId",id);
       if (side === "mens" || side === "womens") query.set("side",side);
-      return "/fan-live" + (query.size ? "?" + query.toString() : "");
+      const suffix = query.toString();
+      return "/fan-live" + (suffix ? "?" + suffix : "");
     }
     if (url.pathname === "/notifications") {
       const tab = url.searchParams.get("tab");
