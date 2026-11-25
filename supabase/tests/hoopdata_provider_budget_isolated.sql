@@ -370,3 +370,28 @@ BEGIN
   IF public.hoopdata_stage_fallback_overlay(g,'42','1','2',tip,99,92,primary_at,clock_timestamp()) THEN RAISE EXCEPTION 'Old primary accepted'; END IF;
 END $overlay_test$;
 RESET ROLE;
+
+\ir ../candidates/hoopdata_score_display_review_only.sql
+DO $display_access$ BEGIN
+  IF has_function_privilege('anon','public.hoopdata_read_score_display(uuid)','EXECUTE') OR
+     has_function_privilege('authenticated','public.hoopdata_read_score_display(uuid)','EXECUTE') THEN
+    RAISE EXCEPTION 'Score projection exposed';
+  END IF;
+END $display_access$;
+SET ROLE service_role;
+DO $display_test$ DECLARE
+  g uuid:='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+  p timestamptz:=clock_timestamp()-interval '40 minutes';
+  t timestamptz:=statement_timestamp()-interval '1 second';
+BEGIN
+  IF NOT EXISTS(SELECT 1 FROM public.hoopdata_read_score_display(g) WHERE score_source='primary' AND home_score=80) THEN RAISE EXCEPTION 'Recovered primary not selected'; END IF;
+  UPDATE public.fan_live_games SET score_updated_at=p WHERE id=g;
+  -- Earlier fixture overlay must not match the new primary checkpoint.
+  IF NOT EXISTS(SELECT 1 FROM public.hoopdata_read_score_display(g) WHERE score_source='primary') THEN RAISE EXCEPTION 'Old overlay reused'; END IF;
+  UPDATE public.hoopdata_fallback_overlays SET primary_observed_at=p,observed_at=t WHERE canonical_game_id=g;
+  IF NOT EXISTS(SELECT 1 FROM public.hoopdata_read_score_display(g) WHERE score_source='balldontlie-nba' AND home_score=91 AND away_score=98) THEN RAISE EXCEPTION 'Valid overlay not displayed'; END IF;
+  UPDATE public.fan_live_games SET status='final' WHERE id=g;
+  IF NOT EXISTS(SELECT 1 FROM public.hoopdata_read_score_display(g) WHERE score_source='primary' AND status='final' AND home_score=80) THEN RAISE EXCEPTION 'Fallback altered final result'; END IF;
+  IF EXISTS(SELECT 1 FROM public.hoopdata_read_score_display('99999999-9999-4999-8999-999999999999')) THEN RAISE EXCEPTION 'Unknown game fabricated'; END IF;
+END $display_test$;
+RESET ROLE;
