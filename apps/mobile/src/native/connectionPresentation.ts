@@ -11,3 +11,21 @@ export function connectionPath(row: PublicConnection, viewerType: string): strin
   if (viewerType !== "fan" && row.target_type === "player" && row.account_type === "player") return `/players/${row.id || row.target_id}`;
   return null;
 }
+
+/** The followers RPC returns the follower in id/account_type, and the followed
+ * account in target_id/target_type. Never treat the latter as the follower. */
+export function visibleFollowers(input: unknown, viewerId: string, viewerType: string): PublicConnection[] {
+  if (!Array.isArray(input) || !uuid.test(viewerId)) throw new Error("Connections unavailable");
+  const targetType = viewerType === "fan" ? "fan" : viewerType === "player" ? "player" : null;
+  if (!targetType) return [];
+  const result: PublicConnection[] = [];
+  const seen = new Set<string>();
+  for (const row of input) {
+    if (!row || typeof row !== "object" || row.target_id !== viewerId || row.target_type !== targetType || typeof row.id !== "string" || !uuid.test(row.id) || row.id === viewerId || seen.has(row.id)) continue;
+    const type = row.account_type === "fan" ? "fan" : row.account_type === "player" && viewerType !== "fan" ? "player" : null;
+    if (!type) continue;
+    seen.add(row.id);
+    result.push({ target_type: type, target_id: row.id, id: row.id, account_type: type, display_name: typeof row.display_name === "string" ? row.display_name.slice(0, 200) : null });
+  }
+  return result;
+}
