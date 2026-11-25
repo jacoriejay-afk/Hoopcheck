@@ -109,10 +109,16 @@ test("season rollover requires unique verified provider date window",()=>{
   assert.equal(selectActiveCompetitionSeason([seasons[0],seasons[0]],"2026-11-25"),null);
 });
 
+const competitionFetchModule={exports:{}};
+new Function("require","exports",ts.transpileModule(read("lib/hoopdata-competition-fetch.ts"),cjsOptions).outputText)(name=>{
+  if(name==="./hoopdata-api-sports-competition")return competitionModule.exports;
+  if(name==="./hoopdata-provider-fetch")return {retryAfterTime:()=> "2026-11-25T13:01:00.000Z"};
+  throw Error(name);
+},competitionFetchModule.exports);
 const competitionWorkerModule={exports:{}};
 new Function("require","exports",ts.transpileModule(read("lib/hoopdata-competition-worker.ts"),cjsOptions).outputText)(name=>{
   if(name==="./hoopdata-api-sports-competition")return competitionModule.exports;
-  if(name==="./hoopdata-provider-fetch")return {retryAfterTime:()=> "2026-11-25T13:01:00.000Z"};
+  if(name==="./hoopdata-competition-fetch")return competitionFetchModule.exports;
   throw Error(name);
 },competitionWorkerModule.exports);
 const {runCompetitionTask}=competitionWorkerModule.exports;
