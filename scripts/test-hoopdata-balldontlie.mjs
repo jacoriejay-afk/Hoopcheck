@@ -88,3 +88,29 @@ test("provisional team records require certified coverage and exclude playoff ga
   assert.equal(regularSeasonRecords({...input,fixtures:[{...fixture,postseason:null}]}).state,"unavailable");
   assert.equal(regularSeasonRecords({...input,fixtures:[{...fixture,homeScore:null}]}).state,"unavailable");
 });
+
+test("preview importer refuses production, missing credentials and the existing application DB",async()=>{
+  const src=readFileSync(new URL("../app/api/cron/hoopdata-preview-import/route.ts",import.meta.url),"utf8");
+  const code=ts.transpileModule(src,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+  const imported={exports:{}};
+  let dbCalls=0,providerCalls=0;
+  new Function("require","exports",code)(name=>{
+    if(name==="next/server")return {NextResponse:{json:(body,init)=>Response.json(body,init)}};
+    if(name==="@supabase/supabase-js")return {createClient:()=>{dbCalls++;throw Error("unexpected DB call")}};
+    if(name.includes("hoopdata-provider-fetch"))return {fetchBdlSeasonPage:()=>{providerCalls++;throw Error("unexpected provider call")}};
+    throw Error(name);
+  },imported.exports);
+  const env={VERCEL_ENV:"production",HOOPDATA_PREVIEW_IMPORT_ENABLED:"true",HOOPDATA_PREVIEW_CRON_SECRET:"fixture-cron",HOOPDATA_ISOLATED_SUPABASE_URL:"https://fixture.invalid",HOOPDATA_ISOLATED_SUPABASE_SERVICE_KEY:"fixture-service",BALLDONTLIE_API_KEY:"fixture-provider",NEXT_PUBLIC_SUPABASE_URL:"https://fixture.invalid",SUPABASE_SERVICE_ROLE_KEY:"fixture-app-service"};
+  const before=Object.fromEntries(Object.keys(env).map(k=>[k,process.env[k]]));
+  const request=()=>new Request("https://fixture.invalid/api/cron/hoopdata-preview-import",{method:"POST",headers:{Authorization:"Bearer fixture-cron"},body:JSON.stringify({league:"nba",season:2026})});
+  try{
+    Object.assign(process.env,env);
+    assert.equal((await imported.exports.POST(request())).status,404);
+    process.env.VERCEL_ENV="preview";
+    assert.equal((await imported.exports.POST(request())).status,503);
+    process.env.HOOPDATA_ISOLATED_SUPABASE_URL="https://isolated.invalid";
+    delete process.env.HOOPDATA_ISOLATED_SUPABASE_SERVICE_KEY;
+    assert.equal((await imported.exports.POST(request())).status,503);
+    assert.equal(dbCalls,0);assert.equal(providerCalls,0);
+  }finally{for(const [key,value] of Object.entries(before)){if(value===undefined)delete process.env[key];else process.env[key]=value;}}
+});
