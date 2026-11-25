@@ -10,6 +10,16 @@ const compiled = ts.transpileModule(source, {
 const exports = {};
 new Function("exports", compiled)(exports);
 const { selectFixtureSyncDay } = exports;
+function loadPredictionHelper(name){
+  const paths={"../../../lib/fan-prediction-xp":"../lib/fan-prediction-xp.ts","../../../lib/live-game-status":"../lib/live-game-status.ts"};
+  if(!Object.hasOwn(paths,name))throw Error(name);
+  const source=readFileSync(new URL(paths[name],import.meta.url),"utf8");
+  const code=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+  const module={exports:{}};
+  new Function("exports",code)(module.exports);
+  return module.exports;
+}
+
 const bakuDate = (day, hour, minute = 7) =>
   new Date(`2026-11-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00+04:00`);
 
@@ -86,7 +96,7 @@ test("production prediction listing bounds dates before the limit and falls back
   new Function("require","module","exports",code)(name=>{
     if(name==="next/server")return {NextResponse:{json:(data,init)=>Response.json(data,init)}};
     if(name==="@supabase/supabase-js")return {createClient:(_url,key)=>key==="fixture-service"?db:auth};
-    throw Error(name);
+    return loadPredictionHelper(name);
   },mod,mod.exports);
   const denied=await mod.exports.GET(new Request("https://fixture.example/api/game-predictions?mode=games"));
   assert.equal(denied.status,401);assert.equal(calls.length,0);
@@ -122,7 +132,7 @@ test("server rejects incomplete, cancelled and expired matchups consistently for
  new Function("require","module","exports",code)(name=>{
    if(name==="next/server")return {NextResponse:{json:(data,init)=>Response.json(data,init)}};
    if(name==="@supabase/supabase-js")return {};
-   throw Error(name);
+   return loadPredictionHelper(name);
  },m,m.exports);
  const home="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",away="bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
  const valid={team_id:home,opponent_team_id:away,status:"scheduled",scheduled_at:new Date(Date.now()+3600000).toISOString()};
