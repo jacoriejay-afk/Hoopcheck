@@ -23,6 +23,7 @@ export default function TeamHubPage(){
   const basketballSide = useFanBasketballSide();
   const [loading,setLoading]=useState(true);
   const [signedIn,setSignedIn]=useState(false);
+  const [fanAccountId,setFanAccountId]=useState<string|null>(null);
   const [teams,setTeams]=useState<Team[]>([]);
   const [games,setGames]=useState<Game[]>([]);
   const [message,setMessage]=useState("");
@@ -38,13 +39,13 @@ export default function TeamHubPage(){
     try {
       const {data:{user}}=await supabase.auth.getUser();
       if(!current())return;
-      if(!user){activeUser.current=null;setSignedIn(false);setTeams([]);setGames([]);setTeamNames({});setScheduleAvailable(false);setMessage("");setLoading(false);return;}
-      if(activeUser.current!==user.id){activeUser.current=user.id;setSignedIn(false);setTeams([]);setGames([]);setTeamNames({});setScheduleAvailable(false);}
+      if(!user){activeUser.current=null;setSignedIn(false);setFanAccountId(null);setTeams([]);setGames([]);setTeamNames({});setScheduleAvailable(false);setMessage("");setLoading(false);return;}
+      if(activeUser.current!==user.id){activeUser.current=user.id;setSignedIn(false);setFanAccountId(null);setTeams([]);setGames([]);setTeamNames({});setScheduleAvailable(false);}
       const {data:profile,error:profileError}=await supabase.from("profiles").select("account_type").eq("id",user.id).maybeSingle();
       if(!current())return;
       if(profileError)throw profileError;
-      if(profile?.account_type!=="fan"){setSignedIn(false);setTeams([]);setGames([]);setTeamNames({});setScheduleAvailable(false);window.location.replace("/dashboard");return;}
-      setSignedIn(true);
+      if(profile?.account_type!=="fan"){setSignedIn(false);setFanAccountId(null);setTeams([]);setGames([]);setTeamNames({});setScheduleAvailable(false);window.location.replace("/dashboard");return;}
+      setFanAccountId(user.id);setSignedIn(true);
       const {data:follows,error:followError}=await supabase.from("follow_relationships").select("target_id").eq("follower_id",user.id).eq("target_type","team").limit(100);
       if(!current())return;
       if(followError)throw followError;
@@ -102,7 +103,7 @@ export default function TeamHubPage(){
       const next=session?.user.id||null;
       if(event!=="SIGNED_OUT"&&!(event==="SIGNED_IN"&&next!==activeUser.current))return;
       requestSequence.current++;activeUser.current=next;
-      setSignedIn(false);setTeams([]);setGames([]);setTeamNames({});setScheduleAvailable(false);setMessage("");
+      setSignedIn(false);setFanAccountId(null);setTeams([]);setGames([]);setTeamNames({});setScheduleAvailable(false);setMessage("");
       setLoading(Boolean(next));
       if(timer!==undefined)window.clearTimeout(timer);
       if(next)timer=window.setTimeout(()=>void load(),0);
@@ -115,7 +116,7 @@ export default function TeamHubPage(){
   return <main className="page-shell hc-fan-feed-page hc-role-hq"><div className="page-container">
     <section className="hero-card hc-feed-hero"><div><p className="eyebrow">{labels.kicker}</p><h1>{labels.title}</h1><p className="muted">{labels.description}</p></div><p className="hc-feed-expiry-note">{labels.yourTeams}<span>{labels.refreshNote}</span></p></section>
     {signedIn&&<FanBasketballSideSwitch lockedHint/>}
-    {signedIn&&activeUser.current&&<FanPredictionXp key={activeUser.current} accountId={activeUser.current}/> }
+    {signedIn&&fanAccountId&&<FanPredictionXp key={fanAccountId} accountId={fanAccountId}/> }
     {!signedIn&&!message&&<section className="dashboard-card hc-feed-empty"><h2>{labels.signInTitle}</h2><p>{labels.signInBody}</p><Link className="btn" href="/login">{labels.signIn}</Link></section>}
     {signedIn&&!message&&!teams.length&&<section className="dashboard-card hc-feed-empty"><p className="eyebrow">{labels.startFollowing}</p><h2>{labels.emptyTitle}</h2><p>{labels.emptyBody}</p><Link className="btn" href={directoryHref}>{labels.findTeams}</Link></section>}
     {!!message&&<p className="hc-feed-message" role="status">{message}</p>}
