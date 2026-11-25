@@ -68,8 +68,8 @@ function PlayerProfileDetails({ viewer, id }: { viewer: PlayerViewer; id: string
   async function submitReport() {
     const reason = reportReason.trim();
     if (reportInFlight.current || reportSubmitting || !player || player.id !== id || player.id === viewerId) return;
-    if (reason.length < 1 || reason.length > 500) {
-      setReportMessage("Please enter a reason of 1–500 characters.");
+    if (Array.from(reason).length < 3 || Array.from(reason).length > 500) {
+      setReportMessage("Please enter a reason of 3–500 characters.");
       return;
     }
     const apiOrigin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim().replace(/\/$/, "");
@@ -187,12 +187,12 @@ function PlayerProfileDetails({ viewer, id }: { viewer: PlayerViewer; id: string
                     style={styles.reportInput}
                   />
                   {reportMessage ? <Text accessibilityRole="alert" style={styles.reportMessage}>{reportMessage}</Text> : null}
-                  <Text style={styles.characterCount}>{reportReason.trim().length}/500</Text>
+                  <Text style={styles.characterCount}>{Array.from(reportReason.trim()).length}/500</Text>
                   <View style={styles.reportActions}>
                     <Button secondary disabled={reportSubmitting} style={styles.cancelButton} onPress={() => { setReporting(false); setReportReason(""); setReportMessage(""); }}>
                       <Text style={styles.cancelButtonText}>Cancel</Text>
                     </Button>
-                    <Pressable disabled={reportSubmitting || !reportReason.trim()} style={[styles.reportButton, (reportSubmitting || !reportReason.trim()) && styles.disabledButton]} onPress={() => void submitReport()}>
+                    <Pressable disabled={reportSubmitting || Array.from(reportReason.trim()).length < 3} style={[styles.reportButton, (reportSubmitting || Array.from(reportReason.trim()).length < 3) && styles.disabledButton]} onPress={() => void submitReport()}>
                       <Text style={styles.reportButtonText}>{reportSubmitting ? "Submitting…" : "Submit report"}</Text>
                     </Pressable>
                   </View>
