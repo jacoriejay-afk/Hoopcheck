@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type FormEvent, type CSSProperties } from
 import Link from "next/link";
 import { supabase } from "../lib/supabase";
 import PlayerPassportExport from "./PlayerPassportExport";
+import ContractReminderExport from "./ContractReminderExport";
 import TeamLeaguePicker from "./TeamLeaguePicker";
 
 type CareerStop = {
@@ -236,6 +237,7 @@ export default function PlayerJourney({ playerId, isOwnProfile, canManage, playe
         </div>
       </article>)}
     </div> : !loading && !loadError && <div className="hc-journey-empty"><span>01 / CAREER PASSPORT</span><h3>No career stops added yet</h3><p>Build a timeline of the teams, leagues, countries, seasons, and positions that shaped your career.</p></div>}
+    {isOwnProfile && canManage && !loading && !loadError && <ContractReminderExport key={playerId} />}
     {isOwnProfile && canManage && !loading && !loadError && <PlayerPassportExport playerName={playerName} verifiedPlayer={verifiedPlayer} stops={stops} />}
     {isOwnProfile&&!canManage&&!loadError&&<div className="hc-journey-upgrade"><strong>Premium Players · My Journey</strong><p>Add career stops and create your professional basketball passport. Public sharing is always optional.</p><Link href="/membership" className="btn">Unlock My Journey</Link></div>}
     {isOwnProfile&&canManage&&!loading&&!loadError&&<div className="hc-journey-editor">
