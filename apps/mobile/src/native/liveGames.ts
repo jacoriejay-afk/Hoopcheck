@@ -7,6 +7,7 @@ export type LiveGame = {
   status: string; home_score: number | null; away_score: number | null;
   started_at: string | null; ends_at: string | null; scheduled_at: string | null;
   league_name: string | null; country: string | null; period_label: string | null; score_updated_at?: string | null;
+  score_source?: string | null; provider_source?: string | null;
 };
 export type GameTeam = { id: string; name: string; logo_url?: string | null; logo_bg?: string | null };
 export type ChatMessage = { id: string; body: string; created_at: string; user_id: string };
@@ -73,7 +74,8 @@ export async function readLiveGames(client: SupabaseClient, side: "mens" | "wome
       } else query = query.in("status", ["scheduled", "live", "final", "finished", "cancelled", "postponed", "abandoned"]).gte("scheduled_at", since).lte("scheduled_at", until);
       return await query.order("scheduled_at", { ascending: true, nullsFirst: false }).order("id").limit(500).abortSignal(timer.signal);
       };
-      let result = await readRows(fields + ",score_updated_at");
+      let result = await readRows(fields + ",score_updated_at,provider_source");
+      if (result.error?.code === "42703") result = await readRows(fields + ",score_updated_at");
       if (result.error?.code === "42703") result = await readRows(fields);
       if (result.error) throw new Error("Games could not load.");
       games = (result.data ?? []) as unknown as LiveGame[];
