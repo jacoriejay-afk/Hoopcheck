@@ -34,6 +34,7 @@ BEGIN
   IF jsonb_array_length(p_rows) NOT BETWEEN 1 AND 10000 OR p_season IS NULL OR (p_kind='seasons' AND p_season<>'') OR (p_kind<>'seasons' AND p_season !~ '^[0-9]{4}(-[0-9]{4})?$') THEN RETURN false; END IF;
   SELECT * INTO m FROM public.hoopdata_competition_mappings WHERE league_id=p_league FOR UPDATE;
   IF NOT FOUND OR NOT m.reviewed OR m.provider_league_id IS DISTINCT FROM p_provider OR m.side IS DISTINCT FROM p_side THEN RETURN false; END IF;
+  IF NOT EXISTS(SELECT 1 FROM public.leagues l WHERE l.id=p_league AND l.active AND l.basketball_type=p_side) THEN RETURN false; END IF;
   INSERT INTO public.hoopdata_competition_snapshots(league_id,provider_league_id,kind,season,observed_at,rows)
   VALUES(p_league,p_provider,p_kind,p_season,p_observed,p_rows)
   ON CONFLICT(league_id,kind,season) DO UPDATE SET provider_league_id=excluded.provider_league_id,observed_at=excluded.observed_at,rows=excluded.rows
