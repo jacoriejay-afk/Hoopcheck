@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createClient } from '@supabase/supabase-js';
-import { readNotifications, markNotificationsRead, notificationPath, noticeMatches } from '../src/native/notifications.ts';
+import { readNotifications, markNotificationsRead, notificationPath, noticeMatches, noticeSearchMatches } from '../src/native/notifications.ts';
 const uid='11111111-1111-4111-8111-111111111111';
 test('alerts read and mark actual read_at fields only for authenticated viewer',async()=>{
   const calls=[];
@@ -49,4 +49,10 @@ test('marking a single alert keeps user scope and preserves other unread alerts'
   assert.equal(calls[0].searchParams.get('user_id'),`eq.${uid}`);
   assert.equal(calls[0].searchParams.get('id'),`eq.${id}`);
   assert.equal(calls[0].searchParams.get('read_at'),'is.null');
+});
+
+test('alert search matches loaded text and type, combines terms, and treats input literally',()=>{
+  const notice={title:'Team update',body:'New review from a verified player',notification_type:'trust_score'};
+  for(const query of ['', '   ', ' TEAM ', 'verified player', 'team TRUST score']) assert.equal(noticeSearchMatches(notice,query),true);
+  for(const query of ['unknown', 'team unknown', '.*', 'review,or']) assert.equal(noticeSearchMatches(notice,query),false);
 });
