@@ -24,7 +24,16 @@ Scope: development-only integration/build16-launch-candidate. No production cron
 - Provider docs: https://docs.balldontlie.io/ and https://wnba.balldontlie.io/. NBA free tier includes games (5 requests/min), not official standings. WNBA availability must still be verified against our account; no subscription changes authorized.
 - Actual importer checkpoints, provider fallback writes, alias review UI, quota RPC wiring, concurrency stress test and complete-season certification remain gated.
 
-## Remaining gates — do not mark complete on the strength of Phases A/B
+## Phase C development and test fixes
+- Fixed the malformed PostgreSQL cooldown function delimiter; isolated quota/alias rehearsal passed on commit 35a83edf. Its later production build found a remaining Supabase literal-query type mismatch; repaired on the branch.
+- Resumable season page staging with atomic cursor compare-and-commit, per-provider/season fixture uniqueness and separate completion versus coverage-certification semantics. Preview POST route is disabled by default, requires dedicated credentials and refuses the existing application DB. No schedules or provider calls activated.
+- Coverage-certified provisional regular-season records helper; no rank or official tiebreak claims. Fallback proposals require reviewed game/team mappings, matching exact tip-off, score orientation, fresh secondary snapshot, stale primary and no downward score correction; no fallback write is enabled.
+- Owner HQ Basketball Data Center uses the existing verified owner-only session check and reads stored fixture counts, last snapshot, delayed records, missing opponent and league mappings, and separately labeled men's/women's catalog counts.
+- Manager submission SQL is review-only: approved team claim, manager/club_admin role, active same-side same-league teams, own-record access, pending-only inserts, no self-approval; schedule horizon 18 months and result lookback 30 days are conservative policy choices pending owner review. Cross-league fixtures need a reviewed competition workflow.
+- Game-day push SQL is review-only: explicit user opt-in and unique user/game/event outbox; actual native permission, tokens, scheduling, delivery, retry lease, quiet hours and reschedule/cancellation handling remain unimplemented.
+- Expanded isolated SQL and source-level regression coverage; exact latest head CI still required. All new SQL files remain candidates, not deployed migrations.
+
+## Remaining gates — do not mark complete on the strength of Phases A/B/C
 1. Faster sync: confirm actual free limits and scheduler capacity, use shared durable atomic request reservation per provider/time window, count failed requests and manual invocations, honor Retry-After, bounded backoff and circuit-breaker. Preserve existing production workflow until rollout approval. Realtime delivery is not upstream polling.
 2. Full schedules: verified league+season IDs, paginated bounded import with resumable checkpoint, include postponed/rescheduled games, avoid partial import silently appearing complete.
 3. Standings: import official tables with phase/group and timestamp, or calculate clearly labeled provisional tables only from complete verified results and competition-specific tiebreak rules. No guessed rank.
