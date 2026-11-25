@@ -292,3 +292,95 @@ test("attested standings projection refuses missing, stale or unsupported data w
     [{...i,attestation:{...i.attestation,reviewedRoster:i.attestation.reviewedRoster.slice(1)}},"review-required"]
   ])assert.deepEqual(projectAttestedStandings(x),{state});
 });
+
+test("score display preview is authenticated, isolated and source-labelled",async()=>{
+  const src=read("app/api/cron/hoopdata-score-display-preview/route.ts");
+  const js=ts.transpileModule(src,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+  const mod={exports:{}};
+  const id="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+  let calls=0;
+  let row={game_id:id,status:"live",home_score:91,away_score:98,score_updated_at:new Date(Date.now()-1000).toISOString(),score_source:"balldontlie-nba",private_evidence:"never expose"};
+  new Function("require","exports",js)(name=>{
+    if(name==="next/server")return {NextResponse:{json:(body,init)=>Response.json(body,init)}};
+    if(name==="@supabase/supabase-js")return {createClient:(url,key)=>{
+      assert.equal(url,"https://isolated.invalid");assert.equal(key,"test-isolated");
+      return {rpc:(fn,args)=>{calls++;assert.equal(fn,"hoopdata_read_score_display");assert.deepEqual(args,{p_game:id});return {abortSignal:async()=>({data:[row],error:null})};}};
+    }};
+    throw Error(name);
+  },mod.exports);
+  const env={VERCEL_ENV:"production",HOOPDATA_SCORE_DISPLAY_PREVIEW_ENABLED:"true",HOOPDATA_PREVIEW_CRON_SECRET:"test-secret",HOOPDATA_ISOLATED_SUPABASE_URL:"https://app.invalid",HOOPDATA_ISOLATED_SUPABASE_SERVICE_KEY:"test-isolated",NEXT_PUBLIC_SUPABASE_URL:"https://app.invalid",SUPABASE_SERVICE_ROLE_KEY:"test-app"};
+  const before=Object.fromEntries(Object.keys(env).map(k=>[k,process.env[k]]));
+  const req=(auth=true)=>new Request("https://fixture.invalid/api/cron/hoopdata-score-display-preview?gameId="+id,{headers:auth?{Authorization:"Bearer test-secret"}:{}});
+  try{
+    Object.assign(process.env,env);
+    assert.equal((await mod.exports.GET(req())).status,404);
+    process.env.VERCEL_ENV="preview";
+    assert.equal((await mod.exports.GET(req(false))).status,401);
+    assert.equal((await mod.exports.GET(req())).status,503);
+    assert.equal(calls,0);
+    process.env.HOOPDATA_ISOLATED_SUPABASE_URL="https://isolated.invalid";
+    const result=await mod.exports.GET(req());
+    assert.equal(result.status,200);assert.equal(result.headers.get("cache-control"),"private, no-store");
+    assert.deepEqual(await result.json(),{game:{id,status:"live",home_score:91,away_score:98,score_updated_at:row.score_updated_at,score_source:"balldontlie-nba"},preview:true});
+    row={...row,status:"final"};
+    assert.equal((await mod.exports.GET(req())).status,503);
+    row={...row,status:"live",score_updated_at:new Date(Date.now()-360000).toISOString()};
+    assert.equal((await mod.exports.GET(req())).status,503);
+    row={...row,score_source:"primary",status:"final",home_score:80};
+    assert.equal((await mod.exports.GET(req())).status,200);
+  }finally{for(const [k,v] of Object.entries(before)){if(v===undefined)delete process.env[k];else process.env[k]=v;}}
+});
+
+test("provider expansion requires explicit scoped rights and rejects ambiguous, expired and revoked records",async()=>{
+ const js=ts.transpileModule(read("lib/hoopdata-provider-rights.ts"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+ const {evaluateProviderRights:evaluate}=await import("data:text/javascript;base64,"+Buffer.from(js).toString("base64"));
+ const now=new Date("2026-11-25T12:00:00Z");
+ const req={provider:"highlightly",competitionId:"reviewed-league",kind:"scores",use:"app-display",plan:"free"};
+ const grant={...req,evidenceRef:"private-review-1",reviewerId:"operator",reviewedAt:"2026-11-24T12:00:00Z",validUntil:"2026-12-01T12:00:00Z",uses:["app-display","cache"],status:"approved",retentionHours:24,attribution:"Example source",upstreamRightsConfirmed:true,artworkPermissionConfirmed:false,appStorePermissionConfirmed:true};
+ assert.equal(evaluate(req,[grant],now).allowed,true);
+ for(const grants of [[],[grant,grant],[{...grant,status:"revoked"}],[{...grant,validUntil:now.toISOString()}],[{...grant,upstreamRightsConfirmed:false}],[{...grant,appStorePermissionConfirmed:false}],[{...grant,evidenceRef:""}]])assert.equal(evaluate(req,grants,now).allowed,false);
+ for(const changed of [{provider:"fiba-gdap"},{competitionId:"other"},{plan:"paid"},{use:"notifications"},{kind:"artwork"}])assert.equal(evaluate({...req,...changed},[grant],now).allowed,false);
+ assert.equal(evaluate({...req,kind:"artwork"},[{...grant,kind:"artwork"}],now).allowed,false);
+ assert.equal(evaluate({...req,use:"cache",retentionHours:24},[grant],now).allowed,true);
+ for(const hours of [undefined,0,25,Infinity,NaN])assert.equal(evaluate({...req,use:"cache",retentionHours:hours},[grant],now).allowed,false);
+ assert.equal(evaluate({...req,use:"cache",retentionHours:24},[{...grant,validUntil:"2026-11-25T13:00:00Z"}],now).allowed,false);
+});
+
+const coverageRightsModule={exports:{}};
+new Function("exports",ts.transpileModule(read("lib/hoopdata-provider-rights.ts"),cjsOptions).outputText)(coverageRightsModule.exports);
+const coverageAuditModule={exports:{}};
+new Function("require","exports",ts.transpileModule(read("lib/hoopdata-coverage-audit.ts"),cjsOptions).outputText)(name=>{
+ if(name==="./hoopdata-competition-worker")return competitionWorkerModule.exports;
+ if(name==="./hoopdata-api-sports-competition")return competitionModule.exports;
+ if(name==="./hoopdata-provider-rights")return coverageRightsModule.exports;
+ throw Error(name);
+},coverageAuditModule.exports);
+const {auditLeagueCoverage}=coverageAuditModule.exports;
+function coverageFixture(){
+ const leagueId="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",providerLeagueId=12,season="2026-2027";
+ const now=new Date("2026-11-25T13:30:00Z"),observedAt="2026-11-25T13:00:00Z";
+ return {leagues:[{id:leagueId,active:true,side:"womens"},{id:"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",active:true,side:"mens"}],
+ mappings:[{leagueId,providerLeagueId,side:"womens",reviewed:true,evidence:"private",reviewedAt:"2026-11-24T12:00:00Z"}],
+ seasons:[{leagueId,providerLeagueId,observedAt,rows:[{season,start:"2026-10-01",end:"2027-06-01",games:true,standings:true}]}],
+ observations:[{leagueId,providerLeagueId,season,kind:"games",observedAt,rowCount:20},{leagueId,providerLeagueId,season,kind:"standings",observedAt,rowCount:8}],
+ rights:[],plan:"reviewed-pilot",now};
+}
+test("coverage audit distinguishes catalog, observed snapshots and verified display rights without certifying completeness",()=>{
+ const i=coverageFixture(),r=auditLeagueCoverage(i);
+ assert.equal(r[0].side,"womens");assert.equal(r[1].side,"mens");
+ assert.equal(r[0].fixtures.state,"rights-unconfirmed");assert.equal(r[0].standings.state,"rights-unconfirmed");assert.equal(r[1].fixtures.state,"unmapped");
+ const grant={provider:"api-sports",competitionId:i.leagues[0].id,kind:"fixtures",plan:i.plan,uses:["web-display"],status:"approved",evidenceRef:"private evidence",reviewerId:"operator",reviewedAt:"2026-11-24T00:00:00Z",validUntil:"2026-12-01T00:00:00Z",retentionHours:0,upstreamRightsConfirmed:true,artworkPermissionConfirmed:false,appStorePermissionConfirmed:false,attribution:"API-Sports"};
+ const approved=auditLeagueCoverage({...i,rights:[grant]});
+ assert.equal(approved[0].fixtures.state,"observed-not-certified");assert.equal(approved[0].standings.state,"rights-unconfirmed");
+ assert.doesNotMatch(JSON.stringify(approved),/private evidence|operator/);
+});
+test("coverage audit rejects wrong side, duplicate provider identity, ambiguous seasons and stale snapshots",()=>{
+ const i=coverageFixture(),m=i.mappings[0],s=i.seasons[0];
+ assert.equal(auditLeagueCoverage({...i,mappings:[{...m,side:"mens"}]})[0].fixtures.state,"mapping-review-required");
+ assert.equal(auditLeagueCoverage({...i,mappings:[m,{...m,leagueId:i.leagues[1].id,side:"mens"}]})[0].fixtures.state,"mapping-review-required");
+ assert.equal(auditLeagueCoverage({...i,seasons:[{...s,rows:[...s.rows,...s.rows]}]})[0].fixtures.state,"season-unverified");
+ const unsupported=auditLeagueCoverage({...i,seasons:[{...s,rows:[{...s.rows[0],games:null,standings:false}]}]});
+ assert.equal(unsupported[0].fixtures.state,"support-unconfirmed");assert.equal(unsupported[0].standings.state,"unsupported");
+ assert.equal(auditLeagueCoverage({...i,observations:[]})[0].fixtures.state,"no-observation");
+ assert.equal(auditLeagueCoverage({...i,observations:i.observations.map(o=>({...o,observedAt:"2026-11-25T11:00:00Z"}))})[0].standings.state,"stale-observation");
+});

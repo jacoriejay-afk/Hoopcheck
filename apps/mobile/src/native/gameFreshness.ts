@@ -19,7 +19,7 @@ export type GameDisplayState = {
 };
 
 export function gameDisplayState(
-  game: Pick<LiveGame, "status" | "scheduled_at" | "started_at" | "score_updated_at">,
+  game: Pick<LiveGame, "status" | "scheduled_at" | "started_at" | "score_updated_at" | "score_source">,
   nowMs = Date.now(),
   lastCheckedMs: number | null = null,
 ): GameDisplayState {
@@ -30,7 +30,8 @@ export function gameDisplayState(
     && (!Number.isFinite(lastCheckedMs) || nowMs - lastCheckedMs > MAX_LAST_CHECK_AGE_MS || lastCheckedMs > nowMs + 60_000);
   const receipt = Date.parse(game.score_updated_at || "");
   const providerIsFresh = Number.isFinite(receipt) && receipt <= nowMs + 60_000
-    && nowMs - receipt <= MAX_PROVIDER_RECEIPT_AGE_MS;
+    && nowMs - receipt <= (game.score_source === "balldontlie-nba" ? MAX_FALLBACK_RECEIPT_AGE_MS : MAX_PROVIDER_RECEIPT_AGE_MS)
+    && (game.score_source !== "balldontlie-nba" || receipt <= nowMs);
   const awaiting = { kind: "awaiting", label: "Awaiting score update", isLive: false, needsVerification: true } as const;
   if (raw === "final" || raw === "finished") {
     return { kind: "final", label: "FINAL", isLive: false, needsVerification: false };
@@ -73,4 +74,27 @@ export function providerReceiptLabel(value?: string | null, nowMs = Date.now()):
   if (minutes < 60) return "Provider checked " + minutes + " min ago";
   const hours = Math.floor(minutes / 60);
   return hours < 24 ? "Provider checked " + hours + " hr ago" : "Provider checked " + Math.floor(hours/24) + " d ago";
+}
+
+export const MAX_FALLBACK_RECEIPT_AGE_MS=5*60_000;
+type ScoreDisplayInput=Pick<LiveGame,"status"|"home_score"|"away_score"|"score_updated_at"|"score_source"|"provider_source">;
+/** UI-only contract. No source can change canonical status or settle a prediction. */
+export function nativeScoreDisplay(game:ScoreDisplayInput,nowMs=Date.now()){
+  const validScore=(v:unknown):v is number=>typeof v==="number"&&Number.isSafeInteger(v)&&v>=0;
+  const isFallback=game.score_source==="balldontlie-nba";
+  const receipt=Date.parse(game.score_updated_at||"");
+  const age=nowMs-receipt;
+  const fallbackValid=isFallback&&game.status==="live"&&Number.isFinite(age)&&age>=0&&age<=MAX_FALLBACK_RECEIPT_AGE_MS&&validScore(game.home_score)&&validScore(game.away_score);
+  const invalidFallback=isFallback&&!fallbackValid;
+  const sourceLabel=isFallback?"BALLDONTLIE · Backup source":game.provider_source==="api-sports-basketball"?"API-Sports":null;
+  const unknownSource=game.score_source!==undefined&&game.score_source!==null&&game.score_source!=="primary"&&!isFallback;
+  const hide=invalidFallback||unknownSource;
+  return {
+    homeScore:!hide&&validScore(game.home_score)?game.home_score:null,
+    awayScore:!hide&&validScore(game.away_score)?game.away_score:null,
+    sourceLabel:unknownSource?null:sourceLabel,
+    warning:hide?"Score source unavailable. Awaiting a verified update.":null,
+    // A secondary score receipt does not certify the primary feed's period.
+    showPeriod:!isFallback&&!unknownSource,
+  };
 }
