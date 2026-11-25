@@ -48,6 +48,14 @@ async function fixture(browser,theme,allowed=true){
       if(url.pathname==='/auth/v1/user')return json(user);
       if(url.pathname.startsWith('/storage/v1/object/sign/'))return route.fulfill({status:200,contentType:url.pathname.endsWith('.webm')?'video/webm':'image/png',headers:{'access-control-allow-origin':'*'},body:url.pathname.endsWith('.webm')?fs.readFileSync(videoPath):png});
       const table=url.pathname.split('/').pop();
+      if(method==='HEAD'&&['feed_posts','reviews'].includes(table)){
+        assert.ok(allowed,'Denied fixture must not query protected activity counts');
+        assert.equal(url.searchParams.get('select'),'id');
+        assert.equal(url.searchParams.get('author_id'),`eq.${uid}`,'Account counts must stay owner-scoped');
+        assert.ok((request.headers().prefer||'').includes('count=exact'));
+        if(table==='feed_posts')assert.equal(url.searchParams.get('status'),'eq.approved');
+        return route.fulfill({status:200,headers:{'access-control-allow-origin':'*','access-control-expose-headers':'content-range','content-range':'*/0'}});
+      }
       if(table==='feed_posts'){
         assert.ok(allowed,'Denied viewer must never query protected posts');
         return json(url.searchParams.has('video_url')?posts.filter(p=>p.video_url):posts);
@@ -70,6 +78,7 @@ async function fixture(browser,theme,allowed=true){
         // Read-only public follow rail is optional. No synthetic accounts are
         // following in this fixture, and no private relation rows are exposed.
         assert.equal(method,'POST');
+        assert.deepEqual(JSON.parse(body),{p_mode:'following',p_target_type:null,p_target_id:null,p_user_id:uid});
         return json([]);
       }
       if(table==='get_hoopfeed_check_totals')return json(JSON.parse(body).post_ids.map(post_id=>({post_id,checks_count:checked?1:0,checked_by_me:checked})));
