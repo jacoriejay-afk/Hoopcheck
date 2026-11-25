@@ -192,3 +192,36 @@ DO $competition_stage$ BEGIN
   EXCEPTION WHEN check_violation THEN NULL; END;
 END $competition_stage$;
 RESET ROLE;
+
+\ir ../candidates/hoopdata_competition_snapshots_review_only.sql
+DO $mapped_access$ BEGIN
+  IF has_table_privilege('anon','public.hoopdata_competition_mappings','SELECT') OR
+     has_table_privilege('authenticated','public.hoopdata_competition_snapshots','SELECT') OR
+     has_function_privilege('authenticated','public.hoopdata_stage_competition_snapshot(uuid,bigint,text,text,text,timestamptz,jsonb)','EXECUTE') THEN
+    RAISE EXCEPTION 'Private mapped snapshot privileges exposed';
+  END IF;
+END $mapped_access$;
+GRANT SELECT ON public.leagues TO service_role;
+INSERT INTO public.hoopdata_competition_mappings(league_id,provider_league_id,side,evidence)
+VALUES('33333333-3333-4333-8333-333333333333',12,'mens','synthetic evidence');
+SET ROLE service_role;
+DO $unreviewed$ BEGIN
+  IF public.hoopdata_stage_competition_snapshot('33333333-3333-4333-8333-333333333333',12,'mens','standings','2026',now(),'[{"teamId":2,"position":1}]') THEN
+    RAISE EXCEPTION 'Unreviewed competition staged';
+  END IF;
+END $unreviewed$;
+RESET ROLE;
+UPDATE public.hoopdata_competition_mappings SET reviewed=true,reviewed_by='11111111-1111-4111-8111-111111111111',reviewed_at=now();
+SET ROLE service_role;
+DO $mapped_stage$ DECLARE
+  l uuid:='33333333-3333-4333-8333-333333333333';
+  t timestamptz:=clock_timestamp();
+BEGIN
+  IF public.hoopdata_stage_competition_snapshot(l,12,'womens','standings','2026',t,'[{"teamId":2,"position":1}]') THEN RAISE EXCEPTION 'Wrong basketball side staged'; END IF;
+  IF public.hoopdata_stage_competition_snapshot(l,13,'mens','standings','2026',t,'[{"teamId":2,"position":1}]') THEN RAISE EXCEPTION 'Wrong provider competition staged'; END IF;
+  IF NOT public.hoopdata_stage_competition_snapshot(l,12,'mens','standings','2026',t,'[{"teamId":2,"position":1}]') THEN RAISE EXCEPTION 'Reviewed snapshot not staged'; END IF;
+  IF public.hoopdata_stage_competition_snapshot(l,12,'mens','standings','2026',t+interval '1 second','[]') THEN RAISE EXCEPTION 'Empty snapshot staged'; END IF;
+  IF public.hoopdata_stage_competition_snapshot(l,12,'mens','standings','2026',t-interval '1 second','[{"teamId":2,"position":2}]') THEN RAISE EXCEPTION 'Older snapshot replaced latest'; END IF;
+  IF NOT EXISTS(SELECT 1 FROM public.hoopdata_competition_snapshots WHERE league_id=l AND rows='[{"teamId":2,"position":1}]') THEN RAISE EXCEPTION 'Latest valid snapshot not retained'; END IF;
+END $mapped_stage$;
+RESET ROLE;
