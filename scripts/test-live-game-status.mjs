@@ -79,6 +79,6 @@ assert.match(fanApi,/profile\?\.account_type!=="fan"/);
 assert.match(fanApi,/\.eq\("user_id",user.id\)\s*\.gte\("updated_at",cutoff\)/);
 assert.match(fanApi,/count!==picks.length/);
 assert.match(fanApi,/getLiveGameStatusPresentation\(game,now\).isVerifiedFinal/);
-assert.match(read("app/team-hub/page.tsx"),/key=\{activeUser.current\} accountId=\{activeUser.current\}/);
+assert.match(read("app/team-hub/page.tsx"),/key=\{fanAccountId\} accountId=\{fanAccountId\}/);
 assert.match(read("components/FanPredictionXp.tsx"),/session\?\.user.id!==accountId/);
 console.log("PASS: bounded, private, non-redeemable fan XP from settled pregame picks.");
