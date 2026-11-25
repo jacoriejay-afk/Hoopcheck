@@ -1,6 +1,7 @@
 import type { ThemePreference } from "./themePreference";
 export type Role = "player" | "fan" | "coach" | "agent" | "scout" | "manager";
-export type Preferences = { haptics: boolean; appLock: boolean; onboardingDone: boolean; theme: ThemePreference; role?: Role };
+export type MeasurementSystem = "metric" | "imperial";
+export type Preferences = { haptics: boolean; appLock: boolean; onboardingDone: boolean; theme: ThemePreference; role?: Role; measurementSystem?: MeasurementSystem };
 export const defaultPreferences: Preferences = { haptics: true, appLock: false, onboardingDone: false, theme: "system" };
 const roles: Role[] = ["player", "fan", "coach", "agent", "scout", "manager"];
 export function restorePreferences(value: string | null): Preferences {
@@ -15,6 +16,7 @@ export function restorePreferences(value: string | null): Preferences {
       appLock: data.appLock === undefined ? false : typeof data.appLock === "boolean" ? data.appLock : true,
       onboardingDone: data.onboardingDone === true,
       theme: data.theme === "light" || data.theme === "dark" || data.theme === "midnight" ? data.theme : "system",
+      ...(data.measurementSystem === "metric" || data.measurementSystem === "imperial" ? { measurementSystem: data.measurementSystem } : {}),
       ...(typeof data.role === "string" && roles.includes(data.role as Role) ? { role: data.role as Role } : {}),
     };
   } catch { return { ...defaultPreferences, appLock: true }; }

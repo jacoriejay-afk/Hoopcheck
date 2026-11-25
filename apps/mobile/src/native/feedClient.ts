@@ -44,6 +44,53 @@ export async function readFeedPage(client: SupabaseClient, userId: string, curso
   const posts = page.filter(row => !archived.has(row.id) && (!row.expires_at || (Number.isFinite(Date.parse(row.expires_at)) && Date.parse(row.expires_at) > now.getTime()))).map(row => ({ ...row, profiles: Array.isArray(row.profiles) ? row.profiles[0] ?? null : row.profiles }));
   return { posts, next: rows.length > FEED_PAGE_SIZE ? { id: page[page.length - 1].id, created_at: page[page.length - 1].created_at } : null };
 }
+
+/** Saved library cursor is the bookmark's creation time and post ID, not the post's creation time. */
+export async function readSavedFeedPage(client: SupabaseClient, userId: string, cursor?: FeedCursor, now = new Date()) {
+  if (!uuid.test(userId) || (cursor && !validCursor(cursor))) throw new Error("Invalid saved feed request");
+  const initial = await client.auth.getSession();
+  if (initial.error || initial.data.session?.user.id !== userId) throw new Error("Sign in again to view saved posts");
+  const token = initial.data.session.access_token;
+  const header = "Bearer " + token;
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      (async () => {
+        let query = client.from("feed_post_bookmarks").select("post_id,created_at").eq("user_id", userId)
+          .order("created_at", { ascending: false }).order("post_id", { ascending: false }).limit(FEED_PAGE_SIZE + 1)
+          .setHeader("Authorization", header).abortSignal(controller.signal);
+        if (cursor) query = query.or(`created_at.lt.${cursor.created_at},and(created_at.eq.${cursor.created_at},post_id.lt.${cursor.id})`);
+        const result = await query;
+        if (result.error) throw new Error("Saved posts unavailable");
+        const bookmarks = (result.data ?? []).map(row => ({ id: row.post_id as string, created_at: row.created_at as string }));
+        if (bookmarks.length > FEED_PAGE_SIZE + 1 || bookmarks.some(row => !validCursor(row)) || new Set(bookmarks.map(row => row.id)).size !== bookmarks.length) throw new Error("Invalid saved post response");
+        const page = bookmarks.slice(0, FEED_PAGE_SIZE);
+        const ids = page.map(row => row.id);
+        let posts: FeedPost[] = [];
+        if (ids.length) {
+          const [visible, archives, blocks] = await Promise.all([
+            readablePosts(client, now).in("id", ids).setHeader("Authorization", header).abortSignal(controller.signal),
+            client.from("feed_post_archives").select("post_id").eq("user_id", userId).in("post_id", ids).setHeader("Authorization", header).abortSignal(controller.signal),
+            client.from("user_blocks").select("blocked_id").eq("blocker_id", userId).limit(501).setHeader("Authorization", header).abortSignal(controller.signal),
+          ]);
+          if (visible.error || archives.error || blocks.error || (blocks.data?.length ?? 0) > 500) throw new Error("Saved post access could not be verified");
+          const hidden = new Set((archives.data ?? []).map(row => row.post_id));
+          const blocked = new Set((blocks.data ?? []).map(row => row.blocked_id));
+          const rows = (visible.data ?? []) as unknown as FeedPost[];
+          if (rows.some(row => !validCursor(row) || !uuid.test(row.author_id) || !ids.includes(row.id))) throw new Error("Invalid saved post response");
+          const byId = new Map(rows.filter(row => !hidden.has(row.id) && !blocked.has(row.author_id) && (!row.expires_at || (Number.isFinite(Date.parse(row.expires_at)) && Date.parse(row.expires_at) > now.getTime()))).map(row => [row.id, { ...row, profiles: Array.isArray(row.profiles) ? row.profiles[0] ?? null : row.profiles }]));
+          posts = ids.flatMap(id => { const post = byId.get(id); return post ? [post] : []; });
+        }
+        const current = await client.auth.getSession();
+        if (controller.signal.aborted || current.error || current.data.session?.user.id !== userId || current.data.session.access_token !== token) throw new Error("Account changed. Refresh saved posts");
+        return { posts, next: bookmarks.length > FEED_PAGE_SIZE ? page[page.length - 1] : null };
+      })(),
+      new Promise<never>((_, reject) => { timer = setTimeout(() => { controller.abort(); reject(new Error("Saved posts did not finish loading")); }, 12000); }),
+    ]);
+  } finally { clearTimeout(timer); }
+}
+
 export async function readFeedComments(client: SupabaseClient, postId: string, offset = 0) {
   if (!uuid.test(postId) || !Number.isSafeInteger(offset) || offset < 0) throw new Error("Invalid comment request");
   const result = await client.from("feed_post_comments").select("id,author_id,parent_id,body,created_at,profiles:profiles!feed_post_comments_author_id_fkey(display_name,avatar_url,avatar_moderation_status)").eq("post_id", postId).order("created_at").order("id").range(offset, offset + 50);

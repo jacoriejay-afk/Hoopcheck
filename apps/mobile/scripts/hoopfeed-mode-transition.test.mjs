@@ -9,7 +9,8 @@ const account = readFileSync(new URL("../src/native/accountClient.ts", import.me
 test("Posts/Reels tab remounts FlatList when viewability config changes", () => {
   // React Native VirtualizedList does not support replacing its viewability
   // config or onViewableItemsChanged callback on an already mounted instance.
-  assert.match(feed, /<FlatList key=\{reels \? "reels" : "posts"\}/);
+  assert.match(feed, /<FlatList key=\{reels \? "reels" : savedOnly \? "saved-posts" : "posts"\}/);
+  assert.match(feed, /const scope = `\$\{uid \?\? ""\}:\$\{reels\}:\$\{savedOnly\}`/);
   assert.match(feed, /itemVisiblePercentThreshold: reels \? 75 : 30/);
   assert.match(feed, /const nextIds = reels \? candidates\.slice\(0, 1\) : candidates/);
   assert.match(feed, /enabled=\{focused && visible\.has\(post\.id\)\}/);

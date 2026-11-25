@@ -21,8 +21,11 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path='' AS $read$
  JOIN public.hoopdata_competition_snapshots meta ON meta.league_id=m.league_id AND meta.provider_league_id=m.provider_league_id AND meta.kind='seasons' AND meta.season=''
  WHERE m.league_id=p_league AND m.reviewed AND m.reviewed_at<=s.observed_at
  AND s.observed_at BETWEEN statement_timestamp()-interval '1 hour' AND statement_timestamp()
+ AND (s.retention_expires_at IS NULL OR s.retention_expires_at>statement_timestamp())
+ AND (a.retention_expires_at IS NULL OR a.retention_expires_at>statement_timestamp())
  AND a.reviewed_at BETWEEN s.observed_at AND statement_timestamp()
  AND meta.observed_at BETWEEN statement_timestamp()-interval '24 hours' AND statement_timestamp()
+ AND (meta.retention_expires_at IS NULL OR meta.retention_expires_at>statement_timestamp())
  AND meta.observed_at>=m.reviewed_at
  AND (SELECT count(*) FROM jsonb_array_elements(meta.rows) x(r) WHERE r->>'season'=p_season)=1
  AND EXISTS(SELECT 1 FROM jsonb_array_elements(meta.rows) x(r) WHERE r->>'season'=p_season AND r->'standings'='true'::jsonb)

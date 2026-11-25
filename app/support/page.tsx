@@ -73,6 +73,12 @@ export default function SupportPage() {
       setPriority("normal");
       setDescription("Please review my membership and help cancel or remove access. My membership page does not show a linked Stripe subscription. Please confirm whether there is recurring billing and what action is required.\n");
     }
+    if (new URLSearchParams(window.location.search).get("accountCompromised") === "1") {
+      setSubject("Report a potentially compromised HoopCheck account");
+      setCategory("security");
+      setPriority("high");
+      setDescription("When did you notice the issue?\nWhat unexpected activity did you observe?\nWhich recovery steps have you already tried?\nDo not include passwords, authenticator codes, recovery keys or payment details.\n");
+    }
     if (new URLSearchParams(window.location.search).get("scamAlert") === "1") {
       setSubject("Report a suspicious basketball offer");
       setCategory("security");
@@ -169,7 +175,7 @@ export default function SupportPage() {
               Tickets create a trackable record for account, billing, verification,
               review, privacy, security, technical and team-directory issues.
             </p>
-            <p><Link href="/scam-alerts">Recognize and privately report suspicious basketball offers</Link></p>
+            <p>If you cannot sign in, contact the support email above. Never send passwords or authenticator codes.</p><p><Link href="/scam-alerts">Recognize and privately report suspicious basketball offers</Link></p>
           </div>
         </section>
 

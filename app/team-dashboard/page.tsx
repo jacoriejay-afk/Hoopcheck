@@ -152,6 +152,7 @@ export default function TeamDashboardPage() {
         {groupPulse?.latestPost && <div style={{ marginTop: 12 }}><h3>Latest fan-group post</h3><p>{groupPulse.latestPost}</p></div>}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 12 }}>
           <Link href={"/team-hub/groups/" + teamId} className="btn">Open fan group</Link>
+          {process.env.NEXT_PUBLIC_HOOPDATA_MANAGER_PREVIEW_ENABLED==="true"&&teamId?<Link href={`/team-dashboard/game-submissions?teamId=${encodeURIComponent(teamId)}`} className="btn dark" prefetch={false}>Submit schedule or result</Link>:null}
           <Link href={"/teams/" + teamId + "#reviews"} className="btn dark">Read club reviews</Link>
         </div>
       </section>

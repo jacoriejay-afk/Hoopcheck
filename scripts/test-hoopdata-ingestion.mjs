@@ -384,3 +384,42 @@ test("coverage audit rejects wrong side, duplicate provider identity, ambiguous 
  assert.equal(auditLeagueCoverage({...i,observations:[]})[0].fixtures.state,"no-observation");
  assert.equal(auditLeagueCoverage({...i,observations:i.observations.map(o=>({...o,observedAt:"2026-11-25T11:00:00Z"}))})[0].standings.state,"stale-observation");
 });
+
+const licensedStandingsModule={exports:{}};
+new Function("require","exports",ts.transpileModule(read("lib/hoopdata-licensed-standings.ts"),cjsOptions).outputText)(name=>{
+ if(name==="./hoopdata-provider-rights")return coverageRightsModule.exports;
+ throw Error(name);
+},licensedStandingsModule.exports);
+test("licensed standings view preserves group and rank, requires complete names and limits display expiry",()=>{
+ const input=projectionFixture(),projection=projectAttestedStandings(input),leagueId=input.mapping.leagueId;
+ const grant={provider:"api-sports",competitionId:leagueId,kind:"standings",plan:"pilot",uses:["web-display"],status:"approved",evidenceRef:"private evidence",reviewerId:"reviewer",reviewedAt:"2026-11-24T00:00:00Z",validUntil:"2026-11-25T13:45:00Z",retentionHours:0,upstreamRightsConfirmed:true,artworkPermissionConfirmed:false,appStorePermissionConfirmed:false,attribution:"Licensed by API-Sports"};
+ const teams=input.teamMappings.map((m,i)=>({id:m.teamId,name:"Team "+i}));
+ const view=(grants=[grant],rows=teams,now=input.now)=>licensedStandingsModule.exports.licensedStandingsView(projection,leagueId,"pilot",grants,rows,now);
+ const r=view();
+ assert.equal(r.groups.length,2);assert.equal(r.groups[0].rows[0].position,1);assert.equal(r.groups[0].rows[0].pointsFor,null);
+ assert.equal(r.expiresAt,"2026-11-25T13:45:00.000Z");
+ assert.equal(r.attribution,grant.attribution);
+ assert.doesNotMatch(JSON.stringify(r),/private evidence|reviewer|providerLeagueId/);
+ assert.equal(view([]),null);assert.equal(view([{...grant,status:"revoked"}]),null);
+ assert.equal(view([grant],teams.slice(1)),null);assert.equal(view([grant],[...teams,teams[0]]),null);
+ assert.equal(view([grant],teams,new Date("2026-11-25T13:45:00Z")),null);
+ assert.equal(view([{...grant,validUntil:"2026-12-01T00:00:00Z"}]).expiresAt,"2026-11-25T14:00:00.000Z");
+});
+
+test("mobile standings require explicit app display and app store permission independently of web rights",()=>{
+ const i=projectionFixture(),p=projectAttestedStandings(i),leagueId=i.mapping.leagueId,teams=i.teamMappings.map(m=>({id:m.teamId,name:"Verified team"}));
+ const grant={provider:"api-sports",competitionId:leagueId,kind:"standings",plan:"pilot",uses:["web-display"],status:"approved",evidenceRef:"fixture",reviewerId:"operator",reviewedAt:"2026-11-24T00:00:00Z",validUntil:"2026-12-01T00:00:00Z",retentionHours:0,upstreamRightsConfirmed:true,artworkPermissionConfirmed:false,appStorePermissionConfirmed:false,attribution:"API-Sports"};
+ const app=(g)=>licensedStandingsModule.exports.licensedStandingsView(p,leagueId,"pilot",[g],teams,i.now,"app-display");
+ assert.equal(app(grant),null);
+ assert.equal(app({...grant,uses:["app-display"]}),null);
+ assert.ok(app({...grant,uses:["app-display"],appStorePermissionConfirmed:true}));
+});
+const womensAliasModule={exports:{}};
+new Function("exports",ts.transpileModule(read("lib/hoopdata-womens-directory-alias.ts"),cjsOptions).outputText)(womensAliasModule.exports);
+test("women's legacy directory requires a unique current reviewed canonical alias",()=>{
+ const legacyLeagueId="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",canonicalLeagueId="bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",now=new Date("2026-11-25T13:30:00Z");
+ const a={legacyLeagueId,canonicalLeagueId,status:"approved",evidence:"synthetic mapping",reviewedAt:"2026-11-24T00:00:00Z",validUntil:"2026-11-25T13:45:00Z"};
+ const resolve=(rows)=>womensAliasModule.exports.resolveWomensStandingsAlias(legacyLeagueId,rows,now);
+ assert.deepEqual(resolve([a]),{canonicalLeagueId,expiresAt:"2026-11-25T13:45:00.000Z"});
+ for(const rows of [[],[a,a],[{...a,status:"revoked"}],[{...a,evidence:""}],[{...a,validUntil:now.toISOString()}],[a,{...a,legacyLeagueId:canonicalLeagueId}]])assert.equal(resolve(rows),null);
+});

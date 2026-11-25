@@ -28,12 +28,12 @@ export async function runCompetitionRefreshTick(deps:Dependencies){
     if(!mapping||mapping.leagueId!==claim.leagueId||!reviewedCompetitionMapping(mapping))outcome={state:"deferred",reason:"mapping-required"};
     else {
       const season=claim.kind==="seasons"?null:activeSeason(claim.seasonRows,deps.now());
-      if(claim.kind!=="seasons"&&(!season||(claim.kind==="standings"?season.standings:season.games)===false)){
+      if(claim.kind!=="seasons"&&(!season||(claim.kind==="standings"?season.standings:season.games)!==true)){
         outcome={state:"deferred",reason:"active-season-or-coverage-unconfirmed"};
       }else{
         const task:CompetitionTask=claim.kind==="seasons"?{kind:"seasons",mapping}:{kind:claim.kind,mapping,season:season!.season};
         const result=await deps.execute(task,claim);
-        outcome={state:result.state==="staged"?"staged":["budget-blocked","budget-unavailable","mapping-required","not-configured"].includes(result.state)?"deferred":"failed",reason:result.state};
+        outcome={state:result.state==="staged"?"staged":["budget-blocked","budget-unavailable","mapping-required","not-configured","rights-blocked"].includes(result.state)?"deferred":"failed",reason:result.state};
         if(typeof result.retryAt==="string"&&Number.isFinite(Date.parse(result.retryAt)))outcome.retryAt=result.retryAt;
       }
     }

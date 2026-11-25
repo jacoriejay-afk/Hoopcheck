@@ -1,0 +1,33 @@
+name: HOOPDATA Game Push Rehearsal
+on:
+  pull_request:
+    paths:
+      - 'supabase/candidates/hoopdata_game_push*.sql'
+      - 'supabase/tests/hoopdata_game_push_lifecycle_isolated.sql'
+      - '.github/workflows/hoopdata-game-push-review.yml'
+permissions:
+  contents: read
+jobs:
+  rehearsal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hoopcheck_hoopdata_budget_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - run: psql -h localhost -U postgres -d hoopcheck_hoopdata_budget_test -v ON_ERROR_STOP=1 -f supabase/tests/hoopdata_provider_budget_isolated.sql -f supabase/tests/hoopdata_game_push_lifecycle_isolated.sql
