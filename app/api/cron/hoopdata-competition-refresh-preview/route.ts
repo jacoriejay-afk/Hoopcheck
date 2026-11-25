@@ -21,11 +21,11 @@ export async function POST(request:NextRequest){
       now:()=>new Date(),
       claim:async()=>{const {data,error}=await db.rpc("hoopdata_claim_competition_refresh");if(error)throw Error("Queue unavailable");return data;},
       finish:async(claim,outcome)=>{const {data,error}=await db.rpc("hoopdata_finish_competition_refresh",{p_league:claim.leagueId,p_kind:claim.kind,p_token:claim.leaseToken,p_state:outcome.state,p_retry_at:outcome.retryAt??null});return !error&&data===true;},
-      execute:task=>runCompetitionTask(task,providerKey,{
+      execute:(task,claim)=>runCompetitionTask(task,providerKey,{
         fetcher:fetch,now:()=>new Date(),
         reserve:async pool=>{const {data,error}=await db.rpc("hoopdata_reserve_request",{p_pool:pool});if(error)throw Error("Quota unavailable");return data===true;},
         blockUntil:async(pool,until)=>{const {data,error}=await db.rpc("hoopdata_block_provider",{p_pool:pool,p_until:until});if(error||data!==true)throw Error("Cooldown unavailable");},
-        stage:async snapshot=>{const {data,error}=await db.rpc("hoopdata_stage_competition_snapshot",{p_league:snapshot.mapping.leagueId,p_provider:snapshot.mapping.providerLeagueId,p_side:snapshot.mapping.side,p_kind:snapshot.kind,p_season:snapshot.kind==="seasons"?"":snapshot.season,p_observed:snapshot.observedAt,p_rows:snapshot.rows});return !error&&data===true;},
+        stage:async snapshot=>{const {data,error}=await db.rpc("hoopdata_stage_leased_competition_snapshot",{p_token:claim.leaseToken,p_league:snapshot.mapping.leagueId,p_provider:snapshot.mapping.providerLeagueId,p_side:snapshot.mapping.side,p_kind:snapshot.kind,p_season:snapshot.kind==="seasons"?"":snapshot.season,p_observed:snapshot.observedAt,p_rows:snapshot.rows});return !error&&data===true;},
       }),
     });
     return reply({...result,canonicalWrites:false,coverageCertified:false},["failed","lease-lost","invalid-claim"].includes(result.state)?503:200);
