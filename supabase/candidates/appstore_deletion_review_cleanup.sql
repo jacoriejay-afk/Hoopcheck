@@ -33,7 +33,8 @@ BEGIN
   IF NOT EXISTS(SELECT 1 FROM pg_catalog.pg_class c WHERE c.oid=relation AND c.relkind='r')
    OR (SELECT count(*) FROM pg_catalog.pg_constraint k WHERE k.contype='f' AND k.confrelid=relation)<>expected
    OR EXISTS(SELECT 1 FROM pg_catalog.pg_trigger g WHERE g.tgrelid=relation AND NOT g.tgisinternal AND (g.tgtype::int & 8)<>0)
-   OR EXISTS(SELECT 1 FROM pg_catalog.pg_inherits i WHERE i.inhrelid=relation OR i.inhparent=relation)
+   OR EXISTS(SELECT 1 FROM pg_catalog.pg_rewrite rw WHERE rw.ev_class=relation)
+  OR EXISTS(SELECT 1 FROM pg_catalog.pg_inherits i WHERE i.inhrelid=relation OR i.inhparent=relation)
   THEN RAISE EXCEPTION 'Review cleanup schema drift'; END IF;
  END LOOP;
  IF (SELECT count(*) FROM pg_catalog.pg_constraint k WHERE k.contype='f' AND k.confrelid='public.reviews'::regclass
@@ -61,6 +62,7 @@ BEGIN
  IF jsonb_array_length(scope->'reviews')+jsonb_array_length(scope->'women')+jsonb_array_length(scope->'comments')+jsonb_array_length(scope->'likes')=0 THEN RETURN jsonb_build_object('ok',true); END IF;
  SELECT * INTO approved FROM hoopcheck_deletion_private.review_cleanup_approvals WHERE request_id=p_request AND policy_version=version AND scope_digest=digest;
  IF NOT FOUND OR ((scope->>'third_party')::bigint>0 AND NOT approved.allow_thread_removal) THEN RAISE EXCEPTION 'Exact review scope approval required'; END IF;
+ IF NOT public.assert_account_deletion_worker(p_request,p_owner,p_fence) THEN RAISE EXCEPTION 'Review cleanup lease expired' USING ERRCODE='42501'; END IF;
  DELETE FROM public.review_comments WHERE author_id=p_owner OR review_id IN (SELECT id FROM public.reviews WHERE author_id=p_owner);
  DELETE FROM public.review_likes WHERE user_id=p_owner OR review_id IN (SELECT id FROM public.reviews WHERE author_id=p_owner);
  DELETE FROM public.reviews WHERE author_id=p_owner;
@@ -68,8 +70,9 @@ BEGIN
  IF EXISTS(SELECT 1 FROM public.reviews WHERE author_id=p_owner) OR EXISTS(SELECT 1 FROM public.womens_team_reviews WHERE author_id=p_owner)
  OR EXISTS(SELECT 1 FROM public.review_comments WHERE author_id=p_owner) OR EXISTS(SELECT 1 FROM public.review_likes WHERE user_id=p_owner)
  THEN RAISE EXCEPTION 'Review cleanup not confirmed'; END IF;
+ IF NOT public.assert_account_deletion_worker(p_request,p_owner,p_fence) THEN RAISE EXCEPTION 'Review cleanup lease expired' USING ERRCODE='42501'; END IF;
  RETURN jsonb_build_object('ok',true);
-END $$;
+END $;
 REVOKE ALL ON FUNCTION hoopcheck_deletion_private.review_cleanup_scope(uuid,uuid,uuid,boolean) FROM public,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION hoopcheck_deletion_private.review_cleanup_scope(uuid,uuid,uuid,boolean) TO service_role;
 CREATE OR REPLACE FUNCTION public.approved_deletion_review_scope(p_request uuid,p_owner uuid,p_fence uuid,p_apply boolean DEFAULT false)
