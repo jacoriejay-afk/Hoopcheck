@@ -68,6 +68,13 @@ jobs:
           createdb -h 127.0.0.1 -U postgres hoopcheck_build8_owner_test
           node scripts/check-build8-owner-profile.mjs | psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_build8_owner_test
 
+      - name: Rehearse private player reference consent in disposable PostgreSQL
+        env:
+          PGPASSWORD: postgres
+        run: |
+          createdb -h 127.0.0.1 -U postgres hoopcheck_build17_references_test
+          psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_build17_references_test -f supabase/tests/build17_player_references_isolated.sql
+
       - name: Verify staged HoopChat contact-request UPDATE privileges
         run: node scripts/check-hoopchat-contact-privileges.mjs
 
