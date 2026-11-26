@@ -1,3 +1,5 @@
+import { BlockedAccounts } from "../components/BlockedAccounts";
+import { AdminSafetyCenter } from "../components/AdminSafetyCenter";
 import { AlternateIcons } from "../components/AlternateIcons";
 import { useRef, useState } from "react";
 import { clearPublicCache } from "../src/native/cache";
@@ -65,6 +67,8 @@ export default function Settings() {
       {account.workspaces.ambassador ? <Pressable testID="settings-ambassador-hq" accessibilityRole="button" onPress={()=>router.push("/account/ambassador-hq")} style={{minHeight:48,flexDirection:"row",alignItems:"center",gap:10,borderBottomWidth:StyleSheet.hairlineWidth,borderColor:theme.border}}><Ionicons name="megaphone-outline" size={20} color={theme.accent}/><Text style={{flex:1,color:theme.foreground,fontWeight:"700"}}>Ambassador HQ</Text><Ionicons name="chevron-forward" size={16} color={theme.muted}/></Pressable> : null}
     </View> : null}
     {!account && !accountLoading && accountError ? <View style={{gap:6}}><Text accessibilityRole="alert" style={{color:theme.muted}}>{accountError}</Text><Pressable accessibilityRole="button" onPress={retryAccount} style={{minHeight:44,justifyContent:"center"}}><Text style={{color:theme.accent,fontWeight:"700"}}>Retry account verification</Text></Pressable></View> : null}
+    <BlockedAccounts />
+    <AdminSafetyCenter />
     <Text accessibilityRole="header" style={{color:theme.foreground,fontSize:21,fontFamily:"HoopCheckDisplay"}}>Device preferences</Text>
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16 }}><Text style={{ color: theme.foreground, fontSize: 17 }}>Haptics</Text><Switch accessibilityLabel="Haptics" value={preferences.haptics} onValueChange={value => void update({ haptics: value }).catch(() => setError("Couldn’t save haptics preference."))} /></View>
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16 }}><Text style={{ color: theme.foreground, fontSize: 17 }}>Face ID / device app lock</Text><Switch accessibilityLabel="Device app lock" disabled={busy} value={preferences.appLock} onValueChange={value => void setLock(value)} /></View>
