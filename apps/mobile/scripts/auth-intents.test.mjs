@@ -117,3 +117,35 @@ test('MFA management retains its verified owner when another account sign-in is 
  pending.resolve(Response.json({access_token:jwt(next),refresh_token:'fixture-b',expires_in:3600,token_type:'bearer',user:user(next)}));await signingIn;
  assert.ok((await enrolling).error);assert.equal(enrollRequests,0);assert.equal((await client.auth.getSession()).data.session.user.id,next);
 });
+
+
+test('a delayed ID-token exchange cannot overwrite a newer password sign-in',async()=>{
+ const {createClient}=await import('@supabase/supabase-js');
+ const apple='11111111-1111-4111-8111-111111111111',next='22222222-2222-4222-8222-222222222222';
+ const jwt=id=>Buffer.from('{"alg":"HS256"}').toString('base64url')+'.'+Buffer.from(JSON.stringify({sub:id,exp:Math.floor(Date.now()/1000)+3600})).toString('base64url')+'.fixture';
+ const response=id=>({access_token:jwt(id),refresh_token:'fixture-'+id,expires_in:3600,token_type:'bearer',user:{id,aud:'authenticated',email:'fixture@example.test'}});
+ const pending=deferred(),started=deferred(),intents=createAuthIntents();
+ const request=guardAuthResponses('https://fixture.supabase.co',intents,async input=>{
+  const url=new URL(String(input));
+  if(url.pathname==='/auth/v1/token'&&url.searchParams.get('grant_type')==='id_token'){started.resolve();return pending.promise;}
+  if(url.pathname==='/auth/v1/token'&&url.searchParams.get('grant_type')==='password')return Response.json(response(next));
+  throw Error('Unexpected fixture request '+url.pathname);
+ });
+ const client=createClient('https://fixture.supabase.co','fixture-key',{auth:{autoRefreshToken:false,persistSession:false,detectSessionInUrl:false},global:{fetch:request}});
+ bindAuthIntents(client.auth,intents);
+ const old=client.auth.signInWithIdToken({provider:'apple',token:'fixture-only',nonce:'fixture-nonce'});
+ await started.promise;
+ const current=client.auth.signInWithPassword({email:'fixture-b@example.test',password:'fixture-only'});
+ pending.resolve(Response.json(response(apple)));
+ assert.ok((await old).error);assert.equal((await current).data.user.id,next);
+ assert.equal((await client.auth.getSession()).data.session.user.id,next);
+});
+
+test('ID-token operations start a fresh intent and are superseded before execution',async()=>{
+ const intents=createAuthIntents(),calls=[],blocked=deferred();
+ const auth={signInWithPassword:async()=>{calls.push('password');await blocked.promise;return {error:null};},signInWithIdToken:async()=>{calls.push('apple');return {error:null};},signOut:async()=>{calls.push('logout');return {error:null};},signUp:async()=>{},setSession:async()=>{},exchangeCodeForSession:async()=>{}};
+ bindAuthIntents(auth,intents);
+ const previous=auth.signInWithPassword();await tick();const passwordIntent=intents.read();
+ const idToken=auth.signInWithIdToken();assert.notEqual(intents.read(),passwordIntent);
+ const logout=auth.signOut();blocked.resolve();assert.ok((await previous).error);assert.ok((await idToken).error);assert.equal((await logout).error,null);assert.deepEqual(calls,['password','logout']);
+});
