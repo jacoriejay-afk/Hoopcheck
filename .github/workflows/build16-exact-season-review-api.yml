@@ -1,0 +1,23 @@
+name: Build 16 exact season review API
+on:
+  pull_request:
+    paths:
+      - 'app/api/reviews/route.ts'
+      - 'app/api/review-access/route.ts'
+      - 'app/api/womens-reviews/route.ts'
+      - 'lib/career/**'
+      - 'scripts/test-exact-season-review-api.mjs'
+      - '.github/workflows/build16-exact-season-review-api.yml'
+permissions:
+  contents: read
+jobs:
+  review-api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: node --test scripts/test-exact-season-review-api.mjs

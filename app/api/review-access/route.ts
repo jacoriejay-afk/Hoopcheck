@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { calculateReviewSummary } from "../../../lib/review-summary";
 import { getHoopCheckEntitlements } from "../../../lib/membership-tier";
+import { exactSeasonReviewsEnabled,listVerifiedReviewSeasons } from "../../../lib/career/verified-review-season";
 
 export const dynamic = "force-dynamic";
 
@@ -63,7 +64,18 @@ export async function GET(request: Request) {
     const targetColumn = entityType === "team" ? "team_id" : entityType === "coach" ? "coach_id" : entityType === "league" ? "league_id" : "womens_team_id";
     const table = entityType === "womens-team" ? "womens_team_reviews" : "reviews";
 
-    if (canWrite && entityType === "team" && user) {
+    const exactSeasonRequired = exactSeasonReviewsEnabled() && (entityType === "team" || entityType === "womens-team");
+    let verifiedSeasons: string[] = [];
+    if (exactSeasonRequired) {
+      // The submission routes do not grant a membership bypass to administrators.
+      const writer = getHoopCheckEntitlements({accountType,subscription,playerVerified:profile?.player_verified===true});
+      canWrite = Boolean(user?.email_confirmed_at && writer.canWriteReviews && (entityType !== "womens-team" || profile?.basketball_type === "womens"));
+      if (canWrite && user) {
+        const scoped = createClient(supabaseUrl,anonKey,{global:{headers:{Authorization:"Bearer "+bearer}},auth:{autoRefreshToken:false,persistSession:false}});
+        verifiedSeasons = await listVerifiedReviewSeasons(scoped,user.id,entityId,entityType==="team"?"teams":"womens_teams",new Date().getUTCFullYear());
+        canWrite=verifiedSeasons.length>0;
+      }
+    } else if (canWrite && entityType === "team" && user) {
       const scoped = createClient(supabaseUrl, anonKey, {
         global: { headers: { Authorization: "Bearer " + bearer } },
         auth: { autoRefreshToken: false, persistSession: false },
@@ -81,6 +93,7 @@ export async function GET(request: Request) {
       tier,
       canWrite,
       canReadFull: fullRead,
+      ...(exactSeasonRequired ? { exactSeasonRequired:true, verifiedSeasons } : {}),
       categories: ["Communication", "Professionalism", "Development", "Payment", "Pay on time", "Housing", "Medical support", "Coaching quality", "Facilities", "Playing time honesty"],
       summary: null,
       reviews: [],

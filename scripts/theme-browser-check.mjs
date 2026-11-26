@@ -255,6 +255,34 @@ try {
       }
       assert.equal(colors.text, colors.expectedText, `Guest ${theme} home at ${width}px: typed search text must follow the input theme`);
       assert.equal(colors.placeholder, colors.expectedPlaceholder, `Guest ${theme} home at ${width}px: search placeholder must follow the muted theme`);
+      // Capture the actual anonymous welcome screen, not the signed-in root fixture.
+      if (testLanguage === "en" && theme !== "system" && [320, 390, 1280].includes(width)) {
+        await input.fill("");
+        await input.blur();
+        const main = guestPage.locator("main.hc-ia-public-home");
+        await main.waitFor({ state: "visible" });
+        assert.equal(new URL(guestPage.url()).pathname, "/", "Welcome must remain anonymous");
+        const hero = main.locator(width < 1024 ? ".hc-ia-welcome" : ".hc-d3-hero__copy");
+        const signup = hero.locator('a[href="/signup"]');
+        const signin = hero.locator('a[href="/login"]');
+        const search = main.locator(".hc-searchbar:visible");
+        const submit = search.locator('button[type="submit"]');
+        for (const control of [signup, signin, submit]) {
+          const bounds = await control.boundingBox();
+          assert.ok(bounds && bounds.height >= 44 && bounds.width >= 44, "Welcome action must have an accessible touch target");
+        }
+        const links = main.locator(width < 1024 ? ".hc-public-quick-links" : ".hc-d3-desktop-only");
+        for (const href of ["/live-games", "/pre-sign"]) {
+          await links.locator('a[href="' + href + '"]').filter({ visible: true }).first().waitFor({ state: "visible" });
+        }
+        for (const element of [hero, search, signup, signin]) {
+          assert.ok(await element.evaluate(node => {
+            const box = node.getBoundingClientRect();
+            return box.left >= -2 && box.right <= document.documentElement.clientWidth + 2;
+          }), `Guest ${theme} ${width}px: welcome control extends beyond viewport`);
+        }
+        await guestPage.screenshot({ path: `${artifactsDir}/routes/public-welcome-${theme}-${width}.png`, fullPage: true, animations: "disabled" });
+      }
     }
     if (theme === "system") {
       await guestPage.locator("html.theme-dark").waitFor({ state: "attached", timeout: 10000 });

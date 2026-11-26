@@ -15,7 +15,7 @@ function compile(path, imports, globals = {}) {
   return compiled.exports;
 }
 const theme = { radius: { control: 12 }, spacing: { lg: 16 }, roles: {}, entityHero: { background: "#111827", ink: "#FFFFFF", muted: "#E5E7EB" }, type: { display: {} } };
-function screen(path, { state = [], params = {}, segments = [], pathname = "/", configurationError = null, pendingDestination = null, fontsLoaded = true, supabase = {} } = {}) {
+function screen(path, { state = [], params = {}, segments = [], pathname = "/", configurationError = null, pendingDestination = null, fontsLoaded = true, supabase = {}, width = 393, fontScale = 1 } = {}) {
   const calls = { push: [], replace: [], alerts: [], oauthUrls: [], freshSignIns: 0, remembered: [] };
   const effects = [];
   let slot = 0;
@@ -24,7 +24,7 @@ function screen(path, { state = [], params = {}, segments = [], pathname = "/", 
   Stack.Screen = "Screen";
   const imports = name => {
     if (name === "react") return { useRef: value => ({ current: value }), useState: initial => [state[slot++] ?? initial, () => {}], useEffect: f => effects.push(f) };
-    if (name === "react-native") return { Platform: { OS: "ios", select: options => options.ios }, StyleSheet: { create: s => s, absoluteFill: {} }, Alert: { alert: (...args) => calls.alerts.push(args) }, AccessibilityInfo: { isReduceMotionEnabled: async () => false }, Image: "Image", ScrollView: "ScrollView", Text: "Text", View: "View", Pressable: "Pressable", KeyboardAvoidingView: "KeyboardAvoidingView", ActivityIndicator: "ActivityIndicator" };
+    if (name === "react-native") return { useWindowDimensions: () => ({ width, fontScale, height: 852, scale: 3 }), Platform: { OS: "ios", select: options => options.ios }, StyleSheet: { create: s => s, absoluteFill: {} }, Alert: { alert: (...args) => calls.alerts.push(args) }, AccessibilityInfo: { isReduceMotionEnabled: async () => false }, Image: "Image", ScrollView: "ScrollView", Text: "Text", View: "View", Pressable: "Pressable", KeyboardAvoidingView: "KeyboardAvoidingView", ActivityIndicator: "ActivityIndicator" };
     if (name === "expo-router") return { Stack, Link: "Link", useRouter: () => router, useLocalSearchParams: () => params, useGlobalSearchParams: () => params, useSegments: () => segments, usePathname: () => pathname };
     if (name === "expo-linking") return { createURL: p => `hoopcheck://${p}`, openURL: async url => calls.oauthUrls.push(url) };
     if (name === "expo-font") return { useFonts: () => [fontsLoaded, null] };
@@ -41,7 +41,7 @@ function screen(path, { state = [], params = {}, segments = [], pathname = "/", 
       useAnimatedStyle: render => render(), withTiming: value => value };
 
     if (name.endsWith("/ExploreLinks")) return { ExploreLinks: "ExploreLinks" };
-    if (name.endsWith("/primitives")) return { GlassCard: "GlassCard", Input: "Input", Button: "Button" };
+    if (name.endsWith("/primitives")) return { GlassCard: "GlassCard", Input: "Input", Button: "Button", SectionHeader: "SectionHeader" };
     if (name.endsWith("/supabase")) return { supabase, supabaseConfigurationError: configurationError };
     if (name.endsWith("/native/sessionBootstrap")) return { createSessionBootstrap: () => ({ retry() {}, dispose() {} }) };
     if (name.endsWith("/native/lockPolicy")) return { recordFreshSignIn: () => { calls.freshSignIns++; } };
@@ -84,6 +84,28 @@ test("themed welcome buttons navigate explicitly to sign-in and sign-up", () => 
   buttons.find(b => b.props.accessibilityLabel === "Create an account").props.onPress();
   assert.deepEqual(f.calls.push, ["/sign-in", "/sign-up"]);
   assert.ok(f.nodes.some(n => n.props.accessibilityRole === "header"));
+});
+
+test("welcome adapts search and account actions to narrow screens and large text without changing destinations", () => {
+  for (const [width, fontScale, expected] of [[393, 1, "row"], [320, 1, "column"], [393, 1.6, "column"], [768, 1, "row"]]) {
+    const f = screen("app/index.tsx", { width, fontScale, state: ["  basketball  "] });
+    const search = f.nodes.find(n => n.type === "Input");
+    const searchRow = f.nodes.find(n => n.type === "View" && [n.props.children].flat().includes(search));
+    const accountRow = f.nodes.find(n => n.type === "View" && [n.props.children].flat().some(child => child?.props?.accessibilityLabel === "Create an account"));
+    assert.equal(searchRow.props.style.flexDirection, expected);
+    assert.equal(accountRow.props.style.flexDirection, expected);
+    search.props.onSubmitEditing();
+    f.nodes.find(n => n.type === "Button" && n.props.accessibilityLabel === "Search").props.onPress();
+    assert.deepEqual(f.calls.push, [
+      { pathname: "/search", params: { q: "basketball" } },
+      { pathname: "/search", params: { q: "basketball" } },
+    ]);
+    const shortcuts = f.nodes.filter(n => n.type === "Pressable" && n.props.accessibilityRole === "button");
+    assert.equal(shortcuts.length, 2);
+    shortcuts.forEach(n => n.props.onPress());
+    assert.deepEqual(f.calls.push.slice(2), ["/fan-live", { pathname: "/web", params: { path: "/pre-sign" } }]);
+    assert.ok(shortcuts.every(n => n.props.style({ pressed: false }).minHeight >= 44));
+  }
 });
 
 test("password sign-in normalizes email and retains profile destination selection", async () => {

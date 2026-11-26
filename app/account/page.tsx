@@ -490,6 +490,7 @@ export default function AccountPage() {
         </SettingsGroup>
         {profile.account_type === "player" && <SettingsGroup title="Career & team reviews">
           {profile.account_type === "player" && <SettingsRow icon="file" label="Career Passport" value="Add teams, seasons, and countries" href="/profile#career-passport" />}
+          {process.env.NEXT_PUBLIC_HOOPCHECK_CAREER_CLAIMS_ENABLED==="true"&&<SettingsRow icon="file" label="Private career history" value="Add former teams and verification claims" href="/career-history" />}
           <SettingsRow icon="star" label="Team reviews" value="Check eligibility when ready" href="#team-review-checklist" />
         </SettingsGroup>}
         <SettingsGroup title="Security & membership">

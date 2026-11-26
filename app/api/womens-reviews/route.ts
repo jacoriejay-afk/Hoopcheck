@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getHoopCheckEntitlements } from "../../../lib/membership-tier";
+import { exactSeasonReviewsEnabled, verifiedReviewSeason } from "../../../lib/career/verified-review-season";
 
 function getAdminSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -93,9 +94,16 @@ export async function POST(req: Request) {
   if (
     typeof reviewInput.womens_team_id !== "string" ||
     !reviewInput.womens_team_id ||
-    reviewInput.womens_team_id !== profile.selected_womens_team_id
+    (!exactSeasonReviewsEnabled() && reviewInput.womens_team_id !== profile.selected_womens_team_id)
   ) {
     return NextResponse.json({ error: "You must be verified with this women’s team before reviewing it." }, { status: 403 });
+  }
+
+  let verifiedSeason: string | null = null;
+  if (exactSeasonReviewsEnabled()) {
+    const eligibility = await verifiedReviewSeason(supabase,user.id,reviewInput.womens_team_id,"womens_teams",reviewInput.player_season,new Date().getUTCFullYear());
+    if(eligibility.status!==200)return NextResponse.json({error:eligibility.error},{status:eligibility.status});
+    verifiedSeason=eligibility.season;
   }
 
   const ratings = ["overall_rating", "communication_rating", "professionalism_rating", "development_rating", "payment_rating"] as const;
@@ -134,6 +142,7 @@ export async function POST(req: Request) {
     .insert({
       author_id: user.id,
       womens_team_id: reviewInput.womens_team_id,
+      ...(verifiedSeason ? {player_season:verifiedSeason} : {}),
       ...ratingValues,
       title: title || null,
       body: reviewBody,
@@ -155,7 +164,7 @@ export async function POST(req: Request) {
       console.error("Unable to release failed women's review slot:", releaseError);
     }
     console.error("Women's review insert failed:", error);
-    return NextResponse.json({ error: error.code === "42501" ? "You are not authorized to submit this review." : "Unable to submit your review." }, { status: error.code === "42501" ? 403 : 400 });
+    return NextResponse.json({ error: error.code === "42501" ? "You are not authorized to submit this review." : "Unable to submit your review." }, { status: error.code === "42501" ? 403 : error.code === "23505" ? 409 : 400 });
   }
 
   return NextResponse.json(data, { status: 201 });
