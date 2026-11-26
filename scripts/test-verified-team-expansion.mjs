@@ -50,3 +50,5 @@ console.log("PASS: 40 missing men + 14 missing women, two source-reviewed crests
 await import('./test-directory-reconciliation.mjs');
 
 await import('./test-directory-korea-oceania.mjs');
+
+await import('./test-directory-duplicate-pair-plan.mjs');
