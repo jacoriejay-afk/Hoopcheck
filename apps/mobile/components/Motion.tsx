@@ -1,7 +1,7 @@
 import { useMotionSetting } from "../src/motion/Provider";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { LinearGradient } from "expo-linear-gradient";
-import { View, type ViewStyle } from "react-native";
+import { AppState, View, type ViewStyle } from "react-native";
 import Animated, { cancelAnimation, FadeIn, useAnimatedStyle, useSharedValue, withRepeat, withTiming, type SharedValue } from "react-native-reanimated";
 import { motion } from "../src/motion/config";
 import { useEntryTheme } from "../src/theme";
@@ -28,13 +28,18 @@ export function Skeleton({ profile = false, review = false }: { profile?: boolea
   const theme = useEntryTheme();
   const reduced = useMotionSetting();
   const [visible, setVisible] = useState(false);
+  const [foreground, setForeground] = useState(() => AppState.currentState !== "background" && AppState.currentState !== "inactive");
+  useEffect(() => {
+    const listener = AppState.addEventListener("change", state => setForeground(state === "active"));
+    return () => listener.remove();
+  }, []);
   const progress = useSharedValue(0);
   useEffect(() => { const timer = setTimeout(() => setVisible(true), motion.skeletonDelay); return () => clearTimeout(timer); }, []);
   useEffect(() => {
-    if (visible && !reduced) progress.set(withRepeat(withTiming(1, { duration: motion.shimmer }), -1, false));
+    if (visible && !reduced && foreground) progress.set(withRepeat(withTiming(1, { duration: motion.shimmer }), -1, false));
     else { cancelAnimation(progress); progress.set(0); }
     return () => cancelAnimation(progress);
-  }, [visible, reduced, progress]);
+  }, [visible, reduced, foreground, progress]);
   return <View accessibilityLabel="Loading content" accessibilityRole="progressbar" accessibilityState={{ busy: true }} accessible accessibilityLiveRegion="polite" style={{ padding: profile ? 0 : 16 }}>
     <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ opacity: visible ? 1 : 0 }}><Shimmer.Provider value={progress}>
       {profile && <View style={{ gap: 12, marginBottom: 26 }}><Bone style={{ width: 66, height: 66 }} /><Bone style={{ width: "70%", height: 32 }} /><Bone style={{ width: "45%", height: 18 }} /></View>}
