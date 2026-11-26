@@ -18,6 +18,7 @@ import { supabase } from "../src/lib/supabase";
 import { useEntryTheme } from "../src/theme";
 import { useNativeAccount } from "../src/native/useNativeAccount";
 import { useNetwork, requireOnline } from "../src/native/network";
+import { readWithDeadline } from "../src/native/readDeadline";
 import { deleteOwnedFeedPost, feedAction, isFeedId, moderateFeedText, publishFeedPoll, readFeedChecks, readFeedComments, readFeedPage, readSavedFeedPage, readFeedSaved, readSharedFeedPost, toggleFeedCheck, validatedPollOptions, type FeedComment, type FeedCursor, type FeedPost } from "../src/native/feedClient";
 function relativeTime(value: string, now: number) { const time=Date.parse(value); if(!Number.isFinite(time))return "Unknown time";const minutes=Math.max(0,Math.floor((now-time)/60000));if(minutes<1)return "Just now";if(minutes<60)return `${minutes}m ago`;if(minutes<1440)return `${Math.floor(minutes/60)}h ago`;if(minutes<10080)return `${Math.floor(minutes/1440)}d ago`;return new Date(time).toLocaleDateString(); }
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
@@ -102,8 +103,8 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
     setBlockedCreators({ owner: uid, ids: [], ready: false, failed: false });
     async function loadBlocks() {
       try {
-        const { data: session, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError || session.session?.user.id !== uid || !alive || controller.signal.aborted) throw new Error("Verify your account");
+        const { data: session, error: sessionError } = await readWithDeadline(() => supabase.auth.getSession());
+        if (sessionError || !session.session || session.session.user.id !== uid || !uid || !alive || controller.signal.aborted) throw new Error("Verify your account");
         const { data, error } = await supabase.from("user_blocks").select("blocked_id").eq("blocker_id", uid).limit(501)
           .setHeader("Authorization", `Bearer ${session.session.access_token}`).abortSignal(controller.signal);
         if (error || !Array.isArray(data) || data.length > 500 || data.some(row => !isFeedId(row.blocked_id))) throw new Error("Block list unavailable");
