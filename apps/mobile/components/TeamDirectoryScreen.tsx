@@ -1,3 +1,4 @@
+import { publicDirectoryShare } from "../src/native/directoryQuickActions";
 import { EntityArtwork } from "./EntityArtwork";
 import { CountryChip } from "../components/DirectoryIdentity";
 import { Input, Button } from "../src/primitives";
@@ -9,7 +10,7 @@ import { RecentSearches, useRecentSearches } from "../components/RecentSearches"
 import { motion } from "../src/motion/config";
 import { useEntryTheme, type EntryTheme } from "../src/theme";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, Share, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { teamDirectoryQuery, cleanTeamSearch, TEAM_PAGE_SIZE } from "../src/native/teamDirectory";
@@ -103,7 +104,7 @@ export function TeamDirectoryScreen({ women = false }: { women?: boolean }) {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.accent} colors={[theme.accent]} progressBackgroundColor={theme.surface} />}
           renderItem={({ item, index }) => (
             <Reveal key={`${appliedTerm}:${item.id}`} index={index}>
-            <Pressable accessibilityHint="Hold to preview this team" onLongPress={() => setPreview(item)} onPress={() => router.push({ pathname: women ? "/womens/[id]" : "/teams/[id]", params: { id: item.id } })} style={styles.card}>
+            <Pressable accessibilityRole="link" accessibilityHint="Hold or use actions to preview and share this team" accessibilityActions={[{name:"teamActions",label:"Team actions"}]} onAccessibilityAction={event => { if (event.nativeEvent.actionName === "teamActions") setPreview(item); }} onLongPress={() => setPreview(item)} onPress={() => router.push({ pathname: women ? "/womens/[id]" : "/teams/[id]", params: { id: item.id } })} style={styles.card}>
               <EntityArtwork name={item.name} kind={women ? "women" : "teams"} size={48} logoUrl={item.logo_url} logoBg={item.logo_bg} />
               <View style={styles.cardBody}>
                 <Text style={styles.teamName}>{item.name}</Text>
@@ -123,6 +124,7 @@ export function TeamDirectoryScreen({ women = false }: { women?: boolean }) {
       )}
       <Sheet open={Boolean(preview)} onClose={() => setPreview(null)} title={preview?.name ?? "Team preview"}>
         <Text style={{ color: theme.muted }}>{[preview?.city, preview?.country, preview?.league_name].filter(Boolean).join(" · ") || "Location and league not listed"}</Text>
+        {preview ? <Pressable accessibilityRole="button" onPress={() => { const payload = publicDirectoryShare(women ? "womens" : "teams", preview.id, preview.name); if (!payload) { Alert.alert("Link unavailable"); return; } void Share.share(payload).catch(() => Alert.alert("Unable to share", "Try again.")); }} style={{minHeight:48,justifyContent:"center"}}><Text style={{color:theme.accent}}>Share team profile</Text></Pressable> : null}
         {preview ? <Pressable accessibilityRole="button" onPress={() => { const id = preview.id; setPreview(null); router.push({ pathname: women ? "/womens/[id]" : "/teams/[id]", params: { id } }); }} style={{ minHeight: 48, justifyContent: "center" }}><Text style={{ color: theme.accent }}>Open team profile</Text></Pressable> : null}
       </Sheet>
     </SafeAreaView>

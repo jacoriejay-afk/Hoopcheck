@@ -38,6 +38,7 @@ export default async function OwnerHQ() {
           <Link href="/admin/directory">Admin Control Center</Link>
           <Link href="/owner-hq/basketball-data" prefetch={false}>Basketball Data Center</Link>
           <Link href="/admin/ambassadors" prefetch={false}>Ambassador administration</Link>
+          <Link href="/owner-hq/campaigns" prefetch={false}>Campaign attribution</Link>
           {ambassador && <Link href="/ambassador-hq" prefetch={false}>My Ambassador HQ</Link>}
         </nav>
       </header>
@@ -57,6 +58,7 @@ export default async function OwnerHQ() {
       </section>
       <section className="dashboard-card" aria-labelledby="release-observation-heading">
         <h2 id="release-observation-heading">Release comparison</h2>
+        <p><Link href="/owner-hq/activation" prefetch={false}>Signup &amp; activation diagnostics</Link></p>
         <p>Compares aggregate operator-supplied observations with identical source, coverage, platform and measurement-window length. No individual telemetry is collected here. A review signal is a threshold check, not proof of a regression.</p>
         {!observation ? <p role="status">No valid release observations supplied. Comparison unavailable.</p> : <>
           <p>{observation.baseline.platform} · {observation.baseline.source} · {observation.baseline.coverage}</p>

@@ -1,3 +1,5 @@
+import { publicDirectoryShare } from "../src/native/directoryQuickActions";
+import { Sheet } from "../components/Sheet";
 import { DirectoryCrest, CountryChip } from "../components/DirectoryIdentity";
 import { Input, Button } from "../src/primitives";
 import { useCachedRead, useNetwork } from "../src/native/network";
@@ -7,7 +9,7 @@ import { RecentSearches, useRecentSearches } from "../components/RecentSearches"
 import { motion } from "../src/motion/config";
 import { useEntryTheme, type EntryTheme } from "../src/theme";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, Share, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { supabase } from "../src/lib/supabase";
@@ -23,6 +25,7 @@ export default function LeaguesScreen() {
   const { revision } = useNetwork();
   const { recents, remember } = useRecentSearches("leagues");
   const requestId = useRef(0);
+  const [preview, setPreview] = useState<League | null>(null);
   const [items, setItems] = useState<League[]>([]);
   const [term, setTerm] = useState("");
   const [appliedTerm, setAppliedTerm] = useState("");
@@ -97,7 +100,7 @@ export default function LeaguesScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.accent} colors={[theme.accent]} progressBackgroundColor={theme.surface} />}
           renderItem={({ item, index }) => (
             <Reveal key={`${appliedTerm}:${item.id}`} index={index}>
-            <Pressable onPress={() => router.push({ pathname: "/leagues/[id]", params: { id: item.id } })} style={styles.card}>
+            <Pressable accessibilityRole="link" accessibilityHint="Hold or use actions to preview and share this league" accessibilityActions={[{name:"leagueActions",label:"League actions"}]} onAccessibilityAction={event=>{if(event.nativeEvent.actionName==="leagueActions")setPreview(item);}} onLongPress={()=>setPreview(item)} onPress={() => router.push({ pathname: "/leagues/[id]", params: { id: item.id } })} style={styles.card}>
               <DirectoryCrest name={item.name} kind="leagues" logoUrl={item.logo_url} />
               <View style={styles.cardBody}>
                 <Text style={styles.leagueName}>{item.name}</Text>
@@ -116,6 +119,11 @@ export default function LeaguesScreen() {
           onEndReached={() => { if (hasMore && !loading) void nextPage(); }}
         />
       )}
+      <Sheet open={Boolean(preview)} onClose={()=>setPreview(null)} title={preview?.name ?? "League actions"}>
+        <Text style={{color:theme.muted}}>{[preview?.country,preview?.level,preview?.season].filter(Boolean).join(" · ") || "League details not listed"}</Text>
+        {preview ? <><Pressable accessibilityRole="button" onPress={()=>{const id=preview.id;setPreview(null);router.push({pathname:"/leagues/[id]",params:{id}});}} style={{minHeight:48,justifyContent:"center"}}><Text style={{color:theme.accent}}>Open league profile</Text></Pressable>
+        <Pressable accessibilityRole="button" onPress={()=>{const payload=publicDirectoryShare("leagues",preview.id,preview.name);if(!payload){Alert.alert("Link unavailable");return;}void Share.share(payload).catch(()=>Alert.alert("Unable to share","Try again."));}} style={{minHeight:48,justifyContent:"center"}}><Text style={{color:theme.accent}}>Share league profile</Text></Pressable></> : null}
+      </Sheet>
     </SafeAreaView>
   );
 }
