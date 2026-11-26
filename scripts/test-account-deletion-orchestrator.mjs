@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { deletionSteps, runDeletionCandidate, createDeletionWorkerAdapter } from "../lib/server/account-deletion-orchestrator.ts";
+import { deletionSteps, runDeletionCandidate, createDeletionWorkerAdapter, revokeDeletionAppleAuthorizations } from "../lib/server/account-deletion-orchestrator.ts";
 const lease={requestId:"11111111-1111-4111-8111-111111111111",ownerId:"22222222-2222-4222-8222-222222222222",fence:"33333333-3333-4333-8333-333333333333",policyVersion:"fixture-v1",completed:[]};
 function fixture(completed=[]){
  const events=[];let live=true;
@@ -71,4 +71,20 @@ test("bridge rejects false acknowledgements, RPC errors and malformed claims",as
  await assert.rejects(b.complete(lease),/database acknowledgement failed/);
  const c=createDeletionWorkerAdapter({rpc:async()=>({data:[{request_id:lease.requestId,owner_id:lease.ownerId,fence:lease.fence,policy_version:lease.policyVersion,completed:["delete_auth_identity"]}],error:null})},{},true);
  await assert.rejects(c.claim(),/Invalid deletion claim/);
+});
+
+test("Apple revocation acknowledges exact owner and encrypted credential only after provider success",async()=>{
+ const row={apple_subject:"subject",envelope:"v1.fixtureIV.fixtureTag.fixtureCiphertext",envelope_digest:"a".repeat(64)};
+ const calls=[];let remaining=[row];
+ const rpc={rpc:async(name,args)=>{assert.equal(args.p_owner,lease.ownerId);assert.equal(args.p_request,lease.requestId);assert.equal(args.p_fence,lease.fence);calls.push(name);if(name==="list_account_deletion_apple_revocations")return {data:remaining,error:null};if(name==="ack_account_deletion_apple_revocation"){assert.equal(args.p_subject,row.apple_subject);assert.equal(args.p_digest,row.envelope_digest);remaining=[];}return {data:true,error:null};}};
+ assert.equal((await revokeDeletionAppleAuthorizations(rpc,lease,async(env,owner,subject)=>{assert.equal(env,row.envelope);assert.equal(owner,lease.ownerId);assert.equal(subject,row.apple_subject);calls.push("apple_200");})).confirmed,true);
+ assert.deepEqual(calls,["list_account_deletion_apple_revocations","assert_account_deletion_worker","apple_200","ack_account_deletion_apple_revocation","list_account_deletion_apple_revocations"]);
+});
+test("provider error, stale acknowledgement and unrecognized vault scope fail closed",async()=>{
+ const row={apple_subject:"subject",envelope:"v1.fixtureIV.fixtureTag.fixtureCiphertext",envelope_digest:"b".repeat(64)};
+ let acked=0;
+ const rpc={rpc:async(name)=>{if(name==="list_account_deletion_apple_revocations")return {data:[row],error:null};if(name==="ack_account_deletion_apple_revocation"){acked++;return{data:false,error:null};}return {data:true,error:null};}};
+ await assert.rejects(revokeDeletionAppleAuthorizations(rpc,lease,async()=>{throw Error("Apple unavailable");}),/Apple unavailable/);assert.equal(acked,0);
+ await assert.rejects(revokeDeletionAppleAuthorizations(rpc,lease,async()=>{}),/acknowledgement failed/);assert.equal(acked,1);
+ await assert.rejects(revokeDeletionAppleAuthorizations({rpc:async()=>({data:[{...row,envelope:"invalid"}],error:null})},lease,async()=>{throw Error("Unexpected revoke");}),/Invalid Apple revocation scope/);
 });
