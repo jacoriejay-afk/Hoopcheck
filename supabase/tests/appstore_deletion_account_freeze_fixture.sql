@@ -103,5 +103,58 @@ SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claims','{"role":"authenticated","sub":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","session_id":"77777777-7777-4777-8777-777777777777","aal":"aal1"}',true);
 DO $$ BEGIN IF public.confirm_active_account_session() THEN RAISE EXCEPTION 'Expired session accepted'; END IF; END $$;
 RESET ROLE;
+
+-- Private preferences are a deliberately limited sub-operation, not a full
+-- step-8 acknowledgment. Preserve another user's rows and unrelated content.
+DO $$ DECLARE t text; BEGIN
+ FOREACH t IN ARRAY ARRAY['fan_feed_archives','fan_live_game_reminders','feed_post_archives','feed_post_bookmarks','user_preferences','user_watchlists'] LOOP
+  EXECUTE format('CREATE TABLE public.%I(user_id uuid NOT NULL, marker text)',t);
+  EXECUTE format('INSERT INTO public.%I VALUES (''aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'',''target''),(''bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'',''other'')',t);
+ END LOOP;
+END $$;
+\i supabase/candidates/appstore_deletion_private_preferences_cleanup.sql
+DO $$ BEGIN
+ IF has_function_privilege('authenticated','public.erase_approved_deletion_preferences(uuid,uuid,uuid)','EXECUTE') THEN RAISE EXCEPTION 'Client cleanup allowed'; END IF;
+END $$;
+SET LOCAL ROLE service_role;
+DO $$ BEGIN
+ IF public.erase_approved_deletion_preferences('33333333-3333-4333-8333-333333333333','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','44444444-4444-4444-8444-444444444444') THEN RAISE EXCEPTION 'Out-of-order cleanup accepted'; END IF;
+END $$;
+RESET ROLE;
+INSERT INTO hoopcheck_deletion_private.worker_receipts(request_id,step_number,receipt)
+ SELECT '33333333-3333-4333-8333-333333333333',i,'fixture-'||i FROM generate_series(4,7)i;
+UPDATE hoopcheck_deletion_private.worker_state SET next_step=8;
+-- Add a dependency to the last table. No earlier rows may be erased.
+ALTER TABLE public.user_watchlists ADD UNIQUE(user_id);
+CREATE TABLE public.fixture_watchlist_dependency(user_id uuid REFERENCES public.user_watchlists(user_id));
+SET LOCAL ROLE service_role;
+DO $$ BEGIN
+ BEGIN
+  PERFORM public.erase_approved_deletion_preferences('33333333-3333-4333-8333-333333333333','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','44444444-4444-4444-8444-444444444444');
+  RAISE EXCEPTION 'Schema drift unexpectedly accepted' USING ERRCODE='XX000';
+ EXCEPTION WHEN raise_exception THEN
+  IF SQLERRM<>'Preference cleanup scope drift' THEN RAISE; END IF;
+ END;
+END $$;
+RESET ROLE;
+DO $$ BEGIN IF (SELECT count(*) FROM public.fan_feed_archives)<>2 THEN RAISE EXCEPTION 'Partial deletion on schema drift'; END IF; END $$;
+DROP TABLE public.fixture_watchlist_dependency;
+SET LOCAL ROLE service_role;
+DO $$ BEGIN
+ IF public.erase_approved_deletion_preferences('33333333-3333-4333-8333-333333333333','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','44444444-4444-4444-8444-444444444444') THEN RAISE EXCEPTION 'Foreign owner accepted'; END IF;
+ IF NOT public.erase_approved_deletion_preferences('33333333-3333-4333-8333-333333333333','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','44444444-4444-4444-8444-444444444444')
+ OR NOT public.erase_approved_deletion_preferences('33333333-3333-4333-8333-333333333333','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','44444444-4444-4444-8444-444444444444') THEN RAISE EXCEPTION 'Private cleanup or idempotent retry failed'; END IF;
+END $$;
+RESET ROLE;
+DO $$ DECLARE t text;n integer; BEGIN
+ FOREACH t IN ARRAY ARRAY['fan_feed_archives','fan_live_game_reminders','feed_post_archives','feed_post_bookmarks','user_preferences','user_watchlists'] LOOP
+  EXECUTE format('SELECT count(*) FROM public.%I WHERE marker=''other''',t) INTO n;
+  IF n<>1 THEN RAISE EXCEPTION 'Other account row lost'; END IF;
+  EXECUTE format('SELECT count(*) FROM public.%I WHERE marker=''target''',t) INTO n;
+  IF n<>0 THEN RAISE EXCEPTION 'Target row retained'; END IF;
+ END LOOP;
+ IF EXISTS(SELECT 1 FROM hoopcheck_deletion_private.worker_receipts WHERE step_number=8) THEN RAISE EXCEPTION 'Partial cleanup falsely marked complete'; END IF;
+END $$;
+
 ROLLBACK;
 \echo PASS: freeze gate, owner isolation, direct writes and reads, RPC gate, session absence
