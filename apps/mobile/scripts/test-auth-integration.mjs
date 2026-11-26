@@ -34,6 +34,7 @@ function screen(path, { state = [], params = {}, segments = [], pathname = "/", 
     if (name === "expo-linear-gradient") return { LinearGradient: "LinearGradient" };
     if (name.endsWith("/BrandLogo")) return { BrandLogo: "BrandLogo" };
     if (name.endsWith("/ArenaBrand")) return { ArenaBrand: "ArenaBrand" };
+    if (name.endsWith("/AppleSignIn")) return { __esModule: true, default: "AppleSignIn" };
     if (name.endsWith("/AppOpening")) return { AppOpening: "AppOpening" };
     if (name === "@expo/vector-icons") return { Ionicons: "Ionicons" };
     if (name === "react-native-reanimated") return { __esModule: true, default: { View: "AnimatedView" },
@@ -301,6 +302,7 @@ test("restored pending social account resumes setup and hides member tabs", () =
     [["dashboard"], {}, [{ pathname: "/sign-up", params: { social: "1" } }]],
     [["sign-up"], {}, [{ pathname: "/sign-up", params: { social: "1" } }]],
     [["sign-up"], { social: "1" }, []],
+    [["sign-in"], {}, []],
     [["auth", "callback"], {}, []],
   ]) {
     const f = screen("app/_layout.tsx", { segments, params, state: [{ ready: true, userId: "pending", error: null, pendingSocialSignup: true }] });

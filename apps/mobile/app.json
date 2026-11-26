@@ -44,7 +44,8 @@
           "cameraPermission": "Allow HoopCheck to take basketball photos and record videos when you choose to capture media.",
           "microphonePermission": "Allow HoopCheck to record audio with videos you choose to capture."
         }
-      ]
+      ],
+      "expo-apple-authentication"
     ],
     "experiments": {
       "typedRoutes": true
@@ -54,7 +55,8 @@
       "bundleIdentifier": "online.hoopcheck.app",
       "associatedDomains": [
         "applinks:hoopcheck.online"
-      ]
+      ],
+      "usesAppleSignIn": true
     },
     "android": {
       "package": "online.hoopcheck.app",

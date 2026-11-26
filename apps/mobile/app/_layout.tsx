@@ -73,7 +73,8 @@ function RootLayout() {
     // A restricted identity may be restored after the app is closed mid-signup.
     // Server-side role restrictions remain authoritative; this is navigation only.
     if (session.pendingSocialSignup) {
-      if (currentRoute === "auth" || (currentRoute === "sign-up" && routeParams.social === "1")) return;
+      // The sign-in screen owns Apple authorization persistence before navigation.
+      if (currentRoute === "auth" || currentRoute === "sign-in" || (currentRoute === "sign-up" && routeParams.social === "1")) return;
       router.replace({ pathname: "/sign-up", params: { social: "1" } });
       return;
     }
