@@ -21,6 +21,23 @@ test("web review forms use verified team scope and submit selected season",()=>{
   assert.match(code,/teamId!==id/);
   assert.match(code,/player_season:/);
   assert.match(code,/session.*user\.id!==.*[sS]cope\?\.userId/);
-  assert.match(code,/event==="SIGNED_IN"/);
+  assert.match(code,/sessionGuard\.observe\(session\?\.user\.id\)/);
+  assert.match(code,/sessionGuard\.observe\(after\.session\?\.user\.id\)/);
  }
+});
+
+test("same-user auth events do not invalidate access; switching or signing out permanently invalidates it",()=>{
+ let invalidations=0;
+ const guard=mod.createReviewSessionGuard(()=>invalidations++);
+ assert.equal(guard.observe("player-a"),true);
+ assert.equal(guard.observe("player-a"),true);
+ assert.equal(invalidations,0);
+ assert.equal(guard.observe("player-b"),false);
+ assert.equal(guard.observe("player-a"),false);
+ assert.equal(invalidations,1);
+ const signout=mod.createReviewSessionGuard(()=>invalidations++);
+ assert.equal(signout.observe("player-a"),true);
+ assert.equal(signout.observe(null),false);
+ assert.equal(signout.observe("player-a"),false);
+ assert.equal(invalidations,2);
 });
