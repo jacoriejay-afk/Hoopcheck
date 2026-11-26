@@ -42,6 +42,6 @@ function SupportContent({uid,scam}:{uid:string;scam:boolean}){
   <Button secondary onPress={()=>setRefresh(v=>v+1)}>Refresh tickets</Button>
   {offline?<Text style={{color:t.muted}}>Reconnect to view your tickets.</Text>:!state?<Text accessibilityRole="progressbar" style={{color:t.muted}}>Loading tickets…</Text>:state.error?<Text accessibilityRole="alert" style={{color:t.foreground}}>{state.error}</Text>:state.rows.length?<>{state.rows.map(ticket=><GlassCard key={ticket.id} style={{gap:5}}><Text style={{color:t.foreground,fontWeight:"800"}}>{ticket.subject}</Text><Text style={{color:t.muted}}>{ticket.status} · {ticket.category}</Text><Text style={{color:t.muted}}>{new Date(ticket.created_at).toLocaleString()}</Text></GlassCard>)}{state.rows.length===50?<Text style={{color:t.muted}}>Showing the latest 50. Open support on the website for full ticket history.</Text>:null}</>:<Text style={{color:t.muted}}>No support tickets yet.</Text>}
   <Text accessibilityRole="header" style={{color:t.foreground,fontWeight:"800",fontSize:19}}>Policies</Text>
-  <Button secondary onPress={()=>handoff("/privacy")}>Privacy policy</Button><Button secondary onPress={()=>handoff("/terms")}>Terms of use</Button>
+  <Button secondary onPress={()=>router.push({pathname:"/account/policies",params:{kind:"privacy"}})}>Privacy policy</Button><Button secondary onPress={()=>router.push({pathname:"/account/policies",params:{kind:"terms"}})}>Terms of use</Button>
  </ScrollView>;
 }
