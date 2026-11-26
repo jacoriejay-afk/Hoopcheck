@@ -1,3 +1,4 @@
+import { opportunityMatches, emptyOpportunityCriteria, matchExplanation } from "../src/native/opportunityMatches";
 import { ProfileAvatar } from "../components/ProfileAvatar";
 import { readPlayerDirectory, type PlayerCard } from "../src/native/playerDirectory";
 import { PlayerAccess } from "../components/PlayerAccess";
@@ -26,6 +27,7 @@ function PlayerDirectory() {
   const { read, savedAt } = useCachedRead();
   const { revision } = useNetwork();
   const { recents, remember } = useRecentSearches("players");
+  const [matching,setMatching]=useState(false),[criteria,setCriteria]=useState(emptyOpportunityCriteria);
   const [items, setItems] = useState<PlayerCard[]>([]);
   const [term, setTerm] = useState("");
   const [appliedTerm, setAppliedTerm] = useState("");
@@ -90,6 +92,8 @@ function PlayerDirectory() {
   async function nextPage() { if (loading || !hasMore || !appliedTerm) return; setLoading(true); await load(appliedTerm, offset + PAGE_SIZE, true); }
   const refresh = () => { if (!appliedTerm) return; setRefreshing(true); void load(appliedTerm, 0, false); };
 
+  const matchingEnabled=process.env.EXPO_PUBLIC_HOOPCHECK_OPPORTUNITY_MATCHING_ENABLED==="true"&&matching;
+  const visibleItems=matchingEnabled?opportunityMatches(items,criteria):items;
   return (
     <SafeAreaView edges={["left", "right", "bottom"]} style={styles.safe}>
       <OfflineBanner savedAt={savedAt} />
@@ -102,7 +106,8 @@ function PlayerDirectory() {
           <Input onBlur={() => remember(term)} onSubmitEditing={() => remember(term)} value={term} onChangeText={updateTerm} returnKeyType="search" placeholder="Enter a username (e.g. @player)" placeholderTextColor={theme.muted} style={styles.input} />
         </View>
         {!term ? <RecentSearches items={recents} onSelect={setTerm} /> : null}
-        <Text style={styles.count}>{!appliedTerm ? "Search by username to view profiles" : loading ? "Searching usernames…" : items.length + (hasMore ? "+" : "") + " results shown"}</Text>
+        {process.env.EXPO_PUBLIC_HOOPCHECK_OPPORTUNITY_MATCHING_ENABLED==="true"?<View style={{gap:4}}><Button secondary onPress={()=>setMatching(v=>!v)}>{matching?"Disable opportunity matching":"Match available players"}</Button>{matching?<><Input accessibilityLabel="Exact listed position" maxLength={30} value={criteria.position} onChangeText={position=>setCriteria(v=>({...v,position}))} placeholder="Exact listed position"/><Input accessibilityLabel="Minimum professional years" maxLength={2} keyboardType="number-pad" value={criteria.minimumYears} onChangeText={minimumYears=>setCriteria(v=>({...v,minimumYears}))} placeholder="Minimum pro years (0–50)"/><Button secondary onPress={()=>setCriteria(v=>({...v,verifiedOnly:!v.verifiedOnly}))}>{criteria.verifiedOnly?"Verified only: on":"Verified only: off"}</Button><Text style={styles.meta}>{matchExplanation(criteria)}. Self-reported, not a job offer. Filters apply to loaded records only.</Text></>:null}</View>:null}
+        <Text style={styles.count}>{!appliedTerm ? "Search by username to view profiles" : loading ? "Searching usernames…" : visibleItems.length + (hasMore ? "+" : "") + " results shown"}</Text>
       </View>
       {error ? <View style={styles.errorBox}><Text style={styles.error}>{error}</Text><Pressable onPress={() => void load(appliedTerm)}><Text style={styles.retry}>Try again</Text></Pressable></View> : null}
       {!appliedTerm ? (
@@ -113,7 +118,7 @@ function PlayerDirectory() {
       ) : loading && items.length === 0 ? <Skeleton /> : (
         <FlatList
           keyboardShouldPersistTaps="handled"
-          data={items}
+          data={visibleItems}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.list}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.accent} colors={[theme.accent]} progressBackgroundColor={theme.surface} />}
@@ -126,13 +131,13 @@ function PlayerDirectory() {
                 {item.display_name && item.username ? <Text style={styles.handle}>@{item.username}</Text> : null}
                 <Text style={styles.meta}>{[item.current_team, item.current_country || item.country].filter(Boolean).join(" · ") || "Team and location not listed"}</Text>
                 <Text style={styles.detail}>{[item.position, item.years_pro === null ? null : `${item.years_pro} pro ${item.years_pro === 1 ? "year" : "years"}`].filter(Boolean).join(" · ") || "Professional experience"}</Text>
-                {item.free_agent ? <Text style={styles.freeAgent}>Free agent</Text> : null}
+                {item.free_agent ? <Text style={styles.freeAgent}>Free agent · self-listed</Text> : null}
               </View>
               <Text style={styles.openArrow}>›</Text>
             </Pressable>
             </Reveal>
           )}
-          ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyTitle}>No public player profiles found</Text><Text style={styles.emptyText}>Profiles appear here only when they are public, marked as professional, and visible under current privacy and moderation settings.</Text></View>}
+          ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyTitle}>No matching public player profiles found</Text><Text style={styles.emptyText}>Profiles appear here only when they are public, marked as professional, and visible under current privacy and moderation settings.</Text></View>}
           ListFooterComponent={hasMore ? <Button onPress={() => void nextPage()} style={styles.more}>{loading ? <ActivityIndicator color={theme.onButton} /> : <Text style={styles.moreText}>Load more players</Text>}</Button> : <Text style={styles.footer}>Only public, non-suspended professional player profiles are shown. Profile details depend on each player’s settings.</Text>}
           onEndReachedThreshold={0.5}
           onEndReached={() => { if (hasMore && !loading) void nextPage(); }}
