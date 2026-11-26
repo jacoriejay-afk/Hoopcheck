@@ -38,3 +38,11 @@ test("five main tabs resolve to file-based screens and unmatched screens recover
   assert.match(fallback,/router\.replace\("\/"\)/);
   assert.doesNotMatch(fallback,/WebBrowser|openURL|fetch\(/);
 });
+
+test("plain legacy website paths map to native routes without consuming auth or referral parameters",()=> {
+  assert.equal(nativeDestination("/login"),"/sign-in");
+  assert.equal(nativeDestination("/signup"),"/sign-up");
+  assert.equal(nativeDestination("/feed/welcome"),"/feed-welcome");
+  assert.equal(nativeDestination("/live-games?side=womens"),"/fan-live?side=womens");
+  assert.equal(nativeDestination("/signup?ref=TEST"),"/web?path=%2Fsignup%3Fref%3DTEST");
+});

@@ -14,6 +14,7 @@ export async function readServiceObservation(origin: string, request: typeof fet
     return await Promise.race([
       (async () => {
         const response = await request(url.toString(), { method: "GET", headers: { Accept: "application/json" }, cache: "no-store", redirect: "error", signal: controller.signal });
+        if (response.status === 404) throw new Error("Service status is not available on this server");
         if (!response.ok) throw new Error("Service check unavailable");
         const value: unknown = await response.json();
         if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Invalid service observation");

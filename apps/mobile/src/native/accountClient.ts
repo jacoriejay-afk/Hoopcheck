@@ -1,3 +1,6 @@
+export class NativeAccountEndpointUnavailable extends Error {
+  constructor() { super("Account service is not available on this server. Try again later."); this.name = "NativeAccountEndpointUnavailable"; }
+}
 export type NativeAccount = {
   user: { id: string; displayName: string; accountType: string };
   tier: "free" | "pro" | "premium";
@@ -25,6 +28,7 @@ export async function requestNativeAccount(origin: string, token: string, signal
   if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash || url.pathname !== "/" || !token) throw new Error("Invalid account request");
   url.pathname = "/api/mobile/bootstrap";
   const response = await request(url.toString(), { headers: { Authorization: `Bearer ${token}` }, cache: "no-store", redirect: "error", signal });
+  if (response.status === 404) throw new NativeAccountEndpointUnavailable();
   if (!response.ok) throw new Error("Account access could not be verified");
   return parseNativeAccount(await response.json());
 }

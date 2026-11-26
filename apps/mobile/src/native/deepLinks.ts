@@ -36,6 +36,9 @@ export function nativeDestination(path: string): string {
       if (parts.length === 3 && safeId.test(parts[2])) return `/team-hub/groups/${parts[2]}`;
     }
     if (url.pathname === "/") return "/";
+    if (url.pathname === "/login" && !url.search && !url.hash) return "/sign-in";
+    if (url.pathname === "/signup" && !url.search && !url.hash) return "/sign-up";
+    if (url.pathname === "/feed/welcome") return "/feed-welcome";
     if (parts.length === 3 && parts[0] === "womens" && parts[1] === "leagues" && safeId.test(parts[2])) return `/womens/leagues/${parts[2]}`;
     if (parts.length === 2 && ["teams", "womens", "leagues", "players", "coaches"].includes(parts[0]) && safeId.test(parts[1])) return `/${parts[0]}/${parts[1]}`;
     if (parts.length === 1 && ["account", "teams", "womens", "leagues", "players", "coaches", "dashboard", "settings", "membership", "messages", "feed-welcome", "about", "sign-in", "sign-up", "forgot-password", "choose-username"].includes(parts[0])) return url.pathname;
@@ -43,7 +46,7 @@ export function nativeDestination(path: string): string {
       const post = url.searchParams.get("post") || /^#post-([0-9a-f-]{36})$/i.exec(url.hash)?.[1];
       return "/feed" + (post && /^[0-9a-f-]{36}$/i.test(post) ? `?post=${post}` : "");
     }
-    if (url.pathname === "/fan-live") {
+    if (url.pathname === "/fan-live" || url.pathname === "/live-games") {
       const query = new URLSearchParams();
       const id = url.searchParams.get("gameId"), side = url.searchParams.get("side");
       if (id && /^[0-9a-f-]{36}$/i.test(id)) query.set("gameId",id);
