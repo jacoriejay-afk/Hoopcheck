@@ -22,21 +22,35 @@ export function nativeDestination(path: string): string {
     }
     if (url.protocol !== "https:" || url.hostname !== host || url.username || url.password || url.port) return "/";
     const parts = url.pathname.split("/").filter(Boolean);
-    if (url.pathname === "/account/edit" || url.pathname === "/account/security") return url.pathname;
-    if (url.pathname === "/account/support") return "/account/support" + (url.searchParams.get("topic")==="scam" ? "?topic=scam" : "");
+    if (["/account/edit", "/account/security", "/account/career-history", "/account/owner-hq", "/account/ambassador-hq"].includes(url.pathname)) return url.pathname;
+    if (url.pathname === "/account/network" || ["/agents", "/creators"].includes(url.pathname)) {
+      const kind = url.pathname === "/agents" ? "agents" : url.pathname === "/creators" ? "creators" : url.searchParams.get("kind");
+      return "/account/network" + (kind === "agents" || kind === "creators" || kind === "safety" ? "?kind=" + kind : "");
+    }
+    if (url.pathname === "/owner-hq") return "/account/owner-hq";
+    if (url.pathname === "/ambassador-hq") return "/account/ambassador-hq";
+    if (parts.length === 3 && parts[0] === "teams" && parts[2] === "review" && safeId.test(parts[1])) return `/teams/${parts[1]}/review`;
+    if (url.pathname === "/account/support" || url.pathname === "/support") return "/account/support" + (url.searchParams.get("topic")==="scam" ? "?topic=scam" : "");
+    if (url.pathname === "/privacy" || url.pathname === "/terms" || url.pathname === "/account/policies") {
+      const kind = url.pathname === "/terms" || (url.pathname === "/account/policies" && url.searchParams.get("kind") === "terms") ? "terms" : "privacy";
+      return "/account/policies?kind=" + kind;
+    }
     if (parts[0] === "team-hub" && parts[1] === "groups") {
       if (parts.length === 2) return "/team-hub/groups";
       if (parts.length === 3 && safeId.test(parts[2])) return `/team-hub/groups/${parts[2]}`;
     }
     if (url.pathname === "/") return "/";
+    if (url.pathname === "/login" && !url.search && !url.hash) return "/sign-in";
+    if (url.pathname === "/signup" && !url.search && !url.hash) return "/sign-up";
+    if (url.pathname === "/feed/welcome") return "/feed-welcome";
     if (parts.length === 3 && parts[0] === "womens" && parts[1] === "leagues" && safeId.test(parts[2])) return `/womens/leagues/${parts[2]}`;
     if (parts.length === 2 && ["teams", "womens", "leagues", "players", "coaches"].includes(parts[0]) && safeId.test(parts[1])) return `/${parts[0]}/${parts[1]}`;
-    if (parts.length === 1 && ["account", "teams", "womens", "leagues", "players", "coaches", "dashboard", "settings", "membership"].includes(parts[0])) return url.pathname;
+    if (parts.length === 1 && ["account", "teams", "womens", "leagues", "players", "coaches", "dashboard", "settings", "membership", "messages", "feed-welcome", "about", "sign-in", "sign-up", "forgot-password", "choose-username"].includes(parts[0])) return url.pathname;
     if (url.pathname === "/feed" || url.pathname === "/fan-feed") {
       const post = url.searchParams.get("post") || /^#post-([0-9a-f-]{36})$/i.exec(url.hash)?.[1];
       return "/feed" + (post && /^[0-9a-f-]{36}$/i.test(post) ? `?post=${post}` : "");
     }
-    if (url.pathname === "/fan-live") {
+    if (url.pathname === "/fan-live" || url.pathname === "/live-games") {
       const query = new URLSearchParams();
       const id = url.searchParams.get("gameId"), side = url.searchParams.get("side");
       if (id && /^[0-9a-f-]{36}$/i.test(id)) query.set("gameId",id);
