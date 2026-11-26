@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Image, Platform, Pressable, Text, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { AppState, Image, Platform, Pressable, Text, View } from "react-native";
 import { requireOptionalNativeModule } from "expo";
 import { Sheet } from "./Sheet";
 import { Ionicons } from "@expo/vector-icons";
@@ -36,25 +36,44 @@ export function AlternateIcons() {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const mounted = useRef(false), pending = useRef(false), generation = useRef(0);
   useEffect(() => {
-    let active = true;
-    if (native) void Promise.all([native.isSupported(), native.current()]).then(([supported, current]) => {
-      if (active) { setSupported(supported); setSelected(current); }
-    }).catch(() => {});
-    return () => { active = false; };
+    mounted.current = true;
+    const sync = async () => {
+      if (!native || pending.current) return;
+      const request = ++generation.current;
+      try {
+        const [available, current] = await Promise.all([native.isSupported(), native.current()]);
+        if (mounted.current && request === generation.current && !pending.current) {
+          setSupported(available && choices.some(choice => choice.name === current));
+          if (choices.some(choice => choice.name === current)) setSelected(current);
+        }
+      } catch { if (mounted.current && request === generation.current) setSupported(false); }
+    };
+    void sync();
+    const listener = AppState.addEventListener("change", state => { if (state === "active") void sync(); });
+    return () => { mounted.current = false; generation.current++; listener.remove(); };
   }, []);
   async function select(name: IconName) {
-    if (!native || busy) return;
+    if (!native || pending.current || !supported || selected === name) return;
+    pending.current = true; generation.current++;
     setBusy(true); setError("");
-    try { setSelected(await native.select(name)); }
-    catch { setError("Couldn’t change the app icon. Your previous icon is still selected."); }
-    finally { setBusy(false); }
+    try {
+      await native.select(name);
+      const current = await native.current();
+      if (!choices.some(choice => choice.name === current) || current !== name) throw Error("Icon state not confirmed");
+      if (mounted.current) setSelected(current);
+    } catch {
+      try { const current = await native.current(); if (mounted.current && choices.some(choice => choice.name === current)) setSelected(current); }
+      catch { if (mounted.current) setSupported(false); }
+      if (mounted.current) setError("Could not confirm the app icon. Check your Home Screen and try again.");
+    } finally { pending.current = false; if (mounted.current) setBusy(false); }
   }
   if (!supported) return null;
   return <>
     <Pressable accessibilityRole="button" onPress={() => setOpen(true)} style={{ minHeight: 48, justifyContent: "center" }}><Text style={{ color: theme.accent, fontSize: 17 }}>App icon · {choices.find(choice => choice.name === selected)?.label ?? "Classic"}</Text></Pressable>
     <Sheet title="App icon" open={open} onClose={() => setOpen(false)}>
-      {choices.map(({ name, label, plate }) => <Pressable key={name} accessibilityRole="radio" accessibilityLabel={label} accessibilityState={{ checked: selected === name, disabled: busy }} disabled={busy} onPress={() => void select(name)} style={({ pressed }) => ({ minHeight: 48, flexDirection: "row", alignItems: "center", gap: 12, opacity: pressed ? .75 : 1 })}><View accessible={false} importantForAccessibility="no-hide-descendants" style={{ width: 44, height: 44, borderRadius: 10, backgroundColor: plate, borderWidth: 1, borderColor: theme.border, alignItems: "center", justifyContent: "center", overflow: "hidden" }}><Image accessible={false} alt="" source={appIcon} resizeMode="contain" style={{ width: name === "Classic" ? 42 : 36, height: name === "Classic" ? 42 : 36 }} /></View><Text style={{ flex: 1, color: selected === name ? theme.accent : theme.foreground }}>{label}{selected === name ? " · selected" : ""}</Text>{selected === name ? <Animated.View accessible={false} entering={reduced ? undefined : FadeIn.duration(motion.fade)}><Ionicons name="checkmark-circle" size={22} color={theme.accent} /></Animated.View> : null}</Pressable>)}
+      {choices.map(({ name, label, plate }) => <Pressable key={name} accessibilityRole="radio" accessibilityLabel={label} accessibilityState={{ checked: selected === name, disabled: busy || selected === name }} disabled={busy || selected === name} onPress={() => void select(name)} style={({ pressed }) => ({ minHeight: 48, flexDirection: "row", alignItems: "center", gap: 12, opacity: pressed ? .75 : 1 })}><View accessible={false} importantForAccessibility="no-hide-descendants" style={{ width: 44, height: 44, borderRadius: 10, backgroundColor: plate, borderWidth: 1, borderColor: theme.border, alignItems: "center", justifyContent: "center", overflow: "hidden" }}><Image accessible={false} alt="" source={appIcon} resizeMode="contain" style={{ width: name === "Classic" ? 42 : 36, height: name === "Classic" ? 42 : 36 }} /></View><Text style={{ flex: 1, color: selected === name ? theme.accent : theme.foreground }}>{label}{selected === name ? " · selected" : ""}</Text>{selected === name ? <Animated.View accessible={false} entering={reduced ? undefined : FadeIn.duration(motion.fade)}><Ionicons name="checkmark-circle" size={22} color={theme.accent} /></Animated.View> : null}</Pressable>)}
       {error ? <Text accessibilityRole="alert" style={{ color: theme.error }}>{error}</Text> : null}
     </Sheet>
   </>;
