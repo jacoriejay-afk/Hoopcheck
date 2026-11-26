@@ -1,0 +1,18 @@
+/** Offline retrieval of reviewed HoopCheck editorial guidance. No AI calls, account data or live scores. */
+export const intelligenceTopics=[
+ {id:"verify-club",title:"Verify a club before signing",phrases:["verify club","verify team","check club","check team","before signing","before sign","team legitimacy"],answer:"Confirm the current club, country, competition and the person offering the contract. Independently verify contact details and speak with consenting former players. A listed profile is not proof that an offer is legitimate.",source:"Pre-Sign Check",webPath:"/pre-sign",nativePath:"/teams"},
+ {id:"contract",title:"What should I check in a contract?",phrases:["contract terms","basketball contract","salary currency","housing travel","review contract","check contract","contract red flags"],answer:"Confirm salary, currency, dates, housing, travel, medical coverage, termination and dispute terms in writing. Obtain independent qualified advice; a checklist is not a guarantee or legal advice.",source:"Pre-Sign Check",webPath:"/pre-sign",nativePath:"/teams"},
+ {id:"payment",title:"How do I research payment reliability?",phrases:["payment reliability","late salary","late payment","payment history","unpaid salary","team pay"],answer:"Compare multiple permitted player experiences and ask specific questions about timing. Missing reviews or a small sample do not demonstrate reliability. Independently verify payment arrangements.",source:"Pre-Sign Check",webPath:"/pre-sign",nativePath:"/teams"},
+ {id:"scams",title:"Recognize suspicious offers",phrases:["scam offer","suspicious offer","upfront fee","agent scam","tryout fee","report scam","fake agent"],answer:"Unexpected upfront fees, impersonation, pressure to send private documents and suspicious links are warning signs. Verify through official club contacts and report privately without including passwords or banking details.",source:"Scam Alerts",webPath:"/scam-alerts",nativePath:"/account/support"},
+ {id:"reviews",title:"Understand player reviews",phrases:["player reviews","team reviews","review reliability","reviews reliable","read reviews","review score"],answer:"Reviews represent individual experiences, not guaranteed facts. Compare multiple available reviews and details rather than relying on an overall rating; existing access permissions still apply.",source:"About HoopCheck and Pre-Sign Check",webPath:"/pre-sign",nativePath:"/teams"},
+ {id:"scores",title:"Understand live score freshness",phrases:["live scores","score update","score stale","provider update","live score delay","missing score"],answer:"A local check time does not establish when the provider changed a score. When an update cannot be verified, HoopCheck should show awaiting or unavailable status rather than infer the score or clock.",source:"HoopCheck game freshness policy",webPath:"/live-games",nativePath:"/fan-live"},
+] as const;
+export type IntelligenceTopic=typeof intelligenceTopics[number];
+function normalize(value:string){return value.normalize("NFKC").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();}
+export function findIntelligenceTopics(query:string):IntelligenceTopic[]{
+ if(typeof query!=="string"||query.trim().length<3||query.length>160)return [];
+ const normalized=" "+normalize(query)+" ";
+ // Phrase matches only; no guesses from a person's name, one generic word or unsupported question.
+ return intelligenceTopics.map(topic=>({topic,score:Math.max(0,...topic.phrases.filter(p=>normalized.includes(" "+p+" ")).map(p=>p.split(" ").length))}))
+  .filter(item=>item.score>0).sort((a,b)=>b.score-a.score).slice(0,3).map(item=>item.topic);
+}
