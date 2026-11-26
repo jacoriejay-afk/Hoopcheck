@@ -58,11 +58,11 @@ INSERT INTO auth.identities VALUES
  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','apple','apple-extra'),
  ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','apple','apple-b');
 SET LOCAL ROLE service_role;
-DO $ BEGIN
+DO $$ BEGIN
  IF NOT public.store_verified_apple_authorization('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','55555555-5555-4555-8555-555555555555','apple-a','v1.originalIV.originalTag.originalCiphertext') THEN
   RAISE EXCEPTION 'Original authorization rejected';
  END IF;
-END $;
+END $$;
 RESET ROLE;
 UPDATE hoopcheck_deletion_private.worker_config SET worker_enabled=true,policy_version='fixture';
 SET LOCAL ROLE service_role;
@@ -72,7 +72,7 @@ DO $$ BEGIN
 END $$;
 RESET ROLE;
 SET LOCAL ROLE service_role;
-DO $ BEGIN
+DO $$ BEGIN
  BEGIN
   PERFORM public.store_verified_apple_authorization('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','55555555-5555-4555-8555-555555555555','apple-a','v1.fixtureIV.fixtureTag.fixtureCiphertext');
   RAISE EXCEPTION 'Frozen owner vault update allowed';
@@ -86,12 +86,12 @@ DO $ BEGIN
  IF NOT public.store_verified_apple_authorization('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','77777777-7777-4777-8777-777777777777','apple-b','v1.fixtureIV.fixtureTag.fixtureCiphertext') THEN
   RAISE EXCEPTION 'Unfrozen owner vault write denied';
  END IF;
-END $;
+END $$;
 RESET ROLE;
-DO $ BEGIN
+DO $$ BEGIN
  IF NOT EXISTS(SELECT 1 FROM hoopcheck_apple_private.authorization_vault WHERE owner_id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' AND apple_subject='apple-a' AND encrypted_refresh_token='v1.originalIV.originalTag.originalCiphertext')
  OR (SELECT count(*) FROM hoopcheck_apple_private.authorization_vault)<>2 THEN RAISE EXCEPTION 'Vault owner isolation failed'; END IF;
-END $;
+END $$;
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claims','{"role":"authenticated","sub":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","aal":"aal1","session_id":"55555555-5555-4555-8555-555555555555"}',true);
 DO $$ DECLARE t text;n integer;BEGIN
