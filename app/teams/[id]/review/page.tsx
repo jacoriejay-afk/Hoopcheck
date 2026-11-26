@@ -14,7 +14,7 @@ import { useParams } from "next/navigation";
 
 import { supabase } from "../../../../lib/supabase";
 import { getHoopCheckEntitlements } from "../../../../lib/membership-tier";
-import { webExactSeasonReviewsEnabled,readVerifiedSeasonChoices } from "../../../../lib/career/web-review-season-choices";
+import { webExactSeasonReviewsEnabled,readVerifiedSeasonChoices,createReviewSessionGuard } from "../../../../lib/career/web-review-season-choices";
 
 type Team = {
   id: string;
@@ -153,6 +153,16 @@ export default function TeamReviewPage() {
   useEffect(() => {
     let active=true;
     const controller=new AbortController();
+    const sessionGuard=createReviewSessionGuard(()=>{
+      if(!active)return;
+      active=false;controller.abort();
+      setVerifiedSeasons([]);setVerifiedScope(null);setEligible(false);setPlayerSeason("");
+      setAccountType(null);setIsPaid(false);setLoading(false);
+      setTitle("");setBody("");setAnonymous(false);
+      setCommunication(0);setPayment(0);setHousing(0);setMedicalSupport(0);
+      setCoachingQuality(0);setFacilities(0);setPlayingTimeHonesty(0);
+      setMessage("Your session changed. Please reopen this review form.");
+    });
     if(webExactSeasonReviewsEnabled){setLoading(true);setEligible(false);setVerifiedSeasons([]);setVerifiedScope(null);setPlayerSeason("");setAlreadyReviewed(false);}
     async function loadPage() {
       if (!id) {
@@ -204,10 +214,10 @@ export default function TeamReviewPage() {
       if(webExactSeasonReviewsEnabled){
         try{
           const {data:{session}}=await supabase.auth.getSession();
-          if(!active||session?.user.id!==user.id)throw Error("Session changed.");
+          if(!active||session?.user.id!==user.id||!sessionGuard.observe(user.id))throw Error("Session changed.");
           const seasons=await readVerifiedSeasonChoices(session.access_token,id,"team",controller.signal);
           const {data:after}=await supabase.auth.getSession();
-          if(!active||after.session?.user.id!==user.id)return;
+          if(!active||!sessionGuard.observe(after.session?.user.id)||after.session?.user.id!==user.id)return;
           setVerifiedSeasons(seasons);setVerifiedScope({userId:user.id,teamId:id});setEligible(seasons.length>0);setIsPaid(seasons.length>0);
         }catch{if(active){setEligible(false);setMessage("Verified career seasons are unavailable. Please try again.");}}
         finally{if(active)setLoading(false);}
@@ -280,7 +290,7 @@ export default function TeamReviewPage() {
     }
 
     void loadPage().catch(()=>{if(active){setEligible(false);setMessage("Review access is unavailable. Please try again.");setLoading(false);}});
-    const auth=webExactSeasonReviewsEnabled?supabase.auth.onAuthStateChange((event,session)=>{if(!session||event==="SIGNED_IN"){setVerifiedSeasons([]);setVerifiedScope(null);setEligible(false);setPlayerSeason("");}}):null;
+    const auth=webExactSeasonReviewsEnabled?supabase.auth.onAuthStateChange((_event,session)=>{if(active)sessionGuard.observe(session?.user.id);}):null;
     return()=>{active=false;controller.abort();auth?.data.subscription.unsubscribe();};
   }, [id]);
 
