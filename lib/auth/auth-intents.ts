@@ -82,6 +82,18 @@ export function bindAuthIntents<T extends { signInWithPassword: (...args: never[
     if (session.error || session.data.session?.user.id !== owner || !originals.has(name)) return stale();
     return originals.get(name)!(...args);
   }) });
+  // Capture the intent before an external native identity prompt is opened.
+  // A later sign-out or login invalidates the prompt, even before token exchange.
+  const rawIdToken = client.signInWithIdToken;
+  if (typeof rawIdToken === "function") Object.defineProperty(client, Symbol.for("hoopcheck.id-token-prompt"), { value: () => {
+    const intent = intents.begin();
+    let consumed = false;
+    return (credentials: unknown) => {
+      if (consumed) return Promise.resolve(stale());
+      consumed = true;
+      return enqueue(intent, () => Promise.resolve(rawIdToken.call(auth, credentials)));
+    };
+  } });
   function bind(target: Record<string, unknown>, name: string, startsIntent: boolean) {
     const original = target[name];
     if (typeof original !== "function") return;
@@ -90,7 +102,7 @@ export function bindAuthIntents<T extends { signInWithPassword: (...args: never[
       return enqueue(intent, () => original.apply(target, args));
     };
   }
-  for (const name of ["signInWithPassword", "signUp", "signOut", "setSession", "exchangeCodeForSession", "verifyOtp", "signInWithOAuth"]) bind(client, name, true);
+  for (const name of ["signInWithPassword", "signUp", "signOut", "setSession", "exchangeCodeForSession", "verifyOtp", "signInWithOAuth", "signInWithIdToken"]) bind(client, name, true);
   bind(client, "updateUser", false);
   if (client.mfa && typeof client.mfa === "object") for (const name of ["verify", "challengeAndVerify"]) bind(client.mfa as Record<string, unknown>, name, false);
 }
