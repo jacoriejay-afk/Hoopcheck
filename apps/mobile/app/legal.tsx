@@ -14,7 +14,7 @@ export default function LegalScreen() {
     {policy.content.map((entry, i) => <Text key={i} accessibilityRole={entry.kind === "h2" ? "header" : undefined} style={{ color: t.foreground, fontSize: entry.kind === "h2" ? 19 : 16, lineHeight: entry.kind === "h2" ? 26 : 24, fontWeight: entry.kind === "h2" ? "700" : "400" }}>{entry.kind === "li" ? "• " : ""}{entry.text}</Text>)}
     {(Object.keys(legalDocuments) as LegalDocument[]).filter(other => other !== key).map(other => <Button key={other} secondary onPress={() => router.replace({ pathname: "/legal", params: { document: other } })}>{legalDocuments[other].title}</Button>)}
     <Button secondary onPress={() => router.push("/account/support")}>Help & Support</Button>
-    {key === "privacy" ? <Button secondary onPress={() => router.push({ pathname: "/web", params: { path: "/privacy-center" } })}>Privacy Request Center (website)</Button> : null}
+    {key === "privacy" ? <Button secondary onPress={() => router.push("/account/privacy-center")}>Privacy Request Center</Button> : null}
     {key === "terms" ? <Button secondary onPress={() => router.push({ pathname: "/web", params: { path: "/copyright" } })}>Copyright reporting (website)</Button> : null}
     <Button secondary onPress={() => router.canGoBack() ? router.back() : router.replace("/")}>Back</Button>
   </ScrollView>;
