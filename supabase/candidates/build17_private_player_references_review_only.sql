@@ -2,6 +2,13 @@
 -- Private, revocable consent to discuss basketball experience, not an endorsement.
 begin;
 create schema if not exists private;
+create table private.player_reference_feature_gate (
+ singleton boolean primary key default true check(singleton),
+ enabled boolean not null default false
+);
+insert into private.player_reference_feature_gate(singleton,enabled) values(true,false);
+alter table private.player_reference_feature_gate enable row level security;
+revoke all on private.player_reference_feature_gate from public,anon,authenticated,service_role;
 create table private.player_reference_requests (
  connection_id uuid primary key references public.player_contact_requests(id) on delete cascade,
  requester_id uuid not null references public.profiles(id) on delete cascade,
@@ -31,6 +38,11 @@ declare
 begin
  if actor is null or p_connection_id is null or p_action is null
     or p_action not in ('read','request','accept','decline','revoke') then
+  raise exception 'Reference unavailable' using errcode='42501';
+ end if;
+ if not exists(select 1 from private.player_reference_feature_gate where singleton and enabled)
+    or (exists(select 1 from auth.mfa_factors where user_id=actor and status='verified')
+        and (auth.jwt()->>'aal') is distinct from 'aal2') then
   raise exception 'Reference unavailable' using errcode='42501';
  end if;
  select * into c from public.player_contact_requests
