@@ -30,3 +30,8 @@ test("motion is bounded and icon previews use the original asset", () => {
   assert.ok(ui.includes("reduced ? undefined : FadeIn.duration(motion.fade)"));
   assert.ok(plugin.includes('JSON.stringify(Object.keys(icons).join(" "))'));
 });
+
+test("onboarding uses the existing reduced-motion-aware brand reveal", () => {
+  assert.ok(read("../components/Onboarding.tsx").includes("<BrandLogo animated />"));
+  assert.ok(read("../components/BrandLockup.tsx").includes("animated && !reduced"));
+});
