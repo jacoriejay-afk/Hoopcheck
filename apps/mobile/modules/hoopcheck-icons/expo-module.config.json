@@ -1,4 +1,14 @@
 {
-  "platforms": ["apple"],
-  "apple": { "modules": ["HoopcheckIconsModule"] }
+  "platforms": [
+    "apple"
+  ],
+  "apple": {
+    "modules": [
+      "HoopcheckIconsModule",
+      "HoopcheckPublicLinksModule"
+    ],
+    "appDelegateSubscribers": [
+      "HoopcheckPublicLinkSubscriber"
+    ]
+  }
 }

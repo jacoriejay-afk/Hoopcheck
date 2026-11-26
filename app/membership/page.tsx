@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import HoopLoading from "../../components/HoopLoading";
+import MembershipExitFeedback from "../../components/MembershipExitFeedback";
 import MembershipComparison from "../../components/MembershipComparison";
 import { BILLING_LABELS, PLAN_PRICES } from "../../lib/plan-comparison";
 import { getActiveMembershipTier } from "../../lib/membership-tier";
@@ -123,6 +124,7 @@ function MembershipContent() {
       </> : null}
       {!loading && !userId && !error ? <Link href="/login?returnTo=%2Fmembership" className="btn">Sign in to verify membership</Link> : null}
       <button className="btn dark" disabled={loading || Boolean(busy)} onClick={() => void loadSubscription()}>Refresh membership</button>
+      {process.env.NEXT_PUBLIC_HOOPCHECK_EXIT_FEEDBACK_ENABLED === "true" && !loading && !error && userId && (isActive || billing || appleBillingKnown) ? <MembershipExitFeedback key={userId} uid={userId} /> : null}
       <div className="subscription-legal"><p>Subscriptions renew for the displayed billing period until cancelled through the original provider. Apple purchase and trial terms are confirmed separately in the iPhone app. Taxes may apply.</p><p>By purchasing, you agree to our <Link href="/terms">Terms of Service</Link>, <Link href="/privacy">Privacy Policy</Link> and <Link href="/community-guidelines">Community Guidelines</Link>.</p></div>
     </section>
   </main>;

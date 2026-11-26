@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Button } from "../src/primitives";
+import {PlayerReferencePanel} from "../components/PlayerReferencePanel";
 import { ChatMessageEnter, ChatTypingBasketball, useConfirmedMessageMotion } from "../components/chat/ChatMotion";
 import { HoopCheckLoading } from "../components/HoopCheckLoading";
 import { useEntryTheme } from "../src/theme";
@@ -273,6 +274,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
         </View>
         {selected.status==="pending"&&selected.player_id===userId?<View style={{gap:8}}><Text style={{color:theme.muted}}>Approve this request to unlock messaging.</Text><Button disabled={sending||offline} onPress={()=>void respond("accepted")}>Accept request</Button><Button secondary disabled={sending||offline} onPress={()=>void respond("rejected")}>Decline</Button></View>:null}
         {selected.status==="accepted"?<View style={{gap:8}}>
+          {process.env.EXPO_PUBLIC_HOOPCHECK_PLAYER_REFERENCES_ENABLED==="true"&&userId?<PlayerReferencePanel key={userId+":"+selected.id} userId={userId} connectionId={selected.id} offline={offline}/>:null}
           <ChatTypingBasketball active={motionActive && Boolean(draft.trim()) && !sending} />
           <TextInput accessibilityLabel="Write private HoopChat message" multiline maxLength={2000} value={draft} onChangeText={setDraft} placeholder="Write a message…" placeholderTextColor={theme.muted}
             style={{minHeight:48,maxHeight:120,textAlignVertical:"top",padding:12,backgroundColor:theme.input,color:theme.foreground,borderWidth:1,borderColor:theme.border,borderRadius:theme.radius.control}} />

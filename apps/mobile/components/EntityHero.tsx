@@ -1,3 +1,4 @@
+import { dataConfidence } from "../src/native/dataConfidence";
 import { EntityArtwork } from "./EntityArtwork";
 import { Text, View } from "react-native";
 import { CountryChip } from "./DirectoryIdentity";
@@ -19,6 +20,7 @@ export function EntityHero({ name, country, kind, label, location, path, logoUrl
       </View>
     </View>
     <CountryChip country={country} />
+    <Text style={{color:theme.muted,...theme.type.caption}}>{dataConfidence({kind:"directory-record"}).label} · {dataConfidence({kind:"directory-record"}).detail}</Text>
     {location ? <Text style={{ color: theme.muted, fontSize: 14, lineHeight: 20 }}>{location}</Text> : null}
     <ShareSheet title={name} path={path} />
   </View>;

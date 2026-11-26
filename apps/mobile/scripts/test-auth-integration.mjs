@@ -62,6 +62,7 @@ function screen(path, { state = [], params = {}, segments = [], pathname = "/", 
     if (name.endsWith("/motion/config")) return { motion: { logo: 300, shortFade: 100, splashDeadline: 2000 } };
     if (name.endsWith("/native/telemetry")) return { traceFlow: (_, fn) => fn(), Sentry: { wrap: component => component } };
     if (name.endsWith("/Onboarding")) return { Onboarding: "Onboarding" };
+    if (name.endsWith("/PublicSystemLinks")) return { PublicSystemNavigation: "PublicSystemNavigation" };
     if (name.endsWith("/AppLock")) return { AppLock: "AppLock" };
     if (name.endsWith("/NativePageHeader")) return { NativePageHeader: "NativePageHeader" };
     if (name.endsWith("/TabBar")) return { TabBar: "TabBar" };

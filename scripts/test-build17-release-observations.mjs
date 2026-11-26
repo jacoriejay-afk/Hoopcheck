@@ -67,3 +67,21 @@ test("directory experiment does not change filtered categories or send experimen
  assert.match(page,/visible\.map\(\(category\)/);
  assert.doesNotMatch(page,/analytics_events|trackEvent|fetch\(/);
 });
+
+const foundingSource=readFileSync(new URL("../lib/owner/founding-member.ts",import.meta.url),"utf8");
+const foundingJs=ts.transpileModule(foundingSource,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+const {foundingMemberEligible}=await import("data:text/javascript;base64,"+Buffer.from(foundingJs).toString("base64"));
+test("founding badge uses strict owner-approved past cutoff and verified account creation",()=>{
+ const now=Date.parse("2026-11-26T00:00:00Z");
+ const base={enabled:true,confirmed:true,cutoff:"2026-11-20T00:00:00Z",createdAt:"2026-11-19T12:00:00.123456+00:00",now};
+ assert.equal(foundingMemberEligible(base),true);
+ for(const changes of [{enabled:false},{confirmed:false},{cutoff:undefined},{cutoff:"2026-12-01T00:00:00Z"},{cutoff:"2026-11-31T00:00:00Z"},{createdAt:base.cutoff},{createdAt:"not-a-date"},{now:NaN}])assert.equal(foundingMemberEligible({...base,...changes}),false);
+});
+test("founding badge endpoint checks verified session and does not accept user-supplied identity or cohort",()=>{
+ const page=readFileSync(new URL("../app/api/account/founding-member/route.ts",import.meta.url),"utf8");
+ assert.ok(page.indexOf('HOOPCHECK_FOUNDING_MEMBER_ENABLED!=="true"')<page.indexOf("db.auth.getUser(token)"));
+ assert.match(page,/assuranceForVerifiedUser\(token,user\).required/);
+ assert.match(page,/createdAt:user.created_at/);
+ assert.match(page,/private, no-store/);
+ assert.doesNotMatch(page,/request.json|searchParams|user_metadata|service_role/);
+});

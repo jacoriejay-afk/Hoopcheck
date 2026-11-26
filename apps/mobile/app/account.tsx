@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { FoundingMemberBadge } from "../components/FoundingMemberBadge";
 import { MembershipPreview } from "../components/MembershipPreview";
 import { ProfileAvatar } from "../components/ProfileAvatar";
 import { HoopCheckLoading } from "../components/HoopCheckLoading";
@@ -131,6 +132,7 @@ export default function AccountScreen() {
               <View style={{flex:1,minWidth:0,gap:5}}>
                 <Text numberOfLines={1} style={{color:theme.foreground,fontSize:22,fontWeight:"900"}}>{account.user.displayName || "HoopCheck member"}</Text>
                 <Text style={{color:theme.muted,fontSize:13,textTransform:"capitalize"}}>{role} account</Text>
+                <FoundingMemberBadge key={account.user.id} userId={account.user.id} activeScreen={activeScreen} revision={appearanceRevision}/>
                 <View style={{alignSelf:"flex-start",flexDirection:"row",alignItems:"center",gap:5,paddingHorizontal:8,paddingVertical:4,borderRadius:10,backgroundColor:theme.accentSurface}}><Ionicons name={account.hasPaidMembership?"diamond-outline":"person-outline"} size={13} color={theme.accent}/><Text style={{color:theme.accent,fontWeight:"800",fontSize:11}}>{tier.toUpperCase()} MEMBER</Text></View>
               </View>
             </View>
