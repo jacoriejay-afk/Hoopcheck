@@ -4,6 +4,9 @@ on:
     paths:
       - 'lib/career/claim-input.ts'
       - 'scripts/test-career-claim-input.mjs'
+      - 'lib/career/historical-club-search.ts'
+      - 'app/api/career/historical-clubs/route.ts'
+      - 'scripts/test-historical-career-search.mjs'
       - '.github/workflows/build16-career-input.yml'
 permissions:
   contents: read
@@ -17,4 +20,4 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: node --test scripts/test-career-claim-input.mjs
+      - run: node --test scripts/test-career-claim-input.mjs scripts/test-historical-career-search.mjs
