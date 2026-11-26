@@ -5,6 +5,10 @@ on:
     paths:
       - "supabase/candidates/appstore_storekit_entitlement_coverage.sql"
       - "supabase/tests/appstore_storekit_coverage_fixture.sql"
+      - "supabase/tests/appstore_combined_boundary_fixture.sql"
+      - "supabase/candidates/appstore_apple_authorization_vault.sql"
+      - "supabase/candidates/appstore_deletion_*.sql"
+      - "supabase/migrations/20261118162456_opted_in_mfa_enforcement.sql"
       - "supabase/migrations/20261119043244_storekit_membership_sources.sql"
       - ".github/workflows/appstore-storekit-coverage.yml"
   workflow_dispatch:
@@ -45,5 +49,5 @@ jobs:
           test "$PGHOST" = "127.0.0.1"
           test "$PGDATABASE" = "hoopcheck_storekit_compliance_fixture"
           psql -X -Atqc 'SHOW server_version_num' | grep '^17'
-          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/appstore_storekit_coverage_fixture.sql
+          psql -X -v ON_ERROR_STOP=1 -v combined_rehearsal=true -f supabase/tests/appstore_storekit_coverage_fixture.sql
           echo "Synthetic database only. No real subscriptions, payment events or provider credentials."
