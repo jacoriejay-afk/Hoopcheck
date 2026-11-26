@@ -1,8 +1,8 @@
 import { MembershipPreview } from "../components/MembershipPreview";
 import { Reveal } from "../components/Motion";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { AppState, Linking, ScrollView, Text, View } from "react-native";
-import { useFocusEffect } from "expo-router";
+import { AppState, ScrollView, Text, View } from "react-native";
+import { useFocusEffect, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button, GlassCard } from "../src/primitives";
 import { useEntryTheme } from "../src/theme";
@@ -14,6 +14,7 @@ import type { EffectiveMembership } from "../../../lib/billing/membership";
 import type { PreparedPurchase, StoreProduct } from "../src/native/storekitClient";
 const periods: Record<number, string> = { 1: "month", 6: "6 months", 12: "year" };
 export default function MembershipScreen() {
+  const router = useRouter();
   const theme = useEntryTheme(), store = useStoreKit(), { account, retry } = useNativeAccount();
   const [products, setProducts] = useState<StoreProduct[]>([]), [membership, setMembership] = useState<EffectiveMembership | null>(null);
   const [loading, setLoading] = useState(true), [busy, setBusy] = useState(false), [message, setMessage] = useState(""), [error, setError] = useState("");
@@ -95,8 +96,8 @@ export default function MembershipScreen() {
       <Button secondary disabled={busy || !store.supported || !account} onPress={() => void act(async live => { setPrepared(null); await store.manage(); if (live()) { retry(); await load(); } })}>Manage Apple subscription</Button>
       {membership?.provider === "stripe" ? <Text style={muted}>Your membership is billed through Stripe. Manage it securely on the HoopCheck website; Apple controls do not cancel Stripe billing.</Text> : null}
       <View style={{ flexDirection: "row", gap: 18, flexWrap: "wrap" }}>
-        <Button secondary onPress={() => void Linking.openURL("https://hoopcheck.online/terms").catch(() => setError("Could not open the terms. Try again."))}>Terms of use</Button>
-        <Button secondary onPress={() => void Linking.openURL("https://hoopcheck.online/privacy").catch(() => setError("Could not open privacy policy. Try again."))}>Privacy policy</Button>
+        <Button secondary onPress={() => router.push({pathname:"/legal",params:{document:"terms"}})}>Terms of use</Button>
+        <Button secondary onPress={() => router.push({pathname:"/legal",params:{document:"privacy"}})}>Privacy policy</Button>
       </View>
     </ScrollView>
   </SafeAreaView>;

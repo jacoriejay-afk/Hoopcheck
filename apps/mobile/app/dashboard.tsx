@@ -55,6 +55,8 @@ export default function DashboardScreen() {
 
   async function openAccountLink(path: string) {
     if (path === "/account" || path === "/about") { router.push(path); return; }
+    if (path === "/support") { router.push("/account/support"); return; }
+    if (["/terms", "/privacy", "/community-guidelines"].includes(path)) { router.push({ pathname: "/legal", params: { document: path.slice(1) } }); return; }
     try {
       await Linking.openURL(`https://hoopcheck.online${path}`);
     } catch {
