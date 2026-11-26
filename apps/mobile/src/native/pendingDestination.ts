@@ -24,6 +24,9 @@ export function rememberDestination(path: string) {
       const tab=url.searchParams.get("tab"); if(tab==="activity"||tab==="chat"||tab==="requests")query.set("tab",tab);
     }
     if (url.pathname === "/account/support" && url.searchParams.get("topic")==="scam") query.set("topic","scam");
+    if (url.pathname === "/account/support") {
+      const reel=url.searchParams.get("reportReel"); if(reel&&/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(reel)) query.set("reportReel",reel);
+    }
     if (url.pathname === "/account/policies") {
       const kind=url.searchParams.get("kind"); if(kind==="privacy"||kind==="terms")query.set("kind",kind);
     }

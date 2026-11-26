@@ -82,6 +82,23 @@ export function bindAuthIntents<T extends { signInWithPassword: (...args: never[
     if (session.error || session.data.session?.user.id !== owner || !originals.has(name)) return stale();
     return originals.get(name)!(...args);
   }) });
+  // A recovery form may only update the exact session it originally verified.
+  // Check inside the auth action queue, not in a screen before enqueueing.
+  const originalUpdate = typeof client.updateUser === "function" ? (client.updateUser as (...args: unknown[]) => Promise<unknown>).bind(auth) : null;
+  const originalSignOut = (client.signOut as (...args: unknown[]) => Promise<{ error: unknown }>).bind(auth);
+  Object.defineProperty(client, Symbol.for("hoopcheck.recovery-password"), { value: (owner: string, sessionId: string, password: string) => {
+    const intent = intents.read();
+    return enqueue(intent, async () => {
+      const session = await (client.getSession as () => Promise<{ data: { session: { user: { id: string }; access_token: string } | null }; error: unknown }>).call(auth);
+      let id: unknown;
+      try { id = JSON.parse(atob(session.data.session!.access_token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))).session_id; } catch { return stale(); }
+      if (!sessionId || !originalUpdate || session.error || session.data.session?.user.id !== owner || id !== sessionId || intent !== intents.read()) return stale();
+      const updated = await originalUpdate({ password }) as { error: unknown };
+      if (updated.error || intent !== intents.read()) return updated;
+      const signedOut = await originalSignOut({ scope: "local" });
+      return { error: null, signOutError: signedOut.error };
+    });
+  } });
   function bind(target: Record<string, unknown>, name: string, startsIntent: boolean) {
     const original = target[name];
     if (typeof original !== "function") return;

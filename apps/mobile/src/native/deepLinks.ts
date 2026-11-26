@@ -30,7 +30,13 @@ export function nativeDestination(path: string): string {
     if (url.pathname === "/owner-hq") return "/account/owner-hq";
     if (url.pathname === "/ambassador-hq") return "/account/ambassador-hq";
     if (parts.length === 3 && parts[0] === "teams" && parts[2] === "review" && safeId.test(parts[1])) return `/teams/${parts[1]}/review`;
-    if (url.pathname === "/account/support" || url.pathname === "/support") return "/account/support" + (url.searchParams.get("topic")==="scam" ? "?topic=scam" : "");
+    if (url.pathname === "/support" || url.pathname === "/account/support") {
+      const reel = url.searchParams.get("reportReel");
+      if (reel && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(reel)) return "/account/support?reportReel=" + reel;
+      // Retain specialized website forms until their native equivalents exist.
+      if (["membershipCancellation", "accountCompromised", "agentVerification"].some(key => url.searchParams.get(key) === "1")) return "/web?path=" + encodeURIComponent("/support" + url.search);
+      return "/account/support" + ((url.searchParams.get("topic")==="scam" || url.searchParams.get("scamAlert")==="1") ? "?topic=scam" : "");
+    }
     if (url.pathname === "/privacy" || url.pathname === "/terms" || url.pathname === "/account/policies") {
       const kind = url.pathname === "/terms" || (url.pathname === "/account/policies" && url.searchParams.get("kind") === "terms") ? "terms" : "privacy";
       return "/account/policies?kind=" + kind;
@@ -40,6 +46,12 @@ export function nativeDestination(path: string): string {
       if (parts.length === 3 && safeId.test(parts[2])) return `/team-hub/groups/${parts[2]}`;
     }
     if (url.pathname === "/") return "/";
+    if (url.pathname === "/company") return "/about";
+    if (url.pathname === "/community-guidelines") return "/legal?document=community-guidelines";
+    if (url.pathname === "/legal") {
+      const doc=url.searchParams.get("document");
+      return "/legal?document="+(doc==="terms"||doc==="community-guidelines"?doc:"privacy");
+    }
     if (url.pathname === "/login" && !url.search && !url.hash) return "/sign-in";
     if (url.pathname === "/signup" && !url.search && !url.hash) return "/sign-up";
     if (url.pathname === "/feed/welcome") return "/feed-welcome";
@@ -81,9 +93,15 @@ export function nativeDestination(path: string): string {
       // Invalid percent sequences must not reach the router's legacy decoder.
       const query = new URLSearchParams();
       const code = url.searchParams.get("code");
-      if (code && code.length <= 2048) query.set("code", code);
+      const token = url.searchParams.get("token_hash");
+      if (url.pathname === "/reset-password" && code && token) return "/reset-password?error_code=invalid_link";
+      if (code && code.length <= 2048 && url.searchParams.getAll("code").length === 1) query.set("code", code);
+      if (url.pathname === "/reset-password" && !code && token && token.length <= 2048 && url.searchParams.getAll("token_hash").length === 1 && url.searchParams.getAll("type").length === 1 && url.searchParams.get("type") === "recovery") {
+        query.set("token_hash", token); query.set("type", "recovery");
+      }
+      const fragment = new URLSearchParams(url.hash.slice(1));
       for (const field of ["error", "error_description", "error_code"]) {
-        const value = url.searchParams.get(field);
+        const value = url.searchParams.get(field) ?? fragment.get(field);
         if (value) query.set(field, value.slice(0, 512));
       }
       const serialized = query.toString();

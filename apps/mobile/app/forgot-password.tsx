@@ -1,7 +1,7 @@
 import { GlassCard, Input, Button } from "../src/primitives";
 import { ArenaBrand } from "../components/ArenaBrand";
 import { useEntryTheme, type EntryTheme } from "../src/theme";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from "react-native";
 import { Link } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -12,18 +12,24 @@ export default function ForgotPasswordScreen() {
   const styles = createStyles(theme);
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
+  const inFlight = useRef(false);
+  const lastSent = useRef(0);
 
   async function sendReset() {
+    if (inFlight.current) return;
+    if (Date.now() - lastSent.current < 60000) { Alert.alert("Please wait", "Wait one minute before requesting another recovery email."); return; }
     if (supabaseConfigurationError) { Alert.alert("Setup required", supabaseConfigurationError); return; }
     if (!email.trim()) { Alert.alert("Email required", "Enter the email address associated with your account."); return; }
-    setBusy(true);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { Alert.alert("Invalid email", "Enter a valid email address."); return; }
+    inFlight.current = true; setBusy(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), { redirectTo: "hoopcheck://reset-password" });
       if (error) throw error;
+      lastSent.current = Date.now();
       Alert.alert("Check your email", "If an account exists for that address, password recovery instructions will be sent. Open the recovery link on this device to choose a new password.");
     } catch {
       Alert.alert("Could not request reset", "Please check your details and try again.");
-    } finally { setBusy(false); }
+    } finally { inFlight.current = false; setBusy(false); }
   }
 
   return (

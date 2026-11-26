@@ -60,6 +60,7 @@ export default function DashboardScreen() {
       router.push({ pathname: "/account/policies", params: { kind: path === "/terms" ? "terms" : "privacy" } });
       return;
     }
+    if (path === "/community-guidelines") { router.push({ pathname: "/legal", params: { document: "community-guidelines" } }); return; }
     // Remaining website-only pages go through the explicit browser handoff,
     // not an OS universal link which could reopen this app.
     router.push({ pathname: "/web", params: { path } });

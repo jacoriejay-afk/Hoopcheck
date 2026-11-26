@@ -52,6 +52,10 @@ test("full sign-up and recovery contracts remain intact under new branding", () 
   assert.match(signup, /supabase\.auth\.signUp/);
   assert.match(recover, /resetPasswordForEmail/);
   assert.match(reset, /exchangeCodeForSession/);
-  assert.match(reset, /updateUser/);
+  assert.match(reset, /hoopcheck\.recovery-password/);
+  assert.doesNotMatch(reset, /supabase\.auth\.updateUser/);
+  const guarded=read("../../../lib/auth/auth-intents.ts");
+  assert.match(guarded, /hoopcheck\.recovery-password/);
+  assert.match(guarded, /originalUpdate\(\{ password \}\)/);
   for(const src of [signup,recover,reset]) assert.match(src,/ArenaBrand/);
 });
