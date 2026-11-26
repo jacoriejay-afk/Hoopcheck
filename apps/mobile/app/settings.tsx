@@ -1,3 +1,4 @@
+import { PublicSystemLinksSetting } from "../components/PublicSystemLinks";
 import { AlternateIcons } from "../components/AlternateIcons";
 import { useRef, useState } from "react";
 import { clearPublicCache } from "../src/native/cache";
@@ -77,6 +78,7 @@ export default function Settings() {
       </Pressable>
       {cacheMessage ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ color: theme.foreground }}>{cacheMessage}</Text> : null}
     </View>
+    <PublicSystemLinksSetting />
     <AlternateIcons />
     {error ? <Text accessibilityRole="alert" style={{ color: theme.accent }}>{error}</Text> : null}
   </ScrollView>;
