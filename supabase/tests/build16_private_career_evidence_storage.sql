@@ -56,7 +56,7 @@ end $$;
 reset role;
 
 -- New acceptance guard, installed after the legacy metadata fixtures.
-\\i supabase/candidates/build16_private_career_evidence_scan_guard_review_only.sql
+\i supabase/candidates/build16_private_career_evidence_scan_guard_review_only.sql
 insert into public.player_team_season_claims(id,player_id,team_id,season_start_year,season_end_year) values
  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb3','22222222-2222-2222-2222-222222222222','aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',2023,2024),
  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb4','22222222-2222-2222-2222-222222222222','aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',2024,2025);
