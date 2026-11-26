@@ -89,6 +89,21 @@ begin
  select * into c from public.record_verified_account_deletion_request('DELETE','as_soon_as_possible');
  if c.request_id is null or c.request_id=a.request_id then raise exception 'Wrong request identity'; end if;
  if (select count(*) from public.account_deletion_requests)<>1 then raise exception 'Foreign request readable'; end if;
+ if public.cancel_verified_account_deletion_request(a.request_id) then raise exception 'Foreign request cancelled'; end if;
+ if not public.cancel_verified_account_deletion_request(c.request_id)
+ or not public.cancel_verified_account_deletion_request(c.request_id) then raise exception 'Own cancellation not idempotent'; end if;
+ if not exists(select 1 from public.account_deletion_requests where id=c.request_id and status='cancelled' and cancelled_at is not null)
+ then raise exception 'Cancellation not recorded'; end if;
+
+end $$;
+reset role;
+update public.account_deletion_requests set status='processing' where user_id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+set local role authenticated;
+select set_config('request.jwt.claim.sub','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',true);
+select set_config('request.jwt.claims',current_setting('fixture.a'),true);
+do $$ declare id_to_cancel uuid; begin
+ select id into id_to_cancel from public.account_deletion_requests where user_id=auth.uid();
+ if public.cancel_verified_account_deletion_request(id_to_cancel) then raise exception 'Processing request cancelled'; end if;
 end $$;
 reset role;
 do $$ begin
