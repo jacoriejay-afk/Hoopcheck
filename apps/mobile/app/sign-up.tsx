@@ -42,12 +42,15 @@ function ageAtDate(value: string): number {
 
 export default function SignUpScreen() {
   const { social } = useLocalSearchParams<{ social?: string }>();
+  return social === "1" ? <SocialSignupGate key="social" /> : <SignupForm key="email" />;
+}
+
+function SocialSignupGate() {
   const theme = useEntryTheme();
   const router = useRouter();
   const [identity, setIdentity] = useState<PendingSignup | null>(null);
   const [checking, setChecking] = useState(true);
   useEffect(() => {
-    if (social !== "1") return;
     let active = true;
     let expectedOwner: string | null = null;
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
@@ -70,8 +73,7 @@ export default function SignUpScreen() {
       finally { if (active) setChecking(false); }
     })();
     return () => { active = false; listener.subscription.unsubscribe(); };
-  }, [social]);
-  if (social !== "1") return <SignupForm key="email" />;
+  }, []);
   if (identity) return <SignupForm key={identity.owner} socialIdentity={identity} />;
   return <SafeAreaView style={{ flex: 1, backgroundColor: theme.background, padding: 24, justifyContent: "center", gap: 14 }}>
     <Text style={{ color: theme.foreground }}>{checking ? "Verifying your social account…" : "Sign in again to finish setting up your account."}</Text>
@@ -106,7 +108,7 @@ function SignupForm({ socialIdentity }: { socialIdentity?: PendingSignup }) {
     setErrorMessage("");
     if (supabaseConfigurationError) { setErrorMessage(supabaseConfigurationError); return; }
     if (firstName.trim().length < 2 || lastName.trim().length < 2) { setErrorMessage("Enter your first and last name."); return; }
-    const usernameCheck = socialIdentity ? { valid: /^[a-zA-Z0-9_]{3,20}$/.test(username.trim()) } : await usernameFieldRef.current?.validate();
+    const usernameCheck = socialIdentity ? { valid: /^[a-zA-Z0-9_]{3,20}$/.test(username.trim()), message: "Use 3–20 letters, numbers or underscores." } : await usernameFieldRef.current?.validate();
     if (!usernameCheck?.valid) { setErrorMessage("Username: " + (usernameCheck?.message || "Choose an available username.")); usernameFieldRef.current?.focus(); return; }
     if (!validBirthdate(birthdate)) { setErrorMessage("Enter a valid birthdate in YYYY-MM-DD format."); return; }
     if (ageAtDate(birthdate) < 18) { setErrorMessage("You must be 18 or older to create a HoopCheck account."); return; }
