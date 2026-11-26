@@ -27,6 +27,26 @@ test("owner authorization precedes observation parsing and no client data is col
  assert.match(page,/No valid release observations supplied/);
 });
 
+const activationSource=readFileSync(new URL("../lib/owner/activation-diagnostics.ts",import.meta.url),"utf8");
+const activationJs=ts.transpileModule(activationSource,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+const {activationWindow,aggregateWebActivation}=await import("data:text/javascript;base64,"+Buffer.from(activationJs).toString("base64"));
+test("activation uses a mature cohort, distinct profiles and first-week research page views",()=>{
+ const w=activationWindow(Date.parse("2026-11-26T16:00:00Z"));assert.equal(w.start,"2026-11-12T00:00:00.000Z");assert.equal(w.end,"2026-11-19T00:00:00.000Z");
+ const profiles=Array.from({length:25},(_,i)=>({id:String(i),created_at:"2026-11-13T12:00:00Z"}));
+ const events=profiles.slice(0,12).map(p=>({user_id:p.id,path:"/pre-sign",created_at:"2026-11-14T12:00:00Z"}));
+ events.push(events[0],{user_id:"12",path:"/pre-sign",created_at:"2026-11-20T12:00:00Z"},{user_id:"13",path:"/login",created_at:"2026-11-14T12:00:00Z"},{user_id:"14",path:"/pre-sign",created_at:"2026-11-12T12:00:00Z"});
+ assert.deepEqual(aggregateWebActivation(profiles,events),{profiles:25,observed:12});
+ assert.deepEqual(aggregateWebActivation(profiles,[]),{profiles:25,observed:null});
+ assert.equal(aggregateWebActivation(profiles.slice(0,9),events),null);
+ assert.equal(aggregateWebActivation([...profiles,profiles[0]],events),null);
+});
+test("activation reporting is owner-only, disabled by default and bounded",()=>{
+ const page=readFileSync(new URL("../app/owner-hq/activation/page.tsx",import.meta.url),"utf8"),reader=readFileSync(new URL("../lib/owner/read-activation-diagnostics.ts",import.meta.url),"utf8");
+ assert.ok(page.indexOf('await requireAmbassadorSession("/owner-hq/activation",true)')<page.indexOf("await readActivationDiagnostics()"));
+ assert.ok(reader.indexOf('process.env.HOOPCHECK_ACTIVATION_DIAGNOSTICS_ENABLED!=="true"')<reader.indexOf("const db=ambassadorDb()"));
+ assert.match(reader,/limit\(perBatchLimit\+1\)/);assert.match(page,/not a verified activation event/);
+});
+
 const directoryExperimentSource=readFileSync(new URL("../lib/directory-layout-experiment.ts",import.meta.url),"utf8");
 const directoryExperimentJs=ts.transpileModule(directoryExperimentSource,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
 const {assignDirectoryVariant,effectiveDirectoryVariant}=await import("data:text/javascript;base64,"+Buffer.from(directoryExperimentJs).toString("base64"));
