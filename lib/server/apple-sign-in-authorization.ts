@@ -4,6 +4,7 @@ import { createCipheriv, createDecipheriv, createHash, createPrivateKey, createP
 const APPLE = "https://appleid.apple.com";
 const CLIENT_ID = "online.hoopcheck.app";
 type AppleConfig = { teamId: string; keyId: string; privateKey: string };
+export type AppleJwk = JsonWebKey & { kid?: string; alg?: string; use?: string };
 type TokenClaims = { sub: string; nonce?: string; iss: string; aud: string; exp: number; iat: number };
 const encoded = (value: unknown) => Buffer.from(JSON.stringify(value)).toString("base64url");
 const parse = (part: string): Record<string, unknown> => JSON.parse(Buffer.from(part, "base64url").toString("utf8"));
@@ -14,7 +15,7 @@ function checkedSecret(config: AppleConfig, now: number) {
   const unsigned = encoded({ alg: "ES256", kid: config.keyId }) + "." + encoded({ iss: config.teamId, iat: now, exp: now + 300, aud: APPLE, sub: CLIENT_ID });
   return unsigned + "." + sign("sha256", Buffer.from(unsigned), { key, dsaEncoding: "ieee-p1363" }).toString("base64url");
 }
-export function verifyAppleIdentity(token: string, keys: JsonWebKey[], expectedSubject: string, hashedNonce: string | undefined, now = Math.floor(Date.now() / 1000)): TokenClaims {
+export function verifyAppleIdentity(token: string, keys: AppleJwk[], expectedSubject: string, hashedNonce: string | undefined, now = Math.floor(Date.now() / 1000)): TokenClaims {
   if (!token || token.length > 16000 || !expectedSubject) throw Error("Invalid Apple identity.");
   const parts = token.split(".");
   if (parts.length !== 3 || parts.some(part => !/^[A-Za-z0-9_-]+$/.test(part))) throw Error("Invalid Apple identity.");
@@ -46,7 +47,7 @@ async function postApple(path: "/auth/token" | "/auth/revoke", values: Record<st
 
 // Caller must establish the owner and Apple subject using Auth.getUser on
 // the exact bearer token and verified provider identity, never email matching.
-export async function exchangeAppleAuthorization(input: { code: string; identityToken: string; rawNonce: string; subject: string }, keys: JsonWebKey[], config: AppleConfig, request: typeof fetch = fetch) {
+export async function exchangeAppleAuthorization(input: { code: string; identityToken: string; rawNonce: string; subject: string }, keys: AppleJwk[], config: AppleConfig, request: typeof fetch = fetch) {
   if (!/^[a-f0-9]{64}$/.test(input.rawNonce) || !input.code || input.code.length > 4096) throw Error("Invalid Apple authorization.");
   const nonce = createHash("sha256").update(input.rawNonce).digest("hex");
   verifyAppleIdentity(input.identityToken, keys, input.subject, nonce);
