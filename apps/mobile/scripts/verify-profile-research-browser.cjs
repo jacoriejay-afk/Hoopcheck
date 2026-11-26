@@ -23,6 +23,7 @@ async function verify(browser,theme,role){
   if(url.hostname==='fixture.supabase.co'){
    const table=url.pathname.split('/').pop();
    if(url.pathname==='/auth/v1/user')return json(user);
+   if(table==='user_blocks'){assert.equal(role,'player');assert.equal(req.method(),'GET');assert.equal(req.headers().authorization,'Bearer '+token);assert.equal(url.searchParams.get('blocker_id'),'eq.'+uid);assert.equal(url.searchParams.get('blocked_id'),'eq.'+player);assert.equal(url.searchParams.get('select'),'blocked_id');return json([]);}
    if(table==='profiles'){
     assert.equal(url.searchParams.get('id'),'eq.'+uid,'Account avatar query must stay scoped to the signed-in owner');
     assert.equal(url.searchParams.get('select'),'avatar_url,avatar_moderation_status','Avatar query must not expand private profile fields');

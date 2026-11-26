@@ -108,6 +108,15 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
   const draft=member&&channel&&draftState?.channelId===channel.id?draftState.value:"";
   function setDraft(value:string) {setDraftState(value&&channel?{channelId:channel.id,value}:null);}
   const managing=editing&&editingGroupId===selected?.id;
+  const safetyToken=useCallback(async function safetyToken() {
+    await requireOnline();
+    const session=await readWithDeadline(()=>supabase.auth.getSession());
+    if(session.error||session.data.session?.user.id!==userId)throw Error("Sign in again.");
+    const token=session.data.session.access_token;
+    const verified=await readWithDeadline(()=>supabase.auth.getUser(token));
+    if(verified.error||verified.data.user?.id!==userId)throw Error("Sign in again.");
+    return token;
+  },[userId]);
   useEffect(()=>{
     if(!userId||offline||!member||!channel?.id){setPostSnapshot(null);return;}
     let alive=true;const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
@@ -128,7 +137,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
     }
     void loadPosts();
     return()=>{alive=false;clearTimeout(timer);controller.abort();};
-  },[userId,offline,member,channel?.id,revision]);
+  },[userId,offline,member,channel?.id,revision,safetyToken]);
 
   async function join() {
     if(!selected||!userId||offline||busy)return;
@@ -250,15 +259,6 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
       setDraft("");setRevision(value=>value+1);
     }catch(failure){setError(failure instanceof Error?failure.message:"Message was not submitted.");}
     finally{setBusy(false);}
-  }
-  async function safetyToken() {
-    await requireOnline();
-    const session=await readWithDeadline(()=>supabase.auth.getSession());
-    if(session.error||session.data.session?.user.id!==userId)throw Error("Sign in again.");
-    const token=session.data.session.access_token;
-    const verified=await readWithDeadline(()=>supabase.auth.getUser(token));
-    if(verified.error||verified.data.user?.id!==userId)throw Error("Sign in again.");
-    return token;
   }
   async function report(item:Post,reason:string) {
     if(!userId||offline||busy||!member||!posts.some(post=>post.id===item.id))return;
