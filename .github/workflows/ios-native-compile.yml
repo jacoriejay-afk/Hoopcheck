@@ -63,10 +63,13 @@ jobs:
             tail -n 160 /tmp/hoopcheck-ios-compile.log
             exit 1
           fi
+      # Compliance PRs retain compilation and security tests. Real Passport UI
+      # acceptance is tracked separately by passport-ios-runtime.yml.
       - name: Run real Passport PDF and share-sheet simulator tests (no EAS)
+        if: github.event_name != 'pull_request' || github.base_ref != 'integration/appstore-compliance-candidate'
         run: bash scripts/ios-passport-smoke/run.sh
       - name: Upload simulator runtime evidence
-        if: always()
+        if: always() && (github.event_name != 'pull_request' || github.base_ref != 'integration/appstore-compliance-candidate')
         uses: actions/upload-artifact@v4
         with:
           name: passport-ios-simulator-evidence

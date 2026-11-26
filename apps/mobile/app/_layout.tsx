@@ -132,6 +132,7 @@ function RootLayout() {
         <Stack.Screen name="account" options={{ headerShown: false }} />
         <Stack.Screen name="membership" options={{ title: "Membership" }} />
         <Stack.Screen name="account/edit" options={{ title: "Edit profile" }} />
+        <Stack.Screen name="account/delete" options={{ title: "Delete account" }} />
         <Stack.Screen name="account/security" options={{ title: "Account security" }} />
         <Stack.Screen name="account/owner-hq" options={{ title: "Owner HQ" }} />
         <Stack.Screen name="account/ambassador-hq" options={{ title: "Ambassador HQ" }} />
