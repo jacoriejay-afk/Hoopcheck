@@ -5,7 +5,7 @@ export function rememberDestination(path: string) {
     const url = new URL(path, "https://hoopcheck.online");
     if (url.origin !== "https://hoopcheck.online" || url.username || url.password) return;
     const root = /^\/(fan-live|notifications|hoopgroups|connections|feed|fan-feed|feed-welcome|reels|account|search|teams|womens|leagues|players|coaches|dashboard|settings|membership|messages|choose-username)$/;
-    const account = /^\/account\/(edit|security|support|career-history|network|owner-hq|ambassador-hq)$/;
+    const account = /^\/account\/(edit|security|support|career-history|network|owner-hq|ambassador-hq|policies)$/;
     const entity = /^\/(teams|womens|leagues|players|coaches)\/[A-Za-z0-9_-]{1,100}$/;
     const nested = /^\/(?:team-hub\/groups(?:\/[A-Za-z0-9_-]{1,100})?|womens\/leagues\/[A-Za-z0-9_-]{1,100}|teams\/[A-Za-z0-9_-]{1,100}\/review)$/;
     if (![root,account,entity,nested].some(pattern=>pattern.test(url.pathname))) return;
@@ -24,6 +24,9 @@ export function rememberDestination(path: string) {
       const tab=url.searchParams.get("tab"); if(tab==="activity"||tab==="chat"||tab==="requests")query.set("tab",tab);
     }
     if (url.pathname === "/account/support" && url.searchParams.get("topic")==="scam") query.set("topic","scam");
+    if (url.pathname === "/account/policies") {
+      const kind=url.searchParams.get("kind"); if(kind==="privacy"||kind==="terms")query.set("kind",kind);
+    }
     if (url.pathname === "/account/network") {
       const kind=url.searchParams.get("kind"); if(kind==="agents"||kind==="creators"||kind==="safety")query.set("kind",kind);
     }

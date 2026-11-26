@@ -30,7 +30,11 @@ export function nativeDestination(path: string): string {
     if (url.pathname === "/owner-hq") return "/account/owner-hq";
     if (url.pathname === "/ambassador-hq") return "/account/ambassador-hq";
     if (parts.length === 3 && parts[0] === "teams" && parts[2] === "review" && safeId.test(parts[1])) return `/teams/${parts[1]}/review`;
-    if (url.pathname === "/account/support") return "/account/support" + (url.searchParams.get("topic")==="scam" ? "?topic=scam" : "");
+    if (url.pathname === "/account/support" || url.pathname === "/support") return "/account/support" + (url.searchParams.get("topic")==="scam" ? "?topic=scam" : "");
+    if (url.pathname === "/privacy" || url.pathname === "/terms" || url.pathname === "/account/policies") {
+      const kind = url.pathname === "/terms" || (url.pathname === "/account/policies" && url.searchParams.get("kind") === "terms") ? "terms" : "privacy";
+      return "/account/policies?kind=" + kind;
+    }
     if (parts[0] === "team-hub" && parts[1] === "groups") {
       if (parts.length === 2) return "/team-hub/groups";
       if (parts.length === 3 && safeId.test(parts[2])) return `/team-hub/groups/${parts[2]}`;

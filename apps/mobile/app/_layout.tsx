@@ -67,7 +67,9 @@ function RootLayout() {
   }, [sessionReady, fontsLoaded, fontError]);
 
   useEffect(() => {
-    if (!sessionReady || segments[0] === "about") return;
+    // The policy screen contains only bundled public documents, like About.
+    // All other account routes retain the existing session and MFA gates.
+    if (!sessionReady || segments[0] === "about" || pathname === "/account/policies") return;
     const currentRoute = segments[0] ?? "";
     const inAppArea = ["dashboard", "team-hub", "fan-live", "notifications", "messages", "feed-welcome", "hoopgroups", "feed", "fan-feed", "reels", "account", "search", "teams", "womens", "leagues", "players", "coaches", "choose-username", "settings", "membership"].includes(currentRoute);
     if (["web", "sign-in", "sign-up"].includes(currentRoute)) return;

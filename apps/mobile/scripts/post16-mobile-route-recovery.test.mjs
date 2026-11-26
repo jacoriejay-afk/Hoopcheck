@@ -18,7 +18,7 @@ test("existing native destinations do not fall through to website", () => {
   assert.equal(nativeDestination("/ambassador-hq"), "/account/ambassador-hq");
   assert.equal(nativeDestination("https://evil.test/messages"), "/");
   assert.equal(nativeDestination("/referral/TEST"), "/web?path=%2Freferral%2FTEST");
-  assert.equal(nativeDestination("/privacy"), "/web?path=%2Fprivacy");
+  assert.equal(nativeDestination("/privacy"), "/account/policies?kind=privacy");
 });
 test("sign-in return path admits existing protected screens only", () => {
   for (const path of ["/messages","/feed-welcome","/account/network?kind=creators","/account/owner-hq","/account/career-history","/teams/team-1/review","/team-hub/groups/team-1","/choose-username"]) {
@@ -45,4 +45,20 @@ test("plain legacy website paths map to native routes without consuming auth or 
   assert.equal(nativeDestination("/feed/welcome"),"/feed-welcome");
   assert.equal(nativeDestination("/live-games?side=womens"),"/fan-live?side=womens");
   assert.equal(nativeDestination("/signup?ref=TEST"),"/web?path=%2Fsignup%3Fref%3DTEST");
+});
+
+test("merged native policy and support screens use canonical native destinations",()=>{
+  assert.ok(existsSync(new URL("../app/account/policies.tsx",import.meta.url)));
+  assert.equal(nativeDestination("/terms"),"/account/policies?kind=terms");
+  assert.equal(nativeDestination("/account/policies?kind=terms&token=fixture"),"/account/policies?kind=terms");
+  assert.equal(nativeDestination("/support?topic=scam"),"/account/support?topic=scam");
+  rememberDestination("/account/policies?kind=terms&token=fixture");
+  assert.equal(takeDestination(),"/account/policies?kind=terms");
+  const home=readFileSync(new URL("../app/dashboard.tsx",import.meta.url),"utf8");
+  assert.match(home,/pathname: "\/account\/policies"/);
+  assert.match(home,/router\.push\("\/account\/support"\)/);
+  assert.doesNotMatch(home,/Linking\.openURL/);
+  const layout=readFileSync(new URL("../app/_layout.tsx",import.meta.url),"utf8");
+  assert.match(layout,/pathname === "\/account\/policies"\) return;/);
+  assert.match(layout,/!signedIn && \(inAppArea \|\| designProtected\)/);
 });

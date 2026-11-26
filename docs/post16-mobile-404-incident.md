@@ -6,3 +6,6 @@ Acceptance: reproduce on installed device (screen and exact route, no credential
 
 ## Follow-up: service compatibility and recovery
 Account bootstrap now distinguishes missing HTTP endpoint (404) from ordinary session or verification errors; provider remains fail-closed and ignores stale generation errors. Career and status callers explicitly report missing service without parsing HTML error bodies. Existing StoreKit request already rejects 404 without acknowledging a transaction; do not replace this with a permissive fallback. Plain /login, /signup, /feed/welcome and /live-games aliases now navigate to native screens; parameterized signup/login retain website handling. Added offline 404 regression fixtures. This does not activate unavailable services or repair the deployed backend.
+
+## Reconciled settings and safety routes
+Following merge of #1078 and #1079, the native legal document screen is now present. Canonical privacy/terms links map to this static public screen, including when signed out; account/session/MFA gates elsewhere are unchanged. Dashboard support, privacy and terms no longer send users to the website. Remaining website-only links use the explicit browser handoff instead of reopening universal links through the OS. New regressions cover the native policy/support mapping and retention of protected account routing.
