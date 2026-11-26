@@ -48,7 +48,7 @@ function screen(path, { state = [], params = {}, segments = [], pathname = "/", 
     if (name.endsWith("/native/pendingDestination")) return { takeDestination: () => pendingDestination, rememberDestination: value => calls.remembered.push(value) };
     if (name.endsWith("/native/careerClaims")) return { nativeCareerClaimsEnabled: careerEnabled };
     if (name.endsWith("/native/careerSignup")) return compile("src/native/careerSignup.ts", require);
-    if (name === "@react-native-async-storage/async-storage") return { getItem: async key => careerStorage.get(key) ?? null, setItem: async (key, value) => { careerStorage.set(key, value); }, removeItem: async key => { careerStorage.delete(key); } };
+    if (name === "@react-native-async-storage/async-storage") return { __esModule: true, default: { getItem: async key => careerStorage.get(key) ?? null, setItem: async (key, value) => { careerStorage.set(key, value); }, removeItem: async key => { careerStorage.delete(key); } } };
     if (name === "react-native-gesture-handler") return { GestureHandlerRootView: "GestureHandlerRootView" };
     if (name === "@gorhom/bottom-sheet") return { BottomSheetModalProvider: "BottomSheetModalProvider" };
     if (name === "expo-splash-screen") return { preventAutoHideAsync: async () => {}, setOptions: () => {}, hideAsync: async () => {} };
