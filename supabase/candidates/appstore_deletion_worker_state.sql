@@ -55,8 +55,8 @@ begin
   from public.account_deletion_requests r
   join hoopcheck_deletion_private.worker_state w on w.request_id=r.id
   join hoopcheck_deletion_private.worker_config c on c.singleton and c.worker_enabled and c.policy_version=w.policy_version
-  where r.status in ('pending','processing','failed') and r.scheduled_for<=now()
-    and w.retry_after<=now() and (w.lease_until is null or w.lease_until<=now())
+  where r.status in ('pending','processing','failed') and r.scheduled_for<=pg_catalog.clock_timestamp()
+    and w.retry_after<=pg_catalog.clock_timestamp() and (w.lease_until is null or w.lease_until<=pg_catalog.clock_timestamp())
   order by r.scheduled_for,r.id
   limit 1 for update of r,w skip locked;
   if not found then return; end if;
@@ -64,7 +64,7 @@ begin
     or exists(select 1 from hoopcheck_deletion_private.worker_receipts v where v.request_id=rid and v.step_number>=pos)
   then raise exception 'Deletion checkpoint sequence invalid'; end if;
   f:=gen_random_uuid();
-  update hoopcheck_deletion_private.worker_state w set fence=f,lease_until=now()+interval '5 minutes',failure_code=null where w.request_id=rid;
+  update hoopcheck_deletion_private.worker_state w set fence=f,lease_until=pg_catalog.clock_timestamp()+interval '5 minutes',failure_code=null where w.request_id=rid;
   update public.account_deletion_requests r set status='processing',updated_at=now() where r.id=rid;
   return query select rid,owner,f,version,coalesce((select array_agg((hoopcheck_deletion_private.step_names())[v.step_number] order by v.step_number) from hoopcheck_deletion_private.worker_receipts v where v.request_id=rid),array[]::text[]);
 end $$;
@@ -82,7 +82,7 @@ create or replace function hoopcheck_deletion_private.assert_account_deletion_wo
 returns boolean language sql security definer set search_path='' as $$
 select exists(select 1 from hoopcheck_deletion_private.worker_state w join public.account_deletion_requests r on r.id=w.request_id
  join hoopcheck_deletion_private.worker_config c on c.singleton and c.worker_enabled and c.policy_version=w.policy_version
- where w.request_id=p_request and r.user_id=p_owner and r.status='processing' and w.fence=p_fence and w.lease_until>now()
+ where w.request_id=p_request and r.user_id=p_owner and r.status='processing' and w.fence=p_fence and w.lease_until>pg_catalog.clock_timestamp()
  and (select count(*) from hoopcheck_deletion_private.worker_receipts v where v.request_id=w.request_id)=w.next_step-1
  and not exists(select 1 from hoopcheck_deletion_private.worker_receipts v where v.request_id=w.request_id and v.step_number>=w.next_step))
 $$;
@@ -104,7 +104,7 @@ begin
   if expected_step is null or p_receipt is null or p_receipt !~ '^[A-Za-z0-9_-]{1,128}$' then return false; end if;
   select w.next_step into pos from hoopcheck_deletion_private.worker_state w
     join public.account_deletion_requests r on r.id=w.request_id
-    where w.request_id=p_request and r.user_id=p_owner and r.status='processing' and w.fence=p_fence and w.lease_until>now()
+    where w.request_id=p_request and r.user_id=p_owner and r.status='processing' and w.fence=p_fence and w.lease_until>pg_catalog.clock_timestamp()
     for update of r,w;
   if not found or not public.assert_account_deletion_worker(p_request,p_owner,p_fence) then return false; end if;
   if expected_step<pos then
@@ -112,7 +112,7 @@ begin
   end if;
   if expected_step<>pos then return false; end if;
   insert into hoopcheck_deletion_private.worker_receipts(request_id,step_number,receipt) values(p_request,pos,p_receipt);
-  update hoopcheck_deletion_private.worker_state w set next_step=pos+1,lease_until=now()+interval '5 minutes' where w.request_id=p_request;
+  update hoopcheck_deletion_private.worker_state w set next_step=pos+1,lease_until=pg_catalog.clock_timestamp()+interval '5 minutes' where w.request_id=p_request;
   return true;
 end $$;
 revoke all on function hoopcheck_deletion_private.checkpoint_account_deletion_worker(uuid,uuid,uuid,text,text) from public,anon,authenticated,service_role;
@@ -130,7 +130,7 @@ returns boolean language plpgsql security definer set search_path='' as $$
 declare pos integer;
 begin
   select w.next_step into pos from hoopcheck_deletion_private.worker_state w join public.account_deletion_requests r on r.id=w.request_id
-    where w.request_id=p_request and r.user_id=p_owner and r.status='processing' and w.fence=p_fence and w.lease_until>now()
+    where w.request_id=p_request and r.user_id=p_owner and r.status='processing' and w.fence=p_fence and w.lease_until>pg_catalog.clock_timestamp()
     for update of r,w;
   if not found or pos<>13 or not public.assert_account_deletion_worker(p_request,p_owner,p_fence) then return false; end if;
   if (select count(*) from hoopcheck_deletion_private.worker_receipts where request_id=p_request)<>12 then return false; end if;
@@ -153,11 +153,11 @@ returns boolean language plpgsql security definer set search_path='' as $$
 begin
   if p_code is null or p_code not in ('step_not_confirmed','invalid_checkpoint') then return false; end if;
   perform 1 from hoopcheck_deletion_private.worker_state w join public.account_deletion_requests r on r.id=w.request_id
-    where w.request_id=p_request and r.user_id=p_owner and r.status='processing' and w.fence=p_fence and w.lease_until>now()
+    where w.request_id=p_request and r.user_id=p_owner and r.status='processing' and w.fence=p_fence and w.lease_until>pg_catalog.clock_timestamp()
     for update of r,w;
   if not found or not public.assert_account_deletion_worker(p_request,p_owner,p_fence) then return false; end if;
   update public.account_deletion_requests r set status='failed',updated_at=now() where r.id=p_request;
-  update hoopcheck_deletion_private.worker_state w set fence=null,lease_until=null,retry_after=now()+interval '15 minutes',failure_code=p_code where w.request_id=p_request;
+  update hoopcheck_deletion_private.worker_state w set fence=null,lease_until=null,retry_after=pg_catalog.clock_timestamp()+interval '15 minutes',failure_code=p_code where w.request_id=p_request;
   return true;
 end $$;
 revoke all on function hoopcheck_deletion_private.fail_account_deletion_worker(uuid,uuid,uuid,text) from public,anon,authenticated,service_role;
