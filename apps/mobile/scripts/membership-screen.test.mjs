@@ -3,13 +3,13 @@ globalThis.IS_REACT_ACT_ENVIRONMENT=true;const require=createRequire(import.meta
 const deferred=()=>{let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no;});return{promise,resolve,reject};};
 const product={id:'hoopcheck.pro.monthly',title:'Pro',displayPrice:'5,99 €',price:'5.99',currency:'EUR',groupID:'8000',months:1,trialDays:7,appleIntroEligible:true};
 const words=tree=>{const text=value=>value==null?"":typeof value==="string"?value:Array.isArray(value)?value.map(text).join(""):text(value.children);return text(tree.toJSON());};
-function fixture({theme='light',role='player',eligibility='eligible',restoreError=false,preparePending,purchasePending,catalogResponses}={}){
+function fixture({theme='light',role='player',eligibility='eligible',restoreError=false,preparePending,purchasePending,catalogResponses,exitFeedback=false}={}){
  let background;const calls=[];const state={security:{owner,phase:'ready'},account:{user:{id:owner,accountType:role},tier:'free',hasPaidMembership:false}};
  const subscription={plan:'pro',status:'active',access_status:'pro',provider:'apple',current_period_end:'2099-01-01T00:00:00Z',cancel_at_period_end:false,billing_interval:'month'};
  const store={supported:true,membership:async()=>subscription,catalog:async()=>catalogResponses?.shift()??({products:role==='fan'?[]:[product],canPurchase:role!=='fan',reason:'No new fan products'}),prepare:async value=>preparePending?.promise??{product:value,hasTrial:eligibility==='eligible',trialEligibility:eligibility,owner},purchase:async value=>{calls.push(['purchase',value]);return purchasePending?.promise??'pending';},restore:async()=>{calls.push(['restore']);if(restoreError)throw Error('Restore could not be verified. Try again.');return{restored:1,foreign:0,failed:0};},manage:async()=>{calls.push(['manage']);}};
  const color=theme==='dark'?'#101010':'#ffffff';const exports={};const code=ts.transpileModule(readFileSync(new URL('../app/membership.tsx',import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText;
- const stubs={'../components/MembershipPreview':{MembershipPreview:'MembershipPreview'},'../components/Motion':{Reveal:'Reveal'},'react-native':{AppState:{addEventListener:(_,fn)=>{background=fn;return{remove(){}};}},Linking:{openURL:async()=>{}},ScrollView:'ScrollView',Text:'Text',View:'View'},'expo-router':{useFocusEffect:callback=>React.useEffect(callback,[callback])},'react-native-safe-area-context':{SafeAreaView:'SafeAreaView'},'../src/primitives':{Button:'Button',GlassCard:'GlassCard'},'../src/theme':{useEntryTheme:()=>({background:color,foreground:theme==='dark'?'#ffffff':'#101010',muted:'#777777'})},'../src/native/useNativeAccount':{useNativeAccount:()=>({account:state.account,retry:()=>calls.push(['refresh'])})},'../src/native/mfa':{useMfaSession:()=>state.security},'../src/native/storekit':{useStoreKit:()=>store},'../../../lib/billing/apple-products':{appleProduct:()=>({plan:'pro'})}};
- vm.runInNewContext(code,{exports,Date,Error,require:id=>Object.hasOwn(stubs,id)?stubs[id]:require(id)});
+ const stubs={'../components/MembershipExitFeedback':{MembershipExitFeedback:'MembershipExitFeedback'},'../components/MembershipPreview':{MembershipPreview:'MembershipPreview'},'../components/Motion':{Reveal:'Reveal'},'react-native':{AppState:{addEventListener:(_,fn)=>{background=fn;return{remove(){}};}},Linking:{openURL:async()=>{}},ScrollView:'ScrollView',Text:'Text',View:'View'},'expo-router':{useFocusEffect:callback=>React.useEffect(callback,[callback])},'react-native-safe-area-context':{SafeAreaView:'SafeAreaView'},'../src/primitives':{Button:'Button',GlassCard:'GlassCard'},'../src/theme':{useEntryTheme:()=>({background:color,foreground:theme==='dark'?'#ffffff':'#101010',muted:'#777777'})},'../src/native/useNativeAccount':{useNativeAccount:()=>({account:state.account,retry:()=>calls.push(['refresh'])})},'../src/native/mfa':{useMfaSession:()=>state.security},'../src/native/storekit':{useStoreKit:()=>store},'../../../lib/billing/apple-products':{appleProduct:()=>({plan:'pro'})}};
+ vm.runInNewContext(code,{exports,Date,Error,process:{env:{EXPO_PUBLIC_HOOPCHECK_EXIT_FEEDBACK_ENABLED:exitFeedback?'true':'false'}},require:id=>Object.hasOwn(stubs,id)?stubs[id]:require(id)});
  return{Screen:exports.default,state,calls,background:value=>background(value),color};
 }
 async function render(f){let tree;await act(async()=>{tree=create(React.createElement(f.Screen));});return tree;}
@@ -39,6 +39,16 @@ test('membership refresh clears a stale disabled notice in both themes',async()=
   assert.match(words(tree),/Purchases paused/);
   await click(tree,'Refresh membership');
   assert.doesNotMatch(words(tree),/Purchases paused/);assert.match(words(tree),/Review Pro/);
+  await act(async()=>tree.unmount());
+ }
+});
+
+test('optional exit feedback cannot replace existing subscription controls',async()=>{
+ for(const exitFeedback of [false,true]){
+  const f=fixture({exitFeedback}),tree=await render(f);
+  assert.equal(tree.root.findAllByType('MembershipExitFeedback').length,exitFeedback?1:0);
+  assert.match(words(tree),/Manage Apple subscription/);assert.match(words(tree),/Restore purchases/);
+  await click(tree,'Manage Apple subscription');assert.ok(f.calls.some(c=>c[0]==='manage'));
   await act(async()=>tree.unmount());
  }
 });
