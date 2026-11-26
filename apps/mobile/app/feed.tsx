@@ -95,15 +95,26 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
   const [blocksVersion, setBlocksVersion] = useState(0);
   const [blockedCreators, setBlockedCreators] = useState<{ owner: string; ids: string[]; ready: boolean; failed: boolean }>({ owner: "", ids: [], ready: false, failed: false });
   useEffect(() => {
-    if (!uid || !canRead) { setBlockedCreators({ owner: "", ids: [], ready: false, failed: false }); return; }
+    if (!uid || !canRead || !focused) { setBlockedCreators({ owner: "", ids: [], ready: false, failed: false }); return; }
     let alive = true;
+    const controller = new AbortController();
+    const deadline = setTimeout(() => controller.abort(), 12000);
     setBlockedCreators({ owner: uid, ids: [], ready: false, failed: false });
-    void Promise.resolve(supabase.from("user_blocks").select("blocked_id").eq("blocker_id", uid).limit(500))
-      .then(({ data, error }) => {
-        if (alive) setBlockedCreators({ owner: uid, ids: error ? [] : (data || []).map(row => row.blocked_id), ready: true, failed: Boolean(error) });
-      }).catch(() => { if (alive) setBlockedCreators({ owner: uid, ids: [], ready: true, failed: true }); });
-    return () => { alive = false; };
-  }, [uid, canRead, blocksVersion]);
+    async function loadBlocks() {
+      try {
+        const { data: session, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError || session.session?.user.id !== uid || !alive || controller.signal.aborted) throw new Error("Verify your account");
+        const { data, error } = await supabase.from("user_blocks").select("blocked_id").eq("blocker_id", uid).limit(501)
+          .setHeader("Authorization", `Bearer ${session.session.access_token}`).abortSignal(controller.signal);
+        if (error || !Array.isArray(data) || data.length > 500 || data.some(row => !isFeedId(row.blocked_id))) throw new Error("Block list unavailable");
+        if (alive && !controller.signal.aborted && viewer.current.uid === uid) setBlockedCreators({ owner: uid!, ids: data.map(row => row.blocked_id), ready: true, failed: false });
+        else if (alive && viewer.current.uid === uid) setBlockedCreators({ owner: uid!, ids: [], ready: true, failed: true });
+      } catch { if (alive && viewer.current.uid === uid) setBlockedCreators({ owner: uid!, ids: [], ready: true, failed: true }); }
+      finally { clearTimeout(deadline); }
+    }
+    void loadBlocks();
+    return () => { alive = false; clearTimeout(deadline); controller.abort(); };
+  }, [uid, canRead, focused, blocksVersion]);
   const viewability = useMemo(() => ({ itemVisiblePercentThreshold: reels ? 75 : 30 }), [reels]);
   const viewChanged = useCallback(({ viewableItems }: { viewableItems: ViewToken<FeedPost>[] }) => {
     const candidates = viewableItems.filter(item => item.isViewable).map(item => item.item.id);
@@ -195,14 +206,14 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
     if (params.comments !== "1" || !linkedId || reels || autoOpened === linkedId || rows.scope !== scope || !rows.posts.some(post => post.id === linkedId)) return;
     setAutoOpened(linkedId); setOpenComments(previous => ({ ...previous, [linkedId]: true })); void loadComments(linkedId);
   }, [params.comments, linkedId, reels, autoOpened, rows, scope, loadComments]);
-  const posts = canRead && rows.scope === scope ? rows.posts.filter(post =>
+  const blocksVerified = focused && blockedCreators.owner === uid && blockedCreators.ready && !blockedCreators.failed;
+  const posts = canRead && blocksVerified && rows.scope === scope ? rows.posts.filter(post =>
     (!post.expires_at || Date.parse(post.expires_at) > now) &&
-    (!savedOnly || (saved[post.id] === true && blockedCreators.owner === uid && blockedCreators.ready && !blockedCreators.failed && !blockedCreators.ids.includes(post.author_id))) &&
+    !blockedCreators.ids.includes(post.author_id) &&
+    (!savedOnly || saved[post.id] === true) &&
     (!reels || (
       (hiddenReels.owner !== uid || !hiddenReels.ids.includes(post.id)) &&
-      (mutedCreators.owner !== uid || !mutedCreators.ids.includes(post.author_id)) &&
-      blockedCreators.owner === uid && blockedCreators.ready && !blockedCreators.failed &&
-      !blockedCreators.ids.includes(post.author_id)
+      (mutedCreators.owner !== uid || !mutedCreators.ids.includes(post.author_id))
     )),
   ) : [];
   const currentReelIndex = reels ? posts.findIndex(post => visible.has(post.id)) : -1;
@@ -216,21 +227,22 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
     catch { setMessage("This creator is hidden for this session. It could not be saved on this device."); }
   }
   async function blockAccount(authorId: string) {
-    if (!uid || !canRead || !reels || authorId === uid) return;
+    if (!uid || !canRead || !blocksVerified || !isFeedId(authorId) || authorId === uid) return;
     await action(`block:${authorId}`, async () => {
-      await token();
+      const accessToken = await token();
       // user_blocks intentionally grants INSERT + owner SELECT, not UPDATE.
       // An upsert requires UPDATE and would fail under the production RLS boundary.
-      const { error } = await supabase.from("user_blocks").insert({ blocker_id: uid, blocked_id: authorId });
+      const { error } = await supabase.from("user_blocks").insert({ blocker_id: uid, blocked_id: authorId }).setHeader("Authorization", `Bearer ${accessToken}`);
       if (error) {
         if (error.code !== "23505") throw new Error("Could not block this account. Try again.");
         // Repeated taps are idempotent only if an owner-scoped read proves the row exists.
         const { data: existing, error: verifyError } = await supabase.from("user_blocks")
-          .select("blocked_id").eq("blocker_id", uid).eq("blocked_id", authorId).maybeSingle();
+          .select("blocked_id").eq("blocker_id", uid).eq("blocked_id", authorId).setHeader("Authorization", `Bearer ${accessToken}`).maybeSingle();
         if (verifyError || existing?.blocked_id !== authorId) throw new Error("Could not confirm this account is blocked. Try again.");
       }
       if (viewer.current.uid !== uid || !viewer.current.canRead) return;
       setBlockedCreators(current => ({ owner: uid, ids: [...new Set([...(current.owner === uid ? current.ids : []), authorId])], ready: true, failed: false }));
+      setBlocksVersion(version => version + 1);
       setMessage("Creator added to your HoopCheck blocked accounts.");
     });
   }
@@ -316,7 +328,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
         {!canWrite ? <Text style={{ color: theme.muted, marginTop: 8 }}>Your membership does not include posting.</Text> : null}
       </View> : null}
       refreshControl={<RefreshControl refreshing={loading} onRefresh={() => { setBlocksVersion(version => version + 1); void load(); }} />}
-      ListEmptyComponent={loading || ((reels || savedOnly) && blockedCreators.owner === uid && !blockedCreators.ready) ? <HoopCheckLoading label="Loading HoopFeed…" /> : <View style={{ padding: 24, gap: 12 }}><Text style={textStyle}>{loadError || ((reels || savedOnly) && blockedCreators.failed ? "Blocked accounts could not be verified. Refresh to retry." : savedOnly ? (next ? "No accessible saved posts in this page. Load more to check the next page." : "No accessible saved posts found.") : reels ? "No video posts are available in this page." : "No posts are available in this page.")}</Text><Button secondary onPress={() => { setBlocksVersion(version => version + 1); void load(); }}>Refresh</Button></View>}
+      ListEmptyComponent={loading || (canRead && (!focused || blockedCreators.owner !== uid || !blockedCreators.ready)) ? <HoopCheckLoading label="Loading HoopFeed…" /> : <View style={{ padding: 24, gap: 12 }}><Text style={textStyle}>{loadError || (blockedCreators.failed ? "Blocked accounts could not be verified. Refresh to retry." : savedOnly ? (next ? "No accessible saved posts in this page. Load more to check the next page." : "No accessible saved posts found.") : reels ? "No video posts are available in this page." : "No posts are available in this page.")}</Text><Button secondary onPress={() => { setBlocksVersion(version => version + 1); void load(); }}>Refresh</Button></View>}
       renderItem={({ item: post }) => {
         const page = comments.owner === uid ? comments.values[post.id] : undefined;
         const replyTarget = reply && reply.owner === uid && reply.postId === post.id ? reply : null;
@@ -372,7 +384,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
             {reels && <Pressable accessibilityRole="button" accessibilityLabel="Report this Reel" onPress={() => void action(`report:${post.id}`, async () => { await Linking.openURL(`https://hoopcheck.online/support?reportReel=${post.id}`); })} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Report</Text></Pressable>}
             {reels && <Pressable accessibilityRole="button" accessibilityLabel="Hide this Reel from your device" onPress={() => void hideReel(post.id)} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Hide</Text></Pressable>}
             {reels && post.author_id !== uid && <Pressable accessibilityRole="button" accessibilityLabel="Hide this creator's Reels on this device" onPress={() => void hideCreator(post.author_id)} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Hide creator</Text></Pressable>}
-            {reels && post.author_id !== uid && <Pressable accessibilityRole="button" accessibilityLabel="Block this HoopCheck account" disabled={Boolean(pending[`block:${post.author_id}`])} onPress={() => void blockAccount(post.author_id)} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Block account</Text></Pressable>}
+            {post.author_id !== uid && <Pressable accessibilityRole="button" accessibilityLabel="Block this HoopCheck account" disabled={Boolean(pending[`block:${post.author_id}`])} onPress={() => void blockAccount(post.author_id)} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>Block account</Text></Pressable>}
             <Pressable accessibilityRole="button" disabled={!canWrite || saved[post.id] === undefined || Boolean(pending[`save:${post.id}`])} onPress={() => void action(`save:${post.id}`, async () => { const value = !saved[post.id]; await feedAction(origin, await token(), "bookmark", post.id, value); if (viewer.current.uid === uid) setSaved(previous => ({ ...previous, [post.id]: value })); })} style={touch}><Text style={{ ...linkStyle, fontSize: 12 }}>{saved[post.id] === undefined ? "Saved status unavailable" : saved[post.id] ? "Saved" : "Save"}</Text></Pressable>
           </View>
           {uid&&focused&&sharePanel?.scope===scope&&sharePanel.id===post.id?<FeedSharePanel key={scope+post.id} userId={uid} role={account.user.accountType} postId={post.id} author={post.profiles?.display_name||"HoopCheck member"} preview={post.body||""} origin={origin} token={token} active={()=>viewer.current.scope===scope&&viewer.current.canRead} onClose={()=>setSharePanel(null)}/>:null}
