@@ -16,13 +16,15 @@ export default function CareerClaimIntake({userId,initialCategory="mens"}:{userI
  const [history,setHistory]=useState<History|null>(null),[historyError,setHistoryError]=useState("");
  const [busy,setBusy]=useState(false),[message,setMessage]=useState(""),[error,setError]=useState("");
  const active=useRef(true),lock=useRef(false),sessionVersion=useRef(0);
+ const [sessionInvalidated,setSessionInvalidated]=useState(false);
  async function api(path:string,method="GET",body?:object){
   const version=sessionVersion.current;
   const {data:{session}}=await supabase.auth.getSession();
   if(!active.current||version!==sessionVersion.current||session?.user.id!==userId)throw Error("Your session changed. Reopen career history.");
   const response=await fetch("/api/career/"+path,{method,cache:"no-store",headers:{Authorization:"Bearer "+session.access_token,...(body?{"Content-Type":"application/json"}:{})},...(body?{body:JSON.stringify(body)}:{})});
   const data=await response.json();
-  if(!active.current||version!==sessionVersion.current)throw Error("Your session changed.");
+  const {data:{session:after}}=await supabase.auth.getSession();
+  if(!active.current||version!==sessionVersion.current||after?.user.id!==userId)throw Error("Your session changed.");
   if(!response.ok)throw Error(typeof data.error==="string"?data.error:"Career history is unavailable.");
   return data;
  }
@@ -33,7 +35,7 @@ export default function CareerClaimIntake({userId,initialCategory="mens"}:{userI
  useEffect(()=>{
   active.current=true;
   const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,session)=>{
-   if(session?.user.id!==userId){sessionVersion.current++;setHistory(null);setResults([]);setMessage("");setError("Your session changed. Reopen career history.");}
+   if(session?.user.id!==userId){active.current=false;sessionVersion.current++;setSessionInvalidated(true);setHistory(null);setResults([]);setSearched(false);setMore(false);setMissing(false);setName("");setSeason("");setCountry("");setCity("");setLeague("");setDivision("");setCategory(initialCategory);setMessage("");setError("");setHistoryError("");setBusy(false);}
   });
   void refresh();
   return()=>{active.current=false;sessionVersion.current++;subscription.unsubscribe();};
@@ -42,7 +44,7 @@ export default function CareerClaimIntake({userId,initialCategory="mens"}:{userI
  },[userId]);
  function resetSearch(){setResults([]);setSearched(false);setMore(false);setMessage("");setError("");}
  async function perform(action:()=>Promise<void>){
-  if(lock.current)return;lock.current=true;setBusy(true);setError("");setMessage("");
+  if(lock.current)return;if(!active.current)return;lock.current=true;setBusy(true);setError("");setMessage("");
   try{await action();}catch(e){if(active.current)setError(e instanceof Error?e.message:"Unable to complete the request.");}
   finally{lock.current=false;if(active.current)setBusy(false);}
  }
@@ -54,6 +56,7 @@ export default function CareerClaimIntake({userId,initialCategory="mens"}:{userI
   await perform(async()=>{await api("claims","POST",body);setMessage("Saved privately. Verification is pending; this does not unlock reviews yet.");await refresh();});
  }
  function seasonLabel(row:{season_start_year:number;season_end_year:number}){return row.season_start_year===row.season_end_year?String(row.season_start_year):row.season_start_year+"–"+row.season_end_year;}
+ if(sessionInvalidated)return <p role="alert">Your session changed. Reopen career history.</p>;
  return <section aria-label="Private career history">
   <p className="muted">Add teams you played for, including clubs that changed names or divisions, or stopped operating. Career claims are private until separately verified.</p>
   <fieldset disabled={busy}>
