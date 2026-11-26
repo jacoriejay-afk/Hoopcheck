@@ -34,6 +34,7 @@ export default function TeamReviewScreen() {
   const authVersion=useRef(0);
   const owner=useRef<string|null>(null),invalidated=useRef(false);
   const [sessionInvalidated,setSessionInvalidated]=useState(false);
+  const [identityReady,setIdentityReady]=useState(false);
   function observeIdentity(id:string|undefined){
     if(invalidated.current)return false;
     if(!id||(owner.current!==null&&owner.current!==id)){
@@ -43,7 +44,7 @@ export default function TeamReviewScreen() {
       setChecking(false);setCheckError("");setError("");setSubmitting(false);
       return false;
     }
-    owner.current=id;return true;
+    owner.current=id;setIdentityReady(true);return true;
   }
   const [ratings, setRatings] = useState<Record<string, number>>({
     overall_rating: 0, communication_rating: 0, professionalism_rating: 0, development_rating: 0, payment_rating: 0,
@@ -56,7 +57,6 @@ export default function TeamReviewScreen() {
   const [error, setError] = useState("");
 
   useEffect(()=>{
-    if(!nativeExactSeasonReviewsEnabled)return;
     const {data}=supabase.auth.onAuthStateChange((_event,session)=>{observeIdentity(session?.user.id);});
     return()=>data.subscription.unsubscribe();
   },[]);
@@ -79,7 +79,7 @@ export default function TeamReviewScreen() {
   useEffect(() => { if (error) haptic("error"); }, [error, haptic]);
 
   async function submitReview() {
-    if (submitting||invalidated.current) return;
+    if (submitting||invalidated.current||!owner.current) return;
     const submittedVersion=authVersion.current;
     setError("");
     if (!teamId) { setError("This team could not be identified. Return to the team profile and try again."); return; }
@@ -103,7 +103,7 @@ export default function TeamReviewScreen() {
       const { data, error: sessionError } = await supabase.auth.getSession();
       const token = data.session?.access_token;
       if(invalidated.current||submittedVersion!==authVersion.current)return;
-      if (sessionError || !token || (nativeExactSeasonReviewsEnabled&&data.session?.user.id!==currentChoices?.userId)) {
+      if (sessionError || !token || !observeIdentity(data.session?.user.id) || (nativeExactSeasonReviewsEnabled&&data.session?.user.id!==currentChoices?.userId)) {
         setError("Your session has expired. Sign in again before submitting a review.");
         return;
       }
@@ -141,6 +141,7 @@ export default function TeamReviewScreen() {
   }
 
   if(sessionInvalidated)return <SafeAreaView style={styles.safe}><View style={styles.content}><Text accessibilityRole="alert" style={styles.noticeText}>Your session changed. Reopen this review form.</Text><Pressable onPress={()=>router.back()}><Text style={styles.back}>Back to team</Text></Pressable></View></SafeAreaView>;
+  if(!identityReady)return <SafeAreaView style={styles.safe}><View style={styles.content}><ActivityIndicator color={theme.accent}/><Text style={styles.noticeText}>Checking your account…</Text></View></SafeAreaView>;
   return (
     <SafeAreaView style={styles.safe}>
       <OfflineBanner savedAt={null} />
