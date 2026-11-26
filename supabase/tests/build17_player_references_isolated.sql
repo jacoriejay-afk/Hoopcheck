@@ -7,8 +7,11 @@ do $$begin
 end$$;
 create schema auth;
 create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
+create function auth.jwt() returns jsonb language sql stable as $select coalesce(nullif(current_setting('request.jwt.claims',true),'')::jsonb,'{}'::jsonb)$;
+create table auth.mfa_factors(user_id uuid not null,status text not null);
+insert into auth.mfa_factors values('11111111-1111-4111-8111-111111111111','verified');
 grant usage on schema auth to authenticated;
-grant execute on function auth.uid() to authenticated;
+grant execute on function auth.uid(),auth.jwt() to authenticated;
 create table public.profiles(id uuid primary key,account_type text not null,player_verified boolean not null,moderation_status text not null);
 create table public.player_contact_requests(id uuid primary key,requester_id uuid references public.profiles(id),player_id uuid references public.profiles(id),status text not null);
 create table public.user_blocks(blocker_id uuid,blocked_id uuid,primary key(blocker_id,blocked_id));
@@ -32,7 +35,18 @@ do $$begin
 end$$;
 set role authenticated;
 select set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
-do $$declare s jsonb;begin
+do $begin
+ begin perform public.player_reference_action('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1','read');raise exception 'disabled gate bypass';exception when insufficient_privilege then null;end;
+end$;
+reset role;
+update private.player_reference_feature_gate set enabled=true;
+set role authenticated;
+select set_config('request.jwt.claims','{"aal":"aal1","user_metadata":{"aal":"aal2"}}',false);
+do $begin
+ begin perform public.player_reference_action('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1','read');raise exception 'MFA bypass';exception when insufficient_privilege then null;end;
+end$;
+select set_config('request.jwt.claims','{"aal":"aal2"}',false);
+do $declare s jsonb;begin
  s:=public.player_reference_action('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1','read');
  if s->>'state'<>'none' or (s->>'canRequest')::boolean is not true then raise exception 'expected request ability';end if;
  s:=public.player_reference_action('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1','request');
