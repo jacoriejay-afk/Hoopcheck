@@ -6,6 +6,11 @@ on:
       - 'supabase/tests/admin_membership_regression.sql'
       - '.github/workflows/admin-membership-security.yml'
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   membership-security:
     runs-on: ubuntu-latest

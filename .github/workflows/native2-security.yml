@@ -8,8 +8,7 @@ on:
       - 'app/api/native2/**'
       - '.github/workflows/native2-security.yml'
   push:
-    branches:
-      - feat/native-2-foundation
+    branches: [main]
     paths:
       - 'apps/mobile/src/lib/native2/**'
       - 'apps/mobile/package.json'
@@ -18,6 +17,11 @@ on:
       - '.github/workflows/native2-security.yml'
 permissions:
   contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   native2-security:
     runs-on: ubuntu-latest

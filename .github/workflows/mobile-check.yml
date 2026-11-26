@@ -4,13 +4,16 @@ on:
   pull_request:
     paths:
       - "apps/mobile/**"
+      - ".github/workflows/mobile-check.yml"
   push:
-    branches:
-      - "feat/expo-mobile-foundation"
-      - "fix/expo-doctor-dependencies"
+    branches: [main]
     paths:
       - "apps/mobile/**"
       - ".github/workflows/mobile-check.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   mobile-typecheck:
@@ -25,6 +28,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
       - name: Install mobile dependencies
         run: npm ci
       - name: Native link and telemetry privacy contracts

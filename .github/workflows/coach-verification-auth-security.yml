@@ -6,6 +6,11 @@ on:
       - 'supabase/tests/coach_verification_auth_security.sql'
       - '.github/workflows/coach-verification-auth-security.yml'
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   authorization:
     runs-on: ubuntu-latest

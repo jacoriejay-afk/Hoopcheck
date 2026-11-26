@@ -15,8 +15,8 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: hoopcheck-storage-limits
-  cancel-in-progress: false
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   test:
     runs-on: ubuntu-latest

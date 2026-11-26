@@ -6,6 +6,11 @@ on:
       - 'supabase/tests/directory_deletion_security.sql'
       - '.github/workflows/directory-deletion-security.yml'
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   directory-deletion-security:
     runs-on: ubuntu-latest

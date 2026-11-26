@@ -6,6 +6,11 @@ on:
       - 'supabase/tests/profile_identity_security.sql'
       - '.github/workflows/profile-identity-security.yml'
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   profile-identity-security:
     runs-on: ubuntu-latest
