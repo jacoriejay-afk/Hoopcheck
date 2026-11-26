@@ -1,0 +1,23 @@
+name: Build 16 career claim input
+on:
+  pull_request:
+    paths:
+      - 'lib/career/claim-input.ts'
+      - 'scripts/test-career-claim-input.mjs'
+      - 'lib/career/historical-club-search.ts'
+      - 'app/api/career/historical-clubs/route.ts'
+      - 'scripts/test-historical-career-search.mjs'
+      - '.github/workflows/build16-career-input.yml'
+permissions:
+  contents: read
+jobs:
+  input:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: node --test scripts/test-career-claim-input.mjs scripts/test-historical-career-search.mjs
