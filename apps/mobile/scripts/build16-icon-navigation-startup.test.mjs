@@ -35,3 +35,12 @@ test("onboarding uses the existing reduced-motion-aware brand reveal", () => {
   assert.ok(read("../components/Onboarding.tsx").includes("<BrandLogo animated />"));
   assert.ok(read("../components/BrandLockup.tsx").includes("animated && !reduced"));
 });
+
+test("membership reveal is limited to the status card, never purchase controls", () => {
+  const membership = read("../app/membership.tsx");
+  assert.equal((membership.match(/<Reveal>/g) || []).length, 1);
+  const reveal = membership.slice(membership.indexOf("<Reveal>"), membership.indexOf("</Reveal>"));
+  assert.ok(reveal.includes("Membership status"));
+  assert.ok(!reveal.includes("<Button"));
+  assert.ok(!reveal.includes("store.purchase"));
+});
