@@ -16,6 +16,10 @@ import { supabase } from "../src/lib/supabase";
 
 // Default off until fixture export rights and device import are separately accepted.
 const calendarExportEnabled = process.env.EXPO_PUBLIC_HOOPCHECK_FIXTURE_EXPORT_ENABLED === "true";
+// Called only from a user-confirmed async export, never from render.
+function temporaryCalendarUri(cache: string) {
+  return cache + "hoopcheck-fixture-" + Date.now() + "-" + Math.random().toString(36).slice(2) + ".ics";
+}
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
 type Result = Awaited<ReturnType<typeof readLiveGames>>;
 export function EntitySchedule({ scope, side, refresh = 0 }: {
@@ -50,7 +54,7 @@ export function EntitySchedule({ scope, side, refresh = 0 }: {
       const calendar = fixtureCalendarFile(input);
       if (!calendar || !FileSystem.cacheDirectory || !await Sharing.isAvailableAsync()) throw Error("Export unavailable");
       await verify();
-      uri = FileSystem.cacheDirectory + "hoopcheck-fixture-" + Date.now() + "-" + Math.random().toString(36).slice(2) + ".ics";
+      uri = temporaryCalendarUri(FileSystem.cacheDirectory);
       await FileSystem.writeAsStringAsync(uri, calendar);
       await verify();
       await Sharing.shareAsync(uri,{mimeType:"text/calendar",UTI:"com.apple.ical.ics",dialogTitle:"Export scheduled game"});
@@ -98,7 +102,7 @@ export function EntitySchedule({ scope, side, refresh = 0 }: {
             <Text numberOfLines={2} style={{ color: theme.foreground, flex: 1, fontSize: 13 }}>{away?.name || game.opponent_name}</Text>
           </View>
         </Pressable>
-        {calendarExportEnabled && (Platform.OS === "ios" || Platform.OS === "android") && fixtureCalendarFile(calendarInput) ? <Pressable accessibilityRole="button" accessibilityLabel="Export game to calendar" onPress={() => Alert.alert("Export game to calendar", "This shares a calendar file with the scheduled tip-off only. Your calendar will not automatically update if the schedule changes.",[{text:"Cancel",style:"cancel"},{text:"Export",onPress:()=>void exportCalendar(calendarInput)}])} style={{minHeight:44,justifyContent:"center"}}><Text style={{color:theme.accent}}>Export to calendar</Text></Pressable> : null}</View>;
+        {calendarExportEnabled && (Platform.OS === "ios" || Platform.OS === "android") && calendarInput.home && calendarInput.away && calendarInput.scheduledAt ? <Pressable accessibilityRole="button" accessibilityLabel="Export game to calendar" onPress={() => Alert.alert("Export game to calendar", "This shares a calendar file with the scheduled tip-off only. Your calendar will not automatically update if the schedule changes.",[{text:"Cancel",style:"cancel"},{text:"Export",onPress:()=>void exportCalendar(calendarInput)}])} style={{minHeight:44,justifyContent:"center"}}><Text style={{color:theme.accent}}>Export to calendar</Text></Pressable> : null}</View>;
       })}
     {exportMessage ? <Text accessibilityRole="alert" style={muted}>{exportMessage}</Text> : null}
     {games.length > 3 ? <Pressable accessibilityRole="button" onPress={() => setExpanded(v => !v)} style={{ minHeight: 44, justifyContent: "center" }}><Text style={{ color: theme.accent }}>{expanded ? "Show fewer fixtures" : "Show more fixtures"}</Text></Pressable> : null}
