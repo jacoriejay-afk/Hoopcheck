@@ -7,9 +7,9 @@ CREATE ROLE anon NOLOGIN;
 CREATE ROLE authenticated NOLOGIN;
 CREATE ROLE service_role NOLOGIN BYPASSRLS;
 CREATE ROLE authenticator NOLOGIN;
-CREATE TABLE auth.sessions(id uuid PRIMARY KEY,user_id uuid);
-CREATE TABLE auth.users(id uuid PRIMARY KEY,banned_until timestamptz);
-INSERT INTO auth.users VALUES('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',null),('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',null);
+CREATE TABLE auth.sessions(id uuid PRIMARY KEY,user_id uuid,not_after timestamptz);
+CREATE TABLE auth.users(id uuid PRIMARY KEY,banned_until timestamptz,role text NOT NULL DEFAULT 'authenticated');
+INSERT INTO auth.users(id,banned_until) VALUES('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',null),('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',null);
 CREATE TABLE auth.mfa_factors(user_id uuid,status text);
 CREATE FUNCTION auth.jwt() RETURNS jsonb LANGUAGE sql STABLE AS $$ SELECT coalesce(nullif(current_setting('request.jwt.claims',true),''),'{}')::jsonb $$;
 CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(auth.jwt()->>'sub','')::uuid $$;
@@ -36,7 +36,7 @@ CREATE SCHEMA hoopcheck_deletion_private;
 INSERT INTO public.account_deletion_requests(id,user_id,scheduled_for,status) VALUES('33333333-3333-4333-8333-333333333333','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',now(),'processing');
 INSERT INTO hoopcheck_deletion_private.worker_state(request_id,policy_version,fence,lease_until,next_step) VALUES('33333333-3333-4333-8333-333333333333','fixture','44444444-4444-4444-8444-444444444444',now()+interval '5 minutes',3);
 INSERT INTO hoopcheck_deletion_private.worker_receipts(request_id,step_number,receipt) SELECT '33333333-3333-4333-8333-333333333333',i,'fixture-'||i FROM generate_series(1,2)i;
-INSERT INTO auth.sessions VALUES('55555555-5555-4555-8555-555555555555','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+INSERT INTO auth.sessions(id,user_id) VALUES('55555555-5555-4555-8555-555555555555','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),('77777777-7777-4777-8777-777777777777','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
 DO $$ BEGIN
  IF has_table_privilege('authenticated','hoopcheck_deletion_private.frozen_accounts','SELECT')
  OR has_table_privilege('service_role','hoopcheck_deletion_private.frozen_accounts','INSERT')
@@ -56,8 +56,9 @@ DO $$ BEGIN
 END $$;
 RESET ROLE;
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims','{"role":"authenticated","sub":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","aal":"aal1"}',true);
-DO $$ DECLARE t text;n integer;BEGIN
+SELECT set_config('request.jwt.claims','{"role":"authenticated","sub":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","aal":"aal1","session_id":"55555555-5555-4555-8555-555555555555"}',true);
+DO $ DECLARE t text;n integer;BEGIN
+ IF public.confirm_active_account_session() THEN RAISE EXCEPTION 'Frozen live session accepted'; END IF;
  FOREACH t IN ARRAY ARRAY['public.fixture_posts','storage.objects','realtime.messages'] LOOP
   EXECUTE format('SELECT count(*) FROM %s',t) INTO n;
   IF n<>0 THEN RAISE EXCEPTION 'Frozen account read allowed: %',t; END IF;
@@ -67,9 +68,10 @@ DO $$ DECLARE t text;n integer;BEGIN
  END LOOP;
  BEGIN PERFORM hoopcheck_security.require_mfa_and_deletion_access();RAISE EXCEPTION 'Frozen RPC allowed';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
 END $$;
-SELECT set_config('request.jwt.claims','{"role":"authenticated","sub":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","aal":"aal1"}',true);
+SELECT set_config('request.jwt.claims','{"role":"authenticated","sub":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","aal":"aal1","session_id":"77777777-7777-4777-8777-777777777777"}',true);
 DO $$ BEGIN
  PERFORM hoopcheck_security.require_mfa_and_deletion_access();
+ IF NOT public.confirm_active_account_session() THEN RAISE EXCEPTION 'Ordinary active session rejected'; END IF;
  IF (SELECT count(*) FROM public.fixture_posts)<>1 OR (SELECT count(*) FROM storage.objects)<>1 OR (SELECT count(*) FROM realtime.messages)<>1 THEN RAISE EXCEPTION 'Other account access regressed';END IF;
 END $$;
 RESET ROLE;
@@ -84,13 +86,22 @@ DO $$ BEGIN
 END $$;
 RESET ROLE;
 -- Fixture simulates acknowledged Auth sign-out; no real sessions are modified.
-DELETE FROM auth.sessions;
+DELETE FROM auth.sessions WHERE user_id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 UPDATE auth.users SET banned_until=now()+interval '365 days' WHERE id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 SET LOCAL ROLE service_role;
 DO $$ BEGIN
  IF NOT public.verify_deletion_auth_login_block('33333333-3333-4333-8333-333333333333','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','44444444-4444-4444-8444-444444444444') THEN RAISE EXCEPTION 'Auth ban not verified'; END IF;
  IF NOT public.verify_deletion_session_absence('33333333-3333-4333-8333-333333333333','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','44444444-4444-4444-8444-444444444444') THEN RAISE EXCEPTION 'Session absence not verified'; END IF;
 END $$;
+RESET ROLE;
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claims','{"role":"authenticated","sub":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","session_id":"55555555-5555-4555-8555-555555555555","aal":"aal1"}',true);
+DO $$ BEGIN IF public.confirm_active_account_session() THEN RAISE EXCEPTION 'Foreign or revoked session accepted'; END IF; END $$;
+RESET ROLE;
+UPDATE auth.sessions SET not_after=now()-interval '1 day' WHERE user_id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claims','{"role":"authenticated","sub":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","session_id":"77777777-7777-4777-8777-777777777777","aal":"aal1"}',true);
+DO $$ BEGIN IF public.confirm_active_account_session() THEN RAISE EXCEPTION 'Expired session accepted'; END IF; END $$;
 RESET ROLE;
 ROLLBACK;
 \echo PASS: freeze gate, owner isolation, direct writes and reads, RPC gate, session absence
