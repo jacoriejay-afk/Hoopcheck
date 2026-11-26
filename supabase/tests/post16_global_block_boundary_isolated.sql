@@ -7,9 +7,9 @@ do $$ begin create role anon nologin; exception when duplicate_object then null;
 revoke all on schema private from public,anon,authenticated;
 grant usage on schema auth, private to authenticated;
 create function auth.uid() returns uuid language sql stable as
-$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $;
+$$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
 create function public.is_current_user_admin_or_moderator() returns boolean language sql stable as
-$ select auth.uid() is not null and coalesce(current_setting('test.staff',true),'no')='yes' $;
+$$ select auth.uid() is not null and coalesce(current_setting('test.staff',true),'no')='yes' $$;
 create table public.user_blocks(blocker_id uuid not null,blocked_id uuid not null,primary key(blocker_id,blocked_id),check(blocker_id<>blocked_id));
 create table public.player_contact_requests(id uuid primary key,requester_id uuid not null,player_id uuid not null,status text not null);
 create table public.player_contact_messages(id uuid primary key,request_id uuid references public.player_contact_requests(id),sender_id uuid not null);
@@ -55,7 +55,7 @@ set role authenticated;
 select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',true);
 select set_config('test.member','yes',true);
 select set_config('test.staff','no',true);
-do $ begin
+do $$ begin
   if (select count(*) from public.player_contact_requests)<>1 or (select count(*) from public.player_contact_messages)<>1 or (select count(*) from public.feed_post_comments)<>1 or (select count(*) from public.hoop_group_posts)<>1 or (select count(*) from public.fan_live_chat_messages)<>1 then raise exception 'unblocked baseline not preserved'; end if;
 end $$;
 select set_config('test.member','no',true);
@@ -78,10 +78,10 @@ end $$;
 -- Staff safety review must preserve existing live-room access only.
 select set_config('test.staff','yes',true);
 select set_config('test.member','no',true);
-do $ begin
+do $$ begin
   if (select count(*) from public.fan_live_chat_messages)<>1 then raise exception 'Existing live moderation visibility lost'; end if;
   if exists(select 1 from public.player_contact_requests) or exists(select 1 from public.player_contact_messages) or exists(select 1 from public.feed_post_comments) or exists(select 1 from public.hoop_group_posts) then raise exception 'Staff bypass escaped existing live moderation scope'; end if;
-end $;
+end $$;
 select set_config('test.staff','no',true);
 select set_config('test.member','yes',true);
 select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000002',true);
