@@ -8,6 +8,7 @@ import HoopLoading from "../../components/HoopLoading";
 import FollowButton from "../../components/FollowButton";
 import SearchBar from "../../components/SearchBar";
 import { VerifiedBadge } from "../../components/HoopCheckUI";
+import { opportunityMatches, emptyOpportunityCriteria, matchExplanation } from "../../apps/mobile/src/native/opportunityMatches";
 import { availablePlayerMatches } from "../../lib/marketplace-discovery";
 
 type Player = {
@@ -34,6 +35,7 @@ export default function PlayersPage() {
   const [query, setQuery] = useState("");
   const [country, setCountry] = useState("");
   const [onlyAvailable, setOnlyAvailable] = useState(false);
+  const [matching,setMatching]=useState(false),[criteria,setCriteria]=useState(emptyOpportunityCriteria);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [searchError, setSearchError] = useState("");
@@ -107,7 +109,8 @@ export default function PlayersPage() {
     };
   }, [query, country, page, retryCount, roleReady]);
 
-  const visiblePlayers = availablePlayerMatches(players, onlyAvailable);
+  const matchingEnabled=process.env.NEXT_PUBLIC_HOOPCHECK_OPPORTUNITY_MATCHING_ENABLED==="true" && matching;
+  const visiblePlayers = matchingEnabled ? opportunityMatches(players,criteria) : availablePlayerMatches(players, onlyAvailable);
   if (!roleReady) return <main className="page-shell"><div className="page-container"><HoopLoading label="Loading directory…"/></div></main>;
 
   return (
@@ -130,9 +133,10 @@ export default function PlayersPage() {
                 aria-label="Filter matching players by country"
                 autoComplete="country-name"
               />
-              {(query || country) && <button type="button" className="btn dark" onClick={() => { setQuery(""); setCountry(""); setPage(0); setOnlyAvailable(false); }} aria-label="Clear player search">Clear search</button>}
+              {(query || country) && <button type="button" className="btn dark" onClick={() => { setQuery(""); setCountry(""); setPage(0); setOnlyAvailable(false); setMatching(false); setCriteria(emptyOpportunityCriteria); }} aria-label="Clear player search">Clear search</button>}
             </div>
             <label style={{display:"flex",alignItems:"center",gap:8,minHeight:44}}><input type="checkbox" checked={onlyAvailable} onChange={event=>setOnlyAvailable(event.target.checked)}/> Show self-listed free agents on this results page</label>
+            {process.env.NEXT_PUBLIC_HOOPCHECK_OPPORTUNITY_MATCHING_ENABLED==="true"?<section aria-label="Opportunity matching"><label><input type="checkbox" checked={matching} onChange={e=>setMatching(e.target.checked)}/> Match available players on this search page</label>{matching?<><label>Exact listed position<input maxLength={30} value={criteria.position} onChange={e=>setCriteria(v=>({...v,position:e.target.value}))}/></label><label>Minimum listed pro years (0–50)<input inputMode="numeric" maxLength={2} value={criteria.minimumYears} onChange={e=>setCriteria(v=>({...v,minimumYears:e.target.value}))}/></label><label><input type="checkbox" checked={criteria.verifiedOnly} onChange={e=>setCriteria(v=>({...v,verifiedOnly:e.target.checked}))}/> Verified professional players only</label><p>{matchExplanation(criteria)}. Matches are not job offers or verified availability. Filters apply only to returned records.</p></>:null}</section>:null}
             <p className="muted">Availability is self-reported, not a verified recruiting or contract status. Search by username first; this filter does not list private profiles or search all players.</p>
           </div>
         </section>
@@ -154,7 +158,7 @@ export default function PlayersPage() {
           </div>
         ) : (
           <>
-          <div className="hc-player-result-count" role="status" aria-live="polite">{onlyAvailable ? `Showing ${visiblePlayers.length} self-listed free agent${visiblePlayers.length === 1 ? "" : "s"} on this results page` : players.length ? `Showing ${players.length} player${players.length === 1 ? "" : "s"}` : "No matching players"}</div>
+          <div className="hc-player-result-count" role="status" aria-live="polite">{matchingEnabled ? `Showing ${visiblePlayers.length} opportunity matches on this page` : onlyAvailable ? `Showing ${visiblePlayers.length} self-listed free agent${visiblePlayers.length === 1 ? "" : "s"} on this results page` : players.length ? `Showing ${players.length} player${players.length === 1 ? "" : "s"}` : "No matching players"}</div>
           <section className="grid hc-player-results" style={{ marginTop: 18 }}>
             {visiblePlayers.map((player) => {
               const name =
