@@ -1,7 +1,8 @@
+import { blockNativeAccount } from "../src/native/accountBlocking";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useFocusEffect } from "expo-router";
 import { ChatMessageEnter, ChatTypingBasketball, useConfirmedMessageMotion } from "./chat/ChatMotion";
-import { FlatList, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Alert, FlatList, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useNativeDraft } from "../src/native/drafts";
 import { Button } from "../src/primitives";
 import { supabase } from "../src/lib/supabase";
@@ -80,6 +81,15 @@ export function GameChat({ gameId, userId, enabled }: { gameId: string; userId: 
       if (current.current.scope === scope) { setSnapshot(null); setRevision(value => value + 1); }
     });
   }
+  function confirmGlobalBlock(targetId:string){
+    Alert.alert("Block HoopCheck account?","Manage account-wide blocks in Settings.",[
+      {text:"Cancel",style:"cancel"},
+      {text:"Block account",style:"destructive",onPress:()=>void action(async()=>{
+        await blockNativeAccount(supabase,userId,targetId,()=>current.current.scope===scope&&current.current.enabled);
+        if(current.current.scope===scope){setSnapshot(null);setRevision(v=>v+1);}
+      })},
+    ]);
+  }
   if (reportTarget) return <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 12, paddingBottom: 20 }}><Text accessibilityRole="header" style={{ color: theme.foreground }}>Report message</Text><View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>{["harassment", "spam", "hate", "threat", "other"].map(value => <Pressable key={value} accessibilityRole="radio" aria-checked={reason === value} accessibilityState={{ checked: reason === value }} onPress={() => setReason(value)} style={{ minHeight: 44, justifyContent: "center" }}><Text style={{ color: reason === value ? theme.accent : theme.foreground }}>{value}</Text></Pressable>)}</View>
       <TextInput accessibilityLabel="Report details" maxLength={500} value={details} onChangeText={setDetails} style={{ color: theme.foreground, backgroundColor: theme.input, minHeight: 48, padding: 12 }} />
       <Button secondary disabled={busy} onPress={() => void action(async () => { await reportGameMessage(supabase, gameId, userId, reportTarget, reason, details); if (current.current.scope === scope) { setReport(null); setDetails(""); setNotice("Report sent to HoopCheck moderators."); } })}>Submit report</Button><Button secondary onPress={() => setReport(null)}>Cancel report</Button>{notice ? <Text accessibilityRole="alert" style={{ color: theme.muted }}>{notice}</Text> : null}
@@ -90,7 +100,7 @@ export function GameChat({ gameId, userId, enabled }: { gameId: string; userId: 
       <FlatList style={{ flex: 1, minHeight: 0 }} inverted data={[...room.messages].reverse()} keyExtractor={item => item.id} keyboardShouldPersistTaps="handled" ListEmptyComponent={<Text style={{ color: theme.muted }}>No messages yet.</Text>} renderItem={({ item }) => <ChatMessageEnter fresh={freshIds.has(item.id)} incoming={item.user_id !== userId} active={motionActive}><View style={{ paddingVertical: 10, gap: 6, borderBottomWidth: 1, borderColor: theme.border }}>
         <Text style={{ color: theme.foreground, fontWeight: "800" }}>{room.names[item.user_id] || "HoopCheck member"}</Text>
         <Text style={{ color: theme.foreground }}>{item.body}</Text><Text style={{ color: theme.muted }}>{new Date(item.created_at).toLocaleTimeString()}</Text>
-        {item.user_id !== userId ? <View style={{ flexDirection: "row", gap: 12 }}>{["mute", "block", "report"].map(kind => <Pressable key={kind} accessibilityRole="button" accessibilityLabel={`${kind} ${room.names[item.user_id] || "member"}`} disabled={busy} onPress={() => { if (kind === "report") { setReason("harassment"); setDetails(""); setReport({ scope, item }); } else void control(item.user_id, kind as "block" | "mute"); }} style={{ minHeight: 44, justifyContent: "center" }}><Text style={{ color: theme.accent, textTransform: "capitalize" }}>{kind}</Text></Pressable>)}</View> : null}
+        {item.user_id !== userId ? <View style={{ flexDirection: "row", flexWrap:"wrap", gap: 12 }}>{["mute", "block", "report", "block account"].map(kind => <Pressable key={kind} accessibilityRole="button" accessibilityLabel={`${kind} ${room.names[item.user_id] || "member"}`} disabled={busy} onPress={() => { if (kind === "report") { setReason("harassment"); setDetails(""); setReport({ scope, item }); } else if(kind==="block account")confirmGlobalBlock(item.user_id);else void control(item.user_id, kind as "block" | "mute"); }} style={{ minHeight: 44, justifyContent: "center" }}><Text style={{ color: theme.accent, textTransform: "capitalize" }}>{kind}</Text></Pressable>)}</View> : null}
       </View></ChatMessageEnter>} />
       <ChatTypingBasketball active={motionActive && Boolean(text.trim()) && !busy} />
       <TextInput accessibilityLabel="Game chat message" placeholder="Message the room" placeholderTextColor={theme.muted} value={text} maxLength={500} multiline onChangeText={setDraft} style={{ color: theme.foreground, backgroundColor: theme.input, borderColor: theme.border, borderWidth: 1, borderRadius: theme.radius.control, padding: 12, minHeight: 48, maxHeight: 120 }} />

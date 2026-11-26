@@ -1,3 +1,4 @@
+import { blockNativeAccount, readOutgoingBlocks } from "../src/native/accountBlocking";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
 import { useFocusEffect } from "expo-router";
@@ -107,19 +108,36 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
   const draft=member&&channel&&draftState?.channelId===channel.id?draftState.value:"";
   function setDraft(value:string) {setDraftState(value&&channel?{channelId:channel.id,value}:null);}
   const managing=editing&&editingGroupId===selected?.id;
+  const safetyToken=useCallback(async function safetyToken() {
+    await requireOnline();
+    const session=await readWithDeadline(()=>supabase.auth.getSession());
+    if(session.error||session.data.session?.user.id!==userId)throw Error("Sign in again.");
+    const token=session.data.session.access_token;
+    const verified=await readWithDeadline(()=>supabase.auth.getUser(token));
+    if(verified.error||verified.data.user?.id!==userId)throw Error("Sign in again.");
+    return token;
+  },[userId]);
   useEffect(()=>{
     if(!userId||offline||!member||!channel?.id){setPostSnapshot(null);return;}
-    let alive=true;
-    void supabase.from("hoop_group_posts")
-      .select("id,author_id,body,moderation_status,created_at")
-      .eq("channel_id",channel.id).order("created_at",{ascending:false}).limit(100)
-      .then(({data,error:readError})=>{
-        if(!alive)return;
-        if(readError){setError("Channel messages could not be loaded.");setPostSnapshot(null);}
-        else setPostSnapshot({channelId:channel.id,posts:((data||[]) as Post[]).reverse()});
-      });
-    return()=>{alive=false;};
-  },[userId,offline,member,channel?.id,revision]);
+    let alive=true;const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
+    setPostSnapshot(null);
+    async function loadPosts(){
+      try{
+        const blocked=await readOutgoingBlocks(supabase,userId,controller.signal);
+        const token=await safetyToken();
+        if(!alive||controller.signal.aborted)return;
+        const {data,error:readError}=await supabase.from("hoop_group_posts")
+          .select("id,author_id,body,moderation_status,created_at")
+          .eq("channel_id",channel!.id).order("created_at",{ascending:false}).limit(100)
+          .setHeader("Authorization","Bearer "+token).abortSignal(controller.signal);
+        if(readError||controller.signal.aborted)throw Error("Channel messages could not be loaded.");
+        if(alive)setPostSnapshot({channelId:channel!.id,posts:((data||[]) as Post[]).filter(post=>!blocked.has(post.author_id)).reverse()});
+      }catch{if(alive){setError("Channel messages or block status could not be verified.");setPostSnapshot(null);}}
+      finally{clearTimeout(timer);}
+    }
+    void loadPosts();
+    return()=>{alive=false;clearTimeout(timer);controller.abort();};
+  },[userId,offline,member,channel?.id,revision,safetyToken]);
 
   async function join() {
     if(!selected||!userId||offline||busy)return;
@@ -242,15 +260,6 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
     }catch(failure){setError(failure instanceof Error?failure.message:"Message was not submitted.");}
     finally{setBusy(false);}
   }
-  async function safetyToken() {
-    await requireOnline();
-    const session=await readWithDeadline(()=>supabase.auth.getSession());
-    if(session.error||session.data.session?.user.id!==userId)throw Error("Sign in again.");
-    const token=session.data.session.access_token;
-    const verified=await readWithDeadline(()=>supabase.auth.getUser(token));
-    if(verified.error||verified.data.user?.id!==userId)throw Error("Sign in again.");
-    return token;
-  }
   async function report(item:Post,reason:string) {
     if(!userId||offline||busy||!member||!posts.some(post=>post.id===item.id))return;
     setBusy(true);setError("");
@@ -277,12 +286,29 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
     }catch(failure){setError(failure instanceof Error?failure.message:"Block could not be confirmed.");}
     finally{setBusy(false);}
   }
+  async function blockAccount(item:Post){
+    if(!userId||offline||busy||!member||item.author_id===userId||!posts.some(post=>post.id===item.id))return;
+    setBusy(true);setError("");
+    try{
+      await blockNativeAccount(supabase,userId,item.author_id,()=>!offline&&member);
+      setPostSnapshot(current=>current?{...current,posts:current.posts.filter(post=>post.author_id!==item.author_id)}:null);
+      setRevision(v=>v+1);
+    }catch{setError("Account block could not be confirmed. Check Settings.");}
+    finally{setBusy(false);}
+  }
   function actions(item:Post) {
     Alert.alert("Community safety","Choose an action for this member.",[
       {text:"Cancel",style:"cancel"},
-      {text:"Report spam",onPress:()=>void report(item,"Spam or unwanted messages")},
-      {text:"Report harassment",onPress:()=>void report(item,"Harassment or hateful content")},
-      {text:"Block member",style:"destructive",onPress:()=>void block(item)},
+      {text:"Report",onPress:()=>Alert.alert("Report message","Choose a reason.",[
+        {text:"Cancel",style:"cancel"},
+        {text:"Spam",onPress:()=>void report(item,"Spam or unwanted messages")},
+        {text:"Harassment",onPress:()=>void report(item,"Harassment or hateful content")},
+      ])},
+      {text:"Block",onPress:()=>Alert.alert("Block member","Choose whether to hide this member in HoopGroups or block their HoopCheck account.",[
+        {text:"Cancel",style:"cancel"},
+        {text:"Hide in groups",onPress:()=>void block(item)},
+        {text:"Block account",style:"destructive",onPress:()=>void blockAccount(item)},
+      ])},
     ]);
   }
 

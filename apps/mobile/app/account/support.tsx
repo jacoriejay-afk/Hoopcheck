@@ -1,3 +1,5 @@
+import { ModerationAppeal } from "../../components/ModerationAppeal";
+import { readWithDeadline } from "../../src/native/readDeadline";
 import { useEffect, useState } from "react";
 import { Linking, ScrollView, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -21,9 +23,9 @@ function SupportContent({uid,scam}:{uid:string;scam:boolean}){
   let live=true;const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),15000);setState(null);
   async function load(){try{
    if(offline)throw Error("Reconnect to load private tickets.");
-   const before=await supabase.auth.getSession();if(before.error||before.data.session?.user.id!==uid)throw Error("Verify your account again.");
-   const result=await supabase.from("support_tickets").select("id,subject,category,status,created_at").eq("requester_id",uid).order("created_at",{ascending:false}).order("id",{ascending:false}).limit(50).abortSignal(ctrl.signal);
-   const after=await supabase.auth.getSession();if(result.error||after.error||after.data.session?.user.id!==uid)throw Error("Tickets could not load. Try again.");
+   const before=await readWithDeadline(()=>supabase.auth.getSession());if(before.error||!before.data.session||before.data.session.user.id!==uid)throw Error("Verify your account again.");
+   const result=await supabase.from("support_tickets").select("id,subject,category,status,created_at").eq("requester_id",uid).order("created_at",{ascending:false}).order("id",{ascending:false}).limit(50).setHeader("Authorization","Bearer "+before.data.session.access_token).abortSignal(ctrl.signal);
+   const after=await readWithDeadline(()=>supabase.auth.getSession());if(result.error||after.error||after.data.session?.user.id!==uid)throw Error("Tickets could not load. Try again.");
    if(live)setState({rows:(result.data??[]) as Ticket[],error:""});
   }catch(e){if(live)setState({rows:[],error:e instanceof Error?e.message:"Tickets unavailable."});}
   finally{clearTimeout(timer);}}
@@ -38,10 +40,11 @@ function SupportContent({uid,scam}:{uid:string;scam:boolean}){
   <Button secondary onPress={()=>handoff("/support?scamAlert=1")}>Report a suspicious offer</Button>
   <Button secondary onPress={()=>{setLinkError("");void Linking.openURL("mailto:HoopCheck@outlook.com").catch(()=>setLinkError("Email app could not open. Contact HoopCheck@outlook.com."));}}>Email support</Button>{linkError?<Text accessibilityRole="alert" style={{color:t.foreground}}>{linkError}</Text>:null}
   </GlassCard>
+  <ModerationAppeal uid={uid} onSubmitted={()=>setRefresh(v=>v+1)}/>
   <Text accessibilityRole="header" style={{color:t.foreground,fontWeight:"800",fontSize:19}}>My tickets</Text>
   <Button secondary onPress={()=>setRefresh(v=>v+1)}>Refresh tickets</Button>
   {offline?<Text style={{color:t.muted}}>Reconnect to view your tickets.</Text>:!state?<Text accessibilityRole="progressbar" style={{color:t.muted}}>Loading tickets…</Text>:state.error?<Text accessibilityRole="alert" style={{color:t.foreground}}>{state.error}</Text>:state.rows.length?<>{state.rows.map(ticket=><GlassCard key={ticket.id} style={{gap:5}}><Text style={{color:t.foreground,fontWeight:"800"}}>{ticket.subject}</Text><Text style={{color:t.muted}}>{ticket.status} · {ticket.category}</Text><Text style={{color:t.muted}}>{new Date(ticket.created_at).toLocaleString()}</Text></GlassCard>)}{state.rows.length===50?<Text style={{color:t.muted}}>Showing the latest 50. Open support on the website for full ticket history.</Text>:null}</>:<Text style={{color:t.muted}}>No support tickets yet.</Text>}
   <Text accessibilityRole="header" style={{color:t.foreground,fontWeight:"800",fontSize:19}}>Policies</Text>
-  <Button secondary onPress={()=>handoff("/privacy")}>Privacy policy</Button><Button secondary onPress={()=>handoff("/terms")}>Terms of use</Button>
+  <Button secondary onPress={()=>router.push({pathname:"/account/policies",params:{kind:"privacy"}})}>Privacy policy</Button><Button secondary onPress={()=>router.push({pathname:"/account/policies",params:{kind:"terms"}})}>Terms of use</Button>
  </ScrollView>;
 }
