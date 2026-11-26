@@ -3,7 +3,7 @@ export function rememberDestination(path: string) {
   if (path.length > 8192 || !path.startsWith("/") || path.startsWith("//")) return;
   try {
     const url = new URL(path, "https://hoopcheck.online");
-    if (url.origin !== "https://hoopcheck.online" || !/^\/(team-hub\/groups|fan-live|notifications|hoopgroups|connections|feed|fan-feed|reels|account|search|teams|womens|leagues|players|coaches|dashboard|settings|membership)(\/|$)/.test(url.pathname)) return;
+    if (url.origin !== "https://hoopcheck.online" || !/^\/(team-hub\/groups|fan-live|notifications|messages|hoopgroups|connections|feed|fan-feed|reels|account|search|teams|womens|leagues|players|coaches|dashboard|settings|membership)(\/|$)/.test(url.pathname)) return;
     const query = new URLSearchParams();
     if (["/feed", "/fan-feed"].includes(url.pathname)) {
       const post = url.searchParams.get("post"); if (post && /^[0-9a-f-]{36}$/i.test(post)) query.set("post", post);
@@ -19,6 +19,9 @@ export function rememberDestination(path: string) {
       const tab=url.searchParams.get("tab"); if(tab==="activity"||tab==="chat"||tab==="requests")query.set("tab",tab);
     }
     if (url.pathname === "/account/support" && url.searchParams.get("topic")==="scam") query.set("topic","scam");
+    if (url.pathname === "/account/support") {
+      const reel=url.searchParams.get("reportReel"); if(reel&&/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(reel)) query.set("reportReel",reel);
+    }
     if (url.pathname === "/search") {
       const term = url.searchParams.get("q"); if (term) query.set("q", term.slice(0, 100));
     }
