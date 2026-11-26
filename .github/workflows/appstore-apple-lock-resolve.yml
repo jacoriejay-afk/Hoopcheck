@@ -1,0 +1,34 @@
+name: Resolve pinned Apple sign-in dependencies (candidate)
+on:
+  push:
+    branches: ["fix/appstore-native-apple-button"]
+    paths: [".github/workflows/appstore-apple-lock-resolve.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Resolve pinned SDK 54 dependencies without scripts
+        run: |
+          cp package-lock.json /tmp/hoopcheck-apple-original-lock.json
+          npm install --package-lock-only --ignore-scripts --save-exact expo-apple-authentication@8.0.8 expo-crypto@15.0.9
+          node - <<'NODE'
+          const fs=require('fs');
+          const old=JSON.parse(fs.readFileSync('/tmp/hoopcheck-apple-original-lock.json'));
+          const next=JSON.parse(fs.readFileSync('package-lock.json'));
+          const changes=Object.fromEntries(Object.entries(next.packages).filter(([key,value])=>JSON.stringify(old.packages[key])!==JSON.stringify(value)));
+          const removed=Object.keys(old.packages).filter(key=>!(key in next.packages));
+          console.log('HOOPCHECK_LOCK_DIFF='+JSON.stringify({changes,removed}));
+          NODE
+          npm ci --ignore-scripts
+          echo "Resolved lock verified; no credentials, build or deploy."
