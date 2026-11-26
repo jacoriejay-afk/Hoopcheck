@@ -49,8 +49,10 @@ CREATE OR REPLACE FUNCTION hoopcheck_security.require_mfa_and_deletion_access()
 RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path='' AS $$
 BEGIN
  PERFORM hoopcheck_security.require_mfa();
- IF auth.jwt()->>'role'='authenticated' AND NOT hoopcheck_deletion_private.caller_not_frozen() THEN
-  RAISE EXCEPTION 'Account deletion is processing' USING ERRCODE='42501';
+ IF auth.jwt()->>'role'='authenticated' THEN
+  IF NOT hoopcheck_deletion_private.caller_not_frozen() THEN
+   RAISE EXCEPTION 'Account deletion is processing' USING ERRCODE='42501';
+  END IF;
  END IF;
 END $$;
 REVOKE ALL ON FUNCTION hoopcheck_security.require_mfa_and_deletion_access() FROM public,anon,authenticated,service_role;
