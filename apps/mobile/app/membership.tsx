@@ -2,7 +2,7 @@ import { MembershipPreview } from "../components/MembershipPreview";
 import { Reveal } from "../components/Motion";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AppState, ScrollView, Text, View } from "react-native";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button, GlassCard } from "../src/primitives";
 import { useEntryTheme } from "../src/theme";
@@ -14,6 +14,7 @@ import type { EffectiveMembership } from "../../../lib/billing/membership";
 import type { PreparedPurchase, StoreProduct } from "../src/native/storekitClient";
 const periods: Record<number, string> = { 1: "month", 6: "6 months", 12: "year" };
 export default function MembershipScreen() {
+  const router = useRouter();
   const theme = useEntryTheme(), store = useStoreKit(), { account, retry } = useNativeAccount();
   const [products, setProducts] = useState<StoreProduct[]>([]), [membership, setMembership] = useState<EffectiveMembership | null>(null);
   const [loading, setLoading] = useState(true), [busy, setBusy] = useState(false), [message, setMessage] = useState(""), [error, setError] = useState("");
