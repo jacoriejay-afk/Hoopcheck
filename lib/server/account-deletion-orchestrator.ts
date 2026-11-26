@@ -97,3 +97,34 @@ export function createDeletionWorkerAdapter(client:Rpc,effects:DeletionEffects,e
 export async function runOneApprovedDeletion(client:Rpc,effects:DeletionEffects,enabled=false) {
  return runDeletionCandidate(createDeletionWorkerAdapter(client,effects,enabled));
 }
+
+/** Provider-specific worker step. Supply the reviewed Apple cryptographic
+ * revoke helper from #1080 after dependency integration. Never log envelopes.
+ * The worker may retry after an Apple success and before database ACK:
+ * Apple documents that /auth/revoke returns 200 for previously invalidated tokens.
+ */
+export async function revokeDeletionAppleAuthorizations(client:Rpc,lease:DeletionLease,revoke:(envelope:string,owner:string,subject:string)=>Promise<void>) {
+ const args=bindings(lease);
+ async function list(){
+  const r=await client.rpc("list_account_deletion_apple_revocations",args);
+  if(r.error||!Array.isArray(r.data)||r.data.length>32)throw Error("Apple revocation scope not confirmed.");
+  const seen=new Set<string>();
+  for(const row of r.data){
+   if(!row||typeof row.apple_subject!=="string"||!row.apple_subject||row.apple_subject.length>255||
+      typeof row.envelope!=="string"||row.envelope.length>12000||!/^v1\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(row.envelope)||
+      typeof row.envelope_digest!=="string"||!/^[a-f0-9]{64}$/.test(row.envelope_digest)||seen.has(row.apple_subject))throw Error("Invalid Apple revocation scope.");
+   seen.add(row.apple_subject);
+  }
+  return r.data as {apple_subject:string;envelope:string;envelope_digest:string}[];
+ }
+ const rows=await list();
+ for(const row of rows){
+  const check=await client.rpc("assert_account_deletion_worker",args);
+  if(check.error||check.data!==true)throw Error("Deletion lease lost.");
+  await revoke(row.envelope,lease.ownerId,row.apple_subject);
+  const ack=await client.rpc("ack_account_deletion_apple_revocation",{...args,p_subject:row.apple_subject,p_digest:row.envelope_digest});
+  if(ack.error||ack.data!==true)throw Error("Apple revocation acknowledgement failed.");
+ }
+ if((await list()).length!==0)throw Error("Apple authorizations remain.");
+ return {confirmed:true as const,receipt:"apple_revocations_verified"};
+}
