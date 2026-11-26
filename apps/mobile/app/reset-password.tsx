@@ -44,7 +44,7 @@ export default function ResetPasswordScreen() {
     if (verification.current?.key !== code) {
       verification.current = { key: code, work: (async () => {
         const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-        if (error) throw error;
+        if (error || data.redirectType !== "PASSWORD_RECOVERY") throw new Error(invalidMessage);
         return identity(data.session);
       })() };
     }
