@@ -9,19 +9,20 @@ import { rememberDestination } from "../src/native/pendingDestination";
 export function PublicSystemNavigation({ ready, blocked, signedIn }: { ready:boolean; blocked:boolean; signedIn:boolean }) {
  const router=useRouter();
  useEffect(()=>{
-  if(!publicSystemLinks||!ready||blocked)return;
+  const links=publicSystemLinks;
+  if(!links||!ready||blocked)return;
   let alive=true, busy=false;
   const consume=async()=>{
    if(!alive||busy||AppState.currentState!=="active")return;
    busy=true;
    try{
-    const route=publicSystemPath(await publicSystemLinks.takePending());
+    const route=publicSystemPath(await links.takePending());
     if(!alive||!route)return;
     if(signedIn)router.push(route);
     else{rememberDestination(route);router.replace("/sign-in");}
    }catch{}finally{busy=false;}
   };
-  const link=publicSystemLinks.addListener("onPublicLink",()=>void consume());
+  const link=links.addListener("onPublicLink",()=>void consume());
   const foreground=AppState.addEventListener("change",state=>{if(state==="active")void consume();});
   void consume();
   return()=>{alive=false;link.remove();foreground.remove();};
