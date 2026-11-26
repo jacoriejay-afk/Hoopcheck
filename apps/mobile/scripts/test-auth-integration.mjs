@@ -294,3 +294,19 @@ test("pending social callback requires setup rather than consuming a protected d
     assert.equal(f.calls.freshSignIns, 0);
   }
 });
+
+
+test("restored pending social account resumes setup and hides member tabs", () => {
+  for (const [segments, params, expected] of [
+    [["dashboard"], {}, [{ pathname: "/sign-up", params: { social: "1" } }]],
+    [["sign-up"], {}, [{ pathname: "/sign-up", params: { social: "1" } }]],
+    [["sign-up"], { social: "1" }, []],
+    [["auth", "callback"], {}, []],
+  ]) {
+    const f = screen("app/_layout.tsx", { segments, params, state: [{ ready: true, userId: "pending", error: null, pendingSocialSignup: true }] });
+    f.effects[2]();
+    assert.deepEqual(f.calls.replace, expected);
+    assert.equal(f.nodes.some(node => node.type === "TabBar"), false);
+    assert.equal(f.nodes.find(node => node.type === "AppLock").props.protectedScreen, false);
+  }
+});
