@@ -20,6 +20,7 @@ function load(name, state, overrides = {}) {
   const exports = {};
   const stubs = {
     './BrandLogo': { BrandLogo: () => null },
+    './HoopCheckLoading': { HoopCheckLoading: 'HoopCheckLoading' },
     'react-native': { Modal: 'Modal', Pressable: 'Pressable', Text: 'Text', View: 'View', Image: 'Image', ScrollView: 'ScrollView', Switch: 'Switch', useColorScheme: () => 'dark', AppState: { addEventListener: () => ({ remove() {} }) } },
     'react-native-safe-area-context': { SafeAreaView: 'SafeAreaView' },
     '../src/native/preferences': { useDevicePreferences: () => state },
@@ -70,6 +71,7 @@ test('app lock conceals content throughout hydration', async () => {
   for (const [authReady, ready] of [[false, false], [false, true], [true, false]]) {
     const tree = await render(load('AppLock', { ready, preferences: { appLock: false } }), { authReady, protectedScreen: true, userId: "user-a" });
     assert.equal(tree.root.findByType('Modal').props.visible, true);
+    assert.equal(tree.root.findByType('HoopCheckLoading').props.label, 'Preparing HoopCheck…');
     await act(async () => tree.unmount());
   }
 });
@@ -195,7 +197,9 @@ test('startup failure shows an actionable retry while protected content stays co
   const tree = await render(load('AppLock', { ready: true, preferences: { appLock: false } }), { authReady: false, protectedScreen: false, userId: null, startupError: 'Could not restore sign-in', retryStartup: () => retried++ });
   assert.equal(tree.root.findByType('Modal').props.visible, true);
   await act(async () => tree.root.findAllByType('Pressable')[0].props.onPress());
-  assert.equal(retried, 1); await act(async () => tree.unmount());
+  assert.equal(retried, 1);
+  assert.equal(tree.root.findAllByType('HoopCheckLoading').length, 0);
+  await act(async () => tree.unmount());
 });
 
 test('foreground after five minutes relocks and background invalidates an in-flight unlock', async t => {

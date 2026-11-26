@@ -57,7 +57,7 @@ export function Onboarding({ signedIn = false }: { signedIn?: boolean }) {
         <Pressable accessibilityRole="button" disabled={busy} onPress={() => void finish(true)} style={{ minHeight: 48, justifyContent: "center" }}><Text style={{ color: theme.accent, fontSize: 16 }}>Skip</Text></Pressable>
       </View>
       <View accessible={false} style={{ flexDirection: "row", gap: 5 }}>{Array.from({length:total},(_,index)=><View key={index} style={{flex:1,height:4,borderRadius:4,backgroundColor:index<=step?theme.accent:theme.border}}/>)}</View>
-      <BrandLogo />
+      <BrandLogo animated />
       <Reveal key={step}>
         <Text style={{ color: theme.accent, fontSize: 13, fontWeight: "800", letterSpacing: 1 }}>BASKETBALL WITHOUT BORDERS</Text>
         <Text accessibilityRole="header" style={{ color: theme.foreground, fontFamily: "HoopCheckDisplay", fontSize: 30, lineHeight: 34, marginVertical: 12 }}>{heading}</Text>

@@ -25,7 +25,7 @@ async function render(accountType, path, platform = "ios") {
     'react-native-reanimated': {
       __esModule: true, default: { View: 'AnimatedView' },
       useAnimatedStyle: fn => fn(), useSharedValue: value => ({ get: () => value, set() {} }),
-      withSpring: value => value, withTiming: value => value, withSequence: (...values) => values[values.length - 1],
+      cancelAnimation: () => {}, withSpring: value => value, withTiming: value => value, withSequence: (...values) => values[values.length - 1],
     },
     '../src/motion/Provider': { useMotionSetting: () => true },
     '../src/motion/config': { motion: { shortFade: 0, spring: {} } },
@@ -120,5 +120,16 @@ test("directory screens retain Search selection and safe bottom clearance", asyn
     assert.match(screen, /edges=\{\["left", "right", "bottom"\]\}/);
     assert.match(screen, /paddingBottom: 100/);
     assert.match(screen, /contentContainerStyle=\{styles\.list\}/);
+  }
+});
+
+
+test("related screens expose one correct active tab", async () => {
+  for (const [path, label] of [["/reels","hoopfeed"],["/hoopgroups","hoopfeed"],["/team-hub/groups/team","hoopfeed"],["/feed-welcome","hoopfeed"],["/fan-live","home"],["/messages","alerts"],["/settings","account"],["/membership","account"],["/connections","account"],["/about","account"]]) {
+    const { tree } = await render("player", path);
+    try {
+      assert.equal(tree.root.findByProps({testID: "tab-" + label}).props.accessibilityState.selected, true);
+      assert.equal(tree.root.findAllByType("Pressable").filter(tab => tab.props.accessibilityState.selected).length, 1);
+    } finally { await act(async () => tree.unmount()); }
   }
 });

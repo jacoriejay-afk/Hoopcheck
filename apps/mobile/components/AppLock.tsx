@@ -1,3 +1,4 @@
+import { HoopCheckLoading } from "./HoopCheckLoading";
 import { MfaChallenge } from "./MfaChallenge";
 import { useMfaSession } from "../src/native/mfa";
 import { Onboarding } from "./Onboarding";
@@ -93,7 +94,7 @@ export function AppLock({ authReady, protectedScreen, userId, startupError, retr
   if (!needsLock && !needsOnboarding) return null;
   return <Modal visible={true} animationType="none" onRequestClose={() => {}}>{authReady && ready && userId && security.phase === "challenge" && security.state?.owner === userId ? <MfaChallenge key={userId} state={security.state} onVerified={security.retry} /> : !needsLock ? <Onboarding key={userId ?? "guest"} signedIn={Boolean(userId)} /> : <View style={{ flex: 1, justifyContent: "center", backgroundColor: theme.background, padding: 28, gap: 24 }}>
     {bootstrapping ? <>
-      <Text accessibilityLiveRegion="polite" style={{ color: theme.foreground }}>{recoveryMessage || "Preparing HoopCheck…"}</Text>
+      {recoveryMessage ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ color: theme.foreground }}>{recoveryMessage}</Text> : <HoopCheckLoading label="Preparing HoopCheck…" />}
       {recoveryMessage ? <Pressable accessibilityRole="button" onPress={() => { if (startupError) retryStartup?.(); if (restoreError) void retryRestore(); if (security.phase === "error") security.retry(); }} style={{ minHeight: 48, justifyContent: "center" }}><Text style={{ color: theme.accent, fontSize: 18 }}>Try again</Text></Pressable> : null}
       {recoveryMessage ? <Pressable accessibilityRole="button" accessibilityState={{ busy, disabled: busy }} disabled={busy} onPress={() => void normalSignIn()} style={{ minHeight: 48, justifyContent: "center" }}><Text accessibilityLiveRegion="polite" style={{ color: theme.accent, fontSize: 18 }}>{busy ? "Preparing sign-in…" : "Use normal sign-in"}</Text></Pressable> : null}
     </> : <>
