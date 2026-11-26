@@ -27,7 +27,7 @@ declare
  c public.player_contact_requests%rowtype;
  r private.player_reference_requests%rowtype;
  effective_state text;
- current_time timestamptz:=pg_catalog.now();
+ at_time timestamptz:=pg_catalog.now();
 begin
  if actor is null or p_connection_id is null or p_action is null
     or p_action not in ('read','request','accept','decline','revoke') then
@@ -41,9 +41,11 @@ begin
  -- A participant can revoke even after blocking or connection closure; no
  -- private details are returned to an actor who is no longer eligible.
  if p_action='revoke' then
-  update private.player_reference_requests set state='revoked',changed_at=current_time
+  update private.player_reference_requests set state='revoked',changed_at=at_time
    where connection_id=c.id and (requester_id=actor or reference_id=actor)
-     and state in ('pending','accepted') and expires_at>current_time;
+     and requester_id=c.requester_id and reference_id=c.player_id
+     and state in ('pending','accepted') and expires_at>at_time;
+  if not found then raise exception 'Reference no longer active' using errcode='42501';end if;
   return pg_catalog.jsonb_build_object('state','revoked','canRequest',false,'canRespond',false,'canRevoke',false);
  end if;
  if c.status<>'accepted'
@@ -57,21 +59,21 @@ begin
  if p_action='request' then
   if actor<>c.requester_id then raise exception 'Reference unavailable' using errcode='42501';end if;
   perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('hoopcheck-reference:'||actor::text,0));
-  if (select count(*) from private.player_reference_requests where requester_id=actor and created_at>=current_time-interval '24 hours')>=3 then
+  if (select count(*) from private.player_reference_requests where requester_id=actor and created_at>=at_time-interval '24 hours')>=3 then
    raise exception 'Reference request limit reached' using errcode='P0001';
   end if;
   insert into private.player_reference_requests(connection_id,requester_id,reference_id)
    values(c.id,c.requester_id,c.player_id) on conflict(connection_id) do nothing;
  elsif p_action in ('accept','decline') then
   if actor<>c.player_id then raise exception 'Reference unavailable' using errcode='42501';end if;
-  update private.player_reference_requests set state=case when p_action='accept' then 'accepted' else 'declined' end,changed_at=current_time
-   where connection_id=c.id and reference_id=actor and state='pending' and expires_at>current_time;
+  update private.player_reference_requests set state=case when p_action='accept' then 'accepted' else 'declined' end,changed_at=at_time
+   where connection_id=c.id and reference_id=actor and state='pending' and expires_at>at_time;
   if not found then raise exception 'Reference no longer pending' using errcode='42501';end if;
  end if;
  select * into r from private.player_reference_requests where connection_id=c.id
     and requester_id=c.requester_id and reference_id=c.player_id;
  effective_state:=case when r.connection_id is null then 'none'
-     when r.expires_at<=current_time then 'expired' else r.state end;
+     when r.expires_at<=at_time then 'expired' else r.state end;
  return pg_catalog.jsonb_build_object(
    'state',effective_state,
    'canRequest',effective_state='none' and actor=c.requester_id,
