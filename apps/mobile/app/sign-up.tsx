@@ -1,3 +1,6 @@
+import { nativeCareerClaimsEnabled } from "../src/native/careerClaims";
+import { rememberCareerSignup } from "../src/native/careerSignup";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { recordFreshSignIn } from "../src/native/lockPolicy";
 import { useDevicePreferences } from "../src/native/preferences";
 import { Input, Button } from "../src/primitives";
@@ -99,9 +102,13 @@ export default function SignUpScreen() {
       if (error) throw error;
       if (data.session) {
         recordFreshSignIn(data.session.user.id);
-        router.replace("/dashboard");
+        if (nativeCareerClaimsEnabled && accountType === "player") router.replace("/account/career-history");
+        else router.replace("/dashboard");
       } else {
-        Alert.alert("Check your email", "HoopCheck may require email verification before you can sign in.", [
+        if (nativeCareerClaimsEnabled && accountType === "player" && data.user?.id && data.user.identities?.length) {
+          await rememberCareerSignup(AsyncStorage, data.user.id);
+        }
+        Alert.alert("Check your email", "HoopCheck may require email verification before you can sign in. Players can add their private career history after signing in.", [
           { text: "Go to sign in", onPress: () => router.replace("/sign-in") },
         ]);
       }
@@ -157,6 +164,7 @@ export default function SignUpScreen() {
               </View>
             </>
           ) : null}
+          {nativeCareerClaimsEnabled && accountType === "player" ? <Text style={styles.hint}>After creating your account, add your past teams and seasons privately. You can also do this later from Account. Claims require independent verification.</Text> : null}
           <Text style={styles.label}>Email</Text>
           <Input placeholderTextColor={theme.muted} value={email} onChangeText={setEmail} autoCapitalize="none" autoComplete="email" keyboardType="email-address" style={styles.input} placeholder="you@example.com" />
           <Text style={styles.label}>Password</Text>
