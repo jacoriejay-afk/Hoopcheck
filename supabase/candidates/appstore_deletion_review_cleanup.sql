@@ -72,7 +72,7 @@ BEGIN
  THEN RAISE EXCEPTION 'Review cleanup not confirmed'; END IF;
  IF NOT public.assert_account_deletion_worker(p_request,p_owner,p_fence) THEN RAISE EXCEPTION 'Review cleanup lease expired' USING ERRCODE='42501'; END IF;
  RETURN jsonb_build_object('ok',true);
-END $;
+END $$;
 REVOKE ALL ON FUNCTION hoopcheck_deletion_private.review_cleanup_scope(uuid,uuid,uuid,boolean) FROM public,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION hoopcheck_deletion_private.review_cleanup_scope(uuid,uuid,uuid,boolean) TO service_role;
 CREATE OR REPLACE FUNCTION public.approved_deletion_review_scope(p_request uuid,p_owner uuid,p_fence uuid,p_apply boolean DEFAULT false)
