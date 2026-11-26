@@ -1,0 +1,1408 @@
+{
+  "format": 1,
+  "source": "Read-only production and isolated test catalog snapshots; no row data, credentials or connection strings",
+  "candidate": "270bfe78e3744b72e329a1a0a670b34ca7da9a4d",
+  "coverage": "public ordinary tables only; structural counts are necessary but not sufficient for schema parity",
+  "production": [
+    {
+      "schema": "public",
+      "name": "admin_roles",
+      "rls": true,
+      "force_rls": false,
+      "columns": 3,
+      "fk_count": 1,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "agent_showcases",
+      "rls": true,
+      "force_rls": false,
+      "columns": 14,
+      "fk_count": 2,
+      "policies": 4
+    },
+    {
+      "schema": "public",
+      "name": "ambassador_attributions",
+      "rls": true,
+      "force_rls": false,
+      "columns": 14,
+      "fk_count": 2,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "ambassador_campaigns",
+      "rls": true,
+      "force_rls": false,
+      "columns": 3,
+      "fk_count": 0,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "ambassador_clicks",
+      "rls": true,
+      "force_rls": false,
+      "columns": 2,
+      "fk_count": 1,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "ambassador_commission_adjustments",
+      "rls": true,
+      "force_rls": false,
+      "columns": 8,
+      "fk_count": 1,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "ambassador_commissions",
+      "rls": true,
+      "force_rls": false,
+      "columns": 19,
+      "fk_count": 2,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "ambassador_grants",
+      "rls": true,
+      "force_rls": false,
+      "columns": 13,
+      "fk_count": 1,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "ambassador_owner_audit",
+      "rls": true,
+      "force_rls": false,
+      "columns": 6,
+      "fk_count": 1,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "ambassador_payment_fingerprints",
+      "rls": true,
+      "force_rls": false,
+      "columns": 2,
+      "fk_count": 1,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "ambassador_payout_items",
+      "rls": true,
+      "force_rls": false,
+      "columns": 2,
+      "fk_count": 2,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "ambassador_payouts",
+      "rls": true,
+      "force_rls": false,
+      "columns": 11,
+      "fk_count": 1,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "ambassador_referral_tokens",
+      "rls": true,
+      "force_rls": false,
+      "columns": 4,
+      "fk_count": 1,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "ambassador_refund_audit",
+      "rls": true,
+      "force_rls": false,
+      "columns": 9,
+      "fk_count": 1,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "analytics_events",
+      "rls": true,
+      "force_rls": false,
+      "columns": 6,
+      "fk_count": 1,
+      "policies": 2
+    },
+    {
+      "schema": "public",
+      "name": "coach_team_assignments",
+      "rls": true,
+      "force_rls": false,
+      "columns": 9,
+      "fk_count": 2,
+      "policies": 4
+    },
+    {
+      "schema": "public",
+      "name": "coach_team_requests",
+      "rls": true,
+      "force_rls": false,
+      "columns": 10,
+      "fk_count": 3,
+      "policies": 3
+    },
+    {
+      "schema": "public",
+      "name": "coaches",
+      "rls": true,
+      "force_rls": false,
+      "columns": 13,
+      "fk_count": 2,
+      "policies": 4
+    },
+    {
+      "schema": "public",
+      "name": "copyright_report_rate_limits",
+      "rls": true,
+      "force_rls": false,
+      "columns": 3,
+      "fk_count": 0,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "copyright_reports",
+      "rls": true,
+      "force_rls": false,
+      "columns": 21,
+      "fk_count": 1,
+      "policies": 2
+    },
+    {
+      "schema": "public",
+      "name": "creator_profiles",
+      "rls": true,
+      "force_rls": false,
+      "columns": 10,
+      "fk_count": 1,
+      "policies": 4
+    },
+    {
+      "schema": "public",
+      "name": "directory_change_log",
+      "rls": true,
+      "force_rls": false,
+      "columns": 6,
+      "fk_count": 1,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "directory_import_jobs",
+      "rls": true,
+      "force_rls": false,
+      "columns": 10,
+      "fk_count": 1,
+      "policies": 2
+    },
+    {
+      "schema": "public",
+      "name": "directory_sources",
+      "rls": true,
+      "force_rls": false,
+      "columns": 17,
+      "fk_count": 0,
+      "policies": 4
+    },
+    {
+      "schema": "public",
+      "name": "directory_sync_previews",
+      "rls": true,
+      "force_rls": false,
+      "columns": 13,
+      "fk_count": 2,
+      "policies": 3
+    },
+    {
+      "schema": "public",
+      "name": "directory_sync_runs",
+      "rls": true,
+      "force_rls": false,
+      "columns": 11,
+      "fk_count": 1,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "directory_team_requests",
+      "rls": true,
+      "force_rls": false,
+      "columns": 12,
+      "fk_count": 2,
+      "policies": 2
+    },
+    {
+      "schema": "public",
+      "name": "display_name_changes",
+      "rls": true,
+      "force_rls": false,
+      "columns": 3,
+      "fk_count": 1,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "fan_connection_requests",
+      "rls": true,
+      "force_rls": false,
+      "columns": 7,
+      "fk_count": 2,
+      "policies": 3
+    },
+    {
+      "schema": "public",
+      "name": "fan_feed_archives",
+      "rls": true,
+      "force_rls": false,
+      "columns": 3,
+      "fk_count": 2,
+      "policies": 4
+    },
+    {
+      "schema": "public",
+      "name": "fan_feed_checks",
+      "rls": true,
+      "force_rls": false,
+      "columns": 3,
+      "fk_count": 2,
+      "policies": 3
+    },
+    {
+      "schema": "public",
+      "name": "fan_feed_comments",
+      "rls": true,
+      "force_rls": false,
+      "columns": 5,
+      "fk_count": 2,
+      "policies": 3
+    },
+    {
+      "schema": "public",
+      "name": "fan_feed_likes",
+      "rls": true,
+      "force_rls": false,
+      "columns": 3,
+      "fk_count": 2,
+      "policies": 3
+    },
+    {
+      "schema": "public",
+      "name": "fan_feed_posts",
+      "rls": true,
+      "force_rls": false,
+      "columns": 10,
+      "fk_count": 3,
+      "policies": 2
+    },
+    {
+      "schema": "public",
+      "name": "fan_live_chat_messages",
+      "rls": true,
+      "force_rls": false,
+      "columns": 5,
+      "fk_count": 2,
+      "policies": 2
+    },
+    {
+      "schema": "public",
+      "name": "fan_live_chat_presence",
+      "rls": true,
+      "force_rls": false,
+      "columns": 3,
+      "fk_count": 2,
+      "policies": 4
+    },
+    {
+      "schema": "public",
+      "name": "fan_live_chat_reports",
+      "rls": true,
+      "force_rls": false,
+      "columns": 9,
+      "fk_count": 4,
+      "policies": 2
+    },
+    {
+      "schema": "public",
+      "name": "fan_live_chat_user_controls",
+      "rls": true,
+      "force_rls": false,
+      "columns": 5,
+      "fk_count": 2,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "fan_live_game_reminders",
+      "rls": true,
+      "force_rls": false,
+      "columns": 5,
+      "fk_count": 2,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "fan_live_games",
+      "rls": true,
+      "force_rls": false,
+      "columns": 19,
+      "fk_count": 3,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "fan_live_team_provider_map",
+      "rls": true,
+      "force_rls": false,
+      "columns": 5,
+      "fk_count": 1,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "feed_poll_votes",
+      "rls": true,
+      "force_rls": false,
+      "columns": 4,
+      "fk_count": 2,
+      "policies": 4
+    },
+    {
+      "schema": "public",
+      "name": "feed_post_archives",
+      "rls": true,
+      "force_rls": false,
+      "columns": 3,
+      "fk_count": 2,
+      "policies": 4
+    },
+    {
+      "schema": "public",
+      "name": "feed_post_bookmarks",
+      "rls": true,
+      "force_rls": false,
+      "columns": 3,
+      "fk_count": 2,
+      "policies": 3
+    },
+    {
+      "schema": "public",
+      "name": "feed_post_checks",
+      "rls": true,
+      "force_rls": false,
+      "columns": 4,
+      "fk_count": 2,
+      "policies": 3
+    },
+    {
+      "schema": "public",
+      "name": "feed_post_comments",
+      "rls": true,
+      "force_rls": false,
+      "columns": 6,
+      "fk_count": 3,
+      "policies": 2
+    },
+    {
+      "schema": "public",
+      "name": "feed_posting_activity",
+      "rls": true,
+      "force_rls": false,
+      "columns": 3,
+      "fk_count": 1,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "feed_posts",
+      "rls": true,
+      "force_rls": false,
+      "columns": 27,
+      "fk_count": 6,
+      "policies": 2
+    },
+    {
+      "schema": "public",
+      "name": "follow_relationships",
+      "rls": true,
+      "force_rls": false,
+      "columns": 8,
+      "fk_count": 1,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "game_winner_picks",
+      "rls": true,
+      "force_rls": false,
+      "columns": 6,
+      "fk_count": 2,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "hoop_group_blocks",
+      "rls": true,
+      "force_rls": false,
+      "columns": 3,
+      "fk_count": 2,
+      "policies": 3
+    },
+    {
+      "schema": "public",
+      "name": "hoop_group_channels",
+      "rls": true,
+      "force_rls": false,
+      "columns": 6,
+      "fk_count": 1,
+      "policies": 3
+    },
+    {
+      "schema": "public",
+      "name": "hoop_group_members",
+      "rls": true,
+      "force_rls": false,
+      "columns": 3,
+      "fk_count": 2,
+      "policies": 3
+    },
+    {
+      "schema": "public",
+      "name": "hoop_group_moderation_events",
+      "rls": true,
+      "force_rls": false,
+      "columns": 6,
+      "fk_count": 2,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "hoop_group_posts",
+      "rls": true,
+      "force_rls": false,
+      "columns": 7,
+      "fk_count": 2,
+      "policies": 2
+    },
+    {
+      "schema": "public",
+      "name": "hoop_group_reports",
+      "rls": true,
+      "force_rls": false,
+      "columns": 5,
+      "fk_count": 2,
+      "policies": 2
+    },
+    {
+      "schema": "public",
+      "name": "hoop_group_spaces",
+      "rls": true,
+      "force_rls": false,
+      "columns": 9,
+      "fk_count": 1,
+      "policies": 3
+    },
+    {
+      "schema": "public",
+      "name": "hoopfeed_post_shares",
+      "rls": true,
+      "force_rls": false,
+      "columns": 5,
+      "fk_count": 3,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "identity_verification_sessions",
+      "rls": true,
+      "force_rls": false,
+      "columns": 7,
+      "fk_count": 1,
+      "policies": 2
+    },
+    {
+      "schema": "public",
+      "name": "league_rights_registry",
+      "rls": true,
+      "force_rls": false,
+      "columns": 25,
+      "fk_count": 0,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "leagues",
+      "rls": true,
+      "force_rls": false,
+      "columns": 14,
+      "fk_count": 1,
+      "policies": 4
+    },
+    {
+      "schema": "public",
+      "name": "moderation_risk_flags",
+      "rls": true,
+      "force_rls": false,
+      "columns": 10,
+      "fk_count": 1,
+      "policies": 2
+    },
+    {
+      "schema": "public",
+      "name": "notifications",
+      "rls": true,
+      "force_rls": false,
+      "columns": 9,
+      "fk_count": 1,
+      "policies": 2
+    },
+    {
+      "schema": "public",
+      "name": "player_career_stops",
+      "rls": true,
+      "force_rls": false,
+      "columns": 12,
+      "fk_count": 2,
+      "policies": 5
+    },
+    {
+      "schema": "public",
+      "name": "player_contact_messages",
+      "rls": true,
+      "force_rls": false,
+      "columns": 5,
+      "fk_count": 2,
+      "policies": 2
+    },
+    {
+      "schema": "public",
+      "name": "player_contact_requests",
+      "rls": true,
+      "force_rls": false,
+      "columns": 7,
+      "fk_count": 2,
+      "policies": 3
+    },
+    {
+      "schema": "public",
+      "name": "player_team_affiliations",
+      "rls": true,
+      "force_rls": false,
+      "columns": 9,
+      "fk_count": 2,
+      "policies": 4
+    },
+    {
+      "schema": "public",
+      "name": "player_verification_requests",
+      "rls": true,
+      "force_rls": false,
+      "columns": 17,
+      "fk_count": 4,
+      "policies": 2
+    },
+    {
+      "schema": "public",
+      "name": "privacy_request_events",
+      "rls": true,
+      "force_rls": false,
+      "columns": 10,
+      "fk_count": 2,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "privacy_requests",
+      "rls": true,
+      "force_rls": false,
+      "columns": 10,
+      "fk_count": 2,
+      "policies": 3
+    },
+    {
+      "schema": "public",
+      "name": "profile_claim_requests",
+      "rls": true,
+      "force_rls": false,
+      "columns": 12,
+      "fk_count": 2,
+      "policies": 3
+    },
+    {
+      "schema": "public",
+      "name": "profile_reports",
+      "rls": true,
+      "force_rls": false,
+      "columns": 6,
+      "fk_count": 2,
+      "policies": 2
+    },
+    {
+      "schema": "public",
+      "name": "profiles",
+      "rls": true,
+      "force_rls": false,
+      "columns": 59,
+      "fk_count": 5,
+      "policies": 3
+    },
+    {
+      "schema": "public",
+      "name": "public_business_inquiries",
+      "rls": true,
+      "force_rls": false,
+      "columns": 6,
+      "fk_count": 0,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "reel_moderation_actions",
+      "rls": true,
+      "force_rls": false,
+      "columns": 8,
+      "fk_count": 3,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "review_comments",
+      "rls": true,
+      "force_rls": false,
+      "columns": 6,
+      "fk_count": 2,
+      "policies": 3
+    },
+    {
+      "schema": "public",
+      "name": "review_likes",
+      "rls": true,
+      "force_rls": false,
+      "columns": 4,
+      "fk_count": 2,
+      "policies": 3
+    },
+    {
+      "schema": "public",
+      "name": "review_moderation_events",
+      "rls": true,
+      "force_rls": false,
+      "columns": 8,
+      "fk_count": 3,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "review_reports",
+      "rls": true,
+      "force_rls": false,
+      "columns": 6,
+      "fk_count": 2,
+      "policies": 3
+    },
+    {
+      "schema": "public",
+      "name": "review_submission_rate_limits",
+      "rls": true,
+      "force_rls": false,
+      "columns": 3,
+      "fk_count": 1,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "reviews",
+      "rls": true,
+      "force_rls": false,
+      "columns": 24,
+      "fk_count": 4,
+      "policies": 4
+    },
+    {
+      "schema": "public",
+      "name": "rights_registry",
+      "rls": true,
+      "force_rls": false,
+      "columns": 26,
+      "fk_count": 1,
+      "policies": 4
+    },
+    {
+      "schema": "public",
+      "name": "rights_registry_events",
+      "rls": true,
+      "force_rls": false,
+      "columns": 7,
+      "fk_count": 2,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "sponsor_inquiries",
+      "rls": true,
+      "force_rls": false,
+      "columns": 5,
+      "fk_count": 1,
+      "policies": 2
+    },
+    {
+      "schema": "public",
+      "name": "stripe_trial_claims",
+      "rls": true,
+      "force_rls": false,
+      "columns": 5,
+      "fk_count": 1,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "stripe_webhook_event_claims",
+      "rls": true,
+      "force_rls": false,
+      "columns": 8,
+      "fk_count": 0,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "subscription_events",
+      "rls": true,
+      "force_rls": false,
+      "columns": 5,
+      "fk_count": 0,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "subscriptions",
+      "rls": true,
+      "force_rls": false,
+      "columns": 13,
+      "fk_count": 1,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "support_requests",
+      "rls": true,
+      "force_rls": false,
+      "columns": 6,
+      "fk_count": 1,
+      "policies": 2
+    },
+    {
+      "schema": "public",
+      "name": "support_ticket_messages",
+      "rls": true,
+      "force_rls": false,
+      "columns": 5,
+      "fk_count": 2,
+      "policies": 2
+    },
+    {
+      "schema": "public",
+      "name": "support_tickets",
+      "rls": true,
+      "force_rls": false,
+      "columns": 11,
+      "fk_count": 2,
+      "policies": 3
+    },
+    {
+      "schema": "public",
+      "name": "team_fan_group_comments",
+      "rls": true,
+      "force_rls": false,
+      "columns": 5,
+      "fk_count": 2,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "team_fan_group_join_requests",
+      "rls": true,
+      "force_rls": false,
+      "columns": 7,
+      "fk_count": 3,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "team_fan_group_members",
+      "rls": true,
+      "force_rls": false,
+      "columns": 3,
+      "fk_count": 2,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "team_fan_group_moderators",
+      "rls": true,
+      "force_rls": false,
+      "columns": 5,
+      "fk_count": 2,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "team_fan_group_posts",
+      "rls": true,
+      "force_rls": false,
+      "columns": 8,
+      "fk_count": 2,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "team_fan_group_reports",
+      "rls": true,
+      "force_rls": false,
+      "columns": 7,
+      "fk_count": 3,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "team_fan_groups",
+      "rls": true,
+      "force_rls": false,
+      "columns": 5,
+      "fk_count": 1,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "team_fanfeed_posts",
+      "rls": true,
+      "force_rls": false,
+      "columns": 8,
+      "fk_count": 2,
+      "policies": 2
+    },
+    {
+      "schema": "public",
+      "name": "team_league_memberships",
+      "rls": true,
+      "force_rls": false,
+      "columns": 8,
+      "fk_count": 2,
+      "policies": 4
+    },
+    {
+      "schema": "public",
+      "name": "team_pay_checkins",
+      "rls": true,
+      "force_rls": false,
+      "columns": 6,
+      "fk_count": 2,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "teams",
+      "rls": true,
+      "force_rls": false,
+      "columns": 16,
+      "fk_count": 2,
+      "policies": 4
+    },
+    {
+      "schema": "public",
+      "name": "user_blocks",
+      "rls": true,
+      "force_rls": false,
+      "columns": 3,
+      "fk_count": 2,
+      "policies": 3
+    },
+    {
+      "schema": "public",
+      "name": "user_preferences",
+      "rls": true,
+      "force_rls": false,
+      "columns": 6,
+      "fk_count": 1,
+      "policies": 3
+    },
+    {
+      "schema": "public",
+      "name": "user_watchlists",
+      "rls": true,
+      "force_rls": false,
+      "columns": 10,
+      "fk_count": 1,
+      "policies": 4
+    },
+    {
+      "schema": "public",
+      "name": "womens_leagues",
+      "rls": true,
+      "force_rls": false,
+      "columns": 6,
+      "fk_count": 0,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "womens_team_reviews",
+      "rls": true,
+      "force_rls": false,
+      "columns": 13,
+      "fk_count": 2,
+      "policies": 3
+    },
+    {
+      "schema": "public",
+      "name": "womens_teams",
+      "rls": true,
+      "force_rls": false,
+      "columns": 10,
+      "fk_count": 1,
+      "policies": 1
+    }
+  ],
+  "test": [
+    {
+      "schema": "public",
+      "name": "admin_roles",
+      "rls": true,
+      "force_rls": false,
+      "columns": 3,
+      "fk_count": 1,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "agent_showcases",
+      "rls": true,
+      "force_rls": false,
+      "columns": 14,
+      "fk_count": 2,
+      "policies": 4
+    },
+    {
+      "schema": "public",
+      "name": "ambassador_attributions",
+      "rls": true,
+      "force_rls": false,
+      "columns": 14,
+      "fk_count": 2,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "ambassador_campaigns",
+      "rls": true,
+      "force_rls": false,
+      "columns": 3,
+      "fk_count": 0,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "ambassador_clicks",
+      "rls": true,
+      "force_rls": false,
+      "columns": 2,
+      "fk_count": 1,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "ambassador_commission_adjustments",
+      "rls": true,
+      "force_rls": false,
+      "columns": 8,
+      "fk_count": 1,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "ambassador_commissions",
+      "rls": true,
+      "force_rls": false,
+      "columns": 19,
+      "fk_count": 2,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "ambassador_grants",
+      "rls": true,
+      "force_rls": false,
+      "columns": 13,
+      "fk_count": 1,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "ambassador_owner_audit",
+      "rls": true,
+      "force_rls": false,
+      "columns": 6,
+      "fk_count": 1,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "ambassador_payment_fingerprints",
+      "rls": true,
+      "force_rls": false,
+      "columns": 2,
+      "fk_count": 1,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "ambassador_payout_items",
+      "rls": true,
+      "force_rls": false,
+      "columns": 2,
+      "fk_count": 2,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "ambassador_payouts",
+      "rls": true,
+      "force_rls": false,
+      "columns": 11,
+      "fk_count": 1,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "ambassador_referral_tokens",
+      "rls": true,
+      "force_rls": false,
+      "columns": 4,
+      "fk_count": 1,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "ambassador_refund_audit",
+      "rls": true,
+      "force_rls": false,
+      "columns": 9,
+      "fk_count": 1,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "coaches",
+      "rls": true,
+      "force_rls": false,
+      "columns": 13,
+      "fk_count": 0,
+      "policies": 4
+    },
+    {
+      "schema": "public",
+      "name": "creator_profiles",
+      "rls": true,
+      "force_rls": false,
+      "columns": 10,
+      "fk_count": 1,
+      "policies": 4
+    },
+    {
+      "schema": "public",
+      "name": "fan_live_games",
+      "rls": true,
+      "force_rls": false,
+      "columns": 13,
+      "fk_count": 1,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "fan_live_league_provider_map",
+      "rls": true,
+      "force_rls": false,
+      "columns": 6,
+      "fk_count": 1,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "fan_live_team_provider_map",
+      "rls": false,
+      "force_rls": false,
+      "columns": 1,
+      "fk_count": 0,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "feed_posts",
+      "rls": true,
+      "force_rls": false,
+      "columns": 3,
+      "fk_count": 0,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "hoop_group_blocks",
+      "rls": true,
+      "force_rls": false,
+      "columns": 3,
+      "fk_count": 2,
+      "policies": 3
+    },
+    {
+      "schema": "public",
+      "name": "hoop_group_channels",
+      "rls": true,
+      "force_rls": false,
+      "columns": 6,
+      "fk_count": 1,
+      "policies": 3
+    },
+    {
+      "schema": "public",
+      "name": "hoop_group_members",
+      "rls": true,
+      "force_rls": false,
+      "columns": 3,
+      "fk_count": 2,
+      "policies": 3
+    },
+    {
+      "schema": "public",
+      "name": "hoop_group_moderation_events",
+      "rls": true,
+      "force_rls": false,
+      "columns": 6,
+      "fk_count": 2,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "hoop_group_posts",
+      "rls": true,
+      "force_rls": false,
+      "columns": 7,
+      "fk_count": 2,
+      "policies": 2
+    },
+    {
+      "schema": "public",
+      "name": "hoop_group_reports",
+      "rls": true,
+      "force_rls": false,
+      "columns": 5,
+      "fk_count": 2,
+      "policies": 2
+    },
+    {
+      "schema": "public",
+      "name": "hoop_group_spaces",
+      "rls": true,
+      "force_rls": false,
+      "columns": 9,
+      "fk_count": 1,
+      "policies": 3
+    },
+    {
+      "schema": "public",
+      "name": "leagues",
+      "rls": true,
+      "force_rls": false,
+      "columns": 10,
+      "fk_count": 0,
+      "policies": 4
+    },
+    {
+      "schema": "public",
+      "name": "native2_arena_checkins",
+      "rls": true,
+      "force_rls": false,
+      "columns": 5,
+      "fk_count": 2,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "native2_highlight_assets",
+      "rls": true,
+      "force_rls": false,
+      "columns": 7,
+      "fk_count": 1,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "native2_travel_preferences",
+      "rls": true,
+      "force_rls": false,
+      "columns": 5,
+      "fk_count": 1,
+      "policies": 4
+    },
+    {
+      "schema": "public",
+      "name": "native2_verification_video_assets",
+      "rls": true,
+      "force_rls": false,
+      "columns": 6,
+      "fk_count": 2,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "player_career_stops",
+      "rls": true,
+      "force_rls": false,
+      "columns": 12,
+      "fk_count": 2,
+      "policies": 5
+    },
+    {
+      "schema": "public",
+      "name": "player_verification_requests",
+      "rls": true,
+      "force_rls": false,
+      "columns": 2,
+      "fk_count": 1,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "profiles",
+      "rls": true,
+      "force_rls": false,
+      "columns": 59,
+      "fk_count": 0,
+      "policies": 3
+    },
+    {
+      "schema": "public",
+      "name": "reel_moderation_actions",
+      "rls": true,
+      "force_rls": false,
+      "columns": 8,
+      "fk_count": 3,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "review_submission_rate_limits",
+      "rls": true,
+      "force_rls": false,
+      "columns": 3,
+      "fk_count": 1,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "reviews",
+      "rls": true,
+      "force_rls": false,
+      "columns": 24,
+      "fk_count": 4,
+      "policies": 3
+    },
+    {
+      "schema": "public",
+      "name": "stripe_trial_claims",
+      "rls": true,
+      "force_rls": false,
+      "columns": 5,
+      "fk_count": 1,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "stripe_webhook_event_claims",
+      "rls": true,
+      "force_rls": false,
+      "columns": 8,
+      "fk_count": 0,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "subscription_events",
+      "rls": true,
+      "force_rls": false,
+      "columns": 5,
+      "fk_count": 0,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "subscriptions",
+      "rls": true,
+      "force_rls": false,
+      "columns": 13,
+      "fk_count": 1,
+      "policies": 1
+    },
+    {
+      "schema": "public",
+      "name": "support_tickets",
+      "rls": true,
+      "force_rls": false,
+      "columns": 4,
+      "fk_count": 0,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "teams",
+      "rls": true,
+      "force_rls": false,
+      "columns": 16,
+      "fk_count": 0,
+      "policies": 4
+    },
+    {
+      "schema": "public",
+      "name": "womens_team_reviews",
+      "rls": true,
+      "force_rls": false,
+      "columns": 13,
+      "fk_count": 2,
+      "policies": 2
+    },
+    {
+      "schema": "public",
+      "name": "womens_teams",
+      "rls": true,
+      "force_rls": false,
+      "columns": 10,
+      "fk_count": 0,
+      "policies": 1
+    }
+  ],
+  "migrations": {
+    "production_count": 221,
+    "test_count": 53,
+    "exact_version_overlap": 0,
+    "exact_name_overlap": 9
+  },
+  "limitations": [
+    "No full schema dump obtained",
+    "Counts do not establish column, FK, ACL or policy semantic equality",
+    "Do not replay migrations based only on names or timestamp differences",
+    "Private schemas, managed auth/storage, functions, views and grants require separate full-DDL comparison"
+  ]
+}
