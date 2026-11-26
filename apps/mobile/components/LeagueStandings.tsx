@@ -1,3 +1,4 @@
+import { dataConfidence } from "../src/native/dataConfidence";
 import { useCallback,useEffect,useRef,useState } from "react";
 import { AppState,Text,View } from "react-native";
 import { useFocusEffect } from "expo-router";
@@ -49,6 +50,7 @@ export function LeagueStandings({id,side,season}:{id:string;side:StandingsSide;s
   {offline?<Text style={{color:theme.muted}}>Reconnect to check standings.</Text>:status==="unavailable"?<Text accessibilityLiveRegion="polite" style={{color:theme.muted}}>Standings are not verified or licensed for this competition. No estimated rankings are shown.</Text>:status==="expired"?<Text accessibilityLiveRegion="polite" style={{color:theme.muted}}>Standings expired. Check again for an update.</Text>:status==="error"?<Text accessibilityRole="alert" style={{color:theme.muted}}>Standings could not load. Try again.</Text>:null}
   {current&&selected?<View style={{gap:theme.spacing.sm}}>
     <Text style={{color:theme.foreground,fontWeight:"800"}}>{current.season} · {current.source}</Text>
+    <Text style={{color:theme.muted,...theme.type.caption}}>{dataConfidence({kind:"reviewed-provider",observedAt:current.observedAt,expiresAt:current.expiresAt}).label} · Coverage may be incomplete.</Text>
     {current.attribution?<Text style={{color:theme.muted}}>{current.attribution}</Text>:null}
     <Text style={{color:theme.muted,...theme.type.caption}}>Observed {new Date(current.observedAt).toLocaleString()} · — means not reported</Text>
     <Text accessibilityRole="header" style={{color:theme.foreground,fontWeight:"800"}}>{[selected.stage,selected.group].filter(Boolean).join(" · ")||"Competition table"}</Text>
