@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { AppState, Platform, Pressable, Text, View } from "react-native";
-import { VideoView, useVideoPlayer, isPictureInPictureSupported } from "expo-video";
+import { VideoView, useVideoPlayer, isPictureInPictureSupported, type VideoPlayer } from "expo-video";
 import { officialCatalog, reviewedOfficialAsset } from "./officialVideoPolicy";
 
 // Unmounted on session change, sign-out, opt-out or navigation away. The host
@@ -12,6 +12,10 @@ export function OfficialGuideVideo({ videoId, activeSession }: {videoId: string;
   const asset = reviewedOfficialAsset(officialCatalog, videoId, enabled, activeSession, supported);
   if (asset === null) return <Text>Picture-in-picture is unavailable for this video.</Text>;
   return <ApprovedVideo key={asset} asset={asset} />;
+}
+// Expo's native player is an imperative external object, not React state.
+function setBackgroundPlayback(player: VideoPlayer, enabled: boolean) {
+  player.staysActiveInBackground = enabled;
 }
 function ApprovedVideo({asset}: {asset:number}) {
   const player = useVideoPlayer(asset, value => { value.loop = false; value.staysActiveInBackground = false; });
@@ -42,7 +46,7 @@ function ApprovedVideo({asset}: {asset:number}) {
     if (!permitted.current || !nativeView || busy.current || floating.current || AppState.currentState !== "active") return;
     busy.current = true; setStarting(true); setMessage("");
     try {
-      player.staysActiveInBackground = true;
+      setBackgroundPlayback(player, true);
       await nativeView.startPictureInPicture();
       if (!permitted.current) {
         player.pause();
@@ -50,7 +54,7 @@ function ApprovedVideo({asset}: {asset:number}) {
       }
     } catch {
       player.pause();
-      if (permitted.current) { player.staysActiveInBackground = false; setMessage("Picture-in-picture could not start on this device."); }
+      if (permitted.current) { setBackgroundPlayback(player, false); setMessage("Picture-in-picture could not start on this device."); }
     } finally {
       busy.current = false;
       if (permitted.current) setStarting(false);
@@ -59,7 +63,7 @@ function ApprovedVideo({asset}: {asset:number}) {
   const stopped = () => {
     floating.current = false;
     if (!permitted.current) return;
-    player.staysActiveInBackground = false;
+    setBackgroundPlayback(player, false);
     if (AppState.currentState !== "active") player.pause();
   };
   return <View>
@@ -67,7 +71,7 @@ function ApprovedVideo({asset}: {asset:number}) {
       allowsPictureInPicture startsPictureInPictureAutomatically={false}
       onPictureInPictureStart={() => {
         if (!permitted.current) { player.pause(); void view.current?.stopPictureInPicture().catch(()=>{}); return; }
-        floating.current = true; player.staysActiveInBackground = true;
+        floating.current = true; setBackgroundPlayback(player, true);
       }} onPictureInPictureStop={stopped} />
     <Pressable accessibilityRole="button" accessibilityLabel="Open official video in picture-in-picture" disabled={starting} onPress={()=>void start()} style={{minHeight:44,padding:12}}>
       <Text>Picture-in-picture</Text>
