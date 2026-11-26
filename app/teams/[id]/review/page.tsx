@@ -14,6 +14,7 @@ import { useParams } from "next/navigation";
 
 import { supabase } from "../../../../lib/supabase";
 import { getHoopCheckEntitlements } from "../../../../lib/membership-tier";
+import { webExactSeasonReviewsEnabled,readVerifiedSeasonChoices,createReviewSessionGuard } from "../../../../lib/career/web-review-season-choices";
 
 type Team = {
   id: string;
@@ -109,7 +110,9 @@ export default function TeamReviewPage() {
   const [team, setTeam] =
     useState<Team | null>(null);
 
-  const [playerSeason, setPlayerSeason] = useState("2026-27");
+  const [playerSeason, setPlayerSeason] = useState(webExactSeasonReviewsEnabled ? "" : "2026-27");
+  const [verifiedSeasons,setVerifiedSeasons] = useState<string[]>([]);
+  const [verifiedScope,setVerifiedScope] = useState<{userId:string;teamId:string}|null>(null);
 
   const [communication, setCommunication] = useState(0);
   const [payment, setPayment] = useState(0);
@@ -148,6 +151,19 @@ export default function TeamReviewPage() {
   const [accountType, setAccountType] = useState<string | null>(null);
 
   useEffect(() => {
+    let active=true;
+    const controller=new AbortController();
+    const sessionGuard=createReviewSessionGuard(()=>{
+      if(!active)return;
+      active=false;controller.abort();
+      setVerifiedSeasons([]);setVerifiedScope(null);setEligible(false);setPlayerSeason("");
+      setAccountType(null);setIsPaid(false);setLoading(false);
+      setTitle("");setBody("");setAnonymous(false);
+      setCommunication(0);setPayment(0);setHousing(0);setMedicalSupport(0);
+      setCoachingQuality(0);setFacilities(0);setPlayingTimeHonesty(0);
+      setMessage("Your session changed. Please reopen this review form.");
+    });
+    if(webExactSeasonReviewsEnabled){setLoading(true);setEligible(false);setVerifiedSeasons([]);setVerifiedScope(null);setPlayerSeason("");setAlreadyReviewed(false);}
     async function loadPage() {
       if (!id) {
         setLoading(false);
@@ -174,6 +190,7 @@ export default function TeamReviewPage() {
         return;
       }
 
+      if(!active)return;
       setTeam(teamData);
 
       const {
@@ -192,7 +209,20 @@ export default function TeamReviewPage() {
         .eq("id", user.id)
         .maybeSingle();
 
+      if(!active)return;
       setAccountType(profile?.account_type || null);
+      if(webExactSeasonReviewsEnabled){
+        try{
+          const {data:{session}}=await supabase.auth.getSession();
+          if(!active||session?.user.id!==user.id||!sessionGuard.observe(user.id))throw Error("Session changed.");
+          const seasons=await readVerifiedSeasonChoices(session.access_token,id,"team",controller.signal);
+          const {data:after}=await supabase.auth.getSession();
+          if(!active||!sessionGuard.observe(after.session?.user.id)||after.session?.user.id!==user.id)return;
+          setVerifiedSeasons(seasons);setVerifiedScope({userId:user.id,teamId:id});setEligible(seasons.length>0);setIsPaid(seasons.length>0);
+        }catch{if(active){setEligible(false);setMessage("Verified career seasons are unavailable. Please try again.");}}
+        finally{if(active)setLoading(false);}
+        return;
+      }
       const { data: adminValue } = await supabase.rpc("is_current_user_admin_or_moderator");
       const isAdmin = adminValue === true;
 
@@ -259,7 +289,9 @@ export default function TeamReviewPage() {
       setLoading(false);
     }
 
-    loadPage();
+    void loadPage().catch(()=>{if(active){setEligible(false);setMessage("Review access is unavailable. Please try again.");setLoading(false);}});
+    const auth=webExactSeasonReviewsEnabled?supabase.auth.onAuthStateChange((_event,session)=>{if(active)sessionGuard.observe(session?.user.id);}):null;
+    return()=>{active=false;controller.abort();auth?.data.subscription.unsubscribe();};
   }, [id]);
 
   async function handleSubmit(
@@ -267,7 +299,9 @@ export default function TeamReviewPage() {
   ) {
     event.preventDefault();
 
+    if(submitting)return;
     setMessage("");
+    if(webExactSeasonReviewsEnabled&&(!verifiedScope||verifiedScope.teamId!==id||!verifiedSeasons.includes(playerSeason))){setMessage("Choose a verified season before submitting.");return;}
 
     if (categoryValues.some(value => value < 1 || value > 5)) {
       setMessage("Please rate all seven signing categories.");
@@ -331,7 +365,7 @@ export default function TeamReviewPage() {
     const { data: sessionData } = await supabase.auth.getSession();
     const accessToken = sessionData.session?.access_token;
 
-    if (!accessToken) {
+    if (!accessToken || (webExactSeasonReviewsEnabled && sessionData.session?.user.id!==verifiedScope?.userId)) {
       setMessage("Your session expired. Please log in again.");
       setSubmitting(false);
       return;
@@ -365,7 +399,7 @@ export default function TeamReviewPage() {
 
     if (!response.ok) {
       if (response.status === 409 || result?.error?.includes("already")) {
-        setMessage("You have already submitted a review for this team.");
+        setMessage(webExactSeasonReviewsEnabled?"You already submitted a review for this team and season.":"You have already submitted a review for this team.");
       } else if (response.status === 401 || response.status === 403) {
         setMessage(result?.error || "An active HoopCheck membership is required to submit a review.");
       } else {
@@ -415,7 +449,7 @@ export default function TeamReviewPage() {
     );
   }
 
-  if (!eligible) {
+  if (!eligible || (webExactSeasonReviewsEnabled && verifiedScope?.teamId!==id)) {
     return (
       <main>
 <section className="hero">
@@ -423,7 +457,7 @@ export default function TeamReviewPage() {
           <h1>{accountType === "fan" ? "Review writing is not available on fan accounts." : "Reviews are for players who played here."}</h1>
           <p>{accountType === "fan" ? "You can still follow this team and read reviews available with your membership." : "You can only make ratings and reviews for teams you currently or previously played for. Your player account must also be verified."}</p>
           <div className="actions">
-            <Link href="/account" className="btn">View My Account</Link>
+            <Link href={webExactSeasonReviewsEnabled?"/career-history":"/account"} className="btn">{webExactSeasonReviewsEnabled?"Manage career history":"View My Account"}</Link>
             <Link href={`/teams/${team.id}`} className="btn dark">Back To Team</Link>
           </div>
         </section>
@@ -543,7 +577,7 @@ export default function TeamReviewPage() {
             <li>Reviews must be based on your real professional experience with this organization.</li>
             <li>Be factual and respectful. Do not post threats, harassment, private information, or explicit/prohibited content.</li>
             <li>Do not submit a review for a team you did not play for or work with as an eligible professional player.</li>
-            <li>One review per player for each team. Reviews may be moderated before publication.</li>
+            <li>{webExactSeasonReviewsEnabled?"One active review per verified team and season.":"One review per player for each team."} Reviews may be moderated before publication.</li>
             <li>You may choose to publish anonymously, but HoopCheck may retain verification information for moderation and trust.</li>
           </ul>
         </div>
@@ -564,7 +598,7 @@ export default function TeamReviewPage() {
             <div className="eyebrow">Season Played</div>
             <label htmlFor="player-season">Which season did you play for {team.name}?</label>
             <select id="player-season" className="input" value={playerSeason} onChange={(event) => setPlayerSeason(event.target.value)} required>
-              {Array.from({length: 27}, (_, i) => 2026 - i).map((year) => <option key={year} value={`${year}-${String((year + 1) % 100).padStart(2, "0")}`}>{year}-{String((year + 1) % 100).padStart(2, "0")}</option>)}
+              {webExactSeasonReviewsEnabled ? <><option value="">Select a verified season</option>{verifiedSeasons.map(season=><option key={season} value={season}>{season}</option>)}</> : Array.from({length: 27}, (_, i) => 2026 - i).map((year) => <option key={year} value={`${year}-${String((year + 1) % 100).padStart(2, "0")}`}>{year}-{String((year + 1) % 100).padStart(2, "0")}</option>)}
             </select>
             <p className="muted" style={{fontSize:12,marginTop:8}}>This season will appear publicly with your player review.</p>
           </div>

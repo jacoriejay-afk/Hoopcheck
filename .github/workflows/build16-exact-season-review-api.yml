@@ -5,6 +5,9 @@ on:
       - 'app/api/reviews/route.ts'
       - 'app/api/review-access/route.ts'
       - 'app/api/womens-reviews/route.ts'
+      - 'app/teams/**/review/page.tsx'
+      - 'app/womens/**/review/page.tsx'
+      - 'scripts/test-web-verified-review-seasons.mjs'
       - 'lib/career/**'
       - 'scripts/test-exact-season-review-api.mjs'
       - '.github/workflows/build16-exact-season-review-api.yml'
@@ -20,4 +23,4 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: node --test scripts/test-exact-season-review-api.mjs
+      - run: node --test scripts/test-exact-season-review-api.mjs scripts/test-web-verified-review-seasons.mjs
