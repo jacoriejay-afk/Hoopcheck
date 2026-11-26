@@ -49,3 +49,12 @@ test('fresh and legacy preferences retain defaults; malformed security settings 
   assert.equal(prefs.role, undefined);
   assert.equal(prefs.secret, undefined);
 });
+
+test('measurement units are optional for old installs and cannot overwrite security settings', async () => {
+ assert.equal(restorePreferences('{}').measurementSystem, undefined);
+ assert.equal(restorePreferences('{"measurementSystem":"metric"}').measurementSystem, 'metric');
+ assert.equal(restorePreferences('{"measurementSystem":"imperial"}').measurementSystem, 'imperial');
+ assert.equal(restorePreferences('{"measurementSystem":"unknown"}').measurementSystem, undefined);
+ let saved; const writer=createPreferenceWriter({...defaultPreferences,appLock:true},async value=>{saved=value});
+ await writer.update({measurementSystem:'imperial'}); assert.equal(saved.appLock,true); assert.equal(saved.measurementSystem,'imperial');
+});

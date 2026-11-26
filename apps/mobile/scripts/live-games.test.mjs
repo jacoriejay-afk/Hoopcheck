@@ -86,3 +86,20 @@ test("predictions require both distinct mapped team IDs",()=>{
  assert.equal(predictionMatchupReady(game(1,{team_id:"invalid"})),false);
  assert.equal(predictionMatchupReady({team_id:"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",opponent_team_id:"AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA"}),false);
 });
+
+test('native score source presentation hides expired, future, unverified and final fallback scores',async()=>{
+  const {nativeScoreDisplay,gameDisplayState}=await import('../src/native/gameFreshness.ts');
+  const stamp=now.getTime();
+  const row={...game(1,{status:'live',started_at:'2026-11-18T11:00:00Z',home_score:91,away_score:98,score_updated_at:new Date(stamp-60000).toISOString()}),score_source:'balldontlie-nba'};
+  assert.deepEqual(nativeScoreDisplay(row,stamp),{homeScore:91,awayScore:98,sourceLabel:'BALLDONTLIE · Backup source',warning:null,showPeriod:false});
+  assert.equal(gameDisplayState(row,stamp,stamp).isLive,true);
+  for(const change of [{score_updated_at:new Date(stamp-300001).toISOString()},{score_updated_at:new Date(stamp+1).toISOString()},{status:'final'},{home_score:null},{score_source:'unrecognized'}]){
+    const display=nativeScoreDisplay({...row,...change},stamp);
+    assert.equal(display.homeScore,null);assert.equal(display.awayScore,null);assert.ok(display.warning);
+  }
+  assert.equal(gameDisplayState(row,stamp+300000,stamp+300000).isLive,false);
+  const primary={...row,score_source:'primary',provider_source:'api-sports-basketball',home_score:80,away_score:90};
+  assert.deepEqual(nativeScoreDisplay(primary,stamp),{homeScore:80,awayScore:90,sourceLabel:'API-Sports',warning:null,showPeriod:true});
+  assert.equal(nativeScoreDisplay({...primary,home_score:-1},stamp).homeScore,null);
+  assert.equal(nativeScoreDisplay({...primary,score_source:undefined,provider_source:undefined},stamp).sourceLabel,null);
+});

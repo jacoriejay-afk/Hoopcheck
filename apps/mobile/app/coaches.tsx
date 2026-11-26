@@ -39,7 +39,7 @@ export default function CoachesScreen() {
     let query = supabase.from("coaches")
       .select("id,name,country,city,website")
       .eq("active", true)
-      .order("name", { ascending: true })
+      .order("name", { ascending: true }).order("id", { ascending: true })
       .range(start, start + PAGE_SIZE);
     if (clean) query = query.or(`name.ilike.%${clean}%,country.ilike.%${clean}%,city.ilike.%${clean}%`);
     const { data, error: queryError } = await read(`coaches:${clean}:${start}`, () => query);
@@ -80,7 +80,6 @@ export default function CoachesScreen() {
     <SafeAreaView edges={["left", "right", "bottom"]} style={styles.safe}>
       <OfflineBanner savedAt={savedAt} />
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back</Text></Pressable>
         <Text style={styles.kicker}>COACH DIRECTORY</Text>
         <Text style={styles.title}>Find a coach</Text>
         <Text style={styles.subtitle}>Search available coach records by name or location. Verify a coach’s current role and contract details independently.</Text>
@@ -100,17 +99,17 @@ export default function CoachesScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.accent} colors={[theme.accent]} progressBackgroundColor={theme.surface} />}
           renderItem={({ item, index }) => (
             <Reveal key={`${appliedTerm}:${item.id}`} index={index}>
-            <GlassCard style={styles.card}>
+            <Pressable accessibilityRole="link" accessibilityLabel={`View ${item.name}`} onPress={()=>router.push({pathname:"/coaches/[id]",params:{id:item.id}})}><GlassCard style={styles.card}>
               <View style={styles.avatar}><Text style={styles.avatarText}>{item.name.slice(0, 1).toUpperCase()}</Text></View>
               <View style={styles.cardBody}>
                 <Text style={styles.coachName}>{item.name}</Text>
                 <Text style={styles.meta}>{[item.city, item.country].filter(Boolean).join(", ") || "Location not listed"}</Text>
                 {item.website && /^https?:\/\//i.test(item.website) ? <Text style={styles.website}>{item.website}</Text> : null}
               </View>
-            </GlassCard>
+            </GlassCard></Pressable>
             </Reveal>
           )}
-          ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyTitle}>No coach records available yet</Text><Text style={styles.emptyText}>HoopCheck’s coach directory currently has no active records. No sample or invented coaches are shown. Check back as verified directory data is added.</Text></View>}
+          ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyTitle}>{error?"Coach directory unavailable":appliedTerm?"No matching coaches":"No coach records available yet"}</Text><Text style={styles.emptyText}>{error?"Retry when you are connected.":appliedTerm?"Try another name or location.":"No sample or invented coaches are shown."}</Text></View>}
           ListFooterComponent={hasMore ? <Button onPress={() => void nextPage()} style={styles.more}>{loading ? <ActivityIndicator color={theme.onButton} /> : <Text style={styles.moreText}>Load more coaches</Text>}</Button> : <Text style={styles.footer}>Directory listings are not endorsements. Confirm current employment, references, and contract terms before making a decision.</Text>}
           onEndReachedThreshold={0.5}
           onEndReached={() => { if (hasMore && !loading) void nextPage(); }}

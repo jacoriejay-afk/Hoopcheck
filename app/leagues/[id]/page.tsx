@@ -28,6 +28,7 @@ type League = {
   name: string;
   country: string | null;
   level: string | null;
+  season?: string | null;
   logo_url?: string | null;
 };
 
@@ -186,7 +187,7 @@ export default function LeagueDetailPage() {
       } = await supabase
         .from("leagues")
         .select(
-          "id, name, country, level, logo_url"
+          "id, name, country, level, logo_url, season"
         )
         .eq("id", id)
         .maybeSingle();
@@ -525,7 +526,7 @@ export default function LeagueDetailPage() {
       </section>
 
       <nav className="hc-league-profile-jumps" aria-label="League profile sections">
-        <a href="#league-history">Team history</a><a href="#league-clubs">Current clubs</a><a href="#league-insights">League insights</a>
+        {process.env.NEXT_PUBLIC_HOOPDATA_STANDINGS_WEB_PREVIEW_ENABLED === "true" && league.season && /^\d{4}(?:-\d{4})?$/.test(league.season) ? <Link prefetch={false} href={`/leagues/${league.id}/standings?season=${encodeURIComponent(league.season)}`}>Standings</Link> : null}<a href="#league-history">Team history</a><a href="#league-clubs">Current clubs</a><a href="#league-insights">League insights</a>
       </nav>
       <section id="league-history" className="hero">
         <div className="eyebrow">Team Membership History</div>

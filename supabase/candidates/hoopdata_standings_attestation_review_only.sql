@@ -17,6 +17,7 @@ CREATE TABLE public.hoopdata_standings_attestations (
   season text NOT NULL CHECK(season ~ '^[0-9]{4}(-[0-9]{4})?$'),
   observed_at timestamptz NOT NULL,
   mapping_reviewed_at timestamptz NOT NULL,
+  retention_expires_at timestamptz,
   snapshot_rows jsonb NOT NULL CHECK(jsonb_typeof(snapshot_rows)='array'),
   reviewed_roster jsonb NOT NULL CHECK(jsonb_typeof(reviewed_roster)='array'),
   reviewed_team_ids jsonb NOT NULL CHECK(jsonb_typeof(reviewed_team_ids)='object'),
@@ -52,7 +53,7 @@ BEGIN
   IF NOT FOUND OR NOT m.reviewed OR m.provider_league_id IS DISTINCT FROM p_provider OR m.reviewed_at IS NULL THEN RETURN false; END IF;
   IF NOT EXISTS(SELECT 1 FROM public.leagues WHERE id=p_league AND active AND basketball_type=m.side) THEN RETURN false; END IF;
   SELECT * INTO s FROM public.hoopdata_competition_snapshots WHERE league_id=p_league AND kind='standings' AND season=p_season FOR UPDATE;
-  IF NOT FOUND OR s.provider_league_id IS DISTINCT FROM p_provider OR s.observed_at IS DISTINCT FROM p_observed OR s.rows IS DISTINCT FROM p_rows THEN RETURN false; END IF;
+  IF NOT FOUND OR s.provider_league_id IS DISTINCT FROM p_provider OR s.observed_at IS DISTINCT FROM p_observed OR s.rows IS DISTINCT FROM p_rows OR (s.retention_expires_at IS NOT NULL AND s.retention_expires_at<=clock_timestamp()) THEN RETURN false; END IF;
   -- Reject malformed identities before casting; rank and statistic validation remain in the TS preparation gate.
   IF EXISTS(SELECT 1 FROM jsonb_array_elements(p_rows||p_roster) AS x(r)
     WHERE jsonb_typeof(r) IS DISTINCT FROM 'object' OR jsonb_typeof(r->'teamId') IS DISTINCT FROM 'number'
@@ -69,8 +70,8 @@ BEGIN
     JOIN public.hoopdata_standings_team_mappings a ON a.league_id=p_league AND a.provider_league_id=p_provider AND a.provider_team_id=ids.provider_team_id
     JOIN public.teams t ON t.id=a.team_id AND t.active AND t.league_id=p_league AND t.basketball_type=m.side;
   IF matched<>(SELECT count(DISTINCT r->>'teamId') FROM jsonb_array_elements(p_rows) AS x(r)) THEN RETURN false; END IF;
-  INSERT INTO public.hoopdata_standings_attestations(league_id,provider_league_id,season,observed_at,mapping_reviewed_at,snapshot_rows,reviewed_roster,reviewed_team_ids,reviewed_by,evidence)
-    VALUES(p_league,p_provider,p_season,p_observed,m.reviewed_at,p_rows,p_roster,aliases,p_reviewer,p_evidence)
+  INSERT INTO public.hoopdata_standings_attestations(league_id,provider_league_id,season,observed_at,mapping_reviewed_at,retention_expires_at,snapshot_rows,reviewed_roster,reviewed_team_ids,reviewed_by,evidence)
+    VALUES(p_league,p_provider,p_season,p_observed,m.reviewed_at,s.retention_expires_at,p_rows,p_roster,aliases,p_reviewer,p_evidence)
     ON CONFLICT DO NOTHING;
   RETURN FOUND;
 END;

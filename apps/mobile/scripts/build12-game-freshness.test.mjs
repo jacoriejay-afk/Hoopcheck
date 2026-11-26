@@ -79,7 +79,8 @@ test("Game Center keeps its last verified user-scoped snapshot during network fa
   assert.match(src, /HoopCheckLoading/);
   assert.match(src, /canUseLiveGameHub \? "hub" : "predictions"/);
   assert.match(scoreboard, /state\.needsVerification/);
-  assert.match(scoreboard, /live && game\.period_label/);
+  assert.match(scoreboard, /const live = state\.isLive && !display\.warning/);
+  assert.match(scoreboard, /live && display\.showPeriod && game\.period_label/);
   assert.match(loader, /\.lte\("scheduled_at", until\)/);
   assert.match(loader, /const visible = games\.filter/);
 });

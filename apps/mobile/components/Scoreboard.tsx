@@ -7,7 +7,7 @@ import { motion } from "../src/motion/config";
 import { EntityArtwork } from "./EntityArtwork";
 import { useEntryTheme } from "../src/theme";
 import type { LiveGame, GameTeam } from "../src/native/liveGames";
-import { gameDisplayState, providerReceiptLabel } from "../src/native/gameFreshness";
+import { gameDisplayState, providerReceiptLabel, nativeScoreDisplay } from "../src/native/gameFreshness";
 
 /**
  * Short, one-shot pulse only when a previously rendered LIVE score changes.
@@ -73,7 +73,8 @@ function LiveBorder({ width, height, running }: { width: number; height: number;
 export function Scoreboard({ game, teams, checkedAtMs, nowMs, featured = false, active = false }: { game: LiveGame; teams: Record<string, GameTeam>; checkedAtMs?: number; nowMs?: number; featured?: boolean; active?: boolean }) {
   const t = useEntryTheme();
   const state = gameDisplayState(game, nowMs, checkedAtMs);
-  const live = state.isLive;
+  const display = nativeScoreDisplay(game, nowMs);
+  const live = state.isLive && !display.warning;
   const reduced = useMotionSetting();
   const [size, setSize] = useState({ width: 0, height: 0 });
   const showBorder = featured && live;
@@ -84,16 +85,18 @@ export function Scoreboard({ game, teams, checkedAtMs, nowMs, featured = false, 
   return <View onLayout={featured ? ({ nativeEvent: { layout } }) => setSize(previous => previous.width === layout.width && previous.height === layout.height ? previous : { width: layout.width, height: layout.height }) : undefined} style={{ gap: 4, borderLeftWidth: live && !showBorder ? 2 : 0, borderLeftColor: t.button, paddingLeft: live && !showBorder ? 8 : 0, padding: showBorder ? 8 : undefined }}>
     {showBorder ? <LiveBorder width={size.width} height={size.height} running={active && !reduced} /> : null}
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: t.spacing.sm, alignItems: "center" }}>
-      <View style={{ backgroundColor: live ? t.accentSurface : t.chip, paddingHorizontal: t.spacing.sm, paddingVertical: t.spacing.xs, borderRadius: t.radius.pill }}><Text style={{ color: live ? t.accent : t.onChip, ...t.type.caption, fontWeight: "700" }}>{state.label}{live && game.period_label ? ` · ${game.period_label}` : ""}</Text></View>
+      <View style={{ backgroundColor: live ? t.accentSurface : t.chip, paddingHorizontal: t.spacing.sm, paddingVertical: t.spacing.xs, borderRadius: t.radius.pill }}><Text style={{ color: live ? t.accent : t.onChip, ...t.type.caption, fontWeight: "700" }}>{display.warning && state.isLive ? "Awaiting score update" : state.label}{live && display.showPeriod && game.period_label ? ` · ${game.period_label}` : ""}</Text></View>
       <Text style={{ color: t.muted, ...t.type.caption }}>{game.scheduled_at && Number.isFinite(Date.parse(game.scheduled_at)) ? new Date(game.scheduled_at).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "Tip-off not confirmed"}</Text>
     </View>
-    {([{ name: home, score: game.home_score, logo: host?.logo_url, bg: host?.logo_bg }, { name: away, score: game.away_score, logo: visitor?.logo_url, bg: visitor?.logo_bg }]).map((team, index) => <View key={index} style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
+    {([{ name: home, score: display.homeScore, logo: host?.logo_url, bg: host?.logo_bg }, { name: away, score: display.awayScore, logo: visitor?.logo_url, bg: visitor?.logo_bg }]).map((team, index) => <View key={index} style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
       <EntityArtwork name={team.name} kind="teams" size={28} logoUrl={team.logo} logoBg={team.bg} />
       <Text style={{ flex: 1, minWidth: 0, color: t.foreground, ...t.type.section }}>{team.name}</Text>
       <ScoreValue gameId={game.id} name={team.name} score={team.score} live={live} color={t.foreground} fontSize={Math.min(24, t.courtside.typography.score)} fontFamily={t.type.ui.fontFamily} />
     </View>)}
-    {game.home_score == null || game.away_score == null ? <Text style={{ color: t.muted, ...t.type.caption }}>Score not reported</Text> : null}
+    {display.homeScore == null || display.awayScore == null ? <Text style={{ color: t.muted, ...t.type.caption }}>Score not reported</Text> : null}
     {game.status === "live" ? <Text style={{ color: t.muted, ...t.type.caption }}>{providerReceiptLabel(game.score_updated_at, nowMs)}</Text> : null}
+    {display.sourceLabel ? <Text style={{ color: t.muted, ...t.type.caption }}>{display.sourceLabel}</Text> : null}
+    {display.warning ? <Text accessibilityRole="alert" style={{ color: t.muted, ...t.type.caption }}>{display.warning}</Text> : null}
     {state.needsVerification ? <Text style={{ color: t.muted, ...t.type.caption }}>Provider status not verified. Results may be delayed.</Text> : null}
   </View>;
 }
