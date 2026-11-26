@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { readWithDeadline } from "./readDeadline";
+import { readWithDeadline } from "./readDeadline.ts";
 const uuid=/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 async function bearer(client:SupabaseClient,uid:string){
   if(!uuid.test(uid))throw Error("Invalid account.");
