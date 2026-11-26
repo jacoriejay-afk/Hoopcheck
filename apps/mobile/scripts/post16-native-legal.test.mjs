@@ -23,3 +23,12 @@ test("Settings and native support open native legal screen",()=>{
   assert.match(support,/pathname:"\/account\/policies",params:\{kind:"privacy"\}/);
   assert.match(support,/pathname:"\/account\/policies",params:\{kind:"terms"\}/);
 });
+
+test("account deletion does not promise subscription cancellation or completed deletion",()=>{
+  const terms=read("../../../app/terms/page.tsx");
+  assert.match(terms,/Deleting your HoopCheck account does not automatically cancel subscriptions/);
+  assert.match(terms,/Cancellation is not a condition for submitting an account deletion request/);
+  assert.match(terms,/apps\.apple\.com\/account\/subscriptions\//);
+  assert.match(terms,/a request alone does not mean deletion has completed/);
+  assert.doesNotMatch(terms,/Active HoopCheck subscriptions are canceled as part of the deletion process/);
+});

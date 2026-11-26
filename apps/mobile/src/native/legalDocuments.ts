@@ -7,7 +7,7 @@ export const legalDocuments = {
     "blocks": [
       {
         "kind": "p",
-        "text": "Last updated: November 9, 2026"
+        "text": "Last updated: November 26, 2026"
       },
       {
         "kind": "h2",
@@ -31,7 +31,7 @@ export const legalDocuments = {
       },
       {
         "kind": "p",
-        "text": "Subscription records may include plan, subscription status, billing period, Stripe customer or subscription identifiers, and transaction-related information. HoopCheck does not intentionally store complete payment-card numbers in its application database."
+        "text": "Subscription records may include plan, subscription status, billing period, Stripe customer or subscription identifiers, Apple App Store transaction or subscription identifiers where applicable, and transaction-related information. HoopCheck does not intentionally store complete payment-card numbers in its application database."
       },
       {
         "kind": "h2",
@@ -115,11 +115,11 @@ export const legalDocuments = {
       },
       {
         "kind": "h2",
-        "text": "7. Stripe"
+        "text": "7. Payment Providers"
       },
       {
         "kind": "p",
-        "text": "HoopCheck uses Stripe for subscription billing and payment processing. Stripe may process payment, billing, fraud-prevention, and account information necessary to provide those services."
+        "text": "HoopCheck uses Stripe for subscription billing and payment processing. Stripe may process payment, billing, fraud-prevention, and account information necessary to provide those services. Apple processes purchases made through the App Store; HoopCheck may receive limited transaction and subscription status information to verify access, process renewals, and restore eligible purchases."
       },
       {
         "kind": "h2",
@@ -249,7 +249,7 @@ export const legalDocuments = {
     "blocks": [
       {
         "kind": "p",
-        "text": "Last updated: October 9, 2026"
+        "text": "Last updated: November 26, 2026"
       },
       {
         "kind": "h2",
@@ -361,15 +361,15 @@ export const legalDocuments = {
       },
       {
         "kind": "p",
-        "text": "Subscriptions renew automatically until canceled. You can cancel through the HoopCheck membership controls or the Stripe customer portal. Cancellation normally stops the next renewal while preserving paid access through the current paid period."
+        "text": "Subscriptions renew automatically until canceled. For web subscriptions billed through Stripe, use the HoopCheck membership controls or Stripe customer portal. For subscriptions purchased through the Apple App Store, manage or cancel the subscription in your Apple Account subscription settings (apps.apple.com/account/subscriptions/). Cancellation normally stops the next renewal while preserving paid access through the current paid period, subject to the applicable provider terms."
       },
       {
         "kind": "p",
-        "text": "Unless a refund is required by applicable law or expressly offered at checkout, subscription payments are generally non-refundable. If you believe you were charged in error, charged more than once, or have another billing issue, contact HoopCheck Support promptly so the charge can be reviewed."
+        "text": "Refund eligibility depends on applicable law and the billing provider. For Apple App Store purchases, request a refund through Apple (reportaproblem.apple.com). For Stripe-billed purchases or other account billing concerns, contact HoopCheck Support promptly."
       },
       {
         "kind": "p",
-        "text": "Payments are processed by Stripe or another displayed payment provider. HoopCheck does not intentionally store complete payment-card numbers in its application database."
+        "text": "Payments are processed by Stripe, Apple, or another displayed payment provider. HoopCheck does not intentionally store complete payment-card numbers in its application database."
       },
       {
         "kind": "h2",
@@ -377,7 +377,7 @@ export const legalDocuments = {
       },
       {
         "kind": "p",
-        "text": "You may delete your HoopCheck account through the available account controls. Active HoopCheck subscriptions are canceled as part of the deletion process before the account is removed."
+        "text": "You may request account deletion through the available HoopCheck account controls. Account deletion and subscription cancellation are separate actions. Deleting your HoopCheck account does not automatically cancel subscriptions or stop renewal charges. Manage or cancel a Stripe-billed subscription through its billing controls, and an Apple App Store subscription through your Apple Account subscription settings. Cancellation is not a condition for submitting an account deletion request. HoopCheck will communicate the status and completion of the deletion process; a request alone does not mean deletion has completed."
       },
       {
         "kind": "p",
