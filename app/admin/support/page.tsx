@@ -4,19 +4,23 @@ import HoopLoading from "../../../components/HoopLoading";
 import {useEffect,useState} from "react";
 import Logo from "../../../components/Logo";
 import Link from "next/link";
+import {correctionSubject} from "../../../apps/mobile/src/native/dataCorrection";
 import {supabase} from "../../../lib/supabase";
 
 type Ticket={id:string;requester_id:string;subject:string;category:string;priority:string;status:string;description:string;created_at:string};
 
 export default function AdminSupport(){
- const [tickets,setTickets]=useState<Ticket[]>([]);const [message,setMessage]=useState("");const [loading,setLoading]=useState(true);
+ const [tickets,setTickets]=useState<Ticket[]>([]);const [message,setMessage]=useState("");const [loading,setLoading]=useState(true);const [correctionsOnly,setCorrectionsOnly]=useState(false);
  async function load(){setLoading(true);const {data:ok,error:roleError}=await supabase.rpc("is_current_user_admin_or_moderator");if(roleError||!ok){location.href="/dashboard";return;}const {data,error}=await supabase.from("support_tickets").select("id,requester_id,subject,category,priority,status,description,created_at").order("created_at",{ascending:false}).limit(300);if(error)setMessage("Unable to load support tickets.");else setTickets((data||[]) as Ticket[]);setLoading(false);}
  useEffect(()=>{void load();},[]);
  async function update(id:string,status:string){setMessage("");const {error}=await supabase.rpc("admin_update_support_ticket",{p_ticket_id:id,p_status:status});if(error)setMessage(error.code==="42501"?"You are not authorized to update support tickets.":"Could not update this ticket. Please try again.");else {setMessage("Ticket updated.");await load();}}
+ const visible=correctionsOnly?tickets.filter(t=>t.category==="team_request"&&t.subject===correctionSubject):tickets;
  return <main className="page-shell admin-light-shell"><div className="page-container">
   <header className="topbar"><Link href="/dashboard" className="brand">HOOPCHECK ADMIN</Link><nav className="topnav"><Link href="/admin/analytics">Analytics</Link><Link href="/admin/users">Users</Link><Link href="/admin/reviews">Reviews</Link><Link href="/admin/safety-center">Safety Center</Link></nav></header>
   <section className="hero-card"><p className="eyebrow">FOUNDER SUPPORT</p><h1>Support ticket queue.</h1><p className="muted">Operational support queue for <a href="mailto:HoopCheck@outlook.com">HoopCheck@outlook.com</a>.</p></section>
+  <div style={{display:"flex",gap:8,flexWrap:"wrap"}}><button className="btn" type="button" aria-pressed={!correctionsOnly} onClick={()=>setCorrectionsOnly(false)}>All support tickets</button><button className="btn dark" type="button" aria-pressed={correctionsOnly} onClick={()=>setCorrectionsOnly(true)}>Data correction requests</button></div>
+  {correctionsOnly?<p className="muted">Showing correction requests among the latest 300 tickets. Submissions are unverified and resolving a ticket does not edit directory data.</p>:null}
   {message&&<div className="message" role="status" style={{marginTop:18}}>{message}</div>}
-  {loading?<HoopLoading variant="inline" label="Loading tickets..." />:<section className="grid" style={{marginTop:18}}>{tickets.map(t=><article className="dashboard-card" key={t.id}><div className="eyebrow">{t.status} · {t.priority}</div><h2>{t.subject}</h2><p className="muted">{t.category} · {new Date(t.created_at).toLocaleString()}</p><p>{t.description}</p><p className="muted" style={{fontSize:12}}>Requester: {t.requester_id}</p><div style={{display:"flex",gap:8,flexWrap:"wrap"}}>{["in_progress","waiting_on_user","resolved","closed"].map(s=><button key={s} className="btn dark" onClick={()=>void update(t.id,s)}>{s.replace("_"," ")}</button>)}</div></article>)}{!tickets.length&&<div className="dashboard-card"><h2>No tickets.</h2></div>}</section>}
+  {loading?<HoopLoading variant="inline" label="Loading tickets..." />:<section className="grid" style={{marginTop:18}}>{visible.map(t=><article className="dashboard-card" key={t.id}><div className="eyebrow">{t.status} · {t.priority}</div><h2>{t.subject}</h2><p className="muted">{t.category} · {new Date(t.created_at).toLocaleString()}</p><p>{t.description}</p><p className="muted" style={{fontSize:12}}>Requester: {t.requester_id}</p><div style={{display:"flex",gap:8,flexWrap:"wrap"}}>{["in_progress","waiting_on_user","resolved","closed"].map(s=><button key={s} className="btn dark" onClick={()=>void update(t.id,s)}>{s.replace("_"," ")}</button>)}</div></article>)}{!visible.length&&<div className="dashboard-card"><h2>No tickets.</h2></div>}</section>}
  </div></main>;
 }

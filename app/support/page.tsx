@@ -3,6 +3,7 @@
 import HoopLoading from "../../components/HoopLoading";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { correctionTicket, correctionKinds, correctionFields, type CorrectionKind, type CorrectionField } from "../../apps/mobile/src/native/dataCorrection";
 import { supabase } from "../../lib/supabase";
 
 type Ticket = {
@@ -24,6 +25,13 @@ export default function SupportPage() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [correctionOpen,setCorrectionOpen]=useState(false), [kind,setKind]=useState<CorrectionKind>("teams"),[field,setField]=useState<CorrectionField>("name"),[entityId,setEntityId]=useState(""),[proposed,setProposed]=useState(""),[source,setSource]=useState("");
+  function prepareCorrection(){
+    if(process.env.NEXT_PUBLIC_HOOPCHECK_DATA_CORRECTION_ENABLED!=="true"||saving)return;
+    const ticket=correctionTicket({kind,field,entityId,correction:proposed,source});
+    if(!ticket){setMessage("Check the record ID, proposed correction and optional public HTTPS evidence link.");return;}
+    setSubject(ticket.subject);setCategory(ticket.category);setPriority(ticket.priority);setDescription(ticket.description);setCorrectionOpen(false);setMessage("Review the prepared ticket below and submit it for staff review. The directory has not changed.");
+  }
 
   async function load() {
     const {
@@ -180,6 +188,8 @@ export default function SupportPage() {
         </section>
 
         <section className="dashboard-card" style={{ marginTop: 18 }}>
+          {process.env.NEXT_PUBLIC_HOOPCHECK_DATA_CORRECTION_ENABLED==="true"?<section aria-labelledby="correction-heading" style={{marginBottom:20}}><h2 id="correction-heading">Data Correction Center</h2><p>Suggest a correction to a team or league record for private staff review. Do not include private documents, credentials or signed links.</p><button type="button" className="btn" aria-expanded={correctionOpen} onClick={()=>setCorrectionOpen(v=>!v)}>{correctionOpen?"Hide correction form":"Suggest a correction"}</button>
+          {correctionOpen?<div className="signup-form"><label>Record type<select value={kind} onChange={e=>setKind(e.target.value as CorrectionKind)}>{correctionKinds.map(value=><option key={value}>{value}</option>)}</select></label><label>Record UUID<input value={entityId} maxLength={36} onChange={e=>setEntityId(e.target.value)}/></label><label>Field<select value={field} onChange={e=>setField(e.target.value as CorrectionField)}>{correctionFields.map(value=><option key={value}>{value}</option>)}</select></label><label>Proposed correction<textarea value={proposed} maxLength={1000} onChange={e=>setProposed(e.target.value)}/></label><label>Optional public evidence URL<input type="url" value={source} maxLength={500} onChange={e=>setSource(e.target.value)}/></label><button type="button" className="btn" onClick={prepareCorrection}>Prepare correction ticket</button></div>:null}</section>:null}
           <p className="eyebrow">NEW TICKET</p>
           <form onSubmit={submit} className="signup-form">
             <label>
