@@ -1,3 +1,4 @@
+import { IntelligenceGuide } from "../components/IntelligenceGuide";
 import { ExploreLinks } from "../components/ExploreLinks";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
@@ -56,6 +57,7 @@ export default function SearchScreen() {
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
         {(["all", ...Object.keys(labels).filter(value => value !== "players" || includePlayers)] as (SearchKind | "all")[]).map(value => <Pressable key={value} accessibilityRole="button" accessibilityState={{ selected: selectedKind === value }} onPress={() => setKind(value)} style={({ pressed }) => ({ minHeight: theme.courtside.navigation.touchTarget, paddingHorizontal: 7, maxWidth: "100%", justifyContent: "center", borderRadius: theme.radius.pill, backgroundColor: selectedKind === value ? theme.accentSurface : theme.chip, opacity: pressed ? .7 : 1 })}><Text style={{ color: selectedKind === value ? theme.accent : theme.onChip, ...theme.type.caption }}>{value === "all" ? "All" : labels[value]}</Text></Pressable>)}
       </View>
+      {process.env.EXPO_PUBLIC_HOOPCHECK_INTELLIGENCE_ENABLED === "true" && !term.trim() ? <IntelligenceGuide /> : null}
       {!term ? <RecentSearches items={recents} onSelect={setTerm} /> : null}
       {!term.trim() ? <View style={{ gap: 7 }}><Text accessibilityRole="header" style={{ fontFamily: "HoopCheckDisplay", color: theme.foreground, fontSize: 22 }}>EXPLORE</Text><ExploreLinks compact /></View> : null}
       {offline ? <Text accessibilityRole="alert" style={{ color: theme.muted }}>Reconnect to search the directories.</Text> : term.trim().length < 2 ? (term.trim().length > 0 ? <Text style={{ color: theme.muted }}>Enter at least two characters.</Text> : null) : loading ? <Skeleton /> : failed ? <View><Text accessibilityRole="alert" style={{color:theme.muted}}>Search could not load.</Text><Button secondary onPress={()=>setRetryId(v=>v+1)}>Retry search</Button></View> : result?.offsets === offsets && result.term === term && result.scope === scope && visibleGroups.every(group => !group.rows.length && !group.failed) ? <Text style={{ color: theme.muted }}>No matching results.</Text> : null}
