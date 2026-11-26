@@ -139,3 +139,40 @@ test('missing config and enabled billing without signing remain unavailable',asy
  await assert.rejects(service.readAppleCatalog(enabled.db,enabled.db,owner,()=>{calls++;throw Error('signing missing');}),/signing missing/);
  assert.equal(calls,1);assert.deepEqual(enabled.calls,[]);
 });
+
+test('privileged Apple request checks the exact bearer against an active unfrozen session',async()=>{
+ const env={NEXT_PUBLIC_SUPABASE_URL:'https://fixture.supabase.co',NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:'fixture-public',SUPABASE_SERVICE_ROLE_KEY:'fixture-service'};
+ const before=Object.fromEntries(Object.keys(env).map(k=>[k,process.env[k]]));
+ Object.assign(process.env,env);
+ try{
+  const token='fixture.'+Buffer.from(JSON.stringify({sub:owner,exp:Math.floor(Date.now()/1000)+600,role:'authenticated',aal:'aal1'})).toString('base64url')+'.fixture';
+  for(const active of [false,null,true]){
+   const calls=[];
+   const fake={createClient:(url,key,options)=>{
+    calls.push(key);
+    if(key===env.SUPABASE_SERVICE_ROLE_KEY)return{service:true};
+    assert.equal(options.global.headers.Authorization,'Bearer '+token);
+    return{auth:{getUser:async supplied=>{assert.equal(supplied,token);return{data:{user:{id:owner,email_confirmed_at:new Date().toISOString(),factors:[]}},error:null};}},rpc:async name=>{assert.equal(name,'confirm_active_account_session');return{data:active,error:active===null?Error('unavailable'):null};}};
+   }};
+   const candidate=compile('../lib/server/apple/service.ts',name=>name==='@supabase/supabase-js'?fake:name==='server-only'?{}:name==='../../auth/mfa-core'?core:name==='../../stripe-key-mode'?stripeMode:name==='../../billing/apple-products'?products:name==='./proofs'?proofs:require(name));
+   const request=new Request('https://fixture.invalid',{headers:{authorization:'Bearer '+token}});
+   if(active===true){assert.equal((await candidate.appleRequest(request)).user.id,owner);assert.equal(calls.length,2);}
+   else{await assert.rejects(candidate.appleRequest(request),error=>error.code==='account_unverified');assert.deepEqual(calls,[env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY]);}
+  }
+ }finally{for(const [k,v] of Object.entries(before)){if(v===undefined)delete process.env[k];else process.env[k]=v;}}
+});
+test('HoopFeed privileged video upload denies a frozen or unverifiable caller before signing',async()=>{
+ const env={NEXT_PUBLIC_SUPABASE_URL:'https://fixture.supabase.co',NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:'fixture-public',SUPABASE_SERVICE_ROLE_KEY:'fixture-service'};
+ const before=Object.fromEntries(Object.keys(env).map(k=>[k,process.env[k]]));Object.assign(process.env,env);
+ try{
+  for(const active of [false,null,true]){
+   let signed=0;
+   const tables={profiles:{account_type:'player'},membership_entitlements:{plan:'premium',status:'active'},admin_roles:[]};
+   const admin={auth:{getUser:async token=>{assert.equal(token,'fixture-token');return{data:{user:{id:owner}},error:null};}},from:table=>{const q={select:()=>q,eq:()=>q,maybeSingle:async()=>({data:tables[table]}),then:(yes,no)=>Promise.resolve({data:tables[table]}).then(yes,no)};return q;},storage:{from:bucket=>({createSignedUploadUrl:async path=>{assert.equal(bucket,'hoopfeed-private-videos');assert.ok(path.startsWith(owner+'/'));signed++;return{data:{token:'fixture-upload'},error:null};}})}};
+   const fake={createClient:(url,key,options)=>{if(key===env.SUPABASE_SERVICE_ROLE_KEY)return admin;assert.equal(options.global.headers.Authorization,'Bearer fixture-token');return{rpc:async name=>{assert.equal(name,'confirm_active_account_session');return{data:active,error:active===null?Error('unavailable'):null};}};}};
+   const route=compile('../app/api/hoopfeed/video-upload/route.ts',name=>name==='@supabase/supabase-js'?fake:name==='next/server'?{NextResponse:{json:(body,opts)=>Response.json(body,opts)}}:name==='../../../../lib/membership-tier'?{getHoopCheckEntitlements:()=>({canWriteHoopFeed:true})}:require(name));
+   const response=await route.POST(new Request('https://fixture.invalid',{method:'POST',headers:{authorization:'Bearer fixture-token','content-type':'application/json'},body:JSON.stringify({content_type:'video/mp4',size:1024})}));
+   assert.equal(response.status,active===true?200:403);assert.equal(signed,active===true?1:0);
+  }
+ }finally{for(const [k,v] of Object.entries(before)){if(v===undefined)delete process.env[k];else process.env[k]=v;}}
+});
