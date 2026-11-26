@@ -12,6 +12,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { DevicePreferences } from "../src/native/preferences";
 import { NetworkProvider } from "../src/native/network";
 import { MotionProvider } from "../src/motion/Provider";
+import { PublicSystemNavigation } from "../components/PublicSystemLinks";
 import { AppLock } from "../components/AppLock";
 import { AppOpening } from "../components/AppOpening";
 import { NativePageHeader } from "../components/NativePageHeader";
@@ -152,6 +153,7 @@ function RootLayout() {
         <Stack.Screen name="leagues" options={{ title: "Leagues" }} />
         <Stack.Screen name="leagues/[id]" options={{ title: "League profile", headerTransparent: true }} />
       </Stack></RouteFade>
+      <PublicSystemNavigation ready={sessionReady && !session.error} blocked={["auth","reset-password","forgot-password","sign-up","choose-username"].includes(segments[0] ?? "")} signedIn={signedIn} />
       {signedIn ? <TabBar /> : null}<AppLock authReady={sessionReady} userId={session.userId} startupError={session.error} retryStartup={() => { void bootstrap.current?.retry(); }} protectedScreen={signedIn && !["sign-in", "sign-up", "reset-password", "auth"].includes(segments[0] ?? "")} />
       <AppOpening ready={sessionReady && (fontsLoaded || Boolean(fontError))}
         disabled={["auth", "reset-password"].includes(segments[0] ?? "")} />
