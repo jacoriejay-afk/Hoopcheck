@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { removeApprovedAccountMedia, removeApprovedAuthIdentity } from "../lib/server/account-deletion-cleanup.ts";
+import { removeApprovedAccountMedia, removeApprovedAuthIdentity, blockAndRevokeApprovedSessions } from "../lib/server/account-deletion-cleanup.ts";
 const lease={requestId:"11111111-1111-4111-8111-111111111111",ownerId:"22222222-2222-4222-8222-222222222222",fence:"33333333-3333-4333-8333-333333333333",policyVersion:"fixture"};
 const object={id:"44444444-4444-4444-8444-444444444444",bucket:"profile-avatars",path:lease.ownerId+"/fixture.png",ownerId:lease.ownerId,version:"v1"};
 const plan={requestId:lease.requestId,ownerId:lease.ownerId,policyVersion:lease.policyVersion,objects:[object]};
@@ -45,4 +45,39 @@ test("ambiguous missing-user response or non-removal cannot mark completion",asy
  await assert.rejects(removeApprovedAuthIdentity(f.admin,lease,f.guards),/lookup not confirmed/);assert.deepEqual(f.calls,[]);
  const g=fixture();g.admin.auth.admin.deleteUser=async()=>({error:null});
  await assert.rejects(removeApprovedAuthIdentity(g.admin,lease,g.guards),/absence not confirmed/);
+});
+
+function sessionFixture(){
+ let banned=false,active=true;const calls=[];
+ const rpc=async(name,args)=>{
+  assert.equal(args.p_owner,lease.ownerId);assert.equal(args.p_request,lease.requestId);assert.equal(args.p_fence,lease.fence);
+  return {error:null,data:name==="verify_deletion_auth_login_block"?banned:name==="verify_deletion_session_absence"?!active:name==="assert_deletion_frozen_session_step"};
+ };
+ const admin={rpc,auth:{getUser:async token=>({error:null,data:{user:{id:token==="owner-bearer"?lease.ownerId:lease.requestId}}}),
+ admin:{updateUserById:async(id,options)=>{assert.equal(id,lease.ownerId);assert.equal(options.ban_duration,"8760h");calls.push("ban");banned=true;return{error:null,data:{user:{id}}};},
+ signOut:async(token,scope)=>{assert.equal(token,"owner-bearer");assert.equal(scope,"global");calls.push("revoke");active=false;return{error:null};}}}};
+ return{admin,guards:{assertLease:async()=>{},assertFrozen:async()=>{}},calls,clearSessions:()=>{active=false;}};
+}
+test("Auth ban is not session revocation; scheduled requests fail closed without a bearer",async()=>{
+ const f=sessionFixture();
+ await assert.rejects(blockAndRevokeApprovedSessions(f.admin,lease,f.guards),/Existing sessions require/);
+ assert.deepEqual(f.calls,["ban"]);
+ f.clearSessions();
+ assert.equal((await blockAndRevokeApprovedSessions(f.admin,lease,f.guards)).confirmed,true);
+ assert.deepEqual(f.calls,["ban"]);
+});
+test("verified owner bearer revokes global sessions, other owners never trigger effects",async()=>{
+ const f=sessionFixture();
+ await assert.rejects(blockAndRevokeApprovedSessions(f.admin,lease,f.guards,"other-bearer"),/owner mismatch/);
+ assert.deepEqual(f.calls,[]);
+ assert.equal((await blockAndRevokeApprovedSessions(f.admin,lease,f.guards,"owner-bearer")).confirmed,true);
+ assert.deepEqual(f.calls,["ban","revoke"]);
+});
+test("ban acknowledgement and session absence require independent proof",async()=>{
+ const f=sessionFixture();f.admin.auth.admin.updateUserById=async id=>({error:null,data:{user:{id}}});
+ await assert.rejects(blockAndRevokeApprovedSessions(f.admin,lease,f.guards,"owner-bearer"),/login block not confirmed/);
+ const g=sessionFixture();g.admin.auth.admin.signOut=async()=>({error:null});
+ await assert.rejects(blockAndRevokeApprovedSessions(g.admin,lease,g.guards,"owner-bearer"),/sessions or login block not verified/);
+ const h=sessionFixture();h.guards.assertFrozen=async()=>{throw Error("not frozen");};
+ await assert.rejects(blockAndRevokeApprovedSessions(h.admin,lease,h.guards,"owner-bearer"),/not frozen/);assert.deepEqual(h.calls,[]);
 });
