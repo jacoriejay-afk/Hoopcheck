@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
-import { Linking, ScrollView, Text, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Linking, Pressable, ScrollView, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEntryTheme } from "../../src/theme";
-import { Button, GlassCard } from "../../src/primitives";
+import { Button, GlassCard, Input } from "../../src/primitives";
 import { useNativeAccount } from "../../src/native/useNativeAccount";
 import { useNetwork } from "../../src/native/network";
 import { supabase } from "../../src/lib/supabase";
@@ -10,11 +10,12 @@ import { supabase } from "../../src/lib/supabase";
 type Ticket={id:string;subject:string;category:string;status:string;created_at:string};
 export default function SupportPage(){
  const {account,loading,retry}=useNativeAccount(),t=useEntryTheme();
- const {topic}=useLocalSearchParams<{topic?:string}>();
+ const {topic,reportReel}=useLocalSearchParams<{topic?:string;reportReel?:string}>();
+ const reel=typeof reportReel==="string"&&/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(reportReel)?reportReel:null;
  if(loading||!account)return <View style={{flex:1,backgroundColor:t.background,padding:20,gap:12}}><Text style={{color:t.foreground}}>{loading?"Verifying account…":"Verify your account to view private tickets."}</Text><Button secondary onPress={retry}>Verify access</Button></View>;
- return <SupportContent key={account.user.id} uid={account.user.id} scam={topic==="scam"}/>;
+ return <SupportContent key={account.user.id+":"+String(topic)+":"+String(reel)} uid={account.user.id} scam={topic==="scam"} reel={reel}/>;
 }
-function SupportContent({uid,scam}:{uid:string;scam:boolean}){
+function SupportContent({uid,scam,reel}:{uid:string;scam:boolean;reel:string|null}){
  const t=useEntryTheme(),router=useRouter(),{offline,revision}=useNetwork();
  const [state,setState]=useState<{rows:Ticket[];error:string}|null>(null),[refresh,setRefresh]=useState(0),[linkError,setLinkError]=useState("");
  useEffect(()=>{
@@ -29,13 +30,40 @@ function SupportContent({uid,scam}:{uid:string;scam:boolean}){
   finally{clearTimeout(timer);}}
   void load();return()=>{live=false;clearTimeout(timer);ctrl.abort();};
  },[uid,offline,revision,refresh]);
- const handoff=(path:string)=>router.push({pathname:"/web",params:{path}});
+ const categories=["account","billing","verification","review","privacy","security","technical","team_request","general"] as const;
+ const [subject,setSubject]=useState(reel?"Report a HoopFeed Reel":scam?"Report a suspicious basketball offer":"");
+ const [category,setCategory]=useState<(typeof categories)[number]>(scam||reel?"security":"general");
+ const [description,setDescription]=useState(reel?`Reel: https://hoopcheck.online/feed#post-${reel}\nReason: `:"");
+ const [saving,setSaving]=useState(false),[feedback,setFeedback]=useState("");
+ const inFlight=useRef(false);
+ async function submit(){
+  if(inFlight.current||offline)return;
+  const cleanSubject=subject.trim(),cleanDescription=description.trim();
+  if(cleanSubject.length<3||cleanSubject.length>160||cleanDescription.length<10||cleanDescription.length>5000){setFeedback("Enter a subject of 3–160 characters and an issue description of 10–5,000 characters.");return;}
+  if(reel&&cleanDescription===`Reel: https://hoopcheck.online/feed#post-${reel}\nReason:`){setFeedback("Please enter the reason for reporting.");return;}
+  inFlight.current=true;setSaving(true);setFeedback("");
+  try{
+   const before=await supabase.auth.getSession();
+   if(before.error||before.data.session?.user.id!==uid)throw Error("session");
+   const result=await supabase.from("support_tickets").insert({requester_id:uid,subject:cleanSubject,description:cleanDescription,category,priority:scam||reel?"high":"normal"});
+   if(result.error)throw result.error;
+   setSubject("");setDescription("");setCategory("general");setFeedback("Ticket submitted to HoopCheck support.");setRefresh(v=>v+1);
+  }catch{setFeedback("Ticket submission could not be confirmed. Refresh your tickets before trying again.");}
+  finally{inFlight.current=false;setSaving(false);}
+ }
+
  return <ScrollView style={{flex:1,backgroundColor:t.background}} contentContainerStyle={{padding:16,gap:12,paddingBottom:100}}>
   <Text accessibilityRole="header" style={{color:t.foreground,fontFamily:"HoopCheckDisplay",fontSize:26}}>Help & Support</Text>
   <Text style={{color:t.muted}}>Get help with your account, billing, reviews, verification, security or directory records. Never include passwords or payment details.</Text>
-  <GlassCard style={{gap:8}}><Text style={{color:t.foreground,fontWeight:"800",fontSize:18}}>{scam?"Report a suspicious basketball offer":"Contact HoopCheck"}</Text><Text style={{color:t.muted}}>Submit new tickets on the secured website. Your existing tickets are visible below.</Text>
-  <Button onPress={()=>handoff(scam?"/support?scamAlert=1":"/support")}>{scam?"Open confidential report form":"Open support ticket form"}</Button>
-  <Button secondary onPress={()=>handoff("/support?scamAlert=1")}>Report a suspicious offer</Button>
+  <GlassCard style={{gap:8}}><Text style={{color:t.foreground,fontWeight:"800",fontSize:18}}>{reel?"Report a HoopFeed Reel":scam?"Report a suspicious basketball offer":"Contact HoopCheck"}</Text>
+  <Text style={{color:t.muted}}>Your ticket is sent privately to HoopCheck support. Do not include passwords, verification codes, or payment details.</Text>
+  <Input accessibilityLabel="Ticket subject" placeholder="Subject" value={subject} onChangeText={setSubject} maxLength={160} editable={!saving}/>
+  <Text style={{color:t.foreground,fontWeight:"700"}}>Category</Text>
+  <View style={{flexDirection:"row",flexWrap:"wrap",gap:8}}>{categories.map(item=><Pressable key={item} accessibilityRole="button" accessibilityState={{selected:category===item,disabled:saving}} disabled={saving} onPress={()=>setCategory(item)} style={{padding:10,borderWidth:1,borderColor:category===item?t.accent:t.border,borderRadius:12}}><Text style={{color:category===item?t.accent:t.foreground}}>{item.replace("_"," ")}</Text></Pressable>)}</View>
+  <Input accessibilityLabel="Describe the issue" placeholder="Describe the issue" value={description} onChangeText={setDescription} maxLength={5000} editable={!saving} multiline style={{minHeight:130,textAlignVertical:"top"}}/>
+  {feedback?<Text accessibilityRole="alert" style={{color:t.foreground}}>{feedback}</Text>:null}
+  <Button disabled={saving||offline} onPress={()=>void submit()}>{saving?"Submitting…":"Submit ticket"}</Button>
+  {!scam&&!reel?<Button secondary onPress={()=>router.push({pathname:"/account/support",params:{topic:"scam"}})}>Report a suspicious offer</Button>:null}
   <Button secondary onPress={()=>{setLinkError("");void Linking.openURL("mailto:HoopCheck@outlook.com").catch(()=>setLinkError("Email app could not open. Contact HoopCheck@outlook.com."));}}>Email support</Button>{linkError?<Text accessibilityRole="alert" style={{color:t.foreground}}>{linkError}</Text>:null}
   </GlassCard>
   <Text accessibilityRole="header" style={{color:t.foreground,fontWeight:"800",fontSize:19}}>My tickets</Text>
