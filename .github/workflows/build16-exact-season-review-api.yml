@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'app/api/reviews/route.ts'
+      - 'app/api/review-access/route.ts'
       - 'app/api/womens-reviews/route.ts'
       - 'lib/career/**'
       - 'scripts/test-exact-season-review-api.mjs'
