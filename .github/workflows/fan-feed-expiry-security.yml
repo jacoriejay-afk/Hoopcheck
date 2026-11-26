@@ -5,6 +5,11 @@ on:
       - 'supabase/migrations/*fan_feed_subscription_expiry.sql'
       - '.github/workflows/fan-feed-expiry-security.yml'
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify-expiry:
     runs-on: ubuntu-latest

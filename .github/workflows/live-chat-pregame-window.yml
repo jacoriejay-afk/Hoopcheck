@@ -5,6 +5,11 @@ on:
       - 'supabase/migrations/*live_chat_60_minute_opening.sql'
       - '.github/workflows/live-chat-pregame-window.yml'
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify:
     runs-on: ubuntu-latest
