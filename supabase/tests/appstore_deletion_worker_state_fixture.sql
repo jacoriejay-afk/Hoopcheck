@@ -96,14 +96,14 @@ update hoopcheck_deletion_private.worker_state set fence='77777777-7777-4777-877
  where request_id='22222222-2222-4222-8222-222222222222';
 select pg_sleep(0.3);
 set local role service_role;
-do $ declare l record; begin
+do $$ declare l record; begin
  if public.assert_account_deletion_worker('22222222-2222-4222-8222-222222222222','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','77777777-7777-4777-8777-777777777777')
  or public.checkpoint_account_deletion_worker('22222222-2222-4222-8222-222222222222','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','77777777-7777-4777-8777-777777777777','approve_scope','expired')
  or public.fail_account_deletion_worker('22222222-2222-4222-8222-222222222222','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','77777777-7777-4777-8777-777777777777','step_not_confirmed')
  then raise exception 'Expired transaction-local fence accepted'; end if;
  select * into l from public.claim_account_deletion_worker();
  if l.request_id is distinct from '22222222-2222-4222-8222-222222222222'::uuid or l.fence='77777777-7777-4777-8777-777777777777'::uuid or cardinality(l.completed)<>0 then raise exception 'Expired lease not safely reclaimed'; end if;
-end $;
+end $$;
 reset role;
 
 rollback;
