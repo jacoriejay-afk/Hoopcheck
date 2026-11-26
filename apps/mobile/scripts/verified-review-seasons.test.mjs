@@ -43,3 +43,12 @@ test("native review clears private draft and ignores stale submissions on accoun
  assert.match(form,/submittedVersion!==authVersion\.current/);
  assert.match(form,/if\(sessionInvalidated\)return <SafeAreaView/);
 });
+
+test("legacy and exact-season forms both require a bound account before entry and submission",()=>{
+ const form=readFileSync(new URL("../app/teams/[id]/review.tsx",import.meta.url),"utf8");
+ assert.match(form,/useEffect\(\(\)=>\{\s*const \{data\}=supabase\.auth\.onAuthStateChange/);
+ assert.match(form,/owner\.current=id;setIdentityReady\(true\)/);
+ assert.match(form,/if\(!identityReady\)return <SafeAreaView/);
+ assert.match(form,/if \(submitting\|\|invalidated\.current\|\|!owner\.current\) return/);
+ assert.match(form,/!observeIdentity\(data\.session\?\.user\.id\) \|\| \(nativeExactSeasonReviewsEnabled/);
+});
