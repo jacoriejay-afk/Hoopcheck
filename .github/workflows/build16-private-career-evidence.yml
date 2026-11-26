@@ -1,0 +1,36 @@
+name: Build 16 private career evidence storage
+on:
+  pull_request:
+    paths:
+      - 'supabase/candidates/build16*career*evidence*.sql'
+      - 'supabase/candidates/build16_player*claim*.sql'
+      - 'supabase/tests/build16_private_career_evidence_storage.sql'
+      - 'supabase/tests/build16_player_season_claim_decisions.sql'
+      - '.github/workflows/build16-private-career-evidence.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/build16_private_career_evidence_storage.sql
