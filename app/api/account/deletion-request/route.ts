@@ -17,8 +17,7 @@ export async function POST(request: Request) {
   if (!token) return fail("Sign in again to request deletion.", 401);
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  const service = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key || !service) return fail("Account deletion is unavailable.", 503);
+  if (!url || !key) return fail("Account deletion is unavailable.", 503);
   try {
     // The body can contain only a short explicit confirmation and timing option.
     const reader = request.body?.getReader();
@@ -36,7 +35,7 @@ export async function POST(request: Request) {
     if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).some(k => !["confirm", "mode"].includes(k)) ||
       body.confirm !== "DELETE" || (body.mode !== "as_soon_as_possible" && body.mode !== "after_30_days"))
       return fail("Confirm the account deletion request.", 400);
-    const client = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+    const client = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false }, global: { headers: { Authorization: `Bearer ${token}` } } });
     const verified = await client.auth.getUser(token);
     if (verified.error || !verified.data.user || !verified.data.user.email_confirmed_at) return fail("Verify your account first.", 401);
     const owner = verified.data.user;
@@ -51,9 +50,9 @@ export async function POST(request: Request) {
       entry && ["password", "oauth"].includes(entry.method) && Number.isFinite(entry.timestamp) &&
       entry.timestamp <= now + 5 && entry.timestamp >= now - 300);
     if (!recent) return fail("Sign in again using your original sign-in method, then return here.", 403);
-    const admin = createClient(url, service, { auth: { persistSession: false, autoRefreshToken: false } });
-    const { data, error } = await admin.rpc("record_verified_account_deletion_request", {
-      p_owner: owner.id, p_session: c.session_id, p_mode: body.mode,
+    // The database independently checks signed owner, live session, MFA and fresh AMR.
+    const { data, error } = await client.rpc("record_verified_account_deletion_request", {
+      p_confirm: body.confirm, p_mode: body.mode,
     });
     const row = Array.isArray(data) ? data[0] : null;
     if (error || !row || !uuid.test(row.request_id) || !["pending", "processing", "failed"].includes(row.request_status))
