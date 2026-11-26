@@ -1,0 +1,24 @@
+name: Apple authorization cryptographic fixture
+on:
+  pull_request:
+    branches: ["fix/appstore-native-social-onboarding", "integration/appstore-compliance-candidate"]
+    paths:
+      - "lib/server/apple-sign-in-authorization.ts"
+      - "scripts/test-apple-sign-in-authorization.mjs"
+      - ".github/workflows/appstore-apple-authorization-fixture.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  apple-authorization-fixture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Offline Apple authorization and revocation tests
+        run: node --experimental-strip-types --test scripts/test-apple-sign-in-authorization.mjs
