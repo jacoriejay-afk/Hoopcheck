@@ -6,6 +6,7 @@ import {Button} from "../../src/primitives";
 import {useEntryTheme} from "../../src/theme";
 import {useNativeAccount} from "../../src/native/useNativeAccount";
 import {supabase} from "../../src/lib/supabase";
+import {VerifiedClubChanges} from "../../components/VerifiedClubChanges";
 import {nativeCareerClaimsEnabled,requestCareer,careerTimeline,type Club,type History} from "../../src/native/careerClaims";
 const origin=process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim()||"https://hoopcheck.online";
 export default function CareerClaimsScreen(){
@@ -68,6 +69,7 @@ function Intake({userId}:{userId:string}){
   <Button secondary disabled={busy} onPress={()=>setMissing(v=>!v)}>{missing?"Hide club request":"Team not listed? Request a club"}</Button>
   {missing?<View style={{gap:10}}>{field("Country",country,setCountry)}{field("City (optional)",city,setCity)}{field("League at the time",league,setLeague,160)}{field("Division (optional)",division,setDivision)}<Button disabled={busy||!name.trim()||!country.trim()||!league.trim()||!season.trim()} onPress={()=>void save({kind:"missing_club",name,country,city,league,division,basketballType:category,season})}>Request historical club</Button></View>:null}
   {busy?<Text accessibilityLiveRegion="polite" style={{color:t.muted}}>Working…</Text>:null}{error?<Text accessibilityRole="alert" style={{color:t.foreground}}>{error}</Text>:null}{message?<Text accessibilityLiveRegion="polite" style={{color:t.foreground}}>{message}</Text>:null}
+  {history?<VerifiedClubChanges claims={history.claims} partial={history.hasMore}/>:null}
   <Text accessibilityRole="header" style={{color:t.foreground,fontSize:19,fontWeight:"800"}}>Saved career claims</Text>
   {historyError?<><Text style={{color:t.muted}}>{historyError}</Text><Button secondary disabled={busy} onPress={()=>void refresh()}>Retry history</Button></>:null}
   {history?<>{!history.claims.length&&!history.missingClubs.length?<Text style={{color:t.muted}}>No claims yet.</Text>:null}{careerTimeline(history.claims).map(row=><View key={row.id} style={{gap:4,paddingVertical:8,borderBottomWidth:1,borderColor:t.border}}><Text style={{color:t.foreground,fontWeight:"800"}}>{row.name}</Text><Text style={{color:t.muted}}>{row.detail}</Text><Text style={{color:t.foreground}}>{row.status}</Text></View>)}{history.missingClubs.map(row=><Text key={row.id} style={{color:t.foreground}}>{row.historical_name} · {label(row)} · {row.status}</Text>)}{history.hasMore?<Text style={{color:t.muted}}>Showing the most recent claims.</Text>:null}</>:null}
