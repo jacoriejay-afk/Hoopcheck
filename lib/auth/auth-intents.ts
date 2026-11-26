@@ -90,7 +90,7 @@ export function bindAuthIntents<T extends { signInWithPassword: (...args: never[
       return enqueue(intent, () => original.apply(target, args));
     };
   }
-  for (const name of ["signInWithPassword", "signUp", "signOut", "setSession", "exchangeCodeForSession", "verifyOtp", "signInWithOAuth"]) bind(client, name, true);
+  for (const name of ["signInWithPassword", "signUp", "signOut", "setSession", "exchangeCodeForSession", "verifyOtp", "signInWithOAuth", "signInWithIdToken"]) bind(client, name, true);
   bind(client, "updateUser", false);
   if (client.mfa && typeof client.mfa === "object") for (const name of ["verify", "challengeAndVerify"]) bind(client.mfa as Record<string, unknown>, name, false);
 }
