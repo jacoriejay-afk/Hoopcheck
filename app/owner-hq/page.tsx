@@ -1,3 +1,4 @@
+import { parseReleaseObservation, compareReleaseObservations } from "../../lib/owner/release-observations";
 import { getOwnerMetrics } from "../../lib/owner/metrics";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -24,6 +25,8 @@ export default async function OwnerHQ() {
     getOwnerMetrics(),
     getAmbassadorWorkspace(user.id),
   ]);
+  const observation = parseReleaseObservation(process.env.HOOPCHECK_RELEASE_OBSERVATION_JSON);
+  const comparisons = observation ? compareReleaseObservations(observation) : [];
   return <main className="page-shell">
     <div className="page-container" style={{ display: "grid", gap: 20, paddingBlock: 24 }}>
       <header className="hero-card">
@@ -51,6 +54,19 @@ export default async function OwnerHQ() {
         {stripeSummary.subscriptionsIncomplete && <p role="status">Partial results: subscription pagination limit reached.</p>}
         {stripeSummary.refundsIncomplete && <p role="status">Partial results: refund pagination limit reached.</p>}
         <p>Refunds are tracked by refund creation date, while paid invoices are grouped by invoice creation date. Do not subtract these figures to calculate net revenue.</p>
+      </section>
+      <section className="dashboard-card" aria-labelledby="release-observation-heading">
+        <h2 id="release-observation-heading">Release comparison</h2>
+        <p>Compares aggregate operator-supplied observations with identical source, coverage, platform and measurement-window length. No individual telemetry is collected here. A review signal is a threshold check, not proof of a regression.</p>
+        {!observation ? <p role="status">No valid release observations supplied. Comparison unavailable.</p> : <>
+          <p>{observation.baseline.platform} · {observation.baseline.source} · {observation.baseline.coverage}</p>
+          <p>Baseline {observation.baseline.build} · <code>{observation.baseline.sha}</code> · {observation.baseline.windowStart} to {observation.baseline.windowEnd}</p>
+          <p>Candidate {observation.candidate.build} · <code>{observation.candidate.sha}</code> · {observation.candidate.windowStart} to {observation.candidate.windowEnd}</p>
+          <ul>{comparisons.map(row => <li key={row.metric}><strong>{row.metric.replaceAll("_"," ")}</strong>: {row.state === "unavailable" ? "Unavailable: missing, small or stale sample" : <>
+            {(100*row.baselineRate).toFixed(1)}% (n={row.baselineCount}) → {(100*row.candidateRate).toFixed(1)}% (n={row.candidateCount}), {row.changePoints.toFixed(1)} percentage points · {row.state === "review" ? "Review deterioration" : "No review threshold breach"}
+          </>}</li>)}</ul>
+        </>}
+        <p>Review threshold: deterioration of at least 2 percentage points, 100 observations per build, candidate window ended within seven days. These initial thresholds require validation before operational use.</p>
       </section>
       <OwnerRolePreview />
       <section className="dashboard-card">
