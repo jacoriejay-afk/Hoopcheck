@@ -1,3 +1,4 @@
+import { MembershipExitFeedback } from "../components/MembershipExitFeedback";
 import { MembershipPreview } from "../components/MembershipPreview";
 import { Reveal } from "../components/Motion";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -94,6 +95,7 @@ export default function MembershipScreen() {
       })}>Restore purchases</Button>
       <Button secondary disabled={busy || !store.supported || !account} onPress={() => void act(async live => { setPrepared(null); await store.manage(); if (live()) { retry(); await load(); } })}>Manage Apple subscription</Button>
       {membership?.provider === "stripe" ? <Text style={muted}>Your membership is billed through Stripe. Manage it securely on the HoopCheck website; Apple controls do not cancel Stripe billing.</Text> : null}
+      {process.env.EXPO_PUBLIC_HOOPCHECK_EXIT_FEEDBACK_ENABLED === "true" && owner && account?.user.id && membership && !loading ? <MembershipExitFeedback key={account.user.id} uid={account.user.id} /> : null}
       <View style={{ flexDirection: "row", gap: 18, flexWrap: "wrap" }}>
         <Button secondary onPress={() => void Linking.openURL("https://hoopcheck.online/terms").catch(() => setError("Could not open the terms. Try again."))}>Terms of use</Button>
         <Button secondary onPress={() => void Linking.openURL("https://hoopcheck.online/privacy").catch(() => setError("Could not open privacy policy. Try again."))}>Privacy policy</Button>
