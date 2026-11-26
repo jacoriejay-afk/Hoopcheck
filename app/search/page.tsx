@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import FanBasketballSideSwitch from "../../components/FanBasketballSideSwitch";
 import Link from "next/link";
+import IntelligenceGuide from "../../components/IntelligenceGuide";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import PlayerContactButton from "../../components/PlayerContactButton";
@@ -368,6 +369,7 @@ function SearchContent() {
   return (
     <main className="search-page hc-global-search-page">
       <header className="hc-discovery-heading"><h1>{t("search")}</h1></header>
+      {process.env.NEXT_PUBLIC_HOOPCHECK_INTELLIGENCE_ENABLED === "true" && !query ? <IntelligenceGuide /> : null}
       <div className="hc-live-search">
         <form role="search" className="hc-live-search__form" onSubmit={event => {
           event.preventDefault();
