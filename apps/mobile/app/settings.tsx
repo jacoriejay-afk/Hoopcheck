@@ -59,7 +59,7 @@ export default function Settings() {
       </Pressable>)}
     </View>
     <View style={{gap:10}}><Text style={{color:theme.foreground,fontSize:21,fontFamily:"HoopCheckDisplay"}}>Account & community</Text>
-      {([{title:"Account and profile",path:"/account"},{title:"Alerts, HoopChat & requests",path:"/notifications"},{title:"Account security",path:"/account/security"},{title:"Help & Support",path:"/account/support"}] as const).map(item=><Pressable key={item.path} accessibilityRole="button" onPress={()=>router.push(item.path)}
+      {([{title:"Account and profile",path:"/account"},{title:"Alerts, HoopChat & requests",path:"/notifications"},{title:"Account security",path:"/account/security"},{title:"Help & Support",path:"/account/support"},{title:"Privacy Request Center",path:"/account/privacy-center"}] as const).map(item=><Pressable key={item.path} accessibilityRole="button" onPress={()=>router.push(item.path)}
         style={{minHeight:48,justifyContent:"center",borderWidth:1,borderColor:theme.border,backgroundColor:theme.surface,paddingHorizontal:14,borderRadius:theme.radius.control}}>
           <Text style={{color:theme.foreground,fontWeight:"700"}}>{item.title}</Text>
       </Pressable>)}
