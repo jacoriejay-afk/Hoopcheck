@@ -138,3 +138,28 @@ RETURNS boolean LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$
 $$;
 REVOKE ALL ON FUNCTION public.verify_deletion_auth_login_block(uuid,uuid,uuid) FROM public,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION public.verify_deletion_auth_login_block(uuid,uuid,uuid) TO service_role;
+
+-- A caller-bound proof for privileged server endpoints before they use service
+-- credentials. The caller's verified JWT, not a supplied UUID, selects the row.
+-- This is deliberately a separate proof from getUser or JWT expiry.
+CREATE OR REPLACE FUNCTION hoopcheck_deletion_private.active_caller_session()
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $$
+ SELECT coalesce(
+  auth.uid() IS NOT NULL AND auth.jwt()->>'role'='authenticated'
+  AND coalesce(auth.jwt()->>'is_anonymous','false')='false'
+  AND NOT (auth.jwt() ? 'client_id')
+  AND hoopcheck_deletion_private.caller_not_frozen()
+  AND EXISTS(SELECT 1 FROM auth.sessions s JOIN auth.users u ON u.id=s.user_id
+    WHERE s.id::text=auth.jwt()->>'session_id' AND s.user_id=auth.uid()
+      AND (s.not_after IS NULL OR s.not_after>now())
+      AND u.role='authenticated' AND (u.banned_until IS NULL OR u.banned_until<=now())),
+  false)
+$$;
+REVOKE ALL ON FUNCTION hoopcheck_deletion_private.active_caller_session() FROM public,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION hoopcheck_deletion_private.active_caller_session() TO authenticated;
+CREATE OR REPLACE FUNCTION public.confirm_active_account_session()
+RETURNS boolean LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$
+ SELECT hoopcheck_deletion_private.active_caller_session()
+$$;
+REVOKE ALL ON FUNCTION public.confirm_active_account_session() FROM public,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.confirm_active_account_session() TO authenticated;
