@@ -8,6 +8,7 @@ import { ProfileAvatar } from "../components/ProfileAvatar";
 import { HoopCheckLoading } from "../components/HoopCheckLoading";
 import { useEntryTheme } from "../src/theme";
 import { useNativeAccount } from "../src/native/useNativeAccount";
+import { nativeCareerClaimsEnabled } from "../src/native/careerClaims";
 import { supabase } from "../src/lib/supabase";
 import { useActiveScreen } from "../src/native/useActiveScreen";
 import { readWithDeadline } from "../src/native/readDeadline";
@@ -194,6 +195,7 @@ export default function AccountScreen() {
         <GroupLabel>Basketball tools</GroupLabel>
         <AccountGroup>
           <AccountRow icon="document-text-outline" title="Career Passport · My Journey" onPress={()=>router.push({ pathname: "/players/[id]", params: { id: account.user.id } })}/>
+          {nativeCareerClaimsEnabled ? <AccountRow icon="document-text-outline" title="Private career history" detail="Former teams and verification claims" onPress={()=>router.push("/account/career-history")}/> : null}
           <AccountRow icon="star-outline" title="Find a team to review" onPress={()=>router.push("/teams")} last/>
         </AccountGroup>
       </> : null}
