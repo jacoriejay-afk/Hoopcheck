@@ -27,7 +27,22 @@ export async function GET(request:Request){
    ]);
    if(claims.error||requests.error)return reply({error:"Career history could not load."},503);
    const rows=claims.data||[],missing=requests.data||[];
-   return reply({claims:rows.slice(0,100),missingClubs:missing.slice(0,100),hasMore:rows.length>100||missing.length>100});
+   const visible=rows.slice(0,100);
+   // Historical names must match the canonical club and exact season; never
+   // substitute a current club name or infer a successor by name similarity.
+   const keys=["team_id","womens_team_id"] as const;
+   const snapshots=await Promise.all(keys.map(async key=>{
+     const ids=[...new Set(visible.map(row=>row[key]).filter((id):id is string=>typeof id==="string"))];
+     if(!ids.length)return [];
+     const years=[...new Set(visible.filter(row=>typeof row[key]==="string").map(row=>row.season_start_year))];
+     const result=await auth.db.from("historical_club_seasons").select("team_id,womens_team_id,season_start_year,season_end_year,historical_name,historical_league,historical_division,historical_country").in(key,ids).in("season_start_year",years).limit(1000);
+     return result.error?[]:result.data||[];
+   }));
+   const labels=snapshots.flat();
+   return reply({claims:visible.map(row=>{
+     const label=labels.find(s=>s.team_id===row.team_id&&s.womens_team_id===row.womens_team_id&&s.season_start_year===row.season_start_year&&s.season_end_year===row.season_end_year);
+     return {...row,historicalClub:label?{name:label.historical_name,league:label.historical_league,division:label.historical_division,country:label.historical_country}:null};
+   }),missingClubs:missing.slice(0,100),hasMore:rows.length>100||missing.length>100});
  }catch{return reply({error:"Career history could not load."},503);}
 }
 export async function POST(request:Request){
