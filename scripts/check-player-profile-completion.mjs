@@ -48,4 +48,4 @@ assert.match(professionalDirectory,/up to 200 recent showcases/);
 assert.match(professionalDirectory,/identity check confirms a person's identity, not agency authorization/);
 console.log("PASS: existing consent-aware marketplace discovery, bounded results and independent review labels.");
 
-assert.match(playerDirectory,/\}, \[query, country, page, retryCount, roleReady\]\);\s+const visiblePlayers = availablePlayerMatches\(players, onlyAvailable\);\s+if \(!roleReady\) return <main/, "filtered results must be in component render scope, outside the effect");
+assert.match(playerDirectory,/\}, \[query, country, page, retryCount, roleReady\]\);\s+const matchingEnabled=[^\n]+;\s+const visiblePlayers = matchingEnabled \? opportunityMatches\(players,criteria\) : availablePlayerMatches\(players, onlyAvailable\);\s+if \(!roleReady\) return <main/, "both filtered result paths must remain in component render scope, outside the effect");
