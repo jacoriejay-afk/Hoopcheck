@@ -22,15 +22,16 @@ export function FeedReport({uid,postId,authorId,commentId,active}:{uid:string;po
       const session=await readWithDeadline(()=>supabase.auth.getSession());
       if(session.error||!session.data.session||session.data.session.user.id!==uid||!current()||ctrl.signal.aborted)throw Error("Verify your account.");
       const token=session.data.session.access_token,header="Bearer "+token;
-      const post=await supabase.from("feed_posts").select("id,author_id").eq("id",postId).eq("status","approved").or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`).setHeader("Authorization",header).abortSignal(ctrl.signal).maybeSingle();
+      const post=await supabase.from("feed_posts").select("id,author_id,video_url").eq("id",postId).eq("status","approved").or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`).setHeader("Authorization",header).abortSignal(ctrl.signal).maybeSingle();
       if(post.error||!post.data||(!commentId&&post.data.author_id!==authorId))throw Error("Post unavailable.");
       if(commentId){
         const comment=await supabase.from("feed_post_comments").select("id,author_id").eq("id",commentId).eq("post_id",postId).setHeader("Authorization",header).abortSignal(ctrl.signal).maybeSingle();
         if(comment.error||comment.data?.author_id!==authorId)throw Error("Comment unavailable.");
       }
       if(!current()||ctrl.signal.aborted)return;
-      const description=`Post: https://hoopcheck.online/feed#post-${postId}\n${commentId?"Comment ID: "+commentId+"\n":""}Reason: ${clean}`;
-      const response=await supabase.from("support_tickets").insert({requester_id:uid,subject:commentId?"Report a HoopFeed comment":"Report a HoopFeed post",category:"security",priority:"normal",description}).setHeader("Authorization",header).abortSignal(ctrl.signal);
+      const videoReport=!commentId&&typeof post.data.video_url==="string"&&post.data.video_url.length>0;
+      const description=`${videoReport?"Reel":"Post"}: https://hoopcheck.online/feed#post-${postId}\n${commentId?"Comment ID: "+commentId+"\n":""}Reason: ${clean}`;
+      const response=await supabase.from("support_tickets").insert({requester_id:uid,subject:commentId?"Report a HoopFeed comment":videoReport?"Report a HoopFeed Reel":"Report a HoopFeed post",category:"security",priority:"normal",description}).setHeader("Authorization",header).abortSignal(ctrl.signal);
       if(response.error)throw Error("Report submission not confirmed.");
       if(current()){setSent(true);setReason("");setOpen(false);setMessage("Confidential report submitted to HoopCheck staff.");}
     }catch{if(current())setMessage("Report could not be confirmed. Check your support tickets before retrying.");}
