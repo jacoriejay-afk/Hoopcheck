@@ -70,6 +70,13 @@ function RootLayout() {
     if (!sessionReady || segments[0] === "about") return;
     const currentRoute = segments[0] ?? "";
     const inAppArea = ["dashboard", "team-hub", "fan-live", "notifications", "messages", "feed-welcome", "hoopgroups", "feed", "fan-feed", "reels", "account", "search", "teams", "womens", "leagues", "players", "coaches", "choose-username", "settings", "membership"].includes(currentRoute);
+    // A restricted identity may be restored after the app is closed mid-signup.
+    // Server-side role restrictions remain authoritative; this is navigation only.
+    if (session.pendingSocialSignup) {
+      if (currentRoute === "auth" || currentRoute === "sign-up") return;
+      router.replace({ pathname: "/sign-up", params: { social: "1" } });
+      return;
+    }
     if (["web", "sign-in", "sign-up"].includes(currentRoute)) return;
     const onPasswordRecovery = currentRoute === "reset-password";
     // Let the OAuth callback exchange its PKCE code and choose the destination.
@@ -91,7 +98,7 @@ function RootLayout() {
       const suffix = query.toString();
       rememberDestination(pathname + (suffix ? `?${suffix}` : "")); router.replace("/sign-in");
     }
-  }, [sessionReady, signedIn, segments, router, pathname, routeParams.post, routeParams.q, routeParams.gameId, routeParams.side, routeParams.group, routeParams.tab, routeParams.topic]);
+  }, [sessionReady, signedIn, session.pendingSocialSignup, segments, router, pathname, routeParams.post, routeParams.q, routeParams.gameId, routeParams.side, routeParams.group, routeParams.tab, routeParams.topic]);
 
   // Mount the navigator on the first render. Font loading must never prevent
   // Router from mounting or leave a blank screen after the splash deadline.
@@ -152,7 +159,7 @@ function RootLayout() {
         <Stack.Screen name="leagues" options={{ title: "Leagues" }} />
         <Stack.Screen name="leagues/[id]" options={{ title: "League profile", headerTransparent: true }} />
       </Stack></RouteFade>
-      {signedIn ? <TabBar /> : null}<AppLock authReady={sessionReady} userId={session.userId} startupError={session.error} retryStartup={() => { void bootstrap.current?.retry(); }} protectedScreen={signedIn && !["sign-in", "sign-up", "reset-password", "auth"].includes(segments[0] ?? "")} />
+      {signedIn && !session.pendingSocialSignup ? <TabBar /> : null}<AppLock authReady={sessionReady} userId={session.userId} startupError={session.error} retryStartup={() => { void bootstrap.current?.retry(); }} protectedScreen={signedIn && !session.pendingSocialSignup && !["sign-in", "sign-up", "reset-password", "auth"].includes(segments[0] ?? "")} />
       <AppOpening ready={sessionReady && (fontsLoaded || Boolean(fontError))}
         disabled={["auth", "reset-password"].includes(segments[0] ?? "")} />
     </BottomSheetModalProvider></NativeDraftProvider></StoreKitProvider></NativeAccountProvider></MfaSessionProvider></NetworkProvider></DevicePreferences></MotionProvider></SafeAreaProvider></GestureHandlerRootView>
