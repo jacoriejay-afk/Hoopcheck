@@ -91,3 +91,45 @@ export async function removeApprovedAuthIdentity(admin: SupabaseClient,lease: Le
   if(!isMissingUser(after.error))throw Error("Auth identity absence not confirmed.");
   return {confirmed:true as const,receipt:"auth_absence_verified"};
 }
+
+// Use supported Auth Admin endpoints. Never mint, retrieve, persist, or log
+// a user's bearer for deletion processing. A fresh token may be supplied only
+// in memory by the same verified user at an immediate processing handoff.
+// Scheduled jobs without a bearer must stop if sessions still exist.
+export async function blockAndRevokeApprovedSessions(
+ admin:SupabaseClient,lease:Lease,guards:Pick<Guards,"assertLease"|"assertFrozen">,
+ ownerBearer?:string,
+){
+ validLease(lease);
+ const args={p_request:lease.requestId,p_owner:lease.ownerId,p_fence:lease.fence};
+ async function proof(name:string){
+  const result=await admin.rpc(name,args);
+  if(result.error)throw Error("Deletion session state could not be verified.");
+  return result.data===true;
+ }
+ async function guard(){
+  await guards.assertLease(lease);await guards.assertFrozen(lease);
+  if(!await proof("assert_deletion_frozen_session_step"))throw Error("Frozen session step not approved.");
+ }
+ await guard();
+ if(ownerBearer){
+  const verified=await admin.auth.getUser(ownerBearer);
+  if(verified.error||verified.data.user?.id!==lease.ownerId)throw Error("Deletion session owner mismatch.");
+ }
+ if(!await proof("verify_deletion_auth_login_block")){
+  await guard();
+  const blocked=await admin.auth.admin.updateUserById(lease.ownerId,{ban_duration:"8760h"});
+  if(blocked.error||blocked.data.user?.id!==lease.ownerId)throw Error("Auth login block not confirmed.");
+ }
+ await guard();
+ if(!await proof("verify_deletion_auth_login_block"))throw Error("Auth login block not confirmed.");
+ if(!await proof("verify_deletion_session_absence")){
+  if(!ownerBearer)throw Error("Existing sessions require verified Auth revocation.");
+  await guard();
+  const revoked=await admin.auth.admin.signOut(ownerBearer,"global");
+  if(revoked.error)throw Error("Auth global sign-out not confirmed.");
+ }
+ await guard();
+ if(!await proof("verify_deletion_auth_login_block")||!await proof("verify_deletion_session_absence"))throw Error("Auth sessions or login block not verified.");
+ return {confirmed:true as const,receipt:"auth_sessions_absent_and_login_blocked"};
+}
