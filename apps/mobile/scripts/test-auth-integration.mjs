@@ -302,6 +302,7 @@ test("restored pending social account resumes setup and hides member tabs", () =
     [["dashboard"], {}, [{ pathname: "/sign-up", params: { social: "1" } }]],
     [["sign-up"], {}, [{ pathname: "/sign-up", params: { social: "1" } }]],
     [["sign-up"], { social: "1" }, []],
+    [["sign-in"], {}, []],
     [["auth", "callback"], {}, []],
   ]) {
     const f = screen("app/_layout.tsx", { segments, params, state: [{ ready: true, userId: "pending", error: null, pendingSocialSignup: true }] });
