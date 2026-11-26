@@ -79,27 +79,6 @@ export default function ResetPasswordScreen() {
     finally { busyRef.current = false; setBusy(false); }
   }
 
-  return () => { alive = false; };
-  }, [code, recoveryError]);
-
-  async function savePassword() {
-    if (!ready) { Alert.alert("Recovery not ready", "Open a valid recovery link from your email first."); return; }
-    if (password.length < 8) { Alert.alert("Password too short", "Use at least 8 characters for your new password."); return; }
-    if (password !== confirmation) { Alert.alert("Passwords do not match", "Enter the same password in both fields."); return; }
-    setBusy(true);
-    try {
-      const { error } = await supabase.auth.updateUser({ password });
-      if (error) throw error;
-      Alert.alert("Password updated", "Your HoopCheck password has been changed.", [
-        { text: "Continue", onPress: () => router.replace("/dashboard") },
-      ]);
-    } catch (error) {
-      Alert.alert("Could not update password", error instanceof Error ? error.message : "Please request a new recovery link and try again.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
   return (
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
