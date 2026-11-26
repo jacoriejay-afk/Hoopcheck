@@ -68,6 +68,10 @@ export default function Settings() {
     </View> : null}
     {!account && !accountLoading && accountError ? <View style={{gap:6}}><Text accessibilityRole="alert" style={{color:theme.muted}}>{accountError}</Text><Pressable accessibilityRole="button" onPress={retryAccount} style={{minHeight:44,justifyContent:"center"}}><Text style={{color:theme.accent,fontWeight:"700"}}>Retry account verification</Text></Pressable></View> : null}
     <BlockedAccounts />
+    <View style={{gap:5}}>
+      <Text accessibilityRole="header" style={{color:theme.foreground,fontSize:21,fontFamily:"HoopCheckDisplay"}}>Policies</Text>
+      {(["privacy","terms"] as const).map(kind=><Pressable key={kind} accessibilityRole="button" onPress={()=>router.push({pathname:"/account/policies",params:{kind}})} style={{minHeight:48,flexDirection:"row",alignItems:"center",gap:10,borderBottomWidth:StyleSheet.hairlineWidth,borderColor:theme.border}}><Ionicons name="document-text-outline" size={20} color={theme.accent}/><Text style={{flex:1,color:theme.foreground,fontWeight:"700"}}>{kind==="privacy"?"Privacy Policy":"Terms of Service"}</Text><Ionicons name="chevron-forward" size={16} color={theme.muted}/></Pressable>)}
+    </View>
     <AdminSafetyCenter />
     <Text accessibilityRole="header" style={{color:theme.foreground,fontSize:21,fontFamily:"HoopCheckDisplay"}}>Device preferences</Text>
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16 }}><Text style={{ color: theme.foreground, fontSize: 17 }}>Haptics</Text><Switch accessibilityLabel="Haptics" value={preferences.haptics} onValueChange={value => void update({ haptics: value }).catch(() => setError("Couldn’t save haptics preference."))} /></View>
