@@ -38,5 +38,27 @@ class BoundedXCTestTests(unittest.TestCase):
         self.assertIn("PASSPORT_XCTEST_TIMEOUT", result.stderr)
 
 
+class PassportSimulatorHarnessTests(unittest.TestCase):
+    def test_warm_bundle_and_pin_serial_execution(self):
+        script = SCRIPT.with_name("run.sh").read_text()
+        self.assertIn("/.expo/.virtual-metro-entry.bundle?platform=ios", script)
+        self.assertIn("--max-time 180", script)
+        self.assertIn("PASSPORT_SMOKE_BUNDLE_PREWARM_FAILED", script)
+        self.assertLess(script.index("PASSPORT_SMOKE_BUNDLE_PREWARM_FAILED"),
+                        script.index("xcodebuild test -workspace"))
+        self.assertIn('-destination "id=$simulator_id"', script)
+        self.assertIn("-parallel-testing-enabled NO", script)
+        self.assertIn("for theme in light dark; do", script)
+
+    def test_failed_runtime_collects_diagnostics_without_acceptance(self):
+        script = SCRIPT.with_name("run.sh").read_text()
+        failure = script.split("-only-testing:PassportSmokeUITests CODE_SIGNING_ALLOWED=NO; then", 1)[1]
+        failure = failure.split("tail -n 18", 1)[0]
+        self.assertIn('collect_failure_diagnostics "$theme"', failure)
+        self.assertIn("exit 1", failure)
+        self.assertIn("xcresulttool export diagnostics", script)
+        self.assertIn('Executed 1 test, with 0 failures', script)
+
+
 if __name__ == "__main__":
     unittest.main()
