@@ -34,6 +34,7 @@ function screen(path, { state = [], params = {}, segments = [], pathname = "/", 
     if (name === "expo-linear-gradient") return { LinearGradient: "LinearGradient" };
     if (name.endsWith("/BrandLogo")) return { BrandLogo: "BrandLogo" };
     if (name.endsWith("/ArenaBrand")) return { ArenaBrand: "ArenaBrand" };
+    if (name.endsWith("/AppleSignIn")) return { __esModule: true, default: "AppleSignIn" };
     if (name.endsWith("/AppOpening")) return { AppOpening: "AppOpening" };
     if (name === "@expo/vector-icons") return { Ionicons: "Ionicons" };
     if (name === "react-native-reanimated") return { __esModule: true, default: { View: "AnimatedView" },
@@ -48,6 +49,7 @@ function screen(path, { state = [], params = {}, segments = [], pathname = "/", 
     if (name.endsWith("/native/pendingDestination")) return { takeDestination: () => pendingDestination, rememberDestination: value => calls.remembered.push(value) };
     if (name.endsWith("/native/careerClaims")) return { nativeCareerClaimsEnabled: careerEnabled };
     if (name.endsWith("/native/careerSignup")) return compile("src/native/careerSignup.ts", require);
+    if (name.endsWith("/native/socialSignup")) return compile("src/native/socialSignup.ts", require);
     if (name === "@react-native-async-storage/async-storage") return { __esModule: true, default: { getItem: async key => careerStorage.get(key) ?? null, setItem: async (key, value) => { careerStorage.set(key, value); }, removeItem: async key => { careerStorage.delete(key); } } };
     if (name === "react-native-gesture-handler") return { GestureHandlerRootView: "GestureHandlerRootView" };
     if (name === "@gorhom/bottom-sheet") return { BottomSheetModalProvider: "BottomSheetModalProvider" };
@@ -277,4 +279,36 @@ test("root navigator mounts before any redirect even if the display font never l
   assert.deepEqual(f.calls.replace, []);
   f.effects[2]();
   assert.deepEqual(f.calls.replace, ["/sign-in"]);
+});
+
+
+test("pending social callback requires setup rather than consuming a protected destination", async () => {
+  for (const provider of ["google", "apple"]) {
+    const f = screen("app/auth/callback.tsx", {
+      params: { code: "fixture" }, pendingDestination: "/teams/fixture",
+      supabase: { auth: { exchangeCodeForSession: async () => ({
+        data: { user: { id: "user", role: "hoopcheck_pending_signup", app_metadata: { provider } } }, error: null
+      }) }, from: () => { throw new Error("Pending accounts must not query private profiles"); } }
+    });
+    f.effects[0](); await new Promise(resolve => setImmediate(resolve));
+    assert.deepEqual(f.calls.replace, [{ pathname: "/sign-up", params: { social: "1" } }]);
+    assert.equal(f.calls.freshSignIns, 0);
+  }
+});
+
+
+test("restored pending social account resumes setup and hides member tabs", () => {
+  for (const [segments, params, expected] of [
+    [["dashboard"], {}, [{ pathname: "/sign-up", params: { social: "1" } }]],
+    [["sign-up"], {}, [{ pathname: "/sign-up", params: { social: "1" } }]],
+    [["sign-up"], { social: "1" }, []],
+    [["sign-in"], {}, []],
+    [["auth", "callback"], {}, []],
+  ]) {
+    const f = screen("app/_layout.tsx", { segments, params, state: [{ ready: true, userId: "pending", error: null, pendingSocialSignup: true }] });
+    f.effects[2]();
+    assert.deepEqual(f.calls.replace, expected);
+    assert.equal(f.nodes.some(node => node.type === "TabBar"), false);
+    assert.equal(f.nodes.find(node => node.type === "AppLock").props.protectedScreen, false);
+  }
 });
