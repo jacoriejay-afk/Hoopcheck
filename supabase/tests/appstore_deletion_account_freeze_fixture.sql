@@ -57,7 +57,7 @@ END $$;
 RESET ROLE;
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claims','{"role":"authenticated","sub":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","aal":"aal1","session_id":"55555555-5555-4555-8555-555555555555"}',true);
-DO $ DECLARE t text;n integer;BEGIN
+DO $$ DECLARE t text;n integer;BEGIN
  IF public.confirm_active_account_session() THEN RAISE EXCEPTION 'Frozen live session accepted'; END IF;
  FOREACH t IN ARRAY ARRAY['public.fixture_posts','storage.objects','realtime.messages'] LOOP
   EXECUTE format('SELECT count(*) FROM %s',t) INTO n;
