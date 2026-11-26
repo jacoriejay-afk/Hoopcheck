@@ -11,6 +11,7 @@ import { GlassCard } from "../../src/primitives";
 import { supabase } from "../../src/lib/supabase";
 import { useCachedRead, useNetwork } from "../../src/native/network";
 import { readReviewAccess, type ReviewAccess } from "../../src/native/reviewAccess";
+import {nativeExactSeasonReviewsEnabled} from "../../src/native/verifiedReviewSeasons";
 import { useEntryTheme } from "../../src/theme";
 
 type Team = { logo_url?: string | null; logo_bg?: string | null; id: string; name: string; country: string | null; city: string | null; league_id: string | null; league_name: string | null };
@@ -91,7 +92,7 @@ export default function WomensTeamScreen() {
           {review.body ? <Text style={{ ...text, marginTop: 8 }}>{review.body}</Text> : null}
           <Text style={{ color: theme.muted, marginTop: 8 }}>{new Date(review.created_at).toLocaleDateString()}</Text>
         </GlassCard>) : <Text style={text}>No approved reviews are available.</Text> : <Text style={text}>Review access follows your HoopCheck membership and account permissions.</Text>}
-        {permissions?.canWrite ? <Pressable accessibilityRole="link" onPress={() => goWeb(`/womens/${current.id}/review`)} style={touch}><Text style={link}>Write a review on HoopCheck</Text></Pressable> : null}
+        {permissions?.canWrite ? <Pressable accessibilityRole="link" onPress={() => nativeExactSeasonReviewsEnabled?router.push({pathname:"/teams/[id]/review",params:{id:current.id,teamName:current.name,directory:"womens-team"}}):goWeb(`/womens/${current.id}/review`)} style={touch}><Text style={link}>Write a review on HoopCheck</Text></Pressable> : null}
       </>}
     </ScrollView>
   </SafeAreaView>;
