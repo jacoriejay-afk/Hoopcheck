@@ -44,7 +44,9 @@ export default function ResetPasswordScreen() {
     if (verification.current?.key !== code) {
       verification.current = { key: code, work: (async () => {
         const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-        if (error || data.redirectType !== "PASSWORD_RECOVERY") throw new Error(invalidMessage);
+        // auth-js 2.76.1 returns redirectType from the internal PKCE exchange,
+        // although its public AuthTokenResponse type omits that field. Fail closed.
+        if (error || !("redirectType" in data) || data.redirectType !== "PASSWORD_RECOVERY") throw new Error(invalidMessage);
         return identity(data.session);
       })() };
     }
