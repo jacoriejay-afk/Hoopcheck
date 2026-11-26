@@ -6,7 +6,7 @@ import { AccessibilityInfo, Platform, StyleSheet, Keyboard, PanResponder, Pressa
 import { usePathname, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from "react-native-reanimated";
+import Animated, { cancelAnimation, useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from "react-native-reanimated";
 import { motion } from "../src/motion/config";
 import { useHaptics } from "../src/native/haptics";
 import { useEntryTheme } from "../src/theme";
@@ -30,6 +30,7 @@ function AnimatedTabIcon({ selected, pressed, reduced, icon, active, size, color
       ? withSequence(withTiming(1.18, { duration: 120 }), withSpring(1.07, motion.spring))
       : withSpring(1, motion.spring));
     lift.set(withSpring(selected && !pressed ? -2 : 0, motion.spring));
+    return () => { cancelAnimation(scale); cancelAnimation(lift); };
   }, [selected, pressed, reduced, scale, lift]);
   const animated = useAnimatedStyle(() => ({ transform: [{ translateY: lift.get() }, { scale: scale.get() }] }));
   return <Animated.View style={animated} pointerEvents="none"><Ionicons name={selected ? active : icon} size={size} color={color} /></Animated.View>;
@@ -68,11 +69,12 @@ export function TabBar() {
   useEffect(() => {
     if (index < 0) return;
     const next = index * width / tabs.length;
-    if (reduced) { x.set(next); opacity.set(0); opacity.set(withTiming(1, { duration: motion.shortFade })); }
-    else x.set(withSpring(next, motion.spring));
+    if (reduced) { x.set(next); opacity.set(1); }
+    else { x.set(withSpring(next, motion.spring)); opacity.set(withTiming(1, motion.timing)); }
     if (pending.current === path) { haptic("tab"); pending.current = null; }
     // Haptic runs only after navigation reaches its target.
   }, [index, path, reduced, width, haptic, x, opacity]);
+  useEffect(() => () => { cancelAnimation(x); cancelAnimation(opacity); }, [x, opacity]);
   const indicator = useAnimatedStyle(() => ({ transform: [{ translateX: x.get() }], opacity: opacity.get() }));
   // PanResponder registers callbacks; pending.current is written only on gesture release.
   // eslint-disable-next-line react-hooks/refs

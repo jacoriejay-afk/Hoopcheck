@@ -17,7 +17,7 @@ module.exports = function withAlternateIcons(config) {
     const configurations = config.modResults.pbxXCBuildConfigurationSection();
     for (const item of Object.values(configurations)) {
       if (item && typeof item === "object" && item.buildSettings?.PRODUCT_NAME) {
-        item.buildSettings.ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = Object.keys(icons).join(" ");
+        item.buildSettings.ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = JSON.stringify(Object.keys(icons).join(" "));
         item.buildSettings.ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = "YES";
       }
     }

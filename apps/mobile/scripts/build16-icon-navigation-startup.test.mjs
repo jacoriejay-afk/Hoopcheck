@@ -19,3 +19,14 @@ test("related routes select the proper navigation destination", () => {
   const tab = read("../components/TabBar.tsx");
   for (const marker of ["feed-welcome|hoopgroups", "settings|membership|connections|about", 'path === "/fan-live" ? 0', "account ? 4", "keyboardVisible", "useSafeAreaInsets"]) assert.ok(tab.includes(marker));
 });
+
+test("motion is bounded and icon previews use the original asset", () => {
+  const loader = read("../components/HoopCheckLoading.tsx"), tab = read("../components/TabBar.tsx"), ui = read("../components/AlternateIcons.tsx"), plugin = read("../plugins/withAlternateIcons.cjs");
+  assert.ok(loader.includes("animated={foreground && !reduced}"));
+  assert.ok(loader.includes("cancelAnimation(phase)"));
+  assert.ok(tab.includes("cancelAnimation(scale); cancelAnimation(lift);"));
+  assert.ok(tab.includes("if (reduced) { x.set(next); opacity.set(1); }"));
+  assert.ok(ui.includes('require("../assets/app-icon.png")'));
+  assert.ok(ui.includes("reduced ? undefined : FadeIn.duration(motion.fade)"));
+  assert.ok(plugin.includes('JSON.stringify(Object.keys(icons).join(" "))'));
+});

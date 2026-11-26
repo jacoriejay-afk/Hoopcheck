@@ -36,7 +36,7 @@ export function HoopCheckLoading({ label = "Loading HoopCheck…", compact = fal
       {compact ? <BrandMark size={17} /> : <Animated.View style={[{ position: "absolute", width: size * .42, height: size * .42, borderRadius: size, borderWidth: 1.5, borderColor: "transparent", borderBottomColor: t.accent }, inner]} />}
     </View>
     <View style={{ flexShrink: 1, maxWidth: "100%", alignItems: compact ? "flex-start" : "center", gap: 5 }}>
-      {!compact ? <View accessible={false} importantForAccessibility="no-hide-descendants" pointerEvents="none"><BrandLockup size={32} /></View> : null}
+      {!compact ? <View accessible={false} importantForAccessibility="no-hide-descendants" pointerEvents="none"><BrandLockup size={32} animated={foreground && !reduced} /></View> : null}
       <Text style={{ fontSize: 13, fontWeight: "600", color: t.muted, textAlign: compact ? "left" : "center" }}>{label}</Text>
       {!compact ? <View accessible={false} pointerEvents="none" style={{ width: 88, height: 3, borderRadius: 3, overflow: "hidden", backgroundColor: t.border }}>
         <Animated.View style={[{ width: 30, height: 3, borderRadius: 3, backgroundColor: t.accent }, track]} />

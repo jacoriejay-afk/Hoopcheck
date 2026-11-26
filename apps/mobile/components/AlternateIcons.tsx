@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
-import { Platform, Pressable, Text, View } from "react-native";
+import { Image, Platform, Pressable, Text, View } from "react-native";
 import { requireOptionalNativeModule } from "expo";
 import { Sheet } from "./Sheet";
+import { Ionicons } from "@expo/vector-icons";
+import Animated, { FadeIn } from "react-native-reanimated";
+import { useMotionSetting } from "../src/motion/Provider";
+import { motion } from "../src/motion/config";
 import { useEntryTheme } from "../src/theme";
 
 const choices = [
@@ -22,6 +26,7 @@ const native = Platform.OS === "ios" ? requireOptionalNativeModule<{
 
 export function AlternateIcons() {
   const theme = useEntryTheme();
+  const reduced = useMotionSetting();
   const [supported, setSupported] = useState(false);
   const [selected, setSelected] = useState<IconName>("Classic");
   const [open, setOpen] = useState(false);
@@ -45,7 +50,7 @@ export function AlternateIcons() {
   return <>
     <Pressable accessibilityRole="button" onPress={() => setOpen(true)} style={{ minHeight: 48, justifyContent: "center" }}><Text style={{ color: theme.accent, fontSize: 17 }}>App icon · {choices.find(choice => choice.name === selected)?.label ?? "Classic"}</Text></Pressable>
     <Sheet title="App icon" open={open} onClose={() => setOpen(false)}>
-      {choices.map(({ name, label, plate }) => <Pressable key={name} accessibilityRole="radio" accessibilityLabel={label} accessibilityState={{ checked: selected === name, disabled: busy }} disabled={busy} onPress={() => void select(name)} style={{ minHeight: 48, flexDirection: "row", alignItems: "center", gap: 12 }}><View accessible={false} style={{ width: 26, height: 26, borderRadius: 7, backgroundColor: plate, borderWidth: 1, borderColor: theme.border }} /><Text style={{ flexShrink: 1, color: selected === name ? theme.accent : theme.foreground }}>{label}{selected === name ? " · selected" : ""}</Text></Pressable>)}
+      {choices.map(({ name, label, plate }) => <Pressable key={name} accessibilityRole="radio" accessibilityLabel={label} accessibilityState={{ checked: selected === name, disabled: busy }} disabled={busy} onPress={() => void select(name)} style={({ pressed }) => ({ minHeight: 48, flexDirection: "row", alignItems: "center", gap: 12, opacity: pressed ? .75 : 1 })}><View accessible={false} importantForAccessibility="no-hide-descendants" style={{ width: 44, height: 44, borderRadius: 10, backgroundColor: plate, borderWidth: 1, borderColor: theme.border, alignItems: "center", justifyContent: "center", overflow: "hidden" }}><Image accessible={false} source={require("../assets/app-icon.png")} resizeMode="contain" style={{ width: name === "Classic" ? 42 : 36, height: name === "Classic" ? 42 : 36 }} /></View><Text style={{ flex: 1, color: selected === name ? theme.accent : theme.foreground }}>{label}{selected === name ? " · selected" : ""}</Text>{selected === name ? <Animated.View accessible={false} entering={reduced ? undefined : FadeIn.duration(motion.fade)}><Ionicons name="checkmark-circle" size={22} color={theme.accent} /></Animated.View> : null}</Pressable>)}
       {error ? <Text accessibilityRole="alert" style={{ color: theme.error }}>{error}</Text> : null}
     </Sheet>
   </>;
