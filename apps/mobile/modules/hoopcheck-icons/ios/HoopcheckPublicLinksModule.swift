@@ -15,7 +15,8 @@ private let entries: [(id: String, title: String, path: String)] = [
   ("womens", "HoopCheck · Women's teams", "/womens"),
   ("leagues", "HoopCheck · Leagues", "/leagues")
 ]
-private func enabled() -> Bool { UserDefaults.standard.bool(forKey: settingKey) }
+private func featureEnabled() -> Bool { Bundle.main.object(forInfoDictionaryKey: "HoopcheckPublicSystemLinksEnabled") as? Bool == true }
+private func enabled() -> Bool { featureEnabled() && UserDefaults.standard.bool(forKey: settingKey) }
 private final class PendingPublicLink {
   static let shared = PendingPublicLink()
   private let lock = NSLock()
@@ -58,7 +59,7 @@ public class HoopcheckPublicLinksModule: Module {
       let index = CSSearchableIndex.default()
       index.deleteSearchableItems(withDomainIdentifiers: [domain]) { error in
         if let error { promise.reject("SPOTLIGHT_CLEANUP", error.localizedDescription); return }
-        guard allow else { promise.resolve(false); return }
+        guard allow && featureEnabled() else { promise.resolve(false); return }
         let items = entries.map { entry -> CSSearchableItem in
           let attributes = CSSearchableItemAttributeSet(contentType: UTType.content)
           attributes.title = entry.title
@@ -69,6 +70,7 @@ public class HoopcheckPublicLinksModule: Module {
         }
         index.indexSearchableItems(items) { error in
           if let error { promise.reject("SPOTLIGHT_INDEX", error.localizedDescription); return }
+          guard featureEnabled() else { promise.resolve(false); return }
           UserDefaults.standard.set(true, forKey: settingKey)
           promise.resolve(true)
         }
