@@ -24,6 +24,10 @@ do $$ begin
  or has_function_privilege('anon','public.complete_account_deletion_worker(uuid,uuid,uuid)','EXECUTE')
  or has_table_privilege('service_role','hoopcheck_deletion_private.worker_config','UPDATE')
  or has_table_privilege('service_role','hoopcheck_deletion_private.worker_state','INSERT')
+ or has_table_privilege('service_role','hoopcheck_deletion_private.worker_state','UPDATE')
+ or has_table_privilege('service_role','hoopcheck_deletion_private.worker_receipts','INSERT')
+ or has_table_privilege('service_role','hoopcheck_deletion_private.worker_receipts','SELECT')
+ or has_function_privilege('authenticated','hoopcheck_deletion_private.claim_account_deletion_worker()','EXECUTE')
  then raise exception 'Unexpected worker permissions'; end if;
 end $$;
 set local role service_role;
@@ -32,6 +36,23 @@ do $$ begin
 end $$;
 reset role;
 update hoopcheck_deletion_private.worker_config set worker_enabled=true,policy_version='fixture-v1';
+-- A corrupted counter or non-contiguous receipt must never skip effects.
+update hoopcheck_deletion_private.worker_state set next_step=3 where request_id='11111111-1111-4111-8111-111111111111';
+insert into hoopcheck_deletion_private.worker_receipts(request_id,step_number,receipt) values
+('11111111-1111-4111-8111-111111111111',1,'fixture-1'),
+('11111111-1111-4111-8111-111111111111',3,'fixture-3');
+set local role service_role;
+do $$ begin
+ begin
+  perform public.claim_account_deletion_worker();
+  raise exception 'Corrupt checkpoint accepted' using errcode='XX000';
+ exception when raise_exception then
+  if SQLERRM<>'Deletion checkpoint sequence invalid' then raise; end if;
+ end;
+end $$;
+reset role;
+delete from hoopcheck_deletion_private.worker_receipts where request_id='11111111-1111-4111-8111-111111111111';
+update hoopcheck_deletion_private.worker_state set next_step=1 where request_id='11111111-1111-4111-8111-111111111111';
 set local role service_role;
 do $$ declare l record; begin
  select * into l from public.claim_account_deletion_worker();
