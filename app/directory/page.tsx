@@ -5,6 +5,7 @@ import "../hoopcheck-brand-directory.css";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import SearchBar from "../../components/SearchBar";
+import {directoryExperimentKey,parseDirectoryVariant,assignDirectoryVariant,effectiveDirectoryVariant,type DirectoryVariant} from "../../lib/directory-layout-experiment";
 
 const categories = [
   { title: "Professional Teams", description: "Follow your team and explore first-hand feedback.", href: "/teams", icon: "T", color: "#ff5500", group: "Teams" },
@@ -24,6 +25,12 @@ export default function DirectoryPage() {
   const [group, setGroup] = useState<(typeof groups)[number]>("All");
   const [query, setQuery] = useState("");
   const [showPlayers, setShowPlayers] = useState(false);
+  const experimentEnabled=process.env.NEXT_PUBLIC_HOOPCHECK_DIRECTORY_EXPERIMENT_ENABLED==="true";
+  const [consented,setConsented]=useState<DirectoryVariant|null>(null);
+  useEffect(()=>{if(!experimentEnabled)return;try{setConsented(parseDirectoryVariant(window.localStorage.getItem(directoryExperimentKey)));}catch{}},[experimentEnabled]);
+  function optIn(){if(!experimentEnabled)return;try{const seed=window.crypto.getRandomValues(new Uint32Array(1))[0];const variant=assignDirectoryVariant(seed);window.localStorage.setItem(directoryExperimentKey,variant);setConsented(variant);}catch{setConsented(null);}}
+  function optOut(){try{window.localStorage.removeItem(directoryExperimentKey);}catch{}setConsented(null);}
+  const layout=effectiveDirectoryVariant(experimentEnabled,consented);
 
   useEffect(() => {
     let active = true;
@@ -72,7 +79,8 @@ export default function DirectoryPage() {
         ))}
       </div>
 
-      <section className="hc-directory-list" aria-label="HoopCheck categories">
+      {experimentEnabled?<section className="dashboard-card" aria-label="Optional directory layout experiment"><p>Try an optional directory layout experiment. Your browser stores only the chosen variant. No experiment telemetry or account identifiers are collected. Both layouts contain the same categories and permissions.</p>{consented?<><p role="status">Assigned layout: {layout==="compact"?"Compact grid":"Standard list"}</p><button type="button" className="btn" onClick={optOut}>Leave experiment</button></>:<button type="button" className="btn" onClick={optIn}>Join layout experiment</button>}</section>:null}
+      <section className="hc-directory-list" aria-label="HoopCheck categories" style={layout==="compact"?{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,300px),1fr))",gap:8}:undefined}>
         {visible.length ? visible.map((category) => (
           <Link className="hc-directory-row" href={category.href} key={category.title}>
             <span className="hc-directory-emblem" style={{ "--emblem-color": category.color } as React.CSSProperties} aria-hidden="true">
