@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { deletionSteps, runDeletionCandidate, createDeletionWorkerAdapter, revokeDeletionAppleAuthorizations } from "../lib/server/account-deletion-orchestrator.ts";
+import { deletionSteps, runDeletionCandidate, createDeletionWorkerAdapter, revokeDeletionAppleAuthorizations, createCompletionEffects } from "../lib/server/account-deletion-orchestrator.ts";
 const lease={requestId:"11111111-1111-4111-8111-111111111111",ownerId:"22222222-2222-4222-8222-222222222222",fence:"33333333-3333-4333-8333-333333333333",policyVersion:"fixture-v1",completed:[]};
 function fixture(completed=[]){
  const events=[];let live=true;
@@ -87,4 +87,37 @@ test("provider error, stale acknowledgement and unrecognized vault scope fail cl
  await assert.rejects(revokeDeletionAppleAuthorizations(rpc,lease,async()=>{throw Error("Apple unavailable");}),/Apple unavailable/);assert.equal(acked,0);
  await assert.rejects(revokeDeletionAppleAuthorizations(rpc,lease,async()=>{}),/acknowledgement failed/);assert.equal(acked,1);
  await assert.rejects(revokeDeletionAppleAuthorizations({rpc:async()=>({data:[{...row,envelope:"invalid"}],error:null})},lease,async()=>{throw Error("Unexpected revoke");}),/Invalid Apple revocation scope/);
+});
+
+test("completion email is encrypted, sent once, confirmed and scrubbed only after delivery",async()=>{
+ const email="fixture@example.com",id="44444444-4444-4444-8444-444444444444";let state={envelope:null,first_attempt_at:null,provider_id:null,delivered:false},posts=0,delivered=false;
+ const rpc={rpc:async(name,args)=>{assert.equal(name,"account_deletion_completion_action");assert.equal(args.p_owner,lease.ownerId);assert.equal(args.p_request,lease.requestId);assert.equal(args.p_fence,lease.fence);switch(args.p_action){
+ case "capture":state.envelope=args.p_envelope;return{data:{ok:true},error:null};
+ case "begin":state.first_attempt_at??=new Date().toISOString();break;
+ case "accepted":state.provider_id=args.p_provider;break;
+ case "delivered":state.delivered=true;break;
+ case "scrub":assert.ok(state.delivered);state.envelope=null;state.provider_id=null;return{data:{ok:true},error:null};
+ }return{data:{...state},error:null};}};
+ const config={key:Buffer.alloc(32,7),apiKey:"fixture",from:"privacy@hoopcheck.online"};
+ const effects=createCompletionEffects(rpc,async()=>({id:lease.ownerId,email,email_confirmed_at:"verified"}),config,async(url,options)=>{
+ if(options.method==="POST"){posts++;assert.equal(options.headers["Idempotency-Key"],"deletion-complete/"+lease.requestId);assert.deepEqual(JSON.parse(options.body).to,[email]);return Response.json({id});}
+ return Response.json({id,to:[email],subject:"Your HoopCheck account deletion is complete",last_event:delivered?"delivered":"sent"});
+ });
+ await effects.capture_completion_contact(lease);assert.ok(state.envelope.startsWith("v1."));assert.ok(!state.envelope.includes(email));
+ await effects.capture_completion_contact(lease);
+ await assert.rejects(effects.notify_completion(lease),/not confirmed/);assert.equal(posts,1);
+ delivered=true;assert.equal((await effects.notify_completion(lease)).confirmed,true);assert.equal(posts,1);
+ await effects.remove_completion_contact(lease);assert.equal(state.envelope,null);assert.equal(state.provider_id,null);
+});
+test("completion delivery rejects relay contact, stale ambiguous attempt and wrong owner encryption",async()=>{
+ const config={key:Buffer.alloc(32,7),apiKey:"fixture",from:"privacy@hoopcheck.online"};let state={envelope:null,first_attempt_at:null,provider_id:null,delivered:false};
+ const rpc={rpc:async(name,args)=>{if(args.p_action==="capture"){state.envelope=args.p_envelope;return{data:{ok:true},error:null};}return{data:{...state},error:null};}};
+ const none=async()=>{throw Error("Unexpected provider call");};
+ const relay=createCompletionEffects(rpc,async()=>({id:lease.ownerId,email:"fixture@privaterelay.appleid.com",email_confirmed_at:"verified"}),config,none);
+ await assert.rejects(relay.capture_completion_contact(lease),/non-relay/);
+ const effects=createCompletionEffects(rpc,async()=>({id:lease.ownerId,email:"fixture@example.com",email_confirmed_at:"verified"}),config,none);
+ await effects.capture_completion_contact(lease);
+ state.first_attempt_at=new Date(Date.now()-24*3600000).toISOString();
+ await assert.rejects(effects.notify_completion(lease),/reconciliation/);
+ await assert.rejects(effects.notify_completion({...lease,ownerId:lease.fence}));
 });
