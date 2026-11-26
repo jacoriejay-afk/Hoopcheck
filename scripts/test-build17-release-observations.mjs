@@ -47,6 +47,27 @@ test("activation reporting is owner-only, disabled by default and bounded",()=>{
  assert.match(reader,/limit\(perBatchLimit\+1\)/);assert.match(page,/not a verified activation event/);
 });
 
+const directoryExperimentSource=readFileSync(new URL("../lib/directory-layout-experiment.ts",import.meta.url),"utf8");
+const directoryExperimentJs=ts.transpileModule(directoryExperimentSource,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+const {assignDirectoryVariant,effectiveDirectoryVariant}=await import("data:text/javascript;base64,"+Buffer.from(directoryExperimentJs).toString("base64"));
+test("directory layout assignment is deterministic, consent-based and fails closed",()=>{
+ assert.equal(assignDirectoryVariant(0),"control");
+ assert.equal(assignDirectoryVariant(0x7fffffff),"control");
+ assert.equal(assignDirectoryVariant(0x80000000),"compact");
+ assert.equal(assignDirectoryVariant(0xffffffff),"compact");
+ for(const seed of [NaN,-1,1.5,0x100000000])assert.equal(assignDirectoryVariant(seed),"control");
+ assert.equal(effectiveDirectoryVariant(false,"compact"),"control");
+ assert.equal(effectiveDirectoryVariant(true,"unknown"),"control");
+ assert.equal(effectiveDirectoryVariant(true,"compact"),"compact");
+});
+test("directory experiment does not change filtered categories or send experiment events",()=>{
+ const page=readFileSync(new URL("../app/directory/page.tsx",import.meta.url),"utf8");
+ assert.match(page,/window\.localStorage\.removeItem\(directoryExperimentKey\)/);
+ assert.match(page,/NEXT_PUBLIC_HOOPCHECK_DIRECTORY_EXPERIMENT_ENABLED==="true"/);
+ assert.match(page,/visible\.map\(\(category\)/);
+ assert.doesNotMatch(page,/analytics_events|trackEvent|fetch\(/);
+});
+
 const foundingSource=readFileSync(new URL("../lib/owner/founding-member.ts",import.meta.url),"utf8");
 const foundingJs=ts.transpileModule(foundingSource,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
 const {foundingMemberEligible}=await import("data:text/javascript;base64,"+Buffer.from(foundingJs).toString("base64"));
