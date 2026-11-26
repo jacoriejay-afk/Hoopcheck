@@ -77,6 +77,10 @@ export default function Settings() {
       </Pressable>
       {cacheMessage ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ color: theme.foreground }}>{cacheMessage}</Text> : null}
     </View>
+    {process.env.EXPO_PUBLIC_ACCOUNT_DELETION_ENABLED === "true" ? <Pressable accessibilityRole="button" accessibilityLabel="Delete account" onPress={() => router.push("/account/delete")}
+      style={{ minHeight: 48, justifyContent: "center", borderWidth: 1, borderColor: theme.border, borderRadius: theme.radius.control, paddingHorizontal: 14 }}>
+      <Text style={{ color: theme.foreground, fontWeight: "700" }}>Delete account</Text>
+    </Pressable> : null}
     <AlternateIcons />
     {error ? <Text accessibilityRole="alert" style={{ color: theme.accent }}>{error}</Text> : null}
   </ScrollView>;
