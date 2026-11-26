@@ -1,4 +1,4 @@
-import { readOutgoingBlocks } from "./accountBlocking";
+import { readOutgoingBlocks } from "./accountBlocking.ts";
 import { upcomingEntityGames, type ScheduleScope } from "./entitySchedule.ts";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { GAME_FUTURE_WINDOW_MS, GAME_PAST_WINDOW_MS } from "./gameFreshness.ts";
