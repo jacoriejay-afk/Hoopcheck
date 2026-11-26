@@ -13,7 +13,7 @@ insert into hoopcheck_deletion_private.config(singleton) values(true) on conflic
 revoke all on hoopcheck_deletion_private.config from public, anon, authenticated, service_role;
 
 create or replace function hoopcheck_deletion_private.verify_request_owner()
-returns uuid language plpgsql security invoker set search_path='' as $
+returns uuid language plpgsql security invoker set search_path='' as $$
 declare
   owner_id uuid:=auth.uid();
   claims jsonb:=auth.jwt();
@@ -25,96 +25,8 @@ begin
   end if;
   if owner_id is null or claims->>'sub' is distinct from owner_id::text or claims->>'role' is distinct from 'authenticated'
     or coalesce(claims->>'is_anonymous','false') <> 'false' or claims ? 'client_id'
-    or coalesce(claims->>'session_id','') !~ '^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}
-  p_confirm text, p_mode text
-) returns table(request_id uuid, request_status text, requested_at timestamptz, scheduled_for timestamptz)
-language plpgsql security definer set search_path = ''
-as $$
-declare
-  owner_id uuid;
-  existing public.account_deletion_requests%rowtype;
-  due_at timestamptz;
-begin
-  if p_confirm is distinct from 'DELETE' or p_mode is null or p_mode not in ('as_soon_as_possible','after_30_days') then
-    raise exception 'Invalid deletion request' using errcode = '22023';
-  end if;
-  owner_id := hoopcheck_deletion_private.verify_request_owner();
-  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(owner_id::text,17001));
-  select r.* into existing from public.account_deletion_requests r
-    where r.user_id=owner_id and r.status in ('pending','processing','failed') for update;
-  if found then
-    -- An explicit immediate-processing request can expedite a scheduled one.
-    -- A retry cannot push an existing request into the future.
-    if existing.status='pending' and p_mode='as_soon_as_possible' and existing.scheduled_for>now() then
-      update public.account_deletion_requests r set scheduled_for=now(),updated_at=now()
-        where r.id=existing.id returning r.* into existing;
-    end if;
-    return query select existing.id,existing.status,existing.requested_at,existing.scheduled_for;
-    return;
-  end if;
-  due_at := case when p_mode='after_30_days' then now()+interval '30 days' else now() end;
-  insert into public.account_deletion_requests(user_id,scheduled_for)
-    values(owner_id,due_at) returning * into existing;
-  return query select existing.id,existing.status,existing.requested_at,existing.scheduled_for;
-end;
-$$;
-revoke all on function hoopcheck_deletion_private.record_request(text,text) from public, anon, authenticated, service_role;
-grant execute on function hoopcheck_deletion_private.record_request(text,text) to authenticated;
-
-create or replace function public.record_verified_account_deletion_request(p_confirm text,p_mode text)
-returns table(request_id uuid,request_status text,requested_at timestamptz,scheduled_for timestamptz)
-language sql security invoker set search_path = ''
-as $$ select * from hoopcheck_deletion_private.record_request(p_confirm,p_mode) $$;
-revoke all on function public.record_verified_account_deletion_request(text,text) from public, anon, authenticated, service_role;
-grant execute on function public.record_verified_account_deletion_request(text,text) to authenticated;
--- The candidate's config remains false. No hosted grants, schema changes,
--- activation, cleanup or deletion is authorized by this file.
-
-    or coalesce(claims->>'exp','') !~ '^[0-9]{1,12}
-  p_confirm text, p_mode text
-) returns table(request_id uuid, request_status text, requested_at timestamptz, scheduled_for timestamptz)
-language plpgsql security definer set search_path = ''
-as $$
-declare
-  owner_id uuid;
-  existing public.account_deletion_requests%rowtype;
-  due_at timestamptz;
-begin
-  if p_confirm is distinct from 'DELETE' or p_mode is null or p_mode not in ('as_soon_as_possible','after_30_days') then
-    raise exception 'Invalid deletion request' using errcode = '22023';
-  end if;
-  owner_id := hoopcheck_deletion_private.verify_request_owner();
-  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(owner_id::text,17001));
-  select r.* into existing from public.account_deletion_requests r
-    where r.user_id=owner_id and r.status in ('pending','processing','failed') for update;
-  if found then
-    -- An explicit immediate-processing request can expedite a scheduled one.
-    -- A retry cannot push an existing request into the future.
-    if existing.status='pending' and p_mode='as_soon_as_possible' and existing.scheduled_for>now() then
-      update public.account_deletion_requests r set scheduled_for=now(),updated_at=now()
-        where r.id=existing.id returning r.* into existing;
-    end if;
-    return query select existing.id,existing.status,existing.requested_at,existing.scheduled_for;
-    return;
-  end if;
-  due_at := case when p_mode='after_30_days' then now()+interval '30 days' else now() end;
-  insert into public.account_deletion_requests(user_id,scheduled_for)
-    values(owner_id,due_at) returning * into existing;
-  return query select existing.id,existing.status,existing.requested_at,existing.scheduled_for;
-end;
-$$;
-revoke all on function hoopcheck_deletion_private.record_request(text,text) from public, anon, authenticated, service_role;
-grant execute on function hoopcheck_deletion_private.record_request(text,text) to authenticated;
-
-create or replace function public.record_verified_account_deletion_request(p_confirm text,p_mode text)
-returns table(request_id uuid,request_status text,requested_at timestamptz,scheduled_for timestamptz)
-language sql security invoker set search_path = ''
-as $$ select * from hoopcheck_deletion_private.record_request(p_confirm,p_mode) $$;
-revoke all on function public.record_verified_account_deletion_request(text,text) from public, anon, authenticated, service_role;
-grant execute on function public.record_verified_account_deletion_request(text,text) to authenticated;
--- The candidate's config remains false. No hosted grants, schema changes,
--- activation, cleanup or deletion is authorized by this file.
-
+    or coalesce(claims->>'session_id','') !~ '^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$'
+    or coalesce(claims->>'exp','') !~ '^[0-9]{1,12}$'
   then raise exception 'Invalid session' using errcode = '42501'; end if;
   if (claims->>'exp')::numeric <= now_epoch then
     raise exception 'Session expired' using errcode = '42501';
@@ -134,55 +46,11 @@ grant execute on function public.record_verified_account_deletion_request(text,t
   end if;
   if not exists(select 1 from jsonb_array_elements(claims->'amr') e
     where e->>'method' in ('password','oauth')
-      and case when coalesce(e->>'timestamp','') ~ '^[0-9]{1,12}
-  p_confirm text, p_mode text
-) returns table(request_id uuid, request_status text, requested_at timestamptz, scheduled_for timestamptz)
-language plpgsql security definer set search_path = ''
-as $$
-declare
-  owner_id uuid;
-  existing public.account_deletion_requests%rowtype;
-  due_at timestamptz;
-begin
-  if p_confirm is distinct from 'DELETE' or p_mode is null or p_mode not in ('as_soon_as_possible','after_30_days') then
-    raise exception 'Invalid deletion request' using errcode = '22023';
-  end if;
-  owner_id := hoopcheck_deletion_private.verify_request_owner();
-  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(owner_id::text,17001));
-  select r.* into existing from public.account_deletion_requests r
-    where r.user_id=owner_id and r.status in ('pending','processing','failed') for update;
-  if found then
-    -- An explicit immediate-processing request can expedite a scheduled one.
-    -- A retry cannot push an existing request into the future.
-    if existing.status='pending' and p_mode='as_soon_as_possible' and existing.scheduled_for>now() then
-      update public.account_deletion_requests r set scheduled_for=now(),updated_at=now()
-        where r.id=existing.id returning r.* into existing;
-    end if;
-    return query select existing.id,existing.status,existing.requested_at,existing.scheduled_for;
-    return;
-  end if;
-  due_at := case when p_mode='after_30_days' then now()+interval '30 days' else now() end;
-  insert into public.account_deletion_requests(user_id,scheduled_for)
-    values(owner_id,due_at) returning * into existing;
-  return query select existing.id,existing.status,existing.requested_at,existing.scheduled_for;
-end;
-$$;
-revoke all on function hoopcheck_deletion_private.record_request(text,text) from public, anon, authenticated, service_role;
-grant execute on function hoopcheck_deletion_private.record_request(text,text) to authenticated;
-
-create or replace function public.record_verified_account_deletion_request(p_confirm text,p_mode text)
-returns table(request_id uuid,request_status text,requested_at timestamptz,scheduled_for timestamptz)
-language sql security invoker set search_path = ''
-as $$ select * from hoopcheck_deletion_private.record_request(p_confirm,p_mode) $$;
-revoke all on function public.record_verified_account_deletion_request(text,text) from public, anon, authenticated, service_role;
-grant execute on function public.record_verified_account_deletion_request(text,text) to authenticated;
--- The candidate's config remains false. No hosted grants, schema changes,
--- activation, cleanup or deletion is authorized by this file.
-
+      and case when coalesce(e->>'timestamp','') ~ '^[0-9]{1,12}$'
           then (e->>'timestamp')::numeric between now_epoch-300 and now_epoch+5 else false end)
   then raise exception 'Fresh authentication required' using errcode = '42501'; end if;
   return owner_id;
-end $;
+end $$;
 revoke all on function hoopcheck_deletion_private.verify_request_owner() from public,anon,authenticated,service_role;
 
 create or replace function hoopcheck_deletion_private.record_request(
@@ -229,7 +97,6 @@ revoke all on function public.record_verified_account_deletion_request(text,text
 grant execute on function public.record_verified_account_deletion_request(text,text) to authenticated;
 -- The candidate's config remains false. No hosted grants, schema changes,
 -- activation, cleanup or deletion is authorized by this file.
-
 -- Cancellation is allowed only before processing is claimed, with the same
 -- fresh identity checks and per-owner lock as creation/expediting.
 create or replace function hoopcheck_deletion_private.cancel_request(p_request uuid)
