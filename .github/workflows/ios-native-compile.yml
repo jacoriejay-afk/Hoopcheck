@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - "integration/build9-backend-completion-20261121"
+      - "integration/build16-launch-candidate"
   pull_request:
     paths:
       - "apps/mobile/**"

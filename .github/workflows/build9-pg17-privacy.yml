@@ -2,9 +2,9 @@ name: Build 9 PostgreSQL 17 Privacy Rehearsal (Synthetic)
 
 on:
   push:
-    branches: ["integration/build9-backend-completion-20261121"]
+    branches: ["integration/build9-backend-completion-20261121", "integration/build16-launch-candidate"]
   pull_request:
-    branches: ["integration/build9-backend-completion-20261121"]
+    branches: ["integration/build9-backend-completion-20261121", "integration/build16-launch-candidate"]
   workflow_dispatch:
 
 permissions:
