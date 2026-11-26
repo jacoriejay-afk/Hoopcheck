@@ -48,6 +48,7 @@ function screen(path, { state = [], params = {}, segments = [], pathname = "/", 
     if (name.endsWith("/native/pendingDestination")) return { takeDestination: () => pendingDestination, rememberDestination: value => calls.remembered.push(value) };
     if (name.endsWith("/native/careerClaims")) return { nativeCareerClaimsEnabled: careerEnabled };
     if (name.endsWith("/native/careerSignup")) return compile("src/native/careerSignup.ts", require);
+    if (name.endsWith("/native/socialSignup")) return compile("src/native/socialSignup.ts", require);
     if (name === "@react-native-async-storage/async-storage") return { __esModule: true, default: { getItem: async key => careerStorage.get(key) ?? null, setItem: async (key, value) => { careerStorage.set(key, value); }, removeItem: async key => { careerStorage.delete(key); } } };
     if (name === "react-native-gesture-handler") return { GestureHandlerRootView: "GestureHandlerRootView" };
     if (name === "@gorhom/bottom-sheet") return { BottomSheetModalProvider: "BottomSheetModalProvider" };
@@ -277,4 +278,19 @@ test("root navigator mounts before any redirect even if the display font never l
   assert.deepEqual(f.calls.replace, []);
   f.effects[2]();
   assert.deepEqual(f.calls.replace, ["/sign-in"]);
+});
+
+
+test("pending social callback requires setup rather than consuming a protected destination", async () => {
+  for (const provider of ["google", "apple"]) {
+    const f = screen("app/auth/callback.tsx", {
+      params: { code: "fixture" }, pendingDestination: "/teams/fixture",
+      supabase: { auth: { exchangeCodeForSession: async () => ({
+        data: { user: { id: "user", role: "hoopcheck_pending_signup", app_metadata: { provider } } }, error: null
+      }) }, from: () => { throw new Error("Pending accounts must not query private profiles"); } }
+    });
+    f.effects[0](); await new Promise(resolve => setImmediate(resolve));
+    assert.deepEqual(f.calls.replace, [{ pathname: "/sign-up", params: { social: "1" } }]);
+    assert.equal(f.calls.freshSignIns, 0);
+  }
 });
