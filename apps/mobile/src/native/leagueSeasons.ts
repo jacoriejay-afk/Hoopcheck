@@ -24,3 +24,23 @@ export async function readLeagueClubs(client: SupabaseClient, leagueId: string, 
     return { clubs, season, limited: (direct.data?.length || 0) === 50 || (linked.data?.length || 0) === 100 || (details.data?.length || 0) === 50 };
   } finally { clearTimeout(timer); options.signal?.removeEventListener("abort", cancel); }
 }
+
+/** Bounded sample of visible membership records. Exact stored labels, not inferred seasons.
+ * A full sample or hidden membership means the list must not claim complete coverage.
+ */
+export async function readRecordedLeagueSeasons(client: SupabaseClient, leagueId: string, signal?: AbortSignal) {
+  if (!uuid.test(leagueId) || signal?.aborted) throw Error("Check the league or retry.");
+  const controller = new AbortController();
+  const cancel = () => controller.abort();
+  signal?.addEventListener("abort", cancel, { once: true });
+  const timer = setTimeout(cancel, 15000);
+  try {
+    const { data, error } = await client.from("team_league_memberships")
+      .select("season").eq("league_id", leagueId).not("season", "is", null)
+      .order("season", { ascending: false }).order("id").limit(201).abortSignal(controller.signal);
+    if (error || controller.signal.aborted || !data) throw Error("Season records could not load.");
+    const seasons = [...new Set(data.slice(0, 200).map(row => row.season)
+      .filter((value): value is string => typeof value === "string" && value.trim() === value && value.length > 0 && value.length <= 80))];
+    return { seasons, limited: data.length >= 200 };
+  } finally { clearTimeout(timer); signal?.removeEventListener("abort", cancel); }
+}
