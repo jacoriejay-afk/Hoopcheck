@@ -23,7 +23,7 @@ function SupportContent({uid,scam}:{uid:string;scam:boolean}){
   let live=true;const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),15000);setState(null);
   async function load(){try{
    if(offline)throw Error("Reconnect to load private tickets.");
-   const before=await readWithDeadline(()=>supabase.auth.getSession());if(before.error||before.data.session?.user.id!==uid)throw Error("Verify your account again.");
+   const before=await readWithDeadline(()=>supabase.auth.getSession());if(before.error||!before.data.session||before.data.session.user.id!==uid)throw Error("Verify your account again.");
    const result=await supabase.from("support_tickets").select("id,subject,category,status,created_at").eq("requester_id",uid).order("created_at",{ascending:false}).order("id",{ascending:false}).limit(50).setHeader("Authorization","Bearer "+before.data.session.access_token).abortSignal(ctrl.signal);
    const after=await readWithDeadline(()=>supabase.auth.getSession());if(result.error||after.error||after.data.session?.user.id!==uid)throw Error("Tickets could not load. Try again.");
    if(live)setState({rows:(result.data??[]) as Ticket[],error:""});
