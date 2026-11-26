@@ -144,6 +144,7 @@ function RootLayout() {
         <Stack.Screen name="coaches" options={{ title: "Find a coach" }} />
         <Stack.Screen name="coaches/[id]" options={{ title: "Coach profile" }} />
         <Stack.Screen name="account/support" options={{ title: "Help & Support" }} />
+        <Stack.Screen name="account/privacy-center" options={{ title: "Privacy Request Center" }} />
         <Stack.Screen name="womens/index" options={{ title: "Women’s teams" }} />
         <Stack.Screen name="womens/leagues/[id]" options={{ title: "League profile", headerTransparent: true }} />
         <Stack.Screen name="womens/[id]" options={{ title: "Team profile", headerTransparent: true }} />

@@ -23,6 +23,7 @@ export function nativeDestination(path: string): string {
     if (url.protocol !== "https:" || url.hostname !== host || url.username || url.password || url.port) return "/";
     const parts = url.pathname.split("/").filter(Boolean);
     if (["/account/edit", "/account/security", "/account/owner-hq", "/account/ambassador-hq", "/account/career-history", "/account/network", "/owner-hq", "/ambassador-hq"].includes(url.pathname)) return ["/owner-hq", "/ambassador-hq"].includes(url.pathname) ? `/account${url.pathname}` : url.pathname;
+    if (url.pathname === "/privacy-center" || url.pathname === "/account/privacy-center") return "/account/privacy-center";
     if (url.pathname === "/support" || url.pathname === "/account/support") {
       const reel = url.searchParams.get("reportReel");
       if (reel && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(reel)) return "/account/support?reportReel=" + reel;
