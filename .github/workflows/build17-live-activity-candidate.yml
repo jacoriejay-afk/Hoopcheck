@@ -1,0 +1,27 @@
+name: Build 17 ActivityKit candidate
+on:
+  pull_request:
+    paths:
+      - "apps/mobile/native-candidates/live-activity/**"
+      - ".github/workflows/build17-live-activity-candidate.yml"
+permissions:
+  contents: read
+jobs:
+  source-verification:
+    runs-on: macos-15
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/mobile/native-candidates/live-activity
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Test user-selected reminder timing and expiry
+        run: |
+          swiftc ReminderWindow.swift ReminderWindowTests.swift -o /tmp/hoopcheck-reminder-tests
+          /tmp/hoopcheck-reminder-tests
+      - name: Typecheck the ActivityKit app controller
+        run: xcrun --sdk iphonesimulator swiftc -swift-version 5 -typecheck -target arm64-apple-ios16.2-simulator -sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)" ReminderWindow.swift GameReminderAttributes.swift GameReminderController.swift
+      - name: Typecheck WidgetKit and all Dynamic Island presentations
+        run: xcrun --sdk iphonesimulator swiftc -swift-version 5 -typecheck -application-extension -target arm64-apple-ios16.2-simulator -sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)" ReminderWindow.swift GameReminderAttributes.swift GameReminderWidget.swift
