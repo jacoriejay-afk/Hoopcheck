@@ -14,6 +14,7 @@ on:
       - "fix/expo-doctor-dependencies"
       - "integration/build9-backend-completion-20261121"
       - "integration/build16-launch-candidate"
+      - "integration/build17-development"
 
 jobs:
   mobile-typecheck:
