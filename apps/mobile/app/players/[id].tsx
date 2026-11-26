@@ -13,7 +13,7 @@ import { useHaptics } from "../../src/native/haptics";
 import { useNetwork, requireOnline } from "../../src/native/network";
 import { Skeleton } from "../../components/Motion";
 import { useEntryTheme, type EntryTheme } from "../../src/theme";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, RefreshControl, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -42,6 +42,7 @@ function PlayerProfileDetails({ viewer, id }: { viewer: PlayerViewer; id: string
   const [reporting, setReporting] = useState(false);
   const [reportReason, setReportReason] = useState("");
   const [reportSubmitting, setReportSubmitting] = useState(false);
+  const reportInFlight = useRef(false);
   const [reportMessage, setReportMessage] = useState("");
 
   useEffect(() => {
@@ -66,9 +67,9 @@ function PlayerProfileDetails({ viewer, id }: { viewer: PlayerViewer; id: string
 
   async function submitReport() {
     const reason = reportReason.trim();
-    if (reportSubmitting || !player || player.id !== id) return;
-    if (reason.length < 1 || reason.length > 500) {
-      setReportMessage("Please enter a reason of 1–500 characters.");
+    if (reportInFlight.current || reportSubmitting || !player || player.id !== id || player.id === viewerId) return;
+    if (Array.from(reason).length < 3 || Array.from(reason).length > 500) {
+      setReportMessage("Please enter a reason of 3–500 characters.");
       return;
     }
     const apiOrigin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim().replace(/\/$/, "");
@@ -76,6 +77,7 @@ function PlayerProfileDetails({ viewer, id }: { viewer: PlayerViewer; id: string
       setReportMessage("Reporting is temporarily unavailable because the app API is not configured.");
       return;
     }
+    reportInFlight.current = true;
     setReportSubmitting(true);
     setReportMessage("");
     try {
@@ -96,7 +98,7 @@ function PlayerProfileDetails({ viewer, id }: { viewer: PlayerViewer; id: string
         body: JSON.stringify({ profileId: player.id, reason }),
       });
       const result = await response.json().catch(() => ({})) as { error?: string; ok?: boolean };
-      if (!response.ok) {
+      if (!response.ok || result.ok !== true) {
         haptic("error");
         setReportMessage(result.error || "We couldn't submit your report. Please try again.");
         return;
@@ -109,6 +111,7 @@ function PlayerProfileDetails({ viewer, id }: { viewer: PlayerViewer; id: string
       haptic("error");
       setReportMessage("Couldn't connect to HoopCheck. Check your connection and try again.");
     } finally {
+      reportInFlight.current = false;
       setReportSubmitting(false);
     }
   }
@@ -160,7 +163,7 @@ function PlayerProfileDetails({ viewer, id }: { viewer: PlayerViewer; id: string
             </GlassCard>
             <OwnAffiliations key={`${viewerId}:${player.id}`} profileId={player.id} />
             <PlayerCareer key={`${viewerId}:${player.id}`} playerId={player.id} viewer={viewer} />
-            <GlassCard style={styles.reportCard}>
+            {player.id !== viewerId ? <GlassCard style={styles.reportCard}>
               <Text style={styles.sectionTitle}>Safety and reporting</Text>
               <Text style={styles.body}>If this profile contains impersonation, harassment, or inappropriate personal information, report it to the HoopCheck team.</Text>
               {(
@@ -175,27 +178,28 @@ function PlayerProfileDetails({ viewer, id }: { viewer: PlayerViewer; id: string
                     accessibilityLabel="Reason for reporting profile"
                     value={reportReason}
                     onChangeText={setReportReason}
-                    placeholder="Describe the concern (1–500 characters)"
+                    placeholder="Describe the impersonation, harassment or other concern"
                     placeholderTextColor={theme.muted}
+                    editable={!reportSubmitting}
                     multiline
                     maxLength={500}
                     textAlignVertical="top"
                     style={styles.reportInput}
                   />
                   {reportMessage ? <Text accessibilityRole="alert" style={styles.reportMessage}>{reportMessage}</Text> : null}
-                  <Text style={styles.characterCount}>{reportReason.trim().length}/500</Text>
+                  <Text style={styles.characterCount}>{Array.from(reportReason.trim()).length}/500</Text>
                   <View style={styles.reportActions}>
                     <Button secondary disabled={reportSubmitting} style={styles.cancelButton} onPress={() => { setReporting(false); setReportReason(""); setReportMessage(""); }}>
                       <Text style={styles.cancelButtonText}>Cancel</Text>
                     </Button>
-                    <Pressable disabled={reportSubmitting || !reportReason.trim()} style={[styles.reportButton, (reportSubmitting || !reportReason.trim()) && styles.disabledButton]} onPress={() => void submitReport()}>
+                    <Pressable disabled={reportSubmitting || Array.from(reportReason.trim()).length < 3} style={[styles.reportButton, (reportSubmitting || Array.from(reportReason.trim()).length < 3) && styles.disabledButton]} onPress={() => void submitReport()}>
                       <Text style={styles.reportButtonText}>{reportSubmitting ? "Submitting…" : "Submit report"}</Text>
                     </Pressable>
                   </View>
                 </View>
               </Sheet>
               {reportMessage ? <Text accessibilityRole="alert" style={styles.reportMessage}>{reportMessage}</Text> : null}
-            </GlassCard>
+            </GlassCard> : null}
             <Text style={styles.footer}>Public profile fields follow the player’s privacy and moderation settings. Verified team links are visible only to their owner here. Verify roster and free-agent status independently.</Text>
           </>
         ) : null}
