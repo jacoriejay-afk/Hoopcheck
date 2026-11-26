@@ -15,3 +15,24 @@ export async function readVerifiedSeasonChoices(token:string,id:string,type:"tea
  if(!response.ok)throw Error("Verified season access unavailable.");
  return parseVerifiedSeasonAccess(await response.json(),new Date().getUTCFullYear());
 }
+
+// A form is tied to its first authenticated identity. Token refresh and
+// repeated same-user SIGNED_IN events must not clear valid season choices.
+// Once invalidated, even a switch back to the original account cannot
+// revive an earlier asynchronous request or its private draft.
+export function createReviewSessionGuard(onInvalidate:()=>void){
+ let owner:string|undefined;
+ let invalidated=false;
+ return {
+  observe(userId:string|null|undefined):boolean{
+   if(invalidated)return false;
+   if(!userId||(owner!==undefined&&owner!==userId)){
+    invalidated=true;
+    onInvalidate();
+    return false;
+   }
+   owner=userId;
+   return true;
+  },
+ };
+}
