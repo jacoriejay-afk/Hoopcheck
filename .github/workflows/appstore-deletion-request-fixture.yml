@@ -10,6 +10,9 @@ on:
       - "supabase/candidates/appstore_deletion_apple_revocations.sql"
       - "supabase/tests/appstore_deletion_apple_revocations_fixture.sql"
       - "supabase/candidates/appstore_deletion_account_freeze.sql"
+      - "supabase/candidates/appstore_deletion_private_preferences_cleanup.sql"
+      - "supabase/candidates/appstore_deletion_completion_delivery.sql"
+      - "supabase/candidates/appstore_deletion_review_cleanup.sql"
       - "supabase/tests/appstore_deletion_account_freeze_fixture.sql"
       - "supabase/migrations/20261106190000_add_account_deletion_requests.sql"
       - ".github/workflows/appstore-deletion-request-fixture.yml"
@@ -46,7 +49,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/checkout@v4
         with:
-          ref: 0b1bf9a67c52ae124b54c1c9d9f9f4117ce9ba67
+          ref: 19a564eb7ac53e228fcbdba82011708d07a9fcb0
           path: .compliance-apple
           persist-credentials: false
       - name: Verify local fixture database and run SQL
