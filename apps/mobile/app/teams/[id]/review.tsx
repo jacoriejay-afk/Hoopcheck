@@ -3,7 +3,8 @@ import { requireOnline, useNetwork } from "../../../src/native/network";
 import { OfflineBanner } from "../../../components/OfflineBanner";
 import { traceFlow } from "../../../src/native/telemetry";
 import { useEntryTheme } from "../../../src/theme";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import {nativeExactSeasonReviewsEnabled,nativeReviewTarget,readNativeVerifiedSeasons,type ReviewDirectory} from "../../../src/native/verifiedReviewSeasons";
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -24,9 +25,13 @@ export default function TeamReviewScreen() {
   const router = useRouter();
   const haptic = useHaptics();
   const { offline } = useNetwork();
-  const params = useLocalSearchParams<{ id?: string | string[]; teamName?: string | string[] }>();
+  const params = useLocalSearchParams<{ id?: string | string[]; teamName?: string | string[]; directory?: string }>();
   const teamId = Array.isArray(params.id) ? params.id[0] : params.id;
   const teamName = Array.isArray(params.teamName) ? params.teamName[0] : params.teamName;
+  const directory:ReviewDirectory=params.directory==="womens-team"?"womens-team":"team";
+  const [choices,setChoices]=useState<{id:string;directory:ReviewDirectory;userId:string;seasons:string[]}|null>(null);
+  const [checking,setChecking]=useState(false),[checkError,setCheckError]=useState(""),[revision,setRevision]=useState(0);
+  const authVersion=useRef(0);
   const [ratings, setRatings] = useState<Record<string, number>>({
     overall_rating: 0, communication_rating: 0, professionalism_rating: 0, development_rating: 0, payment_rating: 0,
   });
@@ -37,12 +42,35 @@ export default function TeamReviewScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
+  useEffect(()=>{
+    if(!nativeExactSeasonReviewsEnabled)return;
+    const {data}=supabase.auth.onAuthStateChange(()=>{authVersion.current++;setChoices(null);setSeason("");setRevision(v=>v+1);});
+    return()=>data.subscription.unsubscribe();
+  },[]);
+  useEffect(()=>{
+    if(!nativeExactSeasonReviewsEnabled)return;
+    let live=true;const generation=authVersion.current;const controller=new AbortController();
+    const timeout=setTimeout(()=>controller.abort(),12000);
+    setChoices(null);setSeason("");setCheckError("");setChecking(true);
+    void(async()=>{try{
+      if(!teamId||offline)throw Error("Reconnect to check verified seasons.");
+      const {data:{session}}=await supabase.auth.getSession();
+      if(!session)throw Error("Sign in to check verified seasons.");
+      const seasons=await readNativeVerifiedSeasons(API_BASE_URL,session.access_token,teamId,directory,controller.signal);
+      const {data:after}=await supabase.auth.getSession();
+      if(live&&generation===authVersion.current&&after.session?.user.id===session.user.id)setChoices({id:teamId,directory,userId:session.user.id,seasons});
+    }catch{if(live)setCheckError("Verified seasons could not load. Retry when connected.");}finally{clearTimeout(timeout);if(live)setChecking(false);}})();
+    return()=>{live=false;clearTimeout(timeout);controller.abort();};
+  },[teamId,directory,offline,revision]);
+  const currentChoices=choices?.id===teamId&&choices.directory===directory?choices:null;
   useEffect(() => { if (error) haptic("error"); }, [error, haptic]);
 
   async function submitReview() {
     if (submitting) return;
     setError("");
     if (!teamId) { setError("This team could not be identified. Return to the team profile and try again."); return; }
+    if(directory==="womens-team"&&!nativeExactSeasonReviewsEnabled){setError("This review form is not available.");return;}
+    if(nativeExactSeasonReviewsEnabled&&(!currentChoices||!currentChoices.seasons.includes(season)||offline)){setError("Choose one of your verified seasons.");return;}
     if (!API_BASE_URL) { setError("Review submission is not configured yet. Please use the HoopCheck website or try again later."); return; }
     if (RATING_FIELDS.some(field => ratings[field.key] < 1 || ratings[field.key] > 5)) {
       setError("Please choose a 1–5 rating for every category."); return;
@@ -60,15 +88,16 @@ export default function TeamReviewScreen() {
       await requireOnline();
       const { data, error: sessionError } = await supabase.auth.getSession();
       const token = data.session?.access_token;
-      if (sessionError || !token) {
+      if (sessionError || !token || (nativeExactSeasonReviewsEnabled&&data.session?.user.id!==currentChoices?.userId)) {
         setError("Your session has expired. Sign in again before submitting a review.");
         return;
       }
-      const response = await traceFlow("posting", () => fetch(`${API_BASE_URL}/api/reviews`, {
+      const target=nativeReviewTarget(directory,teamId);
+      const response = await traceFlow("posting", () => fetch(API_BASE_URL+target.path, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
-          team_id: teamId,
+          ...target.payload,
           player_season: season.trim(),
           title: title.trim(),
           body: body.trim(),
@@ -85,7 +114,7 @@ export default function TeamReviewScreen() {
       Alert.alert(
         "Review submitted",
         "Your review has been sent for moderation. It will not appear publicly unless approved.",
-        [{ text: "Done", onPress: () => router.replace({ pathname: "/teams/[id]", params: { id: teamId } }) }],
+        [{ text: "Done", onPress: () => router.replace({ pathname: directory==="womens-team"?"/womens/[id]":"/teams/[id]", params: { id: teamId } }) }],
       );
     } catch (cause) {
       setError(cause instanceof Error && cause.message.includes("offline") ? cause.message : "Could not connect to HoopCheck. Nothing was confirmed as sent. Your text stays here; reconnect and try again.");
@@ -107,7 +136,9 @@ export default function TeamReviewScreen() {
           <Text style={styles.noticeText}>Submission requires a confirmed email, verified professional player profile, active HoopCheck membership, and a verified current or former affiliation with this team. The server checks these requirements.</Text>
         </View>
         <Text style={styles.label}>SEASON YOU PLAYED</Text>
-        <TextInput value={season} onChangeText={setSeason} placeholder="e.g. 2025-26" placeholderTextColor={theme.muted} autoCapitalize="none" style={styles.input} maxLength={9} />
+        {nativeExactSeasonReviewsEnabled?<View style={{gap:8,marginBottom:18}}>
+          {checking?<ActivityIndicator color={theme.accent}/>:checkError?<><Text accessibilityRole="alert" style={styles.noticeText}>{checkError}</Text><Pressable accessibilityRole="button" onPress={()=>setRevision(v=>v+1)}><Text style={styles.back}>Retry</Text></Pressable></>:currentChoices?.seasons.length?currentChoices.seasons.map(value=><Pressable key={value} disabled={submitting} accessibilityRole="radio" accessibilityState={{checked:season===value}} onPress={()=>setSeason(value)} style={[styles.input,{marginBottom:0,borderColor:season===value?theme.accent:theme.border}]}><Text style={{color:theme.foreground}}>{value}{season===value?" · Selected":""}</Text></Pressable>):<Text style={styles.noticeText}>No verified seasons are available for this team. Add career history and confirm your membership before reviewing.</Text>}
+        </View>:<TextInput value={season} onChangeText={setSeason} placeholder="e.g. 2025-26" placeholderTextColor={theme.muted} autoCapitalize="none" style={styles.input} maxLength={9} />}
         {RATING_FIELDS.map(field => (
           <View key={field.key} style={styles.ratingGroup}>
             <Text style={styles.label}>{field.label.toUpperCase()}</Text>
@@ -133,7 +164,7 @@ export default function TeamReviewScreen() {
           <Switch value={anonymous} onValueChange={setAnonymous} trackColor={{ false: "#C7D0DE", true: "#D69E18" }} />
         </View>
         {error ? <View accessibilityRole="alert" style={styles.errorBox}><Text style={styles.errorText}>{error}</Text></View> : null}
-        <Pressable accessibilityRole="button" disabled={submitting || offline} onPress={() => void submitReview()} style={[styles.submit, submitting && styles.disabled]}>
+        <Pressable accessibilityRole="button" disabled={submitting || offline || (nativeExactSeasonReviewsEnabled&&!currentChoices?.seasons.includes(season)) || (directory==="womens-team"&&!nativeExactSeasonReviewsEnabled)} onPress={() => void submitReview()} style={[styles.submit, submitting && styles.disabled]}>
           {submitting ? <ActivityIndicator color={theme.foreground} /> : <Text style={styles.submitText}>{offline ? "Reconnect to submit · nothing sent" : "Submit for moderation"}</Text>}
         </Pressable>
         <Text style={styles.footer}>Do not include private contact details, threats, discriminatory language, or information about another person that they would reasonably expect to remain private.</Text>
