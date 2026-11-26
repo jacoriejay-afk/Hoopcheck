@@ -89,5 +89,22 @@ do $$ begin
  or (select count(*) from public.account_deletion_requests where status='pending')<>2
  then raise exception 'Unexpected final state'; end if;
 end $$;
+-- A lease can expire within one transaction. now() is frozen at BEGIN;
+-- the actual worker must use wall time, even without a competing claimant.
+update public.account_deletion_requests set scheduled_for=now()-interval '1 second',status='processing' where id='22222222-2222-4222-8222-222222222222';
+update hoopcheck_deletion_private.worker_state set fence='77777777-7777-4777-8777-777777777777',lease_until=clock_timestamp()+interval '200 milliseconds'
+ where request_id='22222222-2222-4222-8222-222222222222';
+select pg_sleep(0.3);
+set local role service_role;
+do $ declare l record; begin
+ if public.assert_account_deletion_worker('22222222-2222-4222-8222-222222222222','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','77777777-7777-4777-8777-777777777777')
+ or public.checkpoint_account_deletion_worker('22222222-2222-4222-8222-222222222222','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','77777777-7777-4777-8777-777777777777','approve_scope','expired')
+ or public.fail_account_deletion_worker('22222222-2222-4222-8222-222222222222','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','77777777-7777-4777-8777-777777777777','step_not_confirmed')
+ then raise exception 'Expired transaction-local fence accepted'; end if;
+ select * into l from public.claim_account_deletion_worker();
+ if l.request_id is distinct from '22222222-2222-4222-8222-222222222222'::uuid or l.fence='77777777-7777-4777-8777-777777777777'::uuid or cardinality(l.completed)<>0 then raise exception 'Expired lease not safely reclaimed'; end if;
+end $;
+reset role;
+
 rollback;
 \echo PASS: disabled gate, scope approval, due date, fencing, ordering, idempotency, backoff and completion
