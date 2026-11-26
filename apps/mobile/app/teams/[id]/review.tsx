@@ -62,7 +62,7 @@ export default function TeamReviewScreen() {
     }catch{if(live)setCheckError("Verified seasons could not load. Retry when connected.");}finally{clearTimeout(timeout);if(live)setChecking(false);}})();
     return()=>{live=false;clearTimeout(timeout);controller.abort();};
   },[teamId,directory,offline,revision]);
-  const currentChoices=choices?.id===teamId&&choices.directory===directory?choices:null;
+  const currentChoices=choices&&choices.id===teamId&&choices.directory===directory?choices:null;
   useEffect(() => { if (error) haptic("error"); }, [error, haptic]);
 
   async function submitReview() {
