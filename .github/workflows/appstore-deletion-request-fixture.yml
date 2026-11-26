@@ -9,6 +9,8 @@ on:
       - "supabase/tests/appstore_deletion_worker_state_fixture.sql"
       - "supabase/candidates/appstore_deletion_apple_revocations.sql"
       - "supabase/tests/appstore_deletion_apple_revocations_fixture.sql"
+      - "supabase/candidates/appstore_deletion_account_freeze.sql"
+      - "supabase/tests/appstore_deletion_account_freeze_fixture.sql"
       - "supabase/migrations/20261106190000_add_account_deletion_requests.sql"
       - ".github/workflows/appstore-deletion-request-fixture.yml"
   workflow_dispatch:
@@ -57,4 +59,5 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/appstore_deletion_request_fixture.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/appstore_deletion_worker_state_fixture.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/appstore_deletion_apple_revocations_fixture.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/appstore_deletion_account_freeze_fixture.sql
           echo "Synthetic SQL only; no account deletion, hosted database or deployment."
