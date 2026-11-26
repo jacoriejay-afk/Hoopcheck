@@ -22,16 +22,24 @@ export function nativeDestination(path: string): string {
     }
     if (url.protocol !== "https:" || url.hostname !== host || url.username || url.password || url.port) return "/";
     const parts = url.pathname.split("/").filter(Boolean);
-    if (url.pathname === "/account/edit" || url.pathname === "/account/security") return url.pathname;
-    if (url.pathname === "/account/support") return "/account/support" + (url.searchParams.get("topic")==="scam" ? "?topic=scam" : "");
+    if (["/account/edit", "/account/security", "/account/owner-hq", "/account/ambassador-hq", "/account/career-history", "/account/network", "/owner-hq", "/ambassador-hq"].includes(url.pathname)) return ["/owner-hq", "/ambassador-hq"].includes(url.pathname) ? `/account${url.pathname}` : url.pathname;
+    if (url.pathname === "/support" || url.pathname === "/account/support") {
+      const reel = url.searchParams.get("reportReel");
+      if (reel && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(reel)) return "/account/support?reportReel=" + reel;
+      // Retain specialized website forms until their native equivalents exist.
+      if (["membershipCancellation", "accountCompromised", "agentVerification"].some(key => url.searchParams.get(key) === "1")) return "/web?path=" + encodeURIComponent("/support" + url.search);
+      return "/account/support" + ((url.searchParams.get("topic")==="scam" || url.searchParams.get("scamAlert")==="1") ? "?topic=scam" : "");
+    }
     if (parts[0] === "team-hub" && parts[1] === "groups") {
       if (parts.length === 2) return "/team-hub/groups";
       if (parts.length === 3 && safeId.test(parts[2])) return `/team-hub/groups/${parts[2]}`;
     }
     if (url.pathname === "/") return "/";
+    if (url.pathname === "/company") return "/about";
+    if (["/privacy", "/terms", "/community-guidelines"].includes(url.pathname)) return `/legal?document=${url.pathname.slice(1)}`;
     if (parts.length === 3 && parts[0] === "womens" && parts[1] === "leagues" && safeId.test(parts[2])) return `/womens/leagues/${parts[2]}`;
     if (parts.length === 2 && ["teams", "womens", "leagues", "players", "coaches"].includes(parts[0]) && safeId.test(parts[1])) return `/${parts[0]}/${parts[1]}`;
-    if (parts.length === 1 && ["account", "teams", "womens", "leagues", "players", "coaches", "dashboard", "settings", "membership"].includes(parts[0])) return url.pathname;
+    if (parts.length === 1 && ["account", "teams", "womens", "leagues", "players", "coaches", "dashboard", "settings", "membership", "about", "messages", "forgot-password", "sign-in", "sign-up", "choose-username", "feed-welcome"].includes(parts[0])) return url.pathname;
     if (url.pathname === "/feed" || url.pathname === "/fan-feed") {
       const post = url.searchParams.get("post") || /^#post-([0-9a-f-]{36})$/i.exec(url.hash)?.[1];
       return "/feed" + (post && /^[0-9a-f-]{36}$/i.test(post) ? `?post=${post}` : "");
@@ -67,9 +75,15 @@ export function nativeDestination(path: string): string {
       // Invalid percent sequences must not reach the router's legacy decoder.
       const query = new URLSearchParams();
       const code = url.searchParams.get("code");
-      if (code && code.length <= 2048) query.set("code", code);
+      const token = url.searchParams.get("token_hash");
+      if (url.pathname === "/reset-password" && code && token) return "/reset-password?error_code=invalid_link";
+      if (code && code.length <= 2048 && url.searchParams.getAll("code").length === 1) query.set("code", code);
+      if (url.pathname === "/reset-password" && !code && token && token.length <= 2048 && url.searchParams.getAll("token_hash").length === 1 && url.searchParams.getAll("type").length === 1 && url.searchParams.get("type") === "recovery") {
+        query.set("token_hash", token); query.set("type", "recovery");
+      }
+      const fragment = new URLSearchParams(url.hash.slice(1));
       for (const field of ["error", "error_description", "error_code"]) {
-        const value = url.searchParams.get(field);
+        const value = url.searchParams.get(field) ?? fragment.get(field);
         if (value) query.set(field, value.slice(0, 512));
       }
       const serialized = query.toString();
