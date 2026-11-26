@@ -8,6 +8,8 @@ CREATE ROLE authenticated NOLOGIN;
 CREATE ROLE service_role NOLOGIN BYPASSRLS;
 CREATE ROLE authenticator NOLOGIN;
 CREATE TABLE auth.sessions(id uuid PRIMARY KEY,user_id uuid);
+CREATE TABLE auth.users(id uuid PRIMARY KEY,banned_until timestamptz);
+INSERT INTO auth.users VALUES('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',null),('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',null);
 CREATE TABLE auth.mfa_factors(user_id uuid,status text);
 CREATE FUNCTION auth.jwt() RETURNS jsonb LANGUAGE sql STABLE AS $$ SELECT coalesce(nullif(current_setting('request.jwt.claims',true),''),'{}')::jsonb $$;
 CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(auth.jwt()->>'sub','')::uuid $$;
@@ -71,16 +73,22 @@ DO $$ BEGIN
  IF (SELECT count(*) FROM public.fixture_posts)<>1 OR (SELECT count(*) FROM storage.objects)<>1 OR (SELECT count(*) FROM realtime.messages)<>1 THEN RAISE EXCEPTION 'Other account access regressed';END IF;
 END $$;
 RESET ROLE;
+INSERT INTO hoopcheck_deletion_private.worker_receipts(request_id,step_number,receipt) VALUES('33333333-3333-4333-8333-333333333333',3,'fixture-3');
 UPDATE hoopcheck_deletion_private.worker_state SET next_step=4;
 SET LOCAL ROLE service_role;
 DO $$ BEGIN
+ IF NOT public.assert_deletion_frozen_session_step('33333333-3333-4333-8333-333333333333','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','44444444-4444-4444-8444-444444444444') THEN RAISE EXCEPTION 'Valid session step not verified'; END IF;
+ IF public.assert_deletion_frozen_session_step('33333333-3333-4333-8333-333333333333','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','44444444-4444-4444-8444-444444444444') THEN RAISE EXCEPTION 'Foreign session step accepted'; END IF;
+ IF public.verify_deletion_auth_login_block('33333333-3333-4333-8333-333333333333','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','44444444-4444-4444-8444-444444444444') THEN RAISE EXCEPTION 'Unbanned user accepted'; END IF;
  IF public.verify_deletion_session_absence('33333333-3333-4333-8333-333333333333','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','44444444-4444-4444-8444-444444444444') THEN RAISE EXCEPTION 'Active session falsely cleared'; END IF;
 END $$;
 RESET ROLE;
 -- Fixture simulates acknowledged Auth sign-out; no real sessions are modified.
 DELETE FROM auth.sessions;
+UPDATE auth.users SET banned_until=now()+interval '365 days' WHERE id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 SET LOCAL ROLE service_role;
 DO $$ BEGIN
+ IF NOT public.verify_deletion_auth_login_block('33333333-3333-4333-8333-333333333333','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','44444444-4444-4444-8444-444444444444') THEN RAISE EXCEPTION 'Auth ban not verified'; END IF;
  IF NOT public.verify_deletion_session_absence('33333333-3333-4333-8333-333333333333','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','44444444-4444-4444-8444-444444444444') THEN RAISE EXCEPTION 'Session absence not verified'; END IF;
 END $$;
 RESET ROLE;
