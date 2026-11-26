@@ -105,3 +105,36 @@ GRANT EXECUTE ON FUNCTION public.verify_deletion_session_absence(uuid,uuid,uuid)
 -- Auth sign-out and blocking new Auth sign-ins are separate effects.
 -- Retain the freeze until all issued tokens expire; approve minimal retention
 -- and cleanup policy before releasing. No hosted changes are authorized.
+
+-- Exact step-4 gate before performing Auth Admin effects; never disclose
+-- account state to an arbitrary caller. The worker's bearer is not a user JWT.
+CREATE OR REPLACE FUNCTION hoopcheck_deletion_private.assert_frozen_session_step(p_request uuid,p_owner uuid,p_fence uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $$
+ SELECT public.assert_account_deletion_worker(p_request,p_owner,p_fence)
+ AND EXISTS(SELECT 1 FROM hoopcheck_deletion_private.worker_state w WHERE w.request_id=p_request AND w.next_step=4)
+ AND EXISTS(SELECT 1 FROM hoopcheck_deletion_private.worker_receipts r WHERE r.request_id=p_request AND r.step_number=3)
+ AND EXISTS(SELECT 1 FROM hoopcheck_deletion_private.frozen_accounts f WHERE f.owner_id=p_owner AND f.request_id=p_request)
+$$;
+REVOKE ALL ON FUNCTION hoopcheck_deletion_private.assert_frozen_session_step(uuid,uuid,uuid) FROM public,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION hoopcheck_deletion_private.assert_frozen_session_step(uuid,uuid,uuid) TO service_role;
+CREATE OR REPLACE FUNCTION public.assert_deletion_frozen_session_step(p_request uuid,p_owner uuid,p_fence uuid)
+RETURNS boolean LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$
+ SELECT hoopcheck_deletion_private.assert_frozen_session_step(p_request,p_owner,p_fence)
+$$;
+REVOKE ALL ON FUNCTION public.assert_deletion_frozen_session_step(uuid,uuid,uuid) FROM public,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.assert_deletion_frozen_session_step(uuid,uuid,uuid) TO service_role;
+
+-- Separate proof of a long-enough Auth ban, not a claim that banning revokes sessions.
+CREATE OR REPLACE FUNCTION hoopcheck_deletion_private.verify_auth_login_block(p_request uuid,p_owner uuid,p_fence uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $$
+ SELECT hoopcheck_deletion_private.assert_frozen_session_step(p_request,p_owner,p_fence)
+ AND EXISTS(SELECT 1 FROM auth.users u WHERE u.id=p_owner AND u.banned_until>now()+interval '7 days')
+$$;
+REVOKE ALL ON FUNCTION hoopcheck_deletion_private.verify_auth_login_block(uuid,uuid,uuid) FROM public,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION hoopcheck_deletion_private.verify_auth_login_block(uuid,uuid,uuid) TO service_role;
+CREATE OR REPLACE FUNCTION public.verify_deletion_auth_login_block(p_request uuid,p_owner uuid,p_fence uuid)
+RETURNS boolean LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$
+ SELECT hoopcheck_deletion_private.verify_auth_login_block(p_request,p_owner,p_fence)
+$$;
+REVOKE ALL ON FUNCTION public.verify_deletion_auth_login_block(uuid,uuid,uuid) FROM public,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.verify_deletion_auth_login_block(uuid,uuid,uuid) TO service_role;
