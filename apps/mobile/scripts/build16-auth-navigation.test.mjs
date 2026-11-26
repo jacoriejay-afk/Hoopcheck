@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { readFileSync } from "node:fs";
 import { nativeDestination } from "../src/native/deepLinks.ts";
+import { rememberDestination, takeDestination } from "../src/native/pendingDestination.ts";
 import { legalDocuments } from "../src/native/legalDocuments.ts";
 import { bindAuthIntents, createAuthIntents } from "../../../lib/auth/auth-intents.ts";
 
@@ -21,6 +22,17 @@ test("recovery links preserve only recognized fields", () => {
   assert.equal(nativeDestination("hoopcheck://auth/callback?token_hash=fixture&type=recovery"), "/auth/callback");
   assert.equal(nativeDestination("hoopcheck://reset-password#access_token=secret&error_code=otp_expired"), "/reset-password?error_code=otp_expired");
   assert.equal(nativeDestination("hoopcheck://reset-password?code=a&code=b"), "/reset-password");
+});
+test("native support and report links retain only validated report destinations", () => {
+  const id = "11111111-1111-4111-8111-111111111111";
+  assert.equal(nativeDestination("/support"), "/account/support");
+  assert.equal(nativeDestination("/support?scamAlert=1"), "/account/support?topic=scam");
+  assert.equal(nativeDestination("/support?reportReel=" + id + "&token=private"), "/account/support?reportReel=" + id);
+  assert.equal(nativeDestination("/support?reportReel=invalid"), "/account/support");
+  assert.equal(nativeDestination("/company"), "/about");
+  rememberDestination("/account/support?reportReel=" + id + "&token=private");
+  assert.equal(takeDestination(), "/account/support?reportReel=" + id);
+  rememberDestination("/messages"); assert.equal(takeDestination(), "/messages");
 });
 test("bundled legal wording matches the website", () => {
   for (const [key, policy] of Object.entries(legalDocuments)) {
