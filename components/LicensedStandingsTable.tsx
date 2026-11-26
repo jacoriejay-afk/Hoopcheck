@@ -1,11 +1,12 @@
 "use client";
+import { dataConfidence } from "../apps/mobile/src/native/dataConfidence";
 import { useEffect,useState } from "react";
 import type { licensedStandingsView } from "../lib/hoopdata-licensed-standings";
 type View=NonNullable<ReturnType<typeof licensedStandingsView>>;
 export default function LicensedStandingsTable({view}:{view:View}){
- const [current,setCurrent]=useState(()=>Date.parse(view.expiresAt)>Date.now());
+ const [current,setCurrent]=useState(()=>dataConfidence({kind:"reviewed-provider",observedAt:view.observedAt,expiresAt:view.expiresAt}).state==="reviewed-provider");
  useEffect(()=>{
-  const check=()=>setCurrent(Date.parse(view.expiresAt)>Date.now());
+  const check=()=>setCurrent(dataConfidence({kind:"reviewed-provider",observedAt:view.observedAt,expiresAt:view.expiresAt}).state==="reviewed-provider");
   check();
   const timer=setTimeout(check,Math.max(0,Date.parse(view.expiresAt)-Date.now()));
   window.addEventListener("pageshow",check);
@@ -15,6 +16,7 @@ export default function LicensedStandingsTable({view}:{view:View}){
  if(!current)return <p role="status">Standings have expired. Refresh to check for a verified update.</p>;
  return <section className="card" aria-label="Official league standings">
   <h2>Official standings</h2>
+  <p><strong>Reviewed provider snapshot</strong> · Source and display rights were checked for this preview; coverage may be incomplete.</p>
   <p>Season {view.season} · Source: {view.source}</p>
   {view.attribution?<p>{view.attribution}</p>:null}
   <p className="muted">Observed <time dateTime={view.observedAt}>{new Date(view.observedAt).toISOString().replace("T"," ").slice(0,16)} UTC</time>. Unreported statistics are shown as —.</p>
