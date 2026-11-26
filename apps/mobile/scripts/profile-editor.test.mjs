@@ -45,3 +45,28 @@ test('profile save pins the owner token and aborts when the account changes afte
  client.auth.getSession=async()=>({data:{session:{user:{id:++reads>2?other:uid},access_token:'fixture-owner-token'}},error:null});
  await assert.rejects(saveOwnProfile(client,uid,row),/account changed|could not be verified/);assert.equal(writes,1);
 });
+
+test('international names and bios survive profile reads, drafts and writes without broken surrogate pairs',async()=>{
+ const name='Əli 李 أحمد O’Connor 𐐷';
+ const boundary='a'.repeat(79)+'🏀';
+ const bio='é'.repeat(499)+'🏀';
+ const parsed=parseProfileDraft({...row,display_name:boundary,bio,hometown:'São Paulo',nationality:'Azərbaycan'});
+ assert.equal(parsed.display_name,'a'.repeat(79));
+ assert.equal(parsed.bio,'é'.repeat(499));
+ assert.equal(parsed.hometown,'São Paulo');
+ assert.equal(parsed.nationality,'Azərbaycan');
+ assert.equal(parseProfileDraft({...row,display_name:'a'.repeat(78)+'🏀'}).display_name,'a'.repeat(78)+'🏀');
+ assert.equal(parseProfileDraft({...row,display_name:name}).display_name,name);
+ const profile=await readOwnProfile(db(async()=>Response.json({...row,display_name:name,first_name:'a'.repeat(99)+'𐐷',bio})),uid);
+ assert.equal(profile.display_name,name);
+ assert.equal(profile.first_name,'a'.repeat(99));
+ assert.equal(profile.bio,'é'.repeat(499));
+ let body;
+ const client=db(async(_,options)=>options.method==='PATCH'?(body=JSON.parse(options.body),Response.json({id:uid})):Response.json(row));
+ await saveOwnProfile(client,uid,{...row,display_name:boundary,bio});
+ assert.equal(body.display_name,'a'.repeat(79));
+ assert.equal(body.bio,'é'.repeat(499));
+ await saveOwnProfile(client,uid,{...row,display_name:name,bio:'مرحبا 🏀'});
+ assert.equal(body.display_name,name);
+ assert.equal(body.bio,'مرحبا 🏀');
+});
