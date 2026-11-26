@@ -3,8 +3,11 @@ set -euo pipefail
 artifact_root=/tmp/hoopcheck-passport-simulator
 mkdir -p "$artifact_root"
 cp package.json "$artifact_root/package.original.json"
+app_delegate=ios/HoopCheck/AppDelegate.swift
+cp "$app_delegate" "$artifact_root/AppDelegate.original.swift"
 cleanup() {
   cp "$artifact_root/package.original.json" package.json
+  cp "$artifact_root/AppDelegate.original.swift" "$app_delegate"
   if [[ -n "${metro_pid:-}" ]]; then kill "$metro_pid" 2>/dev/null || true; fi
 }
 trap cleanup EXIT
@@ -12,6 +15,9 @@ node - <<'JS'
 const fs=require('fs'); const p=JSON.parse(fs.readFileSync('package.json','utf8'));
 p.main='./scripts/ios-passport-smoke/entry.tsx'; fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n');
 JS
+# Patch only the disposable generated native fixture after the ordinary compile.
+# The real XCTest rebuilds this Debug simulator app and retains all assertions.
+python3 scripts/ios-passport-smoke/pin-fixture-bundle.py "$app_delegate"
 ruby scripts/ios-passport-smoke/add-ui-test.rb
 npx --no-install expo start --localhost --port 8081 > "$artifact_root/metro.log" 2>&1 &
 metro_pid=$!
