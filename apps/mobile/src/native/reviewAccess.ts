@@ -1,11 +1,11 @@
 export type Review = { id: string; title: string | null; body: string | null; overall_rating: number | null; created_at: string };
 export type ReviewAccess = { canReadFull: boolean; canWrite: boolean; reviews: Review[] };
-export async function readReviewAccess(origin: string, token: string, id: string, signal?: AbortSignal, request: typeof fetch = fetch): Promise<ReviewAccess> {
+export async function readReviewAccess(origin: string, token: string, id: string, signal?: AbortSignal, request: typeof fetch = fetch, entityType: "womens-team" | "coach" = "womens-team"): Promise<ReviewAccess> {
   const url = new URL(origin);
   if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash || (url.pathname !== "/" && url.pathname !== "")) throw new Error("Invalid API origin");
-  if (!token || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) throw new Error("Invalid review request");
+  if (!["womens-team", "coach"].includes(entityType) || !token || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) throw new Error("Invalid review request");
   url.pathname = "/api/review-access";
-  url.searchParams.set("entityType", "womens-team"); url.searchParams.set("entityId", id);
+  url.searchParams.set("entityType", entityType); url.searchParams.set("entityId", id);
   const response = await request(url.toString(), { headers: { Authorization: `Bearer ${token}` }, cache: "no-store", redirect: "error", signal });
   if (!response.ok) throw new Error("Review access unavailable");
   const data = await response.json();
