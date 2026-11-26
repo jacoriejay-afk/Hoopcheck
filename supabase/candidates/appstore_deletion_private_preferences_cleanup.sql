@@ -38,7 +38,7 @@ BEGIN
  END LOOP;
  IF NOT public.assert_account_deletion_worker(p_request,p_owner,p_fence) THEN RAISE EXCEPTION 'Preference cleanup lease expired' USING ERRCODE='42501'; END IF;
  RETURN true;
-END $;
+END $$;
 REVOKE ALL ON FUNCTION hoopcheck_deletion_private.erase_private_preferences(uuid,uuid,uuid) FROM public,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION hoopcheck_deletion_private.erase_private_preferences(uuid,uuid,uuid) TO service_role;
 CREATE OR REPLACE FUNCTION public.erase_approved_deletion_preferences(p_request uuid,p_owner uuid,p_fence uuid)
