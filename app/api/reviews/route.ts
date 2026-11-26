@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getHoopCheckEntitlements } from "../../../lib/membership-tier";
+import { exactSeasonReviewsEnabled, verifiedReviewSeason } from "../../../lib/career/verified-review-season";
 
 function getAdminSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -51,7 +52,12 @@ export async function POST(req:Request){
  if (!entitlements.canWriteReviews) return NextResponse.json({error:"Only verified professional players with an active Pro or Premium membership can submit ratings or reviews."},{status:403});
  const anonymous = b.is_anonymous === true; const targetKeys=["coach_id","team_id","league_id"].filter(k=>typeof b[k]==="string"&&b[k]);
  if(targetKeys.length!==1)return NextResponse.json({error:"Choose exactly one coach, team, or league."},{status:400});
- if (typeof b.team_id === "string" && b.team_id) {
+ let verifiedSeason: string | null = null;
+ if (typeof b.team_id === "string" && b.team_id && exactSeasonReviewsEnabled()) {
+   const eligibility = await verifiedReviewSeason(s,user.id,b.team_id,"teams",b.player_season,new Date().getUTCFullYear());
+   if(eligibility.status!==200)return NextResponse.json({error:eligibility.error},{status:eligibility.status});
+   verifiedSeason=eligibility.season;
+ } else if (typeof b.team_id === "string" && b.team_id) {
    const { data: canReview, error: eligibilityError } = await s.rpc("can_user_review_team", { p_user_id: user.id, p_team_id: b.team_id });
    if (eligibilityError || canReview !== true) return NextResponse.json({error:"Only verified professional players who currently or previously played for this team can submit a team review."},{status:403});
  }
@@ -76,7 +82,7 @@ export async function POST(req:Request){
  if(body.length<10)return NextResponse.json({error:"Review text must be at least 10 characters."},{status:400});
  if(body.length>5000)return NextResponse.json({error:"Review text must be 5,000 characters or fewer."},{status:400});
  if(title.length>120)return NextResponse.json({error:"Review title must be 120 characters or fewer."},{status:400});
- const playerSeason=typeof b.player_season==="string"?b.player_season.trim():"";
+ const playerSeason=verifiedSeason ?? (typeof b.player_season==="string"?b.player_season.trim():"");
  if(!/^\d{4}(-\d{2,4})?$/.test(playerSeason))return NextResponse.json({error:"Select the season you played for this team."},{status:400});
  const payload:any={
    author_id:user.id,coach_id:b.coach_id??null,team_id:b.team_id??null,league_id:b.league_id??null,
@@ -114,7 +120,7 @@ export async function POST(req:Request){
      console.error("Unable to release failed review slot:", releaseError);
    }
    console.error("Review submission failed:", { code: error.code, message: error.message });
-   return NextResponse.json({error:"Unable to submit review. Please check your entries and try again."},{status:error.code==="42501"?403:400});
+   return NextResponse.json({error:"Unable to submit review. Please check your entries and try again."},{status:error.code==="42501"?403:error.code==="23505"?409:400});
  }
  return NextResponse.json(data,{status:201});
 }
