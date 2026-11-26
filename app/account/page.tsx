@@ -1,4 +1,5 @@
 "use client";
+import FoundingMemberBadge from "../../components/FoundingMemberBadge";
 
 import { useEffect, useState } from "react";
 import { isAuthSessionMissingError } from "@supabase/supabase-js";
@@ -464,6 +465,7 @@ export default function AccountPage() {
           <span className="hc-account-minimal-header__avatar">{avatarUrl?<img src={avatarUrl} alt="" />:(displayName||profile.username||"HC").slice(0,1).toUpperCase()}</span>
           <span className="hc-account-minimal-header__copy"><h1>Account</h1><small>{t("accountPreferences")} · {displayName||profile.username||t("yourAccount")}{profile.username?" · @"+profile.username:""}</small></span>
         </div>
+        <FoundingMemberBadge key={userId} userId={userId} />
         <Link href="/profile" className="hc-account-minimal-header__link">View profile</Link>
       </header>
       <nav className="hc-account-simple-nav" aria-label={t("accountSettings")}>
