@@ -14,7 +14,7 @@ public class HoopcheckIconsModule: Module {
     }.runOnQueue(.main)
 
     AsyncFunction("select") { (name: String, promise: Promise) in
-      guard ["Classic", "Blackout", "Orange"].contains(name), UIApplication.shared.supportsAlternateIcons else {
+      guard ["Classic","Blackout","Orange","Whiteout","Gold","Chrome","ElectricBlue","Stealth","Court"].contains(name), UIApplication.shared.supportsAlternateIcons else {
         promise.reject("ICON_UNAVAILABLE", "This icon is unavailable on this device.")
         return
       }

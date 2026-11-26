@@ -59,7 +59,10 @@ export function TabBar() {
   const pending = useRef<string | null>(null);
   const [width, setWidth] = useState(0);
   const directory = /^\/(teams|players|coaches|leagues|womens)(\/|$)/.test(path);
-  const index = path === "/reels" || path === "/fan-feed" ? 1 : path === "/messages" ? 3 : directory ? 2 : tabs.findIndex(tab => path === tab.route || path.startsWith(tab.route + "/"));
+  // Keep the owning destination highlighted on related screens without changing routes.
+  const community = /^\/(reels|fan-feed|feed-welcome|hoopgroups)(\/|$)/.test(path) || /^\/team-hub\/groups(\/|$)/.test(path);
+  const account = /^\/(settings|membership|connections|about)(\/|$)/.test(path);
+  const index = community ? 1 : /^\/messages(\/|$)/.test(path) ? 3 : path === "/fan-live" ? 0 : account ? 4 : directory ? 2 : tabs.findIndex(tab => path === tab.route || path.startsWith(tab.route + "/"));
   const x = useSharedValue(0);
   const opacity = useSharedValue(1);
   useEffect(() => {
@@ -130,7 +133,7 @@ export function TabBar() {
               icon={tab.icon} active={tab.active} size={22}
               color={selected ? theme.accent : theme.muted} />
             <Text numberOfLines={1} style={{
-              fontFamily: theme.type.ui.fontFamily, fontSize: 10,
+              fontFamily: theme.type.ui.fontFamily, fontSize: 11,
               fontWeight: selected ? "700" : "500",
               color: selected ? theme.accent : theme.dark ? "#E7EFFA" : theme.muted,
             }}>{label}</Text>

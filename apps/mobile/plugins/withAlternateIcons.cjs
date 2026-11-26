@@ -6,7 +6,7 @@ const sharp = require("sharp");
 
 // Only the surrounding plate changes. The genuine Classic asset is composited
 // unchanged in proportion; no tracing, recolouring, or regenerated logo artwork.
-const icons = { Blackout: "#101014", Orange: "#FF793D" };
+const icons = {"Blackout":"#101014","Orange":"#FF793D","Whiteout":"#F4F4F4","Gold":"#D4AF37","Chrome":"#BFC5CC","ElectricBlue":"#387CFF","Stealth":"#080808","Court":"#AC713B"};
 module.exports = function withAlternateIcons(config) {
   config = withInfoPlist(config, config => {
     const alternates = Object.fromEntries(Object.keys(icons).map(name => [name, { CFBundleIconName: name, CFBundleIconFiles: [name], UIPrerenderedIcon: false }]));
@@ -17,7 +17,7 @@ module.exports = function withAlternateIcons(config) {
     const configurations = config.modResults.pbxXCBuildConfigurationSection();
     for (const item of Object.values(configurations)) {
       if (item && typeof item === "object" && item.buildSettings?.PRODUCT_NAME) {
-        item.buildSettings.ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = '"Blackout Orange"';
+        item.buildSettings.ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = Object.keys(icons).join(" ");
         item.buildSettings.ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = "YES";
       }
     }
