@@ -31,3 +31,11 @@ test("native intake is gated and checks session ownership",()=>{
  assert.match(screen,/reviews are not unlocked/);
  assert.match(account,/nativeCareerClaimsEnabled \? <AccountRow/);
 });
+
+test("account identity changes permanently hide the private intake and reject further actions on that mount",()=>{
+ const screen=readFileSync(new URL("../app/account/career-history.tsx",import.meta.url),"utf8");
+ assert.match(screen,/session\?\.user\.id!==userId\)\{active\.current=false;version\.current\+\+;setSessionInvalidated\(true\)/);
+ assert.match(screen,/setName\(""\);setSeason\(""\);setCountry\(""\)/);
+ assert.match(screen,/if\(sessionInvalidated\)return <Text/);
+ assert.match(screen,/if\(!active\.current\)return;lock\.current=true/);
+});

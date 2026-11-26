@@ -22,6 +22,7 @@ function Intake({userId}:{userId:string}){
  const [results,setResults]=useState<Club[]>([]),[searched,setSearched]=useState(false),[more,setMore]=useState(false),[missing,setMissing]=useState(false);
  const [history,setHistory]=useState<History|null>(null),[historyError,setHistoryError]=useState(""),[busy,setBusy]=useState(false),[error,setError]=useState(""),[message,setMessage]=useState("");
  const active=useRef(false),lock=useRef(false),version=useRef(0);
+ const [sessionInvalidated,setSessionInvalidated]=useState(false);
  async function api<T>(path:"claims"|"historical-clubs",options:{query?:URLSearchParams;body?:object}={}){
   const epoch=version.current,controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
   try{
@@ -40,14 +41,14 @@ function Intake({userId}:{userId:string}){
  useEffect(()=>{
   active.current=true;
   const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,session)=>{
-   if(session?.user.id!==userId){version.current++;setHistory(null);setResults([]);setSearched(false);setMessage("");setError("Your session changed. Reopen career history.");}
+   if(session?.user.id!==userId){active.current=false;version.current++;setSessionInvalidated(true);setHistory(null);setResults([]);setSearched(false);setMore(false);setMissing(false);setName("");setSeason("");setCountry("");setCity("");setLeague("");setDivision("");setCategory("mens");setMessage("");setError("");setHistoryError("");setBusy(false);}
   });
   void refresh();return()=>{active.current=false;version.current++;subscription.unsubscribe();};
  // The parent remounts this component on account changes.
  // eslint-disable-next-line react-hooks/exhaustive-deps
  },[userId]);
  async function perform(action:()=>Promise<void>){
-  if(lock.current)return;lock.current=true;setBusy(true);setError("");setMessage("");
+  if(lock.current)return;if(!active.current)return;lock.current=true;setBusy(true);setError("");setMessage("");
   try{await action();}catch(e){if(active.current)setError(e instanceof Error?e.message:"Unable to complete the request.");}finally{lock.current=false;if(active.current)setBusy(false);}
  }
  function reset(){setResults([]);setSearched(false);setMore(false);setMessage("");setError("");}
@@ -55,6 +56,7 @@ function Intake({userId}:{userId:string}){
  async function save(body:object){await perform(async()=>{await api("claims",{body});setMessage("Saved privately. Verification is pending; reviews are not unlocked.");await refresh();});}
  const label=(row:{season_start_year:number;season_end_year:number})=>row.season_start_year===row.season_end_year?String(row.season_start_year):row.season_start_year+"–"+row.season_end_year;
  const field=(title:string,value:string,change:(v:string)=>void,maxLength=100,placeholder="")=><View style={{gap:5}}><Text style={{color:t.foreground,fontWeight:"600"}}>{title}</Text><TextInput accessibilityLabel={title} value={value} onChangeText={change} editable={!busy} maxLength={maxLength} placeholder={placeholder} placeholderTextColor={t.muted} style={{minHeight:48,borderWidth:1,borderColor:t.border,borderRadius:12,padding:12,color:t.foreground,backgroundColor:t.input}}/></View>;
+ if(sessionInvalidated)return <Text accessibilityRole="alert" style={{color:t.muted,padding:16}}>Your session changed. Reopen career history.</Text>;
  return <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:16,paddingBottom:110,gap:14,maxWidth:680,width:"100%",alignSelf:"center"}}>
   <Text accessibilityRole="header" style={{color:t.foreground,fontSize:26,fontWeight:"900"}}>Your playing history</Text>
   <Text style={{color:t.muted}}>Search by the club name and season you played, including renamed, relegated or archived clubs. Claims are private and require separate verification.</Text>
