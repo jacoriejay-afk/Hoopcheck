@@ -34,3 +34,12 @@ test("form uses verified scope and correct team endpoint",()=>{
  assert.match(form,/\.\.\.target\.payload/);
  assert.match(women,/nativeExactSeasonReviewsEnabled\?router\.push/);
 });
+
+test("native review clears private draft and ignores stale submissions on account change",()=>{
+ const form=readFileSync(new URL("../app/teams/[id]/review.tsx",import.meta.url),"utf8");
+ assert.match(form,/owner\.current!==null&&owner\.current!==id/);
+ assert.match(form,/invalidated\.current=true;authVersion\.current\+\+/);
+ assert.match(form,/setSeason\(""\);setTitle\(""\);setBody\(""\);setAnonymous\(false\)/);
+ assert.match(form,/submittedVersion!==authVersion\.current/);
+ assert.match(form,/if\(sessionInvalidated\)return <SafeAreaView/);
+});
