@@ -5,6 +5,8 @@ on:
     paths:
       - "supabase/candidates/appstore_apple_authorization_vault.sql"
       - "supabase/tests/appstore_apple_vault_fixture.sql"
+      - "supabase/tests/appstore_apple_signup_vault_combined_fixture.sql"
+      - "supabase/candidates/appstore_apple_signup_vault_gate.sql"
       - ".github/workflows/appstore-apple-vault-fixture.yml"
   workflow_dispatch:
 permissions:
@@ -37,6 +39,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/checkout@v4
+        with:
+          ref: dbdaf8f53ab61c6dee773d0b73d0c15fb8e7c050
+          path: .compliance-reference
+          persist-credentials: false
       - name: Rehearse encrypted authorization vault
         run: |
           set -euo pipefail
@@ -44,3 +51,4 @@ jobs:
           test "$PGDATABASE" = "hoopcheck_apple_vault_fixture"
           psql -X -Atqc 'SHOW server_version_num' | grep '^17'
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/appstore_apple_vault_fixture.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/appstore_apple_signup_vault_combined_fixture.sql
