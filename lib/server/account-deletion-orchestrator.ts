@@ -1,3 +1,4 @@
+import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 // Review-only orchestration. No production adapter or scheduler is supplied.
 // All effects must use a durable request/step idempotency key and lease fencing.
 // Never infer completion from a timeout, a missing row, or an HTTP 202.
@@ -127,4 +128,79 @@ export async function revokeDeletionAppleAuthorizations(client:Rpc,lease:Deletio
  }
  if((await list()).length!==0)throw Error("Apple authorizations remain.");
  return {confirmed:true as const,receipt:"apple_revocations_verified"};
+}
+
+// Optional transactional delivery integration. No provider account, spend, or
+// live activation is implied by this adapter. Key rotation/retention and
+// verified non-relay contact availability must be approved before rollout.
+type CompletionUser={id:string;email?:string;email_confirmed_at?:string};
+type CompletionConfig={key:Buffer;apiKey:string;from:string};
+export function createCompletionEffects(client:Rpc,readUser:(id:string)=>Promise<CompletionUser>,config:CompletionConfig,request:typeof fetch=fetch){
+ const subject="Your HoopCheck account deletion is complete";
+ const body="Your HoopCheck account deletion has been completed. Any independently managed subscription must still be managed with its billing provider. If you have questions, contact HoopCheck support.";
+ const emailPattern=/^[^\s@<>(),;:\x00-\x1f\x7f]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,63}$/;
+ if(config.key.length!==32||!config.apiKey||!emailPattern.test(config.from)||!config.from.toLowerCase().endsWith("@hoopcheck.online"))throw Error("Completion delivery not configured.");
+ const aad=(l:DeletionLease)=>Buffer.from(JSON.stringify(["hoopcheck-deletion-contact-v1",l.requestId,l.ownerId,l.policyVersion]));
+ const validContact=(email:unknown):email is string=>typeof email==="string"&&email.length<=254&&emailPattern.test(email)&&!email.toLowerCase().endsWith("@privaterelay.appleid.com");
+ function seal(l:DeletionLease,email:string){
+  const iv=randomBytes(12),cipher=createCipheriv("aes-256-gcm",config.key,iv);
+  cipher.setAAD(aad(l));
+  const encrypted=Buffer.concat([cipher.update(email,"utf8"),cipher.final()]);
+  return ["v1",iv.toString("base64url"),cipher.getAuthTag().toString("base64url"),encrypted.toString("base64url")].join(".");
+ }
+ function unseal(l:DeletionLease,value:unknown){
+  if(typeof value!=="string"||value.length>2048||!/^v1\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(value))throw Error("Completion contact invalid.");
+  const [,i,t,c]=value.split(".");const iv=Buffer.from(i,"base64url"),tag=Buffer.from(t,"base64url");
+  if(iv.length!==12||tag.length!==16)throw Error("Completion contact invalid.");
+  const decipher=createDecipheriv("aes-256-gcm",config.key,iv);decipher.setAAD(aad(l));decipher.setAuthTag(tag);
+  const email=Buffer.concat([decipher.update(Buffer.from(c,"base64url")),decipher.final()]).toString("utf8");
+  if(!validContact(email))throw Error("Verified non-relay completion contact required.");
+  return email;
+ }
+ async function action(l:DeletionLease,name:string,extra:Record<string,unknown>={}){
+  const r=await client.rpc("account_deletion_completion_action",{...bindings(l),p_action:name,...extra});
+  if(r.error||!r.data||typeof r.data!=="object"||Array.isArray(r.data))throw Error("Completion state unavailable.");
+  return r.data as Record<string,unknown>;
+ }
+ async function mail(method:"GET"|"POST",path:string, payload?:unknown,key?:string){
+  const result=await request("https://api.resend.com"+path,{method,headers:{Authorization:"Bearer "+config.apiKey,"Content-Type":"application/json",...(key?{"Idempotency-Key":key}:{})},redirect:"error",cache:"no-store",signal:AbortSignal.timeout(15000),...(payload?{body:JSON.stringify(payload)}:{})});
+  if(!result.ok)throw Error("Completion provider unavailable.");
+  const value:unknown=await result.json();
+  if(!value||typeof value!=="object"||Array.isArray(value))throw Error("Completion provider response invalid.");
+  return value as Record<string,unknown>;
+ }
+ return {
+  capture_completion_contact:async(l:DeletionLease)=>{
+   const old=await action(l,"capture_read");
+   if(old.envelope){unseal(l,old.envelope);return {confirmed:true as const,receipt:"completion_contact_captured"};}
+   const user=await readUser(l.ownerId);
+   if(user.id!==l.ownerId||!user.email_confirmed_at||!validContact(user.email))throw Error("Verified non-relay completion contact required.");
+   if((await action(l,"capture",{p_envelope:seal(l,user.email)})).ok!==true)throw Error("Completion contact not captured.");
+   return {confirmed:true as const,receipt:"completion_contact_captured"};
+  },
+  notify_completion:async(l:DeletionLease)=>{
+   let state=await action(l,"read");const email=unseal(l,state.envelope);
+   if(state.delivered===true)return {confirmed:true as const,receipt:"completion_email_delivered"};
+   if(!state.provider_id){
+    state=await action(l,"begin");
+    const start=typeof state.first_attempt_at==="string"?Date.parse(state.first_attempt_at):NaN;
+    // Resend idempotency expires after 24h. Never automatically resend an
+    // ambiguous delivery outside a conservative 23h reconciliation window.
+    if(!Number.isFinite(start)||start>Date.now()+60000||Date.now()-start>=23*3600000)throw Error("Completion delivery requires reconciliation.");
+    const sent=await mail("POST","/emails",{from:config.from,to:[email],subject,text:body},"deletion-complete/"+l.requestId);
+    if(typeof sent.id!=="string"||!uuid.test(sent.id))throw Error("Completion acceptance unverified.");
+    state=await action(l,"accepted",{p_provider:sent.id});
+   }
+   const id=state.provider_id;
+   if(typeof id!=="string"||!uuid.test(id))throw Error("Completion provider ID invalid.");
+   const delivery=await mail("GET","/emails/"+id);
+   if(delivery.id!==id||!Array.isArray(delivery.to)||delivery.to.length!==1||delivery.to[0]!==email||delivery.subject!==subject||delivery.last_event!=="delivered")throw Error("Completion delivery not confirmed.");
+   if((await action(l,"delivered",{p_provider:id})).delivered!==true)throw Error("Completion delivery not recorded.");
+   return {confirmed:true as const,receipt:"completion_email_delivered"};
+  },
+  remove_completion_contact:async(l:DeletionLease)=>{
+   if((await action(l,"scrub")).ok!==true)throw Error("Completion contact scrub not confirmed.");
+   return {confirmed:true as const,receipt:"completion_contact_scrubbed"};
+  },
+ };
 }
