@@ -280,7 +280,7 @@ export default function TeamReviewPage() {
     }
 
     void loadPage().catch(()=>{if(active){setEligible(false);setMessage("Review access is unavailable. Please try again.");setLoading(false);}});
-    const auth=webExactSeasonReviewsEnabled?supabase.auth.onAuthStateChange((_event,session)=>{if(!session){setVerifiedSeasons([]);setVerifiedScope(null);setEligible(false);setPlayerSeason("");}}):null;
+    const auth=webExactSeasonReviewsEnabled?supabase.auth.onAuthStateChange((event,session)=>{if(!session||event==="SIGNED_IN"){setVerifiedSeasons([]);setVerifiedScope(null);setEligible(false);setPlayerSeason("");}}):null;
     return()=>{active=false;controller.abort();auth?.data.subscription.unsubscribe();};
   }, [id]);
 
