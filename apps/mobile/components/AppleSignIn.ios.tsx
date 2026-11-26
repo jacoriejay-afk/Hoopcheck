@@ -46,12 +46,27 @@ export default function AppleSignIn({ disabled, onBusyChange }: Props) {
         nonce: hashedNonce,
       });
       if (!active.current) return;
-      if (!credentials.identityToken) throw new Error("Apple returned no identity token.");
+      if (!credentials.identityToken || !credentials.authorizationCode) throw new Error("Apple returned incomplete authorization.");
       const result = await exchange({ provider: "apple", token: credentials.identityToken, nonce });
       if (result.error || !result.data.user || !result.data.session || !active.current) throw new Error("Apple identity could not be verified.");
       const uid = result.data.user.id;
       const current = await supabase.auth.getSession();
       if (!active.current || current.error || current.data.session?.user.id !== uid) return;
+      const origin = new URL(process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online");
+      if (origin.protocol !== "https:" || origin.username || origin.password || origin.pathname !== "/" || origin.search || origin.hash)
+        throw new Error("Invalid authorization service.");
+      origin.pathname = "/api/auth/apple-authorization";
+      const ctrl = new AbortController(), timer = setTimeout(() => ctrl.abort(), 25000);
+      try {
+        const stored = await fetch(origin.href, {
+          method: "POST", redirect: "error", signal: ctrl.signal,
+          headers: { Authorization: "Bearer " + result.data.session.access_token, "Content-Type": "application/json" },
+          body: JSON.stringify({ code: credentials.authorizationCode, identityToken: credentials.identityToken, rawNonce: nonce }),
+        });
+        if (!stored.ok || (await stored.json())?.stored !== true) throw new Error("Apple authorization was not confirmed.");
+      } finally { clearTimeout(timer); }
+      const afterStorage = await supabase.auth.getSession();
+      if (!active.current || afterStorage.error || afterStorage.data.session?.user.id !== uid) return;
       if (pendingSignup(result.data.user)) {
         router.replace({ pathname: "/sign-up", params: { social: "1" } });
         return;
