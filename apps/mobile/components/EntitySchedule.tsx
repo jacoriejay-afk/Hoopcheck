@@ -14,6 +14,8 @@ import { readLiveGames } from "../src/native/liveGames";
 import { upcomingEntityGames, type ScheduleScope } from "../src/native/entitySchedule";
 import { supabase } from "../src/lib/supabase";
 
+// Default off until fixture export rights and device import are separately accepted.
+const calendarExportEnabled = process.env.EXPO_PUBLIC_HOOPCHECK_FIXTURE_EXPORT_ENABLED === "true";
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
 type Result = Awaited<ReturnType<typeof readLiveGames>>;
 export function EntitySchedule({ scope, side, refresh = 0 }: {
@@ -40,7 +42,7 @@ export function EntitySchedule({ scope, side, refresh = 0 }: {
   const [exportMessage,setExportMessage] = useState("");
   useEffect(() => setExportMessage(""),[key]);
   async function exportCalendar(input: Parameters<typeof fixtureCalendarFile>[0]) {
-    if (exportBusy.current || activeKey.current !== key || !uid) return;
+    if (!calendarExportEnabled || exportBusy.current || activeKey.current !== key || !uid) return;
     exportBusy.current = true;
     let uri: string | undefined;
     try {
@@ -96,7 +98,7 @@ export function EntitySchedule({ scope, side, refresh = 0 }: {
             <Text numberOfLines={2} style={{ color: theme.foreground, flex: 1, fontSize: 13 }}>{away?.name || game.opponent_name}</Text>
           </View>
         </Pressable>
-        {(Platform.OS === "ios" || Platform.OS === "android") && fixtureCalendarFile(calendarInput) ? <Pressable accessibilityRole="button" accessibilityLabel="Export game to calendar" onPress={() => Alert.alert("Export game to calendar", "This shares a calendar file with the scheduled tip-off only. Your calendar will not automatically update if the schedule changes.",[{text:"Cancel",style:"cancel"},{text:"Export",onPress:()=>void exportCalendar(calendarInput)}])} style={{minHeight:44,justifyContent:"center"}}><Text style={{color:theme.accent}}>Export to calendar</Text></Pressable> : null}</View>;
+        {calendarExportEnabled && (Platform.OS === "ios" || Platform.OS === "android") && fixtureCalendarFile(calendarInput) ? <Pressable accessibilityRole="button" accessibilityLabel="Export game to calendar" onPress={() => Alert.alert("Export game to calendar", "This shares a calendar file with the scheduled tip-off only. Your calendar will not automatically update if the schedule changes.",[{text:"Cancel",style:"cancel"},{text:"Export",onPress:()=>void exportCalendar(calendarInput)}])} style={{minHeight:44,justifyContent:"center"}}><Text style={{color:theme.accent}}>Export to calendar</Text></Pressable> : null}</View>;
       })}
     {exportMessage ? <Text accessibilityRole="alert" style={muted}>{exportMessage}</Text> : null}
     {games.length > 3 ? <Pressable accessibilityRole="button" onPress={() => setExpanded(v => !v)} style={{ minHeight: 44, justifyContent: "center" }}><Text style={{ color: theme.accent }}>{expanded ? "Show fewer fixtures" : "Show more fixtures"}</Text></Pressable> : null}
