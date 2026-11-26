@@ -1,0 +1,1226 @@
+{
+  "version": "2026-11-26-read-only",
+  "source": "Live catalog metadata only. No account records. Not an approved deletion policy.",
+  "queries": {
+    "directForeignKeys": "SELECT n.nspname AS schema_name,c.relname AS table_name,con.conname,pg_get_constraintdef(con.oid) AS definition FROM pg_constraint con JOIN pg_class c ON c.oid=con.conrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE con.contype='f' AND con.confrelid IN (to_regclass('auth.users'),to_regclass('public.profiles')) ORDER BY 1,2,3",
+    "identityLikeColumns": "SELECT table_schema,table_name,string_agg(column_name,', ' ORDER BY column_name) AS identity_like_columns FROM information_schema.columns WHERE table_schema IN ('public','storage','hoopcheck_security') AND (column_name ~* '(email|user_id|profile_id|owner_id|author_id|sender_id|recipient_id|player_id|created_by|reviewer_id|moderator_id|customer_id|transaction_id|phone|birthdate|device_token|push_token|ip_address)' OR (table_schema='storage' AND column_name IN ('owner','name','bucket_id'))) GROUP BY 1,2 ORDER BY 1,2"
+  },
+  "directForeignKeys": [
+    {
+      "schema_name": "auth",
+      "table_name": "identities",
+      "conname": "identities_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "auth",
+      "table_name": "mfa_factors",
+      "conname": "mfa_factors_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "auth",
+      "table_name": "mfa_recovery_code_sets",
+      "conname": "mfa_recovery_code_sets_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "auth",
+      "table_name": "oauth_authorizations",
+      "conname": "oauth_authorizations_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "auth",
+      "table_name": "oauth_consents",
+      "conname": "oauth_consents_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "auth",
+      "table_name": "one_time_tokens",
+      "conname": "one_time_tokens_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "auth",
+      "table_name": "scim_users",
+      "conname": "scim_users_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE SET NULL",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "auth",
+      "table_name": "sessions",
+      "conname": "sessions_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "auth",
+      "table_name": "webauthn_challenges",
+      "conname": "webauthn_challenges_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "auth",
+      "table_name": "webauthn_credentials",
+      "conname": "webauthn_credentials_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "hoopcheck_security",
+      "table_name": "owner_accounts",
+      "conname": "owner_accounts_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id)",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "admin_roles",
+      "conname": "admin_roles_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "agent_showcases",
+      "conname": "agent_showcases_profile_id_fkey",
+      "definition": "FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "agent_showcases",
+      "conname": "agent_showcases_reviewed_by_fkey",
+      "definition": "FOREIGN KEY (reviewed_by) REFERENCES profiles(id) ON DELETE SET NULL",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "ambassador_attributions",
+      "conname": "ambassador_attributions_referred_user_id_fkey",
+      "definition": "FOREIGN KEY (referred_user_id) REFERENCES auth.users(id) ON DELETE SET NULL",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "ambassador_grants",
+      "conname": "ambassador_grants_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE SET NULL",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "analytics_events",
+      "conname": "analytics_events_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE SET NULL",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "coach_team_requests",
+      "conname": "coach_team_requests_reviewer_id_fkey",
+      "definition": "FOREIGN KEY (reviewer_id) REFERENCES auth.users(id) ON DELETE SET NULL",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "coach_team_requests",
+      "conname": "coach_team_requests_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "copyright_reports",
+      "conname": "copyright_reports_reviewed_by_fkey",
+      "definition": "FOREIGN KEY (reviewed_by) REFERENCES auth.users(id) ON DELETE SET NULL",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "creator_profiles",
+      "conname": "creator_profiles_profile_id_fkey",
+      "definition": "FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "directory_import_jobs",
+      "conname": "directory_import_jobs_imported_by_fkey",
+      "definition": "FOREIGN KEY (imported_by) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "directory_sync_previews",
+      "conname": "directory_sync_previews_created_by_fkey",
+      "definition": "FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "directory_team_requests",
+      "conname": "directory_team_requests_requester_id_fkey",
+      "definition": "FOREIGN KEY (requester_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "directory_team_requests",
+      "conname": "directory_team_requests_reviewer_id_fkey",
+      "definition": "FOREIGN KEY (reviewer_id) REFERENCES auth.users(id) ON DELETE SET NULL",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "display_name_changes",
+      "conname": "display_name_changes_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "fan_connection_requests",
+      "conname": "fan_connection_requests_fan_id_fkey",
+      "definition": "FOREIGN KEY (fan_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "fan_connection_requests",
+      "conname": "fan_connection_requests_requester_id_fkey",
+      "definition": "FOREIGN KEY (requester_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "fan_feed_archives",
+      "conname": "fan_feed_archives_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "fan_feed_checks",
+      "conname": "fan_feed_checks_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "fan_feed_comments",
+      "conname": "fan_feed_comments_author_id_fkey",
+      "definition": "FOREIGN KEY (author_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "fan_feed_likes",
+      "conname": "fan_feed_likes_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "fan_feed_posts",
+      "conname": "fan_feed_posts_author_id_fkey",
+      "definition": "FOREIGN KEY (author_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "fan_live_chat_messages",
+      "conname": "fan_live_chat_messages_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "fan_live_chat_presence",
+      "conname": "fan_live_chat_presence_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "fan_live_chat_reports",
+      "conname": "fan_live_chat_reports_reported_user_id_fkey",
+      "definition": "FOREIGN KEY (reported_user_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "fan_live_chat_reports",
+      "conname": "fan_live_chat_reports_reporter_id_fkey",
+      "definition": "FOREIGN KEY (reporter_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "fan_live_chat_user_controls",
+      "conname": "fan_live_chat_user_controls_target_user_id_fkey",
+      "definition": "FOREIGN KEY (target_user_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "fan_live_chat_user_controls",
+      "conname": "fan_live_chat_user_controls_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "fan_live_game_reminders",
+      "conname": "fan_live_game_reminders_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "feed_poll_votes",
+      "conname": "feed_poll_votes_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "feed_post_archives",
+      "conname": "feed_post_archives_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "feed_post_bookmarks",
+      "conname": "feed_post_bookmarks_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "feed_post_checks",
+      "conname": "feed_post_checks_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "feed_post_comments",
+      "conname": "feed_post_comments_author_id_fkey",
+      "definition": "FOREIGN KEY (author_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "feed_posting_activity",
+      "conname": "feed_posting_activity_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "feed_posts",
+      "conname": "feed_posts_author_id_fkey",
+      "definition": "FOREIGN KEY (author_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "follow_relationships",
+      "conname": "follow_relationships_follower_id_fkey",
+      "definition": "FOREIGN KEY (follower_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "game_winner_picks",
+      "conname": "game_winner_picks_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "hoop_group_blocks",
+      "conname": "hoop_group_blocks_blocked_id_fkey",
+      "definition": "FOREIGN KEY (blocked_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "hoop_group_blocks",
+      "conname": "hoop_group_blocks_blocker_id_fkey",
+      "definition": "FOREIGN KEY (blocker_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "hoop_group_members",
+      "conname": "hoop_group_members_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "hoop_group_moderation_events",
+      "conname": "hoop_group_moderation_events_actor_id_fkey",
+      "definition": "FOREIGN KEY (actor_id) REFERENCES auth.users(id)",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "hoop_group_posts",
+      "conname": "hoop_group_posts_author_id_fkey",
+      "definition": "FOREIGN KEY (author_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "hoop_group_reports",
+      "conname": "hoop_group_reports_reporter_id_fkey",
+      "definition": "FOREIGN KEY (reporter_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "hoop_group_spaces",
+      "conname": "hoop_group_spaces_owner_id_fkey",
+      "definition": "FOREIGN KEY (owner_id) REFERENCES auth.users(id) ON DELETE SET NULL",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "hoopfeed_post_shares",
+      "conname": "hoopfeed_post_shares_recipient_id_fkey",
+      "definition": "FOREIGN KEY (recipient_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "hoopfeed_post_shares",
+      "conname": "hoopfeed_post_shares_sender_id_fkey",
+      "definition": "FOREIGN KEY (sender_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "identity_verification_sessions",
+      "conname": "identity_verification_sessions_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "moderation_risk_flags",
+      "conname": "moderation_risk_flags_reviewer_id_fkey",
+      "definition": "FOREIGN KEY (reviewer_id) REFERENCES auth.users(id) ON DELETE SET NULL",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "notifications",
+      "conname": "notifications_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "player_career_stops",
+      "conname": "player_career_stops_player_id_fkey",
+      "definition": "FOREIGN KEY (player_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "player_contact_messages",
+      "conname": "player_contact_messages_sender_id_fkey",
+      "definition": "FOREIGN KEY (sender_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "player_contact_requests",
+      "conname": "player_contact_requests_player_id_fkey",
+      "definition": "FOREIGN KEY (player_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "player_contact_requests",
+      "conname": "player_contact_requests_requester_id_fkey",
+      "definition": "FOREIGN KEY (requester_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "player_team_affiliations",
+      "conname": "player_team_affiliations_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "player_verification_requests",
+      "conname": "player_verification_requests_reviewer_id_fkey",
+      "definition": "FOREIGN KEY (reviewer_id) REFERENCES auth.users(id) ON DELETE SET NULL",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "player_verification_requests",
+      "conname": "player_verification_requests_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "privacy_request_events",
+      "conname": "privacy_request_events_actor_id_fkey",
+      "definition": "FOREIGN KEY (actor_id) REFERENCES auth.users(id) ON DELETE SET NULL",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "privacy_requests",
+      "conname": "privacy_requests_assigned_to_fkey",
+      "definition": "FOREIGN KEY (assigned_to) REFERENCES auth.users(id) ON DELETE SET NULL",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "privacy_requests",
+      "conname": "privacy_requests_requester_id_fkey",
+      "definition": "FOREIGN KEY (requester_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "profile_claim_requests",
+      "conname": "profile_claim_requests_requester_id_fkey",
+      "definition": "FOREIGN KEY (requester_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "profile_claim_requests",
+      "conname": "profile_claim_requests_reviewed_by_fkey",
+      "definition": "FOREIGN KEY (reviewed_by) REFERENCES profiles(id) ON DELETE SET NULL",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "profile_reports",
+      "conname": "profile_reports_profile_id_fkey",
+      "definition": "FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "profile_reports",
+      "conname": "profile_reports_reporter_id_fkey",
+      "definition": "FOREIGN KEY (reporter_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "profiles",
+      "conname": "profiles_id_fkey",
+      "definition": "FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "profiles",
+      "conname": "profiles_moderation_updated_by_fkey",
+      "definition": "FOREIGN KEY (moderation_updated_by) REFERENCES auth.users(id) ON DELETE SET NULL",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "reel_moderation_actions",
+      "conname": "reel_moderation_actions_moderator_id_fkey",
+      "definition": "FOREIGN KEY (moderator_id) REFERENCES auth.users(id) ON DELETE SET NULL",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "review_comments",
+      "conname": "review_comments_author_id_fkey",
+      "definition": "FOREIGN KEY (author_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "review_likes",
+      "conname": "review_likes_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "review_moderation_events",
+      "conname": "review_moderation_events_actor_id_fkey",
+      "definition": "FOREIGN KEY (actor_id) REFERENCES auth.users(id) ON DELETE SET NULL",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "review_reports",
+      "conname": "review_reports_reporter_id_fkey",
+      "definition": "FOREIGN KEY (reporter_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "review_submission_rate_limits",
+      "conname": "review_submission_rate_limits_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "reviews",
+      "conname": "reviews_author_id_fkey",
+      "definition": "FOREIGN KEY (author_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "rights_registry",
+      "conname": "rights_registry_approved_by_fkey",
+      "definition": "FOREIGN KEY (approved_by) REFERENCES auth.users(id) ON DELETE SET NULL",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "rights_registry_events",
+      "conname": "rights_registry_events_actor_id_fkey",
+      "definition": "FOREIGN KEY (actor_id) REFERENCES auth.users(id) ON DELETE SET NULL",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "sponsor_inquiries",
+      "conname": "sponsor_inquiries_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE SET NULL",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "stripe_trial_claims",
+      "conname": "stripe_trial_claims_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "subscriptions",
+      "conname": "subscriptions_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "support_requests",
+      "conname": "support_requests_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE SET NULL",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "support_ticket_messages",
+      "conname": "support_ticket_messages_author_id_fkey",
+      "definition": "FOREIGN KEY (author_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "support_tickets",
+      "conname": "support_tickets_assigned_to_fkey",
+      "definition": "FOREIGN KEY (assigned_to) REFERENCES auth.users(id) ON DELETE SET NULL",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "support_tickets",
+      "conname": "support_tickets_requester_id_fkey",
+      "definition": "FOREIGN KEY (requester_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "team_fan_group_comments",
+      "conname": "team_fan_group_comments_author_id_fkey",
+      "definition": "FOREIGN KEY (author_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "team_fan_group_join_requests",
+      "conname": "team_fan_group_join_requests_reviewed_by_fkey",
+      "definition": "FOREIGN KEY (reviewed_by) REFERENCES profiles(id) ON DELETE SET NULL",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "team_fan_group_join_requests",
+      "conname": "team_fan_group_join_requests_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "team_fan_group_members",
+      "conname": "team_fan_group_members_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "team_fan_group_moderators",
+      "conname": "team_fan_group_moderators_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "team_fan_group_posts",
+      "conname": "team_fan_group_posts_author_id_fkey",
+      "definition": "FOREIGN KEY (author_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "team_fan_group_reports",
+      "conname": "team_fan_group_reports_reporter_id_fkey",
+      "definition": "FOREIGN KEY (reporter_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "team_fanfeed_posts",
+      "conname": "team_fanfeed_posts_author_id_fkey",
+      "definition": "FOREIGN KEY (author_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "team_pay_checkins",
+      "conname": "team_pay_checkins_player_id_fkey",
+      "definition": "FOREIGN KEY (player_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "user_blocks",
+      "conname": "user_blocks_blocked_id_fkey",
+      "definition": "FOREIGN KEY (blocked_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "user_blocks",
+      "conname": "user_blocks_blocker_id_fkey",
+      "definition": "FOREIGN KEY (blocker_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "user_preferences",
+      "conname": "user_preferences_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "user_watchlists",
+      "conname": "user_watchlists_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "schema_name": "public",
+      "table_name": "womens_team_reviews",
+      "conname": "womens_team_reviews_author_id_fkey",
+      "definition": "FOREIGN KEY (author_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "disposition": "REVIEW_REQUIRED"
+    }
+  ],
+  "identityLikeColumns": [
+    {
+      "table_schema": "hoopcheck_security",
+      "table_name": "owner_accounts",
+      "identity_like_columns": "user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "admin_roles",
+      "identity_like_columns": "user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "agent_showcases",
+      "identity_like_columns": "profile_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "ambassador_attributions",
+      "identity_like_columns": "referred_user_id, stripe_customer_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "ambassador_grants",
+      "identity_like_columns": "user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "analytics_events",
+      "identity_like_columns": "user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "coach_team_requests",
+      "identity_like_columns": "reviewer_id, user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "copyright_reports",
+      "identity_like_columns": "claimant_email, claimant_phone",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "creator_profiles",
+      "identity_like_columns": "profile_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "directory_sync_previews",
+      "identity_like_columns": "created_by",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "directory_team_requests",
+      "identity_like_columns": "reviewer_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "display_name_changes",
+      "identity_like_columns": "user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "fan_feed_archives",
+      "identity_like_columns": "user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "fan_feed_checks",
+      "identity_like_columns": "user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "fan_feed_comments",
+      "identity_like_columns": "author_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "fan_feed_likes",
+      "identity_like_columns": "user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "fan_feed_posts",
+      "identity_like_columns": "author_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "fan_live_chat_messages",
+      "identity_like_columns": "user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "fan_live_chat_presence",
+      "identity_like_columns": "user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "fan_live_chat_reports",
+      "identity_like_columns": "reported_user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "fan_live_chat_user_controls",
+      "identity_like_columns": "target_user_id, user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "fan_live_game_reminders",
+      "identity_like_columns": "user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "feed_poll_votes",
+      "identity_like_columns": "user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "feed_post_archives",
+      "identity_like_columns": "user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "feed_post_bookmarks",
+      "identity_like_columns": "user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "feed_post_checks",
+      "identity_like_columns": "user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "feed_post_comments",
+      "identity_like_columns": "author_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "feed_posting_activity",
+      "identity_like_columns": "user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "feed_posts",
+      "identity_like_columns": "author_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "game_winner_picks",
+      "identity_like_columns": "user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "hoop_group_members",
+      "identity_like_columns": "user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "hoop_group_posts",
+      "identity_like_columns": "author_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "hoop_group_spaces",
+      "identity_like_columns": "owner_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "hoopfeed_post_shares",
+      "identity_like_columns": "recipient_id, sender_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "identity_verification_sessions",
+      "identity_like_columns": "user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "moderation_risk_flags",
+      "identity_like_columns": "reviewer_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "notifications",
+      "identity_like_columns": "user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "player_career_stops",
+      "identity_like_columns": "player_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "player_contact_messages",
+      "identity_like_columns": "sender_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "player_contact_requests",
+      "identity_like_columns": "player_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "player_team_affiliations",
+      "identity_like_columns": "user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "player_verification_requests",
+      "identity_like_columns": "reviewer_id, user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "profile_claim_requests",
+      "identity_like_columns": "organization_email",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "profile_reports",
+      "identity_like_columns": "profile_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "profiles",
+      "identity_like_columns": "birthdate, coach_profile_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "public_business_inquiries",
+      "identity_like_columns": "email",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "reel_moderation_actions",
+      "identity_like_columns": "moderator_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "review_comments",
+      "identity_like_columns": "author_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "review_likes",
+      "identity_like_columns": "user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "review_submission_rate_limits",
+      "identity_like_columns": "user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "reviews",
+      "identity_like_columns": "author_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "sponsor_inquiries",
+      "identity_like_columns": "user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "stripe_trial_claims",
+      "identity_like_columns": "user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "subscriptions",
+      "identity_like_columns": "stripe_customer_id, user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "support_requests",
+      "identity_like_columns": "user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "support_ticket_messages",
+      "identity_like_columns": "author_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "team_fan_group_comments",
+      "identity_like_columns": "author_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "team_fan_group_join_requests",
+      "identity_like_columns": "user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "team_fan_group_members",
+      "identity_like_columns": "user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "team_fan_group_moderators",
+      "identity_like_columns": "user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "team_fan_group_posts",
+      "identity_like_columns": "author_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "team_fanfeed_posts",
+      "identity_like_columns": "author_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "team_pay_checkins",
+      "identity_like_columns": "player_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "user_preferences",
+      "identity_like_columns": "user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "user_watchlists",
+      "identity_like_columns": "user_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "womens_team_reviews",
+      "identity_like_columns": "author_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "storage",
+      "table_name": "bucket_lifecycle_states",
+      "identity_like_columns": "bucket_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "storage",
+      "table_name": "buckets",
+      "identity_like_columns": "name, owner, owner_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "storage",
+      "table_name": "buckets_analytics",
+      "identity_like_columns": "name",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "storage",
+      "table_name": "lifecycle_abandoned_artifacts",
+      "identity_like_columns": "bucket_id, name",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "storage",
+      "table_name": "migrations",
+      "identity_like_columns": "name",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "storage",
+      "table_name": "objects",
+      "identity_like_columns": "bucket_id, name, owner, owner_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "storage",
+      "table_name": "s3_multipart_uploads",
+      "identity_like_columns": "bucket_id, owner_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "storage",
+      "table_name": "s3_multipart_uploads_parts",
+      "identity_like_columns": "bucket_id, owner_id",
+      "disposition": "REVIEW_REQUIRED"
+    },
+    {
+      "table_schema": "storage",
+      "table_name": "vector_indexes",
+      "identity_like_columns": "bucket_id, name",
+      "disposition": "REVIEW_REQUIRED"
+    }
+  ],
+  "externalSystems": [
+    "Supabase Auth and Storage",
+    "Apple App Store subscriptions and Sign in with Apple",
+    "Stripe billing and refunds",
+    "Sentry diagnostics",
+    "Mux media",
+    "Expo/APNs push tokens",
+    "Email/support communications",
+    "Backups and exports"
+  ],
+  "limitations": [
+    "Direct foreign keys only; recursive cascades, polymorphic references, JSON, media URLs and provider-held data need separate review.",
+    "Live schema may lag candidate migrations; repeat on exact deployed schema.",
+    "No retention or deletion decision is authorized by this inventory."
+  ]
+}
