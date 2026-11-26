@@ -4,6 +4,7 @@ on:
     paths:
       - 'supabase/candidates/build16_player_team_season_claims_review_only.sql'
       - 'supabase/candidates/build16_player_review_season_guard_review_only.sql'
+      - 'supabase/candidates/build16_review_credibility_attestation_review_only.sql'
       - 'supabase/candidates/build16_historical_club_seasons_review_only.sql'
       - 'supabase/tests/build16_player_team_season_claims.sql'
       - '.github/workflows/build16-career-claims-review.yml'
