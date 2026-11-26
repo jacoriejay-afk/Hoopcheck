@@ -156,5 +156,51 @@ DO $$ DECLARE t text;n integer; BEGIN
  IF EXISTS(SELECT 1 FROM hoopcheck_deletion_private.worker_receipts WHERE step_number=8) THEN RAISE EXCEPTION 'Partial cleanup falsely marked complete'; END IF;
 END $$;
 
+
+-- Separate synthetic deletion request for completion contact lifecycle.
+ALTER TABLE auth.users ADD COLUMN email text, ADD COLUMN email_confirmed_at timestamptz;
+UPDATE auth.users SET email='fixture@example.com',email_confirmed_at=now() WHERE id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+\i supabase/candidates/appstore_deletion_completion_delivery.sql
+INSERT INTO public.account_deletion_requests(id,user_id,scheduled_for,status) VALUES('88888888-8888-4888-8888-888888888888','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',now(),'processing');
+INSERT INTO hoopcheck_deletion_private.worker_state(request_id,policy_version,fence,lease_until,next_step) VALUES('88888888-8888-4888-8888-888888888888','fixture','99999999-9999-4999-8999-999999999999',now()+interval '5 minutes',2);
+INSERT INTO hoopcheck_deletion_private.worker_receipts(request_id,step_number,receipt) VALUES('88888888-8888-4888-8888-888888888888',1,'fixture-scope');
+DO $$ BEGIN
+ IF has_table_privilege('service_role','hoopcheck_deletion_private.completion_delivery','SELECT') OR has_function_privilege('authenticated','public.account_deletion_completion_action(uuid,uuid,uuid,text,text,uuid)','EXECUTE') THEN RAISE EXCEPTION 'Contact access exposed'; END IF;
+END $$;
+SET LOCAL ROLE service_role;
+DO $$ DECLARE rid uuid:='88888888-8888-4888-8888-888888888888';own uuid:='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';f uuid:='99999999-9999-4999-8999-999999999999';BEGIN
+ IF (public.account_deletion_completion_action(rid,own,f,'capture','v1.fixtureIV.fixtureTag.fixtureCiphertext')->>'ok') IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'Capture failed'; END IF;
+ BEGIN PERFORM public.account_deletion_completion_action(rid,own,f,'begin'); RAISE EXCEPTION 'Early send allowed'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ BEGIN PERFORM public.account_deletion_completion_action(rid,'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',f,'capture_read'); RAISE EXCEPTION 'Foreign contact exposed'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+END $$;
+RESET ROLE;
+INSERT INTO hoopcheck_deletion_private.worker_receipts(request_id,step_number,receipt) SELECT '88888888-8888-4888-8888-888888888888',i,'fixture-'||i FROM generate_series(2,10)i;
+UPDATE hoopcheck_deletion_private.worker_state SET next_step=11 WHERE request_id='88888888-8888-4888-8888-888888888888';
+SET LOCAL ROLE service_role;
+DO $$ BEGIN
+ BEGIN PERFORM public.account_deletion_completion_action('88888888-8888-4888-8888-888888888888','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','99999999-9999-4999-8999-999999999999','begin');
+ RAISE EXCEPTION 'Unexpected early send' USING ERRCODE='XX000';
+ EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'Auth identity remains' THEN RAISE; END IF; END;
+END $$;
+RESET ROLE;
+DELETE FROM auth.users WHERE id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+SET LOCAL ROLE service_role;
+DO $$ DECLARE rid uuid:='88888888-8888-4888-8888-888888888888';own uuid:='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';f uuid:='99999999-9999-4999-8999-999999999999';pid uuid:='77777777-7777-4777-8777-777777777777';BEGIN
+ IF public.account_deletion_completion_action(rid,own,f,'begin')->>'first_attempt_at' IS NULL THEN RAISE EXCEPTION 'Attempt not persisted'; END IF;
+ IF (public.account_deletion_completion_action(rid,own,f,'accepted',NULL,pid)->>'delivered') IS DISTINCT FROM 'false' THEN RAISE EXCEPTION 'Acceptance falsely counted as delivery'; END IF;
+ IF (public.account_deletion_completion_action(rid,own,f,'delivered',NULL,pid)->>'delivered') IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'Delivery not recorded'; END IF;
+END $$;
+RESET ROLE;
+INSERT INTO hoopcheck_deletion_private.worker_receipts(request_id,step_number,receipt) VALUES('88888888-8888-4888-8888-888888888888',11,'fixture-delivery');
+UPDATE hoopcheck_deletion_private.worker_state SET next_step=12 WHERE request_id='88888888-8888-4888-8888-888888888888';
+SET LOCAL ROLE service_role;
+DO $$ BEGIN
+ IF (public.account_deletion_completion_action('88888888-8888-4888-8888-888888888888','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','99999999-9999-4999-8999-999999999999','scrub')->>'ok') IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'Contact scrub failed'; END IF;
+END $$;
+RESET ROLE;
+DO $$ BEGIN
+ IF EXISTS(SELECT 1 FROM hoopcheck_deletion_private.completion_delivery WHERE envelope IS NOT NULL OR provider_id IS NOT NULL OR scrubbed_at IS NULL) THEN RAISE EXCEPTION 'Contact material retained'; END IF;
+END $$;
+
 ROLLBACK;
 \echo PASS: freeze gate, owner isolation, direct writes and reads, RPC gate, session absence
