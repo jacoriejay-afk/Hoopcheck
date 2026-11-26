@@ -393,3 +393,12 @@
   .hc-ia-public-home .hc-d3-hero__copy .hc-home-hero-actions > a { min-height: 48px; white-space: normal; text-align: center; }
   .hc-ia-public-home .hc-d3-desktop-search { max-width: 100%; }
 }
+
+/* Welcome-only accessibility override: legacy home/search rules enforce 40/42px
+   with !important. Preserve the 48px targets on the public entry at every width. */
+html body main.hc-ia-public-home .hc-home-hero-actions > :is(a.hc-home-cta, a.hc-home-signin),
+html body main.hc-ia-public-home .hc-ia-search.hc-searchbar .hc-searchbar__submit {
+  min-height: 48px !important;
+  height: auto !important;
+  min-width: 44px !important;
+}
