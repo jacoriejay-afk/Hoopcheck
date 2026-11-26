@@ -1,7 +1,7 @@
 export const nativeCareerClaimsEnabled=process.env.EXPO_PUBLIC_HOOPCHECK_CAREER_CLAIMS_ENABLED==="true";
 export type Club={id:string;team_id:string|null;womens_team_id:string|null;historical_name:string;historical_league:string;historical_division:string|null;historical_country:string;club_state:string};
 export type HistoricalClubLabel={name:string;league:string;division:string|null;country:string};
-export type Claim={id:string;season_start_year:number;season_end_year:number;verification_status:string;team_id:string|null;womens_team_id:string|null;historicalClub?:HistoricalClubLabel|null};
+export type Claim={id:string;start_date?:string|null;end_date?:string|null;season_start_year:number;season_end_year:number;verification_status:string;team_id:string|null;womens_team_id:string|null;historicalClub?:HistoricalClubLabel|null};
 export type MissingClub={id:string;historical_name:string;season_start_year:number;season_end_year:number;status:string};
 export type History={claims:Claim[];missingClubs:MissingClub[];hasMore:boolean};
 export function careerRequestUrl(origin:string,path:"claims"|"historical-clubs",query?:URLSearchParams){
