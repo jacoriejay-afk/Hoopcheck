@@ -18,9 +18,9 @@ test("claim input rejects forged identity/status and canonicalizes season",()=>{
  for(const extra of [{name:" "},{country:""},{city:[]},{division:"x".repeat(101)},{resolved_snapshot_id:"fake"},{status:"resolved"}])assert.equal(parsePrivateCareerClaim({...missing,...extra},2026),null);
 });
 test("route enforces caller identity and pending-only writes",async()=>{
- const calls=[];const fixture={role:"player",authError:false,error:null};
+ const calls=[];const fixture={role:"player",authError:false,error:null,claims:[],snapshots:[]};
  globalThis.__careerClaimsMock=()=>({auth:{getUser:async()=>({data:{user:fixture.authError?null:{id:"own-player"}},error:fixture.authError?{}:null})},from(table){
-  const c={select(...a){calls.push(["select",table,...a]);return c;},eq(...a){calls.push(["eq",table,...a]);return c;},order(){return c;},limit:async()=>({data:[],error:fixture.error}),maybeSingle:async()=>({data:{account_type:fixture.role},error:null}),insert(row){calls.push(["insert",table,row]);return c;},single:async()=>({data:fixture.error?null:{id:"new-id"},error:fixture.error})};return c;
+  const c={select(...a){calls.push(["select",table,...a]);return c;},eq(...a){calls.push(["eq",table,...a]);return c;},order(){return c;},in(...a){calls.push(["in",table,...a]);return c;},limit:async()=>({data:table==="player_team_season_claims"?fixture.claims:table==="historical_club_seasons"?fixture.snapshots:[],error:fixture.error}),maybeSingle:async()=>({data:{account_type:fixture.role},error:null}),insert(row){calls.push(["insert",table,row]);return c;},single:async()=>({data:fixture.error?null:{id:"new-id"},error:fixture.error})};return c;
  }});
  const response="data:text/javascript,"+encodeURIComponent("export const NextResponse={json:(body,opts)=>({body,...opts})};");
  const db="data:text/javascript,"+encodeURIComponent("export const createClient=()=>globalThis.__careerClaimsMock();");
@@ -41,6 +41,15 @@ test("route enforces caller identity and pending-only writes",async()=>{
   assert.equal(writes[0][1],"player_team_season_claims");assert.equal(writes[1][1],"historical_club_requests");
   fixture.error={code:"23505"};assert.equal((await POST(request(valid))).status,409);fixture.error=null;
   assert.equal((await GET(request())).status,200);
+  fixture.claims=[{id:"a",team_id:null,womens_team_id:valid.id,season_start_year:2023,season_end_year:2024,verification_status:"pending"},{id:"b",team_id:null,womens_team_id:valid.id,season_start_year:2022,season_end_year:2023,verification_status:"verified"}];
+  fixture.snapshots=[{team_id:null,womens_team_id:valid.id,season_start_year:2023,season_end_year:2024,historical_name:"Former club",historical_league:"Old league",historical_division:"2",historical_country:"Portugal",private_note:"never return"}];
+  const history=await GET(request());
+  assert.equal(history.status,200);
+  assert.deepEqual(history.body.claims[0].historicalClub,{name:"Former club",league:"Old league",division:"2",country:"Portugal"});
+  assert.equal(history.body.claims[0].verification_status,"pending");
+  assert.equal(history.body.claims[1].historicalClub,null);
+  assert.ok(calls.some(x=>x[0]==="in"&&x[1]==="historical_club_seasons"&&x[2]==="womens_team_id"));
+
   for(const table of ["player_team_season_claims","historical_club_requests"])assert.ok(calls.some(x=>x[0]==="eq"&&x[1]===table&&x[2]==="player_id"&&x[3]==="own-player"));
  }finally{for(const k of vars)if(old[k]===undefined)delete process.env[k];else process.env[k]=old[k];delete globalThis.__careerClaimsMock;}
 });
