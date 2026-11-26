@@ -53,8 +53,8 @@ test("HoopGroups resets local state across account changes and scopes private ch
   assert.match(groups, /<ScopedHoopGroups key=\{JSON\.stringify\(\[userId,offline\]\)\}/);
   assert.match(groups, /const posts=member&&channel&&postSnapshot\?\.channelId===channel\.id\?postSnapshot\.posts:\[\]/);
   assert.match(groups, /const draft=member&&channel&&draftState\?\.channelId===channel\.id\?draftState\.value:""/);
-  assert.match(groups, /if\(!alive\)return;\s*if\(readError\)/);
-  assert.match(groups, /setPostSnapshot\(\{channelId:channel\.id,posts:/);
+  assert.match(groups, /if\(!alive\|\|controller\.signal\.aborted\)return;/);assert.match(groups, /if\(readError\|\|controller\.signal\.aborted\)throw Error/);
+  assert.match(groups, /if\(alive\)setPostSnapshot\(\{channelId:channel!\.id,posts:/);assert.match(groups, /filter\(post=>!blocked\.has\(post\.author_id\)\)/);
   assert.match(groups, /const managing=editing&&editingGroupId===selected\?\.id/);
   assert.match(groups, /if\(!selected \|\| !managing \|\| !userId/);
   const join = groups.slice(groups.indexOf("async function join()"), groups.indexOf("async function createGroup()"));

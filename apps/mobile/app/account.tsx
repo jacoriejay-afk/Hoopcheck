@@ -116,11 +116,18 @@ export default function AccountScreen() {
   return <SafeAreaView edges={["top","left","right","bottom"]} style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{paddingHorizontal:15,paddingTop:9,paddingBottom:20,gap:9,maxWidth:680,width:"100%",alignSelf:"center"}}>
       <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between",marginBottom:1}}>
-        <Text accessibilityRole="header" style={{color:theme.foreground,fontSize:25,fontFamily:"HoopCheckDisplay"}}>Your account</Text>
-        <Pressable accessibilityRole="button" accessibilityLabel="Refresh account" onPress={()=>{retry();setAppearanceRevision(value=>value+1);}}
-          style={{minWidth:44,minHeight:44,alignItems:"center",justifyContent:"center"}}>
-          <Ionicons name="refresh-outline" size={22} color={theme.muted}/>
-        </Pressable>
+        <Text accessibilityRole="header" style={{color:theme.foreground,flex:1,fontSize:25,fontFamily:"HoopCheckDisplay"}}>Your account</Text>
+        <View style={{flexDirection:"row",alignItems:"center",gap:4}}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Refresh account" onPress={()=>{retry();setAppearanceRevision(value=>value+1);}}
+            style={{minWidth:44,minHeight:44,alignItems:"center",justifyContent:"center"}}>
+            <Ionicons name="refresh-outline" size={22} color={theme.muted}/>
+          </Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel="Settings" testID="account-open-settings" onPress={()=>router.push("/settings")}
+            style={{minHeight:44,paddingHorizontal:9,flexDirection:"row",gap:5,alignItems:"center",justifyContent:"center"}}>
+            <Ionicons name="settings-outline" size={20} color={theme.accent}/>
+            <Text style={{color:theme.foreground,fontSize:13,fontWeight:"700"}}>Settings</Text>
+          </Pressable>
+        </View>
       </View>
       {loading&&!account?<HoopCheckLoading label="Checking your HoopCheck account…" />:account?<>
         <View style={{paddingVertical:12,gap:10,borderBottomWidth:StyleSheet.hairlineWidth,borderColor:theme.border}}>
@@ -187,7 +194,7 @@ export default function AccountScreen() {
       <GroupLabel>Security & settings</GroupLabel>
       <AccountGroup>
         <AccountRow icon="lock-closed-outline" title="Two-factor authentication" onPress={()=>router.push("/account/security")}/>
-        <AccountRow icon="settings-outline" title="Device settings" onPress={()=>router.push("/settings")}/>
+        <AccountRow icon="settings-outline" title="Settings" detail="Account, preferences and privacy" onPress={()=>router.push("/settings")}/>
         <AccountRow icon="help-circle-outline" title="Help & Support" onPress={()=>router.push("/account/support")}/>
         <AccountRow icon="information-circle-outline" title="About HoopCheck" onPress={()=>router.push("/about")} last/>
       </AccountGroup>

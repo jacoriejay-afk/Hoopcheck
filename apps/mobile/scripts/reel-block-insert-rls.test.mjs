@@ -12,7 +12,7 @@ test("Reels account block matches owner INSERT-only production RLS", () => {
   assert.match(block, /\.from\("user_blocks"\)\.insert\(\{ blocker_id: uid, blocked_id: authorId \}\)/);
   assert.doesNotMatch(block, /\.upsert\(/);
   assert.match(block, /error\.code !== "23505"/);
-  assert.match(block, /\.select\("blocked_id"\)\.eq\("blocker_id", uid\)\.eq\("blocked_id", authorId\)\.maybeSingle\(\)/);
+  assert.match(block, /\.select\("blocked_id"\)\.eq\("blocker_id", uid\)\.eq\("blocked_id", authorId\)\.setHeader\("Authorization", `Bearer \$\{accessToken\}`\)\.maybeSingle\(\)/);
   assert.match(block, /existing\?\.blocked_id !== authorId/);
   const browser = read("./verify-feed-browser.cjs");
   assert.match(browser, /resolution=merge-duplicates/);
