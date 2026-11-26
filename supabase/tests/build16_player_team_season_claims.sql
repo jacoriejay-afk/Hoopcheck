@@ -66,3 +66,80 @@ reset role;
 do $$ begin
  if has_table_privilege('anon','public.player_team_season_claims','SELECT') then raise exception 'anon read granted'; end if;
 end $$;
+
+-- Review guard fixture uses legacy permissive policies to prove restrictive
+-- enforcement even for direct writes, without involving production.
+alter table public.profiles add column player_verified boolean not null default true;
+alter table public.profiles add column basketball_type text not null default 'womens';
+create schema private;
+grant usage on schema private to authenticated;
+create function private.is_active_subscriber() returns boolean language sql stable
+as $$ select coalesce(current_setting('fixture.paid',true),'') = 'yes' $$;
+create table public.reviews (
+ id uuid primary key default gen_random_uuid(), author_id uuid not null, team_id uuid,
+ coach_id uuid, league_id uuid, player_season text, status text not null);
+create table public.womens_team_reviews (
+ id uuid primary key default gen_random_uuid(), author_id uuid not null, womens_team_id uuid not null, status text not null);
+alter table public.reviews enable row level security;
+alter table public.womens_team_reviews enable row level security;
+grant select, insert, update on public.reviews, public.womens_team_reviews to authenticated;
+create policy legacy_reviews_insert on public.reviews for insert to authenticated with check (true);
+create policy "womens reviews paid verified player insert" on public.womens_team_reviews for insert to authenticated with check (false);
+create policy "womens reviews paid verified player insert guard" on public.womens_team_reviews as restrictive for insert to authenticated with check (false);
+create policy fixture_read on public.reviews for select to authenticated using (author_id=auth.uid());
+create policy fixture_update on public.reviews for update to authenticated using (author_id=auth.uid()) with check (author_id=auth.uid());
+create policy fixture_read on public.womens_team_reviews for select to authenticated using (author_id=auth.uid());
+create policy fixture_update on public.womens_team_reviews for update to authenticated using (author_id=auth.uid()) with check (author_id=auth.uid());
+-- Existing legacy rows survive without inventing a verified season.
+insert into public.womens_team_reviews(author_id,womens_team_id,status)
+ values ('11111111-1111-1111-1111-111111111111','bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb','approved');
+\i supabase/candidates/build16_player_review_season_guard_review_only.sql
+update public.player_team_season_claims set verification_status='verified' where season_start_year=2023;
+set role authenticated;
+select set_config('request.jwt.claim.sub','11111111-1111-1111-1111-111111111111',false);
+select set_config('fixture.paid','yes',false);
+insert into public.reviews(author_id,team_id,player_season,status)
+ values ('11111111-1111-1111-1111-111111111111','aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa','2023-2024','pending');
+insert into public.womens_team_reviews(author_id,womens_team_id,player_season,status)
+ values ('11111111-1111-1111-1111-111111111111','bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb','2023-2024','pending');
+do $$ begin
+ if (select count(*) from public.womens_team_reviews where player_season is null and status='approved')<>1 then raise exception 'legacy history lost'; end if;
+ begin
+ insert into public.reviews(author_id,team_id,player_season,status)
+ values ('11111111-1111-1111-1111-111111111111','aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa','2022-2023','pending');
+ raise exception 'pending claim accepted'; exception when insufficient_privilege then null; end;
+ begin
+ insert into public.reviews(author_id,team_id,player_season,status)
+ values ('11111111-1111-1111-1111-111111111111','aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa','2023-24','pending');
+ raise exception 'noncanonical season accepted'; exception when insufficient_privilege then null; end;
+ begin
+ insert into public.reviews(author_id,team_id,player_season,status)
+ values ('11111111-1111-1111-1111-111111111111','aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa','2023-2024','pending');
+ raise exception 'duplicate review accepted'; exception when unique_violation then null; end;
+ begin
+ insert into public.womens_team_reviews(author_id,womens_team_id,player_season,status)
+ values ('11111111-1111-1111-1111-111111111111','bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb','2022-2023','pending');
+ raise exception 'unverified womens season accepted'; exception when insufficient_privilege then null; end;
+ begin
+ insert into public.womens_team_reviews(author_id,womens_team_id,player_season,status)
+ values ('11111111-1111-1111-1111-111111111111','bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb','2023-2024','pending');
+ raise exception 'duplicate womens review accepted'; exception when unique_violation then null; end;
+ begin
+ update public.reviews set player_season='2022-2023';
+ raise exception 'review season rewritten'; exception when insufficient_privilege then null; end;
+ begin
+ update public.womens_team_reviews set player_season='2022-2023' where status='pending';
+ raise exception 'womens review season rewritten'; exception when insufficient_privilege then null; end;
+ perform set_config('fixture.paid','no',false);
+ begin
+ insert into public.reviews(author_id,team_id,player_season,status)
+ values ('11111111-1111-1111-1111-111111111111','aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa','2023-2024','pending');
+ raise exception 'unpaid review accepted'; exception when insufficient_privilege then null; end;
+ perform set_config('fixture.paid','yes',false);
+ perform set_config('request.jwt.claim.sub','22222222-2222-2222-2222-222222222222',false);
+ begin
+ insert into public.reviews(author_id,team_id,player_season,status)
+ values ('22222222-2222-2222-2222-222222222222','aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa','2023-2024','pending');
+ raise exception 'other player claim accepted'; exception when insufficient_privilege then null; end;
+end $$;
+reset role;
