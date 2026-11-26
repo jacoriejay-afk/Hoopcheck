@@ -15,7 +15,7 @@ export default function WebHandoff() {
   const [busy, setBusy] = useState(false);
   async function open() {
     if (!url || busy) return;
-    setBusy(true);
+    setBusy(true); setError("");
     try { await WebBrowser.openBrowserAsync(url); }
     catch { setError("Couldn’t open HoopCheck. Check your connection and try again."); }
     finally { setBusy(false); }
@@ -24,6 +24,7 @@ export default function WebHandoff() {
     <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 28, fontWeight: "900" }}>Continue on HoopCheck</Text>
     <Text style={{ color: theme.muted }}>{isReferral ? "Complete signup in the browser to keep your referral attached." : isWorkspace ? "This workspace is available on the authenticated website. Sign in there if requested; the website verifies your role before granting access." : "Open this page on the HoopCheck website."}</Text>
     <Pressable accessibilityRole="link" disabled={!url || busy} onPress={() => void open()} style={{ minHeight: 48 }}><Text style={{ color: theme.accent, fontSize: 18 }}>Open page</Text></Pressable>
+    {!url ? <Text accessibilityRole="alert" style={{color:theme.foreground}}>This link is invalid or unavailable. Return to the previous screen.</Text> : null}
     {error ? <Text accessibilityRole="alert" style={{ color: theme.foreground }}>{error}</Text> : null}
   </View>;
 }

@@ -19,7 +19,17 @@ export type EditableProfile = {
   current_country_public: boolean; profile_visibility: "public" | "players_only";
 };
 export type OwnProfile = EditableProfile & { id: string; account_type: string; first_name: string; last_name: string; years_pro: string; username: string };
-const text = (value: unknown, max: number) => typeof value === "string" ? value.slice(0, max) : "";
+// Match existing UTF-16 input limits without cutting a Unicode surrogate pair.
+const text = (value: unknown, max: number) => {
+  if (typeof value !== "string") return "";
+  let end = Math.min(value.length, max);
+  if (end > 0 && end < value.length) {
+    const before = value.charCodeAt(end - 1);
+    const after = value.charCodeAt(end);
+    if (before >= 0xd800 && before <= 0xdbff && after >= 0xdc00 && after <= 0xdfff) end--;
+  }
+  return value.slice(0, end);
+};
 const limits = { display_name: 80, bio: 500, hometown: 120, nationality: 80, favorite_teams: 500, favorite_leagues: 500, interests: 500, experience_summary: 1000, position: 30, height: 24, current_country: 120, current_team: 160 } as const;
 export function parseProfileDraft(input: unknown): EditableProfile | null {
   if (!input || typeof input !== "object") return null;
@@ -41,7 +51,7 @@ export async function readOwnProfile(client: SupabaseClient, userId: string): Pr
 export async function saveOwnProfile(client: SupabaseClient, userId: string, draft: EditableProfile) {
   const profile = await readOwnProfile(client, userId); // Current server role, never editable input/metadata.
   const valid = parseProfileDraft(draft); if (!valid) throw new Error("Invalid profile values");
-  const clean = (key: keyof typeof limits) => valid[key].trim().slice(0, limits[key]) || null;
+  const clean = (key: keyof typeof limits) => text(valid[key].trim(), limits[key]) || null;
   const values = {
     display_name: clean("display_name"), bio: clean("bio"), hometown: clean("hometown"), nationality: clean("nationality"),
     favorite_teams: clean("favorite_teams"), favorite_leagues: clean("favorite_leagues"), interests: clean("interests"),

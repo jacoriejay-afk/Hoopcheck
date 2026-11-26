@@ -76,8 +76,9 @@ export async function POST(req: NextRequest) {
   if (!UUID_RE.test(profileId)) {
     return NextResponse.json({ error: "A valid profile is required." }, { status: 400 });
   }
-  if (!reason || reason.length > 500) {
-    return NextResponse.json({ error: "A reason of 1–500 characters is required." }, { status: 400 });
+  const reasonLength = Array.from(reason).length;
+  if (reasonLength < 3 || reasonLength > 500) {
+    return NextResponse.json({ error: "A reason of 3–500 characters is required." }, { status: 400 });
   }
   if (profileId === user.id) {
     return NextResponse.json({ error: "You cannot report your own profile." }, { status: 400 });
@@ -92,7 +93,11 @@ export async function POST(req: NextRequest) {
     if (error.code === "23503") {
       return NextResponse.json({ error: "Profile not found." }, { status: 404 });
     }
-    console.error("Profile report insert failed:", error);
+    if (error.code === "P0001" && error.message === "Report submission rate limit reached") {
+      return NextResponse.json({ error: "Too many reports. Please try again later." }, { status: 429 });
+    }
+    // Do not log database details: constraint failures can include report text.
+    console.error("Profile report insert failed:", { code: error.code });
     return NextResponse.json({ error: "We couldn't submit your report. Please try again." }, { status: 500 });
   }
 
