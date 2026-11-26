@@ -4,7 +4,7 @@ import {readFileSync} from "node:fs";
 import ts from "typescript";
 const source=readFileSync(new URL("../src/native/careerClaims.ts",import.meta.url),"utf8");
 const js=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
-const {careerRequestUrl,requestCareer}=await import("data:text/javascript;base64,"+Buffer.from(js).toString("base64"));
+const {careerRequestUrl,requestCareer,careerTimeline}=await import("data:text/javascript;base64,"+Buffer.from(js).toString("base64"));
 test("career endpoint is confined to HTTPS origin and fixed path",()=>{
  assert.equal(careerRequestUrl("https://hoopcheck.online","claims"),"https://hoopcheck.online/api/career/claims");
  for(const origin of ["http://hoopcheck.online","https://a:b@hoopcheck.online","https://hoopcheck.online/path","https://hoopcheck.online/?q=1","https://hoopcheck.online/#hash"])assert.throws(()=>careerRequestUrl(origin,"claims"));
@@ -38,4 +38,17 @@ test("account identity changes permanently hide the private intake and reject fu
  assert.match(screen,/setName\(""\);setSeason\(""\);setCountry\(""\)/);
  assert.match(screen,/if\(sessionInvalidated\)return <Text/);
  assert.match(screen,/if\(!active\.current\)return;lock\.current=true/);
+});
+
+test("private career timeline uses exact historical labels, orders seasons, and keeps status independent",()=>{
+ const old={id:"old",team_id:"team",womens_team_id:null,season_start_year:2021,season_end_year:2022,verification_status:"verified"};
+ const recent={id:"recent",team_id:null,womens_team_id:"club",season_start_year:2023,season_end_year:2024,verification_status:"pending",historicalClub:{name:"Old club name",league:"Former league",division:"2",country:"Portugal"}};
+ const rows=[old,recent];
+ assert.deepEqual(careerTimeline(rows),[
+  {id:"recent",name:"Old club name",detail:"2023–2024 · Women’s · Former league · 2 · Portugal",status:"Pending verification"},
+  {id:"old",name:"Historical club name unavailable",detail:"2021–2022 · Men’s",status:"Verified"}
+ ]);
+ assert.equal(rows[0].id,"old");
+ assert.equal(careerTimeline([{...old,verification_status:"revoked"}])[0].status,"Verification revoked");
+ assert.equal(careerTimeline([{...recent,verification_status:"unknown"}])[0].status,"Verification status unavailable");
 });
