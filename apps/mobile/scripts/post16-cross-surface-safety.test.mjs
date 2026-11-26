@@ -1,0 +1,27 @@
+import { readFileSync } from "node:fs";
+import { test } from "node:test";
+import assert from "node:assert/strict";
+const read=p=>readFileSync(new URL(p,import.meta.url),"utf8");
+test("private conversation reports and blocking verify the exact participant pair",()=>{
+  const safety=read("../components/ConversationSafety.tsx"),chat=read("../app/messages.tsx");
+  assert.match(safety,/target\.data\.requester_id===uid&&target\.data\.player_id===peerId/);
+  assert.match(safety,/target\.data\.player_id===uid&&target\.data\.requester_id===peerId/);
+  assert.match(safety,/requester_id:uid,subject:"Report a private HoopChat conversation",category:"security"/);
+  assert.match(safety,/insert\(\{blocker_id:uid,blocked_id:peerId\}\)\.setHeader/);
+  assert.match(chat,/blockedIds\.has\(row\.requester_id===user\.id\?row\.player_id:row\.requester_id\)/);
+  assert.match(chat,/await verifyChatPeer\(viewerId/);
+  assert.equal([...chat.matchAll(/withHoopChatDeadline\(signal=>verifyChatPeer\(userId/g)].length,2);
+});
+test("group and game room reads apply account blocking in addition to existing local controls",()=>{
+  const groups=read("../components/HoopGroupsChannels.tsx"),game=read("../src/native/liveGames.ts"),helper=read("../src/native/accountBlocking.ts"),ui=read("../components/GameChat.tsx");
+  assert.match(groups,/readOutgoingBlocks\(supabase,userId,controller\.signal\)/);
+  assert.match(groups,/filter\(post=>!blocked\.has\(post\.author_id\)\)/);
+  assert.match(groups,/from\("hoop_group_reports"\)/);
+  assert.match(groups,/blockNativeAccount\(supabase,userId,item\.author_id/);
+  assert.match(game,/!blocked\.has\(row\.user_id\) && !globalBlocks\.has\(row\.user_id\)/);
+  assert.match(ui,/confirmGlobalBlock/);
+  assert.match(helper,/\.eq\("blocker_id",uid\)\.limit\(501\)\.setHeader/);
+  assert.match(helper,/result\.data\.length>500/);
+  assert.match(helper,/session\.data\.session\.user\.id!==uid/);
+  assert.match(helper,/target===uid/);
+});

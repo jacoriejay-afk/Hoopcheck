@@ -18,6 +18,9 @@ import { Pressable, ScrollView, RefreshControl, StyleSheet, Text, View, useWindo
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { supabase } from "../../src/lib/supabase";
+import { readWithDeadline } from "../../src/native/readDeadline";
+import { isFeedId } from "../../src/native/feedClient";
+import { useActiveScreen } from "../../src/native/useActiveScreen";
 
 export default function PlayerDetailScreen() {
   const { id: rawId } = useLocalSearchParams<{ id: string }>();
@@ -43,6 +46,10 @@ function PlayerProfileDetails({ viewer, id }: { viewer: PlayerViewer; id: string
   const [reportReason, setReportReason] = useState("");
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const reportInFlight = useRef(false);
+  const activeScreen=useActiveScreen();
+  const [confirmBlock,setConfirmBlock]=useState(false),[blockBusy,setBlockBusy]=useState(false),[blockError,setBlockError]=useState("");
+  const blockLock=useRef(false),live=useRef(false);
+  useEffect(()=>{live.current=activeScreen;return()=>{live.current=false;};},[activeScreen]);
   const [reportMessage, setReportMessage] = useState("");
 
   useEffect(() => {
@@ -50,6 +57,19 @@ function PlayerProfileDetails({ viewer, id }: { viewer: PlayerViewer; id: string
     async function load() {
       setLoading(true); setError(""); setPlayer(null);
       try {
+        if(offline||!activeScreen)throw Error("Profile unavailable.");
+        if(id!==viewerId){
+          if(!isFeedId(id))throw Error("Invalid profile.");
+          const session=await readWithDeadline(()=>supabase.auth.getSession());
+          if(session.error||!session.data.session||session.data.session.user.id!==viewerId)throw Error("Verify access.");
+          const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
+          try{
+            const block=await supabase.from("user_blocks").select("blocked_id").eq("blocker_id",viewerId).eq("blocked_id",id).setHeader("Authorization","Bearer "+session.data.session.access_token).abortSignal(controller.signal).maybeSingle();
+            if(block.error||controller.signal.aborted)throw Error("Block status unavailable.");
+            if(block.data){if(active){setError("This account is blocked. Manage blocked accounts in Settings.");setLoading(false);setRefreshing(false);}return;}
+          }finally{clearTimeout(timer);}
+        }
+        if(!active)return;
         const result = await readPlayerProfile(supabase, { id: viewerId, accountType }, id);
         if (!active) return;
         setPlayer(result);
@@ -63,8 +83,25 @@ function PlayerProfileDetails({ viewer, id }: { viewer: PlayerViewer; id: string
     }
     if (id) void load(); else { setError("This profile link is invalid."); setLoading(false); }
     return () => { active = false; };
-  }, [id, revision, refreshId, offline, viewerId, accountType]);
+  }, [id, revision, refreshId, offline, viewerId, accountType, activeScreen]);
 
+  async function blockProfile(){
+    if(blockLock.current||!live.current||!player||player.id!==id||id===viewerId||!isFeedId(id)||offline)return;
+    blockLock.current=true;setBlockBusy(true);setBlockError("");
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
+    try{
+      const session=await readWithDeadline(()=>supabase.auth.getSession());
+      if(session.error||!session.data.session||session.data.session.user.id!==viewerId||!live.current||controller.signal.aborted)throw Error("Verify access.");
+      const header="Bearer "+session.data.session.access_token;
+      const result=await supabase.from("user_blocks").insert({blocker_id:viewerId,blocked_id:id}).setHeader("Authorization",header).abortSignal(controller.signal);
+      if(result.error&&result.error.code!=="23505")throw Error("Block unavailable.");
+      const row=await supabase.from("user_blocks").select("blocked_id").eq("blocker_id",viewerId).eq("blocked_id",id).setHeader("Authorization",header).abortSignal(controller.signal).maybeSingle();
+      if(row.error||row.data?.blocked_id!==id||controller.signal.aborted)throw Error("Block not confirmed.");
+      const after=await readWithDeadline(()=>supabase.auth.getSession());
+      if(live.current&&!after.error&&after.data.session?.user.id===viewerId){setPlayer(null);setConfirmBlock(false);setReporting(false);setError("This account is blocked. Manage blocked accounts in Settings.");}
+    }catch{if(live.current)setBlockError("Block could not be confirmed. Refresh before retrying.");}
+    finally{clearTimeout(timer);blockLock.current=false;if(live.current)setBlockBusy(false);}
+  }
   async function submitReport() {
     const reason = reportReason.trim();
     if (reportInFlight.current || reportSubmitting || !player || player.id !== id || player.id === viewerId) return;
@@ -165,6 +202,9 @@ function PlayerProfileDetails({ viewer, id }: { viewer: PlayerViewer; id: string
             <PlayerCareer key={`${viewerId}:${player.id}`} playerId={player.id} viewer={viewer} />
             {player.id !== viewerId ? <GlassCard style={styles.reportCard}>
               <Text style={styles.sectionTitle}>Safety and reporting</Text>
+              <Button secondary disabled={blockBusy} onPress={()=>setConfirmBlock(v=>!v)}>Block account</Button>
+              {confirmBlock?<><Text style={styles.body}>Block this account? You can unblock it from Settings.</Text><Button disabled={blockBusy} onPress={()=>void blockProfile()}>Confirm block</Button><Button secondary disabled={blockBusy} onPress={()=>setConfirmBlock(false)}>Cancel</Button></>:null}
+              {blockError?<Text accessibilityRole="alert" style={styles.body}>{blockError}</Text>:null}
               <Text style={styles.body}>If this profile contains impersonation, harassment, or inappropriate personal information, report it to the HoopCheck team.</Text>
               {(
                 <Button accessibilityRole="button" style={styles.reportButton} onPress={() => { setReporting(true); setReportMessage(""); }}>

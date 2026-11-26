@@ -6,6 +6,7 @@ const id=n=>`11111111-1111-4111-8111-${String(n).padStart(12,'0')}`;
 const now=new Date('2026-11-18T12:00:00Z');
 const game=(n,overrides={})=>({id:id(n),team_id:id(10),opponent_team_id:id(11),opponent_name:'Away',status:'scheduled',scheduled_at:'2026-11-18T12:30:00Z',...overrides});
 const client=request=>createClient('https://fixture.supabase.co','key',{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},global:{fetch:request}});
+function withSession(db,uid=id(30)){db.auth.getSession=async()=>({data:{session:{user:{id:uid},access_token:'fixture-account-token'}},error:null});return db;}
 test('game discovery preserves side identity including away women and excludes stale scheduled fixtures',async()=>{
   const calls=[];
   const db=client(async input=>{const url=new URL(String(input));calls.push(url);return Response.json(url.pathname.endsWith('/fan_live_games')?[game(1),game(2,{scheduled_at:'2026-11-18T07:00:00Z'}),game(3,{team_id:id(12),opponent_team_id:id(13)})]:url.pathname.endsWith('/womens_teams')?[{id:id(11),name:'Away Women'}]:[]);});
@@ -29,15 +30,15 @@ test('free player listing uses existing bearer prediction API and never bypasses
 });
 test('chat trusts authoritative boolean room state, owns controls, and excludes hidden authors',async()=>{
   const calls=[];
-  const messages=[{id:id(5),body:'Visible',user_id:id(20),created_at:'2026-11-18T12:00:00Z'},{id:id(6),body:'Hidden',user_id:id(21),created_at:'2026-11-18T11:59:00Z'}];
-  const db=client(async(input,options)=>{const url=new URL(String(input));calls.push({url,options});return Response.json(url.pathname.endsWith('/fan_live_chat_room_open')?true:url.pathname.endsWith('/fan_live_chat_user_controls')?[{target_user_id:id(21),is_muted:true,is_blocked:false}]:url.pathname.endsWith('/fan_live_chat_messages')?messages:[{id:id(20),display_name:'Visible member'}]);});
-  const room=await readGameRoom(db,id(1),id(30));assert.equal(room.open,true);assert.deepEqual(room.messages.map(x=>x.body),['Visible']);
+  const messages=[{id:id(5),body:'Visible',user_id:id(20),created_at:'2026-11-18T12:00:00Z'},{id:id(6),body:'Hidden',user_id:id(21),created_at:'2026-11-18T11:59:00Z'},{id:id(7),body:'Globally blocked',user_id:id(22),created_at:'2026-11-18T11:58:00Z'}];
+  const db=client(async(input,options)=>{const url=new URL(String(input));calls.push({url,options});return Response.json(url.pathname.endsWith('/fan_live_chat_room_open')?true:url.pathname.endsWith('/fan_live_chat_user_controls')?[{target_user_id:id(21),is_muted:true,is_blocked:false}]:url.pathname.endsWith('/fan_live_chat_messages')?messages:url.pathname.endsWith('/user_blocks')?[{blocked_id:id(22)}]:[{id:id(20),display_name:'Visible member'}]);});
+  const room=await readGameRoom(withSession(db),id(1),id(30));assert.equal(room.open,true);assert.deepEqual(room.messages.map(x=>x.body),['Visible']);
   const controls=calls.find(c=>c.url.pathname.endsWith('/fan_live_chat_user_controls')).url.searchParams;assert.equal(controls.get('user_id'),`eq.${id(30)}`);
   const query=calls.find(c=>c.url.pathname.endsWith('/fan_live_chat_messages')).url.searchParams;assert.equal(query.get('game_id'),`eq.${id(1)}`);assert.equal(query.get('order'),'created_at.desc,id.desc');assert.equal(query.get('limit'),'200');
-  assert.ok(!calls.at(-1).url.searchParams.get('id').includes(id(21)));
+  assert.ok(!calls.at(-1).url.searchParams.get('id').includes(id(21)));assert.ok(!calls.at(-1).url.searchParams.get('id').includes(id(22)));assert.equal(calls.find(c=>c.url.pathname.endsWith('/user_blocks')).url.searchParams.get('blocker_id'),`eq.${id(30)}`);
   for(const flag of [false,'true']){
     const paths=[];const closed=client(async input=>{const p=new URL(String(input)).pathname;paths.push(p);return Response.json(p.endsWith('/fan_live_chat_room_open')?flag:[]);});
-    if(flag===false)assert.equal((await readGameRoom(closed,id(1),id(30))).messages.length,0);else await assert.rejects(readGameRoom(closed,id(1),id(30)));
+    if(flag===false)assert.equal((await readGameRoom(withSession(closed),id(1),id(30))).messages.length,0);else await assert.rejects(readGameRoom(withSession(closed),id(1),id(30)));
     assert.ok(!paths.includes('/rest/v1/fan_live_chat_messages'));
   }
 });
