@@ -25,6 +25,18 @@ for attempt in range(60):
  time.sleep(2)
 else:raise RuntimeError('Local Metro server did not become ready')
 PY
+# Warm the actual Expo virtual-entry bundle before launching XCTest. The
+# /status endpoint only proves the server is alive, not that the fixture
+# bundle can be built. Keep the real native assertions mandatory.
+if ! curl --fail --silent --show-error --connect-timeout 5 --max-time 180 \
+  --output /dev/null --write-out 'HTTP %{http_code}, %{time_total}s\n' \
+  'http://127.0.0.1:8081/.expo/.virtual-metro-entry.bundle?platform=ios&dev=true&minify=false' \
+  > "$artifact_root/metro-prewarm.log" 2>&1; then
+  cat "$artifact_root/metro-prewarm.log" >&2
+  tail -n 100 "$artifact_root/metro.log" >&2 || true
+  echo "PASSPORT_SMOKE_BUNDLE_PREWARM_FAILED; real XCTest not accepted" >&2
+  exit 1
+fi
 xcrun simctl list devices available --json > "$artifact_root/devices.json"
 simulator_id=$(python3 - <<'PY'
 import json
@@ -49,6 +61,20 @@ boot_ready() {
 }
 if [[ "$state" != "Booted" ]]; then xcrun simctl boot "$simulator_id"; fi
 boot_ready light
+collect_failure_diagnostics() {
+  local theme="$1"
+  # Keep collection bounded and best-effort, without overriding the failed test.
+  python3 scripts/ios-passport-smoke/run-bounded-xctest.py \
+    --log "$artifact_root/$theme-simulator-services.log" --timeout-seconds 90 -- \
+    xcrun simctl spawn "$simulator_id" log show --last 10m --style compact \
+    --predicate 'process == "HoopCheck" OR process CONTAINS[c] "ShareSheet" OR process CONTAINS[c] "XCTRunner" OR process == "SpringBoard" OR subsystem CONTAINS[c] "sharing"' || true
+  if [[ -d "$artifact_root/$theme.xcresult" ]]; then
+    python3 scripts/ios-passport-smoke/run-bounded-xctest.py \
+      --log "$artifact_root/$theme-xcresult-diagnostics.log" --timeout-seconds 90 -- \
+      xcrun xcresulttool export diagnostics --path "$artifact_root/$theme.xcresult" \
+      --output-path "$artifact_root/$theme-diagnostics" || true
+  fi
+}
 for theme in light dark; do
   if [[ "$theme" == "dark" ]]; then
     # Test both themes on real simulator boot sessions. Reusing the warm WebKit
@@ -96,11 +122,13 @@ for theme in light dark; do
     xcodebuild test -workspace ios/HoopCheck.xcworkspace -scheme HoopCheck \
     -configuration Debug -sdk iphonesimulator -destination "id=$simulator_id" \
     -derivedDataPath /tmp/hoopcheck-ios-derived \
+    -parallel-testing-enabled NO \
     -resultBundlePath "$artifact_root/$theme.xcresult" \
     -only-testing:PassportSmokeUITests CODE_SIGNING_ALLOWED=NO; then
     tail -n 140 "$artifact_root/$theme-test.log"
     echo "=== Tail of synthetic local Metro log (no production auth) ==="
     tail -n 100 "$artifact_root/metro.log" || true
+    collect_failure_diagnostics "$theme"
     if [[ -d "$artifact_root/$theme.xcresult" ]]; then xcrun xcresulttool export attachments --path "$artifact_root/$theme.xcresult" --output-path "$artifact_root/$theme-screenshots" || true; fi
     exit 1
   fi
