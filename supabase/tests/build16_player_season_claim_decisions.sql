@@ -28,6 +28,10 @@ insert into public.teams values ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
 insert into public.player_team_season_claims(id,player_id,team_id,season_start_year,season_end_year) values
  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1','22222222-2222-2222-2222-222222222222','aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',2022,2023),
  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb2','11111111-1111-1111-1111-111111111111','aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',2022,2023);
+insert into public.player_season_claim_evidence(id,claim_id,evidence_kind,intake_status,accepted_at) values
+ ('cccccccc-cccc-cccc-cccc-cccccccccccc','bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1','official_roster','accepted',now()),
+ ('cccccccc-cccc-cccc-cccc-ccccccccccc1','bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb2','contract','accepted',now()),
+ ('cccccccc-cccc-cccc-cccc-ccccccccccc2','bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1','contract','pending',null);
 set role authenticated;
 do $$
 declare actor uuid;
@@ -45,6 +49,19 @@ begin
  begin
  perform public.decide_player_season_claim('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1','verified','Fixture');
  raise exception 'approval without evidence reference'; exception when invalid_parameter_value then null; end;
+ if has_table_privilege('authenticated','public.player_season_claim_evidence','SELECT') or has_table_privilege('authenticated','public.player_season_claim_evidence','INSERT') then raise exception 'private evidence registry exposed'; end if;
+ begin
+ perform public.decide_player_season_claim('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1','verified','Fixture','contract','cccccccc-cccc-cccc-cccc-ccccccccccc1');
+ raise exception 'other claim evidence accepted'; exception when invalid_parameter_value then null; end;
+ begin
+ perform public.decide_player_season_claim('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1','verified','Fixture','contract','cccccccc-cccc-cccc-cccc-ccccccccccc2');
+ raise exception 'pending evidence accepted'; exception when invalid_parameter_value then null; end;
+ begin
+ perform public.decide_player_season_claim('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1','verified','Fixture','contract','cccccccc-cccc-cccc-cccc-cccccccccccc');
+ raise exception 'wrong evidence type accepted'; exception when invalid_parameter_value then null; end;
+ begin
+ perform public.decide_player_season_claim('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1','verified','Fixture','contract','dddddddd-dddd-dddd-dddd-dddddddddddd');
+ raise exception 'fabricated evidence accepted'; exception when invalid_parameter_value then null; end;
  if public.decide_player_season_claim('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1','verified','Fixture','official_roster','cccccccc-cccc-cccc-cccc-cccccccccccc') <> 'verified' then raise exception 'owner approval failed'; end if;
  begin
  perform public.decide_player_season_claim('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1','verified','Fixture','official_roster','cccccccc-cccc-cccc-cccc-cccccccccccc');
