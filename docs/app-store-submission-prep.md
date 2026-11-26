@@ -99,6 +99,12 @@ Do not infer current App Store Connect offer configuration from source constants
 - [ ] Verify RLS/ACLs, MFA hooks, REST/RPC access, provider callbacks and rollback/recovery plan. Reconcile production schema drift. Do not apply hosted SQL without owner approval.
 - [ ] Resolve Vercel rate limits, verify complete integrated candidate and approve deployment separately. Do not alter quotas, billing or projects without explicit authorization.
 
+## Passport release acceptance (separate from compliance integration)
+
+- Owner approved separating the unrelated Passport simulator runtime check from the account-deletion integration gate. Native compilation, StoreKit Swift tests, permission verification, watchdog tests, web/mobile checks and deletion security rehearsals remain intact.
+- Exact prior source head `02283938fccbd1f809b345a7c6c190a68d1ffb09`: [native run 45865627317](https://github.com/jacoriejay-afk/Hoopcheck/actions/runs/45865627317) compiled the simulator app but failed the real Passport UI fixture with `No script URL provided` despite successful Metro bundling. Do not record this run as passed. Preserve diagnostics and retain both light/dark runtime assertions in the dedicated `Passport iOS Runtime Verification` workflow. Other branches retain their existing runtime gates.
+- [ ] Resolve the synthetic simulator startup issue independently, or verify the actual Passport experience on the separately approved signed TestFlight release candidate: PDF content/signature, light/dark rendering, native share sheet, dismissal without external transmission, temporary-file deletion, no unexpected permissions. Record actual evidence; do not claim the failed simulator check passed. Physical-device acceptance is required before public release.
+
 ## App Store Connect acceptance
 
 - [ ] Confirm account agreements, banking/tax, trader status/territories and age rating using actual business details.
