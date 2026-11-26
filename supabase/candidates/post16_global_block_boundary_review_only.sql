@@ -13,6 +13,16 @@ begin
     ) then raise exception 'POST16 block boundary schema drift: %', rel; end if;
   end loop;
   if to_regnamespace('private') is null then raise exception 'Missing private schema'; end if;
+  if not has_schema_privilege('authenticated','private','USAGE')
+     or has_schema_privilege('anon','private','USAGE')
+     or has_schema_privilege('authenticated','private','CREATE')
+  then raise exception 'Unexpected private schema privileges'; end if;
+  if to_regprocedure('public.is_current_user_admin_or_moderator()') is null
+    or not exists (select 1 from pg_catalog.pg_policies
+      where schemaname='public' and tablename='fan_live_chat_messages'
+        and cmd='SELECT' and permissive='PERMISSIVE'
+        and qual like '%is_current_user_admin_or_moderator()%')
+  then raise exception 'Existing live chat staff moderation baseline missing'; end if;
 end $guard$;
 
 -- Only the authenticated viewer is ever compared with the supplied peer.
@@ -57,6 +67,10 @@ as restrictive for select to authenticated
 using (private.post16_account_interaction_allowed(author_id));
 create policy post16_live_chat_block_guard on public.fan_live_chat_messages
 as restrictive for select to authenticated
-using (private.post16_account_interaction_allowed(user_id));
--- Staff review paths must be verified separately before migrating this
--- candidate. Never weaken block rules merely to restore a moderation screen.
+using ((select public.is_current_user_admin_or_moderator()) or private.post16_account_interaction_allowed(user_id));
+-- Preserve the EXISTING verified live-chat staff moderation read path.
+-- A restrictive policy cannot grant access on its own. The native ordinary
+-- chat still filters outgoing blocks even for staff using it as members.
+-- No staff exception for private conversations, group posts, or feed comments.
+-- Verify authenticated HTTP, moderation and non-exposed schema configuration
+-- against a full target schema before applying this review-only candidate.
