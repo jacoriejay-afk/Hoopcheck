@@ -24,3 +24,15 @@ test("staff safety query only follows a verified server role and rechecks it bef
   assert.match(src,/if\(!verified\)return null/);
   assert.doesNotMatch(src,/service_role|user_metadata|\.update\(|\.delete\(/);
 });
+
+test("staff ticket status updates require a confirmed current security ticket and verified role",()=>{
+  const src=read("../components/AdminSafetyCenter.tsx");
+  assert.match(src,/Confirm status change/);
+  assert.match(src,/role\.data!==true/);
+  assert.match(src,/\.eq\("id",ticket\.id\)\.eq\("category","security"\)/);
+  assert.match(src,/target\.data\.status!==ticket\.status/);
+  assert.match(src,/rpc\("admin_update_support_ticket",\{p_ticket_id:ticket\.id,p_status:status\}\)\.setHeader/);
+  assert.match(src,/result\.data!==true/);
+  assert.match(src,/staff\.data!==true/);
+  assert.match(src,/This is not a content removal or a finding of misconduct/);
+});
