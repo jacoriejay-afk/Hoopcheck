@@ -202,5 +202,50 @@ DO $$ BEGIN
  IF EXISTS(SELECT 1 FROM hoopcheck_deletion_private.completion_delivery WHERE envelope IS NOT NULL OR provider_id IS NOT NULL OR scrubbed_at IS NULL) THEN RAISE EXCEPTION 'Contact material retained'; END IF;
 END $$;
 
+
+-- Review thread fixture. Evidence and third-party content never cascade
+-- merely because an account is frozen. A reviewed ID-set digest is required.
+CREATE TABLE public.reviews(id uuid PRIMARY KEY,author_id uuid NOT NULL);
+CREATE TABLE public.womens_team_reviews(id uuid PRIMARY KEY,author_id uuid NOT NULL);
+CREATE TABLE public.review_comments(id uuid PRIMARY KEY,author_id uuid NOT NULL,review_id uuid NOT NULL REFERENCES public.reviews(id) ON DELETE CASCADE);
+CREATE TABLE public.review_likes(id uuid PRIMARY KEY,user_id uuid NOT NULL,review_id uuid NOT NULL REFERENCES public.reviews(id) ON DELETE CASCADE);
+CREATE TABLE public.review_reports(id uuid PRIMARY KEY,reporter_id uuid NOT NULL,review_id uuid NOT NULL REFERENCES public.reviews(id) ON DELETE CASCADE);
+CREATE TABLE public.review_moderation_events(id uuid PRIMARY KEY,actor_id uuid,review_id uuid REFERENCES public.reviews(id) ON DELETE CASCADE,report_id uuid REFERENCES public.review_reports(id) ON DELETE CASCADE);
+\i supabase/candidates/appstore_deletion_review_cleanup.sql
+INSERT INTO public.reviews VALUES('10000000-0000-4000-8000-000000000001','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),('10000000-0000-4000-8000-000000000002','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
+INSERT INTO public.womens_team_reviews VALUES('20000000-0000-4000-8000-000000000001','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+INSERT INTO public.review_comments VALUES('30000000-0000-4000-8000-000000000001','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','10000000-0000-4000-8000-000000000001'),('30000000-0000-4000-8000-000000000002','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','10000000-0000-4000-8000-000000000002');
+INSERT INTO public.review_reports VALUES('40000000-0000-4000-8000-000000000001','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','10000000-0000-4000-8000-000000000001');
+SET LOCAL ROLE service_role;
+DO $$ DECLARE r uuid:='33333333-3333-4333-8333-333333333333';o uuid:='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';f uuid:='44444444-4444-4444-8444-444444444444';scope jsonb;BEGIN
+ scope:=public.approved_deletion_review_scope(r,o,f,false);
+ IF scope->>'reports'<>'1' OR scope->>'third_party'<>'1' THEN RAISE EXCEPTION 'Review scope incomplete'; END IF;
+ BEGIN PERFORM public.approved_deletion_review_scope(r,o,f,true);RAISE EXCEPTION 'Evidence removed' USING ERRCODE='XX000';
+ EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'Review evidence requires retention disposition' THEN RAISE; END IF;END;
+END $$;
+RESET ROLE;
+-- Fixture-only disposition of synthetic report, not a production policy.
+DELETE FROM public.review_reports;
+INSERT INTO hoopcheck_deletion_private.review_cleanup_approvals(request_id,policy_version,scope_digest,allow_thread_removal)
+ SELECT '33333333-3333-4333-8333-333333333333',w.policy_version,public.approved_deletion_review_scope('33333333-3333-4333-8333-333333333333','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','44444444-4444-4444-8444-444444444444',false)->>'scope_digest',false
+ FROM hoopcheck_deletion_private.worker_state w WHERE w.request_id='33333333-3333-4333-8333-333333333333';
+SET LOCAL ROLE service_role;
+DO $$ BEGIN
+ BEGIN PERFORM public.approved_deletion_review_scope('33333333-3333-4333-8333-333333333333','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','44444444-4444-4444-8444-444444444444',true);RAISE EXCEPTION 'Unapproved thread erased' USING ERRCODE='XX000';
+ EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'Exact review scope approval required' THEN RAISE; END IF;END;
+END $$;
+RESET ROLE;
+UPDATE hoopcheck_deletion_private.review_cleanup_approvals SET allow_thread_removal=true;
+SET LOCAL ROLE service_role;
+DO $$ BEGIN
+ IF public.approved_deletion_review_scope('33333333-3333-4333-8333-333333333333','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','44444444-4444-4444-8444-444444444444',true)->>'ok' IS DISTINCT FROM 'true'
+ OR public.approved_deletion_review_scope('33333333-3333-4333-8333-333333333333','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','44444444-4444-4444-8444-444444444444',true)->>'ok' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'Review cleanup or retry failed'; END IF;
+END $$;
+RESET ROLE;
+DO $$ BEGIN
+ IF (SELECT count(*) FROM public.reviews)<>1 OR NOT EXISTS(SELECT 1 FROM public.reviews WHERE author_id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb')
+ OR EXISTS(SELECT 1 FROM public.womens_team_reviews) OR EXISTS(SELECT 1 FROM public.review_comments) THEN RAISE EXCEPTION 'Review cleanup scope mismatch'; END IF;
+END $$;
+
 ROLLBACK;
 \echo PASS: freeze gate, owner isolation, direct writes and reads, RPC gate, session absence
