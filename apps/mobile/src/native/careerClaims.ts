@@ -1,0 +1,18 @@
+export const nativeCareerClaimsEnabled=process.env.EXPO_PUBLIC_HOOPCHECK_CAREER_CLAIMS_ENABLED==="true";
+export type Club={id:string;team_id:string|null;womens_team_id:string|null;historical_name:string;historical_league:string;historical_division:string|null;historical_country:string;club_state:string};
+export type Claim={id:string;season_start_year:number;season_end_year:number;verification_status:string;team_id:string|null;womens_team_id:string|null};
+export type MissingClub={id:string;historical_name:string;season_start_year:number;season_end_year:number;status:string};
+export type History={claims:Claim[];missingClubs:MissingClub[];hasMore:boolean};
+export function careerRequestUrl(origin:string,path:"claims"|"historical-clubs",query?:URLSearchParams){
+ const u=new URL(origin);
+ if(u.protocol!=="https:"||u.username||u.password||u.pathname!=="/"||u.search||u.hash)throw Error("Invalid career service configuration.");
+ u.pathname="/api/career/"+path;
+ if(query)u.search=query.toString();
+ return u.toString();
+}
+export async function requestCareer<T>(origin:string,token:string,path:"claims"|"historical-clubs",options:{query?:URLSearchParams;body?:object;signal?:AbortSignal}={},request:typeof fetch=fetch):Promise<T>{
+ if(!token)throw Error("Sign in to manage career history.");
+ const response=await request(careerRequestUrl(origin,path,options.query),{method:options.body?"POST":"GET",cache:"no-store",redirect:"error",headers:{Authorization:"Bearer "+token,...(options.body?{"Content-Type":"application/json"}:{})},...(options.body?{body:JSON.stringify(options.body)}:{}),signal:options.signal});
+ if(!response.ok){const message=response.status===409?"This claim already exists.":response.status===401||response.status===403?"Career history is not available to this session.":response.status===400?"Check your team and season details.":"Career history is unavailable. Try again.";throw Error(message);}
+ return await response.json() as T;
+}
