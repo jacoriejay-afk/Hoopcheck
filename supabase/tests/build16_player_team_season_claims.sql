@@ -143,3 +143,49 @@ do $$ begin
  raise exception 'other player claim accepted'; exception when insufficient_privilege then null; end;
 end $$;
 reset role;
+
+\i supabase/candidates/build16_historical_club_seasons_review_only.sql
+begin;
+insert into public.historical_club_seasons(id,team_id,season_start_year,season_end_year,historical_name,historical_league,historical_division,historical_country,club_state)
+values ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1','aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',2022,2023,'Old Club Name','Original League','First','Example','renamed'),
+ ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2','aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',2023,2024,'New Club Name','Lower League','Second','Example','archived');
+insert into public.historical_club_provenance(snapshot_id,verified_by,source_reference)
+values ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1','11111111-1111-1111-1111-111111111111','fixture roster'),
+ ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2','11111111-1111-1111-1111-111111111111','fixture league archive');
+commit;
+do $$ begin
+ begin
+ delete from public.teams where id='aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+ raise exception 'historical club deletion allowed'; exception when foreign_key_violation then null; end;
+ begin
+ insert into public.historical_club_seasons(womens_team_id,season_start_year,season_end_year,historical_name,historical_league,historical_country,club_state)
+ values ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',2022,2023,'Unverified club','Fixture','Example','unknown');
+ set constraints historical_club_provenance_required immediate;
+ raise exception 'unsourced historical snapshot accepted'; exception when foreign_key_violation then null; end;
+end $$;
+set role authenticated;
+select set_config('request.jwt.claim.sub','11111111-1111-1111-1111-111111111111',false);
+insert into public.historical_club_requests(player_id,historical_name,country,league_name,division,basketball_type,season_start_year,season_end_year)
+values ('11111111-1111-1111-1111-111111111111','Missing former team','Example','Former League','First','mens',2020,2021);
+do $$ begin
+ if (select count(*) from public.historical_club_seasons where team_id='aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')<>2 then raise exception 'historical seasons not preserved'; end if;
+ if (select count(*) from public.historical_club_requests where status='pending')<>1 then raise exception 'request not pending'; end if;
+ begin
+ update public.historical_club_requests set status='resolved',resolved_snapshot_id='aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1';
+ raise exception 'self resolution allowed'; exception when insufficient_privilege then null; end;
+ begin
+ update public.historical_club_seasons set historical_name='Forged';
+ raise exception 'client altered historical identity'; exception when insufficient_privilege then null; end;
+ if has_table_privilege('authenticated','public.historical_club_provenance','SELECT') then raise exception 'private source access granted'; end if;
+end $$;
+select set_config('request.jwt.claim.sub','22222222-2222-2222-2222-222222222222',false);
+do $$ begin
+ if exists(select 1 from public.historical_club_requests) then raise exception 'private historical request leaked'; end if;
+end $$;
+reset role;
+set role anon;
+do $$ begin
+ if (select count(*) from public.historical_club_seasons)<>2 then raise exception 'archive not searchable'; end if;
+ if has_table_privilege('anon','public.historical_club_requests','SELECT') then raise exception 'anon request access'; end if;
+end $$;
+reset role;
