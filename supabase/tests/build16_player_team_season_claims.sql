@@ -189,3 +189,48 @@ do $$ begin
  if has_table_privilege('anon','public.historical_club_requests','SELECT') then raise exception 'anon request access'; end if;
 end $$;
 reset role;
+
+-- Attest only new eligible reviews after installing the candidate.
+\i supabase/candidates/build16_review_credibility_attestation_review_only.sql
+-- Fixture service role permissions mirror the existing server review reader.
+grant select on public.reviews,public.womens_team_reviews to service_role;
+update public.reviews set status='approved';
+update public.womens_team_reviews set status='approved' where player_season is not null;
+do $$ begin
+ if exists(select 1 from public.review_season_attestations) then raise exception 'legacy reviews backfilled'; end if;
+end $$;
+-- Verify another season and submit new men/women reviews as caller.
+update public.player_team_season_claims set verification_status='verified' where season_start_year=2022;
+insert into public.player_team_season_claims(player_id,womens_team_id,season_start_year,season_end_year,verification_status)
+ values ('11111111-1111-1111-1111-111111111111','bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',2022,2023,'verified');
+set role authenticated;
+select set_config('request.jwt.claim.sub','11111111-1111-1111-1111-111111111111',false);
+select set_config('fixture.paid','yes',false);
+insert into public.reviews(id,author_id,team_id,player_season,status)
+ values ('dddddddd-dddd-dddd-dddd-ddddddddddd1','11111111-1111-1111-1111-111111111111','aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa','2022-2023','pending');
+insert into public.womens_team_reviews(id,author_id,womens_team_id,player_season,status)
+ values ('dddddddd-dddd-dddd-dddd-ddddddddddd2','11111111-1111-1111-1111-111111111111','bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb','2022-2023','pending');
+do $$ begin
+ if has_table_privilege('authenticated','public.review_season_attestations','SELECT') or has_table_privilege('authenticated','public.review_season_attestations','INSERT') or has_table_privilege('authenticated','public.approved_review_season_attestations','SELECT') then raise exception 'client attestation privilege'; end if;
+ if has_function_privilege('authenticated','private.attest_exact_review_season()','EXECUTE') then raise exception 'client attestation trigger executable'; end if;
+end $$;
+reset role;
+do $$ begin
+ if (select count(*) from public.review_season_attestations)<>2 then raise exception 'missing new attestations'; end if;
+ if exists(select 1 from public.approved_review_season_attestations) then raise exception 'pending reviews labeled'; end if;
+ if has_table_privilege('anon','public.approved_review_season_attestations','SELECT') then raise exception 'anonymous projection exposed'; end if;
+end $$;
+update public.reviews set status='approved' where id='dddddddd-dddd-dddd-dddd-ddddddddddd1';
+update public.womens_team_reviews set status='approved' where id='dddddddd-dddd-dddd-dddd-ddddddddddd2';
+set role service_role;
+do $$ begin
+ if (select count(*) from public.approved_review_season_attestations)<>2 then raise exception 'approved verified projection missing'; end if;
+ if has_table_privilege('service_role','public.review_season_attestations','INSERT') then raise exception 'server can forge attestation'; end if;
+end $$;
+reset role;
+update public.player_team_season_claims set verification_status='revoked' where season_start_year=2022 and team_id is not null;
+set role service_role;
+do $$ begin
+ if (select count(*) from public.approved_review_season_attestations)<>1 or not exists(select 1 from public.approved_review_season_attestations where directory='womens-team') then raise exception 'revoked claim still labeled'; end if;
+end $$;
+reset role;
