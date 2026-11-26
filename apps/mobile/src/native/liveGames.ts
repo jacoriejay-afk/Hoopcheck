@@ -1,3 +1,4 @@
+import { readOutgoingBlocks } from "./accountBlocking";
 import { upcomingEntityGames, type ScheduleScope } from "./entitySchedule.ts";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { GAME_FUTURE_WINDOW_MS, GAME_PAST_WINDOW_MS } from "./gameFreshness.ts";
@@ -109,16 +110,17 @@ export async function readGameRoom(client: SupabaseClient, gameId: string, userI
   const timer = deadline();
   try {
     validId(gameId); validId(userId);
-    const [room, controls] = await Promise.all([
+    const [room, controls, globalBlocks] = await Promise.all([
       client.rpc("fan_live_chat_room_open", { p_game_id: gameId }).abortSignal(timer.signal),
       client.from("fan_live_chat_user_controls").select("target_user_id,is_blocked,is_muted").eq("user_id", userId).abortSignal(timer.signal),
+      readOutgoingBlocks(client,userId,timer.signal),
     ]);
     if (room.error || controls.error || typeof room.data !== "boolean") throw new Error("Chat access could not be verified.");
     if (!room.data) return { open: false, controls: [] as ChatControl[], messages: [] as ChatMessage[], names: {} as Record<string, string> };
     const result = await client.from("fan_live_chat_messages").select("id,body,created_at,user_id").eq("game_id", gameId).order("created_at", { ascending: false }).order("id", { ascending: false }).limit(200).abortSignal(timer.signal);
     if (result.error) throw new Error("Chat history could not load.");
     const blocked = new Set((controls.data ?? []).filter(row => row.is_blocked || row.is_muted).map(row => row.target_user_id));
-    const messages = ((result.data ?? []) as ChatMessage[]).filter(row => !blocked.has(row.user_id)).reverse();
+    const messages = ((result.data ?? []) as ChatMessage[]).filter(row => !blocked.has(row.user_id) && !globalBlocks.has(row.user_id)).reverse();
     const authorIds = [...new Set(messages.map(row => row.user_id))];
     const names: Record<string, string> = {};
     // Names are optional; missing profile visibility never expands access to the message body.
