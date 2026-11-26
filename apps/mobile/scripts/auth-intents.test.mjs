@@ -149,3 +149,15 @@ test('ID-token operations start a fresh intent and are superseded before executi
  const idToken=auth.signInWithIdToken();assert.notEqual(intents.read(),passwordIntent);
  const logout=auth.signOut();blocked.resolve();assert.ok((await previous).error);assert.ok((await idToken).error);assert.equal((await logout).error,null);assert.deepEqual(calls,['password','logout']);
 });
+
+
+test('native identity prompt cannot replace a newer session and is single-use',async()=>{
+ const intents=createAuthIntents(),calls=[];
+ const auth={signInWithPassword:async()=>{calls.push('password');return {error:null};},signInWithIdToken:async(value)=>{calls.push(value.token);return {error:null};},signOut:async()=>{calls.push('logout');return {error:null};},signUp:async()=>{},setSession:async()=>{},exchangeCodeForSession:async()=>{}};
+ bindAuthIntents(auth,intents);
+ const begin=auth[Symbol.for('hoopcheck.id-token-prompt')];
+ const stalePrompt=begin();await auth.signInWithPassword();assert.ok((await stalePrompt({token:'stale'})).error);
+ const currentPrompt=begin();assert.equal((await currentPrompt({token:'current'})).error,null);assert.ok((await currentPrompt({token:'duplicate'})).error);
+ const logoutPrompt=begin();await auth.signOut();assert.ok((await logoutPrompt({token:'late'})).error);
+ assert.deepEqual(calls,['password','current','logout']);
+});
