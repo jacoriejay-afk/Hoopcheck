@@ -8,7 +8,9 @@ import { ArenaBrand } from "../components/ArenaBrand";
 import { useEntryTheme, type EntryTheme } from "../src/theme";
 import { useEffect, useRef, useState } from "react";
 import { Alert, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { Link, useRouter } from "expo-router";
+import { Link, useLocalSearchParams, useRouter } from "expo-router";
+import { completePendingSignup, pendingSignup, type PendingSignup } from "../src/native/socialSignup";
+import { takeDestination } from "../src/native/pendingDestination";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase, supabaseConfigurationError } from "../src/lib/supabase";
 import UsernameField, { type UsernameFieldHandle } from "../components/UsernameField";
@@ -39,6 +41,45 @@ function ageAtDate(value: string): number {
 }
 
 export default function SignUpScreen() {
+  const { social } = useLocalSearchParams<{ social?: string }>();
+  const theme = useEntryTheme();
+  const router = useRouter();
+  const [identity, setIdentity] = useState<PendingSignup | null>(null);
+  const [checking, setChecking] = useState(true);
+  useEffect(() => {
+    if (social !== "1") return;
+    let active = true;
+    let expectedOwner: string | null = null;
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT" || (expectedOwner && session?.user.id !== expectedOwner)) {
+        active = false;
+        setIdentity(null);
+        setChecking(false);
+      }
+    });
+    void (async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error || !data.session) return;
+        expectedOwner = data.session.user.id;
+        const verified = await supabase.auth.getUser(data.session.access_token);
+        const current = await supabase.auth.getSession();
+        if (!active || verified.error || current.data.session?.user.id !== expectedOwner || verified.data.user?.id !== expectedOwner) return;
+        setIdentity(pendingSignup(verified.data.user));
+      } catch { /* Never expose the social form without a verified owner. */ }
+      finally { if (active) setChecking(false); }
+    })();
+    return () => { active = false; listener.subscription.unsubscribe(); };
+  }, [social]);
+  if (social !== "1") return <SignupForm key="email" />;
+  if (identity) return <SignupForm key={identity.owner} socialIdentity={identity} />;
+  return <SafeAreaView style={{ flex: 1, backgroundColor: theme.background, padding: 24, justifyContent: "center", gap: 14 }}>
+    <Text style={{ color: theme.foreground }}>{checking ? "Verifying your social account…" : "Sign in again to finish setting up your account."}</Text>
+    {!checking ? <Button onPress={() => router.replace("/sign-in")}>Return to sign in</Button> : null}
+  </SafeAreaView>;
+}
+
+function SignupForm({ socialIdentity }: { socialIdentity?: PendingSignup }) {
   const theme = useEntryTheme();
   const styles = createStyles(theme);
   const router = useRouter();
@@ -57,29 +98,30 @@ export default function SignUpScreen() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [accepted, setAccepted] = useState(false);
   const [busy, setBusy] = useState(false);
+  const submitting = useRef(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   async function createAccount() {
+    if (submitting.current) return;
     setErrorMessage("");
     if (supabaseConfigurationError) { setErrorMessage(supabaseConfigurationError); return; }
     if (firstName.trim().length < 2 || lastName.trim().length < 2) { setErrorMessage("Enter your first and last name."); return; }
-    const usernameCheck = await usernameFieldRef.current?.validate();
+    const usernameCheck = socialIdentity ? { valid: /^[a-zA-Z0-9_]{3,20}$/.test(username.trim()) } : await usernameFieldRef.current?.validate();
     if (!usernameCheck?.valid) { setErrorMessage("Username: " + (usernameCheck?.message || "Choose an available username.")); usernameFieldRef.current?.focus(); return; }
     if (!validBirthdate(birthdate)) { setErrorMessage("Enter a valid birthdate in YYYY-MM-DD format."); return; }
     if (ageAtDate(birthdate) < 18) { setErrorMessage("You must be 18 or older to create a HoopCheck account."); return; }
     if (!["male", "female", "non_binary", "prefer_not_to_say"].includes(gender)) { setErrorMessage("Select a gender option."); return; }
     if (accountType === "player" && !["PG", "SG", "SF", "PF", "C"].includes(position)) { setErrorMessage("Select your primary basketball position."); return; }
-    if (password.length < 6) { setErrorMessage("Password must be at least 6 characters."); return; }
-    if (password !== confirmPassword) { setErrorMessage("Passwords do not match."); return; }
+    if (!socialIdentity && password.length < 6) { setErrorMessage("Password must be at least 6 characters."); return; }
+    if (!socialIdentity && password !== confirmPassword) { setErrorMessage("Passwords do not match."); return; }
     if (!accepted) { setErrorMessage("Please agree to the Terms of Service and acknowledge the Privacy Policy and Community Guidelines."); return; }
 
+    if (submitting.current) return;
+    submitting.current = true;
     setBusy(true);
     try {
       const normalizedEmail = email.trim().toLowerCase();
-      const { data, error } = await supabase.auth.signUp({
-        email: normalizedEmail,
-        password,
-        options: { data: {
+      const metadata = {
           full_name: `${firstName.trim()} ${lastName.trim()}`,
           first_name: firstName.trim(),
           last_name: lastName.trim(),
@@ -97,8 +139,35 @@ export default function SignUpScreen() {
           agreed_to_terms: true,
           terms_accepted_at: new Date().toISOString(),
           terms_version: TERMS_VERSION,
-        } },
-      });
+      };
+      if (socialIdentity) {
+        const owner = await completePendingSignup(socialIdentity, metadata, {
+          session: async () => { const r = await supabase.auth.getSession(); if (r.error) throw r.error; return r.data.session; },
+          verifiedUser: async token => { const r = await supabase.auth.getUser(token); return r.error ? null : r.data.user; },
+          submit: async (rpc, token, signup) => {
+            // Pin the request to the verified owner instead of the mutable SDK session.
+            const origin = process.env.EXPO_PUBLIC_SUPABASE_URL?.trim();
+            const key = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim();
+            if (!origin || !key || supabaseConfigurationError) throw new Error("Missing account configuration.");
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 15000);
+            try {
+              const response = await fetch(new URL("/rest/v1/rpc/" + rpc, origin).href, {
+                method: "POST",
+                headers: { apikey: key, Authorization: "Bearer " + token, "Content-Type": "application/json" },
+                body: JSON.stringify({ signup }),
+                signal: controller.signal,
+              });
+              if (!response.ok) throw new Error("Account setup could not be completed. Check your username and details.");
+            } finally { clearTimeout(timer); }
+          },
+          refresh: async () => { const r = await supabase.auth.refreshSession(); if (r.error) throw r.error; return r.data.session; },
+        });
+        recordFreshSignIn(owner);
+        router.replace((takeDestination() ?? (nativeCareerClaimsEnabled && accountType === "player" ? "/account/career-history" : "/dashboard")) as "/dashboard");
+        return;
+      }
+      const { data, error } = await supabase.auth.signUp({ email: normalizedEmail, password, options: { data: metadata } });
       if (error) throw error;
       if (data.session) {
         recordFreshSignIn(data.session.user.id);
@@ -114,7 +183,7 @@ export default function SignUpScreen() {
       }
     } catch {
       setErrorMessage("Could not create the account. Please check your details and try again.");
-    } finally { setBusy(false); }
+    } finally { submitting.current = false; setBusy(false); }
   }
 
   return (
@@ -122,7 +191,7 @@ export default function SignUpScreen() {
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
           <ArenaBrand size={66} compact dark={theme.dark}/>
-          <Text style={[styles.title, { fontFamily: "HoopCheckDisplay", fontWeight: "400" }]}>Create your account</Text>
+          <Text style={[styles.title, { fontFamily: "HoopCheckDisplay", fontWeight: "400" }]}>{socialIdentity ? "Finish account setup" : "Create your account"}</Text>
           <Text style={styles.subtitle}>Join the basketball community. You must be 18 or older.</Text>
 
           <Text style={styles.label}>Account type</Text>
@@ -138,7 +207,7 @@ export default function SignUpScreen() {
           <Input placeholderTextColor={theme.muted} value={firstName} onChangeText={setFirstName} autoComplete="given-name" style={styles.input} placeholder="First name" />
           <Text style={styles.label}>Last name</Text>
           <Input placeholderTextColor={theme.muted} value={lastName} onChangeText={setLastName} autoComplete="family-name" style={styles.input} placeholder="Last name" />
-          <UsernameField ref={usernameFieldRef} value={username} onChange={setUsername} disabled={busy} />
+          {socialIdentity ? <><Text style={styles.label}>Username</Text><Input value={username} onChangeText={setUsername} autoCapitalize="none" autoCorrect={false} maxLength={20} placeholder="yourname" style={styles.input} /><Text style={styles.hint}>3–20 letters, numbers or underscores. Availability is checked when you submit.</Text></> : <UsernameField ref={usernameFieldRef} value={username} onChange={setUsername} disabled={busy} />}
           <Text style={styles.label}>Birthdate (YYYY-MM-DD)</Text>
           <Input placeholderTextColor={theme.muted} value={birthdate} onChangeText={setBirthdate} keyboardType="numbers-and-punctuation" placeholder="1990-04-23" style={styles.input} maxLength={10} />
           <Text style={styles.hint}>Your birthdate is used to enforce HoopCheck’s 18+ account requirement.</Text>
@@ -165,12 +234,14 @@ export default function SignUpScreen() {
             </>
           ) : null}
           {nativeCareerClaimsEnabled && accountType === "player" ? <Text style={styles.hint}>After creating your account, add your past teams and seasons privately. You can also do this later from Account. Claims require independent verification.</Text> : null}
+          {!socialIdentity ? <>
           <Text style={styles.label}>Email</Text>
           <Input placeholderTextColor={theme.muted} value={email} onChangeText={setEmail} autoCapitalize="none" autoComplete="email" keyboardType="email-address" style={styles.input} placeholder="you@example.com" />
           <Text style={styles.label}>Password</Text>
           <Input placeholderTextColor={theme.muted} value={password} onChangeText={setPassword} secureTextEntry autoComplete="new-password" style={styles.input} placeholder="At least 6 characters" />
           <Text style={styles.label}>Confirm password</Text>
           <Input placeholderTextColor={theme.muted} value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry autoComplete="new-password" style={styles.input} placeholder="Enter password again" />
+          </> : null}
 
           <Pressable onPress={() => setAccepted(!accepted)} accessibilityRole="checkbox" accessibilityState={{ checked: accepted }} style={styles.consent}>
             <View style={[styles.checkbox, accepted && styles.checkboxChecked]}><Text style={styles.checkmark}>{accepted ? "✓" : ""}</Text></View>
@@ -182,8 +253,8 @@ export default function SignUpScreen() {
             <Text onPress={() => Linking.openURL(`${LEGAL_BASE}/community-guidelines`)} style={styles.link}>Community Guidelines</Text>
           </View>
           {errorMessage ? <Text accessibilityRole="alert" style={styles.error}>{errorMessage}</Text> : null}
-          <Button onPress={createAccount} disabled={busy} style={[styles.button, busy && styles.dim]}><Text style={styles.buttonText}>{busy ? "Creating account…" : "Create account"}</Text></Button>
-          <Text style={styles.bottomText}>Already have an account? <Link href="/sign-in" style={styles.link}>Sign in</Link></Text>
+          <Button onPress={createAccount} disabled={busy} style={[styles.button, busy && styles.dim]}><Text style={styles.buttonText}>{busy ? "Creating account…" : socialIdentity ? "Complete account setup" : "Create account"}</Text></Button>
+          {socialIdentity ? <Button secondary disabled={busy} onPress={async () => { const r = await supabase.auth.getSession(); if (r.data.session?.user.id === socialIdentity.owner) await supabase.auth.signOut(); router.replace("/sign-in"); }}>Return to sign in</Button> : <Text style={styles.bottomText}>Already have an account? <Link href="/sign-in" style={styles.link}>Sign in</Link></Text>}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
