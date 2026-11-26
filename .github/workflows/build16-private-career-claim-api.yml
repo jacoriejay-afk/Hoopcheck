@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'app/api/career/claims/route.ts'
+      - 'components/CareerClaimIntake.tsx'
       - 'lib/career/**'
       - 'scripts/test-private-career-claim-api.mjs'
       - '.github/workflows/build16-private-career-claim-api.yml'
