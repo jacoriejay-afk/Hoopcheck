@@ -1,3 +1,6 @@
+import { nativeCareerClaimsEnabled } from "../src/native/careerClaims";
+import { consumeCareerSignup } from "../src/native/careerSignup";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { recordFreshSignIn } from "../src/native/lockPolicy";
 import { takeDestination } from "../src/native/pendingDestination";
 import { Input, Button } from "../src/primitives";
@@ -40,9 +43,15 @@ export default function SignInScreen() {
       if (error) throw error;
       if (!data.user) throw new Error("Sign-in did not return an account. Please try again.");
       stage = "profile";
-      const profile = data.user ? await supabase.from("profiles").select("username").eq("id", data.user.id).maybeSingle() : null;
+      const profile = data.user ? await supabase.from("profiles").select("username,account_type").eq("id", data.user.id).maybeSingle() : null;
       recordFreshSignIn(data.user.id);
-      router.replace((profile?.data && !profile.data.username?.trim() ? "/choose-username" : takeDestination() ?? "/dashboard") as "/dashboard");
+      if (nativeCareerClaimsEnabled && profile?.data?.account_type === "player" && profile.data.username?.trim() && await consumeCareerSignup(AsyncStorage, data.user.id)) {
+        const {data:{session}} = await supabase.auth.getSession();
+        if (session?.user.id !== data.user.id) return;
+        router.replace((takeDestination() ?? "/account/career-history") as "/account/career-history");
+      } else {
+        router.replace((profile?.data && !profile.data.username?.trim() ? "/choose-username" : takeDestination() ?? "/dashboard") as "/dashboard");
+      }
     } catch (error) {
       const detail = error instanceof Error ? error.message : "Please try again.";
       Alert.alert(stage === "authentication" ? "Authentication failed" : "Profile loading failed", detail);

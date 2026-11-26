@@ -15,7 +15,7 @@ function compile(path, imports, globals = {}) {
   return compiled.exports;
 }
 const theme = { radius: { control: 12 }, spacing: { lg: 16 }, roles: {}, entityHero: { background: "#111827", ink: "#FFFFFF", muted: "#E5E7EB" }, type: { display: {} } };
-function screen(path, { state = [], params = {}, segments = [], pathname = "/", configurationError = null, pendingDestination = null, fontsLoaded = true, supabase = {}, width = 393, fontScale = 1 } = {}) {
+function screen(path, { state = [], params = {}, segments = [], pathname = "/", configurationError = null, pendingDestination = null, fontsLoaded = true, supabase = {}, width = 393, fontScale = 1, careerEnabled = false, careerStorage = new Map() } = {}) {
   const calls = { push: [], replace: [], alerts: [], oauthUrls: [], freshSignIns: 0, remembered: [] };
   const effects = [];
   let slot = 0;
@@ -46,6 +46,9 @@ function screen(path, { state = [], params = {}, segments = [], pathname = "/", 
     if (name.endsWith("/native/sessionBootstrap")) return { createSessionBootstrap: () => ({ retry() {}, dispose() {} }) };
     if (name.endsWith("/native/lockPolicy")) return { recordFreshSignIn: () => { calls.freshSignIns++; } };
     if (name.endsWith("/native/pendingDestination")) return { takeDestination: () => pendingDestination, rememberDestination: value => calls.remembered.push(value) };
+    if (name.endsWith("/native/careerClaims")) return { nativeCareerClaimsEnabled: careerEnabled };
+    if (name.endsWith("/native/careerSignup")) return compile("src/native/careerSignup.ts", require);
+    if (name === "@react-native-async-storage/async-storage") return { __esModule: true, default: { getItem: async key => careerStorage.get(key) ?? null, setItem: async (key, value) => { careerStorage.set(key, value); }, removeItem: async key => { careerStorage.delete(key); } } };
     if (name === "react-native-gesture-handler") return { GestureHandlerRootView: "GestureHandlerRootView" };
     if (name === "@gorhom/bottom-sheet") return { BottomSheetModalProvider: "BottomSheetModalProvider" };
     if (name === "expo-splash-screen") return { preventAutoHideAsync: async () => {}, setOptions: () => {}, hideAsync: async () => {} };
@@ -118,6 +121,34 @@ test("password sign-in normalizes email and retains profile destination selectio
     assert.deepEqual(requests, [{ email: "player@example.com", password: "password" }]);
     assert.deepEqual(f.calls.replace, [destination]);
     assert.ok(f.nodes.some(n => n.type === "Input" && n.props.secureTextEntry));
+  }
+});
+
+test("career signup handoff preserves the role, identity, flag and pending-link gates", async () => {
+  const id = "11111111-1111-4111-8111-111111111111";
+  const otherId = "22222222-2222-4222-8222-222222222222";
+  const key = "hoopcheck:career-signup:v1:" + id;
+  for (const [careerEnabled, role, sessionId, pendingDestination, expected, consumed] of [
+    [true, "player", id, null, "/account/career-history", true],
+    [true, "player", id, "/teams/fixture", "/teams/fixture", true],
+    [true, "player", otherId, null, null, true],
+    [false, "player", id, null, "/dashboard", false],
+    [true, "fan", id, null, "/dashboard", false],
+  ]) {
+    const careerStorage = new Map([[key, String(Date.now())]]);
+    const f = screen("app/sign-in.tsx", {
+      careerEnabled, careerStorage, pendingDestination,
+      state: ["player@example.com", "password"],
+      supabase: {
+        from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { username: "fixture", account_type: role } }) }) }) }),
+        auth: { signInWithPassword: async () => ({ data: { user: { id } }, error: null }),
+          getSession: async () => ({ data: { session: { user: { id: sessionId } } } }) },
+      },
+    });
+    await f.nodes.find(n => n.type === "Button" && !n.props.secondary).props.onPress();
+    assert.deepEqual(f.calls.replace, expected ? [expected] : []);
+    assert.equal(careerStorage.has(key), !consumed);
+    assert.deepEqual(f.calls.alerts, []);
   }
 });
 
