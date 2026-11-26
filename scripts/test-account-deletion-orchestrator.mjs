@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { deletionSteps, runDeletionCandidate } from "../lib/server/account-deletion-orchestrator.ts";
+import { deletionSteps, runDeletionCandidate, createDeletionWorkerAdapter } from "../lib/server/account-deletion-orchestrator.ts";
 const lease={requestId:"11111111-1111-4111-8111-111111111111",ownerId:"22222222-2222-4222-8222-222222222222",fence:"33333333-3333-4333-8333-333333333333",policyVersion:"fixture-v1",completed:[]};
 function fixture(completed=[]){
  const events=[];let live=true;
@@ -35,4 +35,40 @@ test("lease loss prevents checkpoint, failure write and completion",async()=>{
 });
 test("invalid checkpoint sequence refuses all side effects",async()=>{
  const f=fixture(["delete_auth_identity"]);await assert.rejects(runDeletionCandidate(f.adapter),/Invalid deletion lease/);assert.deepEqual(f.events,[]);
+});
+
+test("database bridge is disabled without explicit configuration and complete effects",async()=>{
+ const prior=process.env.ACCOUNT_DELETION_WORKER_ENABLED;
+ try{
+  const calls=[];
+  const rpc={rpc:async(name,args)=>{calls.push([name,args]);return {data:[],error:null};}};
+  const effects=Object.fromEntries(deletionSteps.map(s=>[s,async()=>({confirmed:true,receipt:"fixture"})]));
+  delete process.env.ACCOUNT_DELETION_WORKER_ENABLED;
+  assert.equal(await runDeletionCandidate(createDeletionWorkerAdapter(rpc,effects,true)),"disabled");
+  process.env.ACCOUNT_DELETION_WORKER_ENABLED="true";
+  assert.equal(await runDeletionCandidate(createDeletionWorkerAdapter(rpc,{},true)),"disabled");
+  assert.equal(await runDeletionCandidate(createDeletionWorkerAdapter(rpc,effects,false)),"disabled");
+  assert.deepEqual(calls,[]);
+  assert.equal(await runDeletionCandidate(createDeletionWorkerAdapter(rpc,effects,true)),"idle");
+  assert.equal(calls[0][0],"claim_account_deletion_worker");
+ }finally{if(prior===undefined)delete process.env.ACCOUNT_DELETION_WORKER_ENABLED;else process.env.ACCOUNT_DELETION_WORKER_ENABLED=prior;}
+});
+test("bridge binds every transition to exact request owner and fence",async()=>{
+ const calls=[];
+ const rpc={rpc:async(name,args)=>{calls.push([name,args]);return {data:name==="claim_account_deletion_worker"?[{request_id:lease.requestId,owner_id:lease.ownerId,fence:lease.fence,policy_version:lease.policyVersion,completed:[]}]:true,error:null};}};
+ const effects=Object.fromEntries(deletionSteps.map(s=>[s,async(l,key)=>{assert.equal(l.ownerId,lease.ownerId);assert.equal(key,lease.requestId+":"+s);return{confirmed:true,receipt:"fixture"};}]));
+ const a=createDeletionWorkerAdapter(rpc,effects,true);
+ const claimed=await a.claim();
+ assert.deepEqual(claimed,lease);
+ await a.assertLease(claimed);await a.execute(claimed,"approve_scope",lease.requestId+":approve_scope");await a.checkpoint(claimed,"approve_scope","fixture");await a.complete(claimed);await a.fail(claimed,"step_not_confirmed");
+ for(const [name,args] of calls.slice(1)){assert.equal(args.p_request,lease.requestId,name);assert.equal(args.p_owner,lease.ownerId,name);assert.equal(args.p_fence,lease.fence,name);}
+});
+test("bridge rejects false acknowledgements, RPC errors and malformed claims",async()=>{
+ const a=createDeletionWorkerAdapter({rpc:async()=>({data:false,error:null})},{},true);
+ await assert.rejects(a.assertLease(lease),/not confirmed/);
+ await assert.rejects(a.claim(),/Invalid deletion claim/);
+ const b=createDeletionWorkerAdapter({rpc:async()=>({data:true,error:{message:"private details"}})},{},true);
+ await assert.rejects(b.complete(lease),/database acknowledgement failed/);
+ const c=createDeletionWorkerAdapter({rpc:async()=>({data:[{request_id:lease.requestId,owner_id:lease.ownerId,fence:lease.fence,policy_version:lease.policyVersion,completed:["delete_auth_identity"]}],error:null})},{},true);
+ await assert.rejects(c.claim(),/Invalid deletion claim/);
 });
