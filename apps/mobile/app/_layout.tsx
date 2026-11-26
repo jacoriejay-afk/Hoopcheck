@@ -70,7 +70,7 @@ function RootLayout() {
     if (!sessionReady || segments[0] === "about") return;
     const currentRoute = segments[0] ?? "";
     const inAppArea = ["dashboard", "team-hub", "fan-live", "notifications", "messages", "feed-welcome", "hoopgroups", "feed", "fan-feed", "reels", "account", "search", "teams", "womens", "leagues", "players", "coaches", "choose-username", "settings", "membership"].includes(currentRoute);
-    if (["web", "sign-in", "sign-up", "forgot-password"].includes(currentRoute)) return;
+    if (["web", "legal", "sign-in", "sign-up", "forgot-password"].includes(currentRoute)) return;
     const onPasswordRecovery = currentRoute === "reset-password";
     // Let the OAuth callback exchange its PKCE code and choose the destination.
     const onAuthCallback = currentRoute === "auth";
@@ -129,6 +129,7 @@ function RootLayout() {
         <Stack.Screen name="account/ambassador-hq" options={{ title: "Ambassador HQ" }} />
         <Stack.Screen name="settings" options={{ title: "Settings" }} />
         <Stack.Screen name="web" options={{ title: "HoopCheck" }} />
+        <Stack.Screen name="legal" options={{ title: "HoopCheck Legal" }} />
         <Stack.Screen name="index" options={{ title: "HoopCheck™", headerShown: false }} />
         <Stack.Screen name="sign-in" options={{ headerShown: false }} />
         <Stack.Screen name="auth/callback" options={{ title: "Signing in" }} />
