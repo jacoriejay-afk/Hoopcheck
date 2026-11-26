@@ -4,7 +4,7 @@ import {supabase} from "../lib/supabase";
 import {parseCareerSeason} from "../lib/career/claim-input";
 
 type Club={id:string;team_id:string|null;womens_team_id:string|null;historical_name:string;historical_league:string;historical_division:string|null;historical_country:string;club_state:string};
-type Saved={id:string;season_start_year:number;season_end_year:number;verification_status:string;team_id:string|null;womens_team_id:string|null};
+type Saved={id:string;season_start_year:number;season_end_year:number;verification_status:string;team_id:string|null;womens_team_id:string|null;historicalClub?:{name:string;league:string;division:string|null;country:string}|null};
 type Missing={id:string;historical_name:string;season_start_year:number;season_end_year:number;status:string};
 type History={claims:Saved[];missingClubs:Missing[];hasMore:boolean};
 export const careerIntakeEnabled=process.env.NEXT_PUBLIC_HOOPCHECK_CAREER_CLAIMS_ENABLED==="true";
@@ -72,6 +72,6 @@ export default function CareerClaimIntake({userId,initialCategory="mens"}:{userI
   {busy&&<p role="status">Working…</p>}{error&&<p role="alert">{error}</p>}{message&&<p role="status">{message}</p>}
   <h2>Saved career claims</h2>
   {historyError&&<><p role="alert">{historyError}</p><button className="btn dark" type="button" onClick={()=>void refresh()}>Retry history</button></>}
-  {history&&<>{!history.claims.length&&!history.missingClubs.length&&<p>No claims yet.</p>}{history.claims.map(row=><p key={row.id}>{seasonLabel(row)} · {row.womens_team_id?"Women’s":"Men’s"} team · {row.verification_status}</p>)}{history.missingClubs.map(row=><p key={row.id}>{row.historical_name} · {seasonLabel(row)} · {row.status}</p>)}{history.hasMore&&<p>Showing the most recent claims and requests.</p>}</>}
+  {history&&<>{!history.claims.length&&!history.missingClubs.length&&<p>No claims yet.</p>}{[...history.claims].sort((a,b)=>b.season_start_year-a.season_start_year||b.season_end_year-a.season_end_year).map(row=><div key={row.id}><strong>{row.historicalClub?.name||"Historical club name unavailable"}</strong><p className="muted">{[seasonLabel(row),row.womens_team_id?"Women’s":"Men’s",row.historicalClub?.league,row.historicalClub?.division,row.historicalClub?.country,row.verification_status].filter(Boolean).join(" · ")}</p></div>)}{history.missingClubs.map(row=><p key={row.id}>{row.historical_name} · {seasonLabel(row)} · {row.status}</p>)}{history.hasMore&&<p>Showing the most recent claims and requests.</p>}</>}
  </section>;
 }
