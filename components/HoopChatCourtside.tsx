@@ -1,4 +1,5 @@
 "use client";
+import PlayerReferencePanel from "./PlayerReferencePanel";
 
 import {useCallback,useEffect,useMemo,useRef,useState,type FormEvent,type UIEvent} from "react";
 import Link from "next/link";
@@ -368,6 +369,7 @@ export default function HoopChatCourtside(){
         </div>
         {feedback&&<p className="hc-courtside-feedback" role="status">{feedback}</p>}
         {selected.status==="accepted"?<div className="hc-courtside-bottom">
+          {process.env.NEXT_PUBLIC_HOOPCHECK_PLAYER_REFERENCES_ENABLED==="true"&&userId?<PlayerReferencePanel key={userId+":"+selected.id} userId={userId} connectionId={selected.id}/>:null}
           <div className="hc-courtside-starters"><span>PLAYBOOK</span>
             {STARTERS.map(starter=><button type="button" key={starter.key} onClick={()=>applyStarter(starter.message)}
               title="Insert a suggestion into your draft; nothing sends automatically">{starter.emoji} {starter.label}</button>)}</div>
