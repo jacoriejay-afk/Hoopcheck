@@ -44,3 +44,12 @@ test("route enforces caller identity and pending-only writes",async()=>{
   for(const table of ["player_team_season_claims","historical_club_requests"])assert.ok(calls.some(x=>x[0]==="eq"&&x[1]===table&&x[2]==="player_id"&&x[3]==="own-player"));
  }finally{for(const k of vars)if(old[k]===undefined)delete process.env[k];else process.env[k]=old[k];delete globalThis.__careerClaimsMock;}
 });
+
+test("web private career intake clears and hides drafts on identity change",()=>{
+ const source=readFileSync(new URL("../components/CareerClaimIntake.tsx",import.meta.url),"utf8");
+ assert.match(source,/session\?\.user\.id!==userId\)\{active\.current=false;sessionVersion\.current\+\+;setSessionInvalidated\(true\)/);
+ assert.match(source,/after\?\.user\.id!==userId/);
+ assert.match(source,/setName\(""\);setSeason\(""\);setCountry\(""\)/);
+ assert.match(source,/if\(sessionInvalidated\)return <p/);
+ assert.match(source,/if\(!active\.current\)return;lock\.current=true/);
+});
