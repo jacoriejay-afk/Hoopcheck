@@ -36,3 +36,19 @@ test('malformed ratings and review bodies never reach the native view', async ()
   const result = await readReviewAccess('https://sandbox.example', 'test-token', id, undefined, async () => Response.json({ canReadFull: true, canWrite: true, reviews: [review, { ...review, overall_rating: 999 }, { ...review, body: { private: true } }, null] }));
   assert.deepEqual(result.reviews, [review]);
 });
+
+test('coach reviews use exact coach target and remain gated by server membership', async () => {
+  let seen;
+  const result=await readReviewAccess('https://sandbox.example','fixture-token',id,undefined,async (url,init)=>{
+    seen=new URL(url);assert.equal(init.headers.Authorization,'Bearer fixture-token');
+    return Response.json({canReadFull:false,canWrite:false,reviews:[review]});
+  },'coach');
+  assert.equal(seen.searchParams.get('entityType'),'coach');
+  assert.equal(seen.searchParams.get('entityId'),id);
+  assert.deepEqual(result.reviews,[]);
+  const allowed=await readReviewAccess('https://sandbox.example','fixture-token',id,undefined,async()=>Response.json({canReadFull:true,canWrite:true,reviews:[{...review,author_id:'private'}]}),'coach');
+  assert.deepEqual(allowed.reviews,[review]);
+  let called=false;
+  await assert.rejects(readReviewAccess('https://sandbox.example','fixture-token',id,undefined,async()=>{called=true;},'invalid'));
+  assert.equal(called,false);
+});
