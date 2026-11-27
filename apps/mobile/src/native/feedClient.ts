@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { cleanExploreSearch, exploreFilters, matchesFeedExplore, type ExploreFilter, type ExploreTarget } from "./feedExplore.ts";
 export const FEED_PAGE_SIZE = 20;
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const isFeedId = (value: string) => uuid.test(value);
@@ -14,8 +15,8 @@ function apiUrl(origin: string, path: string) {
 function validCursor(cursor: FeedCursor) {
   return uuid.test(cursor.id) && /^\d{4}-\d{2}-\d{2}T[\d:.]+(?:Z|[+-]\d\d:\d\d)$/.test(cursor.created_at) && Number.isFinite(Date.parse(cursor.created_at));
 }
-function readablePosts(client: SupabaseClient, now: Date) {
-  return client.from("feed_posts").select("id,author_id,body,image_url,image_urls,video_url,post_kind,post_location,poll_options,created_at,expires_at,profiles:profiles!feed_posts_author_id_fkey(display_name,account_type,avatar_url,avatar_moderation_status)").eq("status", "approved").or(`expires_at.is.null,expires_at.gt.${now.toISOString()}`);
+function readablePosts(client: SupabaseClient, now: Date, creatorSearch = false) {
+  return client.from("feed_posts").select("id,author_id,body,image_url,image_urls,video_url,post_kind,post_location,poll_options,created_at,expires_at,profiles:profiles!feed_posts_author_id_fkey" + (creatorSearch ? "!inner" : "") + "(display_name,account_type,avatar_url,avatar_moderation_status)").eq("status", "approved").or(`expires_at.is.null,expires_at.gt.${now.toISOString()}`);
 }
 export async function readSharedFeedPost(client: SupabaseClient, userId: string, postId: string, now = new Date()): Promise<FeedPost | null> {
   if (!uuid.test(userId) || !uuid.test(postId)) throw new Error("Invalid shared post");
@@ -43,6 +44,50 @@ export async function readFeedPage(client: SupabaseClient, userId: string, curso
   const archived = new Set((archiveResult.data ?? []).map(row => row.post_id));
   const posts = page.filter(row => !archived.has(row.id) && (!row.expires_at || (Number.isFinite(Date.parse(row.expires_at)) && Date.parse(row.expires_at) > now.getTime()))).map(row => ({ ...row, profiles: Array.isArray(row.profiles) ? row.profiles[0] ?? null : row.profiles }));
   return { posts, next: rows.length > FEED_PAGE_SIZE ? { id: page[page.length - 1].id, created_at: page[page.length - 1].created_at } : null };
+}
+
+/** Search all RLS-visible posts with stable keyset paging and a fixed viewer token. */
+export async function readExploreFeedPage(client: SupabaseClient, userId: string, filter: ExploreFilter, search: string, target: ExploreTarget, cursor?: FeedCursor, now = new Date()) {
+  if (!uuid.test(userId) || (cursor && !validCursor(cursor)) || !exploreFilters.includes(filter) || !["posts","creators"].includes(target)) throw new Error("Invalid Explore request");
+  const clean = cleanExploreSearch(search);
+  const terms = clean.split(" ").filter(Boolean);
+  const initial = await client.auth.getSession();
+  if (initial.error || initial.data.session?.user.id !== userId) throw new Error("Sign in again to explore");
+  const token = initial.data.session.access_token, header = "Bearer " + token;
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      (async () => {
+        let query = readablePosts(client, now, target === "creators" && terms.length > 0)
+          .order("created_at",{ascending:false}).order("id",{ascending:false}).limit(FEED_PAGE_SIZE + 1)
+          .setHeader("Authorization",header).abortSignal(controller.signal);
+        if (filter === "polls") query = query.eq("post_kind","poll");
+        if (filter === "discussion") query = query.eq("post_kind","discussion");
+        if (filter === "media") query = query.or("image_url.not.is.null,video_url.not.is.null,image_urls.not.is.null");
+        for (const term of terms) query = query.ilike(target === "creators" ? "profiles.display_name" : "body", "%" + term + "%");
+        if (cursor) query = query.or(`created_at.lt.${cursor.created_at},and(created_at.eq.${cursor.created_at},id.lt.${cursor.id})`);
+        const result = await query;
+        if (result.error || !Array.isArray(result.data)) throw new Error("Explore unavailable");
+        const rows = result.data as unknown as FeedPost[];
+        if (rows.length > FEED_PAGE_SIZE + 1 || rows.some(row => !validCursor(row) || !uuid.test(row.author_id)) || new Set(rows.map(row=>row.id)).size !== rows.length) throw new Error("Invalid Explore response");
+        const page = rows.slice(0,FEED_PAGE_SIZE);
+        const [archives,blocks] = await Promise.all([
+          page.length ? client.from("feed_post_archives").select("post_id").eq("user_id",userId).in("post_id",page.map(row=>row.id)).setHeader("Authorization",header).abortSignal(controller.signal) : Promise.resolve({data:[],error:null}),
+          client.from("user_blocks").select("blocked_id").eq("blocker_id",userId).limit(501).setHeader("Authorization",header).abortSignal(controller.signal),
+        ]);
+        if (archives.error || blocks.error || !Array.isArray(archives.data) || !Array.isArray(blocks.data) || blocks.data.length > 500 || blocks.data.some(row=>!uuid.test(row.blocked_id))) throw new Error("Explore access could not be verified");
+        const hidden = new Set(archives.data.map(row=>row.post_id)), blocked = new Set(blocks.data.map(row=>row.blocked_id));
+        const posts = page.filter(row=>!hidden.has(row.id)&&!blocked.has(row.author_id)&&(!row.expires_at||(Number.isFinite(Date.parse(row.expires_at))&&Date.parse(row.expires_at)>now.getTime())))
+          .map(row=>({...row,profiles:Array.isArray(row.profiles)?row.profiles[0]??null:row.profiles}))
+          .filter(row=>matchesFeedExplore(row,filter,clean,target));
+        const current = await client.auth.getSession();
+        if (controller.signal.aborted || current.error || current.data.session?.user.id !== userId || current.data.session.access_token !== token) throw new Error("Account changed. Refresh Explore");
+        return {posts,next:rows.length>FEED_PAGE_SIZE?{id:page[page.length-1].id,created_at:page[page.length-1].created_at}:null};
+      })(),
+      new Promise<never>((_,reject)=>{timer=setTimeout(()=>{controller.abort();reject(new Error("Explore did not finish loading"));},12000);}),
+    ]);
+  } finally { clearTimeout(timer); }
 }
 
 /** Saved library cursor is the bookmark's creation time and post ID, not the post's creation time. */

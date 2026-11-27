@@ -16,6 +16,7 @@ test("report and block require membership, current message and verified fixed be
     assert.match(action,/const token=await safetyToken\(\)/);
     assert.match(action,/\.setHeader\("Authorization", "Bearer "\+token\)/);
     assert.match(action,/catch\(failure\)/);
-    assert.match(action,/finally\{setBusy\(false\);\}/);
+    assert.match(action,/if\(mutationLocked.current\)return/);
+    assert.match(action,/finally\{mutationLocked.current=false;setBusy\(false\);\}/);
   }
 });

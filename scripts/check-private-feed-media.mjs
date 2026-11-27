@@ -100,9 +100,9 @@ test("HoopFeed signs nested reshares against the original uploader under viewer 
   const videoPath = author + "/" + objectId + ".mp4";
   const video = "hoopfeed-private-videos/" + videoPath;
   const records = new Map([
-    [postId, { author_id: team, video_url: video, shared_post_id: middleId }],
-    [middleId, { author_id: team, video_url: video, shared_post_id: originalId }],
-    [originalId, { author_id: author, video_url: video, shared_post_id: null }],
+    [postId, { author_id: team, video_url: video, shared_post_id: middleId, expires_at: null }],
+    [middleId, { author_id: team, video_url: video, shared_post_id: originalId, expires_at: null }],
+    [originalId, { author_id: author, video_url: video, shared_post_id: null, expires_at: null }],
   ]);
   const signed = [];
   const route = load("app/api/hoopfeed/media/route.ts", id => {
@@ -152,4 +152,18 @@ test("HoopFeed signs nested reshares against the original uploader under viewer 
   assert.deepEqual(signed, []);
   assert.equal((await route.POST(request("allowed"))).status, 200);
   assert.deepEqual(signed, [{ bucket: "hoopfeed-private-videos", path: videoPath, ttl: 60 }]);
+  // Check all ancestors independently, even if a fixture returns an expired row.
+  records.get(originalId).expires_at = new Date(Date.now() + 30000).toISOString();
+  records.get(middleId).expires_at = new Date(Date.now() + 20000).toISOString();
+  const bounded = await route.POST(request("allowed"));
+  assert.equal(bounded.status, 200);
+  const { expires_in } = await bounded.json();
+  assert.ok(expires_in >= 1 && expires_in <= 15);
+  assert.equal(signed.at(-1).ttl, expires_in);
+  const before = signed.length;
+  for (const value of ["not-a-date", new Date(Date.now() - 1000).toISOString(), new Date(Date.now() + 1000).toISOString()]) {
+    records.get(middleId).expires_at = value;
+    assert.equal((await route.POST(request("allowed"))).status, 404);
+  }
+  assert.equal(signed.length, before);
 });

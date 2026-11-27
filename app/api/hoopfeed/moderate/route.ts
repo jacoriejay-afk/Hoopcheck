@@ -311,7 +311,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ allowed: true });
     }
 
-    // Re-share any approved community post.
+    // Re-share permanent approved community posts only.
     // The source has already passed moderation; new user-authored content still uses moderate().
     if (kind === "share") {
       if (!viewerDb) return NextResponse.json({ allowed: false, message: "Post unavailable." }, { status: 404 });
@@ -324,7 +324,7 @@ export async function POST(request: Request) {
         console.error("HoopFeed share source lookup failed", { sourceId, code: sourceError.code });
         return NextResponse.json({ allowed: false, message: "Couldn't share — try again." }, { status: 500 });
       }
-      if (!source || source.status !== "approved" || (source.expires_at && Date.parse(source.expires_at) <= Date.now())) {
+      if (!source || source.status !== "approved" || source.expires_at !== null) {
         return NextResponse.json({ allowed: false, message: "This post is no longer available and can't be shared." }, { status: 404 });
       }
       if (source.post_kind === "poll") {
@@ -354,13 +354,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ allowed: false, message: "Invalid post type." }, { status: 400 });
     }
     const submittedKind = kind === "post" && typeof postKindValues[0] === "string" ? postKindValues[0].trim() : "discussion";
-    if (kind === "post" && !["discussion", "poll", "news"].includes(submittedKind)) {
+    if (kind === "post" && !["discussion", "poll", "news", "story"].includes(submittedKind)) {
       return NextResponse.json({ allowed: false, message: "Choose a valid post type." }, { status: 400 });
     }
     if (kind === "post" && submittedKind === "news" && !isAdmin) {
       return NextResponse.json({ allowed: false, message: "Only HoopCheck administrators can publish official news." }, { status: 403 });
     }
-    const postKind = kind !== "post" ? "discussion" : submittedKind === "news" ? "news" : submittedKind === "poll" ? "poll" : "discussion";
+    const isStory = kind === "post" && submittedKind === "story";
+    if (isStory) {
+      if (process.env.HOOPCHECK_PHOTO_STORIES_ENABLED !== "true") {
+        return NextResponse.json({ allowed: false, message: "Photo Stories are not available yet." }, { status: 403 });
+      }
+      // Pilot uses only the existing follower-scoped read boundary. No public
+      // audience, custom visibility, video, location, tags or client expiry.
+      const audience = form.getAll("audience");
+      if (!viewerDb || audience.length !== 1 || audience[0] !== "followers" || allImages.length !== 1 || videoPath ||
+          ["expires_at", "poll_options", "post_location", "post_country", "share_country", "topic_tag", "club_id", "womens_club_id", "league_id", "womens_league_id"].some(field => form.has(field))) {
+        return NextResponse.json({ allowed: false, message: "Choose one photo for a follower-only Story, without location or tags." }, { status: 400 });
+      }
+    }
+    const postKind = kind !== "post" ? "discussion" : isStory ? "story" : submittedKind === "news" ? "news" : submittedKind === "poll" ? "poll" : "discussion";
     let pollOptions: string[] | null = null;
     if (kind === "post" && postKind === "poll") {
       const pollOptionValues = form.getAll("poll_options");
@@ -493,6 +506,8 @@ export async function POST(request: Request) {
     if (videoPath) video_url = videoPath;
     const shareCountry = String(form.get("share_country") || "false") === "true";
     const submittedCountry = String(form.get("post_country") || "").trim().slice(0, 100);
+    const storyCreatedAt = isStory ? new Date() : null;
+    const storyExpiresAt = storyCreatedAt ? new Date(storyCreatedAt.getTime() + 24 * 60 * 60 * 1000).toISOString() : null;
     const { error } = await db.from("feed_posts").insert({
       author_id:user.id, body:text || " ", image_url, image_urls, video_url, post_kind:postKind, poll_options:pollOptions,
       topic_tag: submittedTopicTag ? submittedTopicTag : null,
@@ -501,10 +516,10 @@ export async function POST(request: Request) {
       game_day_score_for: submittedTopicTag === "Game Day" ? scoreFor : null,
       game_day_score_against: submittedTopicTag === "Game Day" ? scoreAgainst : null,
       location_country:shareCountry && profile?.current_country_public !== false ? (submittedCountry || profile?.current_country || null) : null,
-      ...(form.get("audience") === "community" ? { community_visible: true } : {}),
+      ...(isStory ? { community_visible: false, created_at: storyCreatedAt!.toISOString() } : form.get("audience") === "community" ? { community_visible: true } : {}),
       ...(location ? { post_location: location } : {}),
       ...(tag ? { [tag.column]: tag.id } : {}),
-      status:"approved", expires_at:null
+      status:"approved", expires_at:storyExpiresAt
     });
     if (error) {
       await cleanupUploadedImages();
@@ -513,7 +528,7 @@ export async function POST(request: Request) {
     const activityDate = new Date().toISOString().slice(0, 10);
     const { error: activityError } = await db.from("feed_posting_activity").upsert({ user_id: user.id, activity_date: activityDate }, { onConflict: "user_id,activity_date", ignoreDuplicates: true });
     if (activityError) console.error("HoopFeed posting streak activity could not be recorded:", activityError.message);
-    return NextResponse.json({ allowed:true });
+    return NextResponse.json(isStory ? { allowed:true, story_expires_at:storyExpiresAt } : { allowed:true });
   } catch (error: any) {
     console.error("HoopFeed moderation request failed:", error);
     return NextResponse.json({ allowed:false,message:"Safety moderation failed. Your content was not published." },{status:500});

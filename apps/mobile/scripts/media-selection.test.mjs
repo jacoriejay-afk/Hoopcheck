@@ -4,13 +4,13 @@ import { readFileSync } from 'node:fs';
 import ts from 'typescript';
 import { readWithDeadline } from '../src/native/readDeadline.ts';
 function native(overrides={}) {
- const calls=[];let fileSize=500,permission={granted:true};
+ const calls=[];let fileSize=500,permission={granted:true},saveIndex=0;
  const image={uri:'file:///private/image.jpg',width:4000,height:3000};
  const stubs={
   'react-native':{Platform:{OS:'ios'}},
   'expo-image-picker':{VideoExportPreset:{MediumQuality:2,HighestQuality:3},launchImageLibraryAsync:async options=>{calls.push(['picker',options]);return {canceled:false,assets:[image]};},requestMediaLibraryPermissionsAsync:async()=>permission},
-  'expo-image-manipulator':{SaveFormat:{JPEG:'jpeg'},ImageManipulator:{manipulate:()=>({rotate:value=>calls.push(['rotate',value]),crop:value=>calls.push(['crop',value]),resize:value=>calls.push(['resize',value]),release:()=>calls.push(['release-context']),renderAsync:async()=>({saveAsync:async options=>{calls.push(['save',options]);return {...image,width:720,height:720};},release:()=>calls.push(['release-image'])})})}},
-  'expo-file-system':{File:class{get size(){return fileSize;}get exists(){return true;}}},
+  'expo-image-manipulator':{SaveFormat:{JPEG:'jpeg'},ImageManipulator:{manipulate:()=>({rotate:value=>calls.push(['rotate',value]),crop:value=>calls.push(['crop',value]),resize:value=>calls.push(['resize',value]),release:()=>calls.push(['release-context']),renderAsync:async()=>({saveAsync:async options=>{calls.push(['save',options]);return {...image,uri:"file:///private/generated-"+(++saveIndex)+".jpg",width:720,height:720};},release:()=>calls.push(['release-image'])})})}},
+  'expo-file-system':{File:class{constructor(uri){this.uri=uri;}get size(){return fileSize;}get exists(){return true;}delete(){calls.push(['delete',this.uri]);}}},
   'expo-file-system/legacy':{FileSystemUploadType:{BINARY_CONTENT:0},FileSystemSessionType:{FOREGROUND:1}},
   './readDeadline':{readWithDeadline},...overrides,
  };
@@ -30,7 +30,7 @@ test('oversized or remote images fail before decoding and rotations resize the r
  await f.api.preparePhoto(f.image,false,true);assert.deepEqual(f.calls.find(c=>c[0]==='rotate'),['rotate',90]);assert.deepEqual(f.calls.find(c=>c[0]==='resize')[1],{height:1920});
 });
 test('failed compression is bounded and releases native references',async()=>{
- const f=native();f.setSize(800000);await assert.rejects(f.api.preparePhoto(f.image),/smaller/);assert.equal(f.calls.filter(c=>c[0]==='save').length,3);assert.ok(f.calls.some(c=>c[0]==='release-image'));assert.ok(f.calls.some(c=>c[0]==='release-context'));
+ const f=native();f.setSize(800000);await assert.rejects(f.api.preparePhoto(f.image),/smaller/);assert.equal(f.calls.filter(c=>c[0]==='save').length,3);assert.ok(f.calls.some(c=>c[0]==='release-image'));assert.ok(f.calls.some(c=>c[0]==='release-context'));assert.deepEqual(f.calls.filter(c=>c[0]==='delete').map(c=>c[1]),['file:///private/generated-1.jpg','file:///private/generated-2.jpg','file:///private/generated-3.jpg']);assert.ok(!f.calls.some(c=>c[0]==='delete'&&c[1]===f.image.uri));
 });
 test('library denial never opens a video picker; limited access and cancellation are supported',async()=>{
  let picked=0;
@@ -125,4 +125,17 @@ test('video selection and capture request highest supported quality without remo
  assert.equal((await f.api.chooseVideo()).type,'video/quicktime');assert.equal(options.videoExportPreset,3);
  await f.api.captureVideo();assert.equal(options.videoQuality,0);assert.equal(options.videoMaxDuration,60);
  f.setSize(51*1024*1024);await assert.rejects(f.api.chooseVideo(),/50 MB/);
+});
+
+test('successful output is retained and rejected same-URI output never deletes original',async()=>{
+ const f=native();const result=await f.api.preparePhoto(f.image);assert.equal(result.uri,'file:///private/generated-1.jpg');assert.equal(f.calls.filter(c=>c[0]==='delete').length,0);
+ const source='file:///private/source.jpg';let deletes=0;
+ const x=native({'expo-image-manipulator':{SaveFormat:{JPEG:'jpeg'},ImageManipulator:{manipulate:()=>({resize:()=>{},release:()=>{},renderAsync:async()=>({saveAsync:async()=>({uri:source,width:1920,height:1440}),release:()=>{}})})}},'expo-file-system':{File:class{get size(){return 800000;}get exists(){return true;}delete(){deletes++;}}}});
+ await assert.rejects(x.api.preparePhoto({uri:source,width:4000,height:3000}),/smaller/);assert.equal(deletes,0);
+});
+test('library video rejects known invalid or over-limit duration before upload',async()=>{
+ let duration=180001;
+ const f=native({'expo-image-picker':{VideoExportPreset:{HighestQuality:3},requestMediaLibraryPermissionsAsync:async()=>({granted:true}),launchImageLibraryAsync:async()=>({canceled:false,assets:[{uri:'file:///private/clip.mov',mimeType:'video/quicktime',duration}]})}});
+ for(const value of [180001,0,-1,NaN]){duration=value;await assert.rejects(f.api.chooseVideo(),/3 minutes/);}
+ duration=180000;assert.equal((await f.api.chooseVideo()).type,'video/quicktime');
 });

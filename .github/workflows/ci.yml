@@ -242,6 +242,9 @@ jobs:
       - name: Verify public business inquiry security invariants
         run: node --test scripts/check-public-business-inquiries.mjs
 
+      - name: Verify evidence file signature and download safety
+        run: node --test scripts/test-evidence-file.mjs
+
       - name: Verify all HoopFeed photos are moderated before upload
         run: node --test scripts/check-hoopfeed-moderation.mjs
 

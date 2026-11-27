@@ -45,6 +45,14 @@
           "microphonePermission": "Allow HoopCheck to record audio with videos you choose to capture."
         }
       ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow HoopCheck to take basketball photos and record videos when you choose to capture media.",
+          "microphonePermission": "Allow HoopCheck to record audio with videos you choose to capture.",
+          "recordAudioAndroid": true
+        }
+      ],
       "expo-apple-authentication"
     ],
     "experiments": {

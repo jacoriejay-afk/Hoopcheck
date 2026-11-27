@@ -38,3 +38,15 @@ test("group visuals come from approved fixed choices, not unmoderated image URLs
   assert.match(groups,/managing\?"Close group settings":"Manage group appearance"/);
   assert.doesNotMatch(groups,/upload.*banner|banner_url|cover_url/i);
 });
+
+test("group read and mutation requests pin the verified caller token and serialize writes",()=>{
+ const groups=read("../components/HoopGroupsChannels.tsx");
+ const catalog=groups.slice(groups.indexOf("async function load()"),groups.indexOf("void load();"));
+ assert.match(catalog,/const token=await safetyToken\(\)/);assert.equal((catalog.match(/setHeader\("Authorization",header\)/g)||[]).length,3);
+ assert.match(catalog,/current!==token/);assert.match(catalog,/controller.signal.aborted/);
+ for(const name of ["join","createGroup","saveGroup","leaveGroup","createChannel","send","report","block"]){
+  const start=groups.indexOf("async function "+name+"(");const end=groups.indexOf("\n  }",start);const body=groups.slice(start,end);
+  assert.match(body,/if\(mutationLocked.current\)return/);assert.match(body,/const token=await safetyToken\(\)/);assert.match(body,/setHeader\("Authorization",\s*"Bearer "\+token\)/);assert.match(body,/finally\{mutationLocked.current=false/);
+ }
+ assert.doesNotMatch(groups,/service_role/);
+});
