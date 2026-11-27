@@ -1,25 +1,24 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { normalizeThemePreference, usesDarkPalette, type ThemePreference } from "../lib/theme-preference";
 
-export type ThemePreference = "system" | "light" | "dark";
+export type { ThemePreference } from "../lib/theme-preference";
 type ThemeContextValue = { theme: ThemePreference; setTheme: (theme: ThemePreference) => void };
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
-const normalizeTheme = (value: string | null | undefined): ThemePreference =>
-  value === "dark" || value === "light" || value === "system" ? value : value === "dynamic" ? "dark" : "system";
-
 function readThemeCookie(): ThemePreference | null {
   const match = document.cookie.match(/(?:^|;\s*)hoopcheck-theme=([^;]+)/);
   if (!match) return null;
-  try { return normalizeTheme(decodeURIComponent(match[1])); } catch { return normalizeTheme(match[1]); }
+  try { return normalizeThemePreference(decodeURIComponent(match[1])); } catch { return normalizeThemePreference(match[1]); }
 }
 
 function applyThemeToDocument(preference: ThemePreference) {
-  const dark = preference === "dark" || (preference === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  const dark = usesDarkPalette(preference, window.matchMedia("(prefers-color-scheme: dark)").matches);
   const root = document.documentElement;
   root.classList.toggle("theme-dark", dark);
   root.classList.toggle("theme-light", !dark);
+  root.classList.toggle("theme-midnight", preference === "midnight");
   root.style.colorScheme = dark ? "dark" : "light";
   localStorage.setItem("hoopcheck-theme", preference);
   document.cookie = `hoopcheck-theme=${encodeURIComponent(preference)}; Path=/; Max-Age=31536000; SameSite=Lax`;
@@ -36,7 +35,7 @@ export default function ThemeProvider({
   const preferenceRef = useRef<ThemePreference>(initialTheme);
 
   const setTheme = useCallback((nextTheme: ThemePreference) => {
-    const normalized = normalizeTheme(nextTheme);
+    const normalized = normalizeThemePreference(nextTheme);
     preferenceRef.current = normalized;
     setThemeState(normalized);
     applyThemeToDocument(normalized);
@@ -45,7 +44,7 @@ export default function ThemeProvider({
   useEffect(() => {
     let stored: ThemePreference = initialTheme;
     try {
-      stored = normalizeTheme(localStorage.getItem("hoopcheck-theme") || readThemeCookie() || initialTheme);
+      stored = normalizeThemePreference(localStorage.getItem("hoopcheck-theme") || readThemeCookie() || initialTheme);
       setTheme(stored);
     } catch {
       setTheme(initialTheme);
