@@ -23,6 +23,7 @@ test("web privacy requests pin the verified bearer and recheck the account befor
 });
 const {NextRequest}=require('next/server');
 const owner='11111111-1111-4111-8111-111111111111',factor='22222222-2222-4222-8222-222222222222';
+const pendingSignup=compile('../lib/google-auth.ts');
 const token=(aal='aal1',role='authenticated')=>Buffer.from('{"alg":"HS256"}').toString('base64url')+'.'+Buffer.from(JSON.stringify({sub:owner,aal,role,exp:Math.floor(Date.now()/1000)+3600})).toString('base64url')+'.fixture';
 function fixture({aal='aal1',enrolled=true,invalid=false}={}){
  const credential=token(aal);let verified=0,tableReads=0;
@@ -31,7 +32,7 @@ function fixture({aal='aal1',enrolled=true,invalid=false}={}){
   if(name==='@supabase/ssr')return{createServerClient:()=>client};
   if(name==='@supabase/supabase-js')return{createClient:()=>client};
   if(name==='./lib/server/mfa-enforcement')return enforcement;
-  if(name==='./lib/google-auth')return{GOOGLE_SIGNUP_COOKIE:'hoopcheck-google-setup',GOOGLE_SIGNUP_PATH:'/signup/google',GOOGLE_SIGNUP_ROLE:'pending_google_signup'};
+  if(name==='./lib/google-auth')return pendingSignup;
   return require(name);
  }).proxy;
  return{handler,client,credential,counts:()=>({verified,tableReads})};
@@ -76,7 +77,30 @@ test('the full HoopChat inbox requires sign-in and the existing MFA assurance', 
  assert.equal(verifiedResponse.headers.get('x-middleware-next'), '1');
 });
 test('second-factor verification never bypasses existing pending-signup restrictions',async()=>{
- const f=fixture({aal:'aal2'});const response=await f.handler(new NextRequest('https://fixture.test/api/account/delete',{headers:{authorization:`Bearer ${token('aal2','pending_google_signup')}`}}));assert.equal(response.status,403);assert.equal(f.counts().verified,0);
+ const f=fixture({aal:'aal2'});const response=await f.handler(new NextRequest('https://fixture.test/api/account/delete',{headers:{authorization:`Bearer ${token('aal2',pendingSignup.GOOGLE_SIGNUP_ROLE)}`}}));assert.equal(response.status,403);assert.equal(f.counts().verified,0);
+});
+
+test('first-time Apple onboarding gets an exact, MFA-checked vault exception', async () => {
+ const path = 'https://fixture.test/api/auth/apple-authorization';
+ const bearer = token('aal1',pendingSignup.GOOGLE_SIGNUP_ROLE);
+ const headers = {authorization:'Bearer '+bearer};
+ for (const [method, url, enrolled, invalid, expected] of [
+  ['POST',path,false,false,200],
+  ['POST',path,true,false,403],
+  ['POST',path,false,true,401],
+  ['GET',path,false,false,403],
+  ['POST',path+'/nested',false,false,403],
+ ]) {
+  const f = fixture({enrolled});
+  f.client.auth.getUser = async credential => {
+   assert.equal(credential,bearer);
+   if (invalid) return {data:{user:null},error:Error('invalid signature')};
+   return {data:{user:{id:owner,factors:enrolled?[{id:factor,factor_type:'totp',status:'verified'}]:[]}}};
+  };
+  const response = await f.handler(new NextRequest(url,{method,headers}));
+  assert.equal(response.status,expected);
+  if (expected===200) assert.equal(response.headers.get('x-middleware-next'),'1');
+ }
 });
 
 function workspaceSession(client){return compile('../lib/ambassador/server.ts',name=>{
