@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { readFileSync } from "node:fs";
 import ts from "typescript";
 const src=readFileSync(new URL("../src/native/cameraCapture.ts",import.meta.url),"utf8");
-const ui=readFileSync(new URL("../components/HoopCheckCamera.tsx",import.meta.url),"utf8");
+const ui=readFileSync(new URL("../components/HoopCheckCamera.native.tsx",import.meta.url),"utf8");
 const composer=readFileSync(new URL("../components/MediaPostComposer.tsx",import.meta.url),"utf8");
 const pkg=JSON.parse(readFileSync(new URL("../package.json",import.meta.url),"utf8"));
 const lock=JSON.parse(readFileSync(new URL("../package-lock.json",import.meta.url),"utf8"));
@@ -42,4 +42,10 @@ test("dedicated preview is opt-in, explicit capture and separate moderated compo
  assert.match(ui,/state==="background"/);assert.match(ui,/useFocusEffect/);
  assert.doesNotMatch(ui,/publishMediaPost|supabase|fetch\(/);
  assert.match(composer,/Review your capture and add a caption before posting/);
+});
+
+test("web camera fallback never imports the native camera package",()=>{
+ const web=readFileSync(new URL("../components/HoopCheckCamera.tsx",import.meta.url),"utf8");
+ assert.doesNotMatch(web,/from ["']expo-camera["']/);
+ assert.match(web,/return null/);
 });
