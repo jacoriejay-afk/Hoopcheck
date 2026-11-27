@@ -19,7 +19,9 @@ export async function readConversationPage(client: SupabaseClient, requestId: st
   if (signal.aborted) throw Error("Conversation history check expired.");
   const {data,error} = await query.abortSignal(signal);
   if (error) throw Error("Conversation history could not be loaded. Try again.");
-  return ((data ?? []) as ContactMessage[]).filter(row=>row.request_id===requestId);
+  const rows: unknown = data ?? [];
+  if (!Array.isArray(rows) || rows.length > CHAT_HISTORY_PAGE_SIZE) throw Error("Invalid conversation history.");
+  return rows.filter((row): row is ContactMessage => Boolean(row && typeof row === "object" && row.request_id === requestId && typeof row.id === "string" && uuid.test(row.id) && typeof row.sender_id === "string" && uuid.test(row.sender_id) && typeof row.body === "string" && typeof row.created_at === "string" && timestamp.test(row.created_at) && Number.isFinite(Date.parse(row.created_at)) && (!structuredReplies || row.reply_to_id === null || (typeof row.reply_to_id === "string" && uuid.test(row.reply_to_id)))));
 }
 export function appendConversationPage(previous: ContactMessage[], older: ContactMessage[]): ContactMessage[] {
   const seen = new Set(previous.map(row=>row.id));

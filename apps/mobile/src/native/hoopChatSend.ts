@@ -36,7 +36,8 @@ export async function sendConversationMessage(
     const existing = await client.from("player_contact_messages").select(message.reply_to_id ? "body,reply_to_id" : "body")
       .eq("id", message.id).eq("request_id", message.request_id).eq("sender_id", message.sender_id)
       .setHeader("Authorization", bearer).abortSignal(signal).maybeSingle();
-    if (!existing.error && existing.data?.body === message.body && (!message.reply_to_id || existing.data.reply_to_id === message.reply_to_id)) return;
+    const row: unknown = existing.data;
+    if (!existing.error && row && typeof row === "object" && "body" in row && row.body === message.body && (!message.reply_to_id || ("reply_to_id" in row && row.reply_to_id === message.reply_to_id))) return;
   }
   throw new Error("Delivery could not be confirmed. You can retry the same message.");
 }

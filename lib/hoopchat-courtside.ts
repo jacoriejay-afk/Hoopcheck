@@ -2,7 +2,7 @@ export type ChatRequest = {
   id:string; requester_id:string; player_id:string; message:string|null;
   status:string; created_at:string;
 };
-export type ChatMessage = {id:string; request_id:string; sender_id:string; body:string; created_at:string};
+export type ChatMessage = {id:string; request_id:string; sender_id:string; body:string; created_at:string; reply_to_id?:string|null};
 export type ChatContact = {id:string;display_name:string|null;username:string|null;account_type:string|null};
 export type ChatAppearance = {
   layout:"courtside"|"classic"; density:"comfortable"|"compact";
