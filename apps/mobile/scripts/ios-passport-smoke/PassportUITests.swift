@@ -49,12 +49,23 @@ final class PassportUITests: XCTestCase {
     guard sheetRoot.waitForExistence(timeout: 20) else {
       XCTFail("Real UIKit activity container did not appear"); return
     }
-    let actionCell = sheetRoot.cells.matching(identifier: "actionGroupCell").firstMatch
-    let actionTitle = sheetRoot.staticTexts.matching(
-      NSPredicate(format: "label == 'Copy' OR label == 'Save to Files' OR label == 'Print'")
-    ).firstMatch
-    guard actionCell.waitForExistence(timeout: 20), actionTitle.waitForExistence(timeout: 20) else {
-      XCTFail("Real UIKit PDF action cell and nested action title must appear"); return
+    // UIKit's remote activity collection may populate after the root appears.
+    // Run #45960820432 captured actual actionGroupCell/titleLabel descendants.
+    // Require a real titled cell, using one descendant query with a bounded wait.
+    let titlePredicate = NSPredicate(
+      format: "identifier == %@ AND (label == %@ OR label == %@ OR label == %@)",
+      "titleLabel", "Copy", "Save to Files", "Print"
+    )
+    let actionCell = sheetRoot.descendants(matching: .cell)
+      .matching(identifier: "actionGroupCell")
+      .containing(titlePredicate).firstMatch
+    guard actionCell.waitForExistence(timeout: 45) else {
+      XCTFail("Real UIKit PDF action cell with nested action title must appear"); return
+    }
+    let actionTitle = actionCell.descendants(matching: .staticText)
+      .matching(titlePredicate).firstMatch
+    guard actionTitle.waitForExistence(timeout: 10) else {
+      XCTFail("The native action cell must expose its nested title"); return
     }
     let sheet = XCTAttachment(screenshot: app.screenshot())
     sheet.name = "native-share-sheet"
