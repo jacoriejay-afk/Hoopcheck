@@ -8,11 +8,39 @@ function compile(path, imports) {
 }
 const uid="11111111-1111-4111-8111-111111111111",other="22222222-2222-4222-8222-222222222222";
 const mfa=compile("../lib/auth/mfa-core.ts",()=>{throw Error("Unexpected import");});
+const sessionAccess=compile("../lib/ambassador/session-access.ts",()=>{throw Error("Unexpected import");});
 function fixture(opts={}){
  const calls=[],token=Buffer.from("{}").toString("base64url")+"."+Buffer.from(JSON.stringify({sub:uid,exp:Math.floor(Date.now()/1000)+3600,aal:opts.aal||"aal1"})).toString("base64url")+".signature";
  const user={id:uid,email_confirmed_at:opts.unconfirmed?null:"2026-01-01",user_metadata:{role:"owner"},factors:opts.mfa?[{id:other,status:"verified",factor_type:"totp"}]:[]};
- const db={auth:{getUser:async t=>{calls.push(["auth",t]);return {data:{user:opts.invalid?null:user},error:null};},getClaims:async t=>{calls.push(["claims",t]);return {data:{claims:{role:opts.role||"authenticated"}},error:null};}},rpc:async name=>{calls.push(["ownerRPC",name]);return {data:opts.owner===true,error:null};}};
- const access=compile("../lib/ambassador/mobile-access.ts",name=>name==="../auth/mfa-core"?mfa:name==="./server"?{getAmbassadorWorkspace:async id=>{calls.push(["grant",id]);return opts.ambassador===true;}}:(()=>{throw Error(name);})());
+ const db={
+  auth:{
+   getUser:async t=>{calls.push(["auth",t]);return {data:{user:opts.invalid?null:user},error:null};},
+   getClaims:async t=>{calls.push(["claims",t]);return {data:{claims:{sub:opts.claimOwner??uid,role:opts.role||"authenticated"}},error:null};},
+  },
+  rpc:async name=>{
+   calls.push(["ownerRPC",name]);
+   if(name==="confirm_active_account_session")return {data:opts.active!==false,error:opts.activeError?Error("Verification unavailable"):null};
+   assert.equal(name,"is_approved_claim_owner");
+   return {data:opts.owner===true,error:null};
+  },
+  from:table=>{
+   assert.equal(table,"profiles");
+   return {select:columns=>{
+    assert.equal(columns,"moderation_status");
+    return {eq:(key,id)=>{
+     assert.equal(key,"id");
+     assert.equal(id,uid);
+     return {maybeSingle:async()=>({data:{moderation_status:opts.moderation??"normal"}})};
+    }};
+   }};
+  },
+ };
+ const access=compile("../lib/ambassador/mobile-access.ts",name=>{
+  if(name==="../auth/mfa-core")return mfa;
+  if(name==="./session-access")return sessionAccess;
+  if(name==="./server")return {getAmbassadorWorkspace:async id=>{calls.push(["grant",id]);return opts.ambassador===true;}};
+  throw Error(name);
+ });
  const {GET}=compile("../app/api/mobile/workspaces/route.ts",name=>{
   if(name==="next/server")return {NextResponse:{json:(data,init)=>Response.json(data,init)}};
   if(name==="@supabase/supabase-js")return {createClient:()=>db};
@@ -31,6 +59,14 @@ test("workspace API denies anonymous, invalid, unconfirmed and insufficient-MFA 
   assert.ok(!f.calls.some(c=>["metrics","stripe","ledger"].includes(c[0])));assert.equal(r.headers.get("cache-control"),"private, no-store");
  }
  const f=fixture({owner:true});assert.equal((await f.get("owner","Basic fake")).status,401);assert.deepEqual(f.calls,[]);
+});
+test("both mobile workspaces deny a revoked, suspended or mismatched caller before any role or ledger query",async()=>{
+ for(const option of [{active:false},{activeError:true},{moderation:"suspended"},{claimOwner:other}]){
+  const f=fixture({owner:true,ambassador:true,...option});
+  assert.equal((await f.get("owner")).status,403);
+  assert.equal((await f.get("ambassador")).status,403);
+  assert.ok(!f.calls.some(call=>["grant","metrics","stripe","ledger"].includes(call[0])||call[1]==="is_approved_claim_owner"));
+ }
 });
 test("only the approved owner receives aggregate metrics; ambassador access does not grant owner privileges",async()=>{
  const denied=fixture({ambassador:true});assert.equal((await denied.get("owner")).status,403);
