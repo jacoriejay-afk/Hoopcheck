@@ -11,17 +11,18 @@ export function findInvitedGroup<T extends {slug:string}>(visibleGroups:readonly
 }
 
 const host = "hoopcheck.online";
+export const canonicalWebOrigin = `https://${host}`;
 const safeId = /^[A-Za-z0-9_-]{1,100}$/;
 
 export function nativeDestination(path: string): string {
   try {
     if (path.length > 8192) return "/";
     const isRelative = path.startsWith("/") && !path.startsWith("//");
-    let url = new URL(path, `https://${host}`);
+    let url = new URL(path, canonicalWebOrigin);
     if (!isRelative && url.protocol === "hoopcheck:") {
       if (url.username || url.password || url.port) return "/";
       const nativePath = url.hostname ? `/${url.hostname}${url.pathname}` : url.pathname;
-      url = new URL(`${nativePath}${url.search}${url.hash}`, `https://${host}`);
+      url = new URL(`${nativePath}${url.search}${url.hash}`, canonicalWebOrigin);
     }
     if (url.protocol !== "https:" || url.hostname !== host || url.username || url.password || url.port) return "/";
     const parts = url.pathname.split("/").filter(Boolean);

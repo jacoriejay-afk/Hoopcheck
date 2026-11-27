@@ -7,7 +7,7 @@ import { Link } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase, supabaseConfigurationError } from "../src/lib/supabase";
 import { nativeRecoveryRedirect, recoveryRequestMessage, requestRecoveryEmail } from "../../../lib/auth/password-recovery";
-import { SITE_URL } from "../../../lib/site-url";
+import { canonicalWebOrigin } from "../src/native/deepLinks";
 
 export default function ForgotPasswordScreen() {
   const theme = useEntryTheme();
@@ -24,7 +24,7 @@ export default function ForgotPasswordScreen() {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { Alert.alert("Invalid email", "Enter a valid email address."); return; }
     inFlight.current = true; setBusy(true);
     try {
-      const redirectTo = nativeRecoveryRedirect(process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || SITE_URL);
+      const redirectTo = nativeRecoveryRedirect(process.env.EXPO_PUBLIC_HOOPCHECK_RECOVERY_ORIGIN?.trim() || canonicalWebOrigin);
       const started = await requestRecoveryEmail(() => supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), { redirectTo }));
       if (!started) { Alert.alert("Please wait", "Wait one minute before requesting another recovery email."); return; }
       setRequested(true);
