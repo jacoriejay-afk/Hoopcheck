@@ -28,3 +28,14 @@ test("inbox search matches names and handles, not private message bodies",()=>{
  assert.ok(matchesConversationSearch("","Jordan",null));
  assert.equal(matchesConversationSearch("hello","Jordan","jhoops"),false);
 });
+
+test("verified block check bearer is preserved for the history request",async()=>{
+ const calls=[];const db=createClient("https://fixture.supabase.co","key",{auth:{persistSession:false,autoRefreshToken:false},global:{fetch:async(input,init)=>{calls.push({url:String(input),authorization:new Headers(init?.headers).get("authorization")});return Response.json([row]);}}});
+ const signal=new AbortController().signal;
+ assert.deepEqual(await readConversationPage(db,req,signal,undefined,"Bearer verified-fixture-token"),[row]);
+ assert.equal(calls[0].authorization,"Bearer verified-fixture-token");
+ await assert.rejects(readConversationPage(db,req,signal,undefined,"Bearer invalid token"),/Invalid conversation session/);
+ const stopped=new AbortController();stopped.abort();
+ await assert.rejects(readConversationPage(db,req,stopped.signal,undefined,"Bearer verified-fixture-token"),/expired/);
+ assert.equal(calls.length,1);
+});
