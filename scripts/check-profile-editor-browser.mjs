@@ -18,13 +18,14 @@ try {
   const team={id:tid,name:`${gender==='mens'?'Men':'Women'} QA Club`,country:'QA Country',city:'QA City',league_name:'QA League',basketball_type:gender,active:true,created_at:'2020-01-01T00:00:00Z'};
   let subscription={plan:'pro',status:'active',access_status:'active',current_period_end:null};
   let eligible=false,patches=[];
+  let blocked=[{blocked_id:tid}],blockReads=0,unblocks=0,confirmUnblock=false;
   const context=await browser.newContext({viewport:{width,height:900},serviceWorkers:'block'});
   await context.addCookies([{name:'sb-ci-auth-token',value:'base64-'+Buffer.from(JSON.stringify(session)).toString('base64url'),url:baseURL}]);
   await context.addInitScript(session=>{localStorage.setItem('sb-ci-auth-token',JSON.stringify(session));localStorage.setItem('hoopcheck-theme','light');localStorage.setItem('hoopcheck-language','en');},session);
   const page=await context.newPage();
   await page.route('https://ci.invalid/**',async route=>{
    const req=route.request(),url=new URL(req.url());
-   const headers={'access-control-allow-origin':baseURL,'access-control-allow-methods':'GET,POST,PUT,PATCH,OPTIONS','access-control-allow-headers':req.headers()['access-control-request-headers']||'*','cache-control':'no-store'};
+   const headers={'access-control-allow-origin':baseURL,'access-control-allow-methods':'GET,POST,PUT,PATCH,DELETE,OPTIONS','access-control-allow-headers':req.headers()['access-control-request-headers']||'*','cache-control':'no-store'};
    if(req.method()==='OPTIONS') return route.fulfill({status:204,headers});
    let data=[];
    if(url.pathname==='/auth/v1/user') {
@@ -34,7 +35,20 @@ try {
    else if(url.pathname.endsWith('/rpc/get_own_profile')) data=profile;
    else if(url.pathname.endsWith('/profiles')){
     if(req.method()==='PATCH'){const patch=req.postDataJSON();patches.push(patch);profile={...profile,...patch};data={id:uid};}
+    else if(url.searchParams.get('id')===`in.(${tid})`)data=[{id:tid,display_name:'Blocked fixture member'}];
     else data=profile;
+   } else if (url.pathname.endsWith('/user_blocks')) {
+    assert.equal(req.headers().authorization,`Bearer ${session.access_token}`);
+    assert.equal(url.searchParams.get('blocker_id'),`eq.${uid}`);
+    if (req.method()==='DELETE') {
+      assert.equal(url.searchParams.get('blocked_id'),`eq.${tid}`);
+      unblocks++;
+      data=confirmUnblock?blocked:[];
+      if (confirmUnblock) blocked=[];
+    } else {
+      blockReads++;
+      data=blocked;
+    }
    } else if(url.pathname.endsWith('/subscriptions'))data=subscription;
    else if(url.pathname.endsWith('/rpc/can_user_review_team'))data=eligible;
    else if(url.pathname.includes('/rpc/get_current_user_admin_role'))data=null;
@@ -107,6 +121,27 @@ try {
   await page.waitForURL(`${baseURL}/settings`);
   await page.locator('main.hc-settings-page h1').waitFor();
   assert.match(await page.locator('main.hc-settings-page h1').textContent(), /^settings$/i);
+  if (width===390 && gender==='mens') {
+    const settings=page.getByRole('region',{name:'Blocked accounts'});
+    await settings.locator('summary').waitFor();
+    assert.equal(blockReads,0,'Blocked account data loads only when opened');
+    await settings.locator('summary').click();
+    const unblock=settings.getByRole('button',{name:'Unblock Blocked fixture member'});
+    await unblock.click();
+    await settings.getByRole('button',{name:'Cancel',exact:true}).click();
+    assert.equal(unblocks,0,'Cancel sends no unblock request');
+    await unblock.click();
+    await settings.getByRole('button',{name:'Confirm unblock'}).click();
+    await settings.getByRole('alert').filter({hasText:'Unblock could not be confirmed'}).waitFor();
+    assert.equal(unblocks,1);
+    await settings.getByRole('button',{name:'Refresh blocked accounts'}).click();
+    await unblock.click();
+    confirmUnblock=true;
+    await settings.getByRole('button',{name:'Confirm unblock'}).click();
+    await settings.getByText('No blocked accounts.').waitFor();
+    await settings.getByRole('status').filter({hasText:'Account unblocked.'}).waitFor();
+    assert.equal(unblocks,2);
+  }
   await page.goBack();
   await page.waitForURL(`${baseURL}/profile`);
   await page.getByRole('navigation',{name:'Profile quick links'}).waitFor();
