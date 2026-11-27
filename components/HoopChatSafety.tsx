@@ -16,7 +16,8 @@ export default function HoopChatSafety({uid,requestId,peerId,disabled,isCurrent,
     const action=mode,clean=reason.trim();
     if(!action||disabled||pending.current||!isCurrent()||(action==="report"&&(clean.length<10||clean.length>500)))return;
     const request=new AbortController();pending.current=request;setBusy(true);setNotice("");
-    const active=()=>pending.current===request&&!request.signal.aborted&&isCurrent();
+    const current=()=>pending.current===request&&isCurrent();
+    const active=()=>current()&&!request.signal.aborted;
     try{
       await withHoopChatDeadline(async signal=>{
         const {data:{session},error}=await supabase.auth.getSession();
@@ -36,11 +37,11 @@ export default function HoopChatSafety({uid,requestId,peerId,disabled,isCurrent,
           if(row.error||row.data?.blocked_id!==peerId)throw Error("Block unconfirmed.");
         }
       },undefined,request);
-      if(!active())return;
+      if(!current())return;
       setMode(null);setReason("");
       if(action==="block")onBlocked();else setNotice("Confidential report submitted. Staff will review the details you provided.");
-    }catch{if(active())setNotice("Action could not be confirmed. Check Settings or support tickets before retrying.");}
-    finally{if(pending.current===request){pending.current=null;if(!request.signal.aborted&&isCurrent())setBusy(false);}}
+    }catch{if(current())setNotice("Action could not be confirmed. Check Settings or support tickets before retrying.");}
+    finally{if(pending.current===request){pending.current=null;if(isCurrent())setBusy(false);}}
   }
 
   return <section aria-label="Conversation safety" className="hc-courtside-compose">
