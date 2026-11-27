@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {createHash,generateKeyPairSync} from "node:crypto";
-import {encryptAppleToken,revokeAppleAuthorization} from "../.compliance-apple/lib/server/apple-sign-in-authorization.ts";
+import {encryptAppleToken,revokeAppleAuthorization} from "../lib/server/apple-sign-in-authorization.ts";
 import {revokeDeletionAppleAuthorizations} from "../lib/server/account-deletion-orchestrator.ts";
 
 const lease={requestId:"11111111-1111-4111-8111-111111111111",ownerId:"22222222-2222-4222-8222-222222222222",fence:"33333333-3333-4333-8333-333333333333",policyVersion:"fixture-v1",completed:[]};

@@ -84,3 +84,70 @@ test('Owner HQ enforces MFA again before any privileged workspace/owner query',a
 test('AAL2 does not grant the owner role',async()=>{
  const f=fixture({aal:'aal2'});f.client.rpc=async()=>({data:false,error:null});await assert.rejects(workspaceSession(f.client)('/owner-hq',true),/not-found/);
 });
+
+test('moderation requires confirmed identity, MFA, a live account and the scoped staff grant', async () => {
+ const env = {
+  NEXT_PUBLIC_SUPABASE_URL: 'https://fixture.invalid',
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'fixture-public',
+  SUPABASE_SERVICE_ROLE_KEY: 'fixture-service',
+ };
+ const previous = Object.fromEntries(Object.keys(env).map(key => [key, process.env[key]]));
+ Object.assign(process.env, env);
+ try {
+  for (const options of [
+   {confirmed:false,status:401},
+   {aal:'aal1',status:403},
+   {active:false,status:403},
+   {active:null,status:403},
+   {moderation:'suspended',status:403},
+   {staff:false,status:403},
+   {staff:true,status:200},
+  ]) {
+   const credential = token(options.aal ?? 'aal2');
+   const checks = [];
+   const scoped = {
+    auth:{getUser:async supplied => {
+     assert.equal(supplied, credential);
+     return {data:{user:{id:owner,email_confirmed_at:options.confirmed===false?null:'2026-01-01',
+      factors:[{id:factor,status:'verified',factor_type:'totp'}],user_metadata:{role:'admin'}}}};
+    }},
+    rpc:async name => {
+     checks.push(name);
+     if (name==='confirm_active_account_session') {
+      return {data:options.active===undefined?true:options.active,error:options.active===null?Error('unavailable'):null};
+     }
+     assert.equal(name, 'is_current_user_admin_or_moderator');
+     return {data:options.staff===true,error:null};
+    },
+    from: name => {
+     assert.equal(name, 'profiles');
+     return {select: () => ({eq: (key, id) => {
+      assert.equal(key, 'id');
+      assert.equal(id, owner);
+      return {maybeSingle:async()=>({data:{moderation_status:options.moderation??'normal'}})};
+     }})};
+    },
+   };
+   const moderation = compile('../lib/server/review-moderation.ts',name=>{
+    if (name==='server-only') return {};
+    if (name==='../auth/mfa-core') return core;
+    if (name==='@supabase/supabase-js') return {createClient:(_url,key,config)=>{
+     if (key===env.SUPABASE_SERVICE_ROLE_KEY) return {};
+     assert.equal(config.global.headers.Authorization, 'Bearer '+credential);
+     return scoped;
+    }};
+    return require(name);
+   });
+   const result = await moderation.authorizeModeratorRequest(new Request('https://fixture.invalid', {
+    headers:{authorization:'Bearer '+credential},
+   }));
+   assert.equal(result.ok?200:result.response.status, options.status);
+   assert.equal(checks.includes('is_current_user_admin_or_moderator'), options.staff!==undefined);
+  }
+ } finally {
+  for (const [key,value] of Object.entries(previous)) {
+   if (value===undefined) delete process.env[key];
+   else process.env[key]=value;
+  }
+ }
+});

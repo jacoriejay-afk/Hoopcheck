@@ -28,7 +28,7 @@ grant usage on schema auth to anon, authenticated;
 \i supabase/migrations/20261110135216_google_signup_onboarding.sql
 create trigger on_auth_user_created after insert on auth.users
  for each row execute function public.handle_new_user();
-\i .compliance-reference/supabase/candidates/appstore_apple_pending_signup.sql
+\i supabase/candidates/appstore_apple_pending_signup.sql
 create table auth.sessions(id uuid primary key,user_id uuid,not_after timestamptz);
 create table auth.identities(user_id uuid,provider text,provider_id text);
 \i supabase/candidates/appstore_apple_authorization_vault.sql

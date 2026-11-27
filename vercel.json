@@ -1,6 +1,7 @@
 {
   "git": {
     "deploymentEnabled": {
+      "qa/step2-security-boundaries": false,
       "qa/hoopcheck-master-acceptance": false,
       "integration/build17-development": false,
       "reconcile/build8-mobile-705-700-710-711": false,
