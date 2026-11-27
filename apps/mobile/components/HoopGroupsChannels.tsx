@@ -132,6 +132,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
     let activeController:AbortController|null=null;
     let running=false;
     let initial=true;
+    let resumePending=false;
     setPostSnapshot(null);setPostError("");
     async function loadPosts(){
       if(!alive||running||!(AppState.currentState==="active"||AppState.currentState===null))return;
@@ -142,6 +143,14 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
       try{
         const token=await safetyToken();
         if(!alive||controller.signal.aborted)return;
+        const membership=await supabase.from("hoop_group_members").select("space_id")
+          .eq("space_id",channel!.space_id).eq("user_id",userId)
+          .setHeader("Authorization","Bearer "+token).abortSignal(controller.signal).maybeSingle();
+        if(!alive||controller.signal.aborted)return;
+        if(membership.error)throw Error("Membership could not be verified.");
+        if(membership.data?.space_id!==channel!.space_id){
+          setJoined(current=>current.filter(id=>id!==channel!.space_id));setPostSnapshot(null);return;
+        }
         const blocked=await readOutgoingBlocks(supabase,userId,controller.signal);
         if(!alive||controller.signal.aborted)return;
         const {data,error:readError}=await supabase.from("hoop_group_posts")
@@ -155,13 +164,16 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
         if(alive)setPostSnapshot({channelId:channel!.id,posts:((data||[]) as Post[]).filter(post=>!blocked.has(post.author_id)).reverse()});
         setPostError("");
       }catch{if(alive){setPostError("Channel messages or block status could not be verified.");setPostSnapshot(null);}}
-      finally{clearTimeout(timer);if(activeController===controller)activeController=null;running=false;initial=false;if(alive)setPostLoading(false);}
+      finally{
+        clearTimeout(timer);if(activeController===controller)activeController=null;running=false;initial=false;
+        if(alive){setPostLoading(false);if(resumePending){resumePending=false;void loadPosts();}}
+      }
     }
     void loadPosts();
     const refreshTimer=setInterval(()=>void loadPosts(),25000);
     const appState=AppState.addEventListener("change",state=>{
-      if(state==="active")void loadPosts();
-      else {activeController?.abort();setPostSnapshot(null);}
+      if(state==="active"){if(running)resumePending=true;else void loadPosts();}
+      else {resumePending=false;activeController?.abort();setPostSnapshot(null);}
     });
     return()=>{alive=false;clearInterval(refreshTimer);appState.remove();activeController?.abort();setPostSnapshot(null);};
   },[userId,offline,member,channel?.id,revision,postRefresh,safetyToken]));
@@ -306,6 +318,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
         .setHeader("Authorization", "Bearer "+token);
       if(blockError)throw Error("Could not block this account.");
       setPostSnapshot(current=>current?{...current,posts:current.posts.filter(post=>post.author_id!==item.author_id)}:null);
+      setPostRefresh(value=>value+1);
     }catch(failure){setError(failure instanceof Error?failure.message:"Block could not be confirmed.");}
     finally{mutationLocked.current=false;setBusy(false);}
   }
