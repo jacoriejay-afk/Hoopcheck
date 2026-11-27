@@ -109,6 +109,9 @@ export function TeamDirectoryScreen({ women = false }: { women?: boolean }) {
           onPress={() => router.push(women ? "/teams" : "/womens")}>
           <Text style={styles.womensLinkText}>{women ? "Browse men’s teams" : "Browse women’s teams"}</Text>
         </Pressable>
+        {women && <Pressable accessibilityRole="link" style={styles.womensLink} onPress={() => router.push("/womens/leagues")}>
+          <Text style={styles.womensLinkText}>Browse women’s leagues</Text>
+        </Pressable>}
         <View style={styles.searchRow}>
           <Input onBlur={() => remember(term)} onSubmitEditing={() => remember(term)} value={term} onChangeText={updateTerm} returnKeyType="search" placeholder="Team, country, city or league" placeholderTextColor={theme.muted} style={styles.input} />
         </View>
