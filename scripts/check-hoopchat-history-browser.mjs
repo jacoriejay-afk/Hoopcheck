@@ -24,6 +24,7 @@ const messages = Array.from({ length: 51 }, (_, index) => ({
 const scopedReads = [];
 let failNext = true;
 let blocks = [];
+const reports = [], blockWrites = [];
 const browser = await chromium.launch({
   ...(process.env.CHROMIUM_EXECUTABLE_PATH ? { executablePath: process.env.CHROMIUM_EXECUTABLE_PATH } : { channel: "chrome" }),
   headless: true, args: ["--no-sandbox"],
@@ -49,6 +50,18 @@ try {
     if (url.pathname.endsWith("/player_contact_requests")) {
       // Simulate a thread revoked after loading the inbox.
       data = query.has("id") ? (query.get("id") === `eq.${thread}` ? [requests[0]] : []) : requests;
+    }
+    if (url.pathname.endsWith("/support_tickets") && request.method() === "POST") {
+      assert.equal(request.headers().authorization, `Bearer ${token}`);
+      reports.push(request.postDataJSON());
+      return route.fulfill({ status: 201, headers, json: [] });
+    }
+    if (url.pathname.endsWith("/user_blocks") && request.method() === "POST") {
+      assert.equal(request.headers().authorization, `Bearer ${token}`);
+      const row = request.postDataJSON();
+      assert.deepEqual(row, { blocker_id: uid, blocked_id: peer });
+      blockWrites.push(row); blocks.push({ blocked_id: row.blocked_id });
+      return route.fulfill({ status: 201, headers, json: [] });
     }
     if (url.pathname.endsWith("/user_blocks") && query.get("blocker_id") === `eq.${uid}`) {
       data = blocks.filter(row => !query.has("blocked_id") || query.get("blocked_id") === `eq.${row.blocked_id}`);
@@ -78,16 +91,36 @@ try {
   assert.equal(pages.length, 3);
   assert.ok(pages.every(read => read.id === `eq.${thread}` && read.order === "created_at.desc,id.desc" && read.bearer === `Bearer ${token}`));
   assert.ok(pages[2].cursor.includes(`id.lt.${messages[49].id}`));
+  const safety = page.getByRole("region", { name: "Conversation safety" });
+  await safety.getByRole("button", { name: "Report conversation" }).click();
+  await safety.getByLabel("Conversation report reason").fill("Fixture safety concern");
+  await safety.getByRole("button", { name: "Submit confidential report" }).click();
+  await safety.getByRole("status").filter({ hasText: "Confidential report submitted" }).waitFor();
+  assert.equal(reports.length, 1);
+  assert.equal(reports[0].requester_id, uid);
+  assert.match(reports[0].description, new RegExp(thread));
+  assert.match(reports[0].description, new RegExp(peer));
   await page.getByRole("button", { name: /Fixture Revoked/ }).click();
   await history.getByText("Conversation unavailable.", { exact: true }).waitFor();
   assert.equal(await history.locator("article").count(), 0);
   assert.ok(!scopedReads.some(read => read.id === `eq.${deniedThread}`));
+  await safety.getByRole("button", { name: "Report conversation" }).click();
+  await safety.getByLabel("Conversation report reason").fill("Revoked thread fixture");
+  await safety.getByRole("button", { name: "Submit confidential report" }).click();
+  await safety.getByRole("status").filter({ hasText: "Action could not be confirmed" }).waitFor();
+  assert.equal(reports.length, 1);
   blocks = [{ blocked_id: peer }];
   await page.getByRole("button", { name: /Fixture Teammate/ }).click();
   await history.getByText(/Check your blocked accounts/).waitFor();
   assert.equal(await history.locator("article").count(), 0);
   assert.equal(scopedReads.filter(read => read.id === `eq.${thread}`).length, 3);
-  console.log("PASS web HoopChat pagination, retry, fixed caller, participant revocation and block handling");
+  blocks = [];
+  await safety.getByRole("button", { name: "Block account" }).click();
+  await safety.getByRole("button", { name: "Confirm block" }).click();
+  await page.getByRole("button", { name: /Fixture Teammate/ }).waitFor({ state: "hidden" });
+  assert.equal(blockWrites.length, 1);
+  assert.equal(await page.getByText("Fixture message 1", { exact: true }).count(), 0);
+  console.log("PASS web HoopChat pagination, retry, fixed caller, participant revocation, confidential report and confirmed block handling");
 } finally {
   await browser.close();
 }

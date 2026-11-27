@@ -1,5 +1,6 @@
 "use client";
 import PlayerReferencePanel from "./PlayerReferencePanel";
+import HoopChatSafety from "./HoopChatSafety";
 
 import {useCallback,useEffect,useMemo,useRef,useState,type FormEvent,type UIEvent} from "react";
 import Link from "next/link";
@@ -362,6 +363,20 @@ export default function HoopChatCourtside(){
       window.history.replaceState(null,"",url.pathname+url.search+url.hash);
     }
   }
+  function hideBlockedPeer(peer:string){
+    const ids=new Set(requests.filter(row=>peerId(row)===peer).map(row=>row.id));
+    loadSequence.current++;
+    inboxRequest.current?.abort();inboxRequest.current=null;
+    activeHistoryScope.current="";
+    historyRequest.current?.abort();historyRequest.current=null;
+    for(const id of ids)pendingMessages.current.delete(id);
+    setRequests(rows=>rows.filter(row=>!ids.has(row.id)));
+    setMessages(rows=>rows.filter(row=>!ids.has(row.request_id)));
+    setDrafts(previous=>Object.fromEntries(Object.entries(previous).filter(([id])=>!ids.has(id))));
+    setHistoryPage(null);setHistoryError(null);setHistoryBusy(null);setSelectedId(null);
+    setFeedback("Account blocked. Manage blocked accounts in Settings.");
+    void load();
+  }
   function setDraft(value:string){
     if(!selectedId)return;
     setDrafts(prev=>({...prev,[selectedId]:value.slice(0,2000)}));
@@ -490,6 +505,7 @@ export default function HoopChatCourtside(){
             <Link href={peerHref(selected)}>Profile</Link>
           </div>
         </header>
+        <HoopChatSafety key={userId+":"+selected.id+":"+sessionRevision} uid={userId} requestId={selected.id} peerId={peerId(selected)} disabled={sending} isCurrent={()=>userIdRef.current===userId} onBlocked={()=>hideBlockedPeer(peerId(selected))}/>
         <div ref={historyRef} onScroll={onHistoryScroll} className="hc-courtside-history" role="log" aria-label={"Messages with "+peerName(selected)}>
           <div className="hc-courtside-center-note">🏀 THE COURTSIDE THREAD <span>·</span> Only accepted contacts can read this conversation.</div>
           {selected.message&&<div className="hc-courtside-introduction"><small>CONNECTION INTRODUCTION</small><p>{selected.message}</p></div>}

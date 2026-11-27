@@ -1,6 +1,7 @@
 {
   "git": {
     "deploymentEnabled": {
+      "qa/step1-web-hoopchat-safety": false,
       "qa/hoopcheck-master-acceptance": false,
       "qa/step1-verified-reconciliation": false,
       "qa/step1-hoopchat-web-history": false,
