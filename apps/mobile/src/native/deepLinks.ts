@@ -30,6 +30,7 @@ export function nativeDestination(path: string): string {
     if (url.pathname === "/owner-hq") return "/account/owner-hq";
     if (url.pathname === "/ambassador-hq") return "/account/ambassador-hq";
     if (parts.length === 3 && parts[0] === "teams" && parts[2] === "review" && safeId.test(parts[1])) return `/teams/${parts[1]}/review`;
+    if (url.pathname === "/privacy-center" || url.pathname === "/account/privacy-center") return "/account/privacy-center";
     if (url.pathname === "/support" || url.pathname === "/account/support") {
       const reel = url.searchParams.get("reportReel");
       if (reel && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(reel)) return "/account/support?reportReel=" + reel;
