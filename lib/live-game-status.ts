@@ -9,6 +9,7 @@ export type LiveGameStatusInput = {
   scheduled_at?: string | null;
   started_at?: string | null;
   ends_at?: string | null;
+  score_updated_at?: string | null;
 };
 
 export type LiveGameStatusPresentation = {
@@ -21,6 +22,7 @@ export type LiveGameStatusPresentation = {
 
 const ACTIVE_PERIOD = /^(?:q[1-4]|quarter\s*[1-4]|(?:first|second|third|fourth)\s+quarter|half[\s-]?time|break\s*time|bt|ht|ot\d*|overtime)$/i;
 const FOUR_HOURS = 4 * 60 * 60_000;
+const MAX_SCORE_AGE = 45 * 60_000;
 
 export function getLiveGameStatusPresentation(game: LiveGameStatusInput, now = new Date()): LiveGameStatusPresentation {
   const status = (game.status || "").trim().toLowerCase();
@@ -32,9 +34,10 @@ export function getLiveGameStatusPresentation(game: LiveGameStatusInput, now = n
   // timeout, leaving a Q1 / halftime label and partial score in the database.
   const conflictingFinal = isFinal && ACTIVE_PERIOD.test(period);
   const tip = Date.parse(game.started_at || game.scheduled_at || "");
-  const end = Date.parse(game.ends_at || "");
-  const staleLive = isLive && !Number.isFinite(end) && Number.isFinite(tip) &&
-    now.getTime() >= tip + FOUR_HOURS;
+  const scoreUpdated = Date.parse(game.score_updated_at || "");
+  const staleLive = isLive && (Number.isFinite(scoreUpdated)
+    ? now.getTime() >= scoreUpdated + MAX_SCORE_AGE
+    : Number.isFinite(tip) && now.getTime() >= tip + FOUR_HOURS);
 
   const isUnverified = conflictingFinal || staleLive;
   const isVerifiedLive = isLive && !staleLive;
@@ -46,7 +49,8 @@ export function getLiveGameStatusPresentation(game: LiveGameStatusInput, now = n
   else if (isVerifiedFinal) label = "FINAL";
   else if (status === "scheduled") label = "UPCOMING";
   else if (status === "postponed") label = "POSTPONED";
-  else if (["cancelled", "canceled", "abandoned"].includes(status)) label = "CANCELLED";
+  else if (status === "abandoned") label = "ABANDONED";
+  else if (["cancelled", "canceled"].includes(status)) label = "CANCELLED";
 
   return { label, isVerifiedLive, isVerifiedFinal, isUnverified, showPeriod: isVerifiedLive && Boolean(period) };
 }

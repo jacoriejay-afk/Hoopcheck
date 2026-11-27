@@ -23,7 +23,7 @@ function loadPredictionHelper(name){
 const bakuDate = (day, hour, minute = 7) =>
   new Date(`2026-11-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00+04:00`);
 
-test("96 daily GitHub schedule slots use exactly eight off-today calls and 88 live-score updates", () => {
+test("96 daily slots reserve seven future fixtures and three previous-day checks", () => {
   const distribution = new Map();
   for (let hour = 0; hour < 24; hour++) {
     for (const minute of [7, 22, 37, 52]) {
@@ -32,8 +32,8 @@ test("96 daily GitHub schedule slots use exactly eight off-today calls and 88 li
       distribution.set(dayOffset, (distribution.get(dayOffset) || 0) + 1);
     }
   }
-  assert.equal(distribution.get(0), 88, "Keep most calls for today's live scores");
-  assert.equal(distribution.get(-1), 1, "Revisit yesterday's delayed finals");
+  assert.equal(distribution.get(0), 86, "Keep most calls for today's live scores");
+  assert.equal(distribution.get(-1), 3, "Revisit yesterday across midnight and check for delayed finals");
   for (let offset = 1; offset <= 7; offset++) {
     assert.equal(distribution.get(offset), 1, `Coverage for future day +${offset}`);
   }
@@ -45,6 +45,8 @@ test("fixture date rotates correctly through month and year boundaries in Asia/B
   assert.deepEqual(selectFixtureSyncDay(bakuDate(24, 18, 7)), { date: "2026-12-01", dayOffset: 7 });
   assert.deepEqual(selectFixtureSyncDay(bakuDate(24, 21, 7)), { date: "2026-11-23", dayOffset: -1 });
   assert.deepEqual(selectFixtureSyncDay(bakuDate(24, 21, 22)), { date: "2026-11-24", dayOffset: 0 });
+  assert.deepEqual(selectFixtureSyncDay(bakuDate(24, 0, 22)), { date: "2026-11-23", dayOffset: -1 });
+  assert.deepEqual(selectFixtureSyncDay(bakuDate(24, 2, 7)), { date: "2026-11-23", dayOffset: -1 });
   assert.deepEqual(selectFixtureSyncDay(new Date("2026-12-31T20:07:00Z")), { date: "2027-01-02", dayOffset: 1 });
   assert.deepEqual(selectFixtureSyncDay(new Date("2028-02-28T20:07:00Z")), { date: "2028-03-01", dayOffset: 1 });
   assert.throws(() => selectFixtureSyncDay(new Date(NaN)), /Invalid sync time/);
@@ -117,12 +119,91 @@ test("production prediction listing bounds dates before the limit and falls back
 test("fixture country comes from provider country object and incomplete matchup diagnostics are bounded",()=>{
  const source=readFileSync(new URL("../app/api/cron/live-basketball/route.ts",import.meta.url),"utf8");
  assert.match(source,/country\?: \{ id\?: number; name\?: string \}/);
- assert.match(source,/country: typeof game\.country\?\.name === "string"/);
+ assert.match(source,/const country = game\.country\?\.name/);
+ assert.match(source,/country: countryOf\(game\)/);
  assert.match(source,/if \(!opponentId && scheduledStatuses\.has\(statusOf\(game\)\)\)/);
  assert.match(source,/missingMatchupMappings\.length < 20/);
  assert.match(source,/providerTeamId:Number\.isSafeInteger\(missingId\)/);
  assert.match(source,/incompleteMatchups,\s*missingMatchupMappings,/);
  assert.equal((source.match(/await fetch\(/g)||[]).length,1);
+});
+
+test("provider sync requires approved coverage and never links an inactive or cross-country alias", async () => {
+  const source = readFileSync(new URL("../app/api/cron/live-basketball/route.ts", import.meta.url), "utf8");
+  const code = ts.transpileModule(source, {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText;
+  const config = {
+    LIVE_SCORES_CRON_SECRET: "fixture-secret",
+    API_SPORTS_BASKETBALL_KEY: "fixture-provider-key",
+    NEXT_PUBLIC_SUPABASE_URL: "https://fixture.example",
+    SUPABASE_SERVICE_ROLE_KEY: "fixture-service",
+  };
+  const fixture = (id, leagueId, away, status = "Q2") => ({
+    id, timestamp: Number.MAX_VALUE, date: "2026-11-24T10:00:00Z",
+    league: { id: leagueId }, country: { name: "Portugal" }, status: { short: status },
+    teams: { home: { id: 100, name: "Home" }, away },
+    scores: { home: { total: 0 }, away: { total: 36 } },
+  });
+  const data = {
+    fan_live_team_provider_map: [
+      { team_id: "home", provider_team_id: 100, active: true },
+      { team_id: "inactive", provider_team_id: 101, active: false },
+    ],
+    teams: [
+      { id: "inactive", name: "Inactive", country: "Portugal" },
+      { id: "foreign", name: "Rival", country: "Spain" },
+      { id: "local", name: "Rivál", country: "Portugal" },
+      { id: "conflict", name: "Conflicted", country: "Portugal" },
+    ],
+    fan_live_game_reminders: [],
+  };
+  const mappings = [];
+  const writes = [];
+  let fetches = 0;
+  const db = { from(table) {
+    return {
+      select() { return this; }, or() { return this; }, order() { return this; }, is() { return this; },
+      range: async () => ({ data: data[table], error: null }),
+      limit: async () => ({ data: data[table], error: null }),
+      insert: async rows => { mappings.push(...rows); return { error: null }; },
+      upsert: async rows => { writes.push(...rows); return { error: null }; },
+    };
+  } };
+  const module = { exports: {} };
+  let games = [
+    fixture(1, 10, { id: 101, name: "Inactive" }),
+    fixture(2, 10, { id: 102, name: "Rival" }),
+    fixture(3, 20, { id: 900, name: "Rival" }),
+    fixture(4, 10, { id: 103, name: "Conflicted" }, "POST"),
+    fixture(5, 10, { id: 104, name: "Conflicted" }, "ABD"),
+  ];
+  new Function("require", "exports", "process", "fetch", code)(name => {
+    if (name === "next/server") return { NextResponse: Response };
+    if (name === "@supabase/supabase-js") return { createClient: () => db };
+    if (name.endsWith("game-availability")) return { GAME_CHAT_OPEN_EARLY_MINUTES: 60 };
+    return { selectFixtureSyncDay };
+  }, module.exports, { env: config }, async () => { fetches++; return Response.json({ response: games }); });
+  const request = new Request("https://fixture.example", { headers: { Authorization: "Bearer fixture-secret" } });
+  assert.equal((await module.exports.GET(request)).status, 503);
+  assert.equal(fetches, 0);
+  config.API_SPORTS_APPROVED_BASKETBALL_LEAGUE_IDS = "10";
+  const response = await module.exports.GET(request);
+  assert.equal(response.status, 200);
+  const receipt = await response.json();
+  assert.equal(receipt.providerGamesForDate, 5);
+  assert.equal(receipt.approvedGamesForDate, 4);
+  assert.deepEqual(mappings.map(row => [row.provider_team_id, row.team_id]), [[102, "local"]]);
+  assert.deepEqual(writes.map(row => [row.provider_game_id, row.opponent_team_id, row.status]), [
+    ["1", null, "live"], ["2", "local", "live"], ["4", null, "postponed"], ["5", null, "abandoned"],
+  ]);
+  assert.equal(writes[0].home_score, 0);
+  assert.equal(writes[0].scheduled_at, "2026-11-24T10:00:00.000Z");
+  assert.equal(writes[2].away_score, null);
+
+  games = [games[0], games[0]];
+  assert.equal((await module.exports.GET(request)).status, 502);
+  assert.equal(writes.length, 4);
 });
 
 test("server rejects incomplete, cancelled and expired matchups consistently for both prediction reads and writes", async()=>{

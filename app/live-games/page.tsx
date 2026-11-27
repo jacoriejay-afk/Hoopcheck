@@ -31,6 +31,7 @@ type Game = {
   league_name: string | null;
   country: string | null;
   period_label: string | null;
+  score_updated_at: string | null;
 };
 type Team = { id: string; name: string; logo_url?: string | null; logo_bg?: "transparent" | "light" | "dark" | null; country?: string | null; league_name?: string | null };
 type Filter = "live" | "upcoming" | "my-teams";
@@ -91,7 +92,7 @@ export default function LiveGamesPage() {
     const [followsResult, gamesResult, remindersResult] = await Promise.all([
       supabase.from("follow_relationships").select("target_id").eq("follower_id", user.id).eq("target_type", "team").limit(500),
       supabase.from("fan_live_games")
-        .select("id,team_id,opponent_team_id,opponent_name,status,home_score,away_score,started_at,ends_at,scheduled_at,league_id,league_name,country,period_label")
+        .select("id,team_id,opponent_team_id,opponent_name,status,home_score,away_score,started_at,ends_at,scheduled_at,league_id,league_name,country,period_label,score_updated_at")
         .in("status", ["scheduled", "live", "final", "cancelled", "postponed", "abandoned"])
         // Query the relevant time window BEFORE applying the row limit.
         // Otherwise older historical fixtures crowd out today's live games.
@@ -237,11 +238,11 @@ export default function LiveGamesPage() {
     const tb = Date.parse(b.game.scheduled_at || b.game.started_at || "");
     return (Number.isFinite(ta) ? ta : Number.MAX_SAFE_INTEGER) - (Number.isFinite(tb) ? tb : Number.MAX_SAFE_INTEGER);
   });
-  const recent = filtered.filter(({game,availability}) => {
+  const recent = filtered.filter(({game}) => {
     const status = game.status.toLowerCase();
     const timestamp = Date.parse(game.ends_at || game.started_at || game.scheduled_at || "");
-    return ["final","finished","cancelled","canceled"].includes(status) &&
-      Number.isFinite(timestamp) && timestamp >= nowMs - 48 * 3_600_000;
+    return ["final","finished","cancelled","canceled","postponed","abandoned"].includes(status) &&
+      Number.isFinite(timestamp) && timestamp >= nowMs - 48 * 3_600_000 && timestamp <= nowMs;
   }).sort((a,b) => Date.parse(b.game.ends_at || b.game.started_at || b.game.scheduled_at || "") - Date.parse(a.game.ends_at || a.game.started_at || a.game.scheduled_at || ""));
 
   const postGameOpen = filtered.filter(({availability,game}) => availability.phase === "post-game" && availability.chatOpen && !["final","finished","cancelled","canceled","postponed","abandoned"].includes(game.status.toLowerCase()));
@@ -287,7 +288,7 @@ export default function LiveGamesPage() {
           {presentation.isUnverified ? <span className="hc-live-state">{presentation.label}</span>
             : isLive ? <span className="hc-live-badge hc-live-badge--visible"><span aria-hidden="true">●</span> LIVE</span>
             : variant === "postgame" ? <span className="hc-live-state hc-live-state--post">POST-GAME CHAT</span>
-            : isRecent ? <span className="hc-live-state">FINAL</span>
+            : isRecent ? <span className="hc-live-state">{presentation.label}</span>
             : availability.state === "OPENS SOON" ? <span className="hc-live-state hc-live-state--soon">OPENS SOON</span>
             : <span className="hc-live-state">UPCOMING</span>}
           <span className="hc-live-card__league">{leagueName}{country ? ` · ${country}` : ""}</span>
@@ -310,7 +311,7 @@ export default function LiveGamesPage() {
           {availability.chatOpen && allowed && presenceFresh && presenceCounts[game.id] > 0 && <span><HoopIcon name="users" size={15} /> {presenceCounts[game.id]} {presenceCounts[game.id] === 1 ? "member chatting" : "members chatting"}</span>}
           {isUpcoming && <span><HoopIcon name="calendar" size={15} /> {formatViewerLocalTime(tip)}</span>}
           {countdown && <span>{countdown}</span>}
-          {isRecent && <span><HoopIcon name="check" size={15} /> {presentation.isUnverified ? "Waiting for provider-confirmed result" : availability.chatOpen ? "Post-game conversation" : "Final score"}</span>}
+          {isRecent && (presentation.isVerifiedFinal || presentation.isUnverified) && <span><HoopIcon name="check" size={15} /> {presentation.isUnverified ? "Waiting for provider-confirmed result" : availability.chatOpen ? "Post-game conversation" : "Final score"}</span>}
           {variant === "postgame" && <span><HoopIcon name="message-square" size={15} /> Post-game chat remains open</span>}
           {isLive && <span aria-label="Score source">Provider-reported live score</span>}
         </div>

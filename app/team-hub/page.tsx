@@ -15,7 +15,7 @@ import { formatPregameCountdown } from "../../lib/game-availability";
 import "../fan-feed/fan-feed.css";
 
 type Team = { id:string; name:string; logo_url:string|null; logo_bg?:"transparent"|"light"|"dark"|null; league_name:string|null; country:string|null; city:string|null };
-type Game = { id:string; team_id:string; opponent_team_id:string|null; opponent_name:string; status:string; scheduled_at:string|null; started_at:string|null; ends_at:string|null; home_score:number|null; away_score:number|null; period_label:string|null; league_name:string|null };
+type Game = { id:string; team_id:string; opponent_team_id:string|null; opponent_name:string; status:string; scheduled_at:string|null; started_at:string|null; ends_at:string|null; home_score:number|null; away_score:number|null; period_label:string|null; league_name:string|null; score_updated_at:string|null };
 
 export default function TeamHubPage(){
   const { language, formatDate, t } = useLanguage();
@@ -60,7 +60,7 @@ export default function TeamHubPage(){
       const followedTeamIds=(teamQuery.data||[]).map((team:any)=>team.id);
       setMessage("");
       if(followedTeamIds.length){
-        const fields="id,team_id,opponent_team_id,opponent_name,status,scheduled_at,started_at,ends_at,home_score,away_score,period_label,league_name";
+        const fields="id,team_id,opponent_team_id,opponent_name,status,scheduled_at,started_at,ends_at,home_score,away_score,period_label,league_name,score_updated_at";
         const statuses=["scheduled","live","in_progress"];
         const cutoff=new Date(Date.now()-4*60*60_000).toISOString();
         const [homeRows,awayRows]=await Promise.all([
