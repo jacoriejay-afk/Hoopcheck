@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 const uuid=/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 export type ForwardSelection={scope:string;sourceId:string;messageId:string};
 type Thread={id:string;requester_id:string;player_id:string;status:string};
-export function forwardDestinations(rows:Thread[],viewer:string,sourceId:string){
+export function forwardDestinations<T extends Thread>(rows:T[],viewer:string,sourceId:string):T[]{
  return rows.filter(row=>uuid.test(row.id)&&row.id!==sourceId&&row.status==="accepted"&&[row.requester_id,row.player_id].includes(viewer));
 }
 export function forwardDraft(body:string,existing:string):string|null{
