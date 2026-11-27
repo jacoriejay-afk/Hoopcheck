@@ -38,13 +38,26 @@ export async function readPhotoStories(client:SupabaseClient,uid:string,signal:A
  if(signal.aborted||current.error||current.data.session?.user.id!==uid||current.data.session.access_token!==token)throw Error("Account changed.");
  return {stories,next:rows.length>20?{id:page[19].id,created_at:page[19].created_at}:null};
 }
+/** Native photoBody validates the on-disk size before returning its file descriptor.
+ * Browser callers supply a Blob and must still match its actual byte length.
+ * Never pass arbitrary remote URLs or an unrelated local file to FormData. */
+export function appendStoryPhoto(form:FormData,photo:Photo,image:Blob){
+ if(!image||image.type!=="image/jpeg")throw Error("Choose a valid JPEG photo.");
+ if(typeof image.size==="number"){
+  if(image.size!==photo.size||image.size<1||image.size>750000)throw Error("Choose a valid JPEG photo.");
+  form.append("image",image,"photo.jpg");return;
+ }
+ const descriptor=image as unknown as {uri?:unknown;name?:unknown;type?:unknown};
+ if(typeof descriptor.uri!=="string"||descriptor.uri!==photo.uri||!(/^(file:|content:)/.test(descriptor.uri))||descriptor.name!==photo.name||descriptor.name!=="photo.jpg"||descriptor.type!==photo.type)throw Error("Choose a valid JPEG photo.");
+ // React Native FormData reads the file-backed part; its descriptor has no Blob size.
+ form.append("image",image);
+}
 export async function publishPhotoStory(origin:string,uid:string,token:string,caption:string,photo:Photo,signal:AbortSignal,body:(photo:Photo)=>Promise<Blob>,request:typeof fetch=fetch){
  const url=new URL(origin);
  if(url.protocol!=="https:"||url.username||url.password||url.pathname!=="/"||url.search||url.hash||!isFeedId(uid)||!token||caption.trim().length>2000||photo.type!=="image/jpeg"||!Number.isSafeInteger(photo.size)||photo.size<1||photo.size>750000||signal.aborted)throw Error("Choose a valid photo and caption.");
  url.pathname="/api/hoopfeed/moderate";
  const form=new FormData();form.append("kind","post");form.append("post_kind","story");form.append("audience","followers");form.append("text",caption.trim());const image=await body(photo);
- if(image.type!=="image/jpeg"||image.size!==photo.size||image.size<1||image.size>750000)throw Error("Choose a valid JPEG photo.");
- form.append("image",image,"photo.jpg");
+ appendStoryPhoto(form,photo,image);
  if(signal.aborted)throw Error("Story cancelled.");
  let response:Response;
  try{response=await request(url,{method:"POST",headers:{Authorization:"Bearer "+token},body:form,cache:"no-store",redirect:"error",signal});}catch{throw new PublicationUnconfirmed("Story publication could not be confirmed. Refresh before attempting another.");}

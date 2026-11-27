@@ -28,11 +28,20 @@ export default function NotificationBell() {
           readNotifications(supabase,scope.uid,undefined,scope)
         ]);
         if(watchData.error)throw Error("Alerts unavailable.");
-        return {uid:scope.uid,rows:(watchData.data||[]) as Watch[],alerts:alerts.slice(0,12) as Notice[]};
+        const rows=(watchData.data||[]) as Watch[];
+        const preview=alerts.slice(0,12) as Notice[];
+        const names:Record<string,string>={};
+        await Promise.all((["team","coach","league"] as const).map(async type=>{
+          const ids=[...new Set([...rows,...preview].filter(row=>row.target_type===type).map(row=>row.target_id))].filter(id=>/^[A-Za-z0-9_-]{1,100}$/.test(id));
+          if(!ids.length)return;
+          const table=type==="team"?"teams":type==="coach"?"coaches":"leagues";
+          const result=await supabase.from(table).select("id,name").in("id",ids).setHeader("Authorization",scope.bearer).abortSignal(signal);
+          if(!result.error)for(const row of result.data||[])if(typeof row.name==="string"&&ids.includes(row.id))names[row.id]=row.name;
+        }));
+        return {uid:scope.uid,rows,alerts:preview,names};
       });
       if(rev!==generation.current)return;
-      owner.current=result.uid;setWatches(result.rows);setNotices(result.alerts);
-      // Public labels are optional; never retain labels from another account.
+      owner.current=result.uid;setWatches(result.rows);setNotices(result.alerts);setNames(result.names);
     }catch{if(rev===generation.current)clear();}
   }
   useEffect(()=>{
