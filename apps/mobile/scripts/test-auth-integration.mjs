@@ -14,6 +14,16 @@ function compile(path, imports, globals = {}) {
   new Function("require", "exports", "module", ...Object.keys(globals), js)(imports, compiled.exports, compiled, ...Object.values(globals));
   return compiled.exports;
 }
+function recoveryModule() {
+  return compile("../../lib/auth/password-recovery.ts", name => { throw new Error(`Unexpected recovery dependency ${name}`); });
+}
+function nativeLinks() {
+  return compile("src/native/deepLinks.ts", name => {
+    if (name === "./supportTopic.ts") return compile("src/native/supportTopic.ts", () => { throw new Error("Unexpected support dependency"); });
+    if (name.endsWith("/password-recovery.ts")) return recoveryModule();
+    throw new Error(`Unexpected link dependency ${name}`);
+  });
+}
 const theme = { radius: { control: 12 }, spacing: { lg: 16 }, roles: {}, entityHero: { background: "#111827", ink: "#FFFFFF", muted: "#E5E7EB" }, type: { display: {} } };
 function screen(path, { state = [], params = {}, segments = [], pathname = "/", configurationError = null, pendingDestination = null, fontsLoaded = true, supabase = {}, width = 393, fontScale = 1, careerEnabled = false, careerStorage = new Map() } = {}) {
   const calls = { push: [], replace: [], alerts: [], oauthUrls: [], freshSignIns: 0, remembered: [] };
@@ -44,6 +54,8 @@ function screen(path, { state = [], params = {}, segments = [], pathname = "/", 
     if (name.endsWith("/ExploreLinks")) return { ExploreLinks: "ExploreLinks" };
     if (name.endsWith("/primitives")) return { GlassCard: "GlassCard", Input: "Input", Button: "Button", SectionHeader: "SectionHeader" };
     if (name.endsWith("/supabase")) return { supabase, supabaseConfigurationError: configurationError };
+    if (name.endsWith("/native/deepLinks")) return nativeLinks();
+    if (name.endsWith("/auth/password-recovery")) return recoveryModule();
     if (name.endsWith("/native/sessionBootstrap")) return { createSessionBootstrap: () => ({ retry() {}, dispose() {} }) };
     if (name.endsWith("/native/lockPolicy")) return { recordFreshSignIn: () => { calls.freshSignIns++; } };
     if (name.endsWith("/native/pendingDestination")) return { takeDestination: () => pendingDestination, rememberDestination: value => calls.remembered.push(value) };
@@ -172,6 +184,19 @@ test("invalid build configuration blocks both sign-in methods before any auth re
   assert.deepEqual(f.calls.replace, []);
 });
 
+test("native recovery requests an HTTPS browser fallback and gives generic resend feedback", async () => {
+  const requests = [];
+  const f = screen("app/forgot-password.tsx", { state: [" Player@Example.com "], supabase: { auth: {
+    resetPasswordForEmail: async (...args) => { requests.push(args); return { error: { code: "user_not_found" } }; },
+  } } });
+  const send = f.nodes.find(n => n.type === "Button");
+  await send.props.onPress();
+  await send.props.onPress();
+  assert.deepEqual(requests, [["player@example.com", { redirectTo: "https://hoopcheck.online/recover-password" }]]);
+  assert.match(f.calls.alerts[0][1], /If there’s an account/);
+  assert.equal(f.calls.alerts[1][0], "Please wait");
+});
+
 test("layout does not interrupt callback exchange, but retains protected-route redirects", () => {
   for (const [segments, signedIn, expected] of [
     [["auth", "callback"], true, []], [["auth", "callback"], false, []],
@@ -210,10 +235,7 @@ test("denied, missing-code and misconfigured callbacks never exchange or redirec
 
 
 test("OS callback URL reaches native PKCE exchange rather than browser handoff", async () => {
-  const links = compile("src/native/deepLinks.ts", name => {
-    assert.equal(name, "./supportTopic.ts");
-    return compile("src/native/supportTopic.ts", () => { throw new Error("Unexpected dependency"); });
-  });
+  const links = nativeLinks();
   const intent = compile("app/+native-intent.tsx", name => {
     assert.equal(name, "../src/native/deepLinks"); return links;
   });
