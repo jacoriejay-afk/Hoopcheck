@@ -39,6 +39,8 @@ export default function HoopChatCourtside(){
   const [appearance,setAppearance]=useState<ChatAppearance>(DEFAULT_APPEARANCE);
   const [prefs,setPrefs]=useState<ThreadPreferences>(emptyPrefs);
   const accountGeneration=useRef(0);
+  // Lock synchronously within the current account generation, even before React rerenders.
+  const mutationGeneration=useRef<number|null>(null);
   const loadSequence=useRef(0);
   const userIdRef=useRef("");
   const historyRef=useRef<HTMLDivElement|null>(null);
@@ -250,10 +252,12 @@ export default function HoopChatCourtside(){
   async function respond(status:"accepted"|"rejected"){
     if(!selected||selected.player_id!==userId||selected.status!=="pending"||sending)return;
     const rev=accountGeneration.current;
+    if(mutationGeneration.current===rev)return;
+    mutationGeneration.current=rev;
     setSending(true);setFeedback("");
     try{
       const {data:{user}}=await supabase.auth.getUser();
-      if(user?.id!==userId)throw new Error("Your session changed. Sign in again.");
+      if(user?.id!==userId||rev!==accountGeneration.current)throw new Error("Your session changed. Sign in again.");
       const {data,error}=await supabase.from("player_contact_requests")
         .update({status,responded_at:new Date().toISOString()})
         .eq("id",selected.id).eq("player_id",userId).eq("status","pending").select("id");
@@ -262,26 +266,28 @@ export default function HoopChatCourtside(){
       setFeedback(status==="accepted"?"Connection accepted. The conversation is now open.":"Request declined.");
       await load(true);
     }catch(e){if(rev===accountGeneration.current)setError(e instanceof Error?e.message:"Could not respond.");}
-    finally{if(rev===accountGeneration.current)setSending(false);}
+    finally{if(mutationGeneration.current===rev)mutationGeneration.current=null;if(rev===accountGeneration.current)setSending(false);}
   }
   async function send(event:FormEvent<HTMLFormElement>){
     event.preventDefault();
     const body=currentDraft.trim();
     if(!selected||selected.status!=="accepted"||!userId||!body||sending)return;
-    const rev=accountGeneration.current,thread=selected.id;
+    const rev=accountGeneration.current,thread=selected.id,submittedDraft=currentDraft;
+    if(mutationGeneration.current===rev)return;
+    mutationGeneration.current=rev;
     setSending(true);setError("");setFeedback("");
     try{
       const {data:{user}}=await supabase.auth.getUser();
-      if(user?.id!==userId)throw new Error("Session changed. Please sign in again.");
+      if(user?.id!==userId||rev!==accountGeneration.current)throw new Error("Session changed. Please sign in again.");
       const {error:sendError}=await supabase.from("player_contact_messages")
         .insert({request_id:thread,sender_id:userId,body:body.slice(0,2000)});
       if(rev!==accountGeneration.current)return;
       if(sendError)throw new Error("Message not sent. Your text is still here.");
-      setDrafts(prev=>({...prev,[thread]:""}));
+      setDrafts(prev=>prev[thread]===submittedDraft?{...prev,[thread]:""}:prev);
       setFeedback("Message sent.");
       await load(true);
     }catch(e){if(rev===accountGeneration.current)setError(e instanceof Error?e.message:"Message could not be sent.");}
-    finally{if(rev===accountGeneration.current)setSending(false);}
+    finally{if(mutationGeneration.current===rev)mutationGeneration.current=null;if(rev===accountGeneration.current)setSending(false);}
   }
   function applyStarter(value:string){
     if(!selectedId)return;
