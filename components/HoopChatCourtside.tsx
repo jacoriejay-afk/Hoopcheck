@@ -13,7 +13,7 @@ import {prepareConversationMessage,sendConversationMessage} from "../apps/mobile
 import {quoteConversationMessage} from "../apps/mobile/src/native/hoopChatQuote";
 import {
   DEFAULT_APPEARANCE,STARTERS,lastByThread,parseAppearance,parseThreadPreferences,
-  sortThreads,unreadCount,
+  sortThreads,unreadCount,advanceSeenMarker,
   type ChatAppearance,type ChatContact,type ChatMessage,type ChatRequest,type ThreadPreferences
 } from "../lib/hoopchat-courtside";
 import "./HoopChatCourtside.css";
@@ -49,6 +49,8 @@ export default function HoopChatCourtside(){
   const [settingsOpen,setSettingsOpen]=useState(false);
   const [appearance,setAppearance]=useState<ChatAppearance>(DEFAULT_APPEARANCE);
   const [prefs,setPrefs]=useState<ThreadPreferences>(emptyPrefs);
+  const [prefsOwner,setPrefsOwner]=useState("");
+  const [atLatest,setAtLatest]=useState(true);
   const accountGeneration=useRef(0);
   // Lock synchronously within the current account generation, even before React rerenders.
   const mutationGeneration=useRef<number|null>(null);
@@ -157,6 +159,7 @@ export default function HoopChatCourtside(){
     pendingMessages.current.clear();
     setUserId("");setRequests([]);setMessages([]);setContacts({});
     setSelectedId(null);setDrafts({});setError("");setFeedback("");setLoading(true);setSending(false);
+    setPrefs(emptyPrefs());setPrefsOwner("");setAtLatest(true);
     void load();
     return ()=>{
       accountGeneration.current+=1;loadSequence.current+=1;
@@ -179,6 +182,7 @@ export default function HoopChatCourtside(){
     if(!userId)return;
     setAppearance(parseAppearance(safeStorageGet(appearanceKey(userId))));
     setPrefs(parseThreadPreferences(safeStorageGet(threadsKey(userId))));
+    setPrefsOwner(userId);
     setSettingsOpen(false);
   },[userId]);
   // Do not reconnect the socket whenever the 25-second inbox refresh recreates requests[].
@@ -288,6 +292,7 @@ export default function HoopChatCourtside(){
     return !q||[peerName(r),contacts[peerId(r)]?.username||"",r.message||""].some(v=>v.toLocaleLowerCase().includes(q));
   });
   const selected=requests.find(r=>r.id===selectedId)||null;
+  const renderGeneration=accountGeneration.current;
   const selectedHistory=historyScope&&historyPage?.scope===historyScope?historyPage:null;
   const activeMessages=selectedHistory?.rows.slice().reverse()||[];
   const selectedHistoryError=historyScope&&historyError?.scope===historyScope?historyError.message:"";
@@ -298,14 +303,14 @@ export default function HoopChatCourtside(){
     const changedThread=historyThread.current!==selectedId;
     if(changedThread){
       historyThread.current=selectedId;
-      followingLatest.current=true;
+      followingLatest.current=true;setAtLatest(true);
     }
     if(!changedThread&&!followingLatest.current)return;
     const frame=window.requestAnimationFrame(()=>{
       const current=historyRef.current;
       if(current&&historyThread.current===selectedId){
         current.scrollTop=current.scrollHeight;
-        followingLatest.current=true;
+        followingLatest.current=true;setAtLatest(true);
       }
     });
     return ()=>window.cancelAnimationFrame(frame);
@@ -315,6 +320,7 @@ export default function HoopChatCourtside(){
   function onHistoryScroll(event:UIEvent<HTMLDivElement>){
     const element=event.currentTarget;
     followingLatest.current=element.scrollHeight-element.scrollTop-element.clientHeight<100;
+    setAtLatest(followingLatest.current);
   }
   const totalUnread=requests.reduce((n,r)=>n+(prefs.muted.includes(r.id)?0:numberUnread(r)),0);
   const currentDraft=selectedId?drafts[selectedId]||"":"";
@@ -325,6 +331,7 @@ export default function HoopChatCourtside(){
     if(userId)safeStorageSet(appearanceKey(userId),JSON.stringify(next));
   }
   function savePrefs(next:ThreadPreferences){
+    if(!userId||prefsOwner!==userId||userIdRef.current!==userId)return;
     setPrefs(next);
     if(userId)safeStorageSet(threadsKey(userId),JSON.stringify(next));
   }
@@ -335,20 +342,24 @@ export default function HoopChatCourtside(){
     savePrefs({...prefs,muted:prefs.muted.includes(id)?prefs.muted.filter(x=>x!==id):[...prefs.muted,id]});
   }
   function markRead(id:string){
-    const peerMessages=messages.filter(m=>m.request_id===id&&m.sender_id!==userId);
-    const latestPeer=peerMessages.reduce((last,m)=>m.created_at>last?m.created_at:last,"");
-    if(!latestPeer||prefs.seen[id]&&prefs.seen[id]>=latestPeer)return;
-    savePrefs({...prefs,seen:{...prefs.seen,[id]:latestPeer}});
+    if(!selectedHistory||selectedId!==id||prefsOwner!==userId||!userId||userIdRef.current!==userId||document.visibilityState!=="visible")return;
+    const next=advanceSeenMarker(selectedHistory.rows,id,userId,prefs.seen[id]);
+    if(!next||next===prefs.seen[id])return;
+    savePrefs({...prefs,seen:{...prefs.seen,[id]:next}});
   }
   useEffect(()=>{
-    if(!selectedId||document.visibilityState!=="visible")return;
-    const peerMessages=messages.filter(m=>m.request_id===selectedId&&m.sender_id!==userId);
-    const latestPeer=peerMessages.reduce((last,m)=>m.created_at>last?m.created_at:last,"");
-    if(!latestPeer||prefs.seen[selectedId]&&prefs.seen[selectedId]>=latestPeer)return;
-    const next={...prefs,seen:{...prefs.seen,[selectedId]:latestPeer}};
-    setPrefs(next);
-    if(userId)safeStorageSet(threadsKey(userId),JSON.stringify(next));
-  },[messages,selectedId,userId,prefs]);
+    if(!selectedId||!selectedHistory||!atLatest||prefsOwner!==userId||!userId||userIdRef.current!==userId)return;
+    const markVisible=()=>{
+      if(document.visibilityState!=="visible"||!followingLatest.current||userIdRef.current!==userId||activeHistoryScope.current!==historyScope)return;
+      const next=advanceSeenMarker(selectedHistory.rows,selectedId,userId,prefs.seen[selectedId]);
+      if(!next||next===prefs.seen[selectedId])return;
+      const updated={...prefs,seen:{...prefs.seen,[selectedId]:next}};
+      setPrefs(updated);safeStorageSet(threadsKey(userId),JSON.stringify(updated));
+    };
+    markVisible();
+    document.addEventListener("visibilitychange",markVisible);
+    return()=>document.removeEventListener("visibilitychange",markVisible);
+  },[selectedHistory,selectedId,historyScope,userId,prefs,prefsOwner,atLatest]);
 
   function choose(id:string){
     if(id!==selectedId){
@@ -356,7 +367,7 @@ export default function HoopChatCourtside(){
       historyRequest.current?.abort();
       historyRequest.current=null;
     }
-    setSelectedId(id);setFeedback("");setSettingsOpen(false);
+    setSelectedId(id);setFeedback("");setSettingsOpen(false);setAtLatest(true);
     if(typeof window!=="undefined"){
       const url=new URL(window.location.href);
       url.searchParams.set("thread",id);
@@ -449,7 +460,7 @@ export default function HoopChatCourtside(){
       <div><p className="eyebrow">HOOPCHAT · COURTSIDE</p><h2>HoopChat<span>.</span></h2>
         <p>Private messages and requests. Contacts must accept before chatting.</p></div>
       <div className="hc-courtside-top-actions">
-        {totalUnread>0&&<span className="hc-courtside-unread" aria-label={totalUnread+" unread on this device"}>{totalUnread} new</span>}
+        {totalUnread>0&&<span className="hc-courtside-unread" aria-label={totalUnread+" unread items in loaded inbox on this device"}>{totalUnread} new in loaded inbox</span>}
         <button type="button" onClick={()=>void load()} disabled={syncing||sending}>{syncing?"Syncing…":"Refresh"}</button>
         <button type="button" aria-expanded={settingsOpen} onClick={()=>setSettingsOpen(value=>!value)}>Customize <span aria-hidden="true">⚙</span></button>
       </div>
@@ -459,7 +470,7 @@ export default function HoopChatCourtside(){
       <div><strong>Message spacing</strong><div>{(["comfortable","compact"] as const).map(v=><button type="button" key={v} aria-pressed={appearance.density===v} onClick={()=>updateAppearance("density",v)}>{v==="comfortable"?"Comfort":"Compact"}</button>)}</div></div>
       <div><strong>Text size</strong><div>{(["normal","large"] as const).map(v=><button type="button" key={v} aria-pressed={appearance.scale===v} onClick={()=>updateAppearance("scale",v)}>{v==="normal"?"Standard":"Large"}</button>)}</div></div>
       <div><strong>Accent</strong><div>{(["orange","blue","purple"] as const).map(v=><button className={"hc-courtside-color is-"+v} type="button" key={v} aria-label={v} aria-pressed={appearance.accent===v} onClick={()=>updateAppearance("accent",v)}/>)}</div></div>
-      <p>Preferences, pinned threads, and unread markers stay on this device. Your message content is never saved in appearance settings.</p>
+      <p>Preferences, pinned threads, and unread markers stay on this device. Counts include only loaded inbox items, not all account messages. Your message content is never saved in appearance settings.</p>
     </div>}
     {error&&<p className="hc-courtside-alert" role="alert">{error}</p>}
     <div className="hc-courtside-shell">
@@ -486,7 +497,7 @@ export default function HoopChatCourtside(){
               </span>
               <span className="hc-courtside-thread-indicators">{prefs.pinned.includes(row.id)&&<span title="Pinned">★</span>}
                 {prefs.muted.includes(row.id)&&<span title="Muted on this device">◌</span>}
-                {unread>0&&<strong aria-label={unread+" new messages on this device"}>{unread>99?"99+":unread}</strong>}</span>
+                {unread>0&&<strong aria-label={unread+" unread items in loaded inbox on this device"}>{unread>99?"99+":unread}</strong>}</span>
             </button>;
           }):<div className="hc-courtside-list-empty"><strong>{requests.length?"No matching conversations":"Your courtside is open"}</strong>
             <p>{requests.length?"Change your search or filters.":"Connect with another player to start a private thread."}</p>
@@ -498,7 +509,7 @@ export default function HoopChatCourtside(){
           <div className="hc-courtside-identity"><span className="hc-courtside-avatar" aria-hidden="true">{initials(peerName(selected))}</span>
             <span><strong>{peerName(selected)}</strong><small>{selected.status==="accepted"?"Accepted contact · private HoopChat":"Contact request"}</small></span></div>
           <div className="hc-courtside-thread-actions">
-            {selected.status==="accepted"&&<button type="button" onClick={()=>markRead(selected.id)}>Mark read</button>}
+            {selected.status==="accepted"&&<button type="button" disabled={!selectedHistory||prefsOwner!==userId} onClick={()=>markRead(selected.id)}>Mark read</button>}
             <button type="button" aria-pressed={prefs.pinned.includes(selected.id)} onClick={()=>togglePinned(selected.id)}>
               {prefs.pinned.includes(selected.id)?"Unpin":"Pin"} <span aria-hidden="true">★</span></button>
             <button type="button" aria-pressed={prefs.muted.includes(selected.id)} onClick={()=>toggleMuted(selected.id)}>
@@ -506,7 +517,7 @@ export default function HoopChatCourtside(){
             <Link href={peerHref(selected)}>Profile</Link>
           </div>
         </header>
-        <HoopChatSafety key={userId+":"+selected.id+":"+sessionRevision} uid={userId} requestId={selected.id} peerId={peerId(selected)} disabled={sending} isCurrent={()=>userIdRef.current===userId} onBlocked={()=>hideBlockedPeer(peerId(selected))}/>
+        <HoopChatSafety key={userId+":"+selected.id+":"+sessionRevision} uid={userId} requestId={selected.id} peerId={peerId(selected)} disabled={sending} isCurrent={()=>userIdRef.current===userId&&accountGeneration.current===renderGeneration} onBlocked={()=>hideBlockedPeer(peerId(selected))}/>
         <div ref={historyRef} onScroll={onHistoryScroll} className="hc-courtside-history" role="log" aria-label={"Messages with "+peerName(selected)}>
           <div className="hc-courtside-center-note">🏀 THE COURTSIDE THREAD <span>·</span> Only accepted contacts can read this conversation.</div>
           {selected.message&&<div className="hc-courtside-introduction"><small>CONNECTION INTRODUCTION</small><p>{selected.message}</p></div>}
