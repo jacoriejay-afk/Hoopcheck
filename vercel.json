@@ -27,7 +27,8 @@
       "qa/hoopcheck-ios-ci-efficiency": false,
       "ops/step4b-media-cancellation": false,
       "ops/step4b-pg17-recovery": false,
-      "feature/qa-hoopcheck-link-hub": false
+      "feature/qa-hoopcheck-link-hub": false,
+      "ops/step4-migration-forward-guard": false
     }
   }
 }
