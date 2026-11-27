@@ -18,6 +18,7 @@ import RoleQuickLinks from "../../components/RoleQuickLinks";
 import "../../components/role-quick-links.css";
 import { GroupCard, Row } from "../../components/LayoutSystem";
 import { useTheme } from "../../components/ThemeProvider";
+import { normalizeThemePreference, usesDarkPalette } from "../../lib/theme-preference";
 import { useLanguage, type Language } from "../../components/LanguageProvider";
 import { calculateProfileCompletion } from "../../lib/profile-completion";
 import PlayerProfileCompletionCard from "../../components/PlayerProfileCompletionCard";
@@ -88,7 +89,8 @@ function SettingsToggle({icon,label,checked,onChange}:{icon:string;label:string;
 }
 
 export default function AccountPage() {
-  const { setTheme: setGlobalTheme } = useTheme();
+  const { theme: themePreference, setTheme: setGlobalTheme } = useTheme();
+  const darkAppearance = usesDarkPalette(themePreference, typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches);
   const { t, setLanguage: applyLanguage } = useLanguage();
   const [email, setEmail] = useState("");
   const [cover, setCover] = useState(profileCover(null));
@@ -136,7 +138,6 @@ export default function AccountPage() {
   const [cropFile, setCropFile] = useState<File | null>(null);
   const [cropPreview, setCropPreview] = useState("");
   const [cropZoom, setCropZoom] = useState(1);
-  const [themePreference, setThemePreference] = useState<"system"|"light"|"dark">("system");
   const [preferredLanguage, setPreferredLanguage] = useState("en");
   const [notificationPreferences, setNotificationPreferences] = useState({game_chat_alerts:true,new_follower:true,team_reviews:true,hoopfeed_activity:true});
   const [settingsVisibility, setSettingsVisibility] = useState<"public"|"players_only">("public");
@@ -359,10 +360,9 @@ export default function AccountPage() {
     (async () => {
       const { data } = await readOwnProfile<{ theme_preference: string | null; preferred_language: string | null; notification_preferences: Record<string, unknown> | null; profile_visibility: string | null; current_country_public: boolean | null }>(userId, "theme_preference,preferred_language,notification_preferences,profile_visibility,current_country_public");
       if (!alive || !data) return;
-      const theme = typeof data.theme_preference === "string" && ["system","light","dark"].includes(data.theme_preference ?? "") ? data.theme_preference as "system"|"light"|"dark" : "system";
+      const theme = normalizeThemePreference(data.theme_preference);
       const localTheme = localStorage.getItem("hoopcheck-theme");
       const cookieHasTheme = document.cookie.split(";").some((item) => item.trim().startsWith("hoopcheck-theme="));
-      setThemePreference(localTheme && ["system","light","dark"].includes(localTheme) ? localTheme as "system"|"light"|"dark" : theme);
       if (!localTheme && !cookieHasTheme) setGlobalTheme(theme);
       const supportedLanguages: Language[] = ["en","es","fr","de","tr","pt","it","el","ar","ru","az","pl","zh","ja","sr","fi","he","lt","uk"];
       const language = supportedLanguages.includes(data.preferred_language as Language) ? data.preferred_language as Language : "en";
@@ -391,8 +391,6 @@ export default function AccountPage() {
   }
 
   async function changeTheme(next: "system"|"light"|"dark") {
-    setThemePreference(next);
-    localStorage.setItem("hoopcheck-theme", next);
     setGlobalTheme(next);
     await saveSetting({ theme_preference: next }, "Appearance saved.");
   }
@@ -501,7 +499,7 @@ export default function AccountPage() {
           <SettingsRow icon="crown" label={t("membershipLabel")} value={subscription?.plan === "premium" ? "Premium" : subscription?.plan === "pro" ? t("pro") : t("freePlan")} href="/membership" />
         </SettingsGroup>
         <SettingsGroup title="Appearance & language">
-          <div className="hc-setting-row"><SettingsGlyph name="moon"/><div className="hc-setting-copy"><strong>{t("darkMode")}</strong><small>{themePreference === "system" ? t("followsDevice") : themePreference === "dark" ? t("on") : t("off")}</small></div><button type="button" role="switch" aria-checked={themePreference === "dark" || (themePreference === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches)} className={"hc-switch "+((themePreference === "dark" || (themePreference === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches)) ? "is-on" : "")} onClick={() => changeTheme((themePreference === "system" ? (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches) : themePreference === "dark") ? "light" : "dark")}><span/></button></div>
+          <div className="hc-setting-row"><SettingsGlyph name="moon"/><div className="hc-setting-copy"><strong>{t("darkMode")}</strong><small>{themePreference === "system" ? t("followsDevice") : themePreference === "midnight" ? "Midnight Black" : themePreference === "dark" ? t("on") : t("off")}</small></div><button type="button" role="switch" aria-label={t("darkMode")} aria-checked={darkAppearance} className={"hc-switch "+(darkAppearance ? "is-on" : "")} onClick={() => changeTheme(darkAppearance ? "light" : "dark")}><span/></button></div>
           {themePreference !== "system" && <div className="hc-setting-subrow"><button type="button" className="hc-text-button" onClick={() => changeTheme("system")}>{t("useDeviceSetting")}</button></div>}
           <div className="hc-setting-row"><SettingsGlyph name="globe"/><div className="hc-setting-copy"><strong>{t("language")}</strong><small>{t("chooseAppLanguage")}</small></div><select aria-label={t("language")} className="hc-setting-select" value={preferredLanguage} onChange={e=>changeLanguage(e.target.value)}><option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="tr">Türkçe</option><option value="pt">Português</option><option value="it">Italiano</option><option value="el">Ελληνικά</option><option value="ar">العربية</option><option value="ru">Русский</option><option value="az">Azərbaycanca</option><option value="pl">Polski</option><option value="zh">中文</option><option value="ja">日本語</option><option value="sr">Српски</option><option value="fi">Suomi</option><option value="he">עברית</option><option value="lt">Lietuvių</option><option value="uk">Українська</option></select></div>
           </SettingsGroup>

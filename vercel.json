@@ -2,6 +2,7 @@
   "git": {
     "deploymentEnabled": {
       "qa/hoopcheck-master-acceptance": false,
+      "qa/step1-web-midnight": false,
       "qa/step1-verified-reconciliation": false,
       "qa/steps-1-4-web-contrast": false,
       "integration/build17-development": false,
