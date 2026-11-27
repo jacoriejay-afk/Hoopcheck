@@ -1,5 +1,5 @@
 import { createAuthIntents, browserAuthIntentStore, browserAuthActionLock, guardAuthResponses, bindAuthIntents } from "./auth/auth-intents";
-import { createBrowserClient, stringFromBase64URL } from "@supabase/ssr";
+import { createBrowserClient, parseCookieHeader, serializeCookieHeader, stringFromBase64URL } from "@supabase/ssr";
 import { appRecoveryPath, recoveryLink } from "./auth/password-recovery";
 
 export const supabaseUrl =
@@ -47,8 +47,35 @@ export function takeRecoveryEntry(path: string) {
 }
 
 const authIntents = createAuthIntents(browserAuthIntentStore(supabaseUrl));
+const verifierCookieName = `sb-${new URL(supabaseUrl).hostname.split(".")[0]}-auth-token-code-verifier`;
+const onRecoveryPage = () => typeof window !== "undefined" &&
+  ["/reset-password", appRecoveryPath].includes(window.location.pathname);
+const sharedFetch = guardAuthResponses(supabaseUrl, authIntents);
+// The pinned SSR client auto-detects URL callbacks. Next hydration may restore
+// a query after replaceState, so hide recovery verifier cookies from the shared
+// client on these routes. The explicit memory-only recovery client still claims
+// the verifier directly, and normal OAuth callback handling is unchanged.
+const guardedSharedFetch: typeof fetch = async (input, init) => {
+  const url = new URL(typeof input === "string" ? input : input instanceof URL ? input.href : input.url);
+  if (onRecoveryPage() && url.origin === new URL(supabaseUrl).origin &&
+      url.pathname === "/auth/v1/token" && url.searchParams.get("grant_type") === "pkce") {
+    return new Response(JSON.stringify({ code: "recovery_route_isolated", msg: "Use the password recovery form." }), {
+      status: 400, headers: { "Content-Type": "application/json" },
+    });
+  }
+  return sharedFetch(input, init);
+};
 export const supabase = createBrowserClient(supabaseUrl, supabaseKey, {
-  global: { fetch: guardAuthResponses(supabaseUrl, authIntents) },
+  global: { fetch: guardedSharedFetch },
+  ...(typeof window === "undefined" ? {} : { cookies: {
+    getAll() {
+      return parseCookieHeader(document.cookie).filter(({ name }) => !onRecoveryPage() ||
+        (name !== verifierCookieName && !name.startsWith(`${verifierCookieName}.`)));
+    },
+    setAll(values) {
+      values.forEach(({ name, value, options }) => { document.cookie = serializeCookieHeader(name, value, options); });
+    },
+  } }),
   auth: {
     autoRefreshToken: true,
     detectSessionInUrl: true,

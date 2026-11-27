@@ -27,7 +27,8 @@
       "qa/step1-womens-league-directory": false,
       "qa/step1-web-feed-report": false,
       "qa/step1-web-media-recovery": false,
-      "qa/step1-native-live-status": false
+      "qa/step1-native-live-status": false,
+      "qa/step4-recovery-route-isolation": false
     }
   }
 }

@@ -105,13 +105,18 @@ async function run(browser) {
     assert.deepEqual(calls, ["recover", "verify", "update", "logout"]);
     assert.equal((await context.cookies()).some(cookie => /^sb-ci-auth-token(?:\.\d+)?$/.test(cookie.name)), false);
 
+    // Deliberately seed a pending recovery verifier before the wrong-route case.
+    // This reproduces a shared SDK callback race even if a prior cookie was cleared.
+    await context.addCookies([{ name: "sb-ci-auth-token-code-verifier", value: `base64-${part("fixture-verifier/PASSWORD_RECOVERY")}`, url: base.origin }]);
     for (const query of ["token_hash=expired-fixture&type=recovery", "token_hash=valid-fixture&type=recovery", "token_hash=one&token_hash=two&type=recovery", "code=wrong-route"]) {
       await go(`/recover-password?${query}`);
       if (!query.includes("&token_hash=") && !query.startsWith("code=")) await confirm.click();
+      if (query.startsWith("code=")) assert.equal(new URL(page.url()).pathname, "/recover-password");
       await page.getByText("This recovery link is invalid", { exact: false }).waitFor();
       await page.getByRole("link", { name: "Request a new reset link" }).waitFor();
     }
     assert.deepEqual(calls.slice(4), ["verify", "verify"]);
+    assert.ok((await context.cookies()).some(cookie => cookie.name === "sb-ci-auth-token-code-verifier"), "Wrong recovery route must not consume the pending verifier");
 
     // Complete the previous route transition before seeding the legacy PKCE cookie.
     await page.getByRole("link", { name: "Back to sign in" }).click();
