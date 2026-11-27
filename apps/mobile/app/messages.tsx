@@ -48,6 +48,8 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
   const [openedMode, setOpenedMode] = useState(mode);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  // React state updates are not synchronous; prevent duplicate mutations before the next render.
+  const mutationLocked = useRef(false);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [threadPage, setThreadPage] = useState<{scope:string;rows:ContactMessage[];hasMore:boolean}|null>(null);
@@ -239,7 +241,8 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
   }, [threadScope, selectedRequestId, userId, loadThread]);
 
   async function respond(status:"accepted"|"rejected") {
-    if(!selected || selected.player_id!==userId || selected.status!=="pending" || !opened || sending) return;
+    if(!selected || selected.player_id!==userId || selected.status!=="pending" || !opened || sending || offline || mutationLocked.current) return;
+    mutationLocked.current=true;
     const actionGeneration = generation.current;
     setSending(true);setError("");
     try {
@@ -254,10 +257,12 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       if(updateError)throw new Error("Could not update the request.");
       if(actionGeneration===generation.current && focused.current) await load();
     }catch(failure){if(actionGeneration===generation.current && focused.current)setError(failure instanceof Error?failure.message:"Unable to update request.");}
-    finally{setSending(false);}
+    finally{mutationLocked.current=false;setSending(false);}
   }
   async function send(){
-    if(!selected || selected.status!=="accepted" || !opened || !draft.trim() || sending) return;
+    if(!selected || selected.status!=="accepted" || !opened || !draft.trim() || sending || offline || mutationLocked.current) return;
+    mutationLocked.current=true;
+    const submittedDraft=draft;
     const actionGeneration = generation.current;
     setSending(true);setError("");
     try{
@@ -267,11 +272,11 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       const header=await withHoopChatDeadline(signal=>verifyChatPeer(userId,peerId(selected),signal));
       if(actionGeneration!==generation.current||!focused.current)throw Error("Your session changed.");
       const {error:sendError}=await supabase.from("player_contact_messages")
-        .insert({request_id:selected.id,sender_id:userId,body:draft.trim().slice(0,2000)}).setHeader("Authorization",header);
+        .insert({request_id:selected.id,sender_id:userId,body:submittedDraft.trim().slice(0,2000)}).setHeader("Authorization",header);
       if(sendError)throw new Error("The message was not sent.");
-      if(actionGeneration===generation.current && focused.current){setDraft("");await load();}
+      if(actionGeneration===generation.current && focused.current){setDraft(current=>current===submittedDraft?"":current);await load();}
     }catch(failure){if(actionGeneration===generation.current && focused.current)setError(failure instanceof Error?failure.message:"Message failed.");}
-    finally{setSending(false);}
+    finally{mutationLocked.current=false;setSending(false);}
   }
   return <SafeAreaView edges={embedded ? ["left","right"] : ["bottom","left","right"]} style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:embedded?12:16,gap:embedded?8:12,paddingBottom:embedded?120:35}}>
@@ -279,7 +284,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       {!embedded ? <Text style={{color:theme.muted}}>Private player connections and message requests. Players must accept before messaging opens.</Text> : null}
       <View style={{flexDirection:"row",flexWrap:"wrap",gap:8}}>
         {!embedded ? <Button secondary onPress={()=>router.push("/notifications")}>Basketball alerts</Button> : null}
-        <Button secondary disabled={loading || offline} onPress={()=>void load()}>Refresh</Button>
+        <Button secondary disabled={loading || offline || sending} onPress={()=>{if(!mutationLocked.current)void load();}}>Refresh</Button>
       </View>
       {error?<Text accessibilityRole="alert" style={{color:theme.accent}}>{error}</Text>:null}
       {loading&&!visibleThreads.length?<HoopCheckLoading compact label="Loading conversations…" />:null}
@@ -332,7 +337,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
         {selected.status==="accepted"?<View style={{gap:8}}>
           {process.env.EXPO_PUBLIC_HOOPCHECK_PLAYER_REFERENCES_ENABLED==="true"&&userId?<PlayerReferencePanel key={userId+":"+selected.id} userId={userId} connectionId={selected.id} offline={offline}/>:null}
           <ChatTypingBasketball active={motionActive && Boolean(draft.trim()) && !sending} />
-          <TextInput accessibilityLabel="Write private HoopChat message" multiline maxLength={2000} value={draft} onChangeText={setDraft} placeholder="Write a message…" placeholderTextColor={theme.muted}
+          <TextInput accessibilityLabel="Write private HoopChat message" editable={!sending && !offline} multiline maxLength={2000} value={draft} onChangeText={setDraft} placeholder="Write a message…" placeholderTextColor={theme.muted}
             style={{minHeight:48,maxHeight:120,textAlignVertical:"top",padding:12,backgroundColor:theme.input,color:theme.foreground,borderWidth:1,borderColor:theme.border,borderRadius:theme.radius.control}} />
           <Button disabled={sending||offline||!draft.trim()} onPress={()=>void send()}>{sending?"Sending…":"Send"}</Button>
         </View>:selected.status==="pending"?<Text style={{color:theme.muted}}>Messaging opens once the player accepts.</Text>:<Text style={{color:theme.muted}}>This request is no longer active.</Text>}
