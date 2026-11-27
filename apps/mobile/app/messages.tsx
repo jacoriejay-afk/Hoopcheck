@@ -16,6 +16,8 @@ import { requireOnline, useNetwork } from "../src/native/network";
 import { hoopChatAuthAction, withHoopChatDeadline } from "../src/native/hoopChatLoad";
 import { appendConversationPage, CHAT_HISTORY_PAGE_SIZE, matchesConversationSearch, readConversationPage, refreshConversationPage, type ContactMessage } from "../src/native/hoopChatHistory";
 import { prepareConversationMessage, sendConversationMessage } from "../src/native/hoopChatSend";
+import { quoteConversationMessage } from "../src/native/hoopChatQuote";
+import { useNativeDraft } from "../src/native/drafts";
 
 type ContactRequest = {
   id: string; requester_id: string; player_id: string; message: string | null;
@@ -45,7 +47,6 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [contacts, setContacts] = useState<Record<string,ContactName>>({});
   const [selectedId, setSelectedId] = useState("");
-  const [draft, setDraft] = useState("");
   const [openedId, setOpenedId] = useState("");
   const [openedMode, setOpenedMode] = useState(mode);
   const [loading, setLoading] = useState(true);
@@ -120,7 +121,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       if (reloadTimer.current !== null) clearTimeout(reloadTimer.current);
       reloadTimer.current = null;
       generation.current++;
-      setRequests([]); setMessages([]); setContacts({}); setUserId(""); setSelectedId(""); setOpenedId(""); setDraft(""); setSearch(""); setThreadPage(null); setThreadError(null); historyRequest.current++; historyPaging.current=false; setHistoryBusy(false);
+      setRequests([]); setMessages([]); setContacts({}); setUserId(""); setSelectedId(""); setOpenedId(""); setSearch(""); setThreadPage(null); setThreadError(null); historyRequest.current++; historyPaging.current=false; setHistoryBusy(false);
     };
   }, [load]));
 
@@ -134,7 +135,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       generation.current++;
       authIdentity.current = nextUserId;
       pendingMessages.current.clear();
-      setRequests([]); setMessages([]); setContacts({}); setUserId(""); setSelectedId(""); setOpenedId(""); setDraft(""); setSearch(""); setThreadPage(null); setThreadError(null); historyRequest.current++; historyPaging.current=false; setHistoryBusy(false);
+      setRequests([]); setMessages([]); setContacts({}); setUserId(""); setSelectedId(""); setOpenedId(""); setSearch(""); setThreadPage(null); setThreadError(null); historyRequest.current++; historyPaging.current=false; setHistoryBusy(false);
       if (action === "clear") {
         setLoading(false);
         setError("Sign in to view your messages.");
@@ -173,7 +174,11 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
     || (mode === "requests" && row.status === "pending"));
   const selected = visibleThreads.find(item => item.id === selectedId) || visibleThreads[0];
   const opened = Boolean(selected && selected.id === openedId && openedMode === mode);
-  useEffect(() => { setOpenedId(""); setDraft(""); setSearch(""); }, [mode]);
+  useEffect(() => { setOpenedId(""); setSearch(""); }, [mode]);
+  // Drafts stay in the existing bounded, in-memory, account-partitioned provider.
+  // A closed or nonaccepted thread cannot read or write its draft.
+  const draftThread = opened && selected?.status === "accepted" ? selected.id : "";
+  const [draft, setDraft] = useNativeDraft(`contact:chat:${draftThread}`, draftThread ? userId : undefined);
   const selectedRequestId = selected?.id;
   const threadScope = userId && opened && selected?.status==="accepted" && !offline ? JSON.stringify([userId,selected.id,mode]) : "";
   const currentPage=!loading && threadScope && threadPage?.scope===threadScope ? threadPage : null;
@@ -313,7 +318,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
           {matchingThreads.map(row=>{
             const latest=messages.find(message=>message.request_id===row.id);
             return <Pressable key={row.id} accessibilityRole="button" accessibilityState={{selected:row.id===selectedId}}
-              accessibilityLabel={`Open ${name(row)} conversation`} disabled={sending} onPress={()=>{setSelectedId(row.id);setOpenedMode(mode);setOpenedId(row.id);setDraft("");}}
+              accessibilityLabel={`Open ${name(row)} conversation`} disabled={sending} onPress={()=>{setSelectedId(row.id);setOpenedMode(mode);setOpenedId(row.id);}}
               style={{paddingVertical:10,paddingHorizontal:4,minHeight:64,flexDirection:"row",alignItems:"center",borderColor:theme.border,borderBottomWidth:1,gap:10}}>
               <View style={{width:42,height:42,borderRadius:21,backgroundColor:theme.chip,alignItems:"center",justifyContent:"center"}}><Text style={{color:theme.foreground,fontSize:17,fontWeight:"700"}}>{name(row).slice(0,1).toUpperCase()}</Text></View>
               <View style={{flex:1,minWidth:0,gap:3}}>
@@ -326,7 +331,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
         </View>
       </View>:null}
       {opened&&selected?<View style={{gap:8}}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Back to conversations" disabled={sending} onPress={()=>{setOpenedId("");setDraft("");}} style={{minHeight:44,flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="chevron-back" size={20} color={theme.accent}/><Text style={{color:theme.accent,fontWeight:"700"}}>Conversations</Text></Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel="Back to conversations" disabled={sending} onPress={()=>setOpenedId("")} style={{minHeight:44,flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="chevron-back" size={20} color={theme.accent}/><Text style={{color:theme.accent,fontWeight:"700"}}>Conversations</Text></Pressable>
         <Text style={{color:theme.foreground,fontWeight:"900",fontSize:19}}>{name(selected)}</Text>
         <Text style={{color:theme.muted,fontSize:12}}>{selected.status==="accepted"?"Private HoopChat":"Player contact request"}</Text>
         <ConversationSafety key={`${userId}:${selected.id}`} uid={userId} requestId={selected.id} peerId={peerId(selected)} onBlocked={()=>{historyRequest.current++;setOpenedId("");setDraft("");setThreadPage(null);setRequests(rows=>rows.filter(row=>peerId(row)!==peerId(selected)));void load();}}/>
@@ -340,6 +345,12 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
             <Text style={{fontSize:12,fontWeight:"800",color:theme.foreground}}>{item.sender_id===userId?"You":name(selected)}</Text>
             <Text style={{color:theme.foreground}}>{item.body}</Text>
             <Text style={{color:theme.muted,fontSize:11}}>{new Date(item.created_at).toLocaleString()}</Text>
+            <Pressable accessibilityRole="button" accessibilityLabel={`Quote message from ${item.sender_id===userId?"you":name(selected)}`} disabled={sending||offline} onPress={()=>{
+              if(!currentPage||selected.status!=="accepted"||item.request_id!==selected.id||!currentPage.rows.some(row=>row.id===item.id))return;
+              const next=quoteConversationMessage(selected.id,item,draft);
+              if(next===null){setError("Not enough room to quote this message. Shorten your draft first.");return;}
+              setDraft(next);setError("");
+            }} style={{minHeight:44,justifyContent:"center"}}><Text style={{color:theme.foreground,fontSize:12,fontWeight:"700"}}>Quote reply</Text></Pressable>
           </View></ChatMessageEnter>)}
         </View>
         {selected.status==="pending"&&selected.player_id===userId?<View style={{gap:8}}><Text style={{color:theme.muted}}>Approve this request to unlock messaging.</Text><Button disabled={sending||offline} onPress={()=>void respond("accepted")}>Accept request</Button><Button secondary disabled={sending||offline} onPress={()=>void respond("rejected")}>Decline</Button></View>:null}

@@ -19,3 +19,25 @@ test('profile drafts have room for the bounded form and cannot target another id
  assert.equal(store.write(uid,`profile:edit:${other}`,'forged'),false);store.write(uid,profile,'x'.repeat(9000));assert.equal(store.read(uid,profile).length,8000);
  store.switchUser(other);assert.equal(store.read(uid,profile),'');
 });
+
+test('private HoopChat drafts are isolated by request and verified account, cleared on sign-out',()=>{
+ const store=createDraftStore(),first=`contact:chat:${uid}`,second=`contact:chat:${other}`;
+ store.switchUser(uid);
+ assert.equal(store.write(uid,first,'Unsent first conversation'),true);
+ assert.equal(store.write(uid,second,'Unsent second conversation'),true);
+ assert.equal(store.read(uid,first),'Unsent first conversation');
+ assert.equal(store.read(uid,second),'Unsent second conversation');
+ assert.equal(store.read(undefined,first),'');
+ assert.equal(store.write(undefined,first,'Invalid'),false);
+ assert.equal(store.write(uid,'contact:chat:','Invalid'),false);
+ assert.equal(store.write(uid,first,''),true);
+ assert.equal(store.read(uid,first),'');
+ assert.equal(store.read(uid,second),'Unsent second conversation');
+ store.switchUser(other);
+ assert.equal(store.read(other,second),'');
+ assert.equal(store.write(uid,first,'Stale write'),false);
+ store.switchUser(uid);
+ assert.equal(store.read(uid,second),'');
+ store.write(uid,first,'Before sign-out');store.switchUser(null);store.switchUser(uid);
+ assert.equal(store.read(uid,first),'');
+});
