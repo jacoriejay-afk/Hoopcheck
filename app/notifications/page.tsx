@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import {readNotifications,markNotificationsRead,verifiedAlertSession,withAlertDeadline,notificationPath} from "../../apps/mobile/src/native/notifications";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
@@ -14,6 +15,7 @@ type Notice={id:string;target_type:"team"|"coach"|"league"|"game";target_id:stri
 
 export default function NotificationsPage(){
   const [items,setItems]=useState<Notice[]>([]);
+  const generation=useRef(0),owner=useRef<string|null>(null),locked=useRef(false);
   const [loading,setLoading]=useState(true);
   const [errorMessage,setErrorMessage]=useState("");
   const [loadFailed,setLoadFailed]=useState(false);
@@ -24,41 +26,45 @@ export default function NotificationsPage(){
   const [section,setSection]=useState<"alerts"|"messages">("alerts");
   useEffect(()=>{if(new URLSearchParams(window.location.search).get("tab")==="messages")setSection("messages");},[]);
   useEffect(()=>{
-    let active=true;
+    let timer:ReturnType<typeof setTimeout>|undefined;
+    const clear=()=>{generation.current++;owner.current=null;setItems([]);setQuery("");setFilter("all");};
     async function loadAlerts(){
-      setLoading(true);setErrorMessage("");setLoadFailed(false);setItems([]);
+      const rev=++generation.current;
+      owner.current=null;setLoading(true);setErrorMessage("");setLoadFailed(false);setItems([]);
       try{
-        const {data:{session},error:sessionError}=await supabase.auth.getSession();
-        if(!active)return;
-        if(sessionError)throw sessionError;
-        const user=session?.user;
-        if(!user){window.location.href="/login";return;}
-        const {data,error}=await supabase.from("notifications").select("id,target_type,target_id,notification_type,title,body,read_at,created_at").eq("user_id",user.id).order("created_at",{ascending:false}).limit(ALERT_LIST_LIMIT);
-        if(!active)return;
-        if(error)throw error;
-        setItems(data||[]);
-      }catch(error){
-        console.error("Unable to load HoopCheck alerts:",error);
-        if(active){setItems([]);setErrorMessage("Alerts could not be loaded. Please try again.");setLoadFailed(true);}
-      }finally{if(active)setLoading(false);}
+        const result=await withAlertDeadline(async signal=>{
+          const scope=await verifiedAlertSession(supabase,signal);
+          if(rev!==generation.current)throw Error("Account changed.");
+          return {uid:scope.uid,rows:await readNotifications(supabase,scope.uid,undefined,scope)};
+        });
+        if(rev!==generation.current)return;
+        owner.current=result.uid;setItems(result.rows as Notice[]);
+      }catch{
+        if(rev===generation.current){setItems([]);setErrorMessage("Alerts could not be loaded. Please try again.");setLoadFailed(true);}
+      }finally{if(rev===generation.current)setLoading(false);}
     }
+    const {data}=supabase.auth.onAuthStateChange((event,session)=>{
+      if(event!=="SIGNED_OUT"&&!(event==="SIGNED_IN"&&session?.user.id!==owner.current))return;
+      clear();clearTimeout(timer);
+      if(event==="SIGNED_OUT"){setLoading(false);setLoadFailed(true);setErrorMessage("Sign in to view alerts.");return;}
+      timer=setTimeout(()=>void loadAlerts(),0);
+    });
     void loadAlerts();
-    return ()=>{active=false;};
+    return ()=>{generation.current++;owner.current=null;clearTimeout(timer);data.subscription.unsubscribe();};
   },[retryKey]);
   async function markAll(){
-    if(marking||loadFailed)return;
-    setMarking(true);setErrorMessage("");
+    const uid=owner.current,rev=generation.current;
+    if(locked.current||loadFailed||!uid)return;
+    locked.current=true;setMarking(true);setErrorMessage("");
     try{
-      const {data:{session},error:sessionError}=await supabase.auth.getSession();
-      if(sessionError)throw sessionError;
-      const user=session?.user;
-      if(!user){setErrorMessage("Your session has expired. Please sign in again.");return;}
-      const now=new Date().toISOString();
-      const {error}=await supabase.from("notifications").update({read_at:now}).eq("user_id",user.id).is("read_at",null);
-      if(error)throw error;
-      setItems(v=>v.map(n=>({...n,read_at:n.read_at||now})));
-    }catch(error){console.error("Unable to mark HoopCheck alerts as read:",error);setErrorMessage("Could not mark alerts as read. Please retry.");}
-    finally{setMarking(false);}
+      const result=await withAlertDeadline(async signal=>{
+        const scope=await verifiedAlertSession(supabase,signal,uid);
+        if(rev!==generation.current||owner.current!==uid)throw Error("Account changed.");
+        return markNotificationsRead(supabase,uid,new Date(),undefined,scope);
+      });
+      if(rev===generation.current&&owner.current===uid)setItems(v=>v.map(n=>result.ids.includes(n.id)?{...n,read_at:n.read_at||result.readAt}:n));
+    }catch{if(rev===generation.current)setErrorMessage("Could not mark alerts as read. Please retry.");}
+    finally{locked.current=false;setMarking(false);}
   }
   const unreadCount=items.filter(n=>!n.read_at).length;
   const searched=items.filter(n=>matchesAlertSearch(n,query));
@@ -81,8 +87,7 @@ export default function NotificationsPage(){
     <nav className="hc-smooth-inbox-tabs hc-alerts-filters" aria-label="Filter alerts">{ALERT_FILTERS.map(([key,label])=><button key={key} type="button" aria-pressed={filter===key} className={filter===key?"is-active":""} onClick={()=>setFilter(key)}>{label}<span>{searched.filter(n=>matchesAlertFilter(n,key)).length}</span></button>)}</nav></>}
     {section==="alerts"&&!loadFailed&&<section className="hc-alert-list" aria-label="Basketball notifications">
       {filtered.length ? filtered.map(n => {
-        const path = n.target_type === "team" ? "teams" : n.target_type === "coach" ? "coaches" : n.target_type === "game" ? "fan-live?gameId=" + n.target_id : "leagues";
-        const href = n.target_type === "game" ? "/" + path : "/" + path + "/" + n.target_id;
+        const href=notificationPath(n);
         const meta: Record<string, { label: string; icon: "message-square" | "star" | "external-link" | "shield-check" | "users" | "whistle" | "bell" }> = {
           review: { label: "NEW REVIEW", icon: "message-square" },
           rating: { label: "NEW RATING", icon: "star" },
@@ -94,11 +99,11 @@ export default function NotificationsPage(){
         };
         const item = meta[n.notification_type] || meta.update;
         return <article key={n.id} className={"hc-alert-card " + (!n.read_at ? "unread" : "")}>
-          <Link href={href} className="hc-alert-card__main">
+          <Link href={href||"/notifications"} aria-disabled={!href} onClick={event=>{if(!href)event.preventDefault();}} className="hc-alert-card__main">
             <span className={"hc-alert-type hc-alert-type--" + n.notification_type}><HoopIcon name={item.icon} size={14} />{item.label} · {new Date(n.created_at).toLocaleString()}</span>
             <strong>{n.title}</strong><small>{n.body}</small>
           </Link>
-          {n.target_type !== "game" && <div className="hc-alert-card__controls"><WatchButton targetType={n.target_type} targetId={n.target_id} targetName={n.title} /></div>}
+          {href && n.target_type !== "game" && <div className="hc-alert-card__controls"><WatchButton targetType={n.target_type} targetId={n.target_id} targetName={n.title} /></div>}
         </article>;
       }) : <div className="hc-alerts-empty" role="status"><strong>{items.length?(query.trim()?"No matching alerts":"No alerts in this category"):"No notifications yet"}</strong><p>{items.length?(query.trim()?"Try another search or filter.":"Try a different filter."):"Follow a team to get updates here."}</p>{!items.length&&<Link href="/teams">Explore teams</Link>}</div>}
     </section>}

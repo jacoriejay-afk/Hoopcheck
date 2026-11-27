@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
+import {readNotifications,markNotificationsRead,verifiedAlertSession,withAlertDeadline,notificationPath} from "../apps/mobile/src/native/notifications";
 
 type Watch = { id: string; target_type: "team" | "coach" | "league"; target_id: string; notify: boolean; follow: boolean };
 type Notice = { id: string; target_type: Watch["target_type"]; target_id: string; notification_type: "review" | "rating" | "update"; title: string; body: string; read_at: string | null; created_at: string };
@@ -13,30 +14,37 @@ export default function NotificationBell() {
   const [names, setNames] = useState<Record<string, string>>({});
   const ref = useRef<HTMLDivElement>(null);
 
-  async function load() {
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) return;
-    const [{ data: watchData }, { data: noticeData }] = await Promise.all([
-      supabase.from("user_watchlists").select("id,target_type,target_id,notify,follow").eq("user_id", userData.user.id).order("created_at", { ascending: false }),
-      supabase.from("notifications").select("id,target_type,target_id,notification_type,title,body,read_at,created_at").eq("user_id", userData.user.id).order("created_at", { ascending: false }).limit(12),
-    ]);
-    const rows = (watchData || []) as Watch[];
-    const alerts = (noticeData || []) as Notice[];
-    setWatches(rows);
-    setNotices(alerts);
-    const map: Record<string, string> = {};
-    const ids = (type: Watch["target_type"]) => rows.filter((r) => r.target_type === type).map((r) => r.target_id);
-    const noticeIds = (type: Watch["target_type"]) => alerts.filter((r) => r.target_type === type).map((r) => r.target_id);
-    const [teams, coaches, leagues] = await Promise.all([
-      [...new Set([...ids("team"), ...noticeIds("team")])].length ? supabase.from("teams").select("id,name").in("id", [...new Set([...ids("team"), ...noticeIds("team")])]) : Promise.resolve({ data: [] as {id:string;name:string}[] }),
-      [...new Set([...ids("coach"), ...noticeIds("coach")])].length ? supabase.from("coaches").select("id,name").in("id", [...new Set([...ids("coach"), ...noticeIds("coach")])]) : Promise.resolve({ data: [] as {id:string;name:string}[] }),
-      [...new Set([...ids("league"), ...noticeIds("league")])].length ? supabase.from("leagues").select("id,name").in("id", [...new Set([...ids("league"), ...noticeIds("league")])]) : Promise.resolve({ data: [] as {id:string;name:string}[] }),
-    ]);
-    for (const row of [...(teams.data || []), ...(coaches.data || []), ...(leagues.data || [])]) map[row.id] = row.name;
-    setNames(map);
+  const generation=useRef(0),owner=useRef<string|null>(null),marking=useRef(false);
+  function clear(){owner.current=null;setNotices([]);setWatches([]);setNames({});}
+  async function load(){
+    const rev=++generation.current;
+    clear();
+    try{
+      const result=await withAlertDeadline(async signal=>{
+        const scope=await verifiedAlertSession(supabase,signal);
+        if(rev!==generation.current)throw Error("Account changed.");
+        const [watchData,alerts]=await Promise.all([
+          supabase.from("user_watchlists").select("id,target_type,target_id,notify,follow").eq("user_id",scope.uid).order("created_at",{ascending:false}).limit(100).setHeader("Authorization",scope.bearer).abortSignal(signal),
+          readNotifications(supabase,scope.uid,undefined,scope)
+        ]);
+        if(watchData.error)throw Error("Alerts unavailable.");
+        return {uid:scope.uid,rows:(watchData.data||[]) as Watch[],alerts:alerts.slice(0,12) as Notice[]};
+      });
+      if(rev!==generation.current)return;
+      owner.current=result.uid;setWatches(result.rows);setNotices(result.alerts);
+      // Public labels are optional; never retain labels from another account.
+    }catch{if(rev===generation.current)clear();}
   }
-
-  useEffect(() => { load(); }, []);
+  useEffect(()=>{
+    let timer:ReturnType<typeof setTimeout>|undefined;
+    const {data}=supabase.auth.onAuthStateChange((event,session)=>{
+      if(event!=="SIGNED_OUT"&&!(event==="SIGNED_IN"&&session?.user.id!==owner.current))return;
+      generation.current++;clear();setOpen(false);clearTimeout(timer);
+      if(event!=="SIGNED_OUT")timer=setTimeout(()=>void load(),0);
+    });
+    void load();
+    return ()=>{generation.current++;owner.current=null;clearTimeout(timer);data.subscription.unsubscribe();};
+  },[]);
   useEffect(() => {
     const handler = (event: MouseEvent) => {
       if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false);
@@ -47,9 +55,19 @@ export default function NotificationBell() {
 
   const unread = notices.filter((n) => !n.read_at).length;
 
-  async function markRead(id: string) {
-    await supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("id", id);
-    setNotices((items) => items.map((n) => n.id === id ? { ...n, read_at: new Date().toISOString() } : n));
+  async function markRead(id?:string){
+    const uid=owner.current,rev=generation.current;
+    if(!uid||marking.current)return;
+    marking.current=true;
+    try{
+      const result=await withAlertDeadline(async signal=>{
+        const scope=await verifiedAlertSession(supabase,signal,uid);
+        if(rev!==generation.current||owner.current!==uid)throw Error("Account changed.");
+        return markNotificationsRead(supabase,uid,new Date(),id,scope);
+      });
+      if(rev===generation.current&&owner.current===uid)setNotices(items=>items.map(n=>result.ids.includes(n.id)?{...n,read_at:n.read_at||result.readAt}:n));
+    }catch{/* Keep unconfirmed read state. Full Alerts has retry. */}
+    finally{marking.current=false;}
   }
 
   return (
@@ -60,11 +78,11 @@ export default function NotificationBell() {
       </button>
       {open && (
         <div className="notification-panel">
-          <div className="notification-panel-head"><strong>NOTIFICATIONS</strong><span style={{display:"flex",gap:10}}>{unread > 0 && <button type="button" onClick={async()=>{const {data}=await supabase.auth.getUser();if(data.user){await supabase.from("notifications").update({read_at:new Date().toISOString()}).eq("user_id",data.user.id).is("read_at",null);setNotices(v=>v.map(n=>({...n,read_at:n.read_at||new Date().toISOString()})));}}}>Mark all read</button>}<a href="/notifications">View all</a><a href="/settings">Settings</a></span></div>
+          <div className="notification-panel-head"><strong>NOTIFICATIONS</strong><span style={{display:"flex",gap:10}}>{unread > 0 && <button type="button" onClick={()=>void markRead()}>Mark all read</button>}<a href="/notifications">View all</a><a href="/settings">Settings</a></span></div>
           {notices.length > 0 && <div className="notification-section-title">NEW</div>}
           {notices.slice(0, 8).map((notice) => {
-            const path = notice.target_type === "team" ? "teams" : notice.target_type === "coach" ? "coaches" : "leagues";
-            return <a key={notice.id} href={"/" + path + "/" + notice.target_id} onClick={() => markRead(notice.id)} className={"notification-item " + (!notice.read_at ? "unread" : "")}><span>{notice.notification_type.toUpperCase()}</span><strong>{notice.title}</strong><small>{notice.body}</small></a>;
+            const path=notificationPath(notice);
+            return <a key={notice.id} href={path||"/notifications"} onClick={() => void markRead(notice.id)} className={"notification-item " + (!notice.read_at ? "unread" : "")}><span>{notice.notification_type.toUpperCase()}</span><strong>{notice.title}</strong><small>{notice.body}</small></a>;
           })}
           <div className="notification-section-title">FOLLOWING</div>
           {watches.filter((w) => w.follow).slice(0, 8).map((watch) => {
