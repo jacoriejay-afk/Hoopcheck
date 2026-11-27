@@ -1,0 +1,30 @@
+import assert from "node:assert/strict";
+import {test} from "node:test";
+import {readFileSync} from "node:fs";
+import {makeReplyTarget,scopedReplyTarget} from "../src/native/hoopChatReply.ts";
+import {prepareConversationMessage} from "../src/native/hoopChatSend.ts";
+const id="11111111-1111-4111-8111-111111111111", other="22222222-2222-4222-8222-222222222222";
+const row={id,request_id:"a",sender_id:"peer",body:"private",created_at:"2026-11-27T12:00:00Z"};
+test("structured reply requires confirmed same-thread source and account scope",()=>{
+ const target=makeReplyTarget("alice:a","a",row,[row]);
+ assert.equal(scopedReplyTarget("alice:a",target,[row]),id);
+ assert.equal(scopedReplyTarget("bob:a",target,[row]),undefined);
+ assert.equal(scopedReplyTarget("alice:b",target,[row]),undefined);
+ assert.equal(scopedReplyTarget("alice:a",target,[]),undefined);
+ assert.equal(makeReplyTarget("alice:b","b",row,[row]),null);
+ const pending=new Map();let n=0;const next=()=>String(++n);
+ const plain=prepareConversationMessage(pending,"a","alice","hi",next);
+ assert.equal("reply_to_id" in plain,false);
+ const linked=prepareConversationMessage(pending,"a","alice","hi",next,id);
+ assert.notEqual(plain.id,linked.id);
+ assert.equal(prepareConversationMessage(pending,"a","alice","hi",next,id),linked);
+ assert.notEqual(prepareConversationMessage(pending,"a","alice","hi",next,other).id,linked.id);
+});
+test("candidate restricts foreign keys to the same conversation and does not change grants or policies",()=>{
+ const sql=readFileSync(new URL("../../../supabase/candidates/hoopchat_structured_replies_pg17_review_only.sql",import.meta.url),"utf8");
+ assert.match(sql,/DO NOT APPLY TO PRODUCTION/);
+ assert.match(sql,/FOREIGN KEY\(request_id,reply_to_id\)/);
+ assert.match(sql,/ON DELETE SET NULL \(reply_to_id\)/);
+ assert.match(sql,/SECURITY INVOKER/);
+ assert.doesNotMatch(sql,/^\s*(?:GRANT|CREATE POLICY)\b/im);
+});

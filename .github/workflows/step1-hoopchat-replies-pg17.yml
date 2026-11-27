@@ -1,0 +1,39 @@
+name: Step 1 structured replies PostgreSQL 17 rehearsal
+on:
+  pull_request:
+    branches: ["qa/hoopcheck-master-acceptance", "integration/build17-development"]
+    paths:
+      - ".github/workflows/step1-hoopchat-replies-pg17.yml"
+      - "supabase/candidates/hoopchat_structured_replies_pg17_review_only.sql"
+      - "supabase/tests/hoopchat_structured_replies_isolated.sql"
+      - "supabase/migrations/20261008105244_enable_player_hoopchat_realtime.sql"
+permissions:
+  contents: read
+jobs:
+  synthetic-replies:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Exercise reviewed candidate against synthetic baseline in disposable PG17
+        env:
+          PG_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          set -euo pipefail
+          test -n "$PG_CONTAINER"
+          docker exec -i "$PG_CONTAINER" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres < supabase/tests/hoopchat_structured_replies_isolated.sql
+          docker exec -i "$PG_CONTAINER" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres --single-transaction < supabase/candidates/hoopchat_structured_replies_pg17_review_only.sql
+          docker exec -i "$PG_CONTAINER" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres -c 'SELECT public.exercise_hoopchat_reply_fixture();'

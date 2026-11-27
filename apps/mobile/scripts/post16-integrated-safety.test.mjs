@@ -16,6 +16,6 @@ test("video reports and staff moderation share the canonical subject and ticket 
 test("conversation history uses the verified peer-block bearer and clears stale data on failure",()=>{
  const screen=read("../app/messages.tsx");
  assert.match(screen,/const verifiedHeader=await verifyChatPeer/);
- assert.match(screen,/readConversationPage\(supabase,requestId,signal,older,verifiedHeader\)/);
+ assert.match(screen,/readConversationPage\(supabase,requestId,signal,older,verifiedHeader,structuredReplies\)/);
  assert.match(screen,/if\(active\(\)\)\{setThreadPage\(null\);setThreadError/);
 });
