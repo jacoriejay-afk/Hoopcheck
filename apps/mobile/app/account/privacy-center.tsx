@@ -1,3 +1,4 @@
+import { Reveal } from "../../components/Motion";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { useRouter } from "expo-router";
@@ -71,7 +72,7 @@ function Requests({owner}:{owner:string}) {
       {type==="deletion"?<Text style={{color:t.muted}}>This submits a data-deletion request for review; it does not immediately delete your account.</Text>:null}
       <Input accessibilityLabel="Privacy request details" placeholder="Describe the information or action requested" multiline value={details} onChangeText={setDetails} maxLength={5000} editable={!saving} style={{minHeight:130,textAlignVertical:"top"}}/>
       <Text style={{color:t.muted}}>Never include passwords, verification codes or payment details.</Text>
-      {feedback?<Text accessibilityRole="alert" style={{color:t.foreground}}>{feedback}</Text>:null}
+      {feedback?<Reveal><Text accessibilityRole="alert" style={{color:t.foreground}}>{feedback}</Text></Reveal>:null}
       <Button disabled={offline||saving||uncertain} onPress={()=>void submit()}>{saving?"Submitting…":"Submit privacy request"}</Button>
     </GlassCard>
     <Text accessibilityRole="header" style={{color:t.foreground,fontWeight:"800",fontSize:19}}>My requests</Text>

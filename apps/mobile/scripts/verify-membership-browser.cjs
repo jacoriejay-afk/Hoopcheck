@@ -51,14 +51,24 @@ async function verify(browser,theme,role){
   await require("./compact-layout.cjs").capture(page, {path:`/tmp/hoopcheck-native-ui/${theme}-membership-${role}.png`,fullPage:true});
   await page.getByRole('button',{name:'Terms of use',exact:true}).click();
   await page.waitForURL(url=>url.origin===new URL(base).origin&&url.pathname==='/legal'&&url.searchParams.get('document')==='terms');
+  await page.emulateMedia({reducedMotion:role==='fan'?'reduce':'no-preference'});
   await page.goto(base+'/pre-sign');
+  const fillRatio = expected => page.waitForFunction(value => {
+    const track=document.querySelector('[data-testid="pre-sign-progress"]');
+    const fill=document.querySelector('[data-testid="pre-sign-progress-fill"]');
+    if(!track||!fill)return false;
+    const width=track.getBoundingClientRect().width;
+    return width>0&&Math.abs(fill.getBoundingClientRect().width/width-value)<0.015;
+  },expected);
   const check=page.getByRole('checkbox',{name:'Verify the club reviewed'});
   await check.click();
   await page.getByText('1 of 6 reviewed',{exact:true}).waitFor();
   assert.equal(await check.isChecked(),true);
+  await fillRatio(1/6);
   await page.getByRole('button',{name:'Reset checklist',exact:true}).click();
   await page.getByText('0 of 6 reviewed',{exact:true}).waitFor();
   assert.equal(await check.isChecked(),false);
+  await fillRatio(0);
   await page.goto(base+'/link-unavailable');
   await page.getByText('This page is unavailable',{exact:true}).waitFor();
   assert.equal(await page.getByRole('link',{name:'Open page',exact:true}).count(),0);

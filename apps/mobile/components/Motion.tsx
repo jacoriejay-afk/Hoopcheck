@@ -8,7 +8,7 @@ import { useEntryTheme } from "../src/theme";
 
 export function Reveal({ children, index = 0 }: { children: ReactNode; index?: number }) {
   const reduced = useMotionSetting();
-  return <Animated.View entering={FadeIn.duration(reduced ? motion.shortFade : motion.fade).delay(reduced ? 0 : Math.min(index, motion.maxStagger) * motion.stagger)}>{children}</Animated.View>;
+  return <Animated.View entering={reduced ? undefined : FadeIn.duration(motion.fade).easing(motion.easeOut).delay(Math.min(index, motion.maxStagger) * motion.stagger)}>{children}</Animated.View>;
 }
 
 const Shimmer = createContext<SharedValue<number> | null>(null);

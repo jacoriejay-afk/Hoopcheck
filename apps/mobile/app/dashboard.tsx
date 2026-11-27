@@ -7,13 +7,17 @@ import { ExploreLinks } from "../components/ExploreLinks";
 import { Input, Chip, SectionHeader } from "../src/primitives";
 import { useCallback, useState } from "react";
 import { Alert, Keyboard, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
-import Animated, { FadeIn } from "react-native-reanimated";
+import Animated, { FadeIn, FadeInUp } from "react-native-reanimated";
+import { motion } from "../src/motion/config";
 import { useMotionSetting } from "../src/motion/Provider";
 import { useFocusEffect, useRouter } from "expo-router";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../src/lib/supabase";
 import { useEntryTheme } from "../src/theme";
+
+const menuEntering = FadeInUp.duration(motion.menuReveal).easing(motion.easeOut)
+  .withInitialValues({ opacity: 0, transform: [{ translateY: -6 }] });
 
 const accountLinks = [
   { path: "/about", label: "About HoopCheck" },
@@ -96,25 +100,27 @@ export default function DashboardScreen() {
               </Pressable>
             </Animated.View>}
           </GlassSurface>
-          {menuOpen && !searchOpen ? <GlassSurface style={{
-            position:"absolute",right:12,top:61,width:232,zIndex:30,
-            padding:6,borderRadius:18,borderColor:theme.glassBorder,
-            shadowColor:"#000",shadowOpacity:.3,shadowRadius:14,shadowOffset:{width:0,height:8},
-          }}>
-            {([
-              {label:"My account",path:"/account",icon:"person-circle-outline"},
-              {label:"HoopChat",path:"/messages",icon:"chatbubbles-outline"},
-              {label:"HoopGroups",path:"/hoopgroups",icon:"people-outline"},
-              {label:"Settings",path:"/settings",icon:"settings-outline"},
-              {label:"About HoopCheck",path:"/about",icon:"help-circle-outline"},
-            ] as const).map(item=><Pressable key={item.path} accessibilityRole="menuitem"
-              accessibilityLabel={item.label} onPress={()=>{setMenuOpen(false); if(item.label==="HoopChat") router.push({pathname:"/notifications",params:{tab:"chat"}}); else router.push(item.path);}}
-              style={({pressed})=>({flexDirection:"row",alignItems:"center",gap:10,minHeight:47,
-                paddingHorizontal:12,borderRadius:12,backgroundColor:pressed?theme.accentSurface:"transparent"})}>
-              <Ionicons name={item.icon} size={19} color={theme.accent}/>
-              <Text style={{color:theme.foreground,fontWeight:"700",fontSize:14}}>{item.label}</Text>
-            </Pressable>)}
-          </GlassSurface> : null}
+          {menuOpen && !searchOpen ? <Animated.View entering={reduced ? undefined : menuEntering}
+            style={{ position: "absolute", right: 12, top: 61, width: 232, zIndex: 30 }}>
+            <GlassSurface style={{
+              padding:6,borderRadius:18,borderColor:theme.glassBorder,
+              shadowColor:"#000",shadowOpacity:.3,shadowRadius:14,shadowOffset:{width:0,height:8},
+            }}>
+              {([
+                {label:"My account",path:"/account",icon:"person-circle-outline"},
+                {label:"HoopChat",path:"/messages",icon:"chatbubbles-outline"},
+                {label:"HoopGroups",path:"/hoopgroups",icon:"people-outline"},
+                {label:"Settings",path:"/settings",icon:"settings-outline"},
+                {label:"About HoopCheck",path:"/about",icon:"help-circle-outline"},
+              ] as const).map(item=><Pressable key={item.path} accessibilityRole="menuitem"
+                accessibilityLabel={item.label} onPress={()=>{setMenuOpen(false); if(item.label==="HoopChat") router.push({pathname:"/notifications",params:{tab:"chat"}}); else router.push(item.path);}}
+                style={({pressed})=>({flexDirection:"row",alignItems:"center",gap:10,minHeight:47,
+                  paddingHorizontal:12,borderRadius:12,backgroundColor:pressed?theme.accentSurface:"transparent"})}>
+                <Ionicons name={item.icon} size={19} color={theme.accent}/>
+                <Text style={{color:theme.foreground,fontWeight:"700",fontSize:14}}>{item.label}</Text>
+              </Pressable>)}
+            </GlassSurface>
+          </Animated.View> : null}
       </View>
       <ScrollView keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled" onScrollBeginDrag={()=>setMenuOpen(false)} scrollEnabled={!searchOpen} testID="dashboard-scroll" contentContainerStyle={styles.scroll}>
         <View style={styles.content}>

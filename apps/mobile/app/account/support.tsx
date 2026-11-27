@@ -1,3 +1,4 @@
+import { Reveal } from "../../components/Motion";
 import { ModerationAppeal } from "../../components/ModerationAppeal";
 import { readWithDeadline } from "../../src/native/readDeadline";
 import { useEffect, useRef, useState } from "react";
@@ -82,7 +83,7 @@ function SupportContent({uid,topic,reel}:{uid:string;topic:SupportTopic|null;ree
   <Text style={{color:t.foreground,fontWeight:"700"}}>Category</Text>
   <View style={{flexDirection:"row",flexWrap:"wrap",gap:8}}>{categories.map(item=><Pressable key={item} accessibilityRole="button" accessibilityState={{selected:category===item,disabled:saving}} disabled={saving} onPress={()=>setCategory(item)} style={{padding:10,borderWidth:1,borderColor:category===item?t.accent:t.border,borderRadius:12}}><Text style={{color:category===item?t.accent:t.foreground}}>{item.replace("_"," ")}</Text></Pressable>)}</View>
   <Input accessibilityLabel="Describe the issue" placeholder="Describe the issue" value={description} onChangeText={setDescription} maxLength={5000} editable={!saving} multiline style={{minHeight:130,textAlignVertical:"top"}}/>
-  {feedback?<Text accessibilityRole="alert" style={{color:t.foreground}}>{feedback}</Text>:null}
+  {feedback?<Reveal><Text accessibilityRole="alert" style={{color:t.foreground}}>{feedback}</Text></Reveal>:null}
   <Button disabled={saving||offline} onPress={()=>void submit()}>{saving?"Submitting…":"Submit ticket"}</Button>
   {!topic&&!reel?<Button secondary onPress={()=>router.push({pathname:"/account/support",params:{topic:"scam"}})}>Report a suspicious offer</Button>:null}
   <Button secondary onPress={()=>{setLinkError("");void Linking.openURL("mailto:HoopCheck@outlook.com").catch(()=>setLinkError("Email app could not open. Contact HoopCheck@outlook.com."));}}>Email support</Button>{linkError?<Text accessibilityRole="alert" style={{color:t.foreground}}>{linkError}</Text>:null}
