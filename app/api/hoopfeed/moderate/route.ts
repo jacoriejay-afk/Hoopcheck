@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getHoopCheckEntitlements } from "../../../../lib/membership-tier";
+import { assuranceForVerifiedUser } from "../../../../lib/auth/mfa-core";
 
 export const runtime = "nodejs";
 
@@ -227,7 +228,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ allowed: false, message: "Photos and videos can only be added to posts." }, { status: 400 });
     }
 
-    const { data: profile } = await db.from("profiles").select("account_type,current_country,current_country_public").eq("id", user.id).maybeSingle();
+    const { data: profile } = await db.from("profiles").select("account_type,current_country,current_country_public,moderation_status").eq("id", user.id).maybeSingle();
     if (!profile) return NextResponse.json({ allowed: false, message: "Your account profile could not be found." }, { status: 403 });
     const submittedTopicTag = String(form.get("topic_tag") || "").trim();
     const gameDayTeam = String(form.get("game_day_team") || "").trim().slice(0, 80);
@@ -372,6 +373,16 @@ export async function POST(request: Request) {
           ["expires_at", "poll_options", "post_location", "post_country", "share_country", "topic_tag", "club_id", "womens_club_id", "league_id", "womens_league_id"].some(field => form.has(field))) {
         return NextResponse.json({ allowed: false, message: "Choose one photo for a follower-only Story, without location or tags." }, { status: 400 });
       }
+      if (!user.email_confirmed_at || ["suspended","banned","removed"].includes(profile.moderation_status)) {
+        return NextResponse.json({ allowed:false, message:"Verify your account before publishing a Story." }, {status:403});
+      }
+      try {
+        if (assuranceForVerifiedUser(token,user).required) return NextResponse.json({allowed:false,message:"Verify your authenticator."},{status:403});
+      } catch {
+        return NextResponse.json({allowed:false,message:"Invalid account session."},{status:401});
+      }
+      const active = await viewerDb.rpc("confirm_active_account_session");
+      if (active.error || active.data !== true) return NextResponse.json({allowed:false,message:"Account session unavailable."},{status:403});
     }
     const postKind = kind !== "post" ? "discussion" : isStory ? "story" : submittedKind === "news" ? "news" : submittedKind === "poll" ? "poll" : "discussion";
     let pollOptions: string[] | null = null;
@@ -478,6 +489,11 @@ export async function POST(request: Request) {
     const photoRejection = otherPhotoResults.find(decision => !decision.allowed);
     if (photoRejection) return NextResponse.json({ allowed: false, message: photoRejection.message }, { status: photoRejection.status });
 
+    // Recheck the pinned caller after potentially slow moderation, before privileged storage or publication.
+    if (isStory) {
+      const active = await viewerDb!.rpc("confirm_active_account_session");
+      if (active.error || active.data !== true) return NextResponse.json({allowed:false,message:"Account session unavailable."},{status:403});
+    }
     let image_url: string | null = null;
     let video_url: string | null = null;
     const image_urls: string[] = [];

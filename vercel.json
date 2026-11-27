@@ -1,6 +1,7 @@
 {
   "git": {
     "deploymentEnabled": {
+      "qa/step1-story-publish-session": false,
       "qa/step1-hoopchat-read-markers": false,
       "qa/step1-photo-story-boundaries": false,
       "qa/step1-creator-studio-account-boundary": false,
