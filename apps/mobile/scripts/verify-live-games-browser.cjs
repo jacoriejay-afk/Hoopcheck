@@ -14,6 +14,7 @@ async function verify(browser,theme,role='fan',paid=true){
  const token=Buffer.from('{"alg":"HS256"}').toString('base64url')+'.'+Buffer.from(JSON.stringify({sub:uid,exp:expires,role:'authenticated'})).toString('base64url')+'.fixture';
  const tip=new Date(Date.now()+30*60000).toISOString();
  const games=[{id:id(1),team_id:id(10),opponent_team_id:id(11),opponent_name:'Away Men'}, {id:id(2),team_id:id(12),opponent_team_id:id(13),opponent_name:'Away Women'}].map(g=>({...g,status:'scheduled',scheduled_at:tip,home_score:null,away_score:null,ends_at:null,started_at:null,league_name:'Fixture League',country:'France',period_label:null}));
+ if(paid)games.push({...games[0],id:id(3),team_id:id(14),status:'final',scheduled_at:new Date(Date.now()-3600000).toISOString(),period_label:'Q1',home_score:15,away_score:12});
  let side='mens',muted=false,blocked=false,declined=false,myPick=null;
  const chat=[{id:id(5),user_id:other,body:'Fixture room message',created_at:new Date().toISOString()}];
  await context.routeWebSocket('**/*',socket=>socket.close()); // No real realtime connection; verify polling/reload fallback.
@@ -44,7 +45,7 @@ async function verify(browser,theme,role='fan',paid=true){
    }
    if(table==='fan_live_games'){assert.equal(paid,true);return json(games);}
    if(table==='fan_live_chat_presence'){assert.equal(paid,true);return json([{game_id:id(1)}]);}
-   if(table==='teams')return json(url.searchParams.get('basketball_type')==='eq.mens'?[{id:id(10),name:'Home Men'},{id:id(11),name:'Away Men'}]:[]);
+   if(table==='teams')return json(url.searchParams.get('basketball_type')==='eq.mens'?[{id:id(10),name:'Home Men'},{id:id(11),name:'Away Men'},{id:id(14),name:'Pending Men'}]:[]);
    if(table==='womens_teams')return json([{id:id(13),name:'Away Women'}]);
    if(table==='user_blocks'){assert.equal(paid,true);assert.equal(method,'GET');assert.equal(url.searchParams.get('blocker_id'),`eq.${uid}`);assert.equal(request.headers().authorization,'Bearer '+token);return json([]);}
    if(table==='fan_live_chat_room_open'){assert.equal(paid,true);return json(true);}
@@ -75,6 +76,11 @@ async function verify(browser,theme,role='fan',paid=true){
   await page.goto(`${base}/fan-live`);
   if(!canUseGames&&role!=='player'){await page.getByText('Live Games chat is available to eligible Pro and Premium members. Free players retain game predictions.',{exact:true}).waitFor();assert.ok(!calls.some(c=>/fan_live_games|fan_live_chat|game-predictions/.test(c.path)));console.log(`PASS ${role} ${paid?'paid':'free'}: game/chat permission gate`);return;}
   await page.getByText('Home Men',{exact:true}).waitFor();
+  if(paid){
+   await page.getByText('RESULT PENDING',{exact:true}).waitFor();
+   await page.getByText(/Last reported score · Provider status not verified/).waitFor();
+   assert.equal(await page.getByText('FINAL',{exact:true}).count(),0);
+  }
   if(paid&&role==='fan'){
    await page.getByRole('tab',{name:'Women',exact:true}).click();await page.getByText('Away Women',{exact:true}).waitFor();assert.equal(await page.getByText('Home Men',{exact:true}).count(),0);
    await page.getByRole('tab',{name:'Men',exact:true}).click();await page.getByText('Home Men',{exact:true}).waitFor();

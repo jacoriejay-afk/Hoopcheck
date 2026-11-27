@@ -58,8 +58,13 @@ const matches=[
   assert.equal(await page.getByRole("link",{name:/Men Fixture League/}).count(),0);
   await page.getByRole("button",{name:"Filter leagues by country"}).click();
   await page.getByRole("button",{name:"Spain",exact:true}).click();
+  await page.getByRole("heading",{name:"League country",exact:true}).waitFor({state:"hidden"});
   await womenLeague.waitFor();
   assert.ok(requests.some(r=>r.path.endsWith("/womens_leagues")&&r.params.get("country")==="eq.Spain"&&r.params.get("order")==="name.asc,id.asc"));
+  // Re-select the current country and require the modal to release the underlying link again.
+  await page.getByRole("button",{name:"Filter leagues by country"}).click();
+  await page.getByRole("button",{name:"Spain",exact:true}).click();
+  await page.getByRole("heading",{name:"League country",exact:true}).waitFor({state:"hidden"});
   await womenLeague.click();
   await page.waitForURL(base+"/womens/leagues/"+wl);
   console.log("PASS "+theme+" women’s league browse, country filter and canonical profile link");

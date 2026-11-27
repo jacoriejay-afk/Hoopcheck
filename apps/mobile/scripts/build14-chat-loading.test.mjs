@@ -13,7 +13,16 @@ test("HoopChat starts with inbox and requires explicit, mode-scoped thread selec
   assert.match(chat, /selected\.status!=="accepted" \|\| !opened/);
   assert.match(chat, /selected\.status!=="pending" \|\| !opened/);
   assert.match(chat, /actionGeneration!==generation\.current \|\| !focused\.current/);
-  assert.match(chat, /setUserId\(""\); setSelectedId\(""\); setOpenedId\(""\); setDraft\(""\)/);
+  assert.match(chat, /setUserId\(""\); setSelectedId\(""\); setOpenedId\(""\)/);
+  assert.match(chat, /const draftThread = opened && selected\?\.status === "accepted" \? selected\.id : ""/);
+  assert.match(chat, /useNativeDraft\(\x60contact:chat:\$\{draftThread\}\x60, draftThread \? userId : undefined\)/);
+  assert.match(chat, /onBlocked=\{\(\)=>\{historyRequest\.current\+\+;setOpenedId\(""\);setDraft\(""\)/);
+  const drafts = read("../src/native/drafts.tsx");
+  assert.match(drafts, /onAuthStateChange\(\(_event, session\) => store\.switchUser\(session\?\.user\.id \?\? null\)\)/);
+  assert.match(drafts, /store\.switchUser\(null\)/);
+  const store = read("../src/native/draftStore.ts");
+  assert.match(store, /owner = next; values = new Map\(\); notify\(\)/);
+  assert.match(store, /userId && userId === owner \? values\.get\(key\) \|\| "" : ""/);
 });
 test("Home sections have bounded waits and preserve caller identity checks", () => {
   const home = read("../components/HomeCourtside.tsx");

@@ -3,9 +3,9 @@ import {test} from "node:test";
 import assert from "node:assert/strict";
 const read=p=>readFileSync(new URL(p,import.meta.url),"utf8");
 test("video reports and staff moderation share the canonical subject and ticket target",()=>{
- const reporter=read("../components/FeedReport.tsx"),staff=read("../components/StaffReelModeration.tsx"),queue=read("../components/AdminSafetyCenter.tsx");
- assert.match(reporter,/videoReport=\!commentId&&typeof post\.data\.video_url==="string"/);
- assert.match(reporter,/videoReport\?"Report a HoopFeed Reel":"Report a HoopFeed post"/);
+ const reporter=read("../src/native/feedReport.ts"),staff=read("../components/StaffReelModeration.tsx"),queue=read("../components/AdminSafetyCenter.tsx");
+ assert.match(reporter,/videoReport = !commentId && typeof post\.data\.video_url === "string"/);
+ assert.match(reporter,/videoReport \? "Report a HoopFeed Reel" : "Report a HoopFeed post"/);
  assert.ok(reporter.includes("https://hoopcheck.online/feed#post-"));
  assert.match(staff,/ticket\.subject==="Report a HoopFeed Reel"/);
  assert.match(staff,/target\(row\.data\)!==postId/);

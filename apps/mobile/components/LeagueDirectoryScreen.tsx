@@ -135,20 +135,21 @@ export function LeagueDirectoryScreen({ women = false }: { women?: boolean }) {
         {preview ? <><Pressable accessibilityRole="button" onPress={()=>{const id=preview.id;setPreview(null);router.push({pathname:profileRoute,params:{id}});}} style={{minHeight:48,justifyContent:"center"}}><Text style={{color:theme.accent}}>Open league profile</Text></Pressable>
         <Pressable accessibilityRole="button" onPress={()=>{const payload=publicDirectoryShare(women ? "womens/leagues" : "leagues",preview.id,preview.name);if(!payload){Alert.alert("Link unavailable");return;}void Share.share(payload).catch(()=>Alert.alert("Unable to share","Try again."));}} style={{minHeight:48,justifyContent:"center"}}><Text style={{color:theme.accent}}>Share league profile</Text></Pressable></> : null}
       </Sheet>
-      {countryOpen?<LeagueCountryPicker women={women} selected={country} onSelect={updateCountry} onClose={()=>setCountryOpen(false)}/>:null}
+      <LeagueCountryPicker open={countryOpen} women={women} selected={country} onSelect={updateCountry} onClose={()=>setCountryOpen(false)}/>
     </SafeAreaView>
   );
 }
 
-function LeagueCountryPicker({women,selected,onSelect,onClose}:{women:boolean;selected:string;onSelect:(value:string)=>void;onClose:()=>void}){
+function LeagueCountryPicker({open,women,selected,onSelect,onClose}:{open:boolean;women:boolean;selected:string;onSelect:(value:string)=>void;onClose:()=>void}){
   const theme=useEntryTheme();
   const [options,setOptions]=useState<Awaited<ReturnType<typeof readLeagueCountries>>|null>(null),[error,setError]=useState(""),[search,setSearch]=useState(""),[retry,setRetry]=useState(0);
-  useEffect(()=>{let alive=true;const ctrl=new AbortController(),deadline=setTimeout(()=>ctrl.abort(),15000);
+  useEffect(()=>{if(!open)return;let alive=true;const ctrl=new AbortController(),deadline=setTimeout(()=>ctrl.abort(),15000);
     setOptions(null);setError("");void readLeagueCountries(supabase,ctrl.signal,women).then(value=>{if(alive&&!ctrl.signal.aborted)setOptions(value);else if(alive)setError("Country filters timed out.");}).catch(()=>{if(alive)setError("Country filters unavailable. League search still works.");}).finally(()=>clearTimeout(deadline));
     return()=>{alive=false;clearTimeout(deadline);ctrl.abort();};
-  },[retry,women]);
+  },[open,retry,women]);
   const countries=(options?.countries??[]).filter(value=>value.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
-  return <Sheet open title="League country" onClose={onClose}>
+  // Keep the modal mounted while it dismisses so the portal and backdrop are cleaned up.
+  return <Sheet open={open} title="League country" onClose={()=>{setSearch("");onClose();}}>
     <Input accessibilityLabel="Search league countries" placeholder="Search countries" value={search} onChangeText={setSearch}/>
     <Button secondary onPress={()=>onSelect("")}>All countries</Button>
     {!options&&!error?<Text style={{color:theme.muted}}>Loading countries…</Text>:null}

@@ -53,7 +53,8 @@ export default function ResetPasswordPage() {
     const url = new URL(window.location.href);
     const entry = takeRecoveryEntry(url.pathname);
     const hasUrlCredentials = Boolean(url.search || url.hash);
-    const link = hasUrlCredentials ? recoveryLink(url.searchParams, new URLSearchParams(url.hash.slice(1))) : entry?.link;
+    // The initial captured entry wins if hydration restores the original URL.
+    const link = entry ? entry.link : hasUrlCredentials ? recoveryLink(url.searchParams, new URLSearchParams(url.hash.slice(1))) : null;
     if (hasUrlCredentials) window.history.replaceState(window.history.state, "", url.pathname);
     if (link?.token) {
       recoveryToken.current = link.token;
@@ -65,7 +66,7 @@ export default function ResetPasswordPage() {
     }
     if (!verification.current) {
       const code = url.pathname === "/reset-password" ? link?.code : undefined;
-      const verifier = code ? (hasUrlCredentials ? takeRecoveryCodeVerifier() : entry?.verifier ?? null) : null;
+      const verifier = code ? (entry ? entry.verifier : takeRecoveryCodeVerifier()) : null;
       let work: ReturnType<typeof verifyRecoveryCode> = Promise.resolve(null);
       if (code && verifier) {
         client.current = createBrowserRecoveryClient(verifier);

@@ -1,6 +1,6 @@
 import { createAuthIntents, browserAuthIntentStore, browserAuthActionLock, guardAuthResponses, bindAuthIntents } from "./auth/auth-intents";
 import { createBrowserClient, stringFromBase64URL } from "@supabase/ssr";
-import { appRecoveryPath, recoveryLink } from "./auth/password-recovery";
+import { isRecoveryPage, recoveryLink, takeInitialRecoveryUrl, guardSharedRecoveryExchange } from "./auth/password-recovery";
 
 export const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
@@ -27,8 +27,8 @@ export function takeRecoveryCodeVerifier() {
 
 function captureRecoveryEntry() {
   if (typeof window === "undefined") return null;
-  const url = new URL(window.location.href);
-  if (!["/reset-password", appRecoveryPath].includes(url.pathname) || (!url.search && !url.hash)) return null;
+  const url = new URL(takeInitialRecoveryUrl() ?? window.location.href);
+  if (url.origin !== window.location.origin || !isRecoveryPage(url.pathname) || (!url.search && !url.hash)) return null;
   const link = recoveryLink(url.searchParams, new URLSearchParams(url.hash.slice(1)));
   // The SSR client always detects Auth credentials in the browser URL. Own the
   // recovery exchange explicitly and keep its credentials out of browser history.
@@ -48,7 +48,7 @@ export function takeRecoveryEntry(path: string) {
 
 const authIntents = createAuthIntents(browserAuthIntentStore(supabaseUrl));
 export const supabase = createBrowserClient(supabaseUrl, supabaseKey, {
-  global: { fetch: guardAuthResponses(supabaseUrl, authIntents) },
+  global: { fetch: guardSharedRecoveryExchange(supabaseUrl, guardAuthResponses(supabaseUrl, authIntents)) },
   auth: {
     autoRefreshToken: true,
     detectSessionInUrl: true,

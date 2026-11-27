@@ -105,6 +105,9 @@ async function run(browser) {
     assert.deepEqual(calls, ["recover", "verify", "update", "logout"]);
     assert.equal((await context.cookies()).some(cookie => /^sb-ci-auth-token(?:\.\d+)?$/.test(cookie.name)), false);
 
+    // Seed a recovery verifier before an invalid alias code. The shared client
+    // must not exchange it or create a normal login session.
+    await context.addCookies([{ name: "sb-ci-auth-token-code-verifier", value: `base64-${part("fixture-verifier/PASSWORD_RECOVERY")}`, url: base.origin }]);
     for (const query of ["token_hash=expired-fixture&type=recovery", "token_hash=valid-fixture&type=recovery", "token_hash=one&token_hash=two&type=recovery", "code=wrong-route"]) {
       await go(`/recover-password?${query}`);
       if (!query.includes("&token_hash=") && !query.startsWith("code=")) await confirm.click();
@@ -112,6 +115,7 @@ async function run(browser) {
       await page.getByRole("link", { name: "Request a new reset link" }).waitFor();
     }
     assert.deepEqual(calls.slice(4), ["verify", "verify"]);
+    assert.equal((await context.cookies()).some(cookie => /^sb-ci-auth-token(?:\.\d+)?$/.test(cookie.name)), false);
 
     // Complete the previous route transition before seeding the legacy PKCE cookie.
     await page.getByRole("link", { name: "Back to sign in" }).click();
@@ -125,7 +129,7 @@ async function run(browser) {
     } catch (cause) {
       throw new Error(`Legacy recovery did not open. Auth calls: ${calls.join(", ")}. Visible status: ${await page.locator(".hc-auth-card").innerText()}`, { cause });
     }
-    assert.equal(calls.at(-1), "legacy-code");
+    assert.deepEqual(calls.slice(4), ["verify", "verify", "legacy-code"]);
     assert.equal(new URL(page.url()).search, "");
     assert.equal((await context.cookies()).some(cookie => /^sb-ci-auth-token(?:-code-verifier|\.\d+)?$/.test(cookie.name)), false);
 
