@@ -15,6 +15,8 @@ import { MediaPostComposer } from "../components/MediaPostComposer";
 import { FeedPoll } from "../components/FeedPoll";
 import { FeedCheckAction } from "../components/FeedCheckAction";
 import { FeedReport } from "../components/FeedReport";
+import { PhotoStories } from "../components/PhotoStories";
+import { photoStoriesEnabled } from "../src/native/photoStories";
 import { cleanExploreSearch, exploreFilters, matchesFeedExplore, type ExploreFilter, type ExploreTarget } from "../src/native/feedExplore";
 import { supabase } from "../src/lib/supabase";
 import { useEntryTheme } from "../src/theme";
@@ -55,6 +57,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
   const viewer = useRef({ uid, canRead, scope });
   useLayoutEffect(() => { viewer.current = { uid, canRead, scope }; }, [uid, canRead, scope]);
   const [focused, setFocused] = useState(false);
+  const [storyOwner, setStoryOwner] = useState<string | null>(null);
   useFocusEffect(useCallback(() => { setFocused(true); retry(); return () => setFocused(false); }, [retry]));
   const [rows, setRows] = useState<{ scope: string; posts: FeedPost[] }>({ scope: "", posts: [] });
   const [next, setNext] = useState<FeedCursor | null>(null);
@@ -218,6 +221,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
   }, [params.comments, linkedId, reels, autoOpened, rows, scope, loadComments]);
   const blocksVerified = focused && blockedCreators.owner === uid && blockedCreators.ready && !blockedCreators.failed;
   const posts = canRead && blocksVerified && rows.scope === scope ? rows.posts.filter(post =>
+    post.post_kind !== "story" &&
     (!post.expires_at || Date.parse(post.expires_at) > now) &&
     !blockedCreators.ids.includes(post.author_id) &&
     (!savedOnly || saved[post.id] === true) &&
@@ -312,6 +316,8 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
       </View>
     </GlassSurface>
     {!reels && <View accessibilityRole="tablist" style={{flexDirection:"row",gap:6,paddingHorizontal:14,paddingBottom:4}}>{(["all","saved","explore"] as const).map(value => { const selected = value === "explore" ? exploring : value === "saved" ? savedOnly : !savedOnly && !exploring; return <Pressable key={value} testID={`feed-tab-${value}`} accessibilityRole="tab" accessibilityState={{selected}} onPress={()=>{setSavedMode({owner:uid!,enabled:value==="saved"});setExplore(current=>({owner:uid!,active:value==="explore",search:current.owner===uid?current.search:"",applied:current.owner===uid?current.applied:"",filter:current.owner===uid?current.filter:"all",target:current.owner===uid?current.target:"posts"}));}} style={{flex:1,minHeight:44,paddingHorizontal:6,alignItems:"center",justifyContent:"center",borderRadius:22,borderWidth:1,borderColor:selected?theme.accent:theme.border}}><Text style={{color:selected?theme.accent:theme.foreground,fontWeight:"700",textAlign:"center"}}>{value==="saved"?"Saved posts":value==="explore"?"Explore":"All posts"}</Text></Pressable>;})}</View>}
+    {photoStoriesEnabled && !reels && !savedOnly && !exploring && uid && focused && blocksVerified ? <View style={{paddingHorizontal:14,paddingVertical:4}}><Button secondary onPress={()=>setStoryOwner(uid)}>Photo Stories</Button></View> : null}
+    {photoStoriesEnabled && uid && storyOwner===uid && focused && canRead && blocksVerified && !reels ? <PhotoStories key={uid} uid={uid} canWrite={canWrite} blockedIds={blockedCreators.ids} onClose={()=>setStoryOwner(null)} onBlock={async id=>{await blockAccount(id);}} /> : null}
     {exploring ? <View style={{paddingHorizontal:14,paddingVertical:6,gap:6}} testID="hoopfeed-explore">
       <TextInput accessibilityLabel="Search authorized HoopFeed posts or creators" placeholder={exploreTarget==="posts"?"Search post text":"Search creator name"} placeholderTextColor={theme.muted} maxLength={100} value={explore.search} onChangeText={search=>setExplore(current=>current.owner===uid?{...current,search}:current)} returnKeyType="search" onSubmitEditing={()=>setExplore(current=>({...current,applied:cleanExploreSearch(current.search)}))} style={{color:theme.foreground,backgroundColor:theme.input,minHeight:44,borderWidth:1,borderColor:theme.border,borderRadius:12,paddingHorizontal:12}} />
       <View style={{flexDirection:"row",gap:8}}>{(["posts","creators"] as const).map(target=><Button key={target} secondary={exploreTarget!==target} onPress={()=>setExplore(current=>({...current,target,applied:cleanExploreSearch(current.search)}))}>{target==="posts"?"Post text":"Creator name"}</Button>)}<Button secondary onPress={()=>setExplore(current=>({...current,applied:cleanExploreSearch(current.search)}))}>Search</Button></View>
