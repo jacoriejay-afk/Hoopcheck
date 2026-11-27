@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { GAME_PAST_WINDOW_MS, GAME_FUTURE_WINDOW_MS, gameDisplayState, lastCheckedLabel, providerReceiptLabel } from "../src/native/gameFreshness.ts";
 import { selectHomePreviewGames } from "../src/native/homeGamePreview.ts";
+import { getLiveGameStatusPresentation } from "../../../lib/live-game-status.ts";
 
 const now = Date.parse("2026-11-24T08:00:00Z");
 const game = (status, scheduled_at, overrides = {}) => ({
@@ -10,12 +11,17 @@ const game = (status, scheduled_at, overrides = {}) => ({
   status, scheduled_at, started_at: null, period_label: null, score_updated_at: new Date(now-5*60_000).toISOString(), ...overrides,
 });
 
-test("a completed game is FINAL and never inherits an old Q1 label", () => {
+test("native and web keep conflicting final snapshots pending until the provider confirms the result", () => {
   for (const status of ["finished", "final"]) {
-    const result = gameDisplayState(game(status, "2026-11-23T18:00:00Z", { period_label: "Q1" }), now, now);
-    assert.equal(result.kind, "final");
-    assert.equal(result.isLive, false);
-    assert.equal(result.label, "FINAL");
+    for (const period_label of ["Q1", "Half Time", "OT2", "fourth quarter", null, "FT"]) {
+      const snapshot = game(status, "2026-11-23T18:00:00Z", { period_label });
+      const web = getLiveGameStatusPresentation(snapshot, new Date(now));
+      const native = gameDisplayState(snapshot, now, now);
+      assert.equal(native.kind, ["FT", null].includes(period_label) ? "final" : "awaiting");
+      assert.equal(native.label, web.label);
+      assert.equal(native.needsVerification, web.isUnverified);
+      assert.equal(native.isLive, false);
+    }
   }
 });
 
@@ -44,6 +50,7 @@ test("scheduled results that already passed tip-off cannot be presented as upcom
   assert.equal(gameDisplayState(game("scheduled","2026-11-24T08:05:00Z"),now,now).kind,"upcoming");
   assert.equal(gameDisplayState(game("scheduled",null),now,now).kind,"unverified");
   assert.equal(gameDisplayState(game("postponed","2026-11-24T07:00:00Z"),now,now).label,"POSTPONED");
+  assert.equal(gameDisplayState(game("canceled","2026-11-24T07:00:00Z"),now,now).label,"CANCELLED");
   assert.equal(gameDisplayState(game("abandoned","2026-11-24T07:00:00Z"),now,now).kind,"cancelled");
   assert.equal(gameDisplayState(game("suspended","2026-11-24T07:00:00Z"),now,now).kind,"unverified");
 });

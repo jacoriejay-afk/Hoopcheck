@@ -2,6 +2,7 @@
   "git": {
     "deploymentEnabled": {
       "qa/hoopcheck-master-acceptance": false,
+      "qa/step1-native-live-status": false,
       "qa/steps-1-4-web-contrast": false,
       "integration/build17-development": false,
       "reconcile/build8-mobile-705-700-710-711": false,
