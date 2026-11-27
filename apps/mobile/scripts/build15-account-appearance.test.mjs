@@ -5,14 +5,16 @@ const read = p => readFileSync(new URL(p, import.meta.url), "utf8");
 test("Account refreshes verified own appearance on return from edit and manual refresh", () => {
   const account = read("../app/account.tsx");
   assert.match(account, /const activeScreen=useActiveScreen\(\)/);
-  assert.match(account, /if\(!activeScreen\)return/);
-  assert.match(account, /readOwnCover\(supabase,uid\)\.then\(value=>\{if\(active\)setCover\(\{owner:uid,value\}\)/);
-  assert.match(account, /\[account\?\.user\.id,activeScreen,appearanceRevision\]/);
+  assert.match(account, /if \(!activeScreen\) return/);
+  assert.match(account, /readOwnCover\(supabase, uid\)/);
+  assert.match(account, /if \(active\) setCover\(\{ owner: uid, value \}\)/);
+  assert.match(account, /\[account\?\.user\.id, activeScreen, appearanceRevision\]/);
   assert.match(account, /retry\(\);setAppearanceRevision\(value=>value\+1\)/);
   assert.match(account, /cover\?\.owner===account\?\.user\.id\?profileCovers\.find/);
-  assert.match(account, /avatar\.owner===account\.user\.id\?avatar\.url:null/);
-  assert.match(account, /avatar_moderation_status==="approved"/);
-  assert.match(account, /active=false;controller\.abort\(\)/);
+  assert.match(account, /identity\?\.owner === account\?\.user\.id/);
+  assert.match(account, /ownIdentity\?\.avatarUrl/);
+  assert.match(account, /profile.data.avatar_moderation_status === "approved"/);
+  assert.match(account, /controller\.abort\(\)/);
 });
 test("Preset cover stays private to verified owner and is not added to public RPC", () => {
   const editor = read("../app/account/edit.tsx");

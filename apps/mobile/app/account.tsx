@@ -65,6 +65,7 @@ export default function AccountScreen() {
     if (!activeScreen) return;
     let active = true;
     const controller = new AbortController();
+    const deadline = setTimeout(() => controller.abort(), 12000);
     async function loadIdentity() {
       try {
         const { data, error } = await readWithDeadline(() => supabase.auth.getSession());
@@ -72,19 +73,21 @@ export default function AccountScreen() {
         const profile = await supabase.from("profiles").select("username,avatar_url,avatar_moderation_status")
           .eq("id", uid).setHeader("Authorization", `Bearer ${data.session.access_token}`)
           .abortSignal(controller.signal).maybeSingle();
-        if (!active || profile.error || !profile.data || !uid) return;
+        if (!active || controller.signal.aborted || profile.error || !profile.data || !uid) return;
         setIdentity({
           owner: uid,
           username: typeof profile.data.username === "string" && /^[a-z0-9_]{3,20}$/i.test(profile.data.username) ? profile.data.username : null,
           avatarUrl: profile.data.avatar_moderation_status === "approved" && typeof profile.data.avatar_url === "string" ? profile.data.avatar_url : null,
         });
       } catch { /* A failed appearance read does not block access to account tools. */ }
+      finally { clearTimeout(deadline); }
     }
     void loadIdentity();
-    void readOwnCover(supabase,uid).then(value=>{if(active)setCover({owner:uid,value});})
-      .catch(()=>{if(active)setCover(null);});
-    return()=>{active=false;controller.abort();};
-  },[account?.user.id,activeScreen,appearanceRevision]);
+    void readOwnCover(supabase, uid)
+      .then(value => { if (active) setCover({ owner: uid, value }); })
+      .catch(() => { if (active) setCover(null); });
+    return () => { active = false; clearTimeout(deadline); controller.abort(); };
+  }, [account?.user.id, activeScreen, appearanceRevision]);
   useEffect(()=>{
     const uid=account?.user.id,role=account?.user.accountType,canRead=account?.features.canReadHoopFeed;
     if(!uid||!role||!activeScreen){setStats(null);return;}
