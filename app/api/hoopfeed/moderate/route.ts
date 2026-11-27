@@ -311,7 +311,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ allowed: true });
     }
 
-    // Re-share any approved community post.
+    // Re-share permanent approved community posts only.
     // The source has already passed moderation; new user-authored content still uses moderate().
     if (kind === "share") {
       if (!viewerDb) return NextResponse.json({ allowed: false, message: "Post unavailable." }, { status: 404 });
@@ -324,7 +324,7 @@ export async function POST(request: Request) {
         console.error("HoopFeed share source lookup failed", { sourceId, code: sourceError.code });
         return NextResponse.json({ allowed: false, message: "Couldn't share — try again." }, { status: 500 });
       }
-      if (!source || source.status !== "approved" || (source.expires_at && Date.parse(source.expires_at) <= Date.now())) {
+      if (!source || source.status !== "approved" || source.expires_at !== null) {
         return NextResponse.json({ allowed: false, message: "This post is no longer available and can't be shared." }, { status: 404 });
       }
       if (source.post_kind === "poll") {

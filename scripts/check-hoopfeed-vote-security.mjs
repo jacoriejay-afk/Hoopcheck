@@ -37,8 +37,11 @@ const share = action("share", "// Stage 2 post kinds:");
 assert.match(share, /viewerDb\.from\("feed_posts"\)\s*\.select\(/);
 assert.doesNotMatch(share, /db\.from\("feed_posts"\)\s*\.select\(/);
 assert.match(share, /source\.status !== "approved"/);
-assert.match(share, /source\.expires_at/);
+assert.match(share, /source\.expires_at !== null/);
 assert.match(share, /shared_post_id: source\.id/);
+const directShare = read("app/api/hoopfeed/share/route.ts");
+assert.match(directShare, /\.is\("expires_at", null\)/);
+assert.match(directShare, /visible\.expires_at !== null/);
 
 const migration = read("supabase/migrations/20261114000100_secure_poll_votes_unified_visibility.sql");
 for (const name of ["read", "insert own", "update own"]) {
