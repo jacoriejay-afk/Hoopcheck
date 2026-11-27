@@ -29,7 +29,8 @@
       "ops/step4b-media-cancellation": false,
       "ops/step4b-pg17-recovery": false,
       "feature/qa-hoopcheck-link-hub": false,
-      "qa/step1-hoopchat-web-history": false
+      "qa/step1-hoopchat-web-history": false,
+      "qa/step1-web-blocked-accounts": false
     }
   }
 }

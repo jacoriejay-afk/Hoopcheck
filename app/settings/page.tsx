@@ -8,6 +8,7 @@ import { supabase } from "../../lib/supabase";
 import { useLanguage, type Language } from "../../components/LanguageProvider";
 import { useTheme } from "../../components/ThemeProvider";
 import ThemeToast from "../../components/ThemeToast";
+import BlockedAccountsSettings from "../../components/BlockedAccountsSettings";
 
 type Theme = "system" | "dark" | "light";
 const normalizeTheme = (value: unknown): Theme =>
@@ -155,6 +156,7 @@ export default function SettingsPage() {
               <Link href="/account/security">Security settings</Link>
             </div>
           </section>
+          <BlockedAccountsSettings />
         </div>
         <ThemeToast className="settings-save" tone={saving ? "info" : "success"}>{saving ? t("saving") : saveMessage || t("saved") + " " + t("otherPreferencesAutoSave")}</ThemeToast>
       </section>
