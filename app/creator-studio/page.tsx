@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
+import { withHoopChatDeadline } from "../../apps/mobile/src/native/hoopChatLoad";
+import { creatorStudioOwner, createStudioEpoch } from "../../lib/creator-studio-scope";
 import "../agents/network.css";
 
 type Category="media"|"podcast"|"trainer"|"photographer"|"analyst"|"other";
@@ -24,19 +26,46 @@ export default function CreatorStudioPage(){
   const [saving,setSaving]=useState(false);
   const [notice,setNotice]=useState("");
   const [error,setError]=useState("");
+  const [reload,setReload]=useState(0);
+  const scope=useRef(createStudioEpoch());
+  const saveLock=useRef<number|null>(null);
+  const loadRequest=useRef<AbortController|null>(null);
+  const saveRequest=useRef<AbortController|null>(null);
   useEffect(()=>{
-    let active=true;
-    void(async()=>{
-      const {data:{session}}=await supabase.auth.getSession();
-      if(!active)return;
+    const clear=()=>{
+      scope.current.invalidate();
+      loadRequest.current?.abort();saveRequest.current?.abort();saveLock.current=null;
+      setUserId("");setProfileReady(false);setAccountNormal(false);setLoading(true);setSaving(false);
+      setPublicName("");setCountry("");setCategory("media");setHeadline("");setDescription("");setWebsite("");setPublished(false);setError("");setNotice("");
+    };
+    const {data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{
+      if(event==="SIGNED_OUT"||(event==="SIGNED_IN"&&scope.current.owner()!==session?.user.id)){
+        clear();setReload(value=>value+1);
+      }
+    });
+    return()=>{subscription.unsubscribe();scope.current.invalidate();loadRequest.current?.abort();saveRequest.current?.abort();};
+  },[]);
+  useEffect(()=>{
+    const epoch=scope.current.begin();
+    const controller=new AbortController();loadRequest.current=controller;
+    const current=()=>scope.current.current(epoch);
+    void withHoopChatDeadline(async signal=>{
+      const {data:{session},error:sessionError}=await supabase.auth.getSession();
+      if(!current()||signal.aborted)return;
+      if(sessionError)throw Error("Unable to verify your session.");
       if(!session?.user){window.location.replace("/login?returnTo=/creator-studio");return;}
-      setUserId(session.user.id);
-      const response=await fetch("/api/network/creator-studio",{headers:{Authorization:"Bearer "+session.access_token},cache:"no-store"});
+      const verified=await supabase.auth.getUser(session.access_token);
+      if(verified.error||!creatorStudioOwner(session.user.id,verified.data.user?.id)||!current()||signal.aborted)throw Error("Verify your account.");
+      const uid=session.user.id;
+      scope.current.bind(epoch,uid);
+      const response=await fetch("/api/network/creator-studio",{headers:{Authorization:"Bearer "+session.access_token},cache:"no-store",signal});
       const payload=await response.json();
-      if(!active)return;
-      if(!response.ok||!payload.profile){setError(payload.error||"Creator Studio is unavailable.");setLoading(false);return;}
-      setAccountNormal(payload.profile.moderation_status==="normal");
-      setProfileReady(true);
+      if(!current()||signal.aborted)return;
+      const latest=await supabase.auth.getSession();
+      if(!current()||signal.aborted)return;
+      if(latest.error||!creatorStudioOwner(uid,latest.data.session?.user.id))throw Error("Account changed.");
+      if(!response.ok||!creatorStudioOwner(uid,payload.profile?.id)){setError("Creator Studio is unavailable.");setLoading(false);return;}
+      setUserId(uid);setAccountNormal(payload.profile.moderation_status==="normal");setProfileReady(true);
       if(payload.creator){
         const value=payload.creator.category;
         if(categoryOptions.some(([key])=>key===value))setCategory(value as Category);
@@ -45,31 +74,41 @@ export default function CreatorStudioPage(){
         setWebsite(payload.creator.website_url||"");setPublished(Boolean(payload.creator.is_published));
       }
       setLoading(false);
-    })().catch(()=>{if(active){setError("Could not open Creator Studio.");setLoading(false);}});
-    return()=>{active=false;};
-  },[]);
+    },15000,controller).catch(()=>{if(current()){setError("Could not open Creator Studio. Refresh to retry.");setLoading(false);}});
+    return()=>{scope.current.invalidate();controller.abort();};
+  },[reload]);
   async function save(event:FormEvent<HTMLFormElement>){
     event.preventDefault();
-    if(!userId||saving)return;
+    if(!userId||!profileReady||saving||saveLock.current!==null)return;
+    const epoch=scope.current.epoch();
+    const current=()=>scope.current.current(epoch,userId);
+    if(!current())return;
     setNotice("");setError("");
     const url=website.trim();
     if(url&&!validHttps(url)){setError("Website must be a valid https:// address without embedded login details.");return;}
     if(published&&publicName.trim().length<2){setError("Choose a public name for the creator directory.");return;}
     if(headline.trim().length>140||description.trim().length>600){setError("Keep your headline under 140 characters and description under 600.");return;}
-    setSaving(true);
+    saveLock.current=epoch;setSaving(true);
+    const controller=new AbortController();saveRequest.current=controller;
     try{
-      const {data:{session}}=await supabase.auth.getSession();
-      if(!session?.access_token){setError("Please sign in again.");return;}
-      const response=await fetch("/api/network/creator-studio",{
-        method:"PUT",
-        headers:{Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},
-        body:JSON.stringify({public_name:publicName.trim(),country:country.trim(),category,headline:headline.trim(),description:description.trim(),website_url:url||null,is_published:published})
-      });
-      const payload=await response.json();
-      if(!response.ok)throw new Error(payload.error||"Unable to save creator showcase.");
-      setNotice(published?(payload.publicly_visible?"Creator showcase published.":"Your showcase was saved, but a moderation hold prevents public discovery."):"Creator draft saved privately.");
-    }catch{setError("Could not save your creator profile. Check your connection and try again.");}
-    finally{setSaving(false);}
+      const result=await withHoopChatDeadline(async signal=>{
+        const {data:{session},error:sessionError}=await supabase.auth.getSession();
+        if(sessionError||!session?.access_token||!creatorStudioOwner(userId,session.user.id)||!current()||signal.aborted)throw Error("Sign in again.");
+        const verified=await supabase.auth.getUser(session.access_token);
+        if(verified.error||!creatorStudioOwner(userId,verified.data.user?.id)||!current()||signal.aborted)throw Error("Account changed.");
+        const response=await fetch("/api/network/creator-studio",{
+          method:"PUT",cache:"no-store",signal,
+          headers:{Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},
+          body:JSON.stringify({public_name:publicName.trim(),country:country.trim(),category,headline:headline.trim(),description:description.trim(),website_url:url||null,is_published:published})
+        });
+        const payload=await response.json();
+        if(!response.ok||payload.ok!==true)throw Error("Unable to confirm creator showcase.");
+        return payload;
+      },15000,controller);
+      if(current())setNotice(published?(result.publicly_visible?"Creator showcase published.":"Your showcase was saved, but a moderation hold prevents public discovery."):"Creator draft saved privately.");
+    }catch{if(current())setError("Could not confirm your creator profile save. Refresh before retrying.");}
+    finally{if(saveLock.current===epoch)saveLock.current=null;if(current())setSaving(false);}
+
   }
   return <main className="hc-network-page">
     <nav className="hc-network-back"><Link href="/creators">Creator network</Link> / <span>Studio</span></nav>
