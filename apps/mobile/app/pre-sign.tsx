@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Pressable, ScrollView, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { preSignChecks } from "../../../lib/pre-sign-checks";
+import { preSignChecks } from "../../../lib/pre-sign/checks";
 import { Button, GlassCard } from "../src/primitives";
 import { useEntryTheme } from "../src/theme";
 

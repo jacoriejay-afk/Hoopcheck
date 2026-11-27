@@ -69,7 +69,7 @@ export default function AccountScreen() {
     async function loadIdentity() {
       try {
         const { data, error } = await readWithDeadline(() => supabase.auth.getSession());
-        if (error || data.session?.user.id !== uid || !active) return;
+        if (error || !data.session || data.session.user.id !== uid || !active) return;
         const profile = await supabase.from("profiles").select("username,avatar_url,avatar_moderation_status")
           .eq("id", uid).setHeader("Authorization", `Bearer ${data.session.access_token}`)
           .abortSignal(controller.signal).maybeSingle();

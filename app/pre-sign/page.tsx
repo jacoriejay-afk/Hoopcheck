@@ -2,7 +2,7 @@
 import {useEffect,useState} from "react";
 import Link from "next/link";
 import ContractRedFlagCheck from "../../components/ContractRedFlagCheck";
-import { preSignChecks as checks } from "../../lib/pre-sign-checks";
+import { preSignChecks as checks } from "../../lib/pre-sign/checks";
 export default function PreSignPage(){
  const [done,setDone]=useState<string[]>([]);
  const [ready,setReady]=useState(false);
