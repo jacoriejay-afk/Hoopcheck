@@ -1,7 +1,7 @@
 name: Compliance schema parity audit (offline)
 on:
   pull_request:
-    branches: ["integration/appstore-compliance-candidate", "qa/post16-reconcile-repair-compliance", "integration/post16-release-reconciliation"]
+    branches: ["integration/appstore-compliance-candidate", "qa/post16-reconcile-repair-compliance", "integration/post16-release-reconciliation", "qa/hoopcheck-master-acceptance", "integration/build17-development"]
     paths:
       - "scripts/appstore-schema-parity.py"
       - "scripts/test-appstore-schema-parity.py"

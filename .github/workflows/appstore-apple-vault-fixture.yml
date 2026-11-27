@@ -1,7 +1,7 @@
 name: Apple authorization vault rehearsal (synthetic)
 on:
   pull_request:
-    branches: ["fix/appstore-native-social-onboarding","integration/appstore-compliance-candidate", "qa/post16-reconcile-repair-compliance", "integration/post16-release-reconciliation"]
+    branches: ["fix/appstore-native-social-onboarding","integration/appstore-compliance-candidate", "qa/post16-reconcile-repair-compliance", "integration/post16-release-reconciliation", "qa/hoopcheck-master-acceptance", "integration/build17-development"]
     paths:
       - "supabase/candidates/appstore_apple_authorization_vault.sql"
       - "supabase/tests/appstore_apple_vault_fixture.sql"
