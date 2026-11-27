@@ -4,6 +4,8 @@ on:
     paths:
       - "supabase/candidates/step2_review_submission_rate_guard_review_only.sql"
       - "supabase/tests/step2_review_submission_rate_guard_isolated.sql"
+      - "supabase/candidates/step2_review_moderation_read_guard_review_only.sql"
+      - "supabase/tests/step2_review_moderation_read_guard_isolated.sql"
       - ".github/workflows/step2-review-rate-limit.yml"
 permissions:
   contents: read
@@ -64,3 +66,11 @@ jobs:
           test "$accepted" -eq 5
           test "$(grep -l 'Review submission rate limit reached' "$temp"/*.log | wc -l)" -eq 3
           test "$(psql -X -Atqc "SELECT cardinality(accepted_at) FROM hoopcheck_review_security.submission_windows WHERE author_id='55555555-5555-4555-8555-555555555555'")" -eq 5
+      - name: Rehearse restrictive review moderation read policy on fresh synthetic database
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = "127.0.0.1"
+          test "$PGDATABASE" = "hoopcheck_review_quota_fixture"
+          createdb hoopcheck_review_moderation_fixture
+          PGDATABASE=hoopcheck_review_moderation_fixture psql -X -v ON_ERROR_STOP=1 -f supabase/tests/step2_review_moderation_read_guard_isolated.sql
