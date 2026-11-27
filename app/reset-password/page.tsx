@@ -65,7 +65,7 @@ export default function ResetPasswordPage() {
     }
     if (!verification.current) {
       const code = url.pathname === "/reset-password" ? link?.code : undefined;
-      const verifier = code ? takeRecoveryCodeVerifier() : null;
+      const verifier = code ? (hasUrlCredentials ? takeRecoveryCodeVerifier() : entry?.verifier ?? null) : null;
       let work: ReturnType<typeof verifyRecoveryCode> = Promise.resolve(null);
       if (code && verifier) {
         client.current = createBrowserRecoveryClient(verifier);
