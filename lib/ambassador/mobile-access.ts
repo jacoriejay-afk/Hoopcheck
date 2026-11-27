@@ -1,6 +1,7 @@
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { assuranceForVerifiedUser } from "../auth/mfa-core";
 import { getAmbassadorWorkspace } from "./server";
+import { workspaceAccountIsActive } from "./session-access";
 
 export type WorkspaceAccess = { owner: boolean; ambassador: boolean };
 /** Caller must first verify the exact bearer with Auth.getUser(token). */
@@ -9,7 +10,8 @@ export async function mobileWorkspaceAccess(scoped: SupabaseClient, token: strin
   try {
     if (!user.email_confirmed_at) return denied;
     const claims = await scoped.auth.getClaims(token);
-    if (claims.error || claims.data?.claims.role !== "authenticated" || assuranceForVerifiedUser(token, user).required) return denied;
+    if (claims.error || claims.data?.claims.role !== "authenticated" || claims.data.claims.sub !== user.id ||
+        assuranceForVerifiedUser(token, user).required || !await workspaceAccountIsActive(scoped, user.id)) return denied;
     const [owner, ambassador] = await Promise.all([
       scoped.rpc("is_approved_claim_owner"),
       getAmbassadorWorkspace(user.id).catch(() => false),

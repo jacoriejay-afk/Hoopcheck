@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { feedMediaId, resolveFeedMedia } from "../../../../lib/feed-media-reference";
+import { expiringFeedMediaTtl, feedMediaId, resolveFeedMedia } from "../../../../lib/feed-media-reference";
 
 export const runtime = "nodejs";
 
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
   const admin = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
   // Do not issue a full-minute link for a post or ancestor about to expire.
   // Leave a conservative margin for signing latency and decline late responses.
-  const ttl = Math.min(60, Math.floor((earliestExpiry - Date.now()) / 1000) - 5);
+  const ttl = expiringFeedMediaTtl(earliestExpiry);
   if (ttl < 1) return NextResponse.json({ error: "Post unavailable" }, { status: 404 });
   const { data, error } = await admin.storage.from(media.bucket).createSignedUrl(media.path, ttl);
   if (error || !data?.signedUrl || Date.now() + ttl * 1000 > earliestExpiry) return NextResponse.json({ error: "Media unavailable" }, { status: 404 });

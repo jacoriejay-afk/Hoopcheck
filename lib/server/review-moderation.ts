@@ -6,18 +6,13 @@ import {
   type User,
 } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import { assuranceForVerifiedUser } from "../auth/mfa-core";
 
 type ModerationDatabase = {
   public: {
     Tables: {
-      admin_roles: {
-        Row: { user_id: string; role: string };
-        Insert: { user_id: string; role: string };
-        Update: { user_id?: string; role?: string };
-        Relationships: [];
-      };
       reviews: {
-        Row: { id: string; status: string | null };
+        Row: { id: string; status: string | null; team_id: string | null };
         Insert: Record<string, unknown>;
         Update: { status?: string; updated_at?: string };
         Relationships: [];
@@ -68,6 +63,7 @@ type AuthenticatedRequest =
   | {
       ok: true;
       supabase: SupabaseClient<ModerationDatabase>;
+      scoped: SupabaseClient;
       user: User;
     }
   | {
@@ -79,9 +75,10 @@ export async function authenticateModerationRequest(
   request: Request
 ): Promise<AuthenticatedRequest> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!supabaseUrl || !serviceRoleKey) {
+  if (!supabaseUrl || !publishableKey || !serviceRoleKey) {
     console.error("Missing Supabase server configuration for moderation.");
     return {
       ok: false,
@@ -93,9 +90,9 @@ export async function authenticateModerationRequest(
   }
 
   const authorization = request.headers.get("authorization");
-  const tokenMatch = authorization?.match(/^Bearer\s+(\S+)$/i);
+  const token = authorization?.match(/^Bearer\s+(\S{1,16384})$/i)?.[1];
 
-  if (!tokenMatch) {
+  if (!token) {
     return {
       ok: false,
       response: NextResponse.json(
@@ -105,22 +102,25 @@ export async function authenticateModerationRequest(
     };
   }
 
-  const supabase: SupabaseClient<ModerationDatabase> = createClient<ModerationDatabase>(
-    supabaseUrl,
-    serviceRoleKey,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    },
-  );
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser(tokenMatch[1]);
-
-  if (error || !user) {
+  const auth = { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false };
+  const scoped = createClient(supabaseUrl, publishableKey, {
+    auth,
+    global: { headers: { Authorization: `Bearer ${token}` } },
+  });
+  let user: User;
+  try {
+    const result = await scoped.auth.getUser(token);
+    if (result.error || !result.data.user || !result.data.user.email_confirmed_at) {
+      throw Error("Session verification failed.");
+    }
+    user = result.data.user;
+    if (assuranceForVerifiedUser(token, user).required) {
+      return { ok: false, response: NextResponse.json(
+        { error: "Verify your authenticator to continue.", code: "mfa_required" },
+        { status: 403, headers: { "Cache-Control": "private, no-store" } },
+      ) };
+    }
+  } catch {
     return {
       ok: false,
       response: NextResponse.json(
@@ -130,7 +130,24 @@ export async function authenticateModerationRequest(
     };
   }
 
-  return { ok: true, supabase, user };
+  // The signed caller must still own a live session. The same scoped client
+  // enforces the database freeze and checks the account moderation status.
+  try {
+    const [active, profile] = await Promise.all([
+      scoped.rpc("confirm_active_account_session"),
+      scoped.from("profiles").select("moderation_status").eq("id", user.id).maybeSingle(),
+    ]);
+    if (!active.error && active.data === true && !profile.error && profile.data &&
+        !["suspended", "banned", "removed"].includes(profile.data.moderation_status)) {
+      const supabase = createClient<ModerationDatabase>(supabaseUrl, serviceRoleKey, { auth });
+      return { ok: true, supabase, scoped, user };
+    }
+  } catch { /* Treat an unavailable authorization check as denial. */ }
+
+  return { ok: false, response: NextResponse.json(
+    { error: "Account access could not be verified." },
+    { status: 403, headers: { "Cache-Control": "private, no-store" } },
+  ) };
 }
 
 export async function authorizeModeratorRequest(
@@ -139,11 +156,7 @@ export async function authorizeModeratorRequest(
   const authenticated = await authenticateModerationRequest(request);
   if (!authenticated.ok) return authenticated;
 
-  const { data: adminRole, error } = await authenticated.supabase
-    .from("admin_roles")
-    .select("role")
-    .eq("user_id", authenticated.user.id)
-    .maybeSingle();
+  const { data: permitted, error } = await authenticated.scoped.rpc("is_current_user_admin_or_moderator");
 
   if (error) {
     console.error("Unable to verify moderation role:", error);
@@ -156,12 +169,7 @@ export async function authorizeModeratorRequest(
     };
   }
 
-  const role =
-    typeof adminRole?.role === "string"
-      ? adminRole.role.trim().toLowerCase()
-      : "";
-
-  if (role !== "admin" && role !== "moderator") {
+  if (permitted !== true) {
     return {
       ok: false,
       response: NextResponse.json(

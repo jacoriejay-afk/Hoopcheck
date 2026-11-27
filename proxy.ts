@@ -23,7 +23,11 @@ export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
   if (path === "/recover-password" || path === "/reset-password") return NextResponse.next({ request });
   if (path.startsWith("/api/")) {
-    if (isPendingBearer(request.headers.get("authorization"))) {
+    // First-time Apple signup must store the verified authorization before
+    // the database can finalize onboarding. The endpoint verifies the same
+    // bearer, live session, Apple identity and nonce before any vault write.
+    const appleAuthorization = path === "/api/auth/apple-authorization" && request.method === "POST";
+    if (isPendingBearer(request.headers.get("authorization")) && !appleAuthorization) {
       return NextResponse.json({ error: "Finish setting up your HoopCheck account first." }, { status: 403 });
     }
     // Verify bearer credentials or existing SSR cookies before any authenticated

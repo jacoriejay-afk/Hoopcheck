@@ -141,6 +141,35 @@ SELECT set_config('request.jwt.claims','{"role":"authenticated","sub":"bbbbbbbb-
 DO $$ BEGIN IF public.confirm_active_account_session() THEN RAISE EXCEPTION 'Expired session accepted'; END IF; END $$;
 RESET ROLE;
 
+-- A non-frozen member's old JWT must stop authorizing database access after
+-- its exact session is revoked. Keeping another session must not restore it.
+DELETE FROM auth.sessions WHERE id='77777777-7777-4777-8777-777777777777';
+INSERT INTO auth.sessions(id,user_id) VALUES('77777777-7777-4777-8777-777777777778','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
+SET LOCAL ROLE authenticated;
+DO $$ DECLARE t text; n integer; BEGIN
+ FOREACH t IN ARRAY ARRAY['public.fixture_posts','storage.objects','realtime.messages'] LOOP
+  EXECUTE format('SELECT count(*) FROM %s',t) INTO n;
+  IF n<>0 THEN RAISE EXCEPTION 'Revoked session accessed %',t; END IF;
+  BEGIN
+   EXECUTE format('INSERT INTO %s VALUES (''66666666-6666-4666-8666-666666666666'', auth.uid())', t);
+   RAISE EXCEPTION 'Revoked session write accepted';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+ END LOOP;
+ BEGIN
+  PERFORM hoopcheck_security.require_mfa_and_deletion_access();
+  RAISE EXCEPTION 'Revoked session passed API hook';
+ EXCEPTION WHEN insufficient_privilege THEN NULL;
+ END;
+END $$;
+SELECT set_config('request.jwt.claims','{"role":"authenticated","sub":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","session_id":"77777777-7777-4777-8777-777777777778","aal":"aal1"}',true);
+DO $$ BEGIN
+ PERFORM hoopcheck_security.require_mfa_and_deletion_access();
+ IF (SELECT count(*) FROM public.fixture_posts)<>1 OR (SELECT count(*) FROM storage.objects)<>1
+ OR (SELECT count(*) FROM realtime.messages)<>1 THEN RAISE EXCEPTION 'Replacement session access regressed'; END IF;
+END $$;
+RESET ROLE;
+
 -- Private preferences are a deliberately limited sub-operation, not a full
 -- step-8 acknowledgment. Preserve another user's rows and unrelated content.
 DO $$ DECLARE t text; BEGIN

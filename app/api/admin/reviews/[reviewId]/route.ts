@@ -117,7 +117,7 @@ export async function PATCH(
     );
   }
 
-  const { data: existingReview, error: existingError } = await (auth.supabase.from("reviews") as any)
+  const { data: existingReview, error: existingError } = await auth.supabase.from("reviews")
     .select("id, status, team_id")
     .eq("id", reviewId)
     .maybeSingle();
