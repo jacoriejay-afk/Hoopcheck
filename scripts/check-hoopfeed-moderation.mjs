@@ -13,10 +13,12 @@ const loadRoute = compileFunction(ts.transpileModule(route, {
 function fixture(secondResult, failure = null, options = {}) {
   const events = [];
   const rows = [];
+  let sessionChecks=0;
   const db = {
-    auth: { getUser: async () => ({ data: { user: { id: 'fixture-player' } } }) },
+    auth: { getUser: async () => ({ data: { user: { id: 'fixture-player', email_confirmed_at:options.unverified?null:'2026-11-27T00:00:00Z' } } }) },
+    rpc:async(name)=>{assert.equal(name,'confirm_active_account_session');sessionChecks++;return {data:!options.inactive&&!(options.revokeAfterModeration&&sessionChecks>1),error:options.sessionError?{message:'fixture'}:null};},
     from(table) {
-      const records = { profiles: { account_type: 'player' }, membership_entitlements: { plan: 'premium', status: 'active' } };
+      const records = { profiles: { account_type: 'player',moderation_status:options.suspended?'suspended':'active' }, membership_entitlements: { plan: 'premium', status: 'active' } };
       return {
         select: () => ({ eq: () => table === 'admin_roles' ? { data: [] } : { maybeSingle: async () => ({ data: records[table] }) } }),
         insert: async (row) => { rows.push(row); events.push(['insert', table, row.image_urls.length]); return { error: failure === 'insert' ? { message: 'fixture insert failed' } : null }; },
@@ -34,6 +36,7 @@ function fixture(secondResult, failure = null, options = {}) {
     if (id === 'next/server') return { NextResponse };
     if (id === '@supabase/supabase-js') return { createClient: () => db };
     if (id.endsWith('/membership-tier')) return { getHoopCheckEntitlements: () => ({ canWriteHoopFeed: true }) };
+    if (id.endsWith('/auth/mfa-core')) return {assuranceForVerifiedUser:()=>({required:!!options.mfa})};
     throw new Error(`Unexpected route dependency ${id}`);
   }, routeExports, async (url, options) => {
     assert.equal(url, 'https://api.openai.com/v1/moderations');
@@ -128,4 +131,15 @@ test("approved photo Story is follower-only and expires exactly 24 hours after s
 test("permanent posts remain permanent",async()=>{
  const {submit,rows}=fixture({flagged:false});assert.equal((await submit()).status,200);
  assert.equal(rows[0].post_kind,"discussion");assert.equal(rows[0].expires_at,null);
+});
+
+test("Story publication fails closed before moderation for unverified, suspended, MFA or revoked accounts",async()=>{
+ for(const extra of [{unverified:true},{suspended:true},{mfa:true},{inactive:true},{sessionError:true}]){
+  const {submit,events,rows}=fixture({flagged:false},null,{story:true,enabled:true,...extra});
+  assert.equal((await submit()).status,403);assert.deepEqual(events,[]);assert.deepEqual(rows,[]);
+ }
+});
+test("Story session revoked during moderation never uploads or publishes",async()=>{
+ const {submit,events,rows}=fixture({flagged:false},null,{story:true,enabled:true,revokeAfterModeration:true});
+ assert.equal((await submit()).status,403);assert.deepEqual(events,[["moderate","first photo"]]);assert.deepEqual(rows,[]);
 });
