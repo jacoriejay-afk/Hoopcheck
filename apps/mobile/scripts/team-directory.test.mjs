@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createClient } from '@supabase/supabase-js';
-import { teamDirectoryQuery, cleanTeamSearch } from '../src/native/teamDirectory.ts';
+import { teamDirectoryQuery, cleanTeamSearch, mergeTeamDirectoryRows } from '../src/native/teamDirectory.ts';
 
 test('native directory uses each canonical table, active filters and stable pages', async () => {
   for (const women of [false, true]) {
@@ -26,4 +26,12 @@ test('native directory uses each canonical table, active filters and stable page
 test('search preserves international names and bounds filter input', () => {
   assert.equal(cleanTeamSearch("  İstanbul   Žabiny  "), 'İstanbul Žabiny');
   assert.equal(cleanTeamSearch('a'.repeat(500)).length, 120);
+});
+
+test('overlapping pages update canonical IDs without duplicate keys or reordering', () => {
+  const first = [{id:'a',name:'A'},{id:'b',name:'Old B'}];
+  const next = [{id:'b',name:'New B'},{id:'c',name:'C'},{id:'c',name:'Latest C'}];
+  assert.deepEqual(mergeTeamDirectoryRows(first,next),[{id:'a',name:'A'},{id:'b',name:'New B'},{id:'c',name:'Latest C'}]);
+  assert.equal(first[1].name,'Old B');
+  assert.deepEqual(mergeTeamDirectoryRows([],next).map(x=>x.id),['b','c']);
 });
