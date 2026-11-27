@@ -276,6 +276,17 @@ test("OAuth exchange screen does not trigger app lock before fresh sign-in is re
   }
 });
 
+test("public recovery screens never trigger onboarding or pending signup redirects", () => {
+  for (const route of ["forgot-password", "reset-password"]) {
+    const f = screen("app/_layout.tsx", { state: [{ ready: true, userId: "pending", error: null, pendingSocialSignup: true }], segments: [route] });
+    f.effects[2]();
+    assert.deepEqual(f.calls.replace, []);
+    const lock = f.nodes.find(node => node.type === "AppLock");
+    assert.equal(lock.props.allowOnboarding, false);
+    assert.equal(lock.props.protectedScreen, false);
+  }
+});
+
 
 test("protected native links preserve bounded post/search destinations without retaining auth secrets", () => {
   const id = "11111111-1111-4111-8111-111111111111";

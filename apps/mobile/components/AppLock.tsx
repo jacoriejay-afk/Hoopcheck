@@ -12,8 +12,8 @@ import { useDevicePreferences } from "../src/native/preferences";
 import { useEntryTheme } from "../src/theme";
 import { supabase } from "../src/lib/supabase";
 
-type Props = { authReady: boolean; protectedScreen: boolean; userId: string | null; startupError?: string | null; retryStartup?: () => void };
-export function AppLock({ authReady, protectedScreen, userId, startupError, retryStartup }: Props) {
+type Props = { authReady: boolean; protectedScreen: boolean; userId: string | null; startupError?: string | null; retryStartup?: () => void; allowOnboarding?: boolean };
+export function AppLock({ authReady, protectedScreen, userId, startupError, retryStartup, allowOnboarding = true }: Props) {
   const { ready, preferences, restoreError, retryRestore } = useDevicePreferences();
   const theme = useEntryTheme();
   const security = useMfaSession();
@@ -88,7 +88,7 @@ export function AppLock({ authReady, protectedScreen, userId, startupError, retr
   const securityPending = Boolean(userId && security.phase !== "ready");
   const bootstrapping = !authReady || !ready || securityPending;
   const needsLock = lockScreenRequired(authReady, ready, protectedScreen, preferences.appLock, !userId || unlockedUser !== userId) || securityPending;
-  const needsOnboarding = ready && !preferences.onboardingDone;
+  const needsOnboarding = allowOnboarding && ready && !preferences.onboardingDone;
   const recoveryMessage = startupError || restoreError || (userId && security.phase === "error" ? security.error : "");
   // One native presentation owns hydration, recovery, locking and onboarding.
   if (!needsLock && !needsOnboarding) return null;

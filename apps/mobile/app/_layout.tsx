@@ -75,7 +75,7 @@ function RootLayout() {
     // Server-side role restrictions remain authoritative; this is navigation only.
     if (session.pendingSocialSignup) {
       // The sign-in screen owns Apple authorization persistence before navigation.
-      if (currentRoute === "auth" || currentRoute === "sign-in" || currentRoute === "legal" || pathname === "/account/policies" || (currentRoute === "sign-up" && routeParams.social === "1")) return;
+      if (["auth", "sign-in", "forgot-password", "reset-password", "legal"].includes(currentRoute) || pathname === "/account/policies" || (currentRoute === "sign-up" && routeParams.social === "1")) return;
       router.replace({ pathname: "/sign-up", params: { social: "1" } });
       return;
     }
@@ -171,7 +171,7 @@ function RootLayout() {
         <Stack.Screen name="leagues/[id]" options={{ title: "League profile", headerTransparent: true }} />
       </Stack>
       <PublicSystemNavigation ready={sessionReady && !session.error && !session.pendingSocialSignup} blocked={["auth","reset-password","forgot-password","sign-up","choose-username"].includes(segments[0] ?? "")} signedIn={signedIn} />
-      {signedIn && !session.pendingSocialSignup ? <TabBar /> : null}<AppLock authReady={sessionReady} userId={session.userId} startupError={session.error} retryStartup={() => { void bootstrap.current?.retry(); }} protectedScreen={signedIn && !session.pendingSocialSignup && !["sign-in", "sign-up", "reset-password", "auth"].includes(segments[0] ?? "")} />
+      {signedIn && !session.pendingSocialSignup ? <TabBar /> : null}<AppLock authReady={sessionReady} userId={session.userId} startupError={session.error} retryStartup={() => { void bootstrap.current?.retry(); }} protectedScreen={signedIn && !session.pendingSocialSignup && !["sign-in", "sign-up", "forgot-password", "reset-password", "auth"].includes(segments[0] ?? "")} allowOnboarding={!["forgot-password", "reset-password"].includes(segments[0] ?? "")} />
       <AppOpening ready={sessionReady && (fontsLoaded || Boolean(fontError))}
         disabled={["auth", "reset-password"].includes(segments[0] ?? "")} />
     </BottomSheetModalProvider></NativeDraftProvider></StoreKitProvider></NativeAccountProvider></MfaSessionProvider></NetworkProvider></DevicePreferences></MotionProvider></SafeAreaProvider></GestureHandlerRootView>
