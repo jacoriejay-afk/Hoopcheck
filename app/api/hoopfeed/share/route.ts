@@ -40,9 +40,9 @@ export async function POST(request: Request) {
       auth: { autoRefreshToken: false, persistSession: false },
     });
     const { data: visible, error: visibilityError } = await viewer.from("feed_posts")
-      .select("id,author_id").eq("id", postId).eq("status", "approved")
-      .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`).maybeSingle();
-    if (visibilityError || !visible) return json("Post unavailable.", 404);
+      .select("id,author_id,expires_at").eq("id", postId).eq("status", "approved")
+      .is("expires_at", null).maybeSingle();
+    if (visibilityError || !visible || visible.expires_at !== null) return json("Post unavailable.", 404);
 
     const { data: recipient } = await db.from("profiles").select("id,account_type").eq("id", recipientId).maybeSingle();
     if (!recipient || !["player", "fan"].includes(recipient.account_type)) return json("Recipient unavailable.", 404);
