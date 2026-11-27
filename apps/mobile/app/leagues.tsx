@@ -11,9 +11,12 @@ import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Tex
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { supabase } from "../src/lib/supabase";
+import { Sheet } from "../components/Sheet";
+import { cleanTeamSearch, mergeTeamDirectoryRows, TEAM_PAGE_SIZE } from "../src/native/teamDirectory";
+import { leagueDirectoryQuery, readLeagueCountries } from "../src/native/leagueDirectory";
 
 type League = { id: string; name: string; country: string | null; level: string | null; season: string | null; website: string | null; logo_url: string | null };
-const PAGE_SIZE = 40;
+const PAGE_SIZE = TEAM_PAGE_SIZE;
 
 export default function LeaguesScreen() {
   const theme = useEntryTheme();
@@ -23,36 +26,41 @@ export default function LeaguesScreen() {
   const { revision } = useNetwork();
   const { recents, remember } = useRecentSearches("leagues");
   const requestId = useRef(0);
+  const loadingRequest = useRef<number | null>(null);
+  const appliedScope = useRef<string | null>(null);
+  const pageOffset = useRef(0);
   const [items, setItems] = useState<League[]>([]);
   const [term, setTerm] = useState("");
   const [appliedTerm, setAppliedTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
-  const [offset, setOffset] = useState(0);
+  const [country, setCountry] = useState("");
+  const [countryOpen,setCountryOpen] = useState(false);
   const [hasMore, setHasMore] = useState(false);
 
   const load = useCallback(async (search: string, start = 0, append = false) => {
     const currentRequest = ++requestId.current;
-    if (start === 0) setLoading(true);
+    loadingRequest.current=currentRequest;
+    setLoading(true);
     setError("");
-    const clean = search.trim().replace(/[^\p{L}\p{N} '\-]/gu, " ").replace(/\s+/g, " ").trim();
-    let query = supabase.from("leagues").select("id,name,country,level,season,website,logo_url").eq("active", true).eq("basketball_type", "mens").order("name", { ascending: true }).range(start, start + PAGE_SIZE);
-    if (clean) query = query.or(`name.ilike.%${clean}%,country.ilike.%${clean}%,level.ilike.%${clean}%`);
-    const { data, error: queryError } = await read(`leagues:${clean}:${start}`, () => query);
+    const clean = cleanTeamSearch(search);
+    const scope = JSON.stringify([clean,country]);
+    const {data,error:queryError}=await Promise.resolve().then(()=>read(`leagues:${scope}:${start}`,()=>leagueDirectoryQuery(supabase,clean,start,country))).catch(()=>({data:null,error:true}));
     if (currentRequest !== requestId.current) return;
+    loadingRequest.current=null;
     if (queryError) {
       setError("We couldn’t load leagues. Check your connection and try again.");
-      if (!append) setItems([]);
+      if (!append) {setItems([]);setHasMore(false);pageOffset.current=0;appliedScope.current=null;}
       setLoading(false); setRefreshing(false); return;
     }
     const rows = (data ?? []) as League[];
     setHasMore(rows.length > PAGE_SIZE);
     const page = rows.slice(0, PAGE_SIZE);
-    setItems(append ? current => [...current, ...page] : page);
-    setOffset(start);
+    setItems(current=>mergeTeamDirectoryRows(append?current:[],page));
+    pageOffset.current=start;appliedScope.current=scope;
     setLoading(false); setRefreshing(false);
-  }, [read]);
+  }, [read,country]);
 
 
   useEffect(() => {
@@ -60,11 +68,14 @@ export default function LeaguesScreen() {
       setAppliedTerm(term.trim());
       void load(term, 0, false);
     }, motion.searchDelay);
-    return () => { clearTimeout(timer); requestId.current += 1; };
+    return () => { clearTimeout(timer); requestId.current += 1; loadingRequest.current=null; appliedScope.current=null; };
   }, [term, revision, load]);
 
-  async function nextPage() { if (loading || !hasMore) return; setLoading(true); await load(appliedTerm, offset + PAGE_SIZE, true); }
-  const refresh = () => { setRefreshing(true); void load(appliedTerm, 0, false); };
+  async function nextPage() { if (loadingRequest.current!==null || loading || refreshing || !hasMore || cleanTeamSearch(term)!==cleanTeamSearch(appliedTerm) || appliedScope.current!==JSON.stringify([cleanTeamSearch(appliedTerm),country])) return; await load(appliedTerm,pageOffset.current+PAGE_SIZE,true); }
+  const refresh=()=>{if(loadingRequest.current!==null||cleanTeamSearch(term)!==cleanTeamSearch(appliedTerm))return;setRefreshing(true);void load(appliedTerm,0,false);};
+  function invalidate(){requestId.current++;loadingRequest.current=null;appliedScope.current=null;pageOffset.current=0;setLoading(true);setRefreshing(false);setItems([]);setHasMore(false);setError("");}
+  function updateTerm(value:string){if(value===term)return;invalidate();setTerm(value);}
+  function updateCountry(value:string){setCountryOpen(false);if(value===country)return;invalidate();setCountry(value);}
 
   return (
     <SafeAreaView edges={["left", "right", "bottom"]} style={styles.safe}>
@@ -82,12 +93,13 @@ export default function LeaguesScreen() {
           <Text style={styles.openProfile}>Browse women’s teams and leagues →</Text>
         </Pressable>
         <View style={styles.searchRow}>
-          <Input onBlur={() => remember(term)} onSubmitEditing={() => remember(term)} value={term} onChangeText={value => { requestId.current++; setTerm(value); setLoading(true); setItems([]); setHasMore(false); }} returnKeyType="search" placeholder="League, country or level" placeholderTextColor={theme.muted} style={styles.input} />
+          <Input onBlur={() => remember(term)} onSubmitEditing={() => remember(term)} value={term} onChangeText={updateTerm} returnKeyType="search" placeholder="League, country or level" placeholderTextColor={theme.muted} style={styles.input} />
         </View>
-        {!term ? <RecentSearches items={recents} onSelect={setTerm} /> : null}
+        <View style={{flexDirection:"row",alignItems:"center",gap:8}}><Pressable accessibilityRole="button" accessibilityLabel="Filter leagues by country" onPress={()=>setCountryOpen(true)} style={{flex:1,minHeight:44,justifyContent:"center"}}><Text style={{color:theme.accent,fontWeight:"700"}}>{country||"All countries"} ▾</Text></Pressable>{country?<Button secondary onPress={()=>updateCountry("")}>Clear</Button>:null}</View>
+        {!term ? <RecentSearches items={recents} onSelect={updateTerm} /> : null}
         <Text style={styles.count}>{loading ? "Loading leagues…" : `${items.length}${hasMore ? "+" : ""} ${items.length === 1 && !hasMore ? "result" : "results"} shown`}</Text>
       </View>
-      {error ? <View style={styles.errorBox}><Text style={styles.error}>{error}</Text><Pressable onPress={() => void load(appliedTerm)}><Text style={styles.retry}>Try again</Text></Pressable></View> : null}
+      {error ? <View style={styles.errorBox}><Text style={styles.error}>{error}</Text><Pressable onPress={refresh}><Text style={styles.retry}>Try again</Text></Pressable></View> : null}
       {loading && items.length === 0 ? <Skeleton /> : (
         <FlatList
           keyboardShouldPersistTaps="handled"
@@ -116,8 +128,28 @@ export default function LeaguesScreen() {
           onEndReached={() => { if (hasMore && !loading) void nextPage(); }}
         />
       )}
+      {countryOpen?<LeagueCountryPicker selected={country} onSelect={updateCountry} onClose={()=>setCountryOpen(false)}/>:null}
     </SafeAreaView>
   );
+}
+
+function LeagueCountryPicker({selected,onSelect,onClose}:{selected:string;onSelect:(value:string)=>void;onClose:()=>void}){
+  const theme=useEntryTheme();
+  const [options,setOptions]=useState<Awaited<ReturnType<typeof readLeagueCountries>>|null>(null),[error,setError]=useState(""),[search,setSearch]=useState(""),[retry,setRetry]=useState(0);
+  useEffect(()=>{let alive=true;const ctrl=new AbortController(),deadline=setTimeout(()=>ctrl.abort(),15000);
+    setOptions(null);setError("");void readLeagueCountries(supabase,ctrl.signal).then(value=>{if(alive&&!ctrl.signal.aborted)setOptions(value);else if(alive)setError("Country filters timed out.");}).catch(()=>{if(alive)setError("Country filters unavailable. League search still works.");}).finally(()=>clearTimeout(deadline));
+    return()=>{alive=false;clearTimeout(deadline);ctrl.abort();};
+  },[retry]);
+  const countries=(options?.countries??[]).filter(value=>value.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
+  return <Sheet open title="League country" onClose={onClose}>
+    <Input accessibilityLabel="Search league countries" placeholder="Search countries" value={search} onChangeText={setSearch}/>
+    <Button secondary onPress={()=>onSelect("")}>All countries</Button>
+    {!options&&!error?<Text style={{color:theme.muted}}>Loading countries…</Text>:null}
+    {error?<><Text accessibilityRole="alert" style={{color:theme.muted}}>{error}</Text><Button secondary onPress={()=>setRetry(n=>n+1)}>Retry</Button></>:null}
+    {options&&!options.complete?<Text style={{color:theme.muted}}>Showing available labels from a bounded directory scan.</Text>:null}
+    {countries.map(value=><Pressable key={value} accessibilityRole="button" accessibilityState={{selected:value===selected}} onPress={()=>onSelect(value)} style={{minHeight:44,justifyContent:"center",borderBottomWidth:1,borderColor:theme.border}}><Text style={{color:value===selected?theme.accent:theme.foreground}}>{value}</Text></Pressable>)}
+    {options&&countries.length===0?<Text style={{color:theme.muted}}>No matching countries.</Text>:null}
+  </Sheet>;
 }
 
 const createStyles = (theme: EntryTheme) => StyleSheet.create({

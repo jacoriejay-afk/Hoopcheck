@@ -12,7 +12,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { teamDirectoryQuery, cleanTeamSearch, TEAM_PAGE_SIZE, mergeTeamDirectoryRows } from "../src/native/teamDirectory";
+import { teamDirectoryQuery, cleanTeamSearch, TEAM_PAGE_SIZE, mergeTeamDirectoryRows, teamDirectoryScope, EMPTY_TEAM_FACET, type TeamFacet } from "../src/native/teamDirectory";
+import { TeamDirectoryFilters } from "./TeamDirectoryFilters";
 import { supabase } from "../src/lib/supabase";
 
 type Team = { logo_url?: string | null; logo_bg?: string | null; id: string; name: string; country: string | null; city: string | null; league_name: string | null; website?: string | null };
@@ -31,6 +32,8 @@ export function TeamDirectoryScreen({ women = false }: { women?: boolean }) {
   const [preview, setPreview] = useState<Team | null>(null);
   const [items, setItems] = useState<Team[]>([]);
   const [term, setTerm] = useState("");
+  const [facet,setFacet] = useState<TeamFacet>(EMPTY_TEAM_FACET);
+  const [filterOpen,setFilterOpen] = useState(false);
   const [appliedTerm, setAppliedTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -44,7 +47,8 @@ export function TeamDirectoryScreen({ women = false }: { women?: boolean }) {
     setLoading(true);
     setError("");
     const clean = cleanTeamSearch(search);
-    const { data, error: queryError } = await Promise.resolve().then(() => read(`${women ? "womens-teams" : "teams"}:${clean}:${start}`, () => teamDirectoryQuery(supabase, women, clean, start))).catch(() => ({ data: null, error: true }));
+    const scope = teamDirectoryScope(women,clean,facet);
+    const { data, error: queryError } = await Promise.resolve().then(() => read(`team-directory:${scope}:${start}`, () => teamDirectoryQuery(supabase, women, clean, start, facet))).catch(() => ({ data: null, error: true }));
     if (currentRequest !== requestId.current) return;
     loadingRequest.current = null;
     if (queryError) {
@@ -56,10 +60,10 @@ export function TeamDirectoryScreen({ women = false }: { women?: boolean }) {
     setHasMore(rows.length > PAGE_SIZE);
     const page = rows.slice(0, PAGE_SIZE);
     setItems(current => mergeTeamDirectoryRows(append ? current : [], page));
-    appliedScope.current = `${women}:${clean}`;
+    appliedScope.current = scope;
     setOffset(start);
     setLoading(false); setRefreshing(false);
-  }, [read, women]);
+  }, [read, women, facet]);
 
 
 
@@ -72,7 +76,7 @@ export function TeamDirectoryScreen({ women = false }: { women?: boolean }) {
   }, [term, revision, load]);
 
   async function nextPage() {
-    if (loadingRequest.current !== null || loading || refreshing || !hasMore || cleanTeamSearch(term) !== cleanTeamSearch(appliedTerm) || appliedScope.current !== `${women}:${cleanTeamSearch(appliedTerm)}`) return;
+    if (loadingRequest.current !== null || loading || refreshing || !hasMore || cleanTeamSearch(term) !== cleanTeamSearch(appliedTerm) || appliedScope.current !== teamDirectoryScope(women,appliedTerm,facet)) return;
     await load(appliedTerm, offset + PAGE_SIZE, true);
   }
 
@@ -84,6 +88,12 @@ export function TeamDirectoryScreen({ women = false }: { women?: boolean }) {
     if (value === term) return;
     requestId.current++; loadingRequest.current = null; appliedScope.current = null;
     setTerm(value); setLoading(true); setRefreshing(false); setItems([]); setHasMore(false); setOffset(0); setPreview(null);
+  };
+
+  const updateFacet = (value: TeamFacet) => {
+    if (value.country===facet.country && value.league===facet.league) {setFilterOpen(false);return;}
+    requestId.current++;loadingRequest.current=null;appliedScope.current=null;
+    setFacet(value);setFilterOpen(false);setItems([]);setHasMore(false);setOffset(0);setLoading(true);setRefreshing(false);setPreview(null);
   };
 
   return (
@@ -100,6 +110,10 @@ export function TeamDirectoryScreen({ women = false }: { women?: boolean }) {
         </Pressable>
         <View style={styles.searchRow}>
           <Input onBlur={() => remember(term)} onSubmitEditing={() => remember(term)} value={term} onChangeText={updateTerm} returnKeyType="search" placeholder="Team, country, city or league" placeholderTextColor={theme.muted} style={styles.input} />
+        </View>
+        <View style={{flexDirection:"row",alignItems:"center",gap:8}}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Filter teams by country and league" onPress={()=>setFilterOpen(true)} style={{flex:1,minHeight:44,justifyContent:"center"}}><Text numberOfLines={2} style={{color:theme.accent,fontWeight:"700"}}>{facet.country ? `${facet.country}${facet.league ? " · "+facet.league : " · All leagues"}` : "Country ▾  ·  League ▾"}</Text></Pressable>
+          {facet.country ? <Button secondary onPress={()=>updateFacet(EMPTY_TEAM_FACET)}>Clear</Button> : null}
         </View>
         {!term ? <RecentSearches items={recents} onSelect={updateTerm} /> : null}
         <Text style={styles.count}>{loading ? "Loading teams…" : `${items.length}${hasMore ? "+" : ""} ${items.length === 1 && !hasMore ? "result" : "results"} shown`}</Text>
@@ -132,6 +146,7 @@ export function TeamDirectoryScreen({ women = false }: { women?: boolean }) {
           onEndReached={() => { if (hasMore && !loading) void nextPage(); }}
         />
       )}
+      {filterOpen ? <TeamDirectoryFilters key={String(women)} women={women} value={facet} onClose={()=>setFilterOpen(false)} onApply={updateFacet} /> : null}
       <Sheet open={Boolean(preview)} onClose={() => setPreview(null)} title={preview?.name ?? "Team preview"}>
         <Text style={{ color: theme.muted }}>{[preview?.city, preview?.country, preview?.league_name].filter(Boolean).join(" · ") || "Location and league not listed"}</Text>
         {preview ? <Pressable accessibilityRole="button" onPress={() => { const id = preview.id; setPreview(null); router.push({ pathname: women ? "/womens/[id]" : "/teams/[id]", params: { id } }); }} style={{ minHeight: 48, justifyContent: "center" }}><Text style={{ color: theme.accent }}>Open team profile</Text></Pressable> : null}
