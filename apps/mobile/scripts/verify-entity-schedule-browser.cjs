@@ -36,8 +36,10 @@ const matches=[
     if(table==="fan_live_games"){assert.equal(method,"GET");return json(matches);}
     if(table==="profiles")return json({preferred_basketball_side:"mens",avatar_url:null,avatar_moderation_status:"pending"});
     if(table==="fan_live_chat_room_open")return json(false);
-    if(table==="leagues")return json({id:ml,name:"Men Fixture League",country:"Spain",level:"Professional"});
-    if(table==="womens_leagues")return json({id:wl,name:"Women Fixture League",country:"Spain",level:"Professional"});
+    if(table==="leagues"||table==="womens_leagues"){
+      const league={id:table==="leagues"?ml:wl,name:table==="leagues"?"Men Fixture League":"Women Fixture League",country:"Spain",level:"Professional"};
+      return json(url.searchParams.has("id")?league:[league]);
+    }
     if(table==="teams"||table==="womens_teams"){
       const isWomen=table==="womens_teams"||url.searchParams.get("basketball_type")==="eq.womens";
       const list=(table==="teams"&&isWomen?[]:isWomen?women:men).map(t=>({...t,country:"Spain",city:"Madrid",league_name:isWomen?"Women Fixture League":"Men Fixture League",league_id:isWomen?wl:ml,website:null,logo_url:null}));
@@ -48,6 +50,19 @@ const matches=[
   });
   await context.addInitScript(({token,user,expires})=>{localStorage.setItem("sb-fixture-auth-token",JSON.stringify({access_token:token,refresh_token:"fixture",token_type:"bearer",expires_at:expires,user}));localStorage.setItem("hoopcheck:device-preferences:v1",JSON.stringify({appLock:false,haptics:false,onboardingDone:true}));},{token,user,expires});
   const page=await context.newPage();page.on("pageerror",e=>errors.push(e.message));
+  await page.goto(base+"/leagues");
+  await page.getByRole("link",{name:"Browse women’s leagues →"}).click();
+  await page.waitForURL(base+"/womens/leagues");
+  const womenLeague=page.getByRole("link",{name:/Women Fixture League/});
+  await womenLeague.waitFor();
+  assert.equal(await page.getByRole("link",{name:/Men Fixture League/}).count(),0);
+  await page.getByRole("button",{name:"Filter leagues by country"}).click();
+  await page.getByRole("button",{name:"Spain",exact:true}).click();
+  await womenLeague.waitFor();
+  assert.ok(requests.some(r=>r.path.endsWith("/womens_leagues")&&r.params.get("country")==="eq.Spain"&&r.params.get("order")==="name.asc,id.asc"));
+  await womenLeague.click();
+  await page.waitForURL(base+"/womens/leagues/"+wl);
+  console.log("PASS "+theme+" women’s league browse, country filter and canonical profile link");
   for(const [path,name,other,side] of [["/teams/"+men[0].id,"Home Men","Away Men","mens"],["/leagues/"+ml,"Home Men","Away Men","mens"],["/womens/"+women[0].id,"Home Women","Away Women","womens"],["/womens/leagues/"+wl,"Home Women","Away Women","womens"]]){
     await page.goto(base+path);
     const schedule=page.getByTestId("entity-upcoming-games");
