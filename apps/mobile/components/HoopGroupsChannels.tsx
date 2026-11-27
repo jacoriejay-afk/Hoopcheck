@@ -1,6 +1,6 @@
 import { blockNativeAccount, readOutgoingBlocks } from "../src/native/accountBlocking";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
+import { Alert, AppState, Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { Button, GlassCard } from "../src/primitives";
 import { useEntryTheme } from "../src/theme";
@@ -36,6 +36,9 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
   const [inviteUnavailable,setInviteUnavailable]=useState(false);
   const [channelId,setChannelId]=useState("");
   const [postSnapshot,setPostSnapshot]=useState<{channelId:string;posts:Post[]}|null>(null);
+  const [postLoading,setPostLoading]=useState(false);
+  const [postError,setPostError]=useState("");
+  const [postRefresh,setPostRefresh]=useState(0);
   const [draftState,setDraftState]=useState<{channelId:string;value:string}|null>(null);
   const [loading,setLoading]=useState(true);
   const [busy,setBusy]=useState(false);
@@ -123,27 +126,45 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
   function setDraft(value:string) {setDraftState(value&&channel?{channelId:channel.id,value}:null);}
   const managing=editing&&editingGroupId===selected?.id;
 
-  useEffect(()=>{
-    if(!userId||offline||!member||!channel?.id){setPostSnapshot(null);return;}
-    let alive=true;const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
-    setPostSnapshot(null);
+  useFocusEffect(useCallback(()=>{
+    if(!userId||offline||!member||!channel?.id){setPostSnapshot(null);setPostLoading(false);setPostError("");return;}
+    let alive=true;
+    let activeController:AbortController|null=null;
+    let running=false;
+    let initial=true;
+    setPostSnapshot(null);setPostError("");
     async function loadPosts(){
+      if(!alive||running||!(AppState.currentState==="active"||AppState.currentState===null))return;
+      running=true;
+      const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
+      activeController=controller;
+      if(initial)setPostLoading(true);
       try{
-        const blocked=await readOutgoingBlocks(supabase,userId,controller.signal);
         const token=await safetyToken();
+        if(!alive||controller.signal.aborted)return;
+        const blocked=await readOutgoingBlocks(supabase,userId,controller.signal);
         if(!alive||controller.signal.aborted)return;
         const {data,error:readError}=await supabase.from("hoop_group_posts")
           .select("id,author_id,body,moderation_status,created_at")
-          .eq("channel_id",channel!.id).order("created_at",{ascending:false}).limit(100)
+          .eq("channel_id",channel!.id).order("created_at",{ascending:false}).order("id",{ascending:false}).limit(100)
           .setHeader("Authorization","Bearer "+token).abortSignal(controller.signal);
         if(readError||controller.signal.aborted)throw Error("Channel messages could not be loaded.");
+        const current=await safetyToken();
+        if(!alive||controller.signal.aborted||current!==token)throw Error("Session changed. Refresh the channel.");
+        if(AppState.currentState!=="active"&&AppState.currentState!==null)return;
         if(alive)setPostSnapshot({channelId:channel!.id,posts:((data||[]) as Post[]).filter(post=>!blocked.has(post.author_id)).reverse()});
-      }catch{if(alive){setError("Channel messages or block status could not be verified.");setPostSnapshot(null);}}
-      finally{clearTimeout(timer);}
+        setPostError("");
+      }catch{if(alive){setPostError("Channel messages or block status could not be verified.");setPostSnapshot(null);}}
+      finally{clearTimeout(timer);if(activeController===controller)activeController=null;running=false;initial=false;if(alive)setPostLoading(false);}
     }
     void loadPosts();
-    return()=>{alive=false;clearTimeout(timer);controller.abort();};
-  },[userId,offline,member,channel?.id,revision,safetyToken]);
+    const refreshTimer=setInterval(()=>void loadPosts(),25000);
+    const appState=AppState.addEventListener("change",state=>{
+      if(state==="active")void loadPosts();
+      else {activeController?.abort();setPostSnapshot(null);}
+    });
+    return()=>{alive=false;clearInterval(refreshTimer);appState.remove();activeController?.abort();setPostSnapshot(null);};
+  },[userId,offline,member,channel?.id,revision,postRefresh,safetyToken]));
 
   async function join() {
     if(!selected||!userId||offline||busy)return;
@@ -256,7 +277,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
       const {error:sendError}=await supabase.from("hoop_group_posts")
         .insert({channel_id:channel.id,author_id:userId,body:draft.trim().slice(0,1200),moderation_status:"pending"}).setHeader("Authorization","Bearer "+token);
       if(sendError)throw Error("Could not submit this post. Slow mode allows one post per 20 seconds.");
-      setDraft("");setRevision(value=>value+1);
+      setDraftState(current=>current?.channelId===channel.id&&current.value===draft?null:current);setPostRefresh(value=>value+1);
     }catch(failure){setError(failure instanceof Error?failure.message:"Message was not submitted.");}
     finally{mutationLocked.current=false;setBusy(false);}
   }
@@ -478,6 +499,9 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
       {member&&channel?<GlassCard style={{gap:8,backgroundColor:"transparent",borderWidth:0,padding:4}}>
         <Text style={{color:theme.foreground,fontSize:19,fontFamily:"HoopCheckDisplay"}}># {channel.name}</Text>
         <Text style={{color:theme.muted,fontSize:12}}>Members only · moderated posts · 20-second slow mode</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel="Refresh channel messages" disabled={postLoading||busy} onPress={()=>setPostRefresh(value=>value+1)} style={{minHeight:44,justifyContent:"center",alignSelf:"flex-start"}}><Text style={{color:theme.accent,fontWeight:"700"}}>Refresh channel</Text></Pressable>
+        {postLoading?<HoopCheckLoading compact label="Loading channel messages…" />:null}
+        {postError?<Text accessibilityRole="alert" style={{color:theme.accent}}>{postError}</Text>:null}
         {posts.length?posts.map(post=><View key={post.id}
           style={{borderBottomWidth:1,borderColor:theme.border,paddingVertical:10,gap:5}}>
           <Text style={{color:theme.foreground,fontWeight:"700"}}>{post.author_id===userId?"You":"Community member"}</Text>
@@ -487,9 +511,9 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
             style={{minHeight:40,justifyContent:"center"}} onPress={()=>actions(post)}>
             <Text style={{color:theme.accent}}>Report or block</Text>
           </Pressable>:null}
-        </View>):<Text style={{color:theme.muted,marginVertical:12}}>No approved messages yet.</Text>}
+        </View>):!postLoading&&!postError&&postSnapshot?.channelId===channel.id?<Text style={{color:theme.muted,marginVertical:12}}>No approved messages yet.</Text>:null}
         <TextInput accessibilityLabel={"Message in "+channel.name} multiline maxLength={1200}
-          value={draft} onChangeText={setDraft} placeholder="Post to this discussion…" placeholderTextColor={theme.muted}
+          editable={!busy&&!offline} value={draft} onChangeText={setDraft} placeholder="Post to this discussion…" placeholderTextColor={theme.muted}
           style={{backgroundColor:theme.input,color:theme.foreground,borderWidth:1,borderColor:theme.border,
             padding:12,minHeight:72,textAlignVertical:"top",borderRadius:14}} />
         <Button disabled={busy||offline||!draft.trim()} onPress={()=>void send()}>{busy?"Submitting…":"Post for approval"}</Button>
