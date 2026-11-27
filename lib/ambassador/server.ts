@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { uuidPattern } from "./identifiers";
 import { assuranceForVerifiedUser } from "../auth/mfa-core";
 import { createAuthClient } from "../server/supabase-auth";
+import { workspaceAccountIsActive } from "./session-access";
 
 export const referralCookie = "hoopcheck-ambassador-referral";
 
@@ -34,10 +35,11 @@ export async function requireAmbassadorSession(route: string, ownerOnly = false)
   const { data: { user } } = await auth.auth.getUser(token);
   if (!user) redirect(`/login?returnTo=${encodeURIComponent(route)}`);
   const { data } = await auth.auth.getClaims(token);
-  if (data?.claims.role !== "authenticated" || !user.email_confirmed_at) notFound();
+  if (data?.claims.role !== "authenticated" || data.claims.sub !== user.id || !user.email_confirmed_at) notFound();
 
   const security = assuranceForVerifiedUser(token, user);
   if (security.required) redirect(`/auth/verify?returnTo=${encodeURIComponent(route)}`);
+  if (!await workspaceAccountIsActive(auth, user.id)) notFound();
 
   if (ownerOnly) {
     const { data: owner, error } = await auth.rpc("is_approved_claim_owner");

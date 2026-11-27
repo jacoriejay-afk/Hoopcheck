@@ -23,6 +23,7 @@
       "integration/build9-role-hoopchat-completion-20261122": false,
       "integration/build9-native-final-gates-20261122": false,
       "ops/step4-release-readiness": false,
+      "qa/step2-review-rate-limit": false,
       "ops/step4b-acceptance": false,
       "qa/hoopcheck-ios-ci-efficiency": false,
       "ops/step4b-media-cancellation": false,

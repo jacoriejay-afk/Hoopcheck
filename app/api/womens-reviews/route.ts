@@ -164,6 +164,7 @@ export async function POST(req: Request) {
       console.error("Unable to release failed women's review slot:", releaseError);
     }
     console.error("Women's review insert failed:", error);
+    if (error.code === "PT429") return NextResponse.json({ error: "Review limit reached. You can submit up to 5 reviews in a 24-hour period." }, { status: 429 });
     return NextResponse.json({ error: error.code === "42501" ? "You are not authorized to submit this review." : "Unable to submit your review." }, { status: error.code === "42501" ? 403 : error.code === "23505" ? 409 : 400 });
   }
 
