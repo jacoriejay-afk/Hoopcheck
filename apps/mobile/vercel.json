@@ -27,7 +27,12 @@
       "qa/step1-womens-league-directory": false,
       "qa/step1-web-feed-report": false,
       "qa/step1-web-media-recovery": false,
-      "qa/step1-native-live-status": false
+      "qa/step1-native-live-status": false,
+      "qa/step1-native-hoopchat-drafts": false,
+      "qa/step1-web-hoopchat-safety": false,
+      "qa/step1-web-hoopgroups-scope": false,
+      "qa/step1-hoopchat-quote-replies": false,
+      "qa/step1-community-messaging-reconciliation": false
     }
   }
 }
