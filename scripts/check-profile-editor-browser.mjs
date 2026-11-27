@@ -21,7 +21,7 @@ try {
   let blocked=[{blocked_id:tid}],blockReads=0,unblocks=0,confirmUnblock=false;
   const context=await browser.newContext({viewport:{width,height:900},serviceWorkers:'block'});
   await context.addCookies([{name:'sb-ci-auth-token',value:'base64-'+Buffer.from(JSON.stringify(session)).toString('base64url'),url:baseURL}]);
-  await context.addInitScript(session=>{localStorage.setItem('sb-ci-auth-token',JSON.stringify(session));localStorage.setItem('hoopcheck-theme','light');localStorage.setItem('hoopcheck-language','en');},session);
+  await context.addInitScript(session=>{localStorage.setItem('sb-ci-auth-token',JSON.stringify(session));if(!localStorage.getItem('hoopcheck-theme'))localStorage.setItem('hoopcheck-theme','light');localStorage.setItem('hoopcheck-language','en');},session);
   const page=await context.newPage();
   await page.route('https://ci.invalid/**',async route=>{
    const req=route.request(),url=new URL(req.url());
@@ -141,6 +141,30 @@ try {
     await settings.getByText('No blocked accounts.').waitFor();
     await settings.getByRole('status').filter({hasText:'Account unblocked.'}).waitFor();
     assert.equal(unblocks,2);
+    const edits=patches.length;
+    await page.getByRole('button',{name:/Midnight Black/}).click();
+    await page.locator('html.theme-dark.theme-midnight').waitFor();
+    const surface=await page.evaluate(()=>{
+      const probe=document.createElement('span');
+      probe.style.backgroundColor='var(--hc-dark-surface)';
+      document.body.append(probe);
+      const color=getComputedStyle(probe).backgroundColor;
+      probe.remove();
+      return color;
+    });
+    assert.equal(surface,'rgb(17, 17, 17)');
+    const response=await page.reload();
+    assert.match(await response.text(),/class="[^"]*theme-dark theme-midnight/);
+    await page.getByRole('button',{name:/Midnight Black/,pressed:true}).waitFor();
+    assert.equal(patches.length,edits,'Selecting the device appearance sends no profile changes');
+    await page.goto(`${baseURL}/account`);
+    await page.getByRole('switch',{name:'Dark Mode',checked:true}).waitFor();
+    assert.equal(await page.locator('html.theme-midnight').count(),1);
+    await page.goBack();
+    await page.waitForURL(`${baseURL}/settings`);
+    await page.getByRole('button',{name:/Light Mode/}).click();
+    await page.locator('html.theme-light').waitFor();
+    assert.equal(await page.locator('html.theme-midnight').count(),0);
   }
   await page.goBack();
   await page.waitForURL(`${baseURL}/profile`);
