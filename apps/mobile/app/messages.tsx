@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { AppState, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -13,7 +13,7 @@ import { useEntryTheme } from "../src/theme";
 import { supabase } from "../src/lib/supabase";
 import { requireOnline, useNetwork } from "../src/native/network";
 import { hoopChatAuthAction, withHoopChatDeadline } from "../src/native/hoopChatLoad";
-import { appendConversationPage, CHAT_HISTORY_PAGE_SIZE, matchesConversationSearch, readConversationPage, type ContactMessage } from "../src/native/hoopChatHistory";
+import { appendConversationPage, CHAT_HISTORY_PAGE_SIZE, matchesConversationSearch, readConversationPage, refreshConversationPage, type ContactMessage } from "../src/native/hoopChatHistory";
 
 type ContactRequest = {
   id: string; requester_id: string; player_id: string; message: string | null;
@@ -177,11 +177,13 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
   const motionActive=Boolean(threadScope && currentPage);
   const freshIds=useConfirmedMessageMotion(`${userId}:${openedId}:${mode}`,verifiedThreadRows,motionActive,selectedRequestId);
   const matchingThreads=visibleThreads.filter(row=>matchesConversationSearch(search,name(row),contacts[peerId(row)]?.username));
-  const loadThread=useCallback(async (scope:string,requestId:string,viewerId:string,older?:ContactMessage) => {
+  const loadThread=useCallback(async (scope:string,requestId:string,viewerId:string,older?:ContactMessage,refresh=false) => {
     if (historyPaging.current || !scope || !focused.current) return;
     const revision=++historyRequest.current;
     const accountRevision=generation.current;
-    historyPaging.current=true;setHistoryBusy(true);setThreadError(null);
+    historyPaging.current=true;
+    if (!refresh) setHistoryBusy(true);
+    setThreadError(null);
     const active=()=>revision===historyRequest.current && accountRevision===generation.current && focused.current && authIdentity.current===viewerId;
     try {
       const rows=await withHoopChatDeadline(async signal=>{
@@ -189,14 +191,21 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
         const {data:{user},error:authError}=await supabase.auth.getUser();
         if (authError || user?.id!==viewerId || !active()) throw Error("Your session changed.");
         const header=await verifiedChatBearer(viewerId);
-        const target=await supabase.from("player_contact_requests").select("requester_id,player_id").eq("id",requestId).setHeader("Authorization",header).abortSignal(signal).maybeSingle();
-        if(target.error||!target.data||![target.data.requester_id,target.data.player_id].includes(viewerId))throw Error("Conversation unavailable.");
+        const target=await supabase.from("player_contact_requests").select("requester_id,player_id,status").eq("id",requestId).setHeader("Authorization",header).abortSignal(signal).maybeSingle();
+        if(target.error||target.data?.status!=="accepted"||![target.data.requester_id,target.data.player_id].includes(viewerId))throw Error("Conversation unavailable.");
         const verifiedHeader=await verifyChatPeer(viewerId,target.data.requester_id===viewerId?target.data.player_id:target.data.requester_id,signal);
         if(!active())throw Error("Your session changed.");
         return readConversationPage(supabase,requestId,signal,older,verifiedHeader);
       });
       if (!active()) return;
-      setThreadPage(previous=>({scope,rows:older && previous?.scope===scope ? appendConversationPage(previous.rows,rows) : rows,hasMore:rows.length===CHAT_HISTORY_PAGE_SIZE}));
+      setThreadPage(previous => {
+        const hasMore = rows.length === CHAT_HISTORY_PAGE_SIZE;
+        if (previous?.scope !== scope) return { scope, rows, hasMore };
+        if (older) return { scope, rows: appendConversationPage(previous.rows, rows), hasMore };
+        if (!refresh) return { scope, rows, hasMore };
+        const latest = refreshConversationPage(previous.rows, rows);
+        return { scope, rows: latest, hasMore: latest.length > rows.length ? previous.hasMore : hasMore };
+      });
     } catch (failure) {
       if(active()){setThreadPage(null);setThreadError({scope,message:failure instanceof Error?failure.message:"Conversation history could not load."});}
     } finally {
@@ -209,6 +218,25 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
     if (!loading) void loadThread(threadScope,selectedRequestId,userId);
     return ()=>{historyRequest.current++;historyPaging.current=false;};
   },[threadScope,selectedRequestId,userId,loading,loadThread]);
+
+  useEffect(() => {
+    if (!threadScope || !selectedRequestId) return;
+    const refresh = () => {
+      if (focused.current && authIdentity.current === userId && (AppState.currentState === "active" || AppState.currentState === null)) {
+        void loadThread(threadScope, selectedRequestId, userId, undefined, true);
+      }
+    };
+    const channel = supabase.channel(`native-hoopchat:${selectedRequestId}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "player_contact_messages", filter: `request_id=eq.${selectedRequestId}` }, refresh)
+      .subscribe();
+    const timer = setInterval(refresh, 25_000);
+    const appState = AppState.addEventListener("change", state => { if (state === "active") refresh(); });
+    return () => {
+      clearInterval(timer);
+      appState.remove();
+      void supabase.removeChannel(channel);
+    };
+  }, [threadScope, selectedRequestId, userId, loadThread]);
 
   async function respond(status:"accepted"|"rejected") {
     if(!selected || selected.player_id!==userId || selected.status!=="pending" || !opened || sending) return;

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import {test} from "node:test";
 import {createClient} from "@supabase/supabase-js";
-import {appendConversationPage,matchesConversationSearch,readConversationPage} from "../src/native/hoopChatHistory.ts";
+import {appendConversationPage,matchesConversationSearch,readConversationPage,refreshConversationPage} from "../src/native/hoopChatHistory.ts";
 const req="11111111-1111-4111-8111-111111111111";
 const id="22222222-2222-4222-8222-222222222222";
 const row={id,request_id:req,sender_id:id,body:"hello",created_at:"2026-11-25T00:00:00.123456+00:00"};
@@ -21,6 +21,13 @@ test("conversation pages remain scoped to a single request with stable validated
 test("older pages deduplicate and keep newest-first sequence",()=>{
  const older={...row,id:"33333333-3333-4333-8333-333333333333"};
  assert.deepEqual(appendConversationPage([row],[row,older,older]),[row,older]);
+});
+test("refresh keeps the contiguous loaded history and discards gaps or revoked history", () => {
+ const rows = Array.from({length: 102}, (_, index) => ({ ...row, id: String(index) }));
+ const loaded = rows.slice(1, 52);
+ assert.deepEqual(refreshConversationPage(loaded, rows.slice(0, 50)), rows.slice(0, 52));
+ assert.deepEqual(refreshConversationPage(loaded, rows.slice(52)), rows.slice(52));
+ assert.deepEqual(refreshConversationPage(loaded, []), []);
 });
 test("inbox search matches names and handles, not private message bodies",()=>{
  assert.ok(matchesConversationSearch("  jo ","Jordan","jhoops"));

@@ -25,6 +25,12 @@ export function appendConversationPage(previous: ContactMessage[], older: Contac
   const seen = new Set(previous.map(row=>row.id));
   return [...previous,...older.filter(row=>{if(seen.has(row.id))return false;seen.add(row.id);return true;})];
 }
+export function refreshConversationPage(previous: ContactMessage[], newest: ContactMessage[]) {
+  if (newest.length < CHAT_HISTORY_PAGE_SIZE) return newest;
+  const oldestNewestId = newest[newest.length - 1].id;
+  const boundary = previous.findIndex(row => row.id === oldestNewestId);
+  return boundary < 0 ? newest : appendConversationPage(newest, previous.slice(boundary + 1));
+}
 export function matchesConversationSearch(query:string, name:string, username?:string|null) {
   const term=query.trim().toLocaleLowerCase();
   return !term || name.toLocaleLowerCase().includes(term) || Boolean(username && ("@"+username).toLocaleLowerCase().includes(term));

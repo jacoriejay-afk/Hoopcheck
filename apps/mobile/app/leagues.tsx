@@ -13,7 +13,6 @@ import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, Share, S
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { supabase } from "../src/lib/supabase";
-import { Sheet } from "../components/Sheet";
 import { cleanTeamSearch, mergeTeamDirectoryRows, TEAM_PAGE_SIZE } from "../src/native/teamDirectory";
 import { leagueDirectoryQuery, readLeagueCountries } from "../src/native/leagueDirectory";
 
