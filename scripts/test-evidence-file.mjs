@@ -5,10 +5,10 @@ import { createRequire } from 'node:module';
 import ts from 'typescript';
 const require = createRequire(import.meta.url);
 function compile(path) {
-  const module = {exports:{}};
+  const compiled = {exports:{}};
   const js = ts.transpileModule(readFileSync(new URL(path,import.meta.url),'utf8'), {compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
-  new Function('require','exports','module',js)(require,module.exports,module);
-  return module.exports;
+  new Function('require','exports','module',js)(require,compiled.exports,compiled);
+  return compiled.exports;
 }
 const { inspectEvidenceFile, MAX_EVIDENCE_BYTES } = compile('../lib/security/evidence-file.ts');
 const signatures = [
