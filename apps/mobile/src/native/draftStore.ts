@@ -13,7 +13,7 @@ export function createDraftStore() {
     },
     read(userId: string | undefined, key: string) { return userId && userId === owner ? values.get(key) || "" : ""; },
     write(userId: string | undefined, key: string, text: string) {
-      if (!userId || userId !== owner || !/^(game:chat|group:post|group:comment|profile:edit|feed:post):[0-9a-f-]{36}$/i.test(key)) return false;
+      if (!userId || userId !== owner || !/^(game:chat|contact:chat|group:post|group:comment|profile:edit|feed:post):[0-9a-f-]{36}$/i.test(key)) return false;
       if (key.startsWith("profile:edit:") && key !== `profile:edit:${userId}`) return false;
       if (key.startsWith("feed:post:") && key !== `feed:post:${userId}`) return false;
       const value = text.slice(0, key.startsWith("profile:edit:") ? 8000 : 2000);
