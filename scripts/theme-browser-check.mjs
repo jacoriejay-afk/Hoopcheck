@@ -154,6 +154,22 @@ try {
       assert.equal(counts.length, 5, `Guest at ${width}px: expected one request per directory total`);
       assert.equal(new Set(counts.map(entry => JSON.stringify(entry))).size, 5);
       assert.equal(desktopReads.length, width === 390 ? 0 : 4, `Guest at ${width}px: desktop-only directory reads`);
+      if (width === 1440) {
+        // The hidden desktop spotlight must be unmounted, not merely CSS-hidden:
+        // its previous team/trust state must never survive a viewport round trip.
+        const desktopHero = page.locator(".hc-d3-hero");
+        await desktopHero.waitFor({ state: "visible" });
+        await page.setViewportSize({ width: 390, height: 844 });
+        await desktopHero.waitFor({ state: "detached" });
+        await Promise.all([
+          page.waitForResponse(response => response.url().includes("/rest/v1/fan_live_games") && response.request().method() === "GET"),
+          page.setViewportSize({ width: 1440, height: 844 }),
+        ]);
+        await desktopHero.waitFor({ state: "visible" });
+        await page.waitForLoadState("networkidle");
+        assert.equal(desktopReads.length, 8, "Desktop remount must refresh its four directory reads");
+        assert.equal(counts.length, 5, "Viewport changes must not refetch shared directory totals");
+      }
     } finally {
       await context.close();
     }
