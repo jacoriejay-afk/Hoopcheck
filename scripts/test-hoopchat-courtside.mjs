@@ -132,3 +132,19 @@ test("Courtside guards duplicate mutations and preserves edits made during send"
  assert.equal((ui.match(/if\(user\?\.id!==userId\|\|rev!==accountGeneration\.current\)throw new Error/g)||[]).length,2);
  assert.equal((ui.match(/finally\{if\(mutationGeneration\.current===rev\)mutationGeneration\.current=null;if\(rev===accountGeneration\.current\)setSending\(false\);\}/g)||[]).length,2);
 });
+
+test("Seen markers advance only from confirmed peer history with chronological timestamps",async()=>{
+ const code=ts.transpileModule(read("lib/hoopchat-courtside.ts"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+ const {advanceSeenMarker,unreadCount}=await import("data:text/javascript;base64,"+Buffer.from(code).toString("base64"));
+ const row=(request_id,sender_id,created_at)=>({id:"id",request_id,sender_id,created_at,body:"message"});
+ const prior="2026-11-27T12:00:00Z",later="2026-11-27T08:01:00-04:00";
+ assert.equal(advanceSeenMarker([],"a","me",prior),prior);
+ assert.equal(advanceSeenMarker([row("b","peer",later),row("a","me",later)],"a","me",prior),prior);
+ assert.equal(advanceSeenMarker([row("a","peer",later)],"a","me",prior),later);
+ assert.equal(unreadCount({id:"a",status:"accepted"},[row("a","peer",later)],"me",prior),1);
+ const ui=read("components/HoopChatCourtside.tsx");
+ assert.match(ui,/advanceSeenMarker\(selectedHistory.rows/);
+ assert.match(ui,/!followingLatest.current/);
+ assert.match(ui,/prefsOwner!==userId/);
+ assert.match(ui,/unread items in loaded inbox/);
+});
