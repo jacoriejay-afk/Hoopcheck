@@ -1,5 +1,5 @@
 import { blockNativeAccount, readOutgoingBlocks } from "../src/native/accountBlocking";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { Button, GlassCard } from "../src/primitives";
@@ -39,6 +39,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
   const [draftState,setDraftState]=useState<{channelId:string;value:string}|null>(null);
   const [loading,setLoading]=useState(true);
   const [busy,setBusy]=useState(false);
+  const mutationLocked=useRef(false);
   const [error,setError]=useState("");
   const [revision,setRevision]=useState(0);
   const [query,setQuery]=useState("");
@@ -55,31 +56,44 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
   const [editColor,setEditColor]=useState<keyof typeof colorOptions>("orange");
   const [editIcon,setEditIcon]=useState<keyof typeof iconOptions>("basketball");
 
+  const safetyToken=useCallback(async function safetyToken() {
+    await requireOnline();
+    const session=await readWithDeadline(()=>supabase.auth.getSession());
+    if(session.error||session.data.session?.user.id!==userId)throw Error("Sign in again.");
+    const token=session.data.session.access_token;
+    const verified=await readWithDeadline(()=>supabase.auth.getUser(token));
+    if(verified.error||verified.data.user?.id!==userId)throw Error("Sign in again.");
+    return token;
+  },[userId]);
+
   useFocusEffect(useCallback(()=> {
     if(!userId || offline) {setSpaces([]);setPostSnapshot(null);setLoading(false);return;}
     let alive=true;
+    const controller=new AbortController(),deadline=setTimeout(()=>controller.abort(),15000);
     async function load() {
       setLoading(true);setError("");
       try{
-        await requireOnline();
-        const {data:{user}}=await supabase.auth.getUser();
-        if(user?.id!==userId)throw Error("Revalidate your session.");
+        const token=await safetyToken();
+        if(!alive||controller.signal.aborted)return;
+        const header="Bearer "+token;
         const [a,b,c]=await Promise.all([
-          supabase.from("hoop_group_spaces").select("id,slug,name,category,description,owner_id,accent_color,icon_key").order("name"),
-          supabase.from("hoop_group_channels").select("id,space_id,name,slug,sort_index").order("sort_index"),
-          supabase.from("hoop_group_members").select("space_id").eq("user_id",userId),
+          supabase.from("hoop_group_spaces").select("id,slug,name,category,description,owner_id,accent_color,icon_key").order("name").setHeader("Authorization",header).abortSignal(controller.signal),
+          supabase.from("hoop_group_channels").select("id,space_id,name,slug,sort_index").order("sort_index").setHeader("Authorization",header).abortSignal(controller.signal),
+          supabase.from("hoop_group_members").select("space_id").eq("user_id",userId).setHeader("Authorization",header).abortSignal(controller.signal),
         ]);
-        if(a.error||b.error||c.error)throw Error("HoopGroups channels are not available yet.");
+        if(a.error||b.error||c.error||controller.signal.aborted)throw Error("HoopGroups channels are not available yet.");
         if(!alive)return;
+        const current=await safetyToken();
+        if(!alive||controller.signal.aborted||current!==token)throw Error("Account changed. Refresh HoopGroups.");
         setSpaces((a.data||[]) as Space[]);setChannels((b.data||[]) as Channel[]);
         setJoined((c.data||[]).map(row=>row.space_id));
         setSpaceId(current=>(a.data||[]).some(row=>row.id===current)?current:"");
-      }catch(failure){if(alive)setError(failure instanceof Error?failure.message:"Could not open HoopGroups.");}
-      finally{if(alive)setLoading(false);}
+      }catch(failure){if(alive){setSpaces([]);setChannels([]);setJoined([]);setPostSnapshot(null);setError(failure instanceof Error?failure.message:"Could not open HoopGroups.");}}
+      finally{clearTimeout(deadline);if(alive)setLoading(false);}
     }
     void load();
-    return ()=>{alive=false;setPostSnapshot(null);setJoined([]);};
-  },[userId,offline,revision]));
+    return ()=>{alive=false;clearTimeout(deadline);controller.abort();setPostSnapshot(null);setJoined([]);};
+  },[userId,offline,revision,safetyToken]));
 
   useEffect(()=>{
     if(!inviteSlug){setHandledInvite(null);setInviteUnavailable(false);return;}
@@ -108,15 +122,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
   const draft=member&&channel&&draftState?.channelId===channel.id?draftState.value:"";
   function setDraft(value:string) {setDraftState(value&&channel?{channelId:channel.id,value}:null);}
   const managing=editing&&editingGroupId===selected?.id;
-  const safetyToken=useCallback(async function safetyToken() {
-    await requireOnline();
-    const session=await readWithDeadline(()=>supabase.auth.getSession());
-    if(session.error||session.data.session?.user.id!==userId)throw Error("Sign in again.");
-    const token=session.data.session.access_token;
-    const verified=await readWithDeadline(()=>supabase.auth.getUser(token));
-    if(verified.error||verified.data.user?.id!==userId)throw Error("Sign in again.");
-    return token;
-  },[userId]);
+
   useEffect(()=>{
     if(!userId||offline||!member||!channel?.id){setPostSnapshot(null);return;}
     let alive=true;const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
@@ -141,39 +147,37 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
 
   async function join() {
     if(!selected||!userId||offline||busy)return;
-    setBusy(true);setError("");
+    if(mutationLocked.current)return;
+    mutationLocked.current=true;setBusy(true);setError("");
     try{
-      await requireOnline();
-      const {data:{user}}=await supabase.auth.getUser();
-      if(user?.id!==userId)throw Error("Sign in again.");
-      const {error:joinError}=await supabase.from("hoop_group_members").insert({space_id:selected.id,user_id:userId});
+      const token=await safetyToken();
+      const {error:joinError}=await supabase.from("hoop_group_members").insert({space_id:selected.id,user_id:userId}).setHeader("Authorization","Bearer "+token);
       if(joinError)throw Error("Could not join community.");
       setJoined(current=>[...new Set([...current,selected.id])]);
     }catch(failure){setError(failure instanceof Error?failure.message:"Join failed.");}
-    finally{setBusy(false);}
+    finally{mutationLocked.current=false;setBusy(false);}
   }
   async function createGroup() {
     const name=newName.trim();
     const description=newDescription.trim();
     if(!userId || offline || busy || name.length<3 || name.length>80 || description.length>300)return;
     if(!["global","players","fans","coaches","agents","womens"].includes(newCategory))return;
-    setBusy(true);setError("");
+    if(mutationLocked.current)return;
+    mutationLocked.current=true;setBusy(true);setError("");
     try{
-      await requireOnline();
-      const {data:{user}}=await supabase.auth.getUser();
-      if(user?.id!==userId)throw Error("Your account changed. Sign in again.");
+      const token=await safetyToken();
       const base=name.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"")
         .replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,40).replace(/-+$/g,"")||"court";
       const slug=(base+"-"+Math.random().toString(36).slice(2,10)).slice(0,60);
       const {data,error:createError}=await supabase.from("hoop_group_spaces")
-        .insert({slug,name,description,category:newCategory,owner_id:userId,accent_color:"orange",icon_key:"basketball"})
+        .insert({slug,name,description,category:newCategory,owner_id:userId,accent_color:"orange",icon_key:"basketball"}).setHeader("Authorization","Bearer "+token)
         .select("id,slug,name,category,description,owner_id,accent_color,icon_key").single();
       if(createError||!data)throw Error("Group creation was not confirmed. You can own up to three groups.");
       setSpaces(current=>[...current,data as Space]);setSpaceId(data.id);
       setFilter("discover");setQuery("");setCreating(false);setNewName("");setNewDescription("");
       setRevision(value=>value+1);
     }catch(failure){setError(failure instanceof Error?failure.message:"Could not create group.");}
-    finally{setBusy(false);}
+    finally{mutationLocked.current=false;setBusy(false);}
   }
   function beginManage() {
     if (!selected || selected.owner_id !== userId) return;
@@ -191,54 +195,51 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
       || name.length<3 || name.length>80 || description.length>300
       || !(editColor in colorOptions) || !(editIcon in iconOptions))return;
     const id=selected.id;
-    setBusy(true);setError("");
+    if(mutationLocked.current)return;
+    mutationLocked.current=true;setBusy(true);setError("");
     try{
-      await requireOnline();
-      const {data:{user}}=await supabase.auth.getUser();
-      if(user?.id!==userId)throw Error("Your account changed. Sign in again.");
+      const token=await safetyToken();
       const {data,error:updateError}=await supabase.from("hoop_group_spaces")
         .update({name,description,accent_color:editColor,icon_key:editIcon})
-        .eq("id",id).eq("owner_id",userId)
+        .eq("id",id).eq("owner_id",userId).setHeader("Authorization","Bearer "+token)
         .select("id,slug,name,category,description,owner_id,accent_color,icon_key").single();
       if(updateError || !data || data.id!==id || data.owner_id!==userId)
         throw Error("Group settings could not be saved.");
       setSpaces(current=>current.map(space=>space.id===id?data as Space:space));
       setEditing(false);
     }catch(failure){setError(failure instanceof Error?failure.message:"Could not update community.");}
-    finally{setBusy(false);}
+    finally{mutationLocked.current=false;setBusy(false);}
   }
 
   async function leaveGroup() {
     if(!selected||!userId||offline||busy||!member)return;
-    setBusy(true);setError("");
+    if(mutationLocked.current)return;
+    mutationLocked.current=true;setBusy(true);setError("");
     try{
-      await requireOnline();
-      const {data:{user}}=await supabase.auth.getUser();
-      if(user?.id!==userId)throw Error("Sign in again.");
+      const token=await safetyToken();
       const {error:leaveError}=await supabase.from("hoop_group_members")
-        .delete().eq("space_id",selected.id).eq("user_id",userId);
+        .delete().eq("space_id",selected.id).eq("user_id",userId).setHeader("Authorization","Bearer "+token);
       if(leaveError)throw Error("Could not leave this group.");
       setJoined(current=>current.filter(id=>id!==selected.id));setPostSnapshot(null);setDraft("");
     }catch(failure){setError(failure instanceof Error?failure.message:"Could not leave group.");}
-    finally{setBusy(false);}
+    finally{mutationLocked.current=false;setBusy(false);}
   }
   async function createChannel() {
     const name=newChannel.trim();
     if(!selected||selected.owner_id!==userId||!userId||offline||busy||name.length<2||name.length>50||availableChannels.length>=12)return;
-    setBusy(true);setError("");
+    if(mutationLocked.current)return;
+    mutationLocked.current=true;setBusy(true);setError("");
     try{
-      await requireOnline();
-      const {data:{user}}=await supabase.auth.getUser();
-      if(user?.id!==userId)throw Error("Sign in again.");
+      const token=await safetyToken();
       const slug=name.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"")
         .replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,40)||"discussion";
       const {data,error:channelError}=await supabase.from("hoop_group_channels")
-        .insert({space_id:selected.id,slug,name,sort_index:availableChannels.length})
+        .insert({space_id:selected.id,slug,name,sort_index:availableChannels.length}).setHeader("Authorization","Bearer "+token)
         .select("id,space_id,name,slug,sort_index").single();
       if(channelError||!data)throw Error("Could not create a new discussion topic.");
       setChannels(current=>[...current,data as Channel]);setChannelId(data.id);setNewChannel("");
     }catch(failure){setError(failure instanceof Error?failure.message:"Topic creation failed.");}
-    finally{setBusy(false);}
+    finally{mutationLocked.current=false;setBusy(false);}
   }
   async function shareGroup() {
     if(!selected)return;
@@ -248,21 +249,21 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
 
   async function send() {
     if(!channel||!member||!userId||offline||busy||!draft.trim())return;
-    setBusy(true);setError("");
+    if(mutationLocked.current)return;
+    mutationLocked.current=true;setBusy(true);setError("");
     try{
-      await requireOnline();
-      const {data:{user}}=await supabase.auth.getUser();
-      if(user?.id!==userId)throw Error("Sign in again.");
+      const token=await safetyToken();
       const {error:sendError}=await supabase.from("hoop_group_posts")
-        .insert({channel_id:channel.id,author_id:userId,body:draft.trim().slice(0,1200),moderation_status:"pending"});
+        .insert({channel_id:channel.id,author_id:userId,body:draft.trim().slice(0,1200),moderation_status:"pending"}).setHeader("Authorization","Bearer "+token);
       if(sendError)throw Error("Could not submit this post. Slow mode allows one post per 20 seconds.");
       setDraft("");setRevision(value=>value+1);
     }catch(failure){setError(failure instanceof Error?failure.message:"Message was not submitted.");}
-    finally{setBusy(false);}
+    finally{mutationLocked.current=false;setBusy(false);}
   }
   async function report(item:Post,reason:string) {
     if(!userId||offline||busy||!member||!posts.some(post=>post.id===item.id))return;
-    setBusy(true);setError("");
+    if(mutationLocked.current)return;
+    mutationLocked.current=true;setBusy(true);setError("");
     try{
       const token=await safetyToken();
       const {error:reportError}=await supabase.from("hoop_group_reports")
@@ -271,11 +272,12 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
       if(reportError)throw Error("This message could not be reported or was already reported.");
       setError("Report submitted to HoopCheck moderators.");
     }catch(failure){setError(failure instanceof Error?failure.message:"Report could not be confirmed.");}
-    finally{setBusy(false);}
+    finally{mutationLocked.current=false;setBusy(false);}
   }
   async function block(item:Post) {
     if(!userId||offline||busy||!member||item.author_id===userId||!posts.some(post=>post.id===item.id))return;
-    setBusy(true);setError("");
+    if(mutationLocked.current)return;
+    mutationLocked.current=true;setBusy(true);setError("");
     try{
       const token=await safetyToken();
       const {error:blockError}=await supabase.from("hoop_group_blocks")
@@ -284,17 +286,18 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
       if(blockError)throw Error("Could not block this account.");
       setPostSnapshot(current=>current?{...current,posts:current.posts.filter(post=>post.author_id!==item.author_id)}:null);
     }catch(failure){setError(failure instanceof Error?failure.message:"Block could not be confirmed.");}
-    finally{setBusy(false);}
+    finally{mutationLocked.current=false;setBusy(false);}
   }
   async function blockAccount(item:Post){
     if(!userId||offline||busy||!member||item.author_id===userId||!posts.some(post=>post.id===item.id))return;
-    setBusy(true);setError("");
+    if(mutationLocked.current)return;
+    mutationLocked.current=true;setBusy(true);setError("");
     try{
       await blockNativeAccount(supabase,userId,item.author_id,()=>!offline&&member);
       setPostSnapshot(current=>current?{...current,posts:current.posts.filter(post=>post.author_id!==item.author_id)}:null);
       setRevision(v=>v+1);
     }catch{setError("Account block could not be confirmed. Check Settings.");}
-    finally{setBusy(false);}
+    finally{mutationLocked.current=false;setBusy(false);}
   }
   function actions(item:Post) {
     Alert.alert("Community safety","Choose an action for this member.",[
