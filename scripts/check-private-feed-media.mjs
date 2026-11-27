@@ -167,3 +167,48 @@ test("HoopFeed signs nested reshares against the original uploader under viewer 
   }
   assert.equal(signed.length, before);
 });
+
+test("fan feed signed links expire before the source post and fail closed near expiry", async () => {
+  const path = author + "/" + objectId + ".jpg";
+  const record = { image_url: "hoopfeed-private-images/" + path, author_id: author, expires_at: "" };
+  const signed = [];
+  let signingDelay = 0;
+  let now = Date.now();
+  const originalNow = Date.now;
+  const route = load("app/api/fan-feed/media/route.ts", id => {
+    if (id === "next/server") return { NextResponse };
+    if (id.endsWith("/feed-media-reference")) return media;
+    assert.equal(id, "@supabase/supabase-js");
+    return { createClient: (_url, key, options) => {
+      if (key === "service") return { storage: { from: bucket => ({ createSignedUrl: async (object, ttl) => {
+        signed.push({bucket, object, ttl});
+        now += signingDelay;
+        return { data: { signedUrl: "https://storage.example/signed" } };
+      } }) } };
+      assert.equal(options.global.headers.Authorization, "Bearer viewer");
+      return { auth: { getUser: async () => ({ data: { user: { id: author } } }) }, from: table => {
+        assert.equal(table, "fan_feed_posts");
+        const query = { select: () => query, eq: () => query, gt: () => query, maybeSingle: async () => ({ data: record }) };
+        return query;
+      } };
+    } };
+  });
+  const request = () => new Request("https://hoopcheck.online/api/fan-feed/media", {
+    method: "POST", headers: { Authorization: "Bearer viewer" }, body: JSON.stringify({post_id:postId}),
+  });
+  Date.now = () => now;
+  try {
+    for (const invalid of ["invalid", new Date(now - 1000).toISOString(), new Date(now + 5000).toISOString()]) {
+      record.expires_at = invalid;
+      assert.equal((await route.POST(request())).status, 404);
+    }
+    assert.equal(signed.length, 0);
+    record.expires_at = new Date(now + 20000).toISOString();
+    assert.equal((await route.POST(request())).status, 200);
+    assert.deepEqual(signed, [{bucket:"hoopfeed-private-images",object:path,ttl:15}]);
+    signingDelay = 6000;
+    assert.equal((await route.POST(request())).status, 404);
+  } finally {
+    Date.now = originalNow;
+  }
+});

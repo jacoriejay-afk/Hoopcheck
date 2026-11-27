@@ -4,6 +4,7 @@ on:
     paths:
       - 'app/api/reviews/route.ts'
       - 'app/api/review-access/route.ts'
+      - 'app/reviews/page.tsx'
       - 'app/api/womens-reviews/route.ts'
       - 'app/teams/**/review/page.tsx'
       - 'app/womens/**/review/page.tsx'
@@ -18,6 +19,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 20
