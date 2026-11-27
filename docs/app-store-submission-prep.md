@@ -1,85 +1,130 @@
-# HoopCheck App Store Submission Preparation
+# HoopCheck — App Store release preparation
 
-Status: preparation only. This document does not submit either app or change production behavior.
+**Status: HOLD — release preparation, not Apple certification.** Updated 2026-11-26. No production activation, additional signed build or public review submission is authorized by this document. The current tracker is [#1073](https://github.com/jacoriejay-afk/Hoopcheck/issues/1073).
 
-## Current product and deployment facts
+## Actual distribution architecture
 
-- Product: HoopCheck, a basketball research and community-review web platform.
-- Production web app: https://hoopcheck-hoopcheck.vercel.app
-- Repository: https://github.com/jacoriejay-afk/Hoopcheck
-- The current app is a Next.js application with server-side API routes, Supabase authentication/data, and Stripe-related subscription routes.
-- A web app manifest and SVG icon have been added. This is not a native iOS or Android build.
-- Do not submit the existing website as a thin wrapper without checking store rules and proving the app has adequate app-specific functionality.
-- Do not submit or publish anything without explicit owner approval.
+- Next.js website: https://hoopcheck.online
+- Native Expo SDK 54 application: `apps/mobile`, bundle ID `online.hoopcheck.app`, iPad support enabled.
+- App Store Connect app ID: 6835366982. Version 0.2.0, TestFlight build 16, signed from `d6b5e7eae08482c3b2aed6cef7e4b29882142e99`. [EAS build](https://expo.dev/accounts/hoopcheck/projects/hoopcheck-mobile/builds/7200a88d-9695-4ec0-9573-c4843a7f0e1c). Do not infer the installed binary contains later commits.
+- Compliance integration branch: `integration/appstore-compliance-candidate`. Keep the signed build and concurrent Build 16/17 changes separate; reconcile exact SHAs before any new signed archive.
+- Supabase Auth/database/storage, Stripe web billing and native Apple StoreKit. No wrapper migration needed.
 
-## Draft store listing copy
+## Draft App Store metadata (owner approval required)
 
-### App name
-HoopCheck
+| Field | Draft |
+| --- | --- |
+| Name | HoopCheck |
+| Subtitle | Basketball Beyond the Court |
+| Primary category | Sports |
+| Secondary category | Social Networking |
+| Keywords | basketball,overseas,teams,players,leagues,scores,reviews,scouting,career,community,hoops |
+| Promotional text | Discover basketball teams, explore player experiences, build your basketball identity and stay connected to the game with HoopCheck. |
+| Marketing URL | https://hoopcheck.online |
+| Privacy URL | https://hoopcheck.online/privacy |
+| Support URL | https://hoopcheck.online/support |
+| Support email | HoopCheck@outlook.com (owner to confirm publication and delivery) |
+| Terms | https://hoopcheck.online/terms |
 
-### Short description / subtitle draft
-Research basketball teams, coaches, leagues, and player experiences before you commit.
+### Description draft
 
-### Promotional summary draft
-Make more informed basketball career decisions with research and community experiences about teams, coaches, and leagues.
+HoopCheck brings basketball research and community together for players and fans.
 
-### Full description draft
-HoopCheck helps basketball players research professional teams, coaches, and leagues before making career decisions. Explore basketball information, read community experiences, and use account features to manage your activity.
+Explore teams, leagues and player experiences before your next career decision. Build your basketball profile, follow teams, discover basketball conversations in HoopFeed and connect with communities. Access game information and schedules where coverage is available.
 
-Use HoopCheck as one source of information alongside your own research and direct verification. Community posts reflect contributors' experiences and should not be treated as independently verified facts.
+Membership features vary by account type and plan. Available prices, renewal terms and subscription management are shown in the app. Community reviews reflect contributors' experiences and should be considered alongside independent research and direct verification. Game coverage and updates vary by league and data source.
 
-### Keywords draft (Apple)
-basketball, professional basketball, teams, coaches, leagues, player reviews, overseas basketball
+Before using this copy, confirm each advertised feature on the exact submission build. Do not claim comprehensive coverage, real-time data guarantees, guaranteed contracts or independently verified review outcomes.
 
-These are draft marketing materials only. Review for accuracy and store character limits before use. Do not add claims about review volume, verified outcomes, or coverage that have not been independently confirmed.
+### Screenshot storyboard
 
-## Required technical decision before packaging
+Use only actual running-app captures with consented or synthetic demo accounts and no personal data. No generated mock screenshots. Validate all required iPhone and iPad display sizes in App Store Connect.
 
-Choose and implement a native distribution architecture before creating store binaries. The existing project uses Next.js server routes and cannot simply be treated as a static-export app without evaluating functionality. A remote-site WebView wrapper may be rejected if it provides insufficient native/app-specific value.
+1. Home — Basketball Beyond the Court
+2. Team reviews — Know Before You Sign
+3. Career profile — Own Your Basketball Journey
+4. HoopFeed — Connect Through HoopFeed
+5. Games — Stay Close to the Game
+6. HoopGroups — Find Your Community
+7. Directory — Explore Basketball Worldwide
+8. Dark theme — Your Game. Your Style.
 
-Preferred next technical step: prototype a native shell (for example, Capacitor) against a dedicated staging build and test authentication, redirects, file uploads, deep links, navigation, session persistence, network failures, and account deletion. Keep the production website unchanged during preparation.
+Exclude any feature not accepted on the exact archive. Verify app icon, launch screen and accessibility.
 
-## Apple App Store checklist
+## Apple membership catalog
 
-- [ ] Create a real iOS app target and archive; validate on supported iPhone/iPad devices.
-- [ ] Confirm bundle identifier, version/build numbers, signing, and distribution certificate.
-- [ ] Provide correct app icons, screenshots for required device sizes, and optional preview video.
-- [ ] Confirm privacy policy URL: https://hoopcheck-hoopcheck.vercel.app/privacy
-- [ ] Confirm support URL: https://hoopcheck-hoopcheck.vercel.app/support
-- [ ] Provide App Review contact information and a working reviewer account/instructions if login is required. Never place passwords or secrets in this repository.
-- [ ] Complete App Privacy disclosures from actual SDK/network/data behavior; do not guess.
-- [ ] Set age rating based on real user-generated content and moderation behavior.
-- [ ] Verify reporting, moderation, account deletion, privacy requests, and contact/support flows in the native app.
-- [ ] Resolve subscription/payment compliance before submission. Existing Stripe web checkout must not be assumed compliant for digital subscriptions sold/unlocked inside an iOS app; review Apple's current rules and implement required StoreKit/in-app purchase behavior or an explicitly permitted alternative.
-- [ ] Confirm all external links, login providers, and account flows comply with current Apple guidelines.
-- [ ] Archive and upload for TestFlight testing first. Do not submit for App Store review until owner approval.
+Group: HoopCheck Membership. USD reference prices only; use localized StoreKit pricing and actual offer eligibility.
 
-## Google Play checklist
+| Product ID | USD reference | Period | Introductory offer policy |
+| --- | ---: | --- | --- |
+| hoopcheck.pro.monthly | 4.99 | month | 7 days once if eligible |
+| hoopcheck.pro.6month | 26.95 | 6 months | none |
+| hoopcheck.pro.annual | 50.90 | year | none |
+| hoopcheck.premium.monthly | 9.99 | month | 7 days once if eligible |
+| hoopcheck.premium.6month | 53.95 | 6 months | none |
+| hoopcheck.premium.annual | 101.90 | year | none |
 
-- [ ] Create an Android app project and signed Android App Bundle (AAB).
-- [ ] Confirm package/application ID, version code, version name, signing, and target API requirements current at release time.
-- [ ] Provide app icon, feature graphic, phone screenshots, and tablet assets if supported.
-- [ ] Confirm privacy policy URL: https://hoopcheck-hoopcheck.vercel.app/privacy
-- [ ] Complete Data safety form from actual collection, sharing, retention, and deletion behavior.
-- [ ] Complete content rating and target audience declarations accurately.
-- [ ] Provide reviewer access instructions and a stable test account if needed; never store credentials in this repository.
-- [ ] Test user-generated content reporting/moderation, account deletion, privacy requests, support, login persistence, and billing.
-- [ ] Check Google Play Billing requirements for digital subscriptions sold in the app; do not assume existing Stripe checkout is compliant.
-- [ ] Complete required internal/closed testing and any account-specific testing requirements before production release.
-- [ ] Upload to internal testing first. Do not roll out to production until owner approval.
+Do not infer current App Store Connect offer configuration from source constants. Verify all six products, localization, tax category, subscription group, review screenshots, introductory eligibility, purchase, restore, renew, expire, refund/revoke, cross-account rejection and Stripe coexistence using sandbox only. Fan pricing is not authorized by this catalog. Coach and manager purchases are Premium-only in the candidate. No actual payment test without approval.
 
-## Shared release blockers
+## Exact-head evidence snapshot
 
-- [ ] Confirm native packaging approach and app-specific value beyond a simple website wrapper.
-- [ ] Generate final native icon assets (including PNG sizes required by the stores) and screenshots from real running builds.
-- [ ] Test signup, login/logout, password recovery, navigation, support ticket submission, privacy request center, account deletion, review reporting, moderation, and subscription entitlement behavior on real devices.
-- [ ] Confirm the support contact email/address to publish in store listings.
-- [ ] Confirm whether children are an intended audience; set age/audience declarations accordingly.
-- [ ] Audit all data collected by app, SDKs, analytics, Supabase, and Stripe before privacy disclosures.
-- [ ] Verify the exact subscription products, prices, renewal terms, and purchase/restore/cancel flows in each store.
-- [ ] Run a final security and privacy review of the production app and native package.
-- [ ] Obtain explicit owner approval before any store submission or public release.
+- #1074 and #1076 merged: authentication intent safety and Apple pending-signup database candidate.
+- #1077 merged into compliance candidate at `7a7b3455b75e428b1e7450cd18e794df04ca8953`, native social onboarding.
+- #1080 head `19a564eb7ac53e228fcbdba82011708d07a9fcb0`: five GitHub workflows passed; unsigned iOS pending; one Vercel preview passed, four rate-limited.
+- #1081 head before this documentation update `59ae00d49f65aa168c8e722f2d6c9c9f91f03bbb`: SQL rehearsal [45858070180](https://github.com/jacoriejay-afk/Hoopcheck/actions/runs/45858070180) and orchestration, including actual Apple crypto integration [45858070155](https://github.com/jacoriejay-afk/Hoopcheck/actions/runs/45858070155), passed. Other current-head verification not complete. Synthetic tests do not prove real account erasure or mail delivery.
+- #1084 head `bbbbba406c83e72f37e5329dfaef203f8f47eac5`: StoreKit SQL rehearsal and web CI passed; Vercel rate-limited.
+- Recheck every exact head, base, merge status and review before integrating. Do not mark preview failure as success or change branch protections. A candidate merged with an infrastructure exception still needs final deployment acceptance.
 
-## Scope and guardrails
+## P0 acceptance gates
 
-This branch contains documentation only. It does not modify app runtime code, payment configuration, production deployment, or store submissions. Real subscription payments are not to be tested unless the owner explicitly authorizes that later.
+### Sign in with Apple
+
+- [ ] Merge #1080 safely; confirm the signed archive contains the official native button, entitlement, nonce flow and pending-profile gate.
+- [ ] Configure the correct Apple App ID/capability and Supabase provider in an approved test environment. Set server signing key and encrypted vault key through protected environment settings. No credentials in this document.
+- [ ] Verify first and returning Apple sign-in, relay addresses, account linking safety, cancellation, MFA, age/terms/role onboarding, Google/email regression, credential revocation and failed-vault recovery.
+
+### Account deletion
+
+- [ ] Complete actual fulfillment. The legacy endpoint intentionally returns 409; do not re-enable unsafe hard-delete logic. Candidate flags remain disabled.
+- [ ] Verify native Settings > Account > Delete account and web equivalent, recent provider-aware reauthentication, immediate/30-day options, explicit cancellation, subscription instructions and accurate processing duration.
+- [ ] Approve a per-category retention policy: erase identifiable content, reviews, messages, media and derived copies unless legally required; retain only demonstrably non-identifiable aggregates and necessary lawful records. Resolve moderation/report holds before deletion. Never promise preservation of identifiable reviews or auto-cancel subscriptions.
+- [ ] Complete immutable approved cleanup plans for all auth/profile foreign keys, non-FK references, third-party data, sole-manager ownership, media/storage versions, external video assets, logs/backups and billing records. Current candidates cover limited preferences, reviews with no unresolved report evidence, selected media and Auth identity. Do not equate partial erasure with completion.
+- [ ] Enforce freeze across privileged routes, existing signed media credentials, realtime sockets and callbacks. Revoke sessions through a supported path for scheduled requests without retaining user bearer tokens.
+- [ ] Configure and verify approved completion delivery provider, verified non-relay contact or an approved alternative, key management, delivery reconciliation and retention/scrub. Resend adapter is a candidate only; no paid service approved.
+- [ ] Wire actual effects into the fenced worker and verify full end-to-end deletion in a disposable environment, including legal holds, retry, scope mismatch, cross-account denial, Apple revocation, identity absence and notification. No scheduler or production activation until acceptance.
+
+### Database and deployment
+
+- [ ] Rehearse complete migration chain on isolated database matching production schema: opted-in MFA, StoreKit sources and coverage, deletion ledger, Apple pending signup/vault/gate and all reviewed deletion candidates. Generate migrations using the approved tooling. Candidate files are not deployed migrations.
+- [ ] Verify RLS/ACLs, MFA hooks, REST/RPC access, provider callbacks and rollback/recovery plan. Reconcile production schema drift. Do not apply hosted SQL without owner approval.
+- [ ] Resolve Vercel rate limits, verify complete integrated candidate and approve deployment separately. Do not alter quotas, billing or projects without explicit authorization.
+
+## Passport release acceptance (separate from compliance integration)
+
+- Owner approved separating the unrelated Passport simulator runtime check from the account-deletion integration gate. Native compilation, StoreKit Swift tests, permission verification, watchdog tests, web/mobile checks and deletion security rehearsals remain intact.
+- Exact prior source head `02283938fccbd1f809b345a7c6c190a68d1ffb09`: [native run 45865627317](https://github.com/jacoriejay-afk/Hoopcheck/actions/runs/45865627317) compiled the simulator app but failed the real Passport UI fixture with `No script URL provided` despite successful Metro bundling. Do not record this run as passed. Preserve diagnostics and retain both light/dark runtime assertions in the dedicated `Passport iOS Runtime Verification` workflow. Other branches retain their existing runtime gates.
+- [ ] Resolve the synthetic simulator startup issue independently, or verify the actual Passport experience on the separately approved signed TestFlight release candidate: PDF content/signature, light/dark rendering, native share sheet, dismissal without external transmission, temporary-file deletion, no unexpected permissions. Record actual evidence; do not claim the failed simulator check passed. Physical-device acceptance is required before public release.
+
+## App Store Connect acceptance
+
+- [ ] Confirm account agreements, banking/tax, trader status/territories and age rating using actual business details.
+- [ ] Complete App Privacy survey from exact code and SDK data flows (contact details, user content, identifiers, purchases, diagnostics, analytics, usage and any tracking as actually collected). Verify retention and deletion disclosures and privacy policy match working behavior. No guessed selections.
+- [ ] Inspect generated archive for privacy manifests, required-reason API declarations, SDK signatures, permission descriptions, entitlements, encryption/export declarations and current SDK submission requirements.
+- [ ] Verify reporting, blocking, moderation, support and published community standards on physical devices. Confirm contact channels are monitored.
+- [ ] Provide App Review access through secure App Store Connect fields. Demo accounts must not contain real user data and must permit meaningful review of gated features. Supply clear test instructions and subscription review notes.
+- [ ] Confirm physical-device results for account/profile/Owner HQ, HoopFeed, HoopGroups/direct messages, Live Games, HoopReels and notifications; these were unverified in the recorded Build 16 owner test. Re-test all core flows on the final approved signed candidate.
+- [ ] Obtain separate approval for any additional EAS build and public submission. No current approval for either.
+
+## Google Play (separate release)
+
+Android packaging is native Expo; Android publication is not accepted by this iOS preparation. Verify signed AAB, current target API, Play Billing, Data safety, deletion URLs, content rating, reviewer access, device testing and account-specific closed-testing requirements before any rollout.
+
+## Official references
+
+- https://developer.apple.com/app-store/review/guidelines/
+- https://developer.apple.com/support/offering-account-deletion-in-your-app/
+- https://developer.apple.com/documentation/technotes/tn3194-handling-account-deletions-and-revoking-tokens-for-sign-in-with-apple
+- https://developer.apple.com/help/app-review/before-submitting-for-review/complete-review/
+- https://supabase.com/docs/guides/auth/social-sign-in/auth-apple
+
+This guide records preparation and explicit blockers, not a claim of compliance or store approval.

@@ -37,6 +37,7 @@ function PlayerDirectory() {
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const requestId = useRef(0);
+  const paging = useRef(false);
 
   const load = useCallback(async (search: string, start = 0, append = false) => {
     const currentRequest = ++requestId.current;
@@ -51,7 +52,7 @@ function PlayerDirectory() {
       setRefreshing(false);
       return;
     }
-    const { data, error: queryError } = await read(`players:privacy-v2:${clean}:${start}`, () => readPlayerDirectory(supabase, clean, start, PAGE_SIZE));
+    const { data, error: queryError } = await Promise.resolve().then(() => read(`players:privacy-v2:${clean}:${start}`, () => readPlayerDirectory(supabase, clean, start, PAGE_SIZE))).catch(() => ({ data: null, error: new Error("Player directory unavailable") }));
     if (currentRequest !== requestId.current) return;
     if (queryError) {
       setError("We couldn’t load player profiles. Check your connection and try again.");
@@ -61,7 +62,7 @@ function PlayerDirectory() {
     const rows = (data ?? []) as PlayerCard[];
     setHasMore(rows.length > PAGE_SIZE);
     const page = rows.slice(0, PAGE_SIZE);
-    setItems(append ? current => [...current, ...page] : page);
+    setItems(append ? current => [...new Map([...current, ...page].map(row => [row.id, row])).values()] : page);
     setOffset(start);
     setLoading(false); setRefreshing(false);
   }, [read]);
@@ -89,7 +90,12 @@ function PlayerDirectory() {
     return () => { clearTimeout(timer); requestId.current += 1; };
   }, [term, revision, load]);
 
-  async function nextPage() { if (loading || !hasMore || !appliedTerm) return; setLoading(true); await load(appliedTerm, offset + PAGE_SIZE, true); }
+  async function nextPage() {
+    if (paging.current || loading || !hasMore || !appliedTerm) return;
+    paging.current = true; setLoading(true);
+    try { await load(appliedTerm, offset + PAGE_SIZE, true); }
+    finally { paging.current = false; }
+  }
   const refresh = () => { if (!appliedTerm) return; setRefreshing(true); void load(appliedTerm, 0, false); };
 
   const matchingEnabled=process.env.EXPO_PUBLIC_HOOPCHECK_OPPORTUNITY_MATCHING_ENABLED==="true"&&matching;
@@ -98,12 +104,9 @@ function PlayerDirectory() {
     <SafeAreaView edges={["left", "right", "bottom"]} style={styles.safe}>
       <OfflineBanner savedAt={savedAt} />
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Back</Text></Pressable>
-        <Text style={styles.kicker}>PLAYER DIRECTORY</Text>
-        <Text style={styles.title}>Find players</Text>
         <Text style={styles.subtitle}>Explore public profiles of professional basketball players.</Text>
         <View style={styles.searchRow}>
-          <Input onBlur={() => remember(term)} onSubmitEditing={() => remember(term)} value={term} onChangeText={updateTerm} returnKeyType="search" placeholder="Enter a username (e.g. @player)" placeholderTextColor={theme.muted} style={styles.input} />
+          <Input onBlur={() => remember(term)} onSubmitEditing={() => remember(term)} value={term} onChangeText={updateTerm} returnKeyType="search" accessibilityLabel="Search public players by username" maxLength={100} placeholder="Enter a username (e.g. @player)" placeholderTextColor={theme.muted} style={styles.input} />
         </View>
         {!term ? <RecentSearches items={recents} onSelect={setTerm} /> : null}
         {process.env.EXPO_PUBLIC_HOOPCHECK_OPPORTUNITY_MATCHING_ENABLED==="true"?<View style={{gap:4}}><Button secondary onPress={()=>setMatching(v=>!v)}>{matching?"Disable opportunity matching":"Match available players"}</Button>{matching?<><Input accessibilityLabel="Exact listed position" maxLength={30} value={criteria.position} onChangeText={position=>setCriteria(v=>({...v,position}))} placeholder="Exact listed position"/><Input accessibilityLabel="Minimum professional years" maxLength={2} keyboardType="number-pad" value={criteria.minimumYears} onChangeText={minimumYears=>setCriteria(v=>({...v,minimumYears}))} placeholder="Minimum pro years (0–50)"/><Button secondary onPress={()=>setCriteria(v=>({...v,verifiedOnly:!v.verifiedOnly}))}>{criteria.verifiedOnly?"Verified only: on":"Verified only: off"}</Button><Text style={styles.meta}>{matchExplanation(criteria)}. Self-reported, not a job offer. Filters apply to loaded records only.</Text></>:null}</View>:null}

@@ -34,6 +34,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unsupported video or size" }, { status: 400 });
   }
   const path = user.id + "/" + crypto.randomUUID() + "." + EXT[type];
+  // Check the same caller's live session immediately before issuing a privileged upload token.
+  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!publishableKey) return NextResponse.json({ error: "Unavailable" }, { status: 503 });
+  const scoped = createClient(url, publishableKey, {
+    global: { headers: { Authorization: "Bearer " + token } },
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  const active = await scoped.rpc("confirm_active_account_session");
+  if (active.error || active.data !== true) return NextResponse.json({ error: "Account session unavailable" }, { status: 403 });
   const { data, error } = await admin.storage.from("hoopfeed-private-videos").createSignedUploadUrl(path);
   if (error || !data?.token) return NextResponse.json({ error: "Upload unavailable" }, { status: 503 });
   return NextResponse.json({ mode: "private", path, token: data.token, bucket: "hoopfeed-private-videos" }, { headers: { "Cache-Control": "no-store" } });

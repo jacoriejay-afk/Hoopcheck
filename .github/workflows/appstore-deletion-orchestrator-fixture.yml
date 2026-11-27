@@ -1,0 +1,31 @@
+name: Account deletion orchestration fixture
+on:
+  pull_request:
+    branches: ["integration/appstore-compliance-candidate"]
+    paths:
+      - "lib/server/account-deletion-orchestrator.ts"
+      - "scripts/test-account-deletion-orchestrator.mjs"
+      - "lib/server/account-deletion-cleanup.ts"
+      - "scripts/test-account-deletion-cleanup.mjs"
+      - "scripts/test-account-deletion-apple-integration.mjs"
+      - ".github/workflows/appstore-deletion-orchestrator-fixture.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-orchestrator:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/checkout@v4
+        with:
+          ref: 19a564eb7ac53e228fcbdba82011708d07a9fcb0
+          path: .compliance-apple
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --experimental-strip-types --test scripts/test-account-deletion-orchestrator.mjs scripts/test-account-deletion-cleanup.mjs scripts/test-account-deletion-apple-integration.mjs

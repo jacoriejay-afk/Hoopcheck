@@ -5,6 +5,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Button } from "../src/primitives";
 import {PlayerReferencePanel} from "../components/PlayerReferencePanel";
+import { ConversationSafety } from "../components/ConversationSafety";
+import { readWithDeadline } from "../src/native/readDeadline";
 import { ChatMessageEnter, ChatTypingBasketball, useConfirmedMessageMotion } from "../components/chat/ChatMotion";
 import { HoopCheckLoading } from "../components/HoopCheckLoading";
 import { useEntryTheme } from "../src/theme";
@@ -19,6 +21,18 @@ type ContactRequest = {
 };
 type ContactName = { id: string; display_name: string | null; username: string | null };
 const EMPTY_THREAD_MESSAGES: ContactMessage[] = [];
+async function verifiedChatBearer(uid:string){
+  const session=await readWithDeadline(()=>supabase.auth.getSession());
+  if(session.error||!session.data.session||session.data.session.user.id!==uid)throw Error("Verify your account again.");
+  return "Bearer "+session.data.session.access_token;
+}
+async function verifyChatPeer(uid:string,peer:string,signal:AbortSignal){
+  const header=await verifiedChatBearer(uid);
+  if(signal.aborted)throw Error("Conversation check expired.");
+  const result=await supabase.from("user_blocks").select("blocked_id").eq("blocker_id",uid).eq("blocked_id",peer).setHeader("Authorization",header).abortSignal(signal).maybeSingle();
+  if(result.error||result.data||signal.aborted)throw Error("Conversation unavailable. Check blocked accounts in Settings.");
+  return header;
+}
 
 export default function MessagesScreen({ embedded = false, mode = "all" }: { embedded?: boolean; mode?: "all" | "conversations" | "requests" } = {}) {
   const theme = useEntryTheme();
@@ -56,21 +70,25 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
         await requireOnline();
         const { data: { user }, error: authError } = await supabase.auth.getUser();
         if (authError || !user) throw new Error("Sign in to view your messages.");
+        const header=await verifiedChatBearer(user.id);
+        const blocked=await supabase.from("user_blocks").select("blocked_id").eq("blocker_id",user.id).limit(501).setHeader("Authorization",header).abortSignal(signal);
+        if(blocked.error||!Array.isArray(blocked.data)||blocked.data.length>500)throw Error("Blocked accounts could not be verified.");
+        const blockedIds=new Set(blocked.data.map(row=>row.blocked_id));
         const { data, error: requestError } = await supabase.from("player_contact_requests")
           .select("id,requester_id,player_id,message,status,created_at")
           .or(`requester_id.eq.${user.id},player_id.eq.${user.id}`)
-          .order("created_at", { ascending: false }).limit(100).abortSignal(signal);
+          .order("created_at", { ascending: false }).limit(100).setHeader("Authorization",header).abortSignal(signal);
         if (requestError) throw new Error("Messages could not be loaded.");
-        const rows = (data || []) as ContactRequest[];
+        const rows = ((data || []) as ContactRequest[]).filter(row=>!blockedIds.has(row.requester_id===user.id?row.player_id:row.requester_id));
         const accepted = rows.filter(item => item.status === "accepted").map(item => item.id);
         const peerIds = [...new Set(rows.map(item => item.requester_id === user.id ? item.player_id : item.requester_id))];
         const [history, people] = await Promise.all([
           accepted.length ? supabase.from("player_contact_messages")
             .select("id,request_id,sender_id,body,created_at").in("request_id", accepted)
-            .order("created_at", { ascending: false }).limit(500).abortSignal(signal)
+            .order("created_at", { ascending: false }).limit(500).setHeader("Authorization",header).abortSignal(signal)
             : Promise.resolve({ data: [] as ContactMessage[], error: null }),
           peerIds.length ? supabase.from("profiles")
-            .select("id,display_name,username").in("id", peerIds).abortSignal(signal)
+            .select("id,display_name,username").in("id", peerIds).setHeader("Authorization",header).abortSignal(signal)
             : Promise.resolve({ data: [] as ContactName[], error: null }),
         ]);
         if (history.error) throw new Error("Conversation history could not be loaded.");
@@ -83,7 +101,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       setContacts(Object.fromEntries(result.contacts.map(person => [person.id, person])));
       setSelectedId(current => result.rows.some(item => item.id === current) ? current : (result.rows[0]?.id || ""));
     } catch (failure) {
-      if (revision === generation.current) setError(failure instanceof Error ? failure.message : "Unable to load messages.");
+      if (revision === generation.current) { setRequests([]);setMessages([]);setContacts({});setOpenedId("");setThreadPage(null);setError(failure instanceof Error ? failure.message : "Unable to load messages."); }
     } finally {
       if (revision === generation.current) setLoading(false);
     }
@@ -170,6 +188,11 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
         await requireOnline();
         const {data:{user},error:authError}=await supabase.auth.getUser();
         if (authError || user?.id!==viewerId || !active()) throw Error("Your session changed.");
+        const header=await verifiedChatBearer(viewerId);
+        const target=await supabase.from("player_contact_requests").select("requester_id,player_id").eq("id",requestId).setHeader("Authorization",header).abortSignal(signal).maybeSingle();
+        if(target.error||!target.data||![target.data.requester_id,target.data.player_id].includes(viewerId))throw Error("Conversation unavailable.");
+        await verifyChatPeer(viewerId,target.data.requester_id===viewerId?target.data.player_id:target.data.requester_id,signal);
+        if(!active())throw Error("Your session changed.");
         return readConversationPage(supabase,requestId,signal,older);
       });
       if (!active()) return;
@@ -195,9 +218,11 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       await requireOnline();
       const {data:{user}}=await supabase.auth.getUser();
       if(user?.id!==userId || actionGeneration!==generation.current || !focused.current)throw new Error("Your session changed.");
+      const header=await withHoopChatDeadline(signal=>verifyChatPeer(userId,peerId(selected),signal));
+      if(actionGeneration!==generation.current||!focused.current)throw Error("Your session changed.");
       const {error:updateError}=await supabase.from("player_contact_requests")
         .update({status,responded_at:new Date().toISOString()})
-        .eq("id",selected.id).eq("player_id",userId).eq("status","pending");
+        .eq("id",selected.id).eq("player_id",userId).eq("status","pending").setHeader("Authorization",header);
       if(updateError)throw new Error("Could not update the request.");
       if(actionGeneration===generation.current && focused.current) await load();
     }catch(failure){if(actionGeneration===generation.current && focused.current)setError(failure instanceof Error?failure.message:"Unable to update request.");}
@@ -211,8 +236,10 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       await requireOnline();
       const {data:{user}}=await supabase.auth.getUser();
       if(user?.id!==userId || actionGeneration!==generation.current || !focused.current)throw new Error("Your session changed.");
+      const header=await withHoopChatDeadline(signal=>verifyChatPeer(userId,peerId(selected),signal));
+      if(actionGeneration!==generation.current||!focused.current)throw Error("Your session changed.");
       const {error:sendError}=await supabase.from("player_contact_messages")
-        .insert({request_id:selected.id,sender_id:userId,body:draft.trim().slice(0,2000)});
+        .insert({request_id:selected.id,sender_id:userId,body:draft.trim().slice(0,2000)}).setHeader("Authorization",header);
       if(sendError)throw new Error("The message was not sent.");
       if(actionGeneration===generation.current && focused.current){setDraft("");await load();}
     }catch(failure){if(actionGeneration===generation.current && focused.current)setError(failure instanceof Error?failure.message:"Message failed.");}
@@ -260,6 +287,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
         <Pressable accessibilityRole="button" accessibilityLabel="Back to conversations" disabled={sending} onPress={()=>{setOpenedId("");setDraft("");}} style={{minHeight:44,flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="chevron-back" size={20} color={theme.accent}/><Text style={{color:theme.accent,fontWeight:"700"}}>Conversations</Text></Pressable>
         <Text style={{color:theme.foreground,fontWeight:"900",fontSize:19}}>{name(selected)}</Text>
         <Text style={{color:theme.muted,fontSize:12}}>{selected.status==="accepted"?"Private HoopChat":"Player contact request"}</Text>
+        <ConversationSafety key={`${userId}:${selected.id}`} uid={userId} requestId={selected.id} peerId={peerId(selected)} onBlocked={()=>{historyRequest.current++;setOpenedId("");setDraft("");setThreadPage(null);setRequests(rows=>rows.filter(row=>peerId(row)!==peerId(selected)));void load();}}/>
         {selected.message?<View style={{padding:12,borderRadius:12,backgroundColor:theme.chip}}><Text style={{color:theme.foreground}}>Introduction: {selected.message}</Text></View>:null}
         <View accessibilityLabel="Conversation history" style={{gap:10,marginVertical:10}}>
           {threadScope && !currentPage && !currentThreadError ? <HoopCheckLoading compact label="Loading conversation history…" /> : null}

@@ -5,8 +5,8 @@ import { GlassSurface } from "../components/GlassSurface";
 import { BrandLogo } from "../components/BrandLogo";
 import { ExploreLinks } from "../components/ExploreLinks";
 import { Input, Chip, SectionHeader } from "../src/primitives";
-import { useCallback, useEffect, useState } from "react";
-import { Alert, Keyboard, Linking, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { useCallback, useState } from "react";
+import { Alert, Keyboard, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { useMotionSetting } from "../src/motion/Provider";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -38,28 +38,26 @@ export default function DashboardScreen() {
   useFocusEffect(useCallback(() => () => { closeSearch(); setMenuOpen(false); }, [closeSearch]));
   const submitSearch = () => { closeSearch(); router.push({ pathname: "/search", params: { q: search } }); };
   const [busy, setBusy] = useState(false);
-  const [email, setEmail] = useState("");
   const { account: currentAccount } = useNativeAccount();
   // Display the verified profile role, not editable auth metadata.
   const accountType = currentAccount?.user.accountType.replaceAll("_", " ") || "";
 
-  useEffect(() => {
-    let alive = true;
-    supabase.auth.getUser().then(({ data, error }) => {
-      if (!alive || error) return;
-      setEmail(data.user?.email ?? "");
+  // Avoid an unscoped, mount-only identity request. The account provider
+  // already validates the current session and clears old account data.
+  const identityLabel = currentAccount?.user.displayName || "";
+  const groupsEnabled = process.env.EXPO_PUBLIC_HOOPGROUPS_CHANNELS_ENABLED === "true";
 
-    });
-    return () => { alive = false; };
-  }, []);
-
-  async function openAccountLink(path: string) {
+  function openAccountLink(path: string) {
     if (path === "/account" || path === "/about") { router.push(path); return; }
-    try {
-      await Linking.openURL(`https://hoopcheck.online${path}`);
-    } catch {
-      Alert.alert("Unable to open link", "Please try again or visit hoopcheck.online in your browser.");
+    if (path === "/support") { router.push("/account/support"); return; }
+    if (path === "/privacy" || path === "/terms") {
+      router.push({ pathname: "/account/policies", params: { kind: path === "/terms" ? "terms" : "privacy" } });
+      return;
     }
+    if (path === "/community-guidelines") { router.push({ pathname: "/legal", params: { document: "community-guidelines" } }); return; }
+    // Remaining website-only pages go through the explicit browser handoff,
+    // not an OS universal link which could reopen this app.
+    router.push({ pathname: "/web", params: { path } });
   }
 
   async function signOut() {
@@ -124,14 +122,22 @@ export default function DashboardScreen() {
         <View style={styles.content}>
           <HomeCourtside />
           <RoleHub />
+          {currentAccount ? <View style={{gap:5}}>
+            <SectionHeader>HoopGroups</SectionHeader>
+            <Pressable accessibilityRole="link" testID="home-hoopgroups" accessibilityLabel="Open HoopGroups communities" onPress={()=>router.push("/hoopgroups")} style={({pressed})=>({minHeight:52,flexDirection:"row",alignItems:"center",gap:10,paddingVertical:8,borderBottomWidth:StyleSheet.hairlineWidth,borderColor:theme.border,opacity:pressed?.7:1})}>
+              <Ionicons name="people-outline" size={24} color={theme.accent}/>
+              <View style={{flex:1}}><Text style={{color:theme.foreground,fontWeight:"700"}}>Independent basketball communities</Text><Text style={{color:theme.muted,fontSize:12}}>{groupsEnabled?"Browse groups and channels":"Group creation and channels are preparing for launch."}</Text></View>
+              <Ionicons name="chevron-forward" size={17} color={theme.muted}/>
+            </Pressable>
+          </View>:null}
           <SectionHeader>Explore basketball</SectionHeader>
           <View style={styles.directories}><ExploreLinks compact /></View>
 
           <View style={styles.sectionTitle}><SectionHeader>Account &amp; support</SectionHeader></View>
           <View style={[styles.account, panel]}>
-            {email ? (
+            {identityLabel ? (
               <View style={styles.identity}>
-                <Text style={[styles.rowLabel, { color: theme.foreground }]}>{email}</Text>
+                <Text style={[styles.rowLabel, { color: theme.foreground }]}>{identityLabel}</Text>
                 {accountType ? <View style={{ alignSelf: "flex-start" }}><Chip>{accountType}</Chip></View> : null}
               </View>
             ) : null}
@@ -139,7 +145,7 @@ export default function DashboardScreen() {
               <Pressable key={path} accessibilityRole="link" onPress={() => void openAccountLink(path)}
                 style={({ pressed }) => [
                   styles.accountLink,
-                  (index > 0 || Boolean(email)) && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.border },
+                  (index > 0 || Boolean(identityLabel)) && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.border },
                   pressed && { backgroundColor: theme.accentSurface },
                 ]}>
                 <Text style={[styles.linkLabel, { color: theme.foreground }]}>{label}</Text>

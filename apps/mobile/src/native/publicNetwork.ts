@@ -41,3 +41,19 @@ export async function readPublicNetwork(origin: string, kind: NetworkKind, signa
   if (!response.ok) throw new Error("Directory temporarily unavailable");
   return parsePublicNetwork(await response.json(), kind);
 }
+
+/** Refetch the exact published showcase; never fall back to a raw profile. */
+export async function readPublicShowcase(origin: string, kind: NetworkKind, id: string, signal?: AbortSignal, request: typeof fetch = fetch): Promise<NetworkEntry | null> {
+  const url = new URL(origin);
+  if (url.protocol !== "https:" || url.username || url.password || url.pathname !== "/" || url.search || url.hash || !["agents", "creators"].includes(kind) || !uuid.test(id)) throw new Error("Invalid showcase request");
+  url.pathname = "/api/network/" + kind;
+  url.searchParams.set("id", id);
+  const response = await request(url.toString(), { method: "GET", cache: "no-store", redirect: "error", signal, credentials: "omit" });
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error("Showcase temporarily unavailable");
+  const payload = record(await response.json());
+  const row = kind === "agents" ? payload?.person : payload?.creator;
+  const [entry] = parsePublicNetwork(kind === "agents" ? { people: [row] } : { creators: [row] }, kind);
+  if (!entry || entry.id !== id) throw new Error("Invalid showcase identity");
+  return entry;
+}

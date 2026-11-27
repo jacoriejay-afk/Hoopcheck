@@ -18,6 +18,9 @@ export async function appleRequest(request: Request, requireConfirmedEmail=true)
   let role:string;try{role=JSON.parse(Buffer.from(token.split('.')[1],"base64url").toString()).role;}catch{throw new AppleBillingError("sign_in",401,"Sign in again.");}
   if(role!=="authenticated") throw new AppleBillingError("account_setup",403,"Finish setting up your HoopCheck account first.");
   if(assurance.required) throw new AppleBillingError("mfa_required",403,"Verify your authenticator to continue.");
+  // Auth.getUser alone cannot prove the session still exists or is not frozen.
+  const active=await scoped.rpc("confirm_active_account_session");
+  if(active.error || active.data!==true) throw new AppleBillingError("account_unverified",403,"Your account session is unavailable. Sign in again or contact support.");
   const db=createClient(url,secret,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
   return{scoped,db,user:data.user};
 }

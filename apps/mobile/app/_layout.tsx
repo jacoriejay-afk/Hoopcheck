@@ -45,7 +45,7 @@ function RootLayout() {
   const sessionReady = session.ready;
   const signedIn = Boolean(session.userId);
   const pathname = usePathname();
-  const routeParams = useGlobalSearchParams<{ post?: string | string[]; q?: string | string[]; gameId?: string | string[]; side?: string | string[]; group?: string | string[]; tab?: string | string[]; topic?: string | string[] }>();
+  const routeParams = useGlobalSearchParams<{ post?: string | string[]; q?: string | string[]; gameId?: string | string[]; side?: string | string[]; group?: string | string[]; tab?: string | string[]; topic?: string | string[]; social?: string | string[]; kind?: string | string[]; reportReel?: string | string[] }>();
 
   useEffect(() => {
     bootstrap.current = createSessionBootstrap(
@@ -68,10 +68,20 @@ function RootLayout() {
   }, [sessionReady, fontsLoaded, fontError]);
 
   useEffect(() => {
-    if (!sessionReady || segments[0] === "about") return;
+    if (!sessionReady) return;
     const currentRoute = segments[0] ?? "";
     const inAppArea = ["dashboard", "team-hub", "fan-live", "notifications", "messages", "feed-welcome", "hoopgroups", "feed", "fan-feed", "reels", "account", "search", "teams", "womens", "leagues", "players", "coaches", "choose-username", "settings", "membership"].includes(currentRoute);
-    if (["web", "sign-in", "sign-up"].includes(currentRoute)) return;
+    // A restricted identity may be restored after the app is closed mid-signup.
+    // Server-side role restrictions remain authoritative; this is navigation only.
+    if (session.pendingSocialSignup) {
+      // The sign-in screen owns Apple authorization persistence before navigation.
+      if (currentRoute === "auth" || currentRoute === "sign-in" || currentRoute === "legal" || pathname === "/account/policies" || (currentRoute === "sign-up" && routeParams.social === "1")) return;
+      router.replace({ pathname: "/sign-up", params: { social: "1" } });
+      return;
+    }
+    // Static public policy documents are readable during signup; private account screens remain restricted.
+    if (pathname === "/account/policies") return;
+    if (["about", "web", "legal", "sign-in", "sign-up", "forgot-password"].includes(currentRoute)) return;
     const onPasswordRecovery = currentRoute === "reset-password";
     // Let the OAuth callback exchange its PKCE code and choose the destination.
     const onAuthCallback = currentRoute === "auth";
@@ -88,11 +98,13 @@ function RootLayout() {
       if (currentRoute === "hoopgroups" && typeof routeParams.group === "string" && /^[a-z0-9][a-z0-9-]{0,59}$/.test(routeParams.group)) query.set("group",routeParams.group);
       if (currentRoute === "notifications" && (routeParams.tab === "chat" || routeParams.tab === "requests" || routeParams.tab === "activity")) query.set("tab",routeParams.tab);
       if (pathname === "/account/support" && routeParams.topic === "scam") query.set("topic","scam");
+      if (pathname === "/account/support" && typeof routeParams.reportReel === "string" && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(routeParams.reportReel)) query.set("reportReel",routeParams.reportReel);
+      if (pathname === "/account/network" && (routeParams.kind === "agents" || routeParams.kind === "creators" || routeParams.kind === "safety")) query.set("kind",routeParams.kind);
       if (currentRoute === "search" && typeof routeParams.q === "string") query.set("q", routeParams.q.slice(0, 100));
       const suffix = query.toString();
       rememberDestination(pathname + (suffix ? `?${suffix}` : "")); router.replace("/sign-in");
     }
-  }, [sessionReady, signedIn, segments, router, pathname, routeParams.post, routeParams.q, routeParams.gameId, routeParams.side, routeParams.group, routeParams.tab, routeParams.topic]);
+  }, [sessionReady, signedIn, session.pendingSocialSignup, segments, router, pathname, routeParams.post, routeParams.q, routeParams.gameId, routeParams.side, routeParams.group, routeParams.tab, routeParams.topic, routeParams.social, routeParams.kind, routeParams.reportReel]);
 
   // Mount the navigator on the first render. Font loading must never prevent
   // Router from mounting or leave a blank screen after the splash deadline.
@@ -125,11 +137,13 @@ function RootLayout() {
         <Stack.Screen name="account" options={{ headerShown: false }} />
         <Stack.Screen name="membership" options={{ title: "Membership" }} />
         <Stack.Screen name="account/edit" options={{ title: "Edit profile" }} />
+        <Stack.Screen name="account/delete" options={{ title: "Delete account" }} />
         <Stack.Screen name="account/security" options={{ title: "Account security" }} />
         <Stack.Screen name="account/owner-hq" options={{ title: "Owner HQ" }} />
         <Stack.Screen name="account/ambassador-hq" options={{ title: "Ambassador HQ" }} />
         <Stack.Screen name="settings" options={{ title: "Settings" }} />
         <Stack.Screen name="web" options={{ title: "HoopCheck" }} />
+        <Stack.Screen name="legal" options={{ title: "HoopCheck Legal" }} />
         <Stack.Screen name="index" options={{ title: "HoopCheck™", headerShown: false }} />
         <Stack.Screen name="sign-in" options={{ headerShown: false }} />
         <Stack.Screen name="auth/callback" options={{ title: "Signing in" }} />
@@ -153,8 +167,8 @@ function RootLayout() {
         <Stack.Screen name="leagues" options={{ title: "Leagues" }} />
         <Stack.Screen name="leagues/[id]" options={{ title: "League profile", headerTransparent: true }} />
       </Stack></RouteFade>
-      <PublicSystemNavigation ready={sessionReady && !session.error} blocked={["auth","reset-password","forgot-password","sign-up","choose-username"].includes(segments[0] ?? "")} signedIn={signedIn} />
-      {signedIn ? <TabBar /> : null}<AppLock authReady={sessionReady} userId={session.userId} startupError={session.error} retryStartup={() => { void bootstrap.current?.retry(); }} protectedScreen={signedIn && !["sign-in", "sign-up", "reset-password", "auth"].includes(segments[0] ?? "")} />
+      <PublicSystemNavigation ready={sessionReady && !session.error && !session.pendingSocialSignup} blocked={["auth","reset-password","forgot-password","sign-up","choose-username"].includes(segments[0] ?? "")} signedIn={signedIn} />
+      {signedIn && !session.pendingSocialSignup ? <TabBar /> : null}<AppLock authReady={sessionReady} userId={session.userId} startupError={session.error} retryStartup={() => { void bootstrap.current?.retry(); }} protectedScreen={signedIn && !session.pendingSocialSignup && !["sign-in", "sign-up", "reset-password", "auth"].includes(segments[0] ?? "")} />
       <AppOpening ready={sessionReady && (fontsLoaded || Boolean(fontError))}
         disabled={["auth", "reset-password"].includes(segments[0] ?? "")} />
     </BottomSheetModalProvider></NativeDraftProvider></StoreKitProvider></NativeAccountProvider></MfaSessionProvider></NetworkProvider></DevicePreferences></MotionProvider></SafeAreaProvider></GestureHandlerRootView>

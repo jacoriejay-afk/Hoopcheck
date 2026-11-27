@@ -8,7 +8,7 @@ function fixture({theme='light',role='player',eligibility='eligible',restoreErro
  const subscription={plan:'pro',status:'active',access_status:'pro',provider:'apple',current_period_end:'2099-01-01T00:00:00Z',cancel_at_period_end:false,billing_interval:'month'};
  const store={supported:true,membership:async()=>subscription,catalog:async()=>catalogResponses?.shift()??({products:role==='fan'?[]:[product],canPurchase:role!=='fan',reason:'No new fan products'}),prepare:async value=>preparePending?.promise??{product:value,hasTrial:eligibility==='eligible',trialEligibility:eligibility,owner},purchase:async value=>{calls.push(['purchase',value]);return purchasePending?.promise??'pending';},restore:async()=>{calls.push(['restore']);if(restoreError)throw Error('Restore could not be verified. Try again.');return{restored:1,foreign:0,failed:0};},manage:async()=>{calls.push(['manage']);}};
  const color=theme==='dark'?'#101010':'#ffffff';const exports={};const code=ts.transpileModule(readFileSync(new URL('../app/membership.tsx',import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText;
- const stubs={'../components/MembershipExitFeedback':{MembershipExitFeedback:'MembershipExitFeedback'},'../components/MembershipPreview':{MembershipPreview:'MembershipPreview'},'../components/Motion':{Reveal:'Reveal'},'react-native':{AppState:{addEventListener:(_,fn)=>{background=fn;return{remove(){}};}},Linking:{openURL:async()=>{}},ScrollView:'ScrollView',Text:'Text',View:'View'},'expo-router':{useFocusEffect:callback=>React.useEffect(callback,[callback])},'react-native-safe-area-context':{SafeAreaView:'SafeAreaView'},'../src/primitives':{Button:'Button',GlassCard:'GlassCard'},'../src/theme':{useEntryTheme:()=>({background:color,foreground:theme==='dark'?'#ffffff':'#101010',muted:'#777777'})},'../src/native/useNativeAccount':{useNativeAccount:()=>({account:state.account,retry:()=>calls.push(['refresh'])})},'../src/native/mfa':{useMfaSession:()=>state.security},'../src/native/storekit':{useStoreKit:()=>store},'../../../lib/billing/apple-products':{appleProduct:()=>({plan:'pro'})}};
+ const stubs={'../components/MembershipExitFeedback':{MembershipExitFeedback:'MembershipExitFeedback'},'../components/MembershipPreview':{MembershipPreview:'MembershipPreview'},'../components/Motion':{Reveal:'Reveal'},'react-native':{AppState:{addEventListener:(_,fn)=>{background=fn;return{remove(){}};}},Linking:{openURL:async()=>{}},ScrollView:'ScrollView',Text:'Text',View:'View'},'expo-router':{useFocusEffect:callback=>React.useEffect(callback,[callback]),useRouter:()=>({push:target=>calls.push(['navigate',target])})},'react-native-safe-area-context':{SafeAreaView:'SafeAreaView'},'../src/primitives':{Button:'Button',GlassCard:'GlassCard'},'../src/theme':{useEntryTheme:()=>({background:color,foreground:theme==='dark'?'#ffffff':'#101010',muted:'#777777'})},'../src/native/useNativeAccount':{useNativeAccount:()=>({account:state.account,retry:()=>calls.push(['refresh'])})},'../src/native/mfa':{useMfaSession:()=>state.security},'../src/native/storekit':{useStoreKit:()=>store},'../../../lib/billing/apple-products':{appleProduct:()=>({plan:'pro'})}};
  vm.runInNewContext(code,{exports,Date,Error,process:{env:{EXPO_PUBLIC_HOOPCHECK_EXIT_FEEDBACK_ENABLED:exitFeedback?'true':'false'}},require:id=>Object.hasOwn(stubs,id)?stubs[id]:require(id)});
  return{Screen:exports.default,state,calls,background:value=>background(value),color};
 }
@@ -51,4 +51,11 @@ test('optional exit feedback cannot replace existing subscription controls',asyn
   await click(tree,'Manage Apple subscription');assert.ok(f.calls.some(c=>c[0]==='manage'));
   await act(async()=>tree.unmount());
  }
+});
+
+test('membership policies open native screens without changing purchase state',async()=>{
+ const f=fixture(),tree=await render(f);
+ await click(tree,'Terms of use');await click(tree,'Privacy policy');
+ assert.deepEqual(f.calls.map(c=>JSON.parse(JSON.stringify(c))),[['navigate',{pathname:'/legal',params:{document:'terms'}}],['navigate',{pathname:'/legal',params:{document:'privacy'}}]]);
+ await act(async()=>tree.unmount());
 });

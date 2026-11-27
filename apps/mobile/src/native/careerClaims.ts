@@ -14,7 +14,7 @@ export function careerRequestUrl(origin:string,path:"claims"|"historical-clubs",
 export async function requestCareer<T>(origin:string,token:string,path:"claims"|"historical-clubs",options:{query?:URLSearchParams;body?:object;signal?:AbortSignal}={},request:typeof fetch=fetch):Promise<T>{
  if(!token)throw Error("Sign in to manage career history.");
  const response=await request(careerRequestUrl(origin,path,options.query),{method:options.body?"POST":"GET",cache:"no-store",redirect:"error",headers:{Authorization:"Bearer "+token,...(options.body?{"Content-Type":"application/json"}:{})},...(options.body?{body:JSON.stringify(options.body)}:{}),signal:options.signal});
- if(!response.ok){const message=response.status===409?"This claim already exists.":response.status===401||response.status===403?"Career history is not available to this session.":response.status===400?"Check your team and season details.":"Career history is unavailable. Try again.";throw Error(message);}
+ if(!response.ok){const message=response.status===404?"Career history is not available on this server. Try again later.":response.status===409?"This claim already exists.":response.status===401||response.status===403?"Career history is not available to this session.":response.status===400?"Check your team and season details.":"Career history is unavailable. Try again.";throw Error(message);}
  return await response.json() as T;
 }
 

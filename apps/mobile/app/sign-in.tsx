@@ -1,3 +1,4 @@
+import AppleSignIn from "../components/AppleSignIn";
 import { nativeCareerClaimsEnabled } from "../src/native/careerClaims";
 import { consumeCareerSignup } from "../src/native/careerSignup";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -130,6 +131,7 @@ export default function SignInScreen() {
               <Ionicons name="logo-google" size={18} color="#FFFFFF"/>
               <Text style={styles.googleText}>Continue with Google</Text>
             </Button>
+            <AppleSignIn disabled={busy} onBusyChange={setBusy} />
             <Text style={styles.signupPrompt}>New to HoopCheck?{" "}
               <Link href="/sign-up" style={styles.link}>Create an account</Link>
             </Text>

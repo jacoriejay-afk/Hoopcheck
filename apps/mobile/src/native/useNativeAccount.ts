@@ -4,7 +4,7 @@ import { supabase } from "../lib/supabase";
 import { useMfaSession } from "./mfa";
 import { useNetwork } from "./network";
 import { readWithDeadline } from "./readDeadline";
-import { requestNativeAccount, type NativeAccount } from "./accountClient";
+import { requestNativeAccount, NativeAccountEndpointUnavailable, type NativeAccount } from "./accountClient";
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
 function useAccountRequest() {
   const [account, setAccount] = useState<NativeAccount | null>(null);
@@ -45,7 +45,7 @@ function useAccountRequest() {
         const result = await requestNativeAccount(origin, data.session.access_token, controller.signal);
         if (result.user.id !== data.session.user.id) throw new Error("Account identity mismatch");
         if (active && current === generation.current) setAccount(result);
-      } catch { if (active) setError(offline ? "Reconnect to verify your account and membership." : "Your account could not be verified. Try again or sign in again."); }
+      } catch (failure) { if (active && current === generation.current) setError(offline ? "Reconnect to verify your account and membership." : failure instanceof NativeAccountEndpointUnavailable ? failure.message : "Your account could not be verified. Try again or sign in again."); }
       finally { clearTimeout(deadline); if (active) setLoading(false); }
     };
     void load();

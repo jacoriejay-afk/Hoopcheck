@@ -1,3 +1,4 @@
+import { pendingSignup } from "../../src/native/socialSignup";
 import { takeDestination } from "../../src/native/pendingDestination";
 import { recordFreshSignIn } from "../../src/native/lockPolicy";
 import { useEntryTheme, type EntryTheme } from "../../src/theme";
@@ -24,6 +25,10 @@ export default function AuthCallback() {
         const { data, error } = await supabase.auth.exchangeCodeForSession(code);
         if (error) throw error;
         if (!data.user) throw new Error("Google sign-in did not return a user.");
+        if (pendingSignup(data.user)) {
+          if (active) router.replace({ pathname: "/sign-up", params: { social: "1" } });
+          return;
+        }
         recordFreshSignIn(data.user.id);
         const profile = await supabase.from("profiles").select("username").eq("id", data.user.id).maybeSingle();
         if (active) router.replace((profile.data && !profile.data.username?.trim() ? "/choose-username" : takeDestination() ?? "/dashboard") as "/dashboard");

@@ -1,0 +1,49 @@
+name: App Store StoreKit entitlement rehearsal (synthetic)
+on:
+  pull_request:
+    branches: ["integration/appstore-compliance-candidate"]
+    paths:
+      - "supabase/candidates/appstore_storekit_entitlement_coverage.sql"
+      - "supabase/tests/appstore_storekit_coverage_fixture.sql"
+      - "supabase/migrations/20261119043244_storekit_membership_sources.sql"
+      - ".github/workflows/appstore-storekit-coverage.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  isolated-storekit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hoopcheck_storekit_compliance_fixture
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d hoopcheck_storekit_compliance_fixture"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: hoopcheck_storekit_compliance_fixture
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Verify isolated database and rehearse StoreKit membership
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = "127.0.0.1"
+          test "$PGDATABASE" = "hoopcheck_storekit_compliance_fixture"
+          psql -X -Atqc 'SHOW server_version_num' | grep '^17'
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/appstore_storekit_coverage_fixture.sql
+          echo "Synthetic database only. No real subscriptions, payment events or provider credentials."
