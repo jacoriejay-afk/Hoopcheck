@@ -21,9 +21,16 @@ export async function publishMediaPost(api: string, project: string, owner: stri
   const request = transport.request ?? fetch;
   const headers = { Authorization: `Bearer ${token}` };
   let uploadPath: string | null = null, moderationStarted = false, definitiveRejection = false;
+  const ensureActive = () => { if (signal.aborted) throw new Error("Media upload was cancelled. Your draft is unchanged."); };
   try {
+    ensureActive();
     const form = new FormData(); form.append("kind", "post"); form.append("post_kind", "discussion"); form.append("audience", "community"); form.append("text", caption.trim()); appendPostLocation(form,location);
-    for (let index = 0; index < photos.length; index++) form.append(index === 0 ? "image" : "images", await transport.photoBody(photos[index]), "photo.jpg");
+    for (let index = 0; index < photos.length; index++) {
+      ensureActive();
+      const body = await transport.photoBody(photos[index]);
+      ensureActive();
+      form.append(index === 0 ? "image" : "images", body, "photo.jpg");
+    }
     if (video) {
       const response = await request(originUrl(api, "/api/hoopfeed/video-upload"), { method: "POST", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ content_type: video.type, size: video.size }), cache: "no-store", redirect: "error", signal });
       const ticket = await response.json().catch(() => null);
@@ -31,12 +38,13 @@ export async function publishMediaPost(api: string, project: string, owner: stri
       const parts = typeof ticket?.path === "string" ? ticket.path.split("/") : [];
       if (!response.ok || ticket?.mode !== "private" || ticket.bucket !== "hoopfeed-private-videos" || parts.length !== 2 || parts[0] !== owner || !parts[1].endsWith(`.${extension}`) || !uuid.test(parts[1].slice(0, -(extension.length + 1))) || typeof ticket.token !== "string" || !ticket.token || ticket.token.length > 8192) throw new Error("Video upload could not be authorized. Your draft is unchanged.");
       uploadPath = ticket.path;
+      ensureActive();
       storage.pathname += "hoopfeed-private-videos/" + uploadPath; storage.searchParams.set("token", ticket.token);
       const uploaded = await transport.uploadVideo(storage.toString(), { "Content-Type": video.type, "x-upsert": "false", "cache-control": "max-age=31536000" }, video, signal);
       if (uploaded.status < 200 || uploaded.status >= 300) throw new Error("Video upload failed. Your draft is unchanged.");
       form.append("video_path", "hoopfeed-private-videos/" + uploadPath); form.append("video_type", video.type);
     }
-    if (signal.aborted) throw new Error("Media upload was cancelled. Your draft is unchanged."); moderationStarted = true;
+    ensureActive(); moderationStarted = true;
     const response = await request(target, { method: "POST", headers, body: form, cache: "no-store", redirect: "error", signal });
     const result = await response.json().catch(() => null);
     if (response.ok && result?.allowed === true) return;

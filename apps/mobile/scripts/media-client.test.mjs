@@ -85,3 +85,22 @@ test('avatar ownership failure makes no writes and an uncertain profile response
  await assert.rejects(saveOwnAvatar(client,owner,photo,'https://fixture.supabase.co','public-key',base.photoBody,async()=>{writes++;return json({});}),/verified/);assert.equal(writes,0);
  const calls=[];await assert.rejects(saveOwnAvatar(authClient(),owner,photo,'https://fixture.supabase.co','public-key',base.photoBody,async(_,init)=>{calls.push(init.method);if(init.method==='POST')return json({Key:'uploaded'});throw Error('network lost');}));assert.deepEqual(calls,['POST','PATCH']);
 });
+
+
+test('already-cancelled and interrupted photo preparation never start a publication request',async()=>{
+ for(const cancelBefore of [true,false]){
+  const abort=new AbortController(); let prepared=0, requests=0;
+  if(cancelBefore)abort.abort();
+  await assert.rejects(publishMediaPost('https://api.test','https://fixture.supabase.co',owner,'owner-token','Caption',[photo,photo],null,abort.signal,{...base,photoBody:async()=>{prepared++;abort.abort();return new Blob(['photo'],{type:'image/jpeg'});},request:async()=>{requests++;return json({allowed:true});}}),/cancelled/);
+  assert.equal(prepared,cancelBefore?0:1);assert.equal(requests,0);
+ }
+});
+test('cancellation after a private video ticket never starts transfer or publication, but attempts scoped cleanup',async()=>{
+ const abort=new AbortController(); const calls=[];let transfers=0;
+ await assert.rejects(publishMediaPost('https://api.test','https://fixture.supabase.co',owner,'owner-token','Caption',[],video,abort.signal,{...base,uploadVideo:async()=>{transfers++;return {status:200};},request:async(url,init)=>{
+  const path=new URL(url).pathname;calls.push(path);
+  if(path.endsWith('/video-upload')){abort.abort();return json(ticket);}
+  assert.equal(path,'/api/hoopfeed/video-cleanup');assert.equal(init.signal.aborted,false);assert.equal(init.headers.Authorization,'Bearer owner-token');assert.deepEqual(JSON.parse(init.body),{path:ticket.path});return json({removed:true});
+ }}),/cancelled/);
+ assert.equal(transfers,0);assert.deepEqual(calls,['/api/hoopfeed/video-upload','/api/hoopfeed/video-cleanup']);
+});
