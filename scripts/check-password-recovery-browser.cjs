@@ -56,6 +56,12 @@ async function run(browser) {
         return json({});
       }
       if (url.pathname === "/auth/v1/token") {
+        if (url.searchParams.get("grant_type") === "pkce") {
+          calls.push("legacy-code");
+          assert.equal(req.postDataJSON().auth_code, "legacy-fixture");
+          assert.equal(req.postDataJSON().code_verifier, "fixture-verifier");
+          return json(session);
+        }
         assert.equal(url.searchParams.get("grant_type"), "password");
         calls.push("login");
         return req.postDataJSON().password === password ? json(session) : json({ code: "invalid_credentials", msg: "Invalid login" }, 400);
@@ -78,6 +84,7 @@ async function run(browser) {
     const response = await go("/recover-password?token_hash=valid-fixture&type=recovery");
     assert.equal(response.status(), 200);
     assert.equal(response.headers()["referrer-policy"], "no-referrer");
+    assert.match(response.headers()["cache-control"], /no-store/);
     const confirm = page.getByRole("button", { name: "Continue to reset password" });
     await confirm.waitFor();
     assert.equal(new URL(page.url()).search, "");
@@ -107,6 +114,14 @@ async function run(browser) {
     assert.deepEqual(calls.slice(4), ["verify", "verify"]);
 
     await page.getByRole("link", { name: "Back to sign in" }).click();
+    await context.addCookies([{ name: "sb-ci-auth-token-code-verifier", value: `base64-${part("fixture-verifier/PASSWORD_RECOVERY")}`, url: base.origin }]);
+    await go("/reset-password?code=legacy-fixture");
+    await newPassword.waitFor();
+    assert.equal(calls.at(-1), "legacy-code");
+    assert.equal(new URL(page.url()).search, "");
+    assert.equal((await context.cookies()).some(cookie => /^sb-ci-auth-token(?:-code-verifier|\.\d+)?$/.test(cookie.name)), false);
+
+    await go("/login");
     await page.getByLabel("Email", { exact: true }).fill(user.email);
     await page.getByLabel("Password", { exact: true }).fill("original fixture password");
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
