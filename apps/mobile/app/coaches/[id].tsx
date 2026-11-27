@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Linking, RefreshControl, ScrollView, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEntryTheme } from "../../src/theme";
@@ -6,6 +6,10 @@ import { Button, GlassCard } from "../../src/primitives";
 import { supabase } from "../../src/lib/supabase";
 import { useNetwork } from "../../src/native/network";
 import { Skeleton } from "../../components/Motion";
+import { readReviewAccess, type ReviewAccess } from "../../src/native/reviewAccess";
+type Assignment={id:string;team_id:string;role:string|null;season:string|null;start_date:string|null;end_date:string|null};
+type History=Assignment & {teamName:string|null};
+const apiOrigin=process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
 
 type Coach={id:string;name:string;country:string|null;city:string|null;website:string|null;current_team_id:string|null};
 type Team={id:string;name:string;basketball_type:string|null;league_name:string|null};
@@ -36,6 +40,43 @@ function CoachDetails({id}:{id:string}){
   finally{clearTimeout(timer);if(active)setLoading(false);}}
   void load();return()=>{active=false;clearTimeout(timer);ctrl.abort();};
  },[id,offline,revision,refresh]);
+ const [history,setHistory]=useState<History[]|null>(null),[historyError,setHistoryError]=useState(false);
+ const [reviewAccess,setReviewAccess]=useState<ReviewAccess|null>(null),[reviewError,setReviewError]=useState(false),[authRevision,setAuthRevision]=useState(0);
+ const generation=useRef(0);
+ useEffect(()=>{
+   const {data}=supabase.auth.onAuthStateChange(()=>{generation.current++;setReviewAccess(null);setAuthRevision(n=>n+1);});
+   return ()=>data.subscription.unsubscribe();
+ },[]);
+ useEffect(()=>{
+   let live=true;const ctrl=new AbortController(),timeout=setTimeout(()=>ctrl.abort(),15000);
+   setHistory(null);setHistoryError(false);
+   if(!coach||offline){clearTimeout(timeout);return;}
+   void (async()=>{try{
+     const rows=await supabase.from("coach_team_assignments").select("id,team_id,role,season,start_date,end_date").eq("coach_id",id).eq("active",true).order("season",{ascending:false}).limit(100).abortSignal(ctrl.signal);
+     if(rows.error)throw rows.error;
+     const assignments=(rows.data??[]) as Assignment[];
+     const ids=[...new Set(assignments.map(row=>row.team_id).filter(value=>typeof value==="string"&&safeId.test(value)))];
+     const names=ids.length?await supabase.from("teams").select("id,name").in("id",ids).abortSignal(ctrl.signal):{data:[],error:null};
+     if(names.error)throw names.error;
+     const lookup=new Map((names.data??[]).map(row=>[row.id,row.name]));
+     if(live)setHistory(assignments.map(row=>({...row,teamName:lookup.get(row.team_id)??null})));
+   }catch{if(live)setHistoryError(true);}finally{clearTimeout(timeout);}})();
+   return ()=>{live=false;clearTimeout(timeout);ctrl.abort();};
+ },[coach,id,offline,refresh,revision]);
+ useEffect(()=>{
+   let live=true;const current=generation.current,ctrl=new AbortController(),timeout=setTimeout(()=>ctrl.abort(),15000);
+   setReviewAccess(null);setReviewError(false);
+   if(!coach||offline){clearTimeout(timeout);return;}
+   void(async()=>{try{
+     const before=await supabase.auth.getSession();
+     if(before.error||!before.data.session)throw Error("Sign in required");
+     const result=await readReviewAccess(apiOrigin,before.data.session.access_token,id,ctrl.signal,fetch,"coach");
+     const after=await supabase.auth.getSession();
+     if(after.error||after.data.session?.user.id!==before.data.session.user.id)throw Error("Account changed");
+     if(live&&current===generation.current)setReviewAccess(result);
+   }catch{if(live&&current===generation.current)setReviewError(true);}finally{clearTimeout(timeout);}})();
+   return ()=>{live=false;clearTimeout(timeout);ctrl.abort();};
+ },[coach,id,offline,refresh,revision,authRevision]);
  const url=website(coach?.website??null);
  return <ScrollView style={{flex:1,backgroundColor:t.background}} contentContainerStyle={{padding:16,gap:12,paddingBottom:100}} refreshControl={<RefreshControl refreshing={loading} onRefresh={()=>setRefresh(v=>v+1)}/>}>
   {loading?<Skeleton profile/>:error||!coach?<><Text accessibilityRole="alert" style={{color:t.foreground}}>{error||"Coach unavailable."}</Text><Button secondary onPress={()=>setRefresh(v=>v+1)}>Try again</Button></>:<>
@@ -48,8 +89,13 @@ function CoachDetails({id}:{id:string}){
    </GlassCard>
    {url?<Button secondary onPress={()=>{setLinkError("");void Linking.openURL(url).catch(()=>setLinkError("Could not open the listed website."));}}>Open listed website</Button>:null}
    {linkError?<Text accessibilityRole="alert" style={{color:t.foreground}}>{linkError}</Text>:null}
-   <GlassCard style={{gap:9}}><Text style={{color:t.foreground,fontWeight:"800",fontSize:18}}>Reviews & career history</Text><Text style={{color:t.muted}}>Full reviews and coach history remain on the authenticated website. Membership and review permissions still apply.</Text>
-   <Button secondary onPress={()=>router.push({pathname:"/web",params:{path:"/coaches/"+coach.id}})}>View reviews & career history on web</Button></GlassCard>
+   <GlassCard style={{gap:9}}><Text accessibilityRole="header" style={{color:t.foreground,fontWeight:"800",fontSize:18}}>Career history</Text>
+   {offline?<Text style={{color:t.muted}}>Reconnect to load coaching history.</Text>:historyError?<Text accessibilityRole="alert" style={{color:t.muted}}>Career history unavailable. Pull to retry.</Text>:history===null?<Skeleton review/>:history.length?history.map(row=><View key={row.id} style={{gap:4,paddingVertical:8}}><Text style={{color:t.foreground,fontWeight:"700"}}>{row.teamName||"Team not listed"}</Text><Text style={{color:t.muted}}>{[row.season,row.role].filter(Boolean).join(" · ")||"Season and role not listed"}</Text>{row.start_date||row.end_date?<Text style={{color:t.muted}}>{row.start_date||"Not listed"} — {row.end_date||"Not listed"}</Text>:null}{row.teamName&&safeId.test(row.team_id)?<Button secondary onPress={()=>router.push({pathname:"/teams/[id]",params:{id:row.team_id}})}>View team</Button>:null}</View>):<Text style={{color:t.muted}}>No historical assignments listed.</Text>}
+   </GlassCard>
+   <GlassCard style={{gap:9}}><Text accessibilityRole="header" style={{color:t.foreground,fontWeight:"800",fontSize:18}}>Approved reviews</Text>
+   {offline?<Text style={{color:t.muted}}>Reconnect to verify review access. Reviews are not available offline.</Text>:reviewError?<Text accessibilityRole="alert" style={{color:t.muted}}>Review access unavailable. Pull to retry.</Text>:reviewAccess===null?<Skeleton review/>:!reviewAccess.canReadFull?<Text style={{color:t.muted}}>Full reviews require an eligible membership.</Text>:reviewAccess.reviews.length?reviewAccess.reviews.map(review=><View key={review.id} style={{gap:6,paddingVertical:8}}><Text style={{color:t.accent}}>{review.overall_rating==null?"Rating not listed":review.overall_rating+"/5 overall"}</Text>{review.title?<Text style={{color:t.foreground,fontWeight:"700"}}>{review.title}</Text>:null}{review.body?<Text style={{color:t.foreground}}>{review.body}</Text>:null}<Text style={{color:t.muted}}>{new Date(review.created_at).toLocaleDateString()}</Text></View>):<Text style={{color:t.muted}}>No approved reviews available.</Text>}
+   {!offline&&reviewAccess?.canWrite?<Button secondary onPress={()=>router.push({pathname:"/web",params:{path:"/coaches/"+coach.id+"/review"}})}>Write a review (website)</Button>:null}
+   {!offline&&reviewAccess?.canReadFull?<Button secondary onPress={()=>router.push({pathname:"/web",params:{path:"/coaches/"+coach.id}})}>Review actions and reporting (website)</Button>:null}</GlassCard>
    <Text style={{color:t.muted}}>Directory listings are not endorsements. Confirm employment and contract terms independently.</Text>
   </>}
  </ScrollView>;

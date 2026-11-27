@@ -170,7 +170,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
   useEffect(() => { setOpenedId(""); setDraft(""); setSearch(""); }, [mode]);
   const selectedRequestId = selected?.id;
   const threadScope = userId && opened && selected?.status==="accepted" && !offline ? JSON.stringify([userId,selected.id,mode]) : "";
-  const currentPage=threadScope && threadPage?.scope===threadScope ? threadPage : null;
+  const currentPage=!loading && threadScope && threadPage?.scope===threadScope ? threadPage : null;
   const currentThreadError=threadScope && threadError?.scope===threadScope ? threadError.message : "";
   const verifiedThreadRows = currentPage?.rows ?? EMPTY_THREAD_MESSAGES;
   const history=verifiedThreadRows.slice().reverse();
@@ -191,14 +191,14 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
         const header=await verifiedChatBearer(viewerId);
         const target=await supabase.from("player_contact_requests").select("requester_id,player_id").eq("id",requestId).setHeader("Authorization",header).abortSignal(signal).maybeSingle();
         if(target.error||!target.data||![target.data.requester_id,target.data.player_id].includes(viewerId))throw Error("Conversation unavailable.");
-        await verifyChatPeer(viewerId,target.data.requester_id===viewerId?target.data.player_id:target.data.requester_id,signal);
+        const verifiedHeader=await verifyChatPeer(viewerId,target.data.requester_id===viewerId?target.data.player_id:target.data.requester_id,signal);
         if(!active())throw Error("Your session changed.");
-        return readConversationPage(supabase,requestId,signal,older);
+        return readConversationPage(supabase,requestId,signal,older,verifiedHeader);
       });
       if (!active()) return;
       setThreadPage(previous=>({scope,rows:older && previous?.scope===scope ? appendConversationPage(previous.rows,rows) : rows,hasMore:rows.length===CHAT_HISTORY_PAGE_SIZE}));
     } catch (failure) {
-      if(active())setThreadError({scope,message:failure instanceof Error?failure.message:"Conversation history could not load."});
+      if(active()){setThreadPage(null);setThreadError({scope,message:failure instanceof Error?failure.message:"Conversation history could not load."});}
     } finally {
       if (revision===historyRequest.current){historyPaging.current=false;setHistoryBusy(false);}
     }
