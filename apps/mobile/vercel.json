@@ -1,6 +1,7 @@
 {
   "git": {
     "deploymentEnabled": {
+      "qa/step1-hoopchat-forward-drafts": false,
       "qa/step1-structured-replies": false,
       "qa/step1-hoopchat-read-markers": false,
       "qa/step1-photo-story-boundaries": false,

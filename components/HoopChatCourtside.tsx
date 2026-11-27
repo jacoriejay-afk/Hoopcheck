@@ -11,6 +11,7 @@ import {
 } from "../apps/mobile/src/native/hoopChatHistory";
 import {prepareConversationMessage,sendConversationMessage} from "../apps/mobile/src/native/hoopChatSend";
 import {quoteConversationMessage} from "../apps/mobile/src/native/hoopChatQuote";
+import {forwardDestinations,forwardDraft,readForwardDraft,type ForwardSelection} from "../apps/mobile/src/native/hoopChatForward";
 import {makeReplyTarget,scopedReplyTarget,type ReplyTarget} from "../apps/mobile/src/native/hoopChatReply";
 const structuredReplies=process.env.NEXT_PUBLIC_HOOPCHECK_STRUCTURED_REPLIES_ENABLED==="true";
 import {
@@ -42,6 +43,7 @@ export default function HoopChatCourtside(){
   const [selectedId,setSelectedId]=useState<string|null>(null);
   const [drafts,setDrafts]=useState<Record<string,string>>({});
   const [replyTarget,setReplyTarget]=useState<ReplyTarget|null>(null);
+  const [forwardSelection,setForwardSelection]=useState<ForwardSelection|null>(null);
   const [loading,setLoading]=useState(true);
   const [syncing,setSyncing]=useState(false);
   const [sending,setSending]=useState(false);
@@ -161,7 +163,7 @@ export default function HoopChatCourtside(){
     userIdRef.current="";
     pendingMessages.current.clear();
     setUserId("");setRequests([]);setMessages([]);setContacts({});
-    setSelectedId(null);setDrafts({});setReplyTarget(null);setError("");setFeedback("");setLoading(true);setSending(false);
+    setSelectedId(null);setDrafts({});setReplyTarget(null);setForwardSelection(null);setError("");setFeedback("");setLoading(true);setSending(false);
     setPrefs(emptyPrefs());setPrefsOwner("");setAtLatest(true);
     void load();
     return ()=>{
@@ -371,7 +373,7 @@ export default function HoopChatCourtside(){
       historyRequest.current?.abort();
       historyRequest.current=null;
     }
-    setSelectedId(id);setFeedback("");setSettingsOpen(false);setAtLatest(true);
+    setForwardSelection(null);setSelectedId(id);setFeedback("");setSettingsOpen(false);setAtLatest(true);
     if(typeof window!=="undefined"){
       const url=new URL(window.location.href);
       url.searchParams.set("thread",id);
@@ -389,13 +391,29 @@ export default function HoopChatCourtside(){
     setRequests(rows=>rows.filter(row=>!ids.has(row.id)));
     setMessages(rows=>rows.filter(row=>!ids.has(row.request_id)));
     setDrafts(previous=>Object.fromEntries(Object.entries(previous).filter(([id])=>!ids.has(id))));
-    setHistoryPage(null);setHistoryError(null);setHistoryBusy(null);setSelectedId(null);setReplyTarget(null);
+    setHistoryPage(null);setHistoryError(null);setHistoryBusy(null);setSelectedId(null);setReplyTarget(null);setForwardSelection(null);
     setFeedback("Account blocked. Manage blocked accounts in Settings.");
     void load();
   }
   function setDraft(value:string){
     if(!selectedId)return;
     setDrafts(prev=>({...prev,[selectedId]:value.slice(0,2000)}));
+  }
+  async function forwardTo(destination:string){
+    if(!selected||!selectedHistory||!forwardSelection||forwardSelection.scope!==historyScope||forwardSelection.sourceId!==selected.id||sending||!userId)return;
+    if(!forwardDestinations(requests,userId,selected.id).some(row=>row.id===destination))return;
+    if(drafts[destination]?.trim()){setFeedback("Finish or clear the recipient’s existing draft first.");return;}
+    const rev=accountGeneration.current,source=selected.id,scope=historyScope;
+    if(mutationGeneration.current===rev)return;
+    mutationGeneration.current=rev;setSending(true);
+    try{
+      const body=await withHoopChatDeadline(signal=>readForwardDraft(supabase,userId,source,forwardSelection.messageId,destination,signal));
+      if(rev!==accountGeneration.current||userIdRef.current!==userId||activeHistoryScope.current!==scope)return;
+      if(forwardDraft(body,drafts[destination]||"")===null)throw Error("Finish or clear the recipient’s existing draft first.");
+      setDrafts(prev=>prev[destination]?.trim()?prev:{...prev,[destination]:body});
+      setReplyTarget(null);choose(destination);setFeedback("Forwarded text added to a new draft. Review and send when ready.");
+    }catch(e){if(rev===accountGeneration.current)setFeedback(e instanceof Error?e.message:"Forward unavailable.");}
+    finally{if(mutationGeneration.current===rev)mutationGeneration.current=null;if(rev===accountGeneration.current)setSending(false);}
   }
   async function respond(status:"accepted"|"rejected"){
     if(!selected||selected.player_id!==userId||selected.status!=="pending"||sending)return;
@@ -545,10 +563,12 @@ export default function HoopChatCourtside(){
               setDraft(next);setFeedback("Quote added to your draft. Edit it before sending.");
               if(structuredReplies)setReplyTarget(makeReplyTarget(historyScope,selected.id,m,selectedHistory.rows));
               document.getElementById("hc-courtside-compose")?.focus();
-            }}>Quote reply</button></article>)}
+            }}>Quote reply</button>
+            {m.sender_id===userId&&!m.reply_to_id&&!m.body.trimStart().startsWith(">")&&<button type="button" disabled={sending} className="hc-courtside-quote" onClick={()=>{if(selectedHistory&&selected.status==="accepted"&&selectedHistory.rows.some(row=>row.id===m.id))setForwardSelection({scope:historyScope,sourceId:selected.id,messageId:m.id});}}>Forward my text</button>}</article>)}
           {selectedHistory&&!activeMessages.length&&<div className="hc-courtside-no-messages">
             <strong>Your court is ready.</strong><p>Start with a basketball conversation, not a cold DM.</p></div>}
         </div>
+        {forwardSelection?.scope===historyScope&&selected&&selectedHistory?<section aria-label="Choose forward recipient" className="hc-courtside-bottom"><p>Choose an accepted contact. Only your own plain text is copied into an editable draft; no message is sent automatically. Review the text before sharing.</p><button type="button" disabled={sending} onClick={()=>setForwardSelection(null)}>Cancel</button>{forwardDestinations(requests,userId,selected.id).map(row=><button type="button" key={row.id} disabled={sending} onClick={()=>void forwardTo(row.id)}>{peerName(row)}</button>)}</section>:null}
         {feedback&&<p className="hc-courtside-feedback" role="status">{feedback}</p>}
         {selected.status==="accepted"?<div className="hc-courtside-bottom">
           {process.env.NEXT_PUBLIC_HOOPCHECK_PLAYER_REFERENCES_ENABLED==="true"&&userId?<PlayerReferencePanel key={userId+":"+selected.id} userId={userId} connectionId={selected.id}/>:null}

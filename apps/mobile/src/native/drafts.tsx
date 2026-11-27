@@ -19,3 +19,14 @@ export function useNativeDraft(key: string, userId: string | undefined) {
   const set = useCallback((next: SetStateAction<string>) => { store.write(userId, key, typeof next === "function" ? next(store.read(userId, key)) : next); }, [store, userId, key]);
   return [value, set] as const;
 }
+
+/** Add a forwarding draft only to an empty, account-scoped destination. */
+export function useNativeForwardDraft(){
+ const store=useContext(Context);
+ if(!store)throw new Error("Native draft provider is missing");
+ return useCallback((uid:string,thread:string,body:string)=>{
+   const key="contact:chat:"+thread;
+   if(store.read(uid,key).trim())return false;
+   return store.write(uid,key,body);
+ },[store]);
+}

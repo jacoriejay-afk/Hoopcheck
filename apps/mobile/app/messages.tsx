@@ -19,7 +19,8 @@ import { prepareConversationMessage, sendConversationMessage } from "../src/nati
 import { quoteConversationMessage } from "../src/native/hoopChatQuote";
 import { makeReplyTarget, scopedReplyTarget, type ReplyTarget } from "../src/native/hoopChatReply";
 const structuredReplies=process.env.EXPO_PUBLIC_HOOPCHECK_STRUCTURED_REPLIES_ENABLED==="true";
-import { useNativeDraft } from "../src/native/drafts";
+import { useNativeDraft,useNativeForwardDraft } from "../src/native/drafts";
+import {forwardDestinations,readForwardDraft,type ForwardSelection} from "../src/native/hoopChatForward";
 
 type ContactRequest = {
   id: string; requester_id: string; player_id: string; message: string | null;
@@ -59,6 +60,8 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [replyTarget,setReplyTarget]=useState<ReplyTarget|null>(null);
+  const [forwardSelection,setForwardSelection]=useState<ForwardSelection|null>(null);
+  const writeForwardDraft=useNativeForwardDraft();
   const [threadPage, setThreadPage] = useState<{scope:string;rows:ContactMessage[];hasMore:boolean}|null>(null);
   const [threadError,setThreadError] = useState<{scope:string;message:string}|null>(null);
   const [historyBusy,setHistoryBusy] = useState(false);
@@ -124,7 +127,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       if (reloadTimer.current !== null) clearTimeout(reloadTimer.current);
       reloadTimer.current = null;
       generation.current++;
-      setRequests([]); setMessages([]); setContacts({}); setUserId(""); setSelectedId(""); setOpenedId(""); setSearch(""); setReplyTarget(null); setThreadPage(null); setThreadError(null); historyRequest.current++; historyPaging.current=false; setHistoryBusy(false);
+      setRequests([]); setMessages([]); setContacts({}); setUserId(""); setSelectedId(""); setOpenedId(""); setSearch(""); setReplyTarget(null); setForwardSelection(null); setThreadPage(null); setThreadError(null); historyRequest.current++; historyPaging.current=false; setHistoryBusy(false);
     };
   }, [load]));
 
@@ -138,7 +141,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       generation.current++;
       authIdentity.current = nextUserId;
       pendingMessages.current.clear();
-      setRequests([]); setMessages([]); setContacts({}); setUserId(""); setSelectedId(""); setOpenedId(""); setSearch(""); setReplyTarget(null); setThreadPage(null); setThreadError(null); historyRequest.current++; historyPaging.current=false; setHistoryBusy(false);
+      setRequests([]); setMessages([]); setContacts({}); setUserId(""); setSelectedId(""); setOpenedId(""); setSearch(""); setReplyTarget(null); setForwardSelection(null); setThreadPage(null); setThreadError(null); historyRequest.current++; historyPaging.current=false; setHistoryBusy(false);
       if (action === "clear") {
         setLoading(false);
         setError("Sign in to view your messages.");
@@ -177,7 +180,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
     || (mode === "requests" && row.status === "pending"));
   const selected = visibleThreads.find(item => item.id === selectedId) || visibleThreads[0];
   const opened = Boolean(selected && selected.id === openedId && openedMode === mode);
-  useEffect(() => { setOpenedId(""); setSearch(""); }, [mode]);
+  useEffect(() => { setOpenedId(""); setSearch(""); setForwardSelection(null); }, [mode]);
   // Drafts stay in the existing bounded, in-memory, account-partitioned provider.
   // A closed or nonaccepted thread cannot read or write its draft.
   const draftThread = opened && selected?.status === "accepted" ? selected.id : "";
@@ -253,6 +256,19 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
     };
   }, [threadScope, selectedRequestId, userId, loadThread]);
 
+  async function forwardTo(destination:string){
+    if(!selected||!currentPage||!forwardSelection||forwardSelection.scope!==threadScope||forwardSelection.sourceId!==selected.id||sending||offline||mutationLocked.current||!userId)return;
+    if(!forwardDestinations(visibleThreads,userId,selected.id).some(row=>row.id===destination))return;
+    const revision=generation.current;
+    mutationLocked.current=true;setSending(true);setError("");
+    try{
+      const body=await withHoopChatDeadline(signal=>readForwardDraft(supabase,userId,selected.id,forwardSelection.messageId,destination,signal));
+      if(revision!==generation.current||authIdentity.current!==userId||!focused.current)return;
+      if(!writeForwardDraft(userId,destination,body))throw Error("Finish or clear the recipient’s existing draft first.");
+      setReplyTarget(null);setForwardSelection(null);setSelectedId(destination);setOpenedMode(mode);setOpenedId(destination);
+    }catch(e){if(revision===generation.current&&focused.current)setError(e instanceof Error?e.message:"Forward unavailable.");}
+    finally{mutationLocked.current=false;if(revision===generation.current&&focused.current)setSending(false);}
+  }
   async function respond(status:"accepted"|"rejected") {
     if(!selected || selected.player_id!==userId || selected.status!=="pending" || !opened || sending || offline || mutationLocked.current) return;
     mutationLocked.current=true;
@@ -337,10 +353,10 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
         </View>
       </View>:null}
       {opened&&selected?<View style={{gap:8}}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Back to conversations" disabled={sending} onPress={()=>setOpenedId("")} style={{minHeight:44,flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="chevron-back" size={20} color={theme.accent}/><Text style={{color:theme.accent,fontWeight:"700"}}>Conversations</Text></Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel="Back to conversations" disabled={sending} onPress={()=>{setForwardSelection(null);setOpenedId("");}} style={{minHeight:44,flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="chevron-back" size={20} color={theme.accent}/><Text style={{color:theme.accent,fontWeight:"700"}}>Conversations</Text></Pressable>
         <Text style={{color:theme.foreground,fontWeight:"900",fontSize:19}}>{name(selected)}</Text>
         <Text style={{color:theme.muted,fontSize:12}}>{selected.status==="accepted"?"Private HoopChat":"Player contact request"}</Text>
-        <ConversationSafety key={`${userId}:${selected.id}`} uid={userId} requestId={selected.id} peerId={peerId(selected)} onBlocked={()=>{historyRequest.current++;setOpenedId("");setDraft("");setReplyTarget(null);setThreadPage(null);setRequests(rows=>rows.filter(row=>peerId(row)!==peerId(selected)));void load();}}/>
+        <ConversationSafety key={`${userId}:${selected.id}`} uid={userId} requestId={selected.id} peerId={peerId(selected)} onBlocked={()=>{historyRequest.current++;setOpenedId("");setDraft("");setReplyTarget(null);setForwardSelection(null);setThreadPage(null);setRequests(rows=>rows.filter(row=>peerId(row)!==peerId(selected)));void load();}}/>
         {selected.message?<View style={{padding:12,borderRadius:12,backgroundColor:theme.chip}}><Text style={{color:theme.foreground}}>Introduction: {selected.message}</Text></View>:null}
         <View accessibilityLabel="Conversation history" style={{gap:10,marginVertical:10}}>
           {threadScope && !currentPage && !currentThreadError ? <HoopCheckLoading compact label="Loading conversation history…" /> : null}
@@ -359,8 +375,10 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
               setDraft(next);setError("");
               if(structuredReplies)setReplyTarget(makeReplyTarget(threadScope,selected.id,item,currentPage.rows));
             }} style={{minHeight:44,justifyContent:"center"}}><Text style={{color:theme.foreground,fontSize:12,fontWeight:"700"}}>Quote reply</Text></Pressable>
+            {item.sender_id===userId&&!item.reply_to_id&&!item.body.trimStart().startsWith(">")?<Button secondary disabled={sending||offline} onPress={()=>{if(currentPage&&selected.status==="accepted"&&currentPage.rows.some(row=>row.id===item.id))setForwardSelection({scope:threadScope,sourceId:selected.id,messageId:item.id});}}>Forward my text</Button>:null}
           </View></ChatMessageEnter>)}
         </View>
+        {forwardSelection?.scope===threadScope&&currentPage?<View style={{gap:6}}><Text style={{color:theme.foreground,fontWeight:"700"}}>Choose forward recipient</Text><Text style={{color:theme.muted}}>Only your own plain text is copied into a draft. Review it before sending.</Text><Button secondary disabled={sending} onPress={()=>setForwardSelection(null)}>Cancel</Button>{forwardDestinations(visibleThreads,userId,selected.id).map(row=><Button secondary key={row.id} disabled={sending||offline} onPress={()=>void forwardTo(row.id)}>{name(row)}</Button>)}</View>:null}
         {selected.status==="pending"&&selected.player_id===userId?<View style={{gap:8}}><Text style={{color:theme.muted}}>Approve this request to unlock messaging.</Text><Button disabled={sending||offline} onPress={()=>void respond("accepted")}>Accept request</Button><Button secondary disabled={sending||offline} onPress={()=>void respond("rejected")}>Decline</Button></View>:null}
         {selected.status==="accepted"?<View style={{gap:8}}>
           {process.env.EXPO_PUBLIC_HOOPCHECK_PLAYER_REFERENCES_ENABLED==="true"&&userId?<PlayerReferencePanel key={userId+":"+selected.id} userId={userId} connectionId={selected.id} offline={offline}/>:null}
