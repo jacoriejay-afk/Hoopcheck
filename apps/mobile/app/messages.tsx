@@ -16,6 +16,7 @@ import { requireOnline, useNetwork } from "../src/native/network";
 import { hoopChatAuthAction, withHoopChatDeadline } from "../src/native/hoopChatLoad";
 import { appendConversationPage, CHAT_HISTORY_PAGE_SIZE, matchesConversationSearch, readConversationPage, refreshConversationPage, type ContactMessage } from "../src/native/hoopChatHistory";
 import { prepareConversationMessage, sendConversationMessage } from "../src/native/hoopChatSend";
+import { quoteConversationMessage } from "../src/native/hoopChatQuote";
 
 type ContactRequest = {
   id: string; requester_id: string; player_id: string; message: string | null;
@@ -340,6 +341,12 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
             <Text style={{fontSize:12,fontWeight:"800",color:theme.foreground}}>{item.sender_id===userId?"You":name(selected)}</Text>
             <Text style={{color:theme.foreground}}>{item.body}</Text>
             <Text style={{color:theme.muted,fontSize:11}}>{new Date(item.created_at).toLocaleString()}</Text>
+            <Pressable accessibilityRole="button" accessibilityLabel={`Quote message from ${item.sender_id===userId?"you":name(selected)}`} disabled={sending||offline} onPress={()=>{
+              if(!currentPage||selected.status!=="accepted"||item.request_id!==selected.id||!currentPage.rows.some(row=>row.id===item.id))return;
+              const next=quoteConversationMessage(selected.id,item,draft);
+              if(next===null){setError("Not enough room to quote this message. Shorten your draft first.");return;}
+              setDraft(next);setError("");
+            }} style={{minHeight:44,justifyContent:"center"}}><Text style={{color:theme.foreground,fontSize:12,fontWeight:"700"}}>Quote reply</Text></Pressable>
           </View></ChatMessageEnter>)}
         </View>
         {selected.status==="pending"&&selected.player_id===userId?<View style={{gap:8}}><Text style={{color:theme.muted}}>Approve this request to unlock messaging.</Text><Button disabled={sending||offline} onPress={()=>void respond("accepted")}>Accept request</Button><Button secondary disabled={sending||offline} onPress={()=>void respond("rejected")}>Decline</Button></View>:null}

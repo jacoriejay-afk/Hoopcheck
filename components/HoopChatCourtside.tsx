@@ -9,6 +9,7 @@ import {
   appendConversationPage,CHAT_HISTORY_PAGE_SIZE,readConversationPage,refreshConversationPage
 } from "../apps/mobile/src/native/hoopChatHistory";
 import {prepareConversationMessage,sendConversationMessage} from "../apps/mobile/src/native/hoopChatSend";
+import {quoteConversationMessage} from "../apps/mobile/src/native/hoopChatQuote";
 import {
   DEFAULT_APPEARANCE,STARTERS,lastByThread,parseAppearance,parseThreadPreferences,
   sortThreads,unreadCount,
@@ -502,7 +503,14 @@ export default function HoopChatCourtside(){
           </button>:historyScope&&historyBusy===historyScope?<p role="status">Loading messages…</p>:null}
           {activeMessages.map(m=><article className={"hc-courtside-message"+(m.sender_id===userId?" is-mine":"")} key={m.id}>
             <span className="hc-courtside-message-sender">{m.sender_id===userId?"You":peerName(selected)}</span>
-            <p>{m.body}</p><time dateTime={m.created_at}>{formatTime(m.created_at)}</time></article>)}
+            <p>{m.body}</p><time dateTime={m.created_at}>{formatTime(m.created_at)}</time>
+            <button type="button" className="hc-courtside-quote" disabled={sending} aria-label={"Quote message from "+(m.sender_id===userId?"you":peerName(selected))} onClick={()=>{
+              if(!selectedHistory||selected.status!=="accepted"||m.request_id!==selected.id||!selectedHistory.rows.some(row=>row.id===m.id))return;
+              const next=quoteConversationMessage(selected.id,m,currentDraft);
+              if(next===null){setFeedback("Not enough room to quote this message. Shorten your draft first.");return;}
+              setDraft(next);setFeedback("Quote added to your draft. Edit it before sending.");
+              document.getElementById("hc-courtside-compose")?.focus();
+            }}>Quote reply</button></article>)}
           {selectedHistory&&!activeMessages.length&&<div className="hc-courtside-no-messages">
             <strong>Your court is ready.</strong><p>Start with a basketball conversation, not a cold DM.</p></div>}
         </div>
