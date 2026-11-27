@@ -1,7 +1,7 @@
 name: App Store deletion request rehearsal (synthetic)
 on:
   pull_request:
-    branches: ["integration/appstore-compliance-candidate"]
+    branches: ["integration/appstore-compliance-candidate", "qa/post16-reconcile-repair-compliance", "integration/post16-release-reconciliation"]
     paths:
       - "supabase/candidates/appstore_deletion_request_only.sql"
       - "supabase/tests/appstore_deletion_request_fixture.sql"

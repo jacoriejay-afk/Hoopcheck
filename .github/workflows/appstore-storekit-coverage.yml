@@ -1,7 +1,7 @@
 name: App Store StoreKit entitlement rehearsal (synthetic)
 on:
   pull_request:
-    branches: ["integration/appstore-compliance-candidate"]
+    branches: ["integration/appstore-compliance-candidate", "qa/post16-reconcile-repair-compliance", "integration/post16-release-reconciliation"]
     paths:
       - "supabase/candidates/appstore_storekit_entitlement_coverage.sql"
       - "supabase/tests/appstore_storekit_coverage_fixture.sql"
