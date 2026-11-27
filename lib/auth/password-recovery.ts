@@ -43,3 +43,40 @@ export async function requestRecoveryEmail(send: () => Promise<unknown>) {
   }
   return true;
 }
+
+export function isRecoveryPage(path: string) {
+  return path === "/reset-password" || path === appRecoveryPath;
+}
+
+// Static parser-time script, never contains a user credential in the HTML.
+// Capture the initial URL before the shared browser Auth client or Next's
+// hydration can consume or rewrite it. No session/local storage, logs or cookies.
+export const recoveryEntryBootstrap = `(function(){var u=new URL(window.location.href);if(u.pathname!=="/reset-password"&&u.pathname!=="/recover-password")return;if(!u.search&&!u.hash)return;var entry=u.href;var key=Symbol.for("hoopcheck.recovery-entry");window[key]=function(){var value=entry;entry=null;delete window[key];return value;};window.history.replaceState(window.history.state,"",u.pathname);})();`;
+
+export function takeInitialRecoveryUrl(): string | null {
+  if (typeof window === "undefined") return null;
+  const host = window as unknown as Record<symbol, unknown>;
+  const key = Symbol.for("hoopcheck.recovery-entry");
+  const read = host[key];
+  if (typeof read !== "function") return null;
+  delete host[key];
+  const value: unknown = read();
+  return typeof value === "string" ? value : null;
+}
+
+// The shared browser client must never auto-exchange a recovery-route PKCE
+// code, even if the router briefly restores the original URL. Only the isolated
+// in-memory recovery client is allowed to perform the explicitly scoped exchange.
+export function guardSharedRecoveryExchange(project: string, request: typeof fetch): typeof fetch {
+  const origin = new URL(project).origin;
+  return async (input, init) => {
+    const url = new URL(typeof input === "string" ? input : input instanceof URL ? input.href : input.url);
+    if (typeof window !== "undefined" && isRecoveryPage(window.location.pathname) &&
+        url.origin === origin && url.pathname === "/auth/v1/token" && url.searchParams.get("grant_type") === "pkce") {
+      return new Response(JSON.stringify({ error_code: "recovery_requires_isolated_client", msg: "Use the password recovery form." }), {
+        status: 400, headers: { "Content-Type": "application/json" },
+      });
+    }
+    return request(input, init);
+  };
+}
