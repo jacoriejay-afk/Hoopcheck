@@ -130,7 +130,11 @@ test("Courtside guards duplicate mutations and preserves edits made during send"
  assert.match(ui,/async function send[\s\S]*?submittedDraft=currentDraft;\s*if\(structuredReplies&&replyTarget\?\.scope===historyScope&&!replyId\)\{[^}]*return;\}\s*if\(mutationGeneration\.current===rev\)return;\s*mutationGeneration\.current=rev/);
  assert.match(ui,/setDrafts\(prev=>prev\[thread\]===submittedDraft\?\{\.\.\.prev,\[thread\]:""\}:prev\)/);
  assert.equal((ui.match(/if\(user\?\.id!==userId\|\|rev!==accountGeneration\.current\)throw new Error/g)||[]).length,2);
- assert.equal((ui.match(/finally\{if\(mutationGeneration\.current===rev\)mutationGeneration\.current=null;if\(rev===accountGeneration\.current\)setSending\(false\);\}/g)||[]).length,2);
+ assert.equal((ui.match(/finally\{if\(mutationGeneration\.current===rev\)mutationGeneration\.current=null;if\(rev===accountGeneration\.current\)setSending\(false\);\}/g)||[]).length,3);
+ assert.match(ui,/async function forwardTo[\s\S]*?if\(mutationGeneration\.current===rev\)return;\s*mutationGeneration\.current=rev;setSending\(true\)/);
+ const forward=ui.slice(ui.indexOf("async function forwardTo"),ui.indexOf("async function respond"));
+ assert.match(forward,/readForwardDraft\(supabase,userId,source,forwardSelection\.messageId,destination,signal\)/);
+ assert.doesNotMatch(forward,/sendConversationMessage|\.insert\(/);
 });
 
 test("Seen markers advance only from confirmed peer history with chronological timestamps",async()=>{
