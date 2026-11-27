@@ -5,6 +5,11 @@ const legacyObjectPrefix = "/storage/v1/object/public/";
 const legacyBuckets = ["feed-images", "feed-videos"];
 const privateBuckets = ["hoopfeed-private-images", "hoopfeed-private-videos"];
 
+export function expiringFeedMediaTtl(expiresAt: number, now = Date.now()) {
+  // Reserve five seconds for signing latency and reject an almost-expired item.
+  return Math.min(60, Math.floor((expiresAt - now) / 1000) - 5);
+}
+
 export function isProtectedFeedMedia(reference: string) {
   return [...privateBuckets, ...legacyBuckets].some(bucket =>
     reference.startsWith(bucket + "/") || reference.includes(legacyObjectPrefix + bucket + "/")
