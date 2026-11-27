@@ -51,3 +51,44 @@ test("server Explore uses the existing RLS-visible projection and fixed session"
  assert.match(feed,/exploring \? readExploreFeedPage/);
  assert.match(feed,/JSON.stringify\(\[uid \?\? "",reels,savedOnly,exploring,exploreSearch,exploreFilter,exploreTarget\]\)/);
 });
+
+import { createClient } from "@supabase/supabase-js";
+import { readExploreFeedPage } from "../src/native/feedClient.ts";
+const viewer="11111111-1111-4111-8111-111111111111";
+const other="33333333-3333-4333-8333-333333333333";
+const postId=n=>"22222222-2222-4222-8222-"+String(n).padStart(12,"0");
+const now=new Date("2026-11-27T12:00:00Z");
+function fixture({change=false,deny=false}={}){
+ const calls=[];let sessions=0;
+ const db=createClient("https://fixture.supabase.co","fixture-key",{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},global:{fetch:async(input,options)=>{
+  const url=new URL(String(input));calls.push({url,options});
+  if(url.pathname.endsWith("/feed_posts"))return Response.json(Array.from({length:21},(_,i)=>({...post,id:postId(i),author_id:i===1?other:viewer,created_at:"2026-11-26T12:00:00Z",expires_at:i===2?"2026-11-27T11:00:00Z":null})));
+  if(url.pathname.endsWith("/feed_post_archives"))return deny?Response.json({message:"denied"},{status:403}):Response.json([{post_id:postId(0)}]);
+  if(url.pathname.endsWith("/user_blocks"))return Response.json([{blocked_id:other}]);
+  throw Error("Unexpected endpoint");
+ }}});
+ db.auth.getSession=async()=>({error:null,data:{session:{access_token:change&&sessions++>0?"new-token":"fixture-token",user:{id:viewer}}}});
+ return {db,calls};
+}
+test("server Explore queries text and creator matches before paging, and hides archives, blocks and expiry",async()=>{
+ for(const target of ["posts","creators"]){
+  const {db,calls}=fixture();
+  const page=await readExploreFeedPage(db,viewer,"all",target==="posts"?"basketball":"creator",target,undefined,now);
+  assert.equal(page.posts.length,17);
+  assert.equal(page.next.id,postId(19));
+  const params=calls[0].url.searchParams;
+  assert.equal(params.get("status"),"eq.approved");
+  assert.equal(params.get("limit"),"21");
+  assert.equal(params.get(target==="posts"?"body":"profiles.display_name"),target==="posts"?"ilike.%basketball%":"ilike.%creator%");
+  assert.equal(params.get("select").includes("!inner"),target==="creators");
+  assert.equal(calls.find(c=>c.url.pathname.endsWith("/feed_post_archives")).url.searchParams.get("user_id"),"eq."+viewer);
+  assert.equal(calls.find(c=>c.url.pathname.endsWith("/user_blocks")).url.searchParams.get("blocker_id"),"eq."+viewer);
+ }
+});
+test("server Explore rejects wrong session and failed access verification",async()=>{
+ await assert.rejects(readExploreFeedPage(fixture({change:true}).db,viewer,"all","basketball","posts",undefined,now),/Account changed/);
+ await assert.rejects(readExploreFeedPage(fixture({deny:true}).db,viewer,"all","basketball","posts",undefined,now),/access could not be verified/);
+ const {db,calls}=fixture();
+ await assert.rejects(readExploreFeedPage(db,other,"all","","posts",undefined,now),/Sign in again/);
+ assert.equal(calls.length,0);
+});
