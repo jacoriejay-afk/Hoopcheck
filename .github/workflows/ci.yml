@@ -54,6 +54,8 @@ jobs:
           node scripts/step4-local-smoke.mjs --self-test
 
       - name: Rehearse synthetic backup restore on disposable PostgreSQL
+        env:
+          STEP4_POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
         run: bash scripts/step4-restore-fixture.sh
 
       - name: Install dependencies

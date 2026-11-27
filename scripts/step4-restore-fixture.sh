@@ -2,16 +2,16 @@
 # CI-only fixture roundtrip; not a full HoopCheck schema or hosted backup rehearsal.
 set -euo pipefail
 [[ "${CI:-}" == true && "${GITHUB_ACTIONS:-}" == true ]] || { echo 'GitHub Actions disposable service required'; exit 1; }
-unset PGHOST PGPORT PGDATABASE PGUSER PGSERVICE PGSERVICEFILE PGOPTIONS PGHOSTADDR PGSSLMODE PGSSLROOTCERT PGCLIENTENCODING
-export PGPASSWORD=postgres
-export PGCONNECT_TIMEOUT=5
+container="${STEP4_POSTGRES_CONTAINER:-}"
+[[ "$container" =~ ^[0-9a-f]{64}$ ]] || { echo 'Missing isolated PostgreSQL service container ID'; exit 1; }
+[[ "$(docker inspect --format '{{.Config.Image}}' "$container")" == postgres:16 ]] || { echo 'Expected PostgreSQL 16 service'; exit 1; }
 src="hoopcheck_step4_fixture_source"
 dst="hoopcheck_step4_fixture_restore"
-psql_cmd=(psql -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 5432 -U postgres)
+psql_cmd=(docker exec -i "$container" psql -X -v ON_ERROR_STOP=1 -U postgres)
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
-createdb -h 127.0.0.1 -p 5432 -U postgres "$src"
-createdb -h 127.0.0.1 -p 5432 -U postgres "$dst"
+docker exec "$container" createdb -U postgres "$src"
+docker exec "$container" createdb -U postgres "$dst"
 "${psql_cmd[@]}" -d "$src" <<'SQL'
 CREATE TABLE public.fixture_account(id integer primary key);
 CREATE TABLE public.fixture_event(id integer primary key, account_id integer not null references public.fixture_account(id), event_key text unique not null);
@@ -20,8 +20,8 @@ INSERT INTO public.fixture_event VALUES (1,1,'synthetic-event');
 ALTER TABLE public.fixture_event ENABLE ROW LEVEL SECURITY;
 CREATE POLICY fixture_owner ON public.fixture_event FOR SELECT USING (account_id = 1);
 SQL
-pg_dump -h 127.0.0.1 -p 5432 -U postgres -Fc -f "$tmp/fixture.dump" "$src"
-pg_restore -h 127.0.0.1 -p 5432 -U postgres --exit-on-error -d "$dst" "$tmp/fixture.dump"
+docker exec "$container" pg_dump -U postgres -Fc "$src" > "$tmp/fixture.dump"
+docker exec -i "$container" pg_restore -U postgres --exit-on-error -d "$dst" < "$tmp/fixture.dump"
 "${psql_cmd[@]}" -d "$dst" <<'SQL'
 DO $$ BEGIN
  IF (SELECT count(*) FROM public.fixture_account) <> 2 OR (SELECT count(*) FROM public.fixture_event WHERE event_key='synthetic-event' AND account_id=1) <> 1 THEN RAISE EXCEPTION 'restored data mismatch'; END IF;
