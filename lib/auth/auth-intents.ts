@@ -95,8 +95,12 @@ export function bindAuthIntents<T extends { signInWithPassword: (...args: never[
       if (!sessionId || !originalUpdate || session.error || session.data.session?.user.id !== owner || id !== sessionId || intent !== intents.read()) return stale();
       const updated = await originalUpdate({ password }) as { error: unknown };
       if (updated.error || intent !== intents.read()) return updated;
-      const signedOut = await originalSignOut({ scope: "local" });
-      return { error: null, signOutError: signedOut.error };
+      try {
+        const signedOut = await originalSignOut({ scope: "global" });
+        return { error: null, signOutError: signedOut.error };
+      } catch (signOutError) {
+        return { error: null, signOutError };
+      }
     });
   } });
   function bind(target: Record<string, unknown>, name: string, startsIntent: boolean) {
