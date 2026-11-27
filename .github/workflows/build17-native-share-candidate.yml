@@ -1,5 +1,8 @@
 name: Build 17 native share candidate
 on:
+  push:
+    branches:
+      - "integration/build17-development"
   pull_request:
     paths:
       - "apps/mobile/native-candidates/share-extension/**"

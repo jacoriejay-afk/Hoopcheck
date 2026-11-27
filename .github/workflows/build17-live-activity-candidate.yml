@@ -1,5 +1,8 @@
 name: Build 17 ActivityKit candidate
 on:
+  push:
+    branches:
+      - "integration/build17-development"
   pull_request:
     paths:
       - "apps/mobile/native-candidates/live-activity/**"
