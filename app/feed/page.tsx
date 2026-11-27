@@ -15,6 +15,7 @@ import HoopFeedCommentsDialog from "../../components/HoopFeedCommentsDialog";
 import HoopFeedEntityTag from "../../components/HoopFeedEntityTag";
 import HoopFeedToday from "../../components/HoopFeedToday";
 import { compareFeedPosts, entityHref, loadFeedWorld, SEGMENTS, type EntityTag, type FeedSort, type FeedWorld, type Segment, type TaggedPost } from "../../lib/hoopfeed-organization";
+import { classifyFeedPublication } from "../../apps/mobile/src/native/publicationResult";
 import "./feed-organization.css";
 import "../hoopfeed-shared.css";
 import "./feed-camera-picker.css";
@@ -92,6 +93,8 @@ export default function Feed(){
   const [body,setBody]=useState(""); const [typeFilter,setTypeFilter]=useState<TypeFilter>("All Posts"); const [photos,setPhotos]=useState<File[]>([]); const [previews,setPreviews]=useState<string[]>([]); const [composerMode,setComposerMode]=useState<"post"|"poll"|"news">("post"); const [composerExpanded,setComposerExpanded]=useState(false); const [pollDraft,setPollDraft]=useState<string[]>(["",""]); const [votes,setVotes]=useState<Record<string,VoteState>>({}); const [savedMap,setSavedMap]=useState<Record<string,boolean>>({}); const [carouselIdx,setCarouselIdx]=useState<Record<string,number>>({}); const [video,setVideo]=useState<File|null>(null); const [videoPreview,setVideoPreview]=useState("");
   const [user,setUser]=useState<any>(null); const [profile,setProfile]=useState<Profile|null>(null); const [adminRole,setAdminRole]=useState<string|null>(null); const [subscription,setSubscription]=useState<Subscription|null>(null);
   const [msg,setMsg]=useState(""); const [refreshing,setRefreshing]=useState(false); const [mediaPickerOpen,setMediaPickerOpen]=useState(false); const [loading,setLoading]=useState(true); const [posting,setPosting]=useState(false); const [now,setNow]=useState(0); const pendingChecksRef = useRef<Set<string>>(new Set()); const textareaRef = useRef<HTMLTextAreaElement|null>(null); const touchStartY = useRef<number|null>(null);
+  const publication = useRef<"idle" | "sending" | "unconfirmed">("idle");
+  const [publicationUnconfirmed, setPublicationUnconfirmed] = useState(false);
   const following = new Set(followingIds);
   const segmentPosts = {
     All: posts,
@@ -347,19 +350,34 @@ export default function Feed(){
     if(!r.ok){setSavedMap(x=>({...x,[p.id]:!next}));setMsg(r.message||"Couldn't update your saved posts. Please try again.");}
   }
 
+  function clearComposer() {
+    setBody("");
+    setVideo(null);
+    if(videoPreview)URL.revokeObjectURL(videoPreview);
+    setVideoPreview("");
+    setLocation("");
+    setTag(null);
+    clearPhotos();
+    setPollDraft(["",""]);
+    setComposerMode("post");
+  }
+
   async function post(){
     const pollOptionsClean=pollDraft.map(o=>o.trim()).filter(Boolean);
-    if(!user||!access||posting)return;
+    if(!user||!access||publication.current!=="idle")return;
     if(photoSlotsRef.current>photos.length){setMsg("Your photos are still processing. Wait a moment before posting.");return;}
     if(composerMode==="poll"&&(!body.trim()||pollOptionsClean.length<2))return;
     if(composerMode!=="poll"&&!body.trim()&&!photos.length&&!video)return;
     if(video&&!body.trim()){setMsg("Add a caption to your video so HoopCheck can run safety checks.");return;}
+    publication.current="sending";
     setPosting(true);setMsg("Checking your post for safety...");
-    let uploadedVideoPath:string|null=null;
+    let videoPath:string|null=null;
     let uploadAccessToken="";
+    let moderationStarted=false;
+    let definitiveRejection=false;
     try{
       const {data:{session}}=await supabase.auth.getSession();
-      if(!session?.access_token){setMsg("Your session expired. Please sign in again.");setPosting(false);return;}
+      if(!session?.access_token||session.user.id!==user.id){setMsg("Your session changed. Please sign in again.");return;}
       uploadAccessToken=session.access_token;
       const form=new FormData();
       form.append("kind","post");
@@ -376,22 +394,56 @@ export default function Feed(){
         const authorization=await fetch("/api/hoopfeed/video-upload",{method:"POST",headers:{Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({content_type:videoType,size:video.size})});
         if(!authorization.ok)throw new Error("Video upload authorization failed. Please try again.");
         const upload=await authorization.json();
-        if(upload.mode==="private"&&upload.bucket==="hoopfeed-private-videos"&&upload.path&&upload.token){
+        const part=typeof upload.path==="string"?upload.path.split("/"):[];
+        if(upload.mode==="private"&&upload.bucket==="hoopfeed-private-videos"&&part.length===2&&part[0]===user.id&&
+          /^[a-f0-9-]{36}\.(mp4|webm|mov)$/i.test(part[1])&&typeof upload.token==="string"&&upload.token){
+          videoPath=upload.path;
           const {error:uploadError}=await supabase.storage.from("hoopfeed-private-videos").uploadToSignedUrl(upload.path,upload.token,video,{contentType:videoType});
           if(uploadError)throw new Error("Video upload failed. Please try again.");
-          uploadedVideoPath="hoopfeed-private-videos/"+upload.path;
-          form.append("video_path",uploadedVideoPath);
+          form.append("video_path","hoopfeed-private-videos/"+upload.path);
         }else throw new Error("Unsupported video upload mode.");
         form.append("video_type",videoType);
       }
-      const moderation=await fetch("/api/hoopfeed/moderate",{method:"POST",headers:{Authorization:"Bearer "+session.access_token},body:form});
-      const result=await moderation.json().catch(()=>({}));
-      if(!moderation.ok||result.allowed!==true){setMsg(result.message||"This post could not be published because it did not pass HoopFeed safety checks.");if(uploadedVideoPath){try{const {error:cleanupError}=uploadedVideoPath.startsWith("hoopfeed-private-videos/") ? await fetch("/api/hoopfeed/video-cleanup",{method:"DELETE",headers:{Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({path:uploadedVideoPath.slice("hoopfeed-private-videos/".length)})}).then(r=>({error:r.ok?null:new Error("Cleanup failed")})) : await supabase.storage.from("feed-videos").remove([uploadedVideoPath]);if(cleanupError)console.error("HoopFeed rejected video cleanup failed",cleanupError);}catch(cleanupError){console.error("HoopFeed rejected video cleanup threw",cleanupError);}uploadedVideoPath=null;}setPosting(false);return;}
-      uploadedVideoPath=null;
-      setBody("");setVideo(null);if(videoPreview)URL.revokeObjectURL(videoPreview);setVideoPreview("");setLocation("");setTag(null);setComposerExpanded(false);clearPhotos();setPollDraft(["",""]);setComposerMode("post");setMsg(composerMode==="poll"?"Poll posted to HoopFeed. AI safety checks passed.":"Posted to HoopFeed. AI safety checks passed.");try{await load(user);}catch(refreshError){console.error("HoopFeed refresh after posting failed",refreshError);setMsg("Your post was published, but the feed could not refresh. Pull down to reload.");}
-    }catch(e:any){console.error("HoopFeed post failed",e);setMsg(e?.message==="Video upload failed. Please try again."?e.message:"Posting failed. Please try again.");}
-    if(uploadedVideoPath){try{const {error:cleanupError}=uploadedVideoPath.startsWith("hoopfeed-private-videos/") ? await fetch("/api/hoopfeed/video-cleanup",{method:"DELETE",headers:{Authorization:"Bearer "+uploadAccessToken,"Content-Type":"application/json"},body:JSON.stringify({path:uploadedVideoPath.slice("hoopfeed-private-videos/".length)})}).then(r=>({error:r.ok?null:new Error("Cleanup failed")})) : await supabase.storage.from("feed-videos").remove([uploadedVideoPath]);if(cleanupError)console.error("HoopFeed rejected video cleanup failed",cleanupError);}catch(cleanupError){console.error("HoopFeed rejected video cleanup threw",cleanupError);}}
-    setPosting(false);
+      if((await supabase.auth.getSession()).data.session?.user.id!==user.id)throw new Error("Your session changed.");
+      moderationStarted=true;
+      const controller=new AbortController();
+      const timer=setTimeout(()=>controller.abort(),120000);
+      const {outcome,result}=await (async()=>{
+        const response=await fetch("/api/hoopfeed/moderate",{method:"POST",headers:{Authorization:"Bearer "+session.access_token},body:form,redirect:"error",signal:controller.signal});
+        const result=await response.json().catch(()=>null);
+        return {outcome:classifyFeedPublication(response.status,result?.allowed),result};
+      })().finally(()=>clearTimeout(timer));
+      if(outcome==="unconfirmed")throw new Error("Publication could not be confirmed.");
+      if(outcome==="rejected"){
+        definitiveRejection=true;
+        setMsg(typeof result?.message==="string"?result.message.slice(0,300):"This post could not be published. Your draft is kept.");
+        return;
+      }
+      videoPath=null;
+      clearComposer();
+      setComposerExpanded(false);
+      setMsg(composerMode==="poll"?"Poll posted to HoopFeed.":"Posted to HoopFeed.");
+      try{await load(user);}catch{
+        setMsg("Your post was published, but the feed could not refresh. Pull down to reload.");
+      }
+    }catch(error){
+      if(moderationStarted&&!definitiveRejection){
+        publication.current="unconfirmed";
+        setPublicationUnconfirmed(true);
+        setMsg("Publication could not be confirmed. Review your feed before starting another post. Your draft is kept.");
+      }else setMsg(error instanceof Error&&error.message==="Your session changed."?error.message:"Posting failed before safety review. Your draft is kept.");
+    }finally{
+      if(videoPath&&(!moderationStarted||definitiveRejection)){
+        const cleanup=new AbortController();
+        const timer=setTimeout(()=>cleanup.abort(),10000);
+        try{
+          await fetch("/api/hoopfeed/video-cleanup",{method:"DELETE",headers:{Authorization:"Bearer "+uploadAccessToken,"Content-Type":"application/json"},body:JSON.stringify({path:videoPath}),redirect:"error",signal:cleanup.signal});
+        }catch{/* The private upload remains eligible for server cleanup. */}
+        finally{clearTimeout(timer);}
+      }
+      if(publication.current==="sending")publication.current="idle";
+      setPosting(false);
+    }
   }
 
   async function sharePost(p:Post){
@@ -519,7 +571,7 @@ export default function Feed(){
       <div className="hf5-mode-row" role="group" aria-label="Choose what to create">{([["post","Post"],["poll","Poll"]] as const).map(([m,label])=><button type="button" key={m} className={"hf5-type-chip"+(composerMode===m?" is-active":"")} aria-pressed={composerMode===m} onClick={()=>setComposerMode(m)}>{label}</button>)}{isAdmin&&<button type="button" className={"hf5-type-chip"+(composerMode==="news"?" is-active":"")} aria-pressed={composerMode==="news"} onClick={()=>setComposerMode("news")}>News (official)</button>}</div>
       <div className="hc-feed-composer__editor"><div className="hc-feed-composer__avatar" aria-hidden="true">{user?.user_metadata?.avatar_url?<img src={user.user_metadata.avatar_url} alt="" />:"HC"}</div><textarea ref={textareaRef} value={body} onChange={e=>{setBody(e.target.value);e.currentTarget.style.height="auto";e.currentTarget.style.height=Math.min(e.currentTarget.scrollHeight,220)+"px";}} rows={2} maxLength={2000} placeholder={composerMode==="poll"?"Ask the community a question...":composerMode==="news"?"Write the official update...":"Start a post... (ask, share, discuss, update)"} /></div>
       {composerMode==="poll"&&<div className="hf5-poll-editor" aria-label="Poll options">{pollDraft.map((opt,i)=><div key={i} className="hf5-poll-editor__row"><input value={opt} onChange={e=>setPollDraft(x=>x.map((o,j)=>j===i?e.target.value:o))} maxLength={60} placeholder={"Option "+(i+1)} aria-label={"Poll option "+(i+1)} />{pollDraft.length>2&&<button type="button" className="hf5-poll-editor__remove" onClick={()=>setPollDraft(x=>x.filter((_,j)=>j!==i))} aria-label={"Remove option "+(i+1)}>✕</button>}</div>)}{pollDraft.length<4&&<button type="button" className="btn dark" onClick={()=>setPollDraft(x=>[...x,""])}>+ Add option</button>}<small className="muted">Polls are text only — 2 to 4 options. Members can change their vote.</small></div>}
-      <div className="hc-feed-composer__footer">{composerMode!=="poll"&&<><button type="button" className="hc-feed-photo-button" aria-expanded={mediaPickerOpen} aria-controls="hc-feed-media-picker" onClick={()=>setMediaPickerOpen(v=>!v)}><HoopIcon name="image" size={16}/> Media</button>{mediaPickerOpen&&<div id="hc-feed-media-picker" className="hc-feed-media-picker"><label className="hc-feed-photo-button" htmlFor="hoopfeed-camera">Take photo</label><label className="hc-feed-photo-button" htmlFor="hoopfeed-video-camera">Record video</label><label className="hc-feed-photo-button" htmlFor="hoopfeed-photo">Photo library{photos.length?` (${photos.length}/4)`:""}</label><label className="hc-feed-photo-button" htmlFor="hoopfeed-video">Video library</label></div>}<input id="hoopfeed-video-camera" type="file" accept="video/mp4,video/webm,video/quicktime" capture="environment" className="visually-hidden" onChange={e=>{const f=e.target.files?.[0];if(!f)return;chooseVideo(f);e.target.value="";setMediaPickerOpen(false);}} /><input id="hoopfeed-camera" type="file" accept="image/*" capture="environment" className="visually-hidden" onChange={e=>{const f=e.target.files?.[0];if(f)choosePhoto(f);e.target.value="";setMediaPickerOpen(false);}} /><input id="hoopfeed-photo" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" onChange={e=>{const f=e.target.files?.[0];if(f)choosePhoto(f);e.target.value="";setMediaPickerOpen(false);}} className="visually-hidden" /><input id="hoopfeed-video" className="visually-hidden" type="file" accept="video/mp4,video/webm,video/quicktime" onChange={e=>{const f=e.target.files?.[0];if(!f)return;chooseVideo(f);e.target.value="";setMediaPickerOpen(false);}} /></>}<span className="hc-feed-counter" aria-live="polite">{body.length}/2000</span><button className="btn hc-feed-post-button" onClick={post} disabled={posting||(composerMode==="poll"?(!body.trim()||pollDraft.map(o=>o.trim()).filter(Boolean).length<2):(!body.trim()&&!photos.length&&!video)||(Boolean(video)&&!body.trim()))}>{posting?"Posting…":composerMode==="poll"?"POST POLL":"POST"}</button></div>
+      <div className="hc-feed-composer__footer">{composerMode!=="poll"&&<><button type="button" className="hc-feed-photo-button" aria-expanded={mediaPickerOpen} aria-controls="hc-feed-media-picker" onClick={()=>setMediaPickerOpen(v=>!v)}><HoopIcon name="image" size={16}/> Media</button>{mediaPickerOpen&&<div id="hc-feed-media-picker" className="hc-feed-media-picker"><label className="hc-feed-photo-button" htmlFor="hoopfeed-camera">Take photo</label><label className="hc-feed-photo-button" htmlFor="hoopfeed-video-camera">Record video</label><label className="hc-feed-photo-button" htmlFor="hoopfeed-photo">Photo library{photos.length?` (${photos.length}/4)`:""}</label><label className="hc-feed-photo-button" htmlFor="hoopfeed-video">Video library</label></div>}<input id="hoopfeed-video-camera" type="file" accept="video/mp4,video/webm,video/quicktime" capture="environment" className="visually-hidden" onChange={e=>{const f=e.target.files?.[0];if(!f)return;chooseVideo(f);e.target.value="";setMediaPickerOpen(false);}} /><input id="hoopfeed-camera" type="file" accept="image/*" capture="environment" className="visually-hidden" onChange={e=>{const f=e.target.files?.[0];if(f)choosePhoto(f);e.target.value="";setMediaPickerOpen(false);}} /><input id="hoopfeed-photo" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" onChange={e=>{const f=e.target.files?.[0];if(f)choosePhoto(f);e.target.value="";setMediaPickerOpen(false);}} className="visually-hidden" /><input id="hoopfeed-video" className="visually-hidden" type="file" accept="video/mp4,video/webm,video/quicktime" onChange={e=>{const f=e.target.files?.[0];if(!f)return;chooseVideo(f);e.target.value="";setMediaPickerOpen(false);}} /></>}<span className="hc-feed-counter" aria-live="polite">{body.length}/2000</span><button className="btn hc-feed-post-button" onClick={post} disabled={posting||publicationUnconfirmed||(composerMode==="poll"?(!body.trim()||pollDraft.map(o=>o.trim()).filter(Boolean).length<2):(!body.trim()&&!photos.length&&!video)||(Boolean(video)&&!body.trim()))}>{posting?"Posting…":composerMode==="poll"?"POST POLL":"POST"}</button></div>
       <details className="hc-feed-extra-options">
         <summary>Location & tags <span>(optional)</span></summary>
         <div className="hc-feed-optional-fields">
@@ -529,6 +581,18 @@ export default function Feed(){
         </div>
       </details>
       {video&&!body.trim()&&<p className="hc-feed-video-caption-hint" role="status">Add a caption to your video before posting so HoopCheck can complete its safety checks.</p>}
+      {publicationUnconfirmed&&<div className="actions">
+        <button type="button" className="btn dark" onClick={()=>{
+          void load(user).catch(()=>setMsg("HoopFeed could not refresh. Please try again."));
+          document.getElementById("hoopfeed-posts")?.scrollIntoView({block:"start"});
+        }}>Review feed</button>
+        <button type="button" className="btn dark" onClick={()=>{
+          publication.current="idle";
+          setPublicationUnconfirmed(false);
+          clearComposer();
+          setMsg("");
+        }}>Discard uncertain draft</button>
+      </div>}
       {previews.length>0&&<div className="hf5-photo-grid" style={{marginTop:12}}>{previews.map((src,i)=><div key={i} className="hf5-photo-grid__item"><img src={src} alt={"Photo "+(i+1)+" preview"} /><button type="button" className="hf5-photo-grid__remove" onClick={()=>removePhoto(i)} aria-label={"Remove photo "+(i+1)}>✕</button></div>)}</div>}{videoPreview&&<div style={{marginTop:12}}><video src={videoPreview} controls playsInline style={{width:"100%",maxHeight:360,borderRadius:16}}/><button type="button" className="btn dark" style={{marginTop:8}} onClick={()=>{setVideo(null);if(videoPreview)URL.revokeObjectURL(videoPreview);setVideoPreview("");setMsg("");}}>Remove video</button><small>Video uploads require a caption for safety review.</small></div>}
       </div>
     </section>
@@ -538,7 +602,7 @@ export default function Feed(){
       poll={posts.find(post => post.post_kind === "poll" && votes[post.id]?.mine == null)}
       world={world} now={now} onPost={showSystemPost} canUseChat={getHoopCheckEntitlements({accountType:profile?.account_type, subscription, isAdmin}).canUseLiveGameChat} />}
     {sharedLinkUnavailable && <p role="status">This shared post is unavailable.</p>}
-    <section className="hc-feed-stream" aria-label="Recent HoopFeed posts">{!ready ? <FeedLoadingSkeleton count={3} /> : visiblePosts.length?visiblePosts.slice(0, visibleLimit).map(p=>{const cs=orderCommentThreads(comments[p.id]||[]);const roleKey=(p.profiles?.account_type||"").toLowerCase();const rolePill=ROLE_PILLS[roleKey];const mediaImgs:string[]=(p.image_urls&&p.image_urls.length?p.image_urls:(p.image_url?[p.image_url]:[]));const carouselPos=Math.min(carouselIdx[p.id]||0,Math.max(0,mediaImgs.length-1));return <FeedPostCard key={p.id} onDoubleClick={()=>void toggleCheck(p)}>
+    <section id="hoopfeed-posts" className="hc-feed-stream" aria-label="Recent HoopFeed posts">{!ready ? <FeedLoadingSkeleton count={3} /> : visiblePosts.length?visiblePosts.slice(0, visibleLimit).map(p=>{const cs=orderCommentThreads(comments[p.id]||[]);const roleKey=(p.profiles?.account_type||"").toLowerCase();const rolePill=ROLE_PILLS[roleKey];const mediaImgs:string[]=(p.image_urls&&p.image_urls.length?p.image_urls:(p.image_url?[p.image_url]:[]));const carouselPos=Math.min(carouselIdx[p.id]||0,Math.max(0,mediaImgs.length-1));return <FeedPostCard key={p.id} onDoubleClick={()=>void toggleCheck(p)}>
       
       <header id={`post-${p.id}`} className="hc-feed-post-header"><FeedAuthorRow>{p.profiles?.avatar_url?<img src={p.profiles.avatar_url} alt="" className="hc-feed-post-avatar hf5-avatar"/>:<span className="player-avatar-fallback hc-feed-post-avatar hf5-avatar">HC</span>}<div className="hc-feed-post-author__meta"><div className="hc-feed-post-author__line"><strong>{p.shared_post_id?"Shared by "+(p.profiles?.display_name||"HoopCheck Member"):(p.profiles?.display_name||"HoopCheck Member")}</strong><span className="hc-feed-verified" aria-label="HoopCheck member">✓</span>{rolePill&&<span className={"hf5-pill hf5-pill--"+roleKey}>{rolePill.label}</span>}{p.post_kind==="news"&&<span className="hf5-pill hf5-pill--news">News</span>}{p.post_kind==="poll"&&<span className="hf5-pill hf5-pill--poll">Poll</span>}<small>· {p.ageLabel}</small></div>{p.profiles?.current_team&&<span className="hc-feed-jersey-tag">{p.profiles.current_team}</span>}{p.shared_post?.profiles?.display_name&&<small className="muted">Originally shared from {p.shared_post.profiles.display_name}</small>}{p.post_location && <div className="muted hc-feed-location"><HoopIcon name="map-pin" size={14} /> {p.post_location}</div>}
       {p.entity && <Link className="hc-feed-tag-chip" href={entityHref(p.entity)}>{p.entity.name}</Link>}
