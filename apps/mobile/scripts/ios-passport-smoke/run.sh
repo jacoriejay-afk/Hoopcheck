@@ -113,13 +113,23 @@ for theme in light dark; do
   # and always require passing assertions in both themes.
   xctest_timeout_seconds=900
   if [[ "$theme" == "light" ]]; then xctest_timeout_seconds=1500; fi
+  # Light builds and executes the exact checkout. Dark uses the same test
+  # products and scheme, after the required simulator reboot. Run #45973136053
+  # passed light but exhausted dark's watchdog during a redundant Xcode build.
+  # No fallback to a stale or prebuilt external app; both themes must execute
+  # and pass the same native test and produce independent result bundles.
+  xcode_command=(xcodebuild test -workspace ios/HoopCheck.xcworkspace -scheme HoopCheck)
+  if [[ "$theme" == "dark" ]]; then
+    xcode_command[1]=test-without-building
+  fi
+  echo "PASSPORT_SMOKE_XCODE_ACTION=${xcode_command[1]} theme=$theme"
   echo "PASSPORT_SMOKE_THEME=$theme: executing real unsigned Passport PDF/share XCTest (budget=${xctest_timeout_seconds}s)"
   # Cold simulator runs can hang indefinitely inside UIKit/Expo Print.
   # Fail closed with a useful log and xcresult instead of hitting the outer
   # workflow timeout without diagnostic evidence. Never skip either theme.
   if ! python3 scripts/ios-passport-smoke/run-bounded-xctest.py \
     --log "$artifact_root/$theme-test.log" --timeout-seconds "$xctest_timeout_seconds" -- \
-    xcodebuild test -workspace ios/HoopCheck.xcworkspace -scheme HoopCheck \
+    "${xcode_command[@]}" \
     -configuration Debug -sdk iphonesimulator -destination "id=$simulator_id" \
     -derivedDataPath /tmp/hoopcheck-ios-derived \
     -parallel-testing-enabled NO \
