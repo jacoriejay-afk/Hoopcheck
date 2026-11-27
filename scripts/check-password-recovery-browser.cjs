@@ -113,10 +113,18 @@ async function run(browser) {
     }
     assert.deepEqual(calls.slice(4), ["verify", "verify"]);
 
+    // Complete the previous route transition before seeding the legacy PKCE cookie.
     await page.getByRole("link", { name: "Back to sign in" }).click();
+    await page.waitForURL("**/login");
+    await page.getByLabel("Email", { exact: true }).waitFor();
     await context.addCookies([{ name: "sb-ci-auth-token-code-verifier", value: `base64-${part("fixture-verifier/PASSWORD_RECOVERY")}`, url: base.origin }]);
+    assert.ok((await context.cookies()).some(cookie => cookie.name === "sb-ci-auth-token-code-verifier"), "Legacy verifier cookie must exist before navigation");
     await go("/reset-password?code=legacy-fixture");
-    await newPassword.waitFor();
+    try {
+      await newPassword.waitFor({ timeout: 25_000 });
+    } catch (cause) {
+      throw new Error(`Legacy recovery did not open. Auth calls: ${calls.join(", ")}. Visible status: ${await page.locator(".hc-auth-card").innerText()}`, { cause });
+    }
     assert.equal(calls.at(-1), "legacy-code");
     assert.equal(new URL(page.url()).search, "");
     assert.equal((await context.cookies()).some(cookie => /^sb-ci-auth-token(?:-code-verifier|\.\d+)?$/.test(cookie.name)), false);
