@@ -1,6 +1,6 @@
 # HoopCheck — App Store release preparation
 
-**Status: HOLD — release preparation, not Apple certification.** Updated 2026-11-26. No production activation, additional signed build or public review submission is authorized by this document. The current tracker is [#1073](https://github.com/jacoriejay-afk/Hoopcheck/issues/1073).
+**Status: HOLD — release preparation, not Apple certification.** Updated 2026-11-27. No production activation, additional signed build or public review submission is authorized by this document. The current tracker is [#1073](https://github.com/jacoriejay-afk/Hoopcheck/issues/1073).
 
 ## Actual distribution architecture
 
@@ -75,11 +75,20 @@ Do not infer current App Store Connect offer configuration from source constants
 - #1084 head `bbbbba406c83e72f37e5329dfaef203f8f47eac5`: StoreKit SQL rehearsal and web CI passed; Vercel rate-limited.
 - Recheck every exact head, base, merge status and review before integrating. Do not mark preview failure as success or change branch protections. A candidate merged with an infrastructure exception still needs final deployment acceptance.
 
+### Verified integration checkpoint — 2026-11-27
+
+Candidate commit `7d17538964f9578a689bc90bf2bd07550555aa14` includes #1080, #1081, #1084, #1110, #1116 and #1111. The earlier evidence snapshot above is historical, not current PR status.
+
+- #1110 merged schema preflight; 67 missing public tables, five test-only tables and 13 shared-table discrepancies remain. A reviewed schema-only baseline is required; no hosted restore is authorized.
+- #1116 merged Apple vault freeze guard after [deletion fixture](https://github.com/jacoriejay-afk/Hoopcheck/actions/runs/45913288433) and [StoreKit fixture](https://github.com/jacoriejay-afk/Hoopcheck/actions/runs/45913288410) passed on head `3cba5153e56c39f80ab74d667fb32e726a25123c`.
+- #1111 merged after [real light/dark Passport simulator tests](https://github.com/jacoriejay-afk/Hoopcheck/actions/runs/45915262120), unsigned native compilation, mobile and web CI passed on reconciled head `fa7776d21dac323c3954e4a8b61aa0ac9b5f9f74`. This supersedes the historical startup failure, not physical-device acceptance.
+
 ## P0 acceptance gates
 
 ### Sign in with Apple
 
-- [ ] Merge #1080 safely; confirm the signed archive contains the official native button, entitlement, nonce flow and pending-profile gate.
+- [x] #1080 merged into the compliance candidate at `01e81e875c8b89d63fd63a40885fcdebb147ee41`.
+- [ ] Confirm the signed archive contains the official native button, entitlement, nonce flow and pending-profile gate.
 - [ ] Configure the correct Apple App ID/capability and Supabase provider in an approved test environment. Set server signing key and encrypted vault key through protected environment settings. No credentials in this document.
 - [ ] Verify first and returning Apple sign-in, relay addresses, account linking safety, cancellation, MFA, age/terms/role onboarding, Google/email regression, credential revocation and failed-vault recovery.
 
@@ -104,7 +113,8 @@ Do not infer current App Store Connect offer configuration from source constants
 
 - Owner approved separating the unrelated Passport simulator runtime check from the account-deletion integration gate. Native compilation, StoreKit Swift tests, permission verification, watchdog tests, web/mobile checks and deletion security rehearsals remain intact.
 - Exact prior source head `02283938fccbd1f809b345a7c6c190a68d1ffb09`: [native run 45865627317](https://github.com/jacoriejay-afk/Hoopcheck/actions/runs/45865627317) compiled the simulator app but failed the real Passport UI fixture with `No script URL provided` despite successful Metro bundling. Do not record this run as passed. Preserve diagnostics and retain both light/dark runtime assertions in the dedicated `Passport iOS Runtime Verification` workflow. Other branches retain their existing runtime gates.
-- [ ] Resolve the synthetic simulator startup issue independently, or verify the actual Passport experience on the separately approved signed TestFlight release candidate: PDF content/signature, light/dark rendering, native share sheet, dismissal without external transmission, temporary-file deletion, no unexpected permissions. Record actual evidence; do not claim the failed simulator check passed. Physical-device acceptance is required before public release.
+- [x] Simulator startup repaired in #1111; both real light/dark runtime tests passed on the reconciled head above.
+- [ ] Verify the actual Passport experience on the separately approved signed TestFlight release candidate: PDF content/signature, light/dark rendering, native share sheet, dismissal without external transmission, temporary-file deletion, no unexpected permissions. Record actual evidence; do not claim the failed simulator check passed. Physical-device acceptance is required before public release.
 
 ## App Store Connect acceptance
 
@@ -115,6 +125,20 @@ Do not infer current App Store Connect offer configuration from source constants
 - [ ] Provide App Review access through secure App Store Connect fields. Demo accounts must not contain real user data and must permit meaningful review of gated features. Supply clear test instructions and subscription review notes.
 - [ ] Confirm physical-device results for account/profile/Owner HQ, HoopFeed, HoopGroups/direct messages, Live Games, HoopReels and notifications; these were unverified in the recorded Build 16 owner test. Re-test all core flows on the final approved signed candidate.
 - [ ] Obtain separate approval for any additional EAS build and public submission. No current approval for either.
+
+## Reviewer handoff checklist (draft; not submitted)
+
+Use the exact approved signed archive and a disposable, synthetic reviewer account. Supply credentials only through secure App Store Connect review fields, never GitHub. Before providing review access, confirm the following routes on that archive:
+
+| Review flow | Expected evidence before submission |
+| --- | --- |
+| Login | Official Apple button, first and returning sign-in, email/Google alternatives, cancellation and onboarding; no unsafe account linking. |
+| Account deletion | Settings > Account > Delete account, recent reauthentication, confirmation, actual fulfillment and completion notice; no support-email requirement. Do not invite reviewers to test an inactive or simulated deletion path. |
+| Membership | Localized price and renewal disclosures, sandbox purchase and restore, subscription management, terms and privacy links. |
+| Community | Reporting and blocking accessible in relevant surfaces, moderation and support contact. |
+| Passport | PDF export and native share sheet on physical device, both themes. |
+
+If any flow is unavailable, hold submission rather than describing it as working. Reviewer notes must reflect the accepted archive, not the integration branch. Do not supply real user data or owner credentials. Retention decisions, schema baseline approval, provider activation, signed archive and actual deletion/notification evidence remain separate release gates.
 
 ## Google Play (separate release)
 
