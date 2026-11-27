@@ -69,8 +69,9 @@ export const supabase = createBrowserClient(supabaseUrl, supabaseKey, {
   global: { fetch: guardedSharedFetch },
   ...(typeof window === "undefined" ? {} : { cookies: {
     getAll() {
-      return parseCookieHeader(document.cookie).filter(({ name }) => !onRecoveryPage() ||
-        (name !== verifierCookieName && !name.startsWith(`${verifierCookieName}.`)));
+      return parseCookieHeader(document.cookie).filter((cookie): cookie is { name: string; value: string } =>
+        typeof cookie.value === "string" && (!onRecoveryPage() ||
+          (cookie.name !== verifierCookieName && !cookie.name.startsWith(`${verifierCookieName}.`))));
     },
     setAll(values) {
       values.forEach(({ name, value, options }) => { document.cookie = serializeCookieHeader(name, value, options); });
