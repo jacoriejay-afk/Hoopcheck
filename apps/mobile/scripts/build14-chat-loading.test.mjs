@@ -63,3 +63,15 @@ test("HoopGroups resets local state across account changes and scopes private ch
   assert.match(groups, /supabase\.auth\.getUser\(token\)/);
   assert.match(groups, /verified\.data\.user\?\.id!==userId/);
 });
+
+test("HoopChat locks mutations before awaits and preserves unsent draft text", () => {
+  const chat = read("../app/messages.tsx");
+  assert.match(chat, /const mutationLocked = useRef\(false\)/);
+  assert.match(chat, /async function respond[\s\S]*?mutationLocked\.current\) return;\s*mutationLocked\.current=true;\s*const actionGeneration/);
+  assert.match(chat, /async function send\(\)[\s\S]*?mutationLocked\.current\) return;\s*mutationLocked\.current=true;\s*const submittedDraft=draft/);
+  assert.match(chat, /body:submittedDraft\.trim\(\)\.slice\(0,2000\)/);
+  assert.match(chat, /setDraft\(current=>current===submittedDraft\?"":current\)/);
+  assert.match(chat, /if\(!mutationLocked\.current\)void load\(\)/);
+  assert.match(chat, /editable=\{!sending && !offline\}/);
+  assert.equal((chat.match(/finally\{mutationLocked\.current=false;setSending\(false\);\}/g) || []).length, 2);
+});
