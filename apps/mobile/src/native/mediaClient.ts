@@ -1,5 +1,6 @@
 import { appendPostLocation } from "./feedClient.ts";
 import type { Photo, Video } from "./mediaSelection";
+import { classifyFeedPublication } from "./publicationResult.ts";
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function originUrl(origin: string, path: string) {
   const url = new URL(origin);
@@ -47,8 +48,9 @@ export async function publishMediaPost(api: string, project: string, owner: stri
     ensureActive(); moderationStarted = true;
     const response = await request(target, { method: "POST", headers, body: form, cache: "no-store", redirect: "error", signal });
     const result = await response.json().catch(() => null);
-    if (response.ok && result?.allowed === true) return;
-    definitiveRejection = (response.status >= 400 && response.status < 500 && response.status !== 408) || (response.ok && result?.allowed === false);
+    const outcome = classifyFeedPublication(response.status, result?.allowed);
+    if (outcome === "published") return;
+    definitiveRejection = outcome === "rejected";
     if (!definitiveRejection) throw new PublicationUnconfirmed("Publication could not be confirmed. Refresh and review your feed before creating another post. Your draft is kept.");
     throw new Error(typeof result?.message === "string" ? result.message.slice(0, 300) : "This media could not be published. Your draft is unchanged.");
   } catch (error) {
