@@ -15,6 +15,7 @@ async function verify(browser,theme,role='player'){
    if(url.pathname==='/auth/v1/user')return json(user);
    if(url.pathname.includes('/storage/v1/object/public/profile-avatars/'))return route.fulfill({status:200,contentType:'image/png',body:fs.readFileSync('/tmp/hoopcheck-fixture-avatar.png')});
    queries.push(url.pathname);assert.notEqual(role,'fan','Fan must not query any player data');
+   if(url.pathname==='/rest/v1/user_blocks'){assert.equal(url.searchParams.get('blocker_id'),'eq.'+uid);assert.ok(['eq.'+target,'eq.'+privateId].includes(url.searchParams.get('blocked_id')));assert.equal(request.headers().authorization,'Bearer '+token);return json([]);}
    if(url.pathname.endsWith('/search_public_players_by_username'))return json([card]);
    if(url.pathname.endsWith('/get_public_player_profile')){const body=request.postDataJSON();return json(body.p_user_id===privateId?[]:[{...card,id:body.p_user_id,player_position:'PG',current_country:'Hidden exact location',bio:'Public fixture biography'}]);}
    if(url.pathname.endsWith('/is_player_country_public'))return json(countryPublic);
@@ -37,7 +38,7 @@ async function verify(browser,theme,role='player'){
    assert.ok(!queries.includes('/rest/v1/player_career_stops'),'unconnected peers must not query career history');
    countryPublic=true;await page.reload();await page.getByText('Hidden exact location',{exact:true}).waitFor();await page.getByText('Connect with this player to view their career history.',{exact:true}).waitFor();
    const privateStart=queries.length;
-   await page.goto(`${base}/players/${privateId}`);await page.getByText('This profile is unavailable for your account.',{exact:true}).waitFor();assert.ok(queries.slice(privateStart).every(path=>path.includes('/rpc/')));
+   await page.goto(`${base}/players/${privateId}`);await page.getByText('This profile is unavailable for your account.',{exact:true}).waitFor();assert.ok(queries.slice(privateStart).every(path=>path.includes('/rpc/')||path==='/rest/v1/user_blocks'));
    await page.goto(`${base}/players/${uid}`);await page.getByRole('heading',{name:'Career stats',exact:true}).scrollIntoViewIfNeeded();await page.getByText('Recorded stops',{exact:true}).waitFor();await require("./compact-layout.cjs").capture(page,{path:`/tmp/hoopcheck-native-ui/career-stats-${theme}.png`,fullPage:true});await page.getByRole('button',{name:'Preview Player Passport',exact:true}).click();await page.getByText('Your Player Passport',{exact:true}).waitFor();
    await page.getByRole('button',{name:'Export & share PDF',exact:true}).click();await page.getByText('Passport file sharing is available in the iOS and Android app.',{exact:true}).waitFor();
    await require("./compact-layout.cjs").capture(page,{path:`/tmp/hoopcheck-native-ui/passport-owner-${theme}.png`,fullPage:true});

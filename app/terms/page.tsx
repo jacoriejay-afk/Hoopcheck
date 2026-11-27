@@ -12,7 +12,7 @@ export default function TermsPage() {
       </section>
       <section className="legal-content">
         <div className="legal-card">
-          <p className="updated">Last updated: October 9, 2026</p>
+          <p className="updated">Last updated: November 26, 2026</p>
 
           <h2>1. Agreement</h2>
           <p>By creating an account, purchasing a subscription, or using HoopCheck, you agree to these Terms and the Community Guidelines and Privacy Policy. If you do not agree, do not use HoopCheck.</p>
@@ -49,12 +49,12 @@ export default function TermsPage() {
           <h2>9. Subscriptions, Billing, Cancellation, and Refunds</h2>
           <p>Paid plans, prices, billing intervals, discounts, and included features are shown before purchase. Monthly plans are billed upfront for one month and renew monthly. 6-month plans are billed upfront for six months and renew every six months. Annual plans are billed upfront for one year and renew annually, unless canceled before the next renewal date.</p>
           <p>Current subscription pricing is $4.99/month for Pro and $9.99/month for Premium. Discounted 6-month and annual prices are displayed before checkout. A discounted term is charged as one upfront payment for the selected term.</p>
-          <p>Subscriptions renew automatically unless canceled. For purchases billed by Apple, manage or cancel the subscription in your Apple account subscription settings. For purchases billed by Stripe, use the applicable HoopCheck membership controls or Stripe customer portal. Cancellation normally stops the next renewal while preserving paid access through the current paid period.</p>
-          <p>Apple-billed purchases and refund requests are governed by Apple's applicable terms and refund process. For Stripe-billed purchases, refunds are subject to applicable law and the terms presented at checkout. If a charge is incorrect or duplicated, use the relevant billing provider or contact HoopCheck Support for assistance.</p>
-          <p>Payments are processed by Apple, Stripe or another displayed payment provider, as applicable. HoopCheck does not intentionally store complete payment-card numbers in its application database.</p>
+          <p>Subscriptions renew automatically until canceled. For web subscriptions billed through Stripe, use the HoopCheck membership controls or Stripe customer portal. For subscriptions purchased through the Apple App Store, manage or cancel the subscription in your Apple Account subscription settings (apps.apple.com/account/subscriptions/). Cancellation normally stops the next renewal while preserving paid access through the current paid period, subject to the applicable provider terms.</p>
+          <p>Refund eligibility depends on applicable law and the billing provider. For Apple App Store purchases, refunds are governed by Apple's applicable terms and refund process; request a refund through Apple (reportaproblem.apple.com). For Stripe-billed purchases or other account billing concerns, contact HoopCheck Support promptly.</p>
+          <p>Payments are processed by Stripe, Apple, or another displayed payment provider. HoopCheck does not intentionally store complete payment-card numbers in its application database.</p>
 
           <h2>10. Account Deletion</h2>
-          <p>You can request account deletion through available account controls or the Privacy Request Center. A request is not confirmation that deletion is complete. Account deletion does not itself cancel an Apple subscription; use Apple subscription settings to prevent further renewal. Manage Stripe subscriptions through the applicable billing controls. We will communicate the outcome of your deletion request.</p>
+          <p>You may request account deletion through the available HoopCheck account controls or the Privacy Request Center. Account deletion and subscription cancellation are separate actions. Deleting your HoopCheck account does not automatically cancel subscriptions or stop renewal charges. Manage or cancel a Stripe-billed subscription through its billing controls, and an Apple App Store subscription through your Apple Account subscription settings. Cancellation is not a condition for submitting an account deletion request. HoopCheck will communicate the status and completion of the deletion process; a request alone does not mean deletion has completed.</p>
           <p>Deletion does not necessarily require HoopCheck or its payment, security, fraud-prevention, or legal-service providers to immediately erase information they are legally permitted or required to retain.</p>
 
           <h2>11. Third-Party Services</h2>

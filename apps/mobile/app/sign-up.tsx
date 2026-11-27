@@ -7,7 +7,7 @@ import { Input, Button } from "../src/primitives";
 import { ArenaBrand } from "../components/ArenaBrand";
 import { useEntryTheme, type EntryTheme } from "../src/theme";
 import { useEffect, useRef, useState } from "react";
-import { Alert, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { completePendingSignup, pendingSignup, type PendingSignup } from "../src/native/socialSignup";
 import { takeDestination } from "../src/native/pendingDestination";
@@ -24,7 +24,6 @@ const ACCOUNT_TYPES = [
   { value: "agent", label: "Agent" },
   { value: "fan", label: "Fan" },
 ] as const;
-const LEGAL_BASE = "https://hoopcheck.online";
 
 function validBirthdate(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -250,9 +249,9 @@ function SignupForm({ socialIdentity }: { socialIdentity?: PendingSignup }) {
             <Text style={styles.consentText}>I agree to the Terms of Service and acknowledge the Privacy Policy and Community Guidelines.</Text>
           </Pressable>
           <View style={styles.legalLinks}>
-            <Text onPress={() => Linking.openURL(`${LEGAL_BASE}/terms`)} style={styles.link}>Terms of Service</Text>
-            <Text onPress={() => Linking.openURL(`${LEGAL_BASE}/privacy`)} style={styles.link}>Privacy Policy</Text>
-            <Text onPress={() => Linking.openURL(`${LEGAL_BASE}/community-guidelines`)} style={styles.link}>Community Guidelines</Text>
+            <Text onPress={() => router.push({ pathname: "/legal", params: { document: "terms" } })} style={styles.link}>Terms of Service</Text>
+            <Text onPress={() => router.push({ pathname: "/legal", params: { document: "privacy" } })} style={styles.link}>Privacy Policy</Text>
+            <Text onPress={() => router.push({ pathname: "/legal", params: { document: "community-guidelines" } })} style={styles.link}>Community Guidelines</Text>
           </View>
           {errorMessage ? <Text accessibilityRole="alert" style={styles.error}>{errorMessage}</Text> : null}
           <Button onPress={createAccount} disabled={busy} style={[styles.button, busy && styles.dim]}><Text style={styles.buttonText}>{busy ? "Creating account…" : socialIdentity ? "Complete account setup" : "Create account"}</Text></Button>

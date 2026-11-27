@@ -12,7 +12,7 @@ export default function PrivacyPage() {
       </section>
       <section className="legal-content">
         <div className="legal-card">
-          <p className="updated">Last updated: November 9, 2026</p>
+          <p className="updated">Last updated: November 26, 2026</p>
 
           <h2>1. Scope</h2>
           <p>This policy applies to information processed through HoopCheck websites, applications, accounts, subscriptions, reviews, support interactions, and related services.</p>
@@ -20,7 +20,7 @@ export default function PrivacyPage() {
           <h2>2. Information We Collect</h2>
           <p>Depending on how you use HoopCheck, we may collect account and profile information such as name, email address, date of birth (used to enforce the 18+ eligibility rule), account type, country, biography, team information, profile photo, preferences, reviews, ratings, reports, messages, and support requests.</p>
           <p>We may collect technical information such as IP address, device/browser information, session information, approximate location derived from technical data, security logs, and usage events where needed to operate, secure, and improve the service.</p>
-          <p>Subscription records may include plan, subscription status, billing period, Apple transaction identifiers or Stripe customer or subscription identifiers, and transaction-related information. HoopCheck does not intentionally store complete payment-card numbers in its application database.</p>
+          <p>Subscription records may include plan, subscription status, billing period, Apple App Store transaction or subscription identifiers or Stripe customer or subscription identifiers, and transaction-related information. HoopCheck does not intentionally store complete payment-card numbers in its application database.</p>
 
           <h2>Business and Partnership Inquiries</h2>
           <p>If you contact HoopCheck about sponsorship, investment, ambassador opportunities, donations, or partnerships, we collect the name, email address, inquiry category, and message you provide to evaluate and respond to your request. You do not need a player or fan account to use the guest business inquiry form when that feature is available.</p>
@@ -50,7 +50,7 @@ export default function PrivacyPage() {
           <p>HoopCheck uses Supabase for database, authentication, storage, and related application infrastructure. Information processed through Supabase may include account data, profiles, reviews, ratings, reports, preferences, and other platform data.</p>
 
           <h2>7. Payment Providers</h2>
-          <p>HoopCheck uses Stripe for applicable web billing and Apple for applicable iOS in-app purchases. These providers may process payment, billing, fraud-prevention and account information necessary for their services. HoopCheck may receive transaction identifiers, subscription status and related information to verify access and manage subscriptions. Apple and Stripe have their own privacy policies.</p>
+          <p>HoopCheck uses Stripe for applicable web billing and Apple for applicable iOS in-app purchases. These providers may process payment, billing, fraud-prevention and account information necessary for their services. HoopCheck may receive transaction identifiers, subscription status and related information to verify access, manage subscriptions, process renewals and restore eligible purchases. Apple and Stripe have their own privacy policies.</p>
 
           <h2>8. Identity Verification</h2>
           <p>Where enabled, eligible professional players may use an identity-verification process. HoopCheck may receive a verification result and limited information needed to administer a verification badge or status. Identity documents, selfies, biometric-related information, or other verification materials may be processed by the identity-verification provider and are subject to that provider's applicable policies.</p>

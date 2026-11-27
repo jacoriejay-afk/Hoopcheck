@@ -44,7 +44,7 @@ function RootLayout() {
   const sessionReady = session.ready;
   const signedIn = Boolean(session.userId);
   const pathname = usePathname();
-  const routeParams = useGlobalSearchParams<{ post?: string | string[]; q?: string | string[]; gameId?: string | string[]; side?: string | string[]; group?: string | string[]; tab?: string | string[]; topic?: string | string[]; social?: string | string[] }>();
+  const routeParams = useGlobalSearchParams<{ post?: string | string[]; q?: string | string[]; gameId?: string | string[]; side?: string | string[]; group?: string | string[]; tab?: string | string[]; topic?: string | string[]; social?: string | string[]; kind?: string | string[]; reportReel?: string | string[] }>();
 
   useEffect(() => {
     bootstrap.current = createSessionBootstrap(
@@ -74,11 +74,13 @@ function RootLayout() {
     // Server-side role restrictions remain authoritative; this is navigation only.
     if (session.pendingSocialSignup) {
       // The sign-in screen owns Apple authorization persistence before navigation.
-      if (currentRoute === "auth" || currentRoute === "sign-in" || (currentRoute === "sign-up" && routeParams.social === "1")) return;
+      if (currentRoute === "auth" || currentRoute === "sign-in" || currentRoute === "legal" || pathname === "/account/policies" || (currentRoute === "sign-up" && routeParams.social === "1")) return;
       router.replace({ pathname: "/sign-up", params: { social: "1" } });
       return;
     }
-    if (["about", "web", "sign-in", "sign-up"].includes(currentRoute)) return;
+    // Static public policy documents are readable during signup; private account screens remain restricted.
+    if (pathname === "/account/policies") return;
+    if (["about", "web", "legal", "sign-in", "sign-up", "forgot-password"].includes(currentRoute)) return;
     const onPasswordRecovery = currentRoute === "reset-password";
     // Let the OAuth callback exchange its PKCE code and choose the destination.
     const onAuthCallback = currentRoute === "auth";
@@ -95,11 +97,13 @@ function RootLayout() {
       if (currentRoute === "hoopgroups" && typeof routeParams.group === "string" && /^[a-z0-9][a-z0-9-]{0,59}$/.test(routeParams.group)) query.set("group",routeParams.group);
       if (currentRoute === "notifications" && (routeParams.tab === "chat" || routeParams.tab === "requests" || routeParams.tab === "activity")) query.set("tab",routeParams.tab);
       if (pathname === "/account/support" && routeParams.topic === "scam") query.set("topic","scam");
+      if (pathname === "/account/support" && typeof routeParams.reportReel === "string" && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(routeParams.reportReel)) query.set("reportReel",routeParams.reportReel);
+      if (pathname === "/account/network" && (routeParams.kind === "agents" || routeParams.kind === "creators" || routeParams.kind === "safety")) query.set("kind",routeParams.kind);
       if (currentRoute === "search" && typeof routeParams.q === "string") query.set("q", routeParams.q.slice(0, 100));
       const suffix = query.toString();
       rememberDestination(pathname + (suffix ? `?${suffix}` : "")); router.replace("/sign-in");
     }
-  }, [sessionReady, signedIn, session.pendingSocialSignup, segments, router, pathname, routeParams.post, routeParams.q, routeParams.gameId, routeParams.side, routeParams.group, routeParams.tab, routeParams.topic, routeParams.social]);
+  }, [sessionReady, signedIn, session.pendingSocialSignup, segments, router, pathname, routeParams.post, routeParams.q, routeParams.gameId, routeParams.side, routeParams.group, routeParams.tab, routeParams.topic, routeParams.social, routeParams.kind, routeParams.reportReel]);
 
   // Mount the navigator on the first render. Font loading must never prevent
   // Router from mounting or leave a blank screen after the splash deadline.
@@ -138,6 +142,7 @@ function RootLayout() {
         <Stack.Screen name="account/ambassador-hq" options={{ title: "Ambassador HQ" }} />
         <Stack.Screen name="settings" options={{ title: "Settings" }} />
         <Stack.Screen name="web" options={{ title: "HoopCheck" }} />
+        <Stack.Screen name="legal" options={{ title: "HoopCheck Legal" }} />
         <Stack.Screen name="index" options={{ title: "HoopCheck™", headerShown: false }} />
         <Stack.Screen name="sign-in" options={{ headerShown: false }} />
         <Stack.Screen name="auth/callback" options={{ title: "Signing in" }} />

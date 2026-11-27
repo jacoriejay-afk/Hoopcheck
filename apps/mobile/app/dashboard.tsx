@@ -6,7 +6,7 @@ import { BrandLogo } from "../components/BrandLogo";
 import { ExploreLinks } from "../components/ExploreLinks";
 import { Input, Chip, SectionHeader } from "../src/primitives";
 import { useCallback, useEffect, useState } from "react";
-import { Alert, Keyboard, Linking, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Alert, Keyboard, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { useMotionSetting } from "../src/motion/Provider";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -53,13 +53,17 @@ export default function DashboardScreen() {
     return () => { alive = false; };
   }, []);
 
-  async function openAccountLink(path: string) {
+  function openAccountLink(path: string) {
     if (path === "/account" || path === "/about") { router.push(path); return; }
-    try {
-      await Linking.openURL(`https://hoopcheck.online${path}`);
-    } catch {
-      Alert.alert("Unable to open link", "Please try again or visit hoopcheck.online in your browser.");
+    if (path === "/support") { router.push("/account/support"); return; }
+    if (path === "/privacy" || path === "/terms") {
+      router.push({ pathname: "/account/policies", params: { kind: path === "/terms" ? "terms" : "privacy" } });
+      return;
     }
+    if (path === "/community-guidelines") { router.push({ pathname: "/legal", params: { document: "community-guidelines" } }); return; }
+    // Remaining website-only pages go through the explicit browser handoff,
+    // not an OS universal link which could reopen this app.
+    router.push({ pathname: "/web", params: { path } });
   }
 
   async function signOut() {
