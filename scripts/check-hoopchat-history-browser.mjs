@@ -24,7 +24,7 @@ const messages = Array.from({ length: 51 }, (_, index) => ({
 const scopedReads = [];
 let failNext = true;
 let blocks = [];
-const reports = [], blockWrites = [];
+const reports = [], blockWrites = [], messageWrites = [];
 const browser = await chromium.launch({
   ...(process.env.CHROMIUM_EXECUTABLE_PATH ? { executablePath: process.env.CHROMIUM_EXECUTABLE_PATH } : { channel: "chrome" }),
   headless: true, args: ["--no-sandbox"],
@@ -69,6 +69,10 @@ try {
     if (url.pathname.endsWith("/profiles") && query.get("id")?.startsWith("in.")) {
       data = [{ id: peer, display_name: "Fixture Teammate" }, { id: other, display_name: "Fixture Revoked" }];
     }
+    if (url.pathname.endsWith("/player_contact_messages") && request.method() === "POST") {
+      messageWrites.push(request.postDataJSON());
+      return route.fulfill({ status: 201, headers, json: [] });
+    }
     if (url.pathname.endsWith("/player_contact_messages") && query.has("request_id")) {
       scopedReads.push({ id: query.get("request_id"), order: query.get("order"), cursor: query.get("or"), bearer: request.headers().authorization });
       if (!query.get("request_id").startsWith("eq.")) data = messages.slice(0, 1);
@@ -91,6 +95,12 @@ try {
   assert.equal(pages.length, 3);
   assert.ok(pages.every(read => read.id === `eq.${thread}` && read.order === "created_at.desc,id.desc" && read.bearer === `Bearer ${token}`));
   assert.ok(pages[2].cursor.includes(`id.lt.${messages[49].id}`));
+  const composer = page.locator("#hc-courtside-compose");
+  await composer.fill("My unsent reply");
+  await history.locator("article").filter({ has: page.getByText("Fixture message 51", { exact: true }) }).getByRole("button", { name: /Quote message from/ }).click();
+  assert.equal(await composer.inputValue(), "> Fixture message 51\n\nMy unsent reply");
+  assert.equal(messageWrites.length, 0, "Quote action must not publish a message");
+  await composer.fill("");
   const safety = page.getByRole("region", { name: "Conversation safety" });
   await safety.getByRole("button", { name: "Report conversation" }).click();
   await safety.getByLabel("Conversation report reason").fill("Fixture safety concern");
