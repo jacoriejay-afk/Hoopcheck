@@ -10,6 +10,8 @@ on:
       - "supabase/candidates/appstore_deletion_apple_revocations.sql"
       - "supabase/tests/appstore_deletion_apple_revocations_fixture.sql"
       - "supabase/candidates/appstore_deletion_account_freeze.sql"
+      - "supabase/candidates/appstore_deletion_apple_vault_freeze.sql"
+      - "supabase/candidates/appstore_apple_authorization_vault.sql"
       - "supabase/candidates/appstore_deletion_private_preferences_cleanup.sql"
       - "supabase/candidates/appstore_deletion_completion_delivery.sql"
       - "supabase/candidates/appstore_deletion_review_cleanup.sql"

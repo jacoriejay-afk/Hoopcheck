@@ -9,6 +9,8 @@ CREATE ROLE service_role NOLOGIN BYPASSRLS;
 CREATE ROLE authenticator NOLOGIN;
 CREATE TABLE auth.sessions(id uuid PRIMARY KEY,user_id uuid,not_after timestamptz);
 CREATE TABLE auth.users(id uuid PRIMARY KEY,banned_until timestamptz,role text NOT NULL DEFAULT 'authenticated');
+ALTER TABLE auth.users ADD COLUMN email text, ADD COLUMN email_confirmed_at timestamptz;
+CREATE TABLE auth.identities(user_id uuid,provider text,provider_id text);
 INSERT INTO auth.users(id,banned_until) VALUES('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',null),('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',null);
 CREATE TABLE auth.mfa_factors(user_id uuid,status text);
 CREATE FUNCTION auth.jwt() RETURNS jsonb LANGUAGE sql STABLE AS $$ SELECT coalesce(nullif(current_setting('request.jwt.claims',true),''),'{}')::jsonb $$;
@@ -33,6 +35,8 @@ END $$;
 CREATE SCHEMA hoopcheck_deletion_private;
 \i supabase/candidates/appstore_deletion_worker_state.sql
 \i supabase/candidates/appstore_deletion_account_freeze.sql
+\i supabase/candidates/appstore_apple_authorization_vault.sql
+\i supabase/candidates/appstore_deletion_apple_vault_freeze.sql
 INSERT INTO public.account_deletion_requests(id,user_id,scheduled_for,status) VALUES('33333333-3333-4333-8333-333333333333','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',now(),'processing');
 INSERT INTO hoopcheck_deletion_private.worker_state(request_id,policy_version,fence,lease_until,next_step) VALUES('33333333-3333-4333-8333-333333333333','fixture','44444444-4444-4444-8444-444444444444',now()+interval '5 minutes',3);
 INSERT INTO hoopcheck_deletion_private.worker_receipts(request_id,step_number,receipt) SELECT '33333333-3333-4333-8333-333333333333',i,'fixture-'||i FROM generate_series(1,2)i;
@@ -48,6 +52,18 @@ DO $$ BEGIN
  IF public.freeze_approved_deletion_account('33333333-3333-4333-8333-333333333333','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','44444444-4444-4444-8444-444444444444') THEN RAISE EXCEPTION 'Disabled worker froze account'; END IF;
 END $$;
 RESET ROLE;
+UPDATE auth.users SET email_confirmed_at=now();
+INSERT INTO auth.identities VALUES
+ ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','apple','apple-a'),
+ ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','apple','apple-extra'),
+ ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','apple','apple-b');
+SET LOCAL ROLE service_role;
+DO $$ BEGIN
+ IF NOT public.store_verified_apple_authorization('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','55555555-5555-4555-8555-555555555555','apple-a','v1.originalIV.originalTag.originalCiphertext') THEN
+  RAISE EXCEPTION 'Original authorization rejected';
+ END IF;
+END $$;
+RESET ROLE;
 UPDATE hoopcheck_deletion_private.worker_config SET worker_enabled=true,policy_version='fixture';
 SET LOCAL ROLE service_role;
 DO $$ BEGIN
@@ -55,6 +71,27 @@ DO $$ BEGIN
  IF NOT public.freeze_approved_deletion_account('33333333-3333-4333-8333-333333333333','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','44444444-4444-4444-8444-444444444444') THEN RAISE EXCEPTION 'Approved freeze denied'; END IF;
 END $$;
 RESET ROLE;
+SET LOCAL ROLE service_role;
+DO $$ BEGIN
+ BEGIN
+  PERFORM public.store_verified_apple_authorization('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','55555555-5555-4555-8555-555555555555','apple-a','v1.fixtureIV.fixtureTag.fixtureCiphertext');
+  RAISE EXCEPTION 'Frozen owner vault update allowed';
+ EXCEPTION WHEN insufficient_privilege THEN NULL;
+ END;
+ BEGIN
+  PERFORM public.store_verified_apple_authorization('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','55555555-5555-4555-8555-555555555555','apple-extra','v1.fixtureIV.fixtureTag.fixtureCiphertext');
+  RAISE EXCEPTION 'Frozen owner vault insert allowed';
+ EXCEPTION WHEN insufficient_privilege THEN NULL;
+ END;
+ IF NOT public.store_verified_apple_authorization('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','77777777-7777-4777-8777-777777777777','apple-b','v1.fixtureIV.fixtureTag.fixtureCiphertext') THEN
+  RAISE EXCEPTION 'Unfrozen owner vault write denied';
+ END IF;
+END $$;
+RESET ROLE;
+DO $$ BEGIN
+ IF NOT EXISTS(SELECT 1 FROM hoopcheck_apple_private.authorization_vault WHERE owner_id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' AND apple_subject='apple-a' AND encrypted_refresh_token='v1.originalIV.originalTag.originalCiphertext')
+ OR (SELECT count(*) FROM hoopcheck_apple_private.authorization_vault)<>2 THEN RAISE EXCEPTION 'Vault owner isolation failed'; END IF;
+END $$;
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claims','{"role":"authenticated","sub":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","aal":"aal1","session_id":"55555555-5555-4555-8555-555555555555"}',true);
 DO $$ DECLARE t text;n integer;BEGIN
@@ -158,7 +195,7 @@ END $$;
 
 
 -- Separate synthetic deletion request for completion contact lifecycle.
-ALTER TABLE auth.users ADD COLUMN email text, ADD COLUMN email_confirmed_at timestamptz;
+
 UPDATE auth.users SET email='fixture@example.com',email_confirmed_at=now() WHERE id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 \i supabase/candidates/appstore_deletion_completion_delivery.sql
 INSERT INTO public.account_deletion_requests(id,user_id,scheduled_for,status) VALUES('88888888-8888-4888-8888-888888888888','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',now(),'processing');
