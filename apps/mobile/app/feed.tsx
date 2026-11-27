@@ -15,14 +15,14 @@ import { MediaPostComposer } from "../components/MediaPostComposer";
 import { FeedPoll } from "../components/FeedPoll";
 import { FeedCheckAction } from "../components/FeedCheckAction";
 import { FeedReport } from "../components/FeedReport";
-import { exploreFilters, matchesFeedExplore, type ExploreFilter } from "../src/native/feedExplore";
+import { cleanExploreSearch, exploreFilters, matchesFeedExplore, type ExploreFilter, type ExploreTarget } from "../src/native/feedExplore";
 import { supabase } from "../src/lib/supabase";
 import { useEntryTheme } from "../src/theme";
 import { useNativeAccount } from "../src/native/useNativeAccount";
 import { useNativeDraft } from "../src/native/drafts";
 import { useNetwork, requireOnline } from "../src/native/network";
 import { readWithDeadline } from "../src/native/readDeadline";
-import { deleteOwnedFeedPost, feedAction, isFeedId, moderateFeedText, publishFeedPoll, readFeedChecks, readFeedComments, readFeedPage, readSavedFeedPage, readFeedSaved, readSharedFeedPost, toggleFeedCheck, validatedPollOptions, type FeedComment, type FeedCursor, type FeedPost } from "../src/native/feedClient";
+import { deleteOwnedFeedPost, feedAction, isFeedId, moderateFeedText, publishFeedPoll, readFeedChecks, readFeedComments, readFeedPage, readExploreFeedPage, readSavedFeedPage, readFeedSaved, readSharedFeedPost, toggleFeedCheck, validatedPollOptions, type FeedComment, type FeedCursor, type FeedPost } from "../src/native/feedClient";
 function relativeTime(value: string, now: number) { const time=Date.parse(value); if(!Number.isFinite(time))return "Unknown time";const minutes=Math.max(0,Math.floor((now-time)/60000));if(minutes<1)return "Just now";if(minutes<60)return `${minutes}m ago`;if(minutes<1440)return `${Math.floor(minutes/60)}h ago`;if(minutes<10080)return `${Math.floor(minutes/1440)}d ago`;return new Date(time).toLocaleDateString(); }
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
 type CommentPage = { rows: FeedComment[]; more: boolean; offset: number; loading: boolean; error: string };
@@ -44,11 +44,14 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
   const [reels, setReels] = useState(initialReels);
   const [savedMode, setSavedMode] = useState<{ owner: string; enabled: boolean }>({ owner: "", enabled: false });
   const savedOnly = !reels && savedMode.owner === uid && savedMode.enabled;
-  const [explore, setExplore] = useState<{ owner: string; active: boolean; search: string; filter: ExploreFilter }>({ owner: "", active: false, search: "", filter: "all" });
+  const [explore, setExplore] = useState<{ owner: string; active: boolean; search: string; applied: string; filter: ExploreFilter; target: ExploreTarget }>({ owner: "", active: false, search: "", applied: "", filter: "all", target: "posts" });
   const exploring = !reels && !savedOnly && explore.owner === uid && explore.active;
-  useEffect(() => { setExplore({ owner: "", active: false, search: "", filter: "all" }); }, [uid]);
-  useEffect(() => { if (linkedId) { setSavedMode({ owner: "", enabled: false }); setExplore({ owner: "", active: false, search: "", filter: "all" }); } }, [linkedId]);
-  const scope = `${uid ?? ""}:${reels}:${savedOnly}`;
+  useEffect(() => { setExplore({ owner: "", active: false, search: "", applied: "", filter: "all", target: "posts" }); }, [uid]);
+  useEffect(() => { if (linkedId) { setSavedMode({ owner: "", enabled: false }); setExplore({ owner: "", active: false, search: "", applied: "", filter: "all", target: "posts" }); } }, [linkedId]);
+  const exploreSearch = exploring ? explore.applied : "";
+  const exploreFilter = exploring ? explore.filter : "all";
+  const exploreTarget = exploring ? explore.target : "posts";
+  const scope = JSON.stringify([uid ?? "",reels,savedOnly,exploring,exploreSearch,exploreFilter,exploreTarget]);
   const viewer = useRef({ uid, canRead, scope });
   useLayoutEffect(() => { viewer.current = { uid, canRead, scope }; }, [uid, canRead, scope]);
   const [focused, setFocused] = useState(false);
@@ -142,7 +145,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
     const current = ++generation.current;
     setLoading(true); setLoadError("");
     try {
-      const [page, shared] = await Promise.all([savedOnly ? readSavedFeedPage(supabase, uid, cursor) : readFeedPage(supabase, uid, cursor, reels), !savedOnly && !cursor && linkedId ? readSharedFeedPost(supabase, uid, linkedId) : null]);
+      const [page, shared] = await Promise.all([savedOnly ? readSavedFeedPage(supabase, uid, cursor) : exploring ? readExploreFeedPage(supabase,uid,exploreFilter,exploreSearch,exploreTarget,cursor) : readFeedPage(supabase, uid, cursor, reels), !savedOnly && !exploring && !cursor && linkedId ? readSharedFeedPost(supabase, uid, linkedId) : null]);
       const posts = shared && (!reels || shared.video_url) && !page.posts.some(post => post.id === shared.id) ? [shared, ...page.posts] : page.posts;
       const [checkResult, savedResult] = await Promise.allSettled([readFeedChecks(supabase, posts.map(post => post.id)), readFeedSaved(supabase, uid, posts.map(post => post.id))]);
       const activity = checkResult.status === "fulfilled" ? checkResult.value : [];
@@ -162,10 +165,10 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
         return result;
       });
       if (activityFailed) setMessage("Posts loaded. Check totals could not be verified.");
-      else if (!savedOnly && !cursor && linkedId && !shared) setMessage("The shared post is unavailable for this account.");
+      else if (!savedOnly && !exploring && !cursor && linkedId && !shared) setMessage("The shared post is unavailable for this account.");
     } catch { if (current === generation.current) setLoadError("HoopFeed could not load. Try again."); }
     finally { if (current === generation.current) setLoading(false); }
-  }, [uid, canRead, reels, linkedId, scope, savedOnly]);
+  }, [uid, canRead, reels, linkedId, scope, savedOnly, exploring, exploreFilter, exploreSearch, exploreTarget]);
   useEffect(() => {
     setRows({ scope, posts: [] }); setNext(null); setChecks({}); setCheckPulses({ scope, values: {} }); setSaved({}); setOpenComments({}); setMessage("");
     if (canRead && !reels) void load(); else setLoading(false);
@@ -223,7 +226,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
       (mutedCreators.owner !== uid || !mutedCreators.ids.includes(post.author_id))
     )),
   ) : [];
-  const displayPosts = exploring ? posts.filter(post => matchesFeedExplore(post, explore.filter, explore.search)) : posts;
+  const displayPosts = exploring ? posts.filter(post => matchesFeedExplore(post, exploreFilter, exploreSearch, exploreTarget)) : posts;
   const currentReelIndex = reels ? posts.findIndex(post => visible.has(post.id)) : -1;
   const nextReelId = currentReelIndex >= 0 ? posts[currentReelIndex + 1]?.id ?? null : null;
   async function hideCreator(authorId: string) {
@@ -308,11 +311,12 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
         </Pressable>)}
       </View>
     </GlassSurface>
-    {!reels && <View accessibilityRole="tablist" style={{flexDirection:"row",gap:6,paddingHorizontal:14,paddingBottom:4}}>{(["all","saved","explore"] as const).map(value => { const selected = value === "explore" ? exploring : value === "saved" ? savedOnly : !savedOnly && !exploring; return <Pressable key={value} testID={`feed-tab-${value}`} accessibilityRole="tab" accessibilityState={{selected}} onPress={()=>{setSavedMode({owner:uid!,enabled:value==="saved"});setExplore(current=>({owner:uid!,active:value==="explore",search:current.owner===uid?current.search:"",filter:current.owner===uid?current.filter:"all"}));}} style={{flex:1,minHeight:44,paddingHorizontal:6,alignItems:"center",justifyContent:"center",borderRadius:22,borderWidth:1,borderColor:selected?theme.accent:theme.border}}><Text style={{color:selected?theme.accent:theme.foreground,fontWeight:"700",textAlign:"center"}}>{value==="saved"?"Saved posts":value==="explore"?"Explore":"All posts"}</Text></Pressable>;})}</View>}
+    {!reels && <View accessibilityRole="tablist" style={{flexDirection:"row",gap:6,paddingHorizontal:14,paddingBottom:4}}>{(["all","saved","explore"] as const).map(value => { const selected = value === "explore" ? exploring : value === "saved" ? savedOnly : !savedOnly && !exploring; return <Pressable key={value} testID={`feed-tab-${value}`} accessibilityRole="tab" accessibilityState={{selected}} onPress={()=>{setSavedMode({owner:uid!,enabled:value==="saved"});setExplore(current=>({owner:uid!,active:value==="explore",search:current.owner===uid?current.search:"",applied:current.owner===uid?current.applied:"",filter:current.owner===uid?current.filter:"all",target:current.owner===uid?current.target:"posts"}));}} style={{flex:1,minHeight:44,paddingHorizontal:6,alignItems:"center",justifyContent:"center",borderRadius:22,borderWidth:1,borderColor:selected?theme.accent:theme.border}}><Text style={{color:selected?theme.accent:theme.foreground,fontWeight:"700",textAlign:"center"}}>{value==="saved"?"Saved posts":value==="explore"?"Explore":"All posts"}</Text></Pressable>;})}</View>}
     {exploring ? <View style={{paddingHorizontal:14,paddingVertical:6,gap:6}} testID="hoopfeed-explore">
-      <TextInput accessibilityLabel="Search loaded HoopFeed posts and creators" placeholder="Search posts or creators" placeholderTextColor={theme.muted} maxLength={100} value={explore.search} onChangeText={search=>setExplore(current=>current.owner===uid?{...current,search}:current)} returnKeyType="search" style={{color:theme.foreground,backgroundColor:theme.input,minHeight:44,borderWidth:1,borderColor:theme.border,borderRadius:12,paddingHorizontal:12}} />
+      <TextInput accessibilityLabel="Search authorized HoopFeed posts or creators" placeholder={exploreTarget==="posts"?"Search post text":"Search creator name"} placeholderTextColor={theme.muted} maxLength={100} value={explore.search} onChangeText={search=>setExplore(current=>current.owner===uid?{...current,search}:current)} returnKeyType="search" onSubmitEditing={()=>setExplore(current=>({...current,applied:cleanExploreSearch(current.search)}))} style={{color:theme.foreground,backgroundColor:theme.input,minHeight:44,borderWidth:1,borderColor:theme.border,borderRadius:12,paddingHorizontal:12}} />
+      <View style={{flexDirection:"row",gap:8}}>{(["posts","creators"] as const).map(target=><Button key={target} secondary={exploreTarget!==target} onPress={()=>setExplore(current=>({...current,target,applied:cleanExploreSearch(current.search)}))}>{target==="posts"?"Post text":"Creator name"}</Button>)}<Button secondary onPress={()=>setExplore(current=>({...current,applied:cleanExploreSearch(current.search)}))}>Search</Button></View>
       <View style={{flexDirection:"row",flexWrap:"wrap",gap:5}}>{exploreFilters.map(filter=><Pressable key={filter} accessibilityRole="button" accessibilityState={{selected:explore.filter===filter}} onPress={()=>setExplore(current=>current.owner===uid?{...current,filter}:current)} style={{minHeight:44,justifyContent:"center",paddingHorizontal:10,borderRadius:16,borderWidth:1,borderColor:explore.filter===filter?theme.accent:theme.border}}><Text style={{color:explore.filter===filter?theme.accent:theme.foreground}}>{filter==="all"?"All":filter==="discussion"?"Discussion":filter==="media"?"Media":"Polls"}</Text></Pressable>)}</View>
-      <Text style={{color:theme.muted,fontSize:12}}>Search posts already loaded for your account. Load more to explore additional posts.</Text>
+      <Text style={{color:theme.muted,fontSize:12}}>Search approved posts available to your account. Creator search matches display names on visible posts.</Text>
     </View>:null}
     {message || loadError ? <Text accessibilityLiveRegion="polite"
       style={{ color: theme.muted, paddingHorizontal: 18, marginTop: 4 }}>{loadError || message}</Text> : null}
@@ -321,7 +325,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
       <CommunityWordmark reels size={22} />
       <Text style={{ color: theme.muted, textAlign: "center" }}>HoopReels is not available yet.</Text>
       <Button secondary onPress={() => setReels(false)}>Back to HoopFeed</Button>
-    </View> : <FlatList key={reels ? "reels" : savedOnly ? "saved-posts" : "posts"} keyboardDismissMode="on-drag" style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={displayPosts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 9, paddingTop: 4, paddingBottom: 20, gap: reels ? 0 : 8 }} keyboardShouldPersistTaps="handled" initialNumToRender={reels ? 2 : 4} maxToRenderPerBatch={reels ? 2 : 4} windowSize={reels ? 3 : 5} pagingEnabled={reels} getItemLayout={reels && height > 0 ? (_items, index) => ({ length: height, offset: height * index, index }) : undefined} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
+    </View> : <FlatList key={reels ? "reels" : savedOnly ? "saved-posts" : exploring ? "explore-posts" : "posts"} keyboardDismissMode="on-drag" style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={displayPosts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 9, paddingTop: 4, paddingBottom: 20, gap: reels ? 0 : 8 }} keyboardShouldPersistTaps="handled" initialNumToRender={reels ? 2 : 4} maxToRenderPerBatch={reels ? 2 : 4} windowSize={reels ? 3 : 5} pagingEnabled={reels} getItemLayout={reels && height > 0 ? (_items, index) => ({ length: height, offset: height * index, index }) : undefined} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
       ListHeaderComponent={!reels && !savedOnly && !exploring ? <View style={{ marginBottom: 2, gap: 7 }}>
         {!composerExpanded ? <View style={{flexDirection:"row",alignItems:"center",gap:4,borderBottomWidth:1,borderColor:theme.border,paddingHorizontal:6}}>
           <Pressable accessibilityRole="button" accessibilityLabel="Create HoopFeed post" disabled={!canWrite} onPress={()=>{setComposerExpanded(true);setMediaMode(false);}} style={{flex:1,minHeight:44,flexDirection:"row",alignItems:"center",gap:7}}><Ionicons name="create-outline" size={20} color={theme.accent}/><Text numberOfLines={1} style={{color:theme.muted,fontSize:13,flex:1}}>Share a basketball update…</Text></Pressable>
@@ -341,7 +345,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
         {!canWrite ? <Text style={{ color: theme.muted, marginTop: 8 }}>Your membership does not include posting.</Text> : null}
       </View> : null}
       refreshControl={<RefreshControl refreshing={loading} onRefresh={() => { setBlocksVersion(version => version + 1); void load(); }} />}
-      ListEmptyComponent={loading || (canRead && (!focused || blockedCreators.owner !== uid || !blockedCreators.ready)) ? <HoopCheckLoading label="Loading HoopFeed…" /> : <View style={{ padding: 24, gap: 12 }}><Text style={textStyle}>{loadError || (blockedCreators.failed ? "Blocked accounts could not be verified. Refresh to retry." : savedOnly ? (next ? "No accessible saved posts in this page. Load more to check the next page." : "No accessible saved posts found.") : exploring ? (next ? "No matches in loaded posts. Load more to continue searching." : "No matching accessible posts.") : reels ? "No video posts are available in this page." : "No posts are available in this page.")}</Text><Button secondary onPress={() => { setBlocksVersion(version => version + 1); void load(); }}>Refresh</Button></View>}
+      ListEmptyComponent={loading || (canRead && (!focused || blockedCreators.owner !== uid || !blockedCreators.ready)) ? <HoopCheckLoading label="Loading HoopFeed…" /> : <View style={{ padding: 24, gap: 12 }}><Text style={textStyle}>{loadError || (blockedCreators.failed ? "Blocked accounts could not be verified. Refresh to retry." : savedOnly ? (next ? "No accessible saved posts in this page. Load more to check the next page." : "No accessible saved posts found.") : exploring ? (next ? "No accessible matches on this page. Load more to continue searching." : "No matching accessible posts.") : reels ? "No video posts are available in this page." : "No posts are available in this page.")}</Text><Button secondary onPress={() => { setBlocksVersion(version => version + 1); void load(); }}>Refresh</Button></View>}
       renderItem={({ item: post }) => {
         const rawPage = comments.owner === uid ? comments.values[post.id] : undefined;
         const page = rawPage ? {...rawPage, rows:rawPage.rows.filter(comment=>!blockedCreators.ids.includes(comment.author_id))} : undefined;
