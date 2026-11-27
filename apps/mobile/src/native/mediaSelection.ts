@@ -27,6 +27,18 @@ export function movePhoto<T>(items: T[], index: number, direction: -1 | 1): T[] 
   [copy[index], copy[next]] = [copy[next], copy[index]];
   return copy;
 }
+// Delete only a rejected output produced by our own image manipulator. Never
+// delete the user's source URI, including content-provider and library files.
+function discardRejectedPhotoOutput(uri: string, source: string) {
+  if (uri === source) return;
+  try {
+    if (Platform.OS === "web" && uri.startsWith("blob:")) URL.revokeObjectURL(uri);
+    else if (Platform.OS !== "web" && uri.startsWith("file:")) {
+      const file = new File(uri);
+      if (file.exists) file.delete();
+    }
+  } catch { /* Best effort: never let temporary cleanup mask the original error. */ }
+}
 export async function preparePhoto(input: { uri: string; width: number; height: number }, avatar = false, rotate = false, crop?: PhotoCrop): Promise<Photo> {
   localUri(input.uri);
   if (!Number.isFinite(input.width) || !Number.isFinite(input.height) || input.width < 1 || input.height < 1 || input.width * input.height > 80_000_000) throw new Error("Choose a smaller photo (up to 80 megapixels).");
@@ -44,9 +56,22 @@ export async function preparePhoto(input: { uri: string; width: number; height: 
     const rendered = await readWithDeadline(() => context.renderAsync(), 20000);
     try {
       for (const compress of avatar ? [0.8, 0.55, 0.3] : [0.92, 0.72, 0.48]) {
-        const result = await readWithDeadline(() => rendered.saveAsync({ format: SaveFormat.JPEG, compress, base64: false }), 20000);
-        const size = Platform.OS === "web" ? (await (await fetch(result.uri)).blob()).size : new File(result.uri).size;
-        if (Number.isSafeInteger(size) && size > 0 && size <= 750000) return { ...result, name: "photo.jpg", type: "image/jpeg", size };
+        // A native save can finish after its deadline. Discard that late output
+        // instead of leaving a private compressed copy in the application cache.
+        let abandoned = false;
+        const saving = rendered.saveAsync({ format: SaveFormat.JPEG, compress, base64: false });
+        void saving.then(output => { if (abandoned) discardRejectedPhotoOutput(output.uri, input.uri); }, () => {});
+        let result;
+        try { result = await readWithDeadline(() => saving, 20000); }
+        catch (error) { abandoned = true; throw error; }
+        let keep = false;
+        try {
+          const size = Platform.OS === "web" ? (await readWithDeadline(async () => (await (await fetch(result.uri)).blob()).size, 20000)) : new File(result.uri).size;
+          if (Number.isSafeInteger(size) && size > 0 && size <= 750000) {
+            keep = true;
+            return { ...result, name: "photo.jpg", type: "image/jpeg", size };
+          }
+        } finally { if (!keep) discardRejectedPhotoOutput(result.uri, input.uri); }
       }
       throw new Error("This photo is still too large. Choose a smaller image.");
     } finally { rendered.release(); }
@@ -65,7 +90,11 @@ export async function chooseVideo(): Promise<Video | null> {
   if (!permission.granted && permission.accessPrivileges !== "limited") throw new MediaPermissionError("Allow photo-library access in Settings to choose a video, then try again.");
   const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["videos"], allowsEditing: true, videoMaxDuration: 180, videoExportPreset: ImagePicker.VideoExportPreset.HighestQuality, exif: false, base64: false });
   if (result.canceled) return null;
-  return prepareVideo(result.assets[0]);
+  const asset = result.assets[0];
+  // Some library providers omit duration. Reject known invalid/over-limit clips
+  // before upload, without assuming unknown metadata proves compatibility.
+  if (asset.duration != null && (!Number.isFinite(asset.duration) || asset.duration <= 0 || asset.duration > 180000)) throw new Error("Choose a video of up to 3 minutes.");
+  return prepareVideo(asset);
 }
 function prepareVideo(asset: ImagePicker.ImagePickerAsset): Video {
   localUri(asset.uri);

@@ -1,0 +1,38 @@
+name: Compliance schema parity audit (offline)
+on:
+  pull_request:
+    branches: ["integration/appstore-compliance-candidate", "qa/post16-reconcile-repair-compliance", "integration/post16-release-reconciliation"]
+    paths:
+      - "scripts/appstore-schema-parity.py"
+      - "scripts/test-appstore-schema-parity.py"
+      - "docs/appstore-schema-parity-snapshot.json"
+      - "supabase/tests/appstore_schema_catalog_readonly.sql"
+      - ".github/workflows/appstore-schema-parity.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-catalog-checker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Verify drift checker (no database or network access needed)
+        run: python3 scripts/test-appstore-schema-parity.py -v
+      - name: Preserve drift report and require the known mismatch to be detected
+        shell: bash
+        run: |
+          set -euo pipefail
+          code=0
+          python3 scripts/appstore-schema-parity.py docs/appstore-schema-parity-snapshot.json > schema-parity-report.json || code=$?
+          cat schema-parity-report.json
+          test "$code" -eq 1
+          echo "Checker correctly detected drift; database alignment and migration acceptance remain blocked."
+      - uses: actions/upload-artifact@v4
+        with:
+          name: schema-drift-audit-not-release-acceptance
+          path: schema-parity-report.json
+          retention-days: 7

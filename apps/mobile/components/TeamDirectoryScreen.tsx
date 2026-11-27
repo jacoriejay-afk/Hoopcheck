@@ -12,7 +12,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { teamDirectoryQuery, cleanTeamSearch, TEAM_PAGE_SIZE } from "../src/native/teamDirectory";
+import { teamDirectoryQuery, cleanTeamSearch, TEAM_PAGE_SIZE, mergeTeamDirectoryRows } from "../src/native/teamDirectory";
 import { supabase } from "../src/lib/supabase";
 
 type Team = { logo_url?: string | null; logo_bg?: string | null; id: string; name: string; country: string | null; city: string | null; league_name: string | null; website?: string | null };
@@ -26,6 +26,8 @@ export function TeamDirectoryScreen({ women = false }: { women?: boolean }) {
   const { revision } = useNetwork();
   const { recents, remember } = useRecentSearches(women ? "womens-teams" : "teams");
   const requestId = useRef(0);
+  const loadingRequest = useRef<number | null>(null);
+  const appliedScope = useRef<string | null>(null);
   const [preview, setPreview] = useState<Team | null>(null);
   const [items, setItems] = useState<Team[]>([]);
   const [term, setTerm] = useState("");
@@ -38,21 +40,23 @@ export function TeamDirectoryScreen({ women = false }: { women?: boolean }) {
 
   const load = useCallback(async (search: string, start = 0, append = false) => {
     const currentRequest = ++requestId.current;
-    if (start === 0) setLoading(true);
+    loadingRequest.current = currentRequest;
+    setLoading(true);
     setError("");
     const clean = cleanTeamSearch(search);
-    const query = teamDirectoryQuery(supabase, women, clean, start);
-    const { data, error: queryError } = await read(`${women ? "womens-teams" : "teams"}:${clean}:${start}`, () => query).catch(() => ({ data: null, error: true }));
+    const { data, error: queryError } = await Promise.resolve().then(() => read(`${women ? "womens-teams" : "teams"}:${clean}:${start}`, () => teamDirectoryQuery(supabase, women, clean, start))).catch(() => ({ data: null, error: true }));
     if (currentRequest !== requestId.current) return;
+    loadingRequest.current = null;
     if (queryError) {
       setError("We couldn’t load teams. Check your connection and try again.");
-      if (!append) setItems([]);
+      if (!append) { setItems([]); setHasMore(false); setOffset(0); appliedScope.current = null; }
       setLoading(false); setRefreshing(false); return;
     }
     const rows = (data ?? []) as Team[];
     setHasMore(rows.length > PAGE_SIZE);
     const page = rows.slice(0, PAGE_SIZE);
-    setItems(append ? current => [...current, ...page] : page);
+    setItems(current => mergeTeamDirectoryRows(append ? current : [], page));
+    appliedScope.current = `${women}:${clean}`;
     setOffset(start);
     setLoading(false); setRefreshing(false);
   }, [read, women]);
@@ -64,16 +68,23 @@ export function TeamDirectoryScreen({ women = false }: { women?: boolean }) {
       setAppliedTerm(term.trim());
       void load(term, 0, false);
     }, motion.searchDelay);
-    return () => { clearTimeout(timer); requestId.current += 1; };
+    return () => { clearTimeout(timer); requestId.current += 1; loadingRequest.current = null; appliedScope.current = null; };
   }, [term, revision, load]);
 
   async function nextPage() {
-    if (loading || !hasMore) return;
-    setLoading(true);
+    if (loadingRequest.current !== null || loading || refreshing || !hasMore || cleanTeamSearch(term) !== cleanTeamSearch(appliedTerm) || appliedScope.current !== `${women}:${cleanTeamSearch(appliedTerm)}`) return;
     await load(appliedTerm, offset + PAGE_SIZE, true);
   }
 
-  const refresh = () => { setRefreshing(true); void load(appliedTerm, 0, false); };
+  const refresh = () => {
+    if (loadingRequest.current !== null || cleanTeamSearch(term) !== cleanTeamSearch(appliedTerm)) return;
+    setRefreshing(true); void load(appliedTerm, 0, false);
+  };
+  const updateTerm = (value: string) => {
+    if (value === term) return;
+    requestId.current++; loadingRequest.current = null; appliedScope.current = null;
+    setTerm(value); setLoading(true); setRefreshing(false); setItems([]); setHasMore(false); setOffset(0); setPreview(null);
+  };
 
   return (
     <SafeAreaView edges={["left", "right", "bottom"]} style={styles.safe}>
@@ -88,12 +99,12 @@ export function TeamDirectoryScreen({ women = false }: { women?: boolean }) {
           <Text style={styles.womensLinkText}>{women ? "Browse men’s teams" : "Browse women’s teams"}</Text>
         </Pressable>
         <View style={styles.searchRow}>
-          <Input onBlur={() => remember(term)} onSubmitEditing={() => remember(term)} value={term} onChangeText={value => { requestId.current++; setTerm(value); setLoading(true); setItems([]); setHasMore(false); }} returnKeyType="search" placeholder="Team, country, city or league" placeholderTextColor={theme.muted} style={styles.input} />
+          <Input onBlur={() => remember(term)} onSubmitEditing={() => remember(term)} value={term} onChangeText={updateTerm} returnKeyType="search" placeholder="Team, country, city or league" placeholderTextColor={theme.muted} style={styles.input} />
         </View>
-        {!term ? <RecentSearches items={recents} onSelect={setTerm} /> : null}
+        {!term ? <RecentSearches items={recents} onSelect={updateTerm} /> : null}
         <Text style={styles.count}>{loading ? "Loading teams…" : `${items.length}${hasMore ? "+" : ""} ${items.length === 1 && !hasMore ? "result" : "results"} shown`}</Text>
       </View>
-      {error ? <View style={styles.errorBox}><Text style={styles.error}>{error}</Text><Pressable onPress={() => void load(appliedTerm)}><Text style={styles.retry}>Try again</Text></Pressable></View> : null}
+      {error ? <View style={styles.errorBox}><Text style={styles.error}>{error}</Text><Pressable onPress={refresh}><Text style={styles.retry}>Try again</Text></Pressable></View> : null}
       {loading && items.length === 0 ? <Skeleton /> : (
         <FlatList
           keyboardShouldPersistTaps="handled"

@@ -19,6 +19,14 @@ begin
      or p_envelope is null or length(p_envelope) not between 20 and 12000 or p_envelope !~ '^v1\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$'
   then raise exception 'Invalid authorization' using errcode='22023'; end if;
   perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(p_owner::text,17001));
+  -- The deletion freeze candidate is installed later in the reviewed chain.
+  -- Once present, reject credential refresh under the same owner lock, even
+  -- before the worker has completed global session revocation.
+  if pg_catalog.to_regclass('hoopcheck_deletion_private.frozen_accounts') is not null then
+    if exists(select 1 from hoopcheck_deletion_private.frozen_accounts f where f.owner_id=p_owner) then
+      raise exception 'Account deletion is processing' using errcode='42501';
+    end if;
+  end if;
   if not exists(select 1 from auth.sessions s join auth.users u on u.id=s.user_id
     join auth.identities i on i.user_id=u.id
     where s.id=p_session and s.user_id=p_owner and (s.not_after is null or s.not_after>now())

@@ -1,5 +1,7 @@
 import { OwnAffiliations } from "../../components/OwnAffiliations";
 import { PlayerCareer } from "../../components/PlayerCareer";
+import { PrivateContractCountdown } from "../../components/PrivateContractCountdown";
+import { useNativeAccount } from "../../src/native/useNativeAccount";
 import { PlayerPassport } from "../../components/PlayerPassport";
 import { PlayerAccess } from "../../components/PlayerAccess";
 import { ProfileAvatar } from "../../components/ProfileAvatar";
@@ -34,6 +36,7 @@ function PlayerProfileDetails({ viewer, id }: { viewer: PlayerViewer; id: string
   const styles = createStyles(theme);
   const compactHero = useWindowDimensions().width < 390;
   const { id: viewerId, accountType } = viewer;
+  const { account } = useNativeAccount();
   const router = useRouter();
   const haptic = useHaptics();
   const { revision, offline } = useNetwork();
@@ -200,6 +203,7 @@ function PlayerProfileDetails({ viewer, id }: { viewer: PlayerViewer; id: string
             </GlassCard>
             <OwnAffiliations key={`${viewerId}:${player.id}`} profileId={player.id} />
             <PlayerCareer key={`${viewerId}:${player.id}`} playerId={player.id} viewer={viewer} />
+            {activeScreen && player.id === viewerId && account?.user.id === viewerId && account.user.accountType === "player" && account.tier === "premium" ? <PrivateContractCountdown key={viewerId} /> : null}
             {player.id !== viewerId ? <GlassCard style={styles.reportCard}>
               <Text style={styles.sectionTitle}>Safety and reporting</Text>
               <Button secondary disabled={blockBusy} onPress={()=>setConfirmBlock(v=>!v)}>Block account</Button>
