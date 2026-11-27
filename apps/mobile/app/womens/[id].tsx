@@ -71,7 +71,6 @@ export default function WomensTeamScreen() {
   }, [id, revision, refresh, offline, authRevision]);
   const current = team?.id === id ? team : null;
   const permissions = access && access.id === id && !offline ? access.value : null;
-  const goWeb = (path: string) => router.push({ pathname: "/web", params: { path } });
   const text = { color: theme.foreground };
   const link = { color: theme.accent };
   const touch = { minHeight: 48, justifyContent: "center" as const };
@@ -92,7 +91,7 @@ export default function WomensTeamScreen() {
           {review.body ? <Text style={{ ...text, marginTop: 8 }}>{review.body}</Text> : null}
           <Text style={{ color: theme.muted, marginTop: 8 }}>{new Date(review.created_at).toLocaleDateString()}</Text>
         </GlassCard>) : <Text style={text}>No approved reviews are available.</Text> : <Text style={text}>Review access follows your HoopCheck membership and account permissions.</Text>}
-        {permissions?.canWrite ? <Pressable accessibilityRole="link" onPress={() => nativeExactSeasonReviewsEnabled?router.push({pathname:"/teams/[id]/review",params:{id:current.id,teamName:current.name,directory:"womens-team"}}):goWeb(`/womens/${current.id}/review`)} style={touch}><Text style={link}>Write a review on HoopCheck</Text></Pressable> : null}
+        {permissions?.canWrite && nativeExactSeasonReviewsEnabled ? <Pressable accessibilityRole="link" onPress={() => router.push({pathname:"/teams/[id]/review",params:{id:current.id,teamName:current.name,directory:"womens-team"}})} style={touch}><Text style={link}>Write a team review</Text></Pressable> : null}
       </>}
     </ScrollView>
   </SafeAreaView>;

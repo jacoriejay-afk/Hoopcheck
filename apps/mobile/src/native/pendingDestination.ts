@@ -1,3 +1,5 @@
+import { supportTopic } from "./supportTopic.ts";
+
 let pending: string | null = null;
 export function rememberDestination(path: string) {
   if (path.length > 8192 || !path.startsWith("/") || path.startsWith("//")) return;
@@ -5,7 +7,7 @@ export function rememberDestination(path: string) {
     const url = new URL(path, "https://hoopcheck.online");
     if (url.origin !== "https://hoopcheck.online" || url.username || url.password) return;
     const root = /^\/(fan-live|notifications|hoopgroups|connections|feed|fan-feed|feed-welcome|reels|account|search|teams|womens|leagues|players|coaches|dashboard|settings|membership|messages|choose-username)$/;
-    const account = /^\/account\/(edit|security|support|career-history|network|owner-hq|ambassador-hq|policies)$/;
+    const account = /^\/account\/(edit|security|support|career-history|network|owner-hq|ambassador-hq|policies|privacy-center)$/;
     const entity = /^\/(teams|womens|leagues|players|coaches)\/[A-Za-z0-9_-]{1,100}$/;
     const nested = /^\/(?:team-hub\/groups(?:\/[A-Za-z0-9_-]{1,100})?|womens\/leagues\/[A-Za-z0-9_-]{1,100}|teams\/[A-Za-z0-9_-]{1,100}\/review)$/;
     if (![root,account,entity,nested].some(pattern=>pattern.test(url.pathname))) return;
@@ -23,8 +25,9 @@ export function rememberDestination(path: string) {
     if (url.pathname === "/notifications") {
       const tab=url.searchParams.get("tab"); if(tab==="activity"||tab==="chat"||tab==="requests")query.set("tab",tab);
     }
-    if (url.pathname === "/account/support" && url.searchParams.get("topic")==="scam") query.set("topic","scam");
     if (url.pathname === "/account/support") {
+      const topic = supportTopic(url.searchParams.get("topic"));
+      if (topic) query.set("topic", topic);
       const reel=url.searchParams.get("reportReel"); if(reel&&/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(reel)) query.set("reportReel",reel);
     }
     if (url.pathname === "/account/policies") {

@@ -68,7 +68,7 @@ function screen(path, { state = [], params = {}, segments = [], pathname = "/", 
     if (name.endsWith("/AppLock")) return { AppLock: "AppLock" };
     if (name.endsWith("/NativePageHeader")) return { NativePageHeader: "NativePageHeader" };
     if (name.endsWith("/TabBar")) return { TabBar: "TabBar" };
-    if (name.endsWith("/RouteFade")) return { RouteFade: "RouteFade" };
+    if (name.endsWith("/supportTopic")) return { supportTopic: value => value === "scam" ? value : null };
     if (/\.(png|ttf)$/.test(name)) return 1;
     return require(name);
   };
@@ -109,7 +109,7 @@ test("welcome adapts search and account actions to narrow screens and large text
     const shortcuts = f.nodes.filter(n => n.type === "Pressable" && n.props.accessibilityRole === "button");
     assert.equal(shortcuts.length, 2);
     shortcuts.forEach(n => n.props.onPress());
-    assert.deepEqual(f.calls.push.slice(2), ["/fan-live", { pathname: "/web", params: { path: "/pre-sign" } }]);
+    assert.deepEqual(f.calls.push.slice(2), ["/fan-live", "/pre-sign"]);
     assert.ok(shortcuts.every(n => n.props.style({ pressed: false }).minHeight >= 44));
   }
 });
@@ -210,7 +210,10 @@ test("denied, missing-code and misconfigured callbacks never exchange or redirec
 
 
 test("OS callback URL reaches native PKCE exchange rather than browser handoff", async () => {
-  const links = compile("src/native/deepLinks.ts", () => { throw new Error("Unexpected dependency"); });
+  const links = compile("src/native/deepLinks.ts", name => {
+    assert.equal(name, "./supportTopic.ts");
+    return compile("src/native/supportTopic.ts", () => { throw new Error("Unexpected dependency"); });
+  });
   const intent = compile("app/+native-intent.tsx", name => {
     assert.equal(name, "../src/native/deepLinks"); return links;
   });

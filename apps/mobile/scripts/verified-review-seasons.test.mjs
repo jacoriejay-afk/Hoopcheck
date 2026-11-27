@@ -32,7 +32,7 @@ test("form uses verified scope and correct team endpoint",()=>{
  assert.match(form,/currentChoices\.seasons\.includes\(season\)/);
  assert.match(form,/data\.session\?\.user\.id!==currentChoices\?\.userId/);
  assert.match(form,/\.\.\.target\.payload/);
- assert.match(women,/nativeExactSeasonReviewsEnabled\?router\.push/);
+ assert.match(women,/permissions\?\.canWrite && nativeExactSeasonReviewsEnabled/);
 });
 
 test("native review clears private draft and ignores stale submissions on account change",()=>{

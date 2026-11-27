@@ -95,7 +95,7 @@ export default function MembershipScreen() {
         setMessage(result.failed ? "Some purchases still need verification. Please restore again." : result.restored ? `Verified ${result.restored} Apple purchase${result.restored === 1 ? "" : "s"}.` : result.foreign ? "These purchases belong to another HoopCheck account. Sign in to the original account to restore them." : "No restorable Apple purchases were found for this account.");
       })}>Restore purchases</Button>
       <Button secondary disabled={busy || !store.supported || !account} onPress={() => void act(async live => { setPrepared(null); await store.manage(); if (live()) { retry(); await load(); } })}>Manage Apple subscription</Button>
-      {membership?.provider === "stripe" ? <Text style={muted}>Your membership is billed through Stripe. Manage it securely on the HoopCheck website; Apple controls do not cancel Stripe billing.</Text> : null}
+      {membership?.provider === "stripe" ? <><Text style={muted}>Your membership is billed through Stripe.</Text><Button secondary onPress={() => router.push({ pathname: "/account/support", params: { topic: "billing" } })}>Get billing help</Button></> : null}
       {process.env.EXPO_PUBLIC_HOOPCHECK_EXIT_FEEDBACK_ENABLED === "true" && owner && account?.user.id && membership && !loading ? <MembershipExitFeedback key={account.user.id} uid={account.user.id} /> : null}
       <View style={{ flexDirection: "row", gap: 18, flexWrap: "wrap" }}>
         <Button secondary onPress={() => router.push({pathname:"/legal",params:{document:"terms"}})}>Terms of use</Button>

@@ -28,13 +28,13 @@ test("compact V3 removes oversized editorial captions without dropping data feat
   assert.match(player, /readPlayerProfile/);
 });
 
-test("navigation uses reactive animated sport icons with accessible motion fallback", () => {
+test("navigation switches tabs immediately and preserves accessible selection", () => {
   const tabs = read("../components/TabBar.tsx");
   const theme = read("../src/theme.ts");
   const motion = read("../src/motion/Provider.tsx");
-  assert.match(tabs, /AnimatedTabIcon/);
-  assert.match(tabs, /withSequence/);
-  assert.match(tabs, /useMotionSetting/);
+  assert.match(tabs, /selected \? tab.active : tab.icon/);
+  assert.doesNotMatch(tabs, /withSequence|withSpring|onPanResponderMove/);
+  assert.doesNotMatch(read("../app/_layout.tsx"), /RouteFade/);
   assert.match(tabs, /accessibilityRole="tablist"/);
   assert.match(tabs, /accessibilityState=\{\{ selected \}\}/);
   assert.match(motion, /ReducedMotionConfig/);

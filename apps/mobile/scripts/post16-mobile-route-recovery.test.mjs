@@ -17,11 +17,11 @@ test("existing native destinations do not fall through to website", () => {
   assert.equal(nativeDestination("/owner-hq"), "/account/owner-hq");
   assert.equal(nativeDestination("/ambassador-hq"), "/account/ambassador-hq");
   assert.equal(nativeDestination("https://evil.test/messages"), "/");
-  assert.equal(nativeDestination("/referral/TEST"), "/web?path=%2Freferral%2FTEST");
+  assert.equal(nativeDestination("/referral/TEST"), "/link-unavailable");
   assert.equal(nativeDestination("/privacy"), "/account/policies?kind=privacy");
 });
 test("sign-in return path admits existing protected screens only", () => {
-  for (const path of ["/messages","/feed-welcome","/account/network?kind=creators","/account/owner-hq","/account/career-history","/teams/team-1/review","/team-hub/groups/team-1","/choose-username"]) {
+  for (const path of ["/messages","/feed-welcome","/account/network?kind=creators","/account/owner-hq","/account/career-history","/account/privacy-center","/teams/team-1/review","/team-hub/groups/team-1","/choose-username"]) {
     rememberDestination(path);
     assert.equal(takeDestination(),path);
     assert.equal(takeDestination(),null);
@@ -44,7 +44,7 @@ test("plain legacy website paths map to native routes without consuming auth or 
   assert.equal(nativeDestination("/signup"),"/sign-up");
   assert.equal(nativeDestination("/feed/welcome"),"/feed-welcome");
   assert.equal(nativeDestination("/live-games?side=womens"),"/fan-live?side=womens");
-  assert.equal(nativeDestination("/signup?ref=TEST"),"/web?path=%2Fsignup%3Fref%3DTEST");
+  assert.equal(nativeDestination("/signup?ref=TEST"),"/link-unavailable");
 });
 
 test("merged native policy and support screens use canonical native destinations",()=>{
@@ -61,4 +61,17 @@ test("merged native policy and support screens use canonical native destinations
   const layout=readFileSync(new URL("../app/_layout.tsx",import.meta.url),"utf8");
   assert.match(layout,/pathname === "\/account\/policies"\) return;/);
   assert.match(layout,/!signedIn && \(inAppArea \|\| designProtected\)/);
+});
+
+test("specialized support links retain only the validated topic through sign-in", () => {
+  for (const [query, topic] of [
+    ["scamAlert", "scam"], ["membershipCancellation", "billing"],
+    ["accountCompromised", "compromised"], ["agentVerification", "verification"],
+  ]) {
+    const route = "/account/support?topic=" + topic;
+    assert.equal(nativeDestination("/support?" + query + "=1&token=secret"), route);
+    rememberDestination(route + "&token=secret");
+    assert.equal(takeDestination(), route);
+  }
+  assert.equal(nativeDestination("/copyright"), "/account/support?topic=copyright");
 });

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { readServiceObservation, type ServiceObservation } from "../src/native/serviceObservation";
-import { useRouter } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { BrandLogo } from "../components/BrandLogo";
 import { Button, SectionHeader } from "../src/primitives";
@@ -9,7 +8,7 @@ import { overseasGuideIntro, overseasGuideSections, overseasGuideNotice } from "
 
 // Public editorial copy from app/about/page.tsx; no account or role data is loaded.
 export default function AboutScreen() {
-  const theme = useEntryTheme(); const router = useRouter();
+  const theme = useEntryTheme();
   const [observation, setObservation] = useState<ServiceObservation | null>(null);
   const [checking, setChecking] = useState(false);
   const [expandedGuide, setExpandedGuide] = useState<string[]>([]);
@@ -42,6 +41,6 @@ export default function AboutScreen() {
       <Text style={{ color: theme.muted, ...theme.type.body }}>{overseasGuideNotice}</Text>
     </View>
     <View style={{ gap: theme.spacing.sm }}><SectionHeader>Service check</SectionHeader><Text style={{ color: theme.muted }}>Check whether the HoopCheck web API responds. This does not verify sign-in, billing, live scores or other services.</Text><Button secondary disabled={checking} onPress={() => void checkService()}>{checking ? "Checking…" : "Check service"}</Button><Text accessibilityLiveRegion="polite" style={{color:theme.foreground}}>{observation ? `${observation.status === "maintenance_announced" ? "Maintenance announced" : "Web API responded"} · ${new Date(observation.observedAt).toLocaleString()}` : unavailable ? "Status unavailable. Your connection or the service may be unavailable." : "Not checked yet."}</Text></View>
-    <View style={{ gap: theme.spacing.sm }}><SectionHeader>Company information</SectionHeader><Text style={{ color: theme.foreground, ...theme.type.body }}>HoopCheck serves players, fans, coaches, agents, clubs and basketball organizations around the world. Our official website is hoopcheck.online. Entity, registration and business address details will be published once verified.</Text><Button secondary onPress={() => router.push({ pathname: "/web", params: { path: "/business-opportunities" } })}>Business opportunities (website)</Button></View>
+    <View style={{ gap: theme.spacing.sm }}><SectionHeader>Company information</SectionHeader><Text style={{ color: theme.foreground, ...theme.type.body }}>HoopCheck serves players, fans, coaches, agents, clubs and basketball organizations around the world. Our official website is hoopcheck.online. Entity, registration and business address details will be published once verified.</Text></View>
   </ScrollView>;
 }

@@ -24,8 +24,7 @@ test("motion is bounded and icon previews use the original asset", () => {
   const loader = read("../components/HoopCheckLoading.tsx"), tab = read("../components/TabBar.tsx"), ui = read("../components/AlternateIcons.tsx"), plugin = read("../plugins/withAlternateIcons.cjs");
   assert.ok(loader.includes("animated={foreground && !reduced}"));
   assert.ok(loader.includes("cancelAnimation(phase)"));
-  assert.ok(tab.includes("cancelAnimation(scale); cancelAnimation(lift);"));
-  assert.ok(tab.includes("if (reduced) { x.set(next); opacity.set(1); }"));
+  assert.doesNotMatch(tab, /withSpring|withTiming|AnimatedTabIcon/);
   assert.ok(ui.includes('require("../assets/app-icon.png")'));
   assert.ok(ui.includes("reduced ? undefined : FadeIn.duration(motion.fade)"));
   assert.ok(plugin.includes('JSON.stringify(Object.keys(icons).join(" "))'));

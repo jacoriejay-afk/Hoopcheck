@@ -26,8 +26,8 @@ async function verify(browser,theme,role){
    if(table==='user_blocks'){assert.equal(role,'player');assert.equal(req.method(),'GET');assert.equal(req.headers().authorization,'Bearer '+token);assert.equal(url.searchParams.get('blocker_id'),'eq.'+uid);assert.equal(url.searchParams.get('blocked_id'),'eq.'+player);assert.equal(url.searchParams.get('select'),'blocked_id');return json([]);}
    if(table==='profiles'){
     assert.equal(url.searchParams.get('id'),'eq.'+uid,'Account avatar query must stay scoped to the signed-in owner');
-    assert.equal(url.searchParams.get('select'),'avatar_url,avatar_moderation_status','Avatar query must not expand private profile fields');
-    return json({avatar_url:null,avatar_moderation_status:'approved'});
+    assert.equal(url.searchParams.get('select'),'username,avatar_url,avatar_moderation_status','Account identity query must not expand private profile fields');
+    return json({username:'research_member',avatar_url:null,avatar_moderation_status:'approved'});
    }
    if(table==='teams')return json({id:team,name:'Research Club',country:'Spain',city:'Madrid',league_name:'Research League',website:null});
    if(table==='get_public_follow_list'){assert.equal(req.method(),'POST');assert.deepEqual(req.postDataJSON(),{p_mode:'following',p_target_type:null,p_target_id:null,p_user_id:uid});return json([]);}

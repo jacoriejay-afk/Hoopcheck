@@ -107,8 +107,6 @@ function SignupForm({ socialIdentity }: { socialIdentity?: PendingSignup }) {
     setErrorMessage("");
     if (supabaseConfigurationError) { setErrorMessage(supabaseConfigurationError); return; }
     if (firstName.trim().length < 2 || lastName.trim().length < 2) { setErrorMessage("Enter your first and last name."); return; }
-    const usernameCheck = socialIdentity ? { valid: /^[a-zA-Z0-9_]{3,20}$/.test(username.trim()), message: "Use 3–20 letters, numbers or underscores." } : await usernameFieldRef.current?.validate();
-    if (!usernameCheck?.valid) { setErrorMessage("Username: " + (usernameCheck?.message || "Choose an available username.")); usernameFieldRef.current?.focus(); return; }
     if (!validBirthdate(birthdate)) { setErrorMessage("Enter a valid birthdate in YYYY-MM-DD format."); return; }
     if (ageAtDate(birthdate) < 18) { setErrorMessage("You must be 18 or older to create a HoopCheck account."); return; }
     if (!["male", "female", "non_binary", "prefer_not_to_say"].includes(gender)) { setErrorMessage("Select a gender option."); return; }
@@ -117,10 +115,16 @@ function SignupForm({ socialIdentity }: { socialIdentity?: PendingSignup }) {
     if (!socialIdentity && password !== confirmPassword) { setErrorMessage("Passwords do not match."); return; }
     if (!accepted) { setErrorMessage("Please agree to the Terms of Service and acknowledge the Privacy Policy and Community Guidelines."); return; }
 
-    if (submitting.current) return;
     submitting.current = true;
     setBusy(true);
     try {
+      const field = usernameFieldRef.current;
+      const usernameCheck = await field?.validate();
+      if (!usernameCheck?.valid) {
+        setErrorMessage(usernameCheck?.message || "Choose an available username.");
+        field?.focus();
+        return;
+      }
       const normalizedEmail = email.trim().toLowerCase();
       const metadata = {
           full_name: `${firstName.trim()} ${lastName.trim()}`,
@@ -159,7 +163,11 @@ function SignupForm({ socialIdentity }: { socialIdentity?: PendingSignup }) {
                 body: JSON.stringify({ signup }),
                 signal: controller.signal,
               });
-              if (!response.ok) throw new Error("Account setup could not be completed. Check your username and details.");
+              if (!response.ok) {
+                const body: { code?: string } | null = await response.json().catch(() => null);
+                if (body?.code === "23505") throw new Error("username_taken");
+                throw new Error("Account setup could not be completed. Check your username and details.");
+              }
             } finally { clearTimeout(timer); }
           },
           refresh: async () => { const r = await supabase.auth.refreshSession(); if (r.error) throw r.error; return r.data.session; },
@@ -169,7 +177,14 @@ function SignupForm({ socialIdentity }: { socialIdentity?: PendingSignup }) {
         return;
       }
       const { data, error } = await supabase.auth.signUp({ email: normalizedEmail, password, options: { data: metadata } });
-      if (error) throw error;
+      if (error) {
+        // Auth can mask a database uniqueness race as a generic signup error.
+        if (error.code === "unexpected_failure") {
+          const availability = await supabase.rpc("is_username_available", { candidate_username: metadata.username });
+          if (!availability.error && availability.data === false) throw new Error("username_taken");
+        }
+        throw error;
+      }
       if (data.session) {
         recordFreshSignIn(data.session.user.id);
         if (nativeCareerClaimsEnabled && accountType === "player") router.replace("/account/career-history");
@@ -178,12 +193,17 @@ function SignupForm({ socialIdentity }: { socialIdentity?: PendingSignup }) {
         if (nativeCareerClaimsEnabled && accountType === "player" && data.user?.id && data.user.identities?.length) {
           await rememberCareerSignup(AsyncStorage, data.user.id);
         }
-        Alert.alert("Check your email", "HoopCheck may require email verification before you can sign in. Players can add their private career history after signing in.", [
+        Alert.alert("Check your email", "If this address can receive a confirmation message, follow its instructions. If you already have an account, sign in or reset your password.", [
           { text: "Go to sign in", onPress: () => router.replace("/sign-in") },
         ]);
       }
-    } catch {
-      setErrorMessage("Could not create the account. Please check your details and try again.");
+    } catch (error) {
+      if (error instanceof Error && error.message === "username_taken") {
+        setErrorMessage("That username is taken. Choose another username.");
+        usernameFieldRef.current?.focus();
+      } else {
+        setErrorMessage("Could not create the account. Please check your details and try again.");
+      }
     } finally { submitting.current = false; setBusy(false); }
   }
 

@@ -14,25 +14,33 @@ export default function ChooseUsernameScreen() {
   const fieldRef = useRef<UsernameFieldHandle>(null);
   const [username, setUsername] = useState("");
   const [busy, setBusy] = useState(false);
+  const saving = useRef(false);
 
   async function save() {
-    if (busy) return;
+    if (saving.current) return;
+    saving.current = true;
     setBusy(true);
-    const checked = await fieldRef.current?.validate();
-    if (!checked?.valid) {
-      Alert.alert("Username", checked?.message || "Choose an available username.");
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      if (error || !data.session) throw new Error("Sign in again to save your username.");
+      const session = data.session;
+      const checked = await fieldRef.current?.validate();
+      if (!checked?.valid) throw new Error(checked?.message || "Choose an available username.");
+      const result = await supabase.rpc("save_my_username", { candidate_username: username.trim().toLowerCase() })
+        .setHeader("Authorization", `Bearer ${session.access_token}`);
+      const current = await supabase.auth.getSession();
+      if (current.error || current.data.session?.user.id !== session.user.id) {
+        throw new Error("The active account changed. Sign in again to continue.");
+      }
+      if (result.error) throw new Error(result.error.code === "23505" ? "That username is taken." : "Your username could not be saved. Try again.");
+      router.replace((takeDestination() ?? "/dashboard") as "/dashboard");
+    } catch (error) {
+      Alert.alert("Username", error instanceof Error ? error.message : "Your username could not be saved.");
       fieldRef.current?.focus();
+    } finally {
+      saving.current = false;
       setBusy(false);
-      return;
     }
-    const { error } = await supabase.rpc("save_my_username", { candidate_username: username.trim().toLowerCase() });
-    if (error) {
-      Alert.alert("Username", error.message || "That username could not be saved.");
-      fieldRef.current?.focus();
-      setBusy(false);
-      return;
-    }
-    router.replace((takeDestination() ?? "/dashboard") as "/dashboard");
   }
 
   return (

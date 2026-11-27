@@ -106,7 +106,6 @@ export default function ClubGroup() {
           {canJoin ? <Button secondary disabled={busy} onPress={() => { if (access.member && access.moderator) setConfirmLeave(true); else void act(access.member ? "leave" : "join"); }}>{access.member ? "Leave club group" : "Join club group"}</Button> : null}
           {confirmLeave && access.member && access.moderator ? <View style={{ gap: 8 }}><Text style={copy}>Leaving also removes your fan co-moderator appointment.</Text><Button secondary disabled={busy} onPress={() => void act("leave").then(ok => { if (ok) setConfirmLeave(false); })}>Confirm leave club group</Button><Button secondary onPress={() => setConfirmLeave(false)}>Stay in group</Button></View> : null}
           {!access.member && !access.moderator && canJoin ? <Text style={{ color: theme.muted }}>Join to see the conversation.</Text> : null}
-          {access.moderator ? <Button secondary onPress={() => router.push({ pathname: "/web", params: { path: `/team-hub/groups/${teamId}` } })}>Full group moderation tools</Button> : null}
         </> : null}
         {accountError || error ? <View style={{ gap: 8 }}><Text accessibilityRole="alert" style={{ color: theme.muted }}>{offline ? "Reconnect to verify group access." : error || accountError}</Text><Button secondary onPress={() => { retry(); void load(); }}>Verify group access again</Button></View> : null}
         {accountLoading || loading && !current ? <Text style={{ color: theme.muted }}>Verifying club group…</Text> : null}

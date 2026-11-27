@@ -12,8 +12,9 @@ async function verify(browser,theme,role){
   if(url.hostname==='fixture.supabase.co'&&url.pathname==='/auth/v1/user')return json(user);
   if(url.hostname==='fixture.supabase.co'&&url.pathname==='/rest/v1/profiles'){
     assert.equal(url.searchParams.get('id'),'eq.'+uid,'Avatar lookup stays owner-scoped');
-    assert.equal(url.searchParams.get('select'),'avatar_url,avatar_moderation_status');
-    return json({avatar_url:null,avatar_moderation_status:'approved'});
+    assert.equal(url.searchParams.get('select'),'username,avatar_url,avatar_moderation_status');
+    assert.equal(route.request().headers().authorization,`Bearer ${token}`);
+    return json({username:role==='player'?'fixture_player':'fixture_fan',avatar_url:null,avatar_moderation_status:'approved'});
   }
   if(url.hostname==='fixture.supabase.co'&&url.pathname==='/rest/v1/rpc/get_public_follow_list'){
     assert.equal(route.request().method(),'POST');
@@ -38,7 +39,7 @@ async function verify(browser,theme,role){
  await context.addInitScript(({user,token,exp})=>{localStorage.setItem('sb-fixture-auth-token',JSON.stringify({access_token:token,refresh_token:'fixture',expires_at:exp,expires_in:3600,token_type:'bearer',user}));localStorage.setItem('hoopcheck:device-preferences:v1',JSON.stringify({appLock:false,onboardingDone:true,haptics:false}));},{user,token,exp});
  const page=await context.newPage();page.on('pageerror',error=>errors.push(error.message));
  try{
-  await page.goto(base+'/account');await page.getByRole('button',{name:'Membership and restore purchases',exact:true}).waitFor();await page.getByRole('button',{name:'Membership and restore purchases',exact:true}).click();
+  await page.goto(base+'/account');await page.getByText(role==='player'?'@fixture_player':'@fixture_fan',{exact:true}).waitFor();await page.getByRole('button',{name:'Membership and restore purchases',exact:true}).waitFor();await page.getByRole('button',{name:'Membership and restore purchases',exact:true}).click();
   await page.getByText('HoopCheck Membership',{exact:true}).waitFor();await page.getByText('Stripe · active',{exact:true}).waitFor();
   assert.equal(await page.getByRole('button',{name:'Restore purchases',exact:true}).isDisabled(),true);assert.equal(await page.getByRole('button',{name:'Manage Apple subscription',exact:true}).isDisabled(),true);
   assert.equal(await page.getByRole('button',{name:/^Review (Pro|Premium)/}).count(),0);
@@ -48,6 +49,17 @@ async function verify(browser,theme,role){
   const fill=await page.getByText('HoopCheck Membership',{exact:true}).evaluate(el=>{while(el){const value=getComputedStyle(el).backgroundColor;if(value!=='rgba(0, 0, 0, 0)'&&value!=='transparent')return value;el=el.parentElement;}return null;});assert.equal(fill,expected);
   assert.equal(calls.some(path=>path.startsWith('/api/mobile/purchases/')||path.startsWith('/api/stripe/')),false,'web/old native module absence must not begin billing');assert.deepEqual(errors,[]);
   await require("./compact-layout.cjs").capture(page, {path:`/tmp/hoopcheck-native-ui/${theme}-membership-${role}.png`,fullPage:true});
+  await page.getByRole('button',{name:'Terms of use',exact:true}).click();
+  await page.waitForURL(url=>url.origin===new URL(base).origin&&url.pathname==='/legal'&&url.searchParams.get('document')==='terms');
+  await page.goto(base+'/pre-sign');
+  const check=page.getByRole('checkbox',{name:'Verify the club reviewed'});
+  await check.click();assert.equal(await check.isChecked(),true);
+  await page.getByText('1 of 6 reviewed',{exact:true}).waitFor();
+  await page.getByRole('button',{name:'Reset checklist',exact:true}).click();
+  assert.equal(await check.isChecked(),false);
+  await page.goto(base+'/link-unavailable');
+  await page.getByText('This page is unavailable',{exact:true}).waitFor();
+  assert.equal(await page.getByRole('link',{name:'Open page',exact:true}).count(),0);
   for(const workspace of ['owner-hq','ambassador-hq']){
     await page.goto(base+'/account/'+workspace);
     await page.getByText('This private workspace is not available to your account.',{exact:true}).waitFor();

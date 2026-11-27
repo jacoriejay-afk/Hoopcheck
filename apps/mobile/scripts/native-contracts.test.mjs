@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { nativeDestination, canonicalWebUrl } from "../src/native/deepLinks.ts";
+import { nativeDestination } from "../src/native/deepLinks.ts";
 import { privateEvent } from "../src/native/telemetryPrivacy.ts";
 import { backgroundRequiresLock, lockAfter, recordFreshSignIn, consumeFreshSignIn, lockScreenRequired } from "../src/native/lockPolicy.ts";
 
@@ -38,24 +38,19 @@ test("native directory/profile links retain their exact entity, including custom
   }
 });
 
-test("unimplemented group pages keep canonical web paths", () => {
-  for (const path of ["/groups/abc", "/womens/teams/abc"]) {
-    assert.equal(nativeDestination(`https://hoopcheck.online${path}`), `/web?path=${encodeURIComponent(path)}`);
+test("unavailable and legacy browser-only links stay in the app", () => {
+  for (const path of ["/groups/abc", "/referral/CHRISLYKES", "/r/chrislykes", "/signup?ref=TEST", "/web?path=/admin"]) {
+    assert.equal(nativeDestination(`https://hoopcheck.online${path}`), "/link-unavailable");
   }
+  assert.equal(nativeDestination("/womens/teams/abc"), "/womens/abc");
+  assert.equal(nativeDestination("/pre-sign"), "/pre-sign");
+  assert.equal(nativeDestination("/privacy-center"), "/account/privacy-center");
 });
 
-test("both Lykes referral route spellings preserve the server attribution entry", () => {
-  for (const path of ["/r/CHRISLYKES", "/referral/CHRISLYKES", "/r/chrislykes"]) {
-    assert.equal(nativeDestination(`https://hoopcheck.online${path}`), "/web?path=%2Freferral%2FCHRISLYKES");
-  }
-  assert.equal(canonicalWebUrl("/referral/CHRISLYKES"), "https://hoopcheck.online/referral/CHRISLYKES");
-});
-
-test("malformed links and external redirects cannot become trusted web destinations", () => {
-  for (const path of ["https://evil.example/teams/abc", "https://hoopcheck.online.evil.example/teams/abc", "https://user:password@hoopcheck.online/teams/abc", "http://hoopcheck.online/teams/abc", "https://hoopcheck.online:8443/teams/abc", "javascript:alert(1)", "//evil.example/a"]) {
+test("malformed and external URLs cannot redirect the app", () => {
+  for (const path of ["https://evil.example/teams/abc", "https://hoopcheck.online.evil.example/teams/abc", "https://user:password@hoopcheck.online/teams/abc", "http://hoopcheck.online/teams/abc", "https://hoopcheck.online:8443/teams/abc", "javascript:alert(1)", "//evil.example/a", "/\\evil.example"]) {
     assert.equal(nativeDestination(path), "/", path);
   }
-  for (const path of ["//evil.example", "https://evil.example", "/\\evil.example"]) assert.equal(canonicalWebUrl(path), null);
 });
 
 test("Sentry drops private content even when integrations nest it in unknown fields", () => {
@@ -130,11 +125,11 @@ test("Live Games links preserve the canonical game and reject malformed IDs", ()
 });
 
 
-test("club group canonical links retain group identity and malformed alternatives use the website", () => {
+test("club group canonical links retain group identity and unmatched alternatives stay in the app", () => {
   const id = "11111111-1111-4111-8111-111111111111";
   assert.equal(nativeDestination(`hoopcheck://team-hub/groups/${id}`), `/team-hub/groups/${id}`);
   assert.equal(nativeDestination("/team-hub/groups"), "/team-hub/groups");
-  assert.equal(nativeDestination("/groups/other"), "/web?path=%2Fgroups%2Fother");
+  assert.equal(nativeDestination("/groups/other"), "/link-unavailable");
 });
 
 test("search links bound and safely re-encode terms for native routing", () => {

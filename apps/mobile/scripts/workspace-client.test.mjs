@@ -19,14 +19,12 @@ test("private workspace reads have verified owner and no-store bearer request",a
 });
 
 import {readFileSync} from "node:fs";
-test("owner administration shortcuts stay behind verified workspace and use fixed web origin",()=>{
+test("owner metrics stay account-scoped without opening browser administration", () => {
  const source=readFileSync(new URL("../components/PrivateWorkspace.tsx",import.meta.url),"utf8");
- assert.ok(source.includes('if(!active||!allowed||kind!=="owner"||data?.kind!=="owner"||data.owner!==owner)return;'));
- assert.ok(source.includes("session.data.session?.user.id!==owner"));
- assert.ok(source.includes('Linking.openURL("https://hoopcheck.online"+path)'));
- assert.ok(source.includes("No app session is transferred."));
- assert.ok(source.includes("state.data.kind===kind"));
- for(const path of ["/admin/directory","/admin/reviews","/admin/ambassadors"])assert.ok(source.includes(`openAdmin("${path}")`));
+ assert.match(source,/session\.data\.session\.user\.id!==owner/);
+ assert.match(source,/state.data.kind===kind/);
+ assert.match(source,/account\?\.workspaces\?\.\[kind\]===true/);
+ assert.doesNotMatch(source,/Linking\.openURL|openAdmin|\/admin\//);
 });
 
 test("workspace validation refuses malformed data instead of rendering fabricated totals or crashing",()=>{

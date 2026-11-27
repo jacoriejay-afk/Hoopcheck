@@ -23,6 +23,6 @@ test("native system links honor feature flag and existing authentication navigat
  assert.match(ui,/rememberDestination\(route\);router.replace\("\/sign-in"\)/);
  assert.match(ui,/!ready\|\|blocked/);
  assert.match(ui,/publicSystemPath\(await/);
- assert.match(read("../app/_layout.tsx"),/PublicSystemNavigation ready=\{sessionReady && !session.error\}/);
+ assert.match(read("../app/_layout.tsx"),/PublicSystemNavigation ready=\{sessionReady && !session.error && !session.pendingSocialSignup\}/);
  assert.match(read("../app/settings.tsx"),/<PublicSystemLinksSetting \/>/);
 });

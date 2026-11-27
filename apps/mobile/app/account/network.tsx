@@ -65,7 +65,6 @@ function NetworkContent({ kind }: { kind: NetworkKind | "safety" }) {
   const visible = useMemo(() => filterPublicNetwork(rows, query, filter), [rows, query, filter]);
   const title = kind === "agents" ? "Agents & Scouts" : kind === "creators" ? "Creators" : "Player Safety";
   const muted = { color: theme.muted, fontSize: 13, lineHeight: 19 };
-  const go = (path: string) => router.push({ pathname: "/web", params: { path } });
   const header = <Stack.Screen options={{ title }} />;
   const currentDetail = focused && !offline && detail?.id === selectedId ? detail : null;
   if (kind === "safety") return <SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: theme.background }}>
@@ -106,7 +105,6 @@ function NetworkContent({ kind }: { kind: NetworkKind | "safety" }) {
         </View>
         {kind==="agents" && account && canBrowsePlayers(account.user.accountType)?<Button secondary onPress={()=>router.push("/players")}>Find players</Button>:null}
         {kind==="agents" && (account?.user.accountType==="agent"||account?.user.accountType==="scout")?<Button secondary onPress={()=>router.push("/messages")}>HoopChat</Button>:null}
-        <Button secondary onPress={() => go(kind === "agents" ? "/agent-studio" : "/creator-studio")}>{kind === "agents" ? "Manage professional showcase" : "Manage creator showcase"} (website)</Button>
         {kind === "agents" ? <Button secondary onPress={() => router.push({ pathname: "/account/network", params: { kind: "safety" } })}>Player safety & confidential reporting</Button> : null}
       </View>}
       ListEmptyComponent={<View style={{ gap: 10, paddingVertical: 16 }}>

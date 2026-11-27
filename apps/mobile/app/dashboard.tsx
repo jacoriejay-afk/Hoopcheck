@@ -55,9 +55,7 @@ export default function DashboardScreen() {
       return;
     }
     if (path === "/community-guidelines") { router.push({ pathname: "/legal", params: { document: "community-guidelines" } }); return; }
-    // Remaining website-only pages go through the explicit browser handoff,
-    // not an OS universal link which could reopen this app.
-    router.push({ pathname: "/web", params: { path } });
+    if (path === "/privacy-center") router.push("/account/privacy-center");
   }
 
   async function signOut() {
@@ -149,7 +147,7 @@ export default function DashboardScreen() {
                   pressed && { backgroundColor: theme.accentSurface },
                 ]}>
                 <Text style={[styles.linkLabel, { color: theme.foreground }]}>{label}</Text>
-                <Ionicons name="open-outline" size={17} color={theme.accent} />
+                <Ionicons name="chevron-forward" size={17} color={theme.accent} />
               </Pressable>
             ))}
           </View>

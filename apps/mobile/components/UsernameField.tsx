@@ -13,44 +13,63 @@ const UsernameField = forwardRef<UsernameFieldHandle, Props>(function UsernameFi
   const styles = createStyles(theme);
   const inputRef = useRef<TextInput>(null);
   const requestRef = useRef(0);
+  const inFlight = useRef<{ candidate: string; result: Promise<{ valid: boolean; message?: string }> } | null>(null);
   const [state, setState] = useState<State>("idle");
   const [message, setMessage] = useState("");
   const normalized = value.trim().toLowerCase();
 
-  const check = useCallback(async (candidate: string): Promise<{ valid: boolean; message?: string }> => {
+  const check = useCallback((candidate: string): Promise<{ valid: boolean; message?: string }> => {
+    if (inFlight.current?.candidate === candidate) return inFlight.current.result;
+    const id = ++requestRef.current;
     if (!USERNAME_PATTERN.test(candidate)) {
       const text = "Use 3–20 characters: letters, numbers, or underscores.";
-      setState("invalid"); setMessage(text); return { valid: false, message: text };
+      setState("invalid");
+      setMessage(text);
+      return Promise.resolve({ valid: false, message: text });
     }
-    const id = ++requestRef.current;
-    setState("checking"); setMessage("");
-    try {
-      const { data, error } = await supabase.rpc("is_username_available", { candidate_username: candidate });
-      if (id !== requestRef.current) return { valid: false };
-      if (error) throw error;
-      if (data !== true) {
-        setState("taken"); setMessage("That username is taken.");
-        return { valid: false, message: "That username is taken." };
+    setState("checking");
+    setMessage("");
+    const result = (async () => {
+      try {
+        const { data, error } = await supabase.rpc("is_username_available", { candidate_username: candidate });
+        if (id !== requestRef.current) return { valid: false };
+        if (error) throw error;
+        if (data !== true) {
+          const text = "That username is taken.";
+          setState("taken");
+          setMessage(text);
+          return { valid: false, message: text };
+        }
+        setState("available");
+        setMessage("Available");
+        return { valid: true };
+      } catch {
+        if (id !== requestRef.current) return { valid: false };
+        const text = "Availability could not be checked. Try again.";
+        setState("error");
+        setMessage(text);
+        return { valid: false, message: text };
       }
-      setState("available"); setMessage("✓ available");
-      return { valid: true };
-    } catch (error) {
-      if (id !== requestRef.current) return { valid: false };
-      console.error("Username availability check failed:", error);
-      setState("error"); setMessage("We couldn't check availability. Please try again.");
-      return { valid: false, message: "We couldn't check availability. Please try again." };
-    }
+    })().finally(() => {
+      if (inFlight.current?.result === result) inFlight.current = null;
+    });
+    inFlight.current = { candidate, result };
+    return result;
+  }, []);
+
+  const invalidate = useCallback(() => {
+    requestRef.current++;
+    inFlight.current = null;
   }, []);
 
   useEffect(() => {
-    if (!normalized) { requestRef.current++; setState("idle"); setMessage(""); return; }
+    if (!normalized) { setState("idle"); setMessage(""); return invalidate; }
     if (!USERNAME_PATTERN.test(normalized)) {
-      requestRef.current++;
       setState("invalid"); setMessage("Use 3–20 characters: letters, numbers, or underscores."); return;
     }
     const timer = setTimeout(() => { void check(normalized); }, 450);
-    return () => clearTimeout(timer);
-  }, [normalized, check]);
+    return () => { clearTimeout(timer); invalidate(); };
+  }, [normalized, check, invalidate]);
 
   useImperativeHandle(ref, () => ({ validate: () => check(normalized), focus: () => inputRef.current?.focus() }), [normalized, check]);
 
@@ -60,7 +79,11 @@ const UsernameField = forwardRef<UsernameFieldHandle, Props>(function UsernameFi
       <TextInput
         ref={inputRef}
         value={value}
-        onChangeText={(next) => onChange(next.replace(/\s+/g, "").toLowerCase())}
+        onChangeText={next => {
+          const candidate = next.replace(/\s+/g, "").toLowerCase();
+          if (candidate !== normalized) invalidate();
+          onChange(candidate);
+        }}
         onBlur={() => { if (normalized) void check(normalized); }}
         autoCapitalize="none"
         autoCorrect={false}

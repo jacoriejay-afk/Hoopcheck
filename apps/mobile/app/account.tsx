@@ -58,20 +58,29 @@ export default function AccountScreen() {
   const [appearanceRevision,setAppearanceRevision]=useState(0);
   const [cover,setCover]=useState<{owner:string;value:ProfileCover}|null>(null);
   const [stats,setStats]=useState<{owner:string;people:number|null;teams:number|null;posts:number|null;reviews:number|null}|null>(null);
-  const [avatar,setAvatar] = useState<{owner:string;url:string|null}>({owner:"",url:null});
-  useEffect(()=>{
-    const uid=account?.user.id;
-    if(!uid){setAvatar({owner:"",url:null});setCover(null);return;}
-    if(!activeScreen)return;
-    let active=true;
-    const controller=new AbortController();
-    void Promise.resolve(supabase.from("profiles").select("avatar_url,avatar_moderation_status")
-      .eq("id",uid).abortSignal(controller.signal).maybeSingle())
-      .then(({data,error})=>{
-        if(!active)return;
-        setAvatar({owner:uid,url:!error && data?.avatar_moderation_status==="approved"
-          && typeof data.avatar_url==="string"?data.avatar_url:null});
-      }).catch(()=>{if(active)setAvatar({owner:uid,url:null});});
+  const [identity, setIdentity] = useState<{ owner: string; avatarUrl: string | null; username: string | null } | null>(null);
+  useEffect(() => {
+    const uid = account?.user.id;
+    if (!uid) { setIdentity(null); setCover(null); return; }
+    if (!activeScreen) return;
+    let active = true;
+    const controller = new AbortController();
+    async function loadIdentity() {
+      try {
+        const { data, error } = await readWithDeadline(() => supabase.auth.getSession());
+        if (error || data.session?.user.id !== uid || !active) return;
+        const profile = await supabase.from("profiles").select("username,avatar_url,avatar_moderation_status")
+          .eq("id", uid).setHeader("Authorization", `Bearer ${data.session.access_token}`)
+          .abortSignal(controller.signal).maybeSingle();
+        if (!active || profile.error || !profile.data || !uid) return;
+        setIdentity({
+          owner: uid,
+          username: typeof profile.data.username === "string" && /^[a-z0-9_]{3,20}$/i.test(profile.data.username) ? profile.data.username : null,
+          avatarUrl: profile.data.avatar_moderation_status === "approved" && typeof profile.data.avatar_url === "string" ? profile.data.avatar_url : null,
+        });
+      } catch { /* A failed appearance read does not block access to account tools. */ }
+    }
+    void loadIdentity();
     void readOwnCover(supabase,uid).then(value=>{if(active)setCover({owner:uid,value});})
       .catch(()=>{if(active)setCover(null);});
     return()=>{active=false;controller.abort();};
@@ -113,6 +122,7 @@ export default function AccountScreen() {
   }
   const tier=account?.tier==="premium"?"Premium":account?.tier==="pro"?"Pro":"Free";
   const role=account?.user.accountType.replaceAll("_"," ")||"Member";
+  const ownIdentity = identity?.owner === account?.user.id ? identity : null;
   const ownCover=cover?.owner===account?.user.id?profileCovers.find(item=>item.id===cover?.value):undefined;
   return <SafeAreaView edges={["top","left","right","bottom"]} style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{paddingHorizontal:15,paddingTop:9,paddingBottom:20,gap:9,maxWidth:680,width:"100%",alignSelf:"center"}}>
@@ -135,15 +145,17 @@ export default function AccountScreen() {
           <View style={{gap:13}}>
             {ownCover?<Pressable accessibilityRole="button" accessibilityLabel={`Edit ${ownCover.label} profile appearance`} onPress={()=>router.push("/account/edit")} style={{flexDirection:"row",alignItems:"center",gap:7,minHeight:44}}><View style={{width:24,height:24,borderRadius:8,backgroundColor:ownCover.color}}/><Text style={{color:theme.muted,fontSize:12}}>Profile appearance</Text><Ionicons name="chevron-forward" size={14} color={theme.muted}/></Pressable>:null}
             <View style={{flexDirection:"row",alignItems:"center",gap:13}}>
-              <ProfileAvatar size={72} name={account.user.displayName || "HoopCheck member"} url={avatar.owner===account.user.id?avatar.url:null}/>
+              <ProfileAvatar size={72} name={account.user.displayName || "HoopCheck member"} url={ownIdentity?.avatarUrl ?? null}/>
               <View style={{flex:1,minWidth:0,gap:5}}>
                 <Text numberOfLines={1} style={{color:theme.foreground,fontSize:22,fontWeight:"900"}}>{account.user.displayName || "HoopCheck member"}</Text>
+                {ownIdentity?.username ? <Text style={{color:theme.muted,fontSize:13}}>@{ownIdentity.username}</Text> : null}
                 <Text style={{color:theme.muted,fontSize:13,textTransform:"capitalize"}}>{role} account</Text>
                 <FoundingMemberBadge key={account.user.id} userId={account.user.id} activeScreen={activeScreen} revision={appearanceRevision}/>
                 <View style={{alignSelf:"flex-start",flexDirection:"row",alignItems:"center",gap:5,paddingHorizontal:8,paddingVertical:4,borderRadius:10,backgroundColor:theme.accentSurface}}><Ionicons name={account.hasPaidMembership?"diamond-outline":"person-outline"} size={13} color={theme.accent}/><Text style={{color:theme.accent,fontWeight:"800",fontSize:11}}>{tier.toUpperCase()} MEMBER</Text></View>
               </View>
             </View>
             {stats?.owner===account.user.id?<View accessibilityLabel="Account activity" style={{flexDirection:"row",flexWrap:"wrap",paddingVertical:6,borderTopWidth:StyleSheet.hairlineWidth,borderColor:theme.border}}>{([{label:"Following",value:stats.people},{label:"Teams followed",value:stats.teams},{label:"Approved posts",value:stats.posts},{label:"Reviews",value:stats.reviews}]).filter(item=>item.value!==null).map(item=><View key={item.label} style={{flex:1,minWidth:65,alignItems:"center",gap:4}}><Text style={{color:theme.foreground,fontSize:17,fontWeight:"900"}}>{item.value}</Text><Text style={{color:theme.muted,fontSize:10,textAlign:"center"}}>{item.label}</Text></View>)}</View>:null}
+            {ownIdentity && !ownIdentity.username ? <AccountRow icon="at-outline" title="Choose a unique username" onPress={() => router.push("/choose-username")} /> : null}
             <View style={{flexDirection:"row",gap:9}}>
               <Pressable accessibilityRole="button" accessibilityLabel="Edit profile" onPress={()=>router.push("/account/edit")}
                 style={({pressed})=>({flex:1,minHeight:44,borderRadius:13,alignItems:"center",justifyContent:"center",flexDirection:"row",gap:7,

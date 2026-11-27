@@ -8,14 +8,13 @@ import { OfflineBanner } from "../../components/OfflineBanner";
 import { Skeleton } from "../../components/Motion";
 import { useEntryTheme, type EntryTheme } from "../../src/theme";
 import { useEffect, useState } from "react";
-import { Alert, Linking, Pressable, ScrollView, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { supabase } from "../../src/lib/supabase";
 
 type ReviewSummary = { id: string; overall_rating: number | null; title: string | null; body: string | null; created_at: string; player_season: string | null; is_anonymous: boolean };
 type Team = { logo_url?: string | null; logo_bg?: string | null; id: string; name: string; country: string | null; city: string | null; league_name: string | null; website: string | null };
-function safeWebsite(value: string | null) { if (!value) return null; try { const url = new URL(value.startsWith("http") ? value : `https://${value}`); return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : null; } catch { return null; } }
 
 export default function TeamDetailScreen() {
   const theme = useEntryTheme();
@@ -61,7 +60,7 @@ export default function TeamDetailScreen() {
     async function load() {
       setLoading(true);
       if (!id) { setError(true); setLoading(false); return; }
-      const { data, error: queryError } = await read(`teams:profile:${id}`, () => supabase.from("teams").select("id,name,country,city,league_name,website,logo_url,logo_bg").eq("id", id).eq("active", true).eq("basketball_type", "mens").maybeSingle());
+      const { data, error: queryError } = await read(`teams:profile:${id}`, () => supabase.from("teams").select("id,name,country,city,league_name,logo_url,logo_bg").eq("id", id).eq("active", true).eq("basketball_type", "mens").maybeSingle());
       if (!alive) return;
       if (queryError || !data) { setError(true); setTeam(null); } else { setError(false); setTeam(data as Team); }
       setLoading(false);
@@ -71,11 +70,6 @@ export default function TeamDetailScreen() {
     return () => { alive = false; };
   }, [id, revision, refreshId, offline, read]);
 
-  async function openWebsite() {
-    const url = safeWebsite(team?.website ?? null);
-    if (!url) return;
-    try { await Linking.openURL(url); } catch { Alert.alert("Unable to open website", "Try opening the team's official website in your browser."); }
-  }
 
   return (
     <SafeAreaView edges={["left", "right", "bottom"]} style={styles.safe}>
@@ -92,7 +86,6 @@ export default function TeamDetailScreen() {
               <View style={styles.divider} />
               <Text style={styles.label}>LOCATION</Text><Text style={styles.value}>{[team.city, team.country].filter(Boolean).join(", ") || "Not listed"}</Text>
             </GlassCard>
-            {safeWebsite(team.website) ? <Button onPress={openWebsite} style={styles.button}><Text style={styles.buttonText}>Open team website ↗</Text></Button> : null}
             <Pressable onPress={() => router.push({ pathname: "/teams/[id]/review", params: { id: team.id, teamName: team.name } })} style={[styles.button, styles.reviewButton]}><Text style={styles.buttonText}>Write a team review</Text></Pressable>
             <View style={{ gap: theme.spacing.md, marginTop: theme.spacing.xl }}><Button secondary onPress={() => router.push({ pathname: "/team-hub/groups/[teamId]", params: { teamId: team.id } })}>Club fan group</Button></View>
             <TeamTrustIndex key={team.id} id={team.id} entity="team" refresh={refreshId} />

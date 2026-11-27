@@ -1,3 +1,5 @@
+import { supportTopic } from "./supportTopic.ts";
+
 /** A shared group slug is a navigation hint, never an access credential. */
 export function parseGroupInvite(value:unknown):string|null {
   return typeof value==="string" && /^[a-z0-9][a-z0-9-]{0,59}$/.test(value) ? value : null;
@@ -34,9 +36,12 @@ export function nativeDestination(path: string): string {
     if (url.pathname === "/support" || url.pathname === "/account/support") {
       const reel = url.searchParams.get("reportReel");
       if (reel && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(reel)) return "/account/support?reportReel=" + reel;
-      // Retain specialized website forms until their native equivalents exist.
-      if (["membershipCancellation", "accountCompromised", "agentVerification"].some(key => url.searchParams.get(key) === "1")) return "/web?path=" + encodeURIComponent("/support" + url.search);
-      return "/account/support" + ((url.searchParams.get("topic")==="scam" || url.searchParams.get("scamAlert")==="1") ? "?topic=scam" : "");
+      const topic = supportTopic(url.searchParams.get("topic"))
+        ?? (url.searchParams.get("scamAlert") === "1" ? "scam" : null)
+        ?? (url.searchParams.get("accountCompromised") === "1" ? "compromised" : null)
+        ?? (url.searchParams.get("membershipCancellation") === "1" ? "billing" : null)
+        ?? (url.searchParams.get("agentVerification") === "1" ? "verification" : null);
+      return "/account/support" + (topic ? "?topic=" + topic : "");
     }
     if (url.pathname === "/privacy" || url.pathname === "/terms" || url.pathname === "/account/policies") {
       const kind = url.pathname === "/terms" || (url.pathname === "/account/policies" && url.searchParams.get("kind") === "terms") ? "terms" : "privacy";
@@ -47,6 +52,8 @@ export function nativeDestination(path: string): string {
       if (parts.length === 3 && safeId.test(parts[2])) return `/team-hub/groups/${parts[2]}`;
     }
     if (url.pathname === "/") return "/";
+    if (url.pathname === "/pre-sign") return "/pre-sign";
+    if (url.pathname === "/copyright") return "/account/support?topic=copyright";
     if (url.pathname === "/company") return "/about";
     if (url.pathname === "/community-guidelines") return "/legal?document=community-guidelines";
     if (url.pathname === "/legal") {
@@ -56,6 +63,7 @@ export function nativeDestination(path: string): string {
     if (url.pathname === "/login" && !url.search && !url.hash) return "/sign-in";
     if (url.pathname === "/signup" && !url.search && !url.hash) return "/sign-up";
     if (url.pathname === "/feed/welcome") return "/feed-welcome";
+    if (parts.length === 3 && parts[0] === "womens" && parts[1] === "teams" && safeId.test(parts[2])) return `/womens/${parts[2]}`;
     if (parts.length === 3 && parts[0] === "womens" && parts[1] === "leagues" && safeId.test(parts[2])) return `/womens/leagues/${parts[2]}`;
     if (parts.length === 2 && ["teams", "womens", "leagues", "players", "coaches"].includes(parts[0]) && safeId.test(parts[1])) return `/${parts[0]}/${parts[1]}`;
     if (parts.length === 1 && ["account", "teams", "womens", "leagues", "players", "coaches", "dashboard", "settings", "membership", "messages", "feed-welcome", "about", "sign-in", "sign-up", "forgot-password", "choose-username"].includes(parts[0])) return url.pathname;
@@ -108,22 +116,6 @@ export function nativeDestination(path: string): string {
       const serialized = query.toString();
       return url.pathname + (serialized ? `?${serialized}` : "");
     }
-
-
-    if (["r", "referral"].includes(parts[0]) && parts.length === 2 && /^[A-Za-z0-9_-]{4,40}$/.test(parts[1])) {
-      // Reuse the server-issued, httpOnly referral cookie and existing web signup.
-      // No client-side attribution claim or user_metadata authorization is introduced.
-      return `/web?path=${encodeURIComponent(`/referral/${parts[1].toUpperCase()}`)}`;
-    }
-    // Unimplemented routes retain their canonical website paths.
-    return `/web?path=${encodeURIComponent(url.pathname + url.search + url.hash)}`;
+    return "/link-unavailable";
   } catch { return "/"; }
-}
-
-export function canonicalWebUrl(path: string): string | null {
-  if (!path.startsWith("/") || path.startsWith("//") || path.includes("\\")) return null;
-  try {
-    const url = new URL(path, `https://${host}`);
-    return url.origin === `https://${host}` ? url.toString() : null;
-  } catch { return null; }
 }

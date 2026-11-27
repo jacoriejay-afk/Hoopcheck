@@ -85,7 +85,7 @@ export default function TeamReviewScreen() {
     if (!teamId) { setError("This team could not be identified. Return to the team profile and try again."); return; }
     if(directory==="womens-team"&&!nativeExactSeasonReviewsEnabled){setError("This review form is not available.");return;}
     if(nativeExactSeasonReviewsEnabled&&(!currentChoices||!currentChoices.seasons.includes(season)||offline)){setError("Choose one of your verified seasons.");return;}
-    if (!API_BASE_URL) { setError("Review submission is not configured yet. Please use the HoopCheck website or try again later."); return; }
+    if (!API_BASE_URL) { setError("Review submission is temporarily unavailable. Try again later."); return; }
     if (RATING_FIELDS.some(field => ratings[field.key] < 1 || ratings[field.key] > 5)) {
       setError("Please choose a 1–5 rating for every category."); return;
     }

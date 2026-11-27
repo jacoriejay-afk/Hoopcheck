@@ -47,7 +47,7 @@ export default function WelcomeScreen() {
         <View style={{ backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, borderRadius: theme.radius.control }}>
           {([
             { label: "Live Games", icon: "basketball-outline", action: () => router.push("/fan-live") },
-            { label: "Pre-sign check", icon: "shield-checkmark-outline", action: () => router.push({ pathname: "/web", params: { path: "/pre-sign" } }) },
+            { label: "Pre-sign check", icon: "shield-checkmark-outline", action: () => router.push("/pre-sign") },
           ] as const).map((item, index) => <Pressable key={item.label} accessibilityRole="button" onPress={item.action}
             style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 10, minHeight: 48, paddingHorizontal: 12, paddingVertical: 10,
               borderTopWidth: index ? 1 : 0, borderColor: theme.border, opacity: pressed ? .7 : 1 })}>
