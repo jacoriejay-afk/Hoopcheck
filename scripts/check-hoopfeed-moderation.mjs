@@ -16,7 +16,7 @@ function fixture(secondResult, failure = null, options = {}) {
   let sessionChecks=0;
   const db = {
     auth: { getUser: async () => ({ data: { user: { id: 'fixture-player', email_confirmed_at:options.unverified?null:'2026-11-27T00:00:00Z' } } }) },
-    rpc:async(name)=>{assert.equal(name,'confirm_active_account_session');sessionChecks++;return {data:!options.inactive&&!(options.revokeAfterModeration&&sessionChecks>1),error:options.sessionError?{message:'fixture'}:null};},
+    rpc:async(name)=>{if(name==='confirm_community_photo_story_policy')return {data:!!options.policyReady,error:null};assert.equal(name,'confirm_active_account_session');sessionChecks++;return {data:!options.inactive&&!(options.revokeAfterModeration&&sessionChecks>1),error:options.sessionError?{message:'fixture'}:null};},
     from(table) {
       const records = { profiles: { account_type: 'player',moderation_status:options.suspended?'suspended':'active' }, membership_entitlements: { plan: 'premium', status: 'active' } };
       return {
@@ -45,7 +45,7 @@ function fixture(secondResult, failure = null, options = {}) {
     const content = Buffer.from(photo.split(',')[1], 'base64').toString();
     events.push(['moderate', content]);
     return Response.json({ results: [content === 'second photo' ? secondResult : { flagged: false }] });
-  }, { env: { NEXT_PUBLIC_SUPABASE_URL: 'https://fixture.invalid', SUPABASE_SERVICE_ROLE_KEY: 'fixture', OPENAI_API_KEY: 'fixture', ...(options.story ? { NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:'fixture-public', HOOPCHECK_PHOTO_STORIES_ENABLED:options.enabled?'true':'false' } : {}) } });
+  }, { env: { NEXT_PUBLIC_SUPABASE_URL: 'https://fixture.invalid', SUPABASE_SERVICE_ROLE_KEY: 'fixture', OPENAI_API_KEY: 'fixture', ...(options.story ? { NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:'fixture-public', HOOPCHECK_PHOTO_STORIES_ENABLED:options.enabled?'true':'false',HOOPCHECK_COMMUNITY_PHOTO_STORIES_ENABLED:options.communityEnabled?'true':'false' } : {}) } });
 
   const form = new FormData();
   form.set('text', 'Training recap');
@@ -142,4 +142,9 @@ test("Story publication fails closed before moderation for unverified, suspended
 test("Story session revoked during moderation never uploads or publishes",async()=>{
  const {submit,events,rows}=fixture({flagged:false},null,{story:true,enabled:true,revokeAfterModeration:true});
  assert.equal((await submit()).status,403);assert.deepEqual(events,[["moderate","first photo"]]);assert.deepEqual(rows,[]);
+});
+
+test("community photo Stories require explicit rollout and policy confirmation",async()=>{
+ const disabled=fixture({flagged:false},null,{story:true,enabled:true,audience:"community",communityEnabled:true});assert.equal((await disabled.submit()).status,403);assert.deepEqual(disabled.events,[]);
+ const ready=fixture({flagged:false},null,{story:true,enabled:true,audience:"community",communityEnabled:true,policyReady:true});assert.equal((await ready.submit()).status,200);assert.equal(ready.rows[0].community_visible,true);assert.equal(Date.parse(ready.rows[0].expires_at)-Date.parse(ready.rows[0].created_at),86400000);
 });

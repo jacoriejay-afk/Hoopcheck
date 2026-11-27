@@ -51,6 +51,7 @@ test("single photo publication sends explicit follower audience, no client expir
 test("native Stories stay default off and are separated from ordinary posts",()=>{
  const feed=readFileSync(new URL("../app/feed.tsx",import.meta.url),"utf8"),ui=readFileSync(new URL("../components/PhotoStories.tsx",import.meta.url),"utf8"),helper=readFileSync(new URL("../src/native/photoStories.ts",import.meta.url),"utf8");
  assert.match(helper,/EXPO_PUBLIC_HOOPCHECK_PHOTO_STORIES_ENABLED === "true"/);
+ assert.match(helper,/EXPO_PUBLIC_HOOPCHECK_COMMUNITY_PHOTO_STORIES_ENABLED==="true"/);
  assert.match(feed,/post.post_kind !== "story"/);assert.match(feed,/storyOwner===uid && focused && canRead && blocksVerified/);
  assert.match(ui,/storyVisible\(row,now\)/);assert.match(ui,/FeedReport/);assert.match(ui,/onBlock\(current.author_id\)/);
  assert.doesNotMatch(ui,/FeedSharePanel|AsyncStorage|localStorage/);

@@ -5,7 +5,9 @@ import { PublicationUnconfirmed } from "./mediaClient.ts";
 import { resolveStoryPhoto } from "./storyPhotoReference.ts";
 
 export const photoStoriesEnabled = process.env.EXPO_PUBLIC_HOOPCHECK_PHOTO_STORIES_ENABLED === "true";
-export type Story = {id:string;author_id:string;body:string|null;image_url:string;created_at:string;expires_at:string;profiles:{display_name:string|null}|null};
+export const communityPhotoStoriesEnabled=process.env.EXPO_PUBLIC_HOOPCHECK_COMMUNITY_PHOTO_STORIES_ENABLED==="true";
+export type StoryAudience="followers"|"community";
+export type Story = {audience:StoryAudience;id:string;author_id:string;body:string|null;image_url:string;created_at:string;expires_at:string;profiles:{display_name:string|null}|null};
 export type StoryCursor={id:string;created_at:string};
 export function storyVisible(row:Story,now=Date.now()):boolean{
  return Number.isFinite(Date.parse(row.expires_at))&&Date.parse(row.expires_at)>now;
@@ -19,8 +21,9 @@ export async function readPhotoStories(client:SupabaseClient,uid:string,signal:A
  const verified=await client.auth.getUser(token);
  if(verified.error||verified.data.user?.id!==uid||signal.aborted)throw Error("Verify your account.");
  let query=client.from("feed_posts").select("id,author_id,body,image_url,image_urls,video_url,post_kind,status,community_visible,created_at,expires_at,profiles:profiles!feed_posts_author_id_fkey(display_name)")
- .eq("status","approved").eq("post_kind","story").eq("community_visible",false).is("video_url",null).gt("expires_at",now.toISOString())
+ .eq("status","approved").eq("post_kind","story").is("video_url",null).gt("expires_at",now.toISOString())
  .order("created_at",{ascending:false}).order("id",{ascending:false}).limit(21).setHeader("Authorization",header).abortSignal(signal);
+ if(!communityPhotoStoriesEnabled)query=query.eq("community_visible",false);
  if(cursor)query=query.or(`created_at.lt.${cursor.created_at},and(created_at.eq.${cursor.created_at},id.lt.${cursor.id})`);
  const result=await query;
  if(result.error||!Array.isArray(result.data)||result.data.length>21)throw Error("Stories unavailable.");
@@ -33,7 +36,7 @@ export async function readPhotoStories(client:SupabaseClient,uid:string,signal:A
  ]);
  if(blocks.error||archives.error||!Array.isArray(blocks.data)||!Array.isArray(archives.data)||blocks.data.length>500||blocks.data.some(row=>!isFeedId(row.blocked_id)))throw Error("Story access could not be verified.");
  const hidden=new Set(archives.data.map(row=>row.post_id)),blocked=new Set(blocks.data.map(row=>row.blocked_id));
- const stories:Story[]=page.filter(row=>row.status==="approved"&&row.post_kind==="story"&&row.community_visible===false&&row.video_url===null&&resolveStoryPhoto(row.author_id,row.image_url,row.image_urls)&&typeof row.expires_at==="string"&&Date.parse(row.expires_at)-Date.parse(row.created_at)===86400000&&Date.parse(row.expires_at)>now.getTime()&&!hidden.has(row.id)&&!blocked.has(row.author_id)).map(row=>({id:row.id,author_id:row.author_id,body:typeof row.body==="string"?row.body:null,image_url:row.image_url,created_at:row.created_at,expires_at:row.expires_at,profiles:Array.isArray(row.profiles)?row.profiles[0]??null:row.profiles}));
+ const stories:Story[]=page.filter(row=>row.status==="approved"&&row.post_kind==="story"&&(row.community_visible===false||(communityPhotoStoriesEnabled&&row.community_visible===true))&&row.video_url===null&&resolveStoryPhoto(row.author_id,row.image_url,row.image_urls)&&typeof row.expires_at==="string"&&Date.parse(row.expires_at)-Date.parse(row.created_at)===86400000&&Date.parse(row.expires_at)>now.getTime()&&!hidden.has(row.id)&&!blocked.has(row.author_id)).map(row=>({audience:row.community_visible===true?"community" as const:"followers" as const,id:row.id,author_id:row.author_id,body:typeof row.body==="string"?row.body:null,image_url:row.image_url,created_at:row.created_at,expires_at:row.expires_at,profiles:Array.isArray(row.profiles)?row.profiles[0]??null:row.profiles}));
  const current=await client.auth.getSession();
  if(signal.aborted||current.error||current.data.session?.user.id!==uid||current.data.session.access_token!==token)throw Error("Account changed.");
  return {stories,next:rows.length>20?{id:page[19].id,created_at:page[19].created_at}:null};
@@ -52,11 +55,12 @@ export function appendStoryPhoto(form:FormData,photo:Photo,image:Blob){
  // React Native FormData reads the file-backed part; its descriptor has no Blob size.
  form.append("image",image);
 }
-export async function publishPhotoStory(origin:string,uid:string,token:string,caption:string,photo:Photo,signal:AbortSignal,body:(photo:Photo)=>Promise<Blob>,request:typeof fetch=fetch){
+export async function publishPhotoStory(origin:string,uid:string,token:string,caption:string,photo:Photo,signal:AbortSignal,body:(photo:Photo)=>Promise<Blob>,request:typeof fetch=fetch,audience:StoryAudience="followers"){
  const url=new URL(origin);
  if(url.protocol!=="https:"||url.username||url.password||url.pathname!=="/"||url.search||url.hash||!isFeedId(uid)||!token||caption.trim().length>2000||photo.type!=="image/jpeg"||!Number.isSafeInteger(photo.size)||photo.size<1||photo.size>750000||signal.aborted)throw Error("Choose a valid photo and caption.");
+ if(audience!=="followers"&&!(audience==="community"&&communityPhotoStoriesEnabled))throw Error("Story audience unavailable.");
  url.pathname="/api/hoopfeed/moderate";
- const form=new FormData();form.append("kind","post");form.append("post_kind","story");form.append("audience","followers");form.append("text",caption.trim());const image=await body(photo);
+ const form=new FormData();form.append("kind","post");form.append("post_kind","story");form.append("audience",audience);form.append("text",caption.trim());const image=await body(photo);
  appendStoryPhoto(form,photo,image);
  if(signal.aborted)throw Error("Story cancelled.");
  let response:Response;
