@@ -17,6 +17,8 @@ import { hoopChatAuthAction, withHoopChatDeadline } from "../src/native/hoopChat
 import { appendConversationPage, CHAT_HISTORY_PAGE_SIZE, matchesConversationSearch, readConversationPage, refreshConversationPage, type ContactMessage } from "../src/native/hoopChatHistory";
 import { prepareConversationMessage, sendConversationMessage } from "../src/native/hoopChatSend";
 import { quoteConversationMessage } from "../src/native/hoopChatQuote";
+import { makeReplyTarget, scopedReplyTarget, type ReplyTarget } from "../src/native/hoopChatReply";
+const structuredReplies=process.env.EXPO_PUBLIC_HOOPCHECK_STRUCTURED_REPLIES_ENABLED==="true";
 import { useNativeDraft } from "../src/native/drafts";
 
 type ContactRequest = {
@@ -56,6 +58,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
   const pendingMessages = useRef(new Map<string, Omit<ContactMessage, "created_at">>());
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+  const [replyTarget,setReplyTarget]=useState<ReplyTarget|null>(null);
   const [threadPage, setThreadPage] = useState<{scope:string;rows:ContactMessage[];hasMore:boolean}|null>(null);
   const [threadError,setThreadError] = useState<{scope:string;message:string}|null>(null);
   const [historyBusy,setHistoryBusy] = useState(false);
@@ -121,7 +124,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       if (reloadTimer.current !== null) clearTimeout(reloadTimer.current);
       reloadTimer.current = null;
       generation.current++;
-      setRequests([]); setMessages([]); setContacts({}); setUserId(""); setSelectedId(""); setOpenedId(""); setSearch(""); setThreadPage(null); setThreadError(null); historyRequest.current++; historyPaging.current=false; setHistoryBusy(false);
+      setRequests([]); setMessages([]); setContacts({}); setUserId(""); setSelectedId(""); setOpenedId(""); setSearch(""); setReplyTarget(null); setThreadPage(null); setThreadError(null); historyRequest.current++; historyPaging.current=false; setHistoryBusy(false);
     };
   }, [load]));
 
@@ -135,7 +138,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       generation.current++;
       authIdentity.current = nextUserId;
       pendingMessages.current.clear();
-      setRequests([]); setMessages([]); setContacts({}); setUserId(""); setSelectedId(""); setOpenedId(""); setSearch(""); setThreadPage(null); setThreadError(null); historyRequest.current++; historyPaging.current=false; setHistoryBusy(false);
+      setRequests([]); setMessages([]); setContacts({}); setUserId(""); setSelectedId(""); setOpenedId(""); setSearch(""); setReplyTarget(null); setThreadPage(null); setThreadError(null); historyRequest.current++; historyPaging.current=false; setHistoryBusy(false);
       if (action === "clear") {
         setLoading(false);
         setError("Sign in to view your messages.");
@@ -185,6 +188,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
   const currentThreadError=threadScope && threadError?.scope===threadScope ? threadError.message : "";
   const verifiedThreadRows = currentPage?.rows ?? EMPTY_THREAD_MESSAGES;
   const history=verifiedThreadRows.slice().reverse();
+  const replyId=structuredReplies?scopedReplyTarget(threadScope,replyTarget,verifiedThreadRows):undefined;
   const motionActive=Boolean(threadScope && currentPage);
   const freshIds=useConfirmedMessageMotion(`${userId}:${openedId}:${mode}`,verifiedThreadRows,motionActive,selectedRequestId);
   const matchingThreads=visibleThreads.filter(row=>matchesConversationSearch(search,name(row),contacts[peerId(row)]?.username));
@@ -206,7 +210,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
         if(target.error||target.data?.status!=="accepted"||![target.data.requester_id,target.data.player_id].includes(viewerId))throw Error("Conversation unavailable.");
         const verifiedHeader=await verifyChatPeer(viewerId,target.data.requester_id===viewerId?target.data.player_id:target.data.requester_id,signal);
         if(!active())throw Error("Your session changed.");
-        return readConversationPage(supabase,requestId,signal,older,verifiedHeader);
+        return readConversationPage(supabase,requestId,signal,older,verifiedHeader,structuredReplies);
       });
       if (!active()) return;
       setThreadPage(previous => {
@@ -272,6 +276,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
     if(!selected || selected.status!=="accepted" || !opened || !draft.trim() || sending || offline || mutationLocked.current) return;
     mutationLocked.current=true;
     const submittedDraft=draft;
+    if(structuredReplies&&replyTarget?.scope===threadScope&&!replyId){mutationLocked.current=false;setError("Reply target unavailable. Cancel the reply or reload history.");return;}
     const actionGeneration = generation.current;
     setSending(true);setError("");
     try{
@@ -281,12 +286,13 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
         if(signal.aborted||user?.id!==userId||actionGeneration!==generation.current||!focused.current)throw new Error("Your session changed.");
         const header=await verifyChatPeer(userId,peerId(selected),signal);
         if(signal.aborted||actionGeneration!==generation.current||!focused.current)throw new Error("Your session changed.");
-        const message=prepareConversationMessage(pendingMessages.current,selected.id,userId,submittedDraft,randomUUID);
+        const message=prepareConversationMessage(pendingMessages.current,selected.id,userId,submittedDraft,randomUUID,replyId);
         await sendConversationMessage(supabase,message,signal,header);
       });
       if(actionGeneration===generation.current && focused.current){
         pendingMessages.current.delete(selected.id);
         setDraft(current=>current===submittedDraft?"":current);
+        setReplyTarget(current=>current?.scope===threadScope&&current.id===replyId?null:current);
         await load();
       }
     }catch(failure){if(actionGeneration===generation.current && focused.current)setError(failure instanceof Error?failure.message:"Message failed.");}
@@ -334,7 +340,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
         <Pressable accessibilityRole="button" accessibilityLabel="Back to conversations" disabled={sending} onPress={()=>setOpenedId("")} style={{minHeight:44,flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="chevron-back" size={20} color={theme.accent}/><Text style={{color:theme.accent,fontWeight:"700"}}>Conversations</Text></Pressable>
         <Text style={{color:theme.foreground,fontWeight:"900",fontSize:19}}>{name(selected)}</Text>
         <Text style={{color:theme.muted,fontSize:12}}>{selected.status==="accepted"?"Private HoopChat":"Player contact request"}</Text>
-        <ConversationSafety key={`${userId}:${selected.id}`} uid={userId} requestId={selected.id} peerId={peerId(selected)} onBlocked={()=>{historyRequest.current++;setOpenedId("");setDraft("");setThreadPage(null);setRequests(rows=>rows.filter(row=>peerId(row)!==peerId(selected)));void load();}}/>
+        <ConversationSafety key={`${userId}:${selected.id}`} uid={userId} requestId={selected.id} peerId={peerId(selected)} onBlocked={()=>{historyRequest.current++;setOpenedId("");setDraft("");setReplyTarget(null);setThreadPage(null);setRequests(rows=>rows.filter(row=>peerId(row)!==peerId(selected)));void load();}}/>
         {selected.message?<View style={{padding:12,borderRadius:12,backgroundColor:theme.chip}}><Text style={{color:theme.foreground}}>Introduction: {selected.message}</Text></View>:null}
         <View accessibilityLabel="Conversation history" style={{gap:10,marginVertical:10}}>
           {threadScope && !currentPage && !currentThreadError ? <HoopCheckLoading compact label="Loading conversation history…" /> : null}
@@ -343,6 +349,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
           {currentPage && !history.length && !historyBusy && !currentThreadError ? <Text style={{color:theme.muted}}>No messages yet.</Text> : null}
           {history.map(item=><ChatMessageEnter key={item.id} fresh={freshIds.has(item.id)} incoming={item.sender_id!==userId} active={motionActive}><View style={{padding:10,borderRadius:18,backgroundColor:item.sender_id===userId?theme.accentSurface:theme.surface,alignSelf:item.sender_id===userId?"flex-end":"flex-start",maxWidth:"95%",gap:4}}>
             <Text style={{fontSize:12,fontWeight:"800",color:theme.foreground}}>{item.sender_id===userId?"You":name(selected)}</Text>
+            {structuredReplies&&item.reply_to_id?<Text style={{color:theme.muted,fontSize:11}}>Reply to {history.some(row=>row.id===item.reply_to_id)?"a message in this conversation":"an earlier message"}</Text>:null}
             <Text style={{color:theme.foreground}}>{item.body}</Text>
             <Text style={{color:theme.muted,fontSize:11}}>{new Date(item.created_at).toLocaleString()}</Text>
             <Pressable accessibilityRole="button" accessibilityLabel={`Quote message from ${item.sender_id===userId?"you":name(selected)}`} disabled={sending||offline} onPress={()=>{
@@ -350,12 +357,14 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
               const next=quoteConversationMessage(selected.id,item,draft);
               if(next===null){setError("Not enough room to quote this message. Shorten your draft first.");return;}
               setDraft(next);setError("");
+              if(structuredReplies)setReplyTarget(makeReplyTarget(threadScope,selected.id,item,currentPage.rows));
             }} style={{minHeight:44,justifyContent:"center"}}><Text style={{color:theme.foreground,fontSize:12,fontWeight:"700"}}>Quote reply</Text></Pressable>
           </View></ChatMessageEnter>)}
         </View>
         {selected.status==="pending"&&selected.player_id===userId?<View style={{gap:8}}><Text style={{color:theme.muted}}>Approve this request to unlock messaging.</Text><Button disabled={sending||offline} onPress={()=>void respond("accepted")}>Accept request</Button><Button secondary disabled={sending||offline} onPress={()=>void respond("rejected")}>Decline</Button></View>:null}
         {selected.status==="accepted"?<View style={{gap:8}}>
           {process.env.EXPO_PUBLIC_HOOPCHECK_PLAYER_REFERENCES_ENABLED==="true"&&userId?<PlayerReferencePanel key={userId+":"+selected.id} userId={userId} connectionId={selected.id} offline={offline}/>:null}
+          {structuredReplies&&replyTarget?.scope===threadScope?<View style={{gap:4}}><Text style={{color:theme.muted}}>{replyId?"Reply linked to a message":"Reply target unavailable"}</Text><Button secondary disabled={sending} onPress={()=>setReplyTarget(null)}>Remove reply link</Button></View>:null}
           <ChatTypingBasketball active={motionActive && Boolean(draft.trim()) && !sending} />
           <TextInput accessibilityLabel="Write private HoopChat message" editable={!sending && !offline} multiline maxLength={2000} value={draft} onChangeText={setDraft} placeholder="Write a message…" placeholderTextColor={theme.muted}
             style={{minHeight:48,maxHeight:120,textAlignVertical:"top",padding:12,backgroundColor:theme.input,color:theme.foreground,borderWidth:1,borderColor:theme.border,borderRadius:theme.radius.control}} />
