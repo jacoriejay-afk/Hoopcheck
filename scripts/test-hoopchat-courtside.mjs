@@ -119,3 +119,13 @@ test("Alert search and category counts stay within the loaded caller-owned list"
  assert.ok(page.includes("Latest 100 loaded; older alerts are not included."));
  assert.ok(page.includes('Unread alerts in loaded list'));
 });
+
+test("Courtside guards duplicate mutations and preserves edits made during send",()=>{
+ const ui=read("components/HoopChatCourtside.tsx");
+ assert.match(ui,/const mutationGeneration=useRef<number\|null>\(null\)/);
+ assert.match(ui,/async function respond[\s\S]*?if\(mutationGeneration\.current===rev\)return;\s*mutationGeneration\.current=rev;\s*setSending\(true\)/);
+ assert.match(ui,/async function send[\s\S]*?submittedDraft=currentDraft;\s*if\(mutationGeneration\.current===rev\)return;\s*mutationGeneration\.current=rev/);
+ assert.match(ui,/setDrafts\(prev=>prev\[thread\]===submittedDraft\?\{\.\.\.prev,\[thread\]:""\}:prev\)/);
+ assert.equal((ui.match(/if\(user\?\.id!==userId\|\|rev!==accountGeneration\.current\)throw new Error/g)||[]).length,2);
+ assert.equal((ui.match(/finally\{if\(mutationGeneration\.current===rev\)mutationGeneration\.current=null;if\(rev===accountGeneration\.current\)setSending\(false\);\}/g)||[]).length,2);
+});
