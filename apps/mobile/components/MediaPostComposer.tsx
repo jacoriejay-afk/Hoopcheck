@@ -66,7 +66,7 @@ export function MediaPostComposer({ userId, enabled, caption, token, onPublished
     finally { clearTimeout(deadline); if (current === generation.current) { controller.current = null; working.current = false; setBusy(false); setUploading(false); setTransfer(null); } }
   }
   return <View style={{ gap: 12 }}>
-    <Text style={{ color: theme.muted }}>Add up to four photos, or one video up to 50 MB with a caption. Crop, rotate or reorder photos before posting.</Text>
+    <Text style={{ color: theme.muted }}>Add up to four photos or one video up to 50 MB. Photos preserve their framing unless you crop them. Video quality depends on your device and file size.</Text>
     {Platform.OS !== "web" ? <View style={{ gap: 10, padding: 12, borderWidth: 1, borderColor: preferredSource === "camera" ? theme.accent : theme.border, borderRadius: 16 }}>
       <CommunityWordmark size={20} />
       <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 17, fontWeight: "800" }}>HoopCheck™ Camera</Text>
