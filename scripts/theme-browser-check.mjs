@@ -123,6 +123,57 @@ assert.ok(serverReady, "Next production server did not become ready within 60 se
 const browser = await chromium.launch({ ...(process.env.CHROMIUM_EXECUTABLE_PATH ? { executablePath: process.env.CHROMIUM_EXECUTABLE_PATH } : { channel: "chrome" }), headless: true, args: ["--no-sandbox"] });
 const results = [];
 try {
+  for (const width of [390, 1440]) {
+    const context = await browser.newContext({ viewport: { width, height: 844 }, serviceWorkers: "block" });
+    const counts = [];
+    const desktopReads = [];
+    try {
+      await context.route("https://ci.invalid/**", async route => {
+        const request = route.request();
+        const url = new URL(request.url());
+        const headers = {
+          "access-control-allow-origin": baseURL,
+          "access-control-allow-headers": request.headers()["access-control-request-headers"] || "*",
+          "access-control-allow-methods": "GET,HEAD,OPTIONS",
+          "access-control-expose-headers": "content-range",
+          "content-range": "0-0/120",
+        };
+        if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers });
+        if (!url.pathname.startsWith("/rest/v1/")) return route.fulfill({ status: 401, headers, json: {} });
+        if (request.method() === "HEAD") {
+          counts.push([url.pathname, url.searchParams.get("account_type")]);
+          return route.fulfill({ status: 200, headers });
+        }
+        desktopReads.push(url.pathname);
+        return route.fulfill({ status: 200, headers, json: [] });
+      });
+      const page = await context.newPage();
+      await page.goto(baseURL + "/");
+      await page.getByRole("region", { name: "Live directory totals" }).waitFor();
+      await page.waitForLoadState("networkidle");
+      assert.equal(counts.length, 5, `Guest at ${width}px: expected one request per directory total`);
+      assert.equal(new Set(counts.map(entry => JSON.stringify(entry))).size, 5);
+      assert.equal(desktopReads.length, width === 390 ? 0 : 4, `Guest at ${width}px: desktop-only directory reads`);
+      if (width === 1440) {
+        // The hidden desktop spotlight must be unmounted, not merely CSS-hidden:
+        // its previous team/trust state must never survive a viewport round trip.
+        const desktopHero = page.locator(".hc-d3-hero");
+        await desktopHero.waitFor({ state: "visible" });
+        await page.setViewportSize({ width: 390, height: 844 });
+        await desktopHero.waitFor({ state: "detached" });
+        await Promise.all([
+          page.waitForResponse(response => response.url().includes("/rest/v1/fan_live_games") && response.request().method() === "GET"),
+          page.setViewportSize({ width: 1440, height: 844 }),
+        ]);
+        await desktopHero.waitFor({ state: "visible" });
+        await page.waitForLoadState("networkidle");
+        assert.equal(desktopReads.length, 8, "Desktop remount must refresh its four directory reads");
+        assert.equal(counts.length, 5, "Viewport changes must not refetch shared directory totals");
+      }
+    } finally {
+      await context.close();
+    }
+  }
   // Public routes must not expose member-only mobile navigation when there is
   // no session. Keep this separate from the authenticated screenshot fixtures.
   for (const theme of ["light", "dark", "system"]) {
@@ -135,6 +186,9 @@ try {
     });
     const guestPage = await guestContext.newPage();
     await guestContext.addCookies([{ name: "hoopcheck-theme", value: theme, url: baseURL }]);
+    await guestPage.addInitScript({
+      content: `globalThis.__hoopcheckThemeColorMath = (${makeThemeColorMath.toString()})();`,
+    });
     await guestPage.addInitScript((preference) => {
       localStorage.setItem("hoopcheck-theme", preference);
       localStorage.removeItem("sb-ci-auth-token");
@@ -222,6 +276,25 @@ try {
       const resolvedTheme = theme === "system" ? "dark" : theme;
       await guestPage.locator(`html.theme-${resolvedTheme}`).waitFor({ state: "attached" });
       await guestPage.evaluate(() => document.fonts.ready);
+      const contrast = await guestPage.evaluate(() => {
+        const colors = globalThis.__hoopcheckThemeColorMath;
+        const selectors = [
+          ".hc-ia-public-home .hc-home-cta",
+          ".hc-ia-public-home .hc-ia-section-heading .eyebrow",
+          ".site-footer .footer-links :is(a, strong, .muted)",
+          ".site-footer .footer-bottom > span",
+        ];
+        return Array.from(document.querySelectorAll(selectors.join(", ")))
+          .filter(node => node.checkVisibility())
+          .map(node => {
+            const style = getComputedStyle(node);
+            const foreground = colors.parse(style.webkitTextFillColor) ?? colors.parse(style.color);
+            return { text: node.textContent.trim(), ratio: colors.contrast(foreground, colors.background(node)) };
+          });
+      });
+      assert.ok(contrast.length >= 2, `Guest ${theme} at ${width}px: home contrast checks did not run`);
+      assert.deepEqual(contrast.filter(item => item.ratio < 4.5), [],
+        `Guest ${theme} at ${width}px: home action, heading and footer contrast must be at least 4.5:1`);
       const header = guestPage.locator("header.site-header-global");
       const brand = header.locator(".site-header-brand");
       const menuToggle = header.getByRole("button", { name: "Open menu" });

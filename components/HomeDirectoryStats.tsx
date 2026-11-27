@@ -3,12 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 
-type Stat = { label: string; value: number };
+export type HomeDirectoryStat = { label: string; value: number };
 const roundDown = (value: number) =>
   value <= 0 ? null : value < 10 ? value : value < 100 ? Math.floor(value / 5) * 5 : value < 1000 ? Math.floor(value / 10) * 10 : Math.floor(value / 100) * 100;
 
-export default function HomeDirectoryStats() {
-  const [stats, setStats] = useState<Stat[]>([]);
+export default function HomeDirectoryStats({ stats }: { stats: HomeDirectoryStat[] }) {
   const [progress, setProgress] = useState(1);
   const root = useRef<HTMLElement | null>(null);
 
@@ -20,6 +19,7 @@ export default function HomeDirectoryStats() {
     setProgress(0);
     const node = root.current;
     if (!node) return;
+    let frame: number | undefined;
     const observer = new IntersectionObserver(entries => {
       if (!entries.some(entry => entry.isIntersecting)) return;
       observer.disconnect();
@@ -27,14 +27,33 @@ export default function HomeDirectoryStats() {
       const tick = (now: number) => {
         const next = Math.min(1, (now - start) / 720);
         setProgress(next);
-        if (next < 1) requestAnimationFrame(tick);
+        if (next < 1) frame = requestAnimationFrame(tick);
       };
-      requestAnimationFrame(tick);
+      frame = requestAnimationFrame(tick);
     }, { threshold: 0.25 });
     observer.observe(node);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      if (frame !== undefined) cancelAnimationFrame(frame);
+    };
   }, [stats.length]);
 
+  if (!stats.length) return null;
+
+  return (
+    <section ref={root} className="hc-home-directory-stats" aria-label="Live directory totals">
+      {stats.map(stat => (
+        <div className="hc-home-directory-stat" key={stat.label}>
+          <strong>{Math.floor(stat.value * progress).toLocaleString()}+</strong>
+          <span>{stat.label}</span>
+        </div>
+      ))}
+    </section>
+  );
+}
+
+export function useHomeDirectoryStats() {
+  const [stats, setStats] = useState<HomeDirectoryStat[]>([]);
   useEffect(() => {
     let active = true;
     void Promise.all([
@@ -70,16 +89,5 @@ export default function HomeDirectoryStats() {
     return () => { active = false; };
   }, []);
 
-  if (!stats.length) return null;
-
-  return (
-    <section ref={root} className="hc-home-directory-stats" aria-label="Live directory totals">
-      {stats.map(stat => (
-        <div className="hc-home-directory-stat" key={stat.label}>
-          <strong>{Math.floor(stat.value * progress).toLocaleString()}+</strong>
-          <span>{stat.label}</span>
-        </div>
-      ))}
-    </section>
-  );
+  return stats;
 }

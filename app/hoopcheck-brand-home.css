@@ -41,11 +41,16 @@
 .hc-ia-public-home .hc-ia-welcome .muted { color: #e3e3e3; max-width: 540px; }
 .hc-ia-public-home .hc-home-cta {
   background: var(--hc-brand-orange);
-  color: #0a0a0a;
   border-color: var(--hc-brand-orange);
   box-shadow: none;
 }
+html:is(.theme-light, .theme-dark) .hc-ia-public-home .hc-home-cta {
+  color: var(--hc-brand-ink) !important;
+}
 .hc-ia-public-home .hc-home-signin { color: #fff; }
+.hc-ia-public-home .hc-ia-section-heading .eyebrow {
+  color: var(--hc-accent-text) !important;
+}
 .hc-ia-public-home .hc-ia-section-heading h2 {
   font-weight: 950;
   letter-spacing: -.02em;
@@ -230,9 +235,6 @@
     color: inherit;
   }
   .hc-ia-public-home .hc-ia-section-heading { margin-bottom: 12px; }
-  .hc-ia-public-home .hc-ia-section-heading .eyebrow {
-    color: var(--hc-accent-text);
-  }
   .hc-ia-public-home .hc-d3-membership-band {
     width: auto;
     margin: 12px 0 20px;
