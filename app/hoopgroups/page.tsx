@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
+import { withHoopChatDeadline } from "../../apps/mobile/src/native/hoopChatLoad";
+import { groupChannelScope, scopedGroupValue, visibleGroupPosts } from "../../lib/hoopgroups-channel-scope";
 import HoopGroupsManage, { GROUP_COLORS, GROUP_ICONS, type GroupSpace, type GroupChannel } from "../../components/HoopGroupsManage";
 import HoopGroupsChatSettings, { type ChatPrefs } from "../../components/HoopGroupsChatSettings";
 import HoopGroupsOwnerModeration from "../../components/HoopGroupsOwnerModeration";
@@ -30,8 +32,12 @@ export default function HoopGroupsPage() {
   const [memberships, setMemberships] = useState<string[]>([]);
   const [spaceId, setSpaceId] = useState("");
   const [channelId, setChannelId] = useState("");
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [draft, setDraft] = useState("");
+  const [postSnapshot, setPostSnapshot] = useState<{scope:string;value:Post[]}|null>(null);
+  const [draftSnapshot, setDraftSnapshot] = useState<{scope:string;value:string}|null>(null);
+  const [postRevision,setPostRevision]=useState(0);
+  const [postLoading,setPostLoading]=useState(false);
+  const [postError,setPostError]=useState("");
+  const sendingPost=useRef(false);
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [ready, setReady] = useState(false);
@@ -49,8 +55,8 @@ export default function HoopGroupsPage() {
     const generation = ++loadGeneration.current;
     setReady(false); setBackendReady(false); setBusy(false);
     setUserId(""); setAccountRole(""); setSpaces([]); setChannels([]);
-    setMemberships([]); setSpaceId(""); setChannelId(""); setPosts([]);
-    setDraft(""); setFeedback("");
+    setMemberships([]); setSpaceId(""); setChannelId(""); setPostSnapshot(null);
+    setDraftSnapshot(null); setFeedback("");
     const { data: { user } } = await supabase.auth.getUser();
     if (generation !== loadGeneration.current) return;
     if (!user) { setReady(true); return; }
@@ -97,8 +103,8 @@ export default function HoopGroupsPage() {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       // Never await a Supabase request inside the auth callback.
       loadGeneration.current += 1;
-      setReady(false); setBackendReady(false); setUserId(""); setPosts([]);
-      setMemberships([]); setDraft(""); setAccountRole(""); setSpaces([]); setChannels([]);
+      setReady(false); setBackendReady(false); setUserId(""); setPostSnapshot(null);
+      setMemberships([]); setDraftSnapshot(null); setAccountRole(""); setSpaces([]); setChannels([]);
       setSpaceId(""); setChannelId(""); setFeedback(""); setBusy(false);
       setDiscoverQuery(""); setDiscoverFilter("all");
       setSessionRevision(value => value + 1);
@@ -119,7 +125,18 @@ export default function HoopGroupsPage() {
   const availableChannels = channels.filter(item => item.space_id === selected?.id);
   const channel = availableChannels.find(item => item.id === channelId) || availableChannels[0] || null;
   const joined = Boolean(selected && memberships.includes(selected.id));
+  const scope = groupChannelScope(userId,channel?.id,joined&&backendReady&&ready);
+  const posts = scopedGroupValue(postSnapshot,scope,[]);
+  const draft = scopedGroupValue(draftSnapshot,scope,"");
+  function setDraft(value:string){if(scope)setDraftSnapshot({scope,value});}
   useEffect(() => { channelRef.current = channel?.id || ""; }, [channel?.id]);
+  async function verifiedHeader(uid:string,signal:AbortSignal){
+    const {data:{session},error}=await supabase.auth.getSession();
+    if(error||session?.user.id!==uid||signal.aborted)throw Error("Verify your account.");
+    const {data:{user},error:authError}=await supabase.auth.getUser(session.access_token);
+    if(authError||user?.id!==uid||signal.aborted)throw Error("Verify your account.");
+    return "Bearer "+session.access_token;
+  }
   async function shareInvite() {
     if(!selected) return;
     const url=window.location.origin+"/hoopgroups?group="+encodeURIComponent(selected.slug);
@@ -128,23 +145,46 @@ export default function HoopGroupsPage() {
   }
 
   useEffect(() => {
-    if (!enabled || !backendReady || !channel?.id || !joined) { setPosts([]); return; }
+    if (!enabled || !scope || !channel?.id) {setPostSnapshot(null);setPostLoading(false);setPostError("");return;}
     let active = true;
-    const currentChannel=channel.id;
+    let running:AbortController|null=null;
+    const currentChannel=channel.id,currentSpace=channel.space_id;
     const generation=loadGeneration.current;
+    const current=()=>active&&generation===loadGeneration.current&&channelRef.current===currentChannel;
+    setPostSnapshot(null);setPostLoading(true);setPostError("");
+    // Visibility can change during awaited Auth or PostgREST calls.
+    const isHidden=()=>document.visibilityState==="hidden";
     async function readMessages() {
-      if(document.visibilityState==="hidden") return;
-      const {data,error}=await supabase.from("hoop_group_posts")
-        .select("id,author_id,body,moderation_status,created_at").eq("channel_id",currentChannel)
-        .order("created_at",{ascending:false}).limit(100);
-      if(!active||generation!==loadGeneration.current||channelRef.current!==currentChannel) return;
-      if(error) setFeedback("Could not load group discussion posts.");
-      else setPosts(((data||[]) as Post[]).reverse());
+      if(isHidden()||running||!current())return;
+      const request=new AbortController();running=request;
+      try{
+        const rows=await withHoopChatDeadline(async signal=>{
+          const header=await verifiedHeader(userId,signal);
+          if(!current()||signal.aborted)throw Error("Channel changed.");
+          const membership=await supabase.from("hoop_group_members").select("space_id")
+            .eq("space_id",currentSpace).eq("user_id",userId).setHeader("Authorization",header).abortSignal(signal).maybeSingle();
+          if(membership.error||membership.data?.space_id!==currentSpace)throw Error("Group membership could not be verified.");
+          const blocks=await supabase.from("user_blocks").select("blocked_id").eq("blocker_id",userId).limit(501).setHeader("Authorization",header).abortSignal(signal);
+          if(blocks.error||!Array.isArray(blocks.data)||blocks.data.length>500)throw Error("Blocked accounts could not be verified.");
+          if(!current()||signal.aborted)throw Error("Channel changed.");
+          const {data,error}=await supabase.from("hoop_group_posts")
+            .select("id,author_id,body,moderation_status,created_at").eq("channel_id",currentChannel)
+            .order("created_at",{ascending:false}).order("id",{ascending:false}).limit(100).setHeader("Authorization",header).abortSignal(signal);
+          if(error||signal.aborted)throw Error("Could not load group discussion posts.");
+          const after=await verifiedHeader(userId,signal);
+          if(after!==header||!current()||signal.aborted)throw Error("Session changed. Refresh messages.");
+          return visibleGroupPosts((data||[]) as Post[],userId,new Set(blocks.data.map(row=>row.blocked_id))).reverse();
+        },undefined,request);
+        if(current()&&running===request&&!isHidden()){setPostSnapshot({scope,value:rows});setPostError("");}
+      }catch{if(current()&&running===request){setPostSnapshot(null);setPostError("Messages or membership could not be verified. Refresh to retry.");}}
+      finally{if(running===request){running=null;if(current())setPostLoading(false);}}
     }
+    const visibility=()=>{if(document.visibilityState==="hidden"){running?.abort();running=null;setPostSnapshot(null);}else{setPostLoading(true);void readMessages();}};
     void readMessages();
     const interval=window.setInterval(()=>{void readMessages();},15000);
-    return () => { active=false;window.clearInterval(interval); };
-  }, [backendReady,channel?.id,joined]);
+    document.addEventListener("visibilitychange",visibility);
+    return () => {active=false;running?.abort();window.clearInterval(interval);document.removeEventListener("visibilitychange",visibility);};
+  }, [scope,channel?.id,channel?.space_id,userId,postRevision]);
 
   async function join() {
     if (!selected || !userId || busy || !backendReady) return;
@@ -166,40 +206,38 @@ export default function HoopGroupsPage() {
     if (error) setFeedback("Could not leave this community. Please try again.");
     else {
       setMemberships(items=>items.filter(id=>id!==selected.id));
-      setPosts([]); setDraft(""); setFeedback("You left this community.");
+      setPostSnapshot(null); setDraftSnapshot(null); setFeedback("You left this community.");
     }
     setBusy(false);
   }
   async function refresh() {
     if (!channel || !joined || busy || !backendReady) return;
-    const generation = loadGeneration.current;
-    setBusy(true); setFeedback("");
-    const activeChannel=channel.id;
-    const {data,error}=await supabase.from("hoop_group_posts")
-      .select("id,author_id,body,moderation_status,created_at")
-      .eq("channel_id",activeChannel).order("created_at",{ascending:false}).limit(100);
-    if (generation !== loadGeneration.current) return;
-    if (error) setFeedback("Could not refresh group discussion posts.");
-    else if (channelRef.current===activeChannel) setPosts(((data||[]) as Post[]).reverse());
-    setBusy(false);
+    setPostRevision(value=>value+1);
   }
   async function send() {
-    if (!channel || !userId || !joined || !draft.trim() || busy || !backendReady) return;
+    if (!channel || !userId || !scope || !joined || !draft.trim() || busy || !backendReady || sendingPost.current) return;
     const generation = loadGeneration.current;
-    const activeChannel = channel.id;
-    setBusy(true);setFeedback("");
-    const { error } = await supabase.from("hoop_group_posts").insert({
-      channel_id:activeChannel,author_id:userId,body:draft.trim().slice(0,1200),moderation_status:"pending"
-    });
-    if (generation !== loadGeneration.current) return;
-    if (error) setFeedback("Could not submit the post.");
-    else {
-      setDraft("");setFeedback("Post submitted for approval. It is visible only to you until approved.");
-      const {data}=await supabase.from("hoop_group_posts").select("id,author_id,body,moderation_status,created_at").eq("channel_id",activeChannel).order("created_at",{ascending:false}).limit(100);
-      if (generation !== loadGeneration.current) return;
-      if (channelRef.current === activeChannel) setPosts(((data||[]) as Post[]).reverse());
-    }
-    setBusy(false);
+    const activeChannel = channel.id,activeSpace=channel.space_id,submitted=draft;
+    const current=()=>generation===loadGeneration.current&&channelRef.current===activeChannel;
+    sendingPost.current=true;setBusy(true);setFeedback("");
+    try{
+      await withHoopChatDeadline(async signal=>{
+        const header=await verifiedHeader(userId,signal);
+        if(!current()||signal.aborted)throw Error("Channel changed.");
+        const membership=await supabase.from("hoop_group_members").select("space_id").eq("space_id",activeSpace).eq("user_id",userId).setHeader("Authorization",header).abortSignal(signal).maybeSingle();
+        if(membership.error||membership.data?.space_id!==activeSpace||!current()||signal.aborted)throw Error("Group membership could not be verified.");
+        const {error}=await supabase.from("hoop_group_posts").insert({
+          channel_id:activeChannel,author_id:userId,body:submitted.trim().slice(0,1200),moderation_status:"pending"
+        }).setHeader("Authorization",header).abortSignal(signal);
+        if(error)throw Error("Post submission could not be confirmed.");
+      });
+      if(current()){
+        setDraftSnapshot(previous=>previous?.scope===scope&&previous.value===submitted?null:previous);
+        setFeedback("Post submitted for approval. It is visible only to you until approved.");
+        setPostRevision(value=>value+1);
+      }
+    }catch{if(current())setFeedback("Post could not be confirmed. Refresh messages before retrying.");}
+    finally{sendingPost.current=false;if(generation===loadGeneration.current)setBusy(false);}
   }
   async function report(post: Post) {
     const reason = window.prompt("Why are you reporting this message? (3–350 characters)")?.trim();
@@ -215,7 +253,7 @@ export default function HoopGroupsPage() {
     const {error}=await supabase.from("hoop_group_blocks").insert({blocker_id:userId,blocked_id:post.author_id});
     if (generation !== loadGeneration.current) return;
     if (error) setFeedback("Could not block this member.");
-    else setPosts(items=>items.filter(item=>item.author_id!==post.author_id));
+    else {setPostSnapshot(previous=>previous?.scope===scope?{scope,value:previous.value.filter(item=>item.author_id!==post.author_id)}:previous);setPostRevision(value=>value+1);}
   }
 
   return <main className="page-shell hc-hoopgroups-page"><div className="page-container">
@@ -229,7 +267,7 @@ export default function HoopGroupsPage() {
         <div><strong>Discover your people</strong><span>Find basketball communities and create your own group.</span></div>
         <label>Search groups<input value={discoverQuery} onChange={event=>setDiscoverQuery(event.target.value)} type="search" placeholder="Search groups or topics"/></label>
         <div className="hc-hoopgroups-discovery-tabs" role="group" aria-label="Show communities">
-          {(["all","recommended","joined","mine"] as const).map(filter=><button key={filter} type="button" aria-pressed={discoverFilter===filter} onClick={()=>{if(discoverFilter===filter)return;setDraft("");setDiscoverFilter(filter);setSpaceId("");setChannelId("");}}>{filter==="all"?"Discover groups":filter==="recommended"?"For your role":filter==="joined"?"Joined groups":"My groups"}</button>)}
+          {(["all","recommended","joined","mine"] as const).map(filter=><button key={filter} type="button" aria-pressed={discoverFilter===filter} onClick={()=>{if(discoverFilter===filter)return;setDraftSnapshot(null);setDiscoverFilter(filter);setSpaceId("");setChannelId("");}}>{filter==="all"?"Discover groups":filter==="recommended"?"For your role":filter==="joined"?"Joined groups":"My groups"}</button>)}
         </div>
       </div>
       {discoverFilter==="recommended" && <p className="muted">Suggestions are based only on your account role and groups available in this directory that you have not joined or created. They are not popularity rankings.</p>}
@@ -252,7 +290,7 @@ export default function HoopGroupsPage() {
         
       </aside>
       <section className={"hc-hoopgroups-chat "+(chatPrefs.density==="compact"?"is-compact ":"")+(chatPrefs.style==="plain"?"is-plain ":"")+(chatPrefs.scale==="large"?"is-large":"")} aria-label="Community channel"><header><div className="hc-hoopgroups-channel-title"><strong>{channel?.name || "Discussion"}</strong><small>{joined ? "You're a member" : "Join to read and post"} · moderated group discussion</small></div><div className="hc-hoopgroups-chat-tools"><HoopGroupsChatSettings userId={userId} spaceId={selected?.id||""} onChange={setChatPrefs}/><button type="button" className="hc-hoopgroups-refresh" onClick={()=>void refresh()} disabled={!joined || !channel || busy}>Refresh messages</button></div></header>
-        <div className="hc-hoopgroups-messages" role="log" aria-label="Community discussion" aria-live="polite" aria-relevant="additions text">{joined ? posts.length ? posts.map(post => <article key={post.id}><div className="hc-hoopgroups-post-head"><span className="hc-hoopgroups-post-avatar" aria-hidden="true">{post.author_id===userId?"YOU":post.author_id.slice(0,2).toUpperCase()}</span><div><strong>{post.author_id===userId?"You":"Community member"}</strong><small>{new Date(post.created_at).toLocaleString()}</small></div></div><p>{post.body}</p>{post.moderation_status!=="approved" ? <small>Pending moderation · visible to you</small> : post.author_id!==userId && <div className="actions"><button type="button" onClick={()=>void report(post)}>Report</button><button type="button" onClick={()=>void block(post)}>Block member</button></div>}</article>) : <p>No approved discussion posts yet.</p> : <p>Join this group to see community posts.</p>}</div>
+        <div className="hc-hoopgroups-messages" role="log" aria-label="Community discussion" aria-live="polite" aria-relevant="additions text">{joined ? posts.length ? posts.map(post => <article key={post.id}><div className="hc-hoopgroups-post-head"><span className="hc-hoopgroups-post-avatar" aria-hidden="true">{post.author_id===userId?"YOU":post.author_id.slice(0,2).toUpperCase()}</span><div><strong>{post.author_id===userId?"You":"Community member"}</strong><small>{new Date(post.created_at).toLocaleString()}</small></div></div><p>{post.body}</p>{post.moderation_status!=="approved" ? <small>Pending moderation · visible to you</small> : post.author_id!==userId && <div className="actions"><button type="button" onClick={()=>void report(post)}>Report</button><button type="button" onClick={()=>void block(post)}>Block member</button></div>}</article>) : <p>{postError|| (postLoading?"Loading discussion…":"No approved discussion posts yet.")}</p> : <p>Join this group to see community posts.</p>}</div>
         {feedback && <p role="status">{feedback}</p>}
         {joined && channel && <form className="hc-hoopgroups-compose" onSubmit={event=>{event.preventDefault();void send();}}><label htmlFor="hc-group-post">Post in {selected?.name || "HoopGroups"} · {channel.name}</label><textarea id="hc-group-post" value={draft} maxLength={1200} rows={3} onChange={event=>setDraft(event.target.value)} placeholder="Share a basketball discussion… (review required)" /><button type="submit" className="btn" disabled={busy || !draft.trim()}>Post for approval</button></form>}
       </section>

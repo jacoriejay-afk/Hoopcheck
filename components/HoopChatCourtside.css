@@ -187,3 +187,6 @@
  .hc-courtside-thread-actions{gap:5px}
  .hc-courtside-thread-actions button,.hc-courtside-thread-actions a{min-height:44px}
 }
+
+.hc-courtside-quote{align-self:flex-start;min-height:44px;padding:4px 8px;border:0;background:transparent;color:inherit;text-decoration:underline;font-size:12px;cursor:pointer}
+.hc-courtside-quote:disabled{opacity:.5;cursor:default}

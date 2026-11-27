@@ -314,6 +314,9 @@ jobs:
       - name: Verify November audit UI regression contracts
         run: node scripts/check-audit-ui-contracts.mjs
 
+      - name: Verify web HoopFeed publication recovery
+        run: node scripts/check-feed-publication-browser.mjs
+
       - name: Verify profile editing and team review checklist
         run: node scripts/check-profile-editor-browser.mjs
 

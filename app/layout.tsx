@@ -75,6 +75,7 @@ import "./hc-social-density-20261122.css";
 import "./hc-site-rhythm-20261122.css";
 import "./hc-ios-glass-refinement.css";
 import { SITE_URL } from "../lib/site-url";
+import { recoveryEntryBootstrap } from "../lib/auth/password-recovery";
 import { normalizeThemePreference, THEME_PREFERENCES, usesDarkPalette } from "../lib/theme-preference";
 
 const displayFont = localFont({
@@ -160,7 +161,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
 
   return (
     <html lang={initialLanguage} dir={initialLanguage === "ar" ? "rtl" : "ltr"} className={`${displayFont.variable} ${sansFont.variable} ${initialThemeClasses}`} suppressHydrationWarning>
-      <head><Script id="hoopcheck-theme-init" strategy="beforeInteractive">{ `(function(){try{var root=document.documentElement;var m=document.cookie.match(/(?:^|;\\s*)hoopcheck-theme=([^;]+)/);var cookie=m?decodeURIComponent(m[1]):null;var stored=localStorage.getItem("hoopcheck-theme");var pref=stored||cookie||"${initialTheme}";if(pref==="dynamic")pref="dark";if(!${JSON.stringify(THEME_PREFERENCES)}.includes(pref))pref="system";var dark=pref==="dark"||pref==="midnight"||(pref==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);root.classList.toggle("theme-dark",dark);root.classList.toggle("theme-light",!dark);root.classList.toggle("theme-midnight",pref==="midnight");root.style.colorScheme=dark?"dark":"light";if(stored!==pref)localStorage.setItem("hoopcheck-theme",pref);if(cookie!==pref)document.cookie="hoopcheck-theme="+encodeURIComponent(pref)+"; Path=/; Max-Age=31536000; SameSite=Lax";}catch(e){}})();` }</Script></head>
+      <head><script id="hoopcheck-recovery-entry" dangerouslySetInnerHTML={{ __html: recoveryEntryBootstrap }} /><Script id="hoopcheck-theme-init" strategy="beforeInteractive">{ `(function(){try{var root=document.documentElement;var m=document.cookie.match(/(?:^|;\\s*)hoopcheck-theme=([^;]+)/);var cookie=m?decodeURIComponent(m[1]):null;var stored=localStorage.getItem("hoopcheck-theme");var pref=stored||cookie||"${initialTheme}";if(pref==="dynamic")pref="dark";if(!${JSON.stringify(THEME_PREFERENCES)}.includes(pref))pref="system";var dark=pref==="dark"||pref==="midnight"||(pref==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);root.classList.toggle("theme-dark",dark);root.classList.toggle("theme-light",!dark);root.classList.toggle("theme-midnight",pref==="midnight");root.style.colorScheme=dark?"dark":"light";if(stored!==pref)localStorage.setItem("hoopcheck-theme",pref);if(cookie!==pref)document.cookie="hoopcheck-theme="+encodeURIComponent(pref)+"; Path=/; Max-Age=31536000; SameSite=Lax";}catch(e){}})();` }</Script></head>
       <body className={sansFont.className}>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd).replace(/</g, "\\u003c") }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd).replace(/</g, "\\u003c") }} />

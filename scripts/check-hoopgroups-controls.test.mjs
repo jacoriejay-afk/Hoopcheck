@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import ts from "typescript";
 const read=path=>readFileSync(new URL("../"+path,import.meta.url),"utf8");
 
 test("HoopGroups remains behind independently controlled public and moderation gates",()=>{
@@ -41,10 +42,27 @@ test("Auth changes clear account-specific HoopGroups state and cancel stale resp
   assert.match(page,/event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED"/);
   assert.match(page,/subscription\.unsubscribe\(\)/);
   assert.match(page,/loadGeneration\.current \+= 1/);
-  assert.match(page,/setUserId\(""\); setPosts\(\[\]\)/);
-  assert.match(page,/setMemberships\(\[\]\); setDraft\(""\); setAccountRole\(""\)/);
+  assert.match(page,/setUserId\(""\); setPostSnapshot\(null\)/);
+  assert.match(page,/setMemberships\(\[\]\); setDraftSnapshot\(null\); setAccountRole\(""\)/);
   assert.match(page,/if \(generation !== loadGeneration\.current\) return;/);
   assert.match(page,/channelRef\.current===activeChannel/);
-  assert.match(page,/channelRef\.current === activeChannel/);
+  assert.match(page,/channelRef\.current===currentChannel/);
+  assert.match(page,/scopedGroupValue\(postSnapshot,scope,\[\]\)/);
+  assert.match(page,/scopedGroupValue\(draftSnapshot,scope,""\)/);
+  assert.match(page,/membership\.data\?\.space_id!==currentSpace/);
+  assert.match(page,/\.from\("user_blocks"\)\.select\("blocked_id"\)\.eq\("blocker_id",userId\)/);
+  assert.match(page,/setHeader\("Authorization",header\)\.abortSignal\(signal\)/);
   assert.match(page,/if \(generation === loadGeneration\.current\)/);
+});
+
+test("Private channel messages and drafts cannot appear under another member or channel",async()=>{
+ const code=ts.transpileModule(read("lib/hoopgroups-channel-scope.ts"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+ const {groupChannelScope,scopedGroupValue,visibleGroupPosts}=await import("data:text/javascript;base64,"+Buffer.from(code).toString("base64"));
+ const a=groupChannelScope("alice","channel-a",true),b=groupChannelScope("alice","channel-b",true),other=groupChannelScope("bob","channel-a",true);
+ const snapshot={scope:a,value:["private message"]};
+ assert.deepEqual(scopedGroupValue(snapshot,a,[]),["private message"]);
+ for(const scope of [b,other,groupChannelScope("alice","channel-a",false),""])assert.deepEqual(scopedGroupValue(snapshot,scope,[]),[]);
+ assert.equal(scopedGroupValue({scope:a,value:"private draft"},b,""),"");
+ const rows=[{author_id:"alice",moderation_status:"pending"},{author_id:"bob",moderation_status:"pending"},{author_id:"bob",moderation_status:"approved"},{author_id:"blocked",moderation_status:"approved"},{author_id:"alice",moderation_status:"rejected"}];
+ assert.deepEqual(visibleGroupPosts(rows,"alice",new Set(["blocked"])),[rows[0],rows[2]]);
 });
