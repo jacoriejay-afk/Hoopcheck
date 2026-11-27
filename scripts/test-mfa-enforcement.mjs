@@ -13,6 +13,14 @@ function compile(path,imports=require){const compiled={exports:{}};const js=ts.t
 const core=compile('../lib/auth/mfa-core.ts');
 const enforcement=compile('../lib/server/mfa-enforcement.ts',name=>name==='../auth/mfa-core'?core:require(name));
 const workspaceAccess=compile('../lib/ambassador/session-access.ts');
+test("web privacy requests pin the verified bearer and recheck the account before publishing", () => {
+ const page = readFileSync(new URL("../app/privacy-center/page.tsx",import.meta.url),"utf8");
+ assert.match(page,/getUser\(token\)/);
+ assert.match(page,/\.eq\("requester_id", owner\)[\s\S]*?\.setHeader\("Authorization", "Bearer " \+ token\)/);
+ assert.match(page,/requester_id: userId,[\s\S]*?\.setHeader\("Authorization", "Bearer " \+ token\)/);
+ assert.match(page,/current\.current = \{ owner, generation: current\.current\.generation \+ 1 \}/);
+ assert.match(page,/await verifiedPrivacyToken\(userId\);\s*if \(current\.current !== scope\) return;\s*setMessage/);
+});
 const {NextRequest}=require('next/server');
 const owner='11111111-1111-4111-8111-111111111111',factor='22222222-2222-4222-8222-222222222222';
 const token=(aal='aal1',role='authenticated')=>Buffer.from('{"alg":"HS256"}').toString('base64url')+'.'+Buffer.from(JSON.stringify({sub:owner,aal,role,exp:Math.floor(Date.now()/1000)+3600})).toString('base64url')+'.fixture';
