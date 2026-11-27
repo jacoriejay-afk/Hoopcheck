@@ -52,6 +52,7 @@ jobs:
         run: |
           node scripts/step4-release-evidence.mjs --self-test
           node scripts/step4-local-smoke.mjs --self-test
+          node scripts/step4b-local-burst.mjs --self-test
 
       - name: Rehearse synthetic backup restore on disposable PostgreSQL
         env:
@@ -301,6 +302,9 @@ jobs:
 
       - name: Verify core public routes on loopback only
         run: node scripts/step4-local-smoke.mjs --local
+
+      - name: Verify bounded anonymous public route burst on loopback
+        run: node scripts/step4b-local-burst.mjs --local
 
       - name: Verify men’s and women’s team discovery
         run: node scripts/check-team-discovery-browser.mjs
