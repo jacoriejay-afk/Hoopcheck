@@ -50,8 +50,10 @@ export function PhotoStories({uid,canWrite,blockedIds,onClose,onBlock}:Props){
   try{
    const {data,error}=await supabase.auth.getSession();
    if(error||data.session?.user.id!==uid||!alive.current||abort.signal.aborted)throw Error("Verify your account.");
+   const verified=await supabase.auth.getUser(data.session.access_token);
+   if(verified.error||verified.data.user?.id!==uid||!alive.current||abort.signal.aborted)throw Error("Verify your account.");
    await publishPhotoStory(origin,uid,data.session.access_token,caption,photo,abort.signal,photoBody);
-   if(alive.current){setPhoto(null);setCaption("");setUncertain(false);success=true;}
+   if(alive.current&&!abort.signal.aborted){setPhoto(null);setCaption("");setUncertain(false);success=true;}
   }catch(error){if(alive.current){setMessage(error instanceof Error?error.message:"Story unavailable.");setUncertain(error instanceof PublicationUnconfirmed);}}
   finally{clearTimeout(deadline);locked.current=false;if(alive.current)setBusy(false);}
   if(success&&alive.current){await refresh();if(alive.current)setMessage("Story published for eligible followers for 24 hours.");}
