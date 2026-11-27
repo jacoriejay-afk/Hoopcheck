@@ -280,7 +280,7 @@ assert.match(feedModerationSource, /kindValues\.length > 1 \|\| \(kindValues\.le
 assert.match(feedModerationSource, /textValues\.length > 1 \|\| \(textValues\.length === 1 && typeof textValues\[0\] !== "string"\)/, "duplicate or non-text HoopFeed body fields must be rejected");
 
 assert.match(feedModerationSource, /postKindValues\.length > 1/, "duplicate post kind fields must be rejected");
-assert.match(feedModerationSource, /!\["discussion", "poll", "news"\]\.includes\(submittedKind\)/, "unknown post types must be rejected instead of silently converted");
+assert.match(feedModerationSource, /!\["discussion", "poll", "news", "story"\]\.includes\(submittedKind\)/, "unknown post types must be rejected instead of silently converted");
 
 assert.match(feedModerationSource, /const cleanupUploadedImages = async/, "uploaded photos must have failure cleanup");
 assert.match(feedModerationSource, /uploadedImagePaths\.push\(path\)/, "track each successfully uploaded photo for cleanup");
@@ -303,7 +303,10 @@ assert.match(feedModerationSource, /videoPath && allImages\.length > 0/, "posts 
 assert.match(feedModerationSource, /\/\^\\d\{1,3\}\$\/\.test\(scoreForRaw\)/, "Game Day scores must be decimal integers");
 assert.match(feedModerationSource, /\/\^\\d\{1,3\}\$\/\.test\(scoreAgainstRaw\)/, "Opponent scores must be decimal integers");
 
-assert.match(feedModerationSource, /expires_at:null/, "new HoopFeed posts must be permanent");
+assert.match(feedModerationSource, /const storyCreatedAt = isStory \? new Date\(\) : null/, "ordinary posts must stay outside the temporary Story lifecycle");
+assert.match(feedModerationSource, /const storyExpiresAt = storyCreatedAt \? [^\n]+ : null/, "only Story posts receive an expiry");
+assert.match(feedModerationSource, /expires_at:storyExpiresAt/, "the insert must use the server-derived expiry");
+assert.match(feedModerationSource, /source\.expires_at !== null/, "temporary posts cannot become permanent reshares");
 assert.match(feedModerationSource, /const expiresAt = null/, "reshares must be permanent");
 assert.doesNotMatch(feedModerationSource, /2100-01-01/, "posts must not use far-future expiry sentinels");
 const unifiedFeedPolicy = read("../supabase/migrations/20261111233000_unify_hoopfeed_read_and_checks_rls.sql");
