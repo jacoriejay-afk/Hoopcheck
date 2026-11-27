@@ -4,6 +4,11 @@ import PlayerReferencePanel from "./PlayerReferencePanel";
 import {useCallback,useEffect,useMemo,useRef,useState,type FormEvent,type UIEvent} from "react";
 import Link from "next/link";
 import {supabase} from "../lib/supabase";
+import {withHoopChatDeadline} from "../apps/mobile/src/native/hoopChatLoad";
+import {
+  appendConversationPage,CHAT_HISTORY_PAGE_SIZE,readConversationPage,refreshConversationPage
+} from "../apps/mobile/src/native/hoopChatHistory";
+import {prepareConversationMessage,sendConversationMessage} from "../apps/mobile/src/native/hoopChatSend";
 import {
   DEFAULT_APPEARANCE,STARTERS,lastByThread,parseAppearance,parseThreadPreferences,
   sortThreads,unreadCount,
@@ -12,6 +17,7 @@ import {
 import "./HoopChatCourtside.css";
 
 type InboxFilter="all"|"unread"|"requests"|"pinned";
+type HistoryPage={scope:string;rows:ChatMessage[];hasMore:boolean};
 const emptyPrefs=():ThreadPreferences=>({pinned:[],muted:[],seen:{}});
 const appearanceKey=(id:string)=>"hc-courtside-appearance-v1:"+id;
 const threadsKey=(id:string)=>"hc-courtside-threads-v1:"+id;
@@ -25,6 +31,9 @@ export default function HoopChatCourtside(){
   const [sessionRevision,setSessionRevision]=useState(0);
   const [requests,setRequests]=useState<ChatRequest[]>([]);
   const [messages,setMessages]=useState<ChatMessage[]>([]);
+  const [historyPage,setHistoryPage]=useState<HistoryPage|null>(null);
+  const [historyError,setHistoryError]=useState<{scope:string;message:string}|null>(null);
+  const [historyBusy,setHistoryBusy]=useState<string|null>(null);
   const [contacts,setContacts]=useState<Record<string,ChatContact>>({});
   const [selectedId,setSelectedId]=useState<string|null>(null);
   const [drafts,setDrafts]=useState<Record<string,string>>({});
@@ -41,69 +50,101 @@ export default function HoopChatCourtside(){
   const accountGeneration=useRef(0);
   // Lock synchronously within the current account generation, even before React rerenders.
   const mutationGeneration=useRef<number|null>(null);
+  const pendingMessages=useRef(new Map<string,Omit<ChatMessage,"created_at">>());
   const loadSequence=useRef(0);
+  const inboxRequest=useRef<AbortController|null>(null);
   const userIdRef=useRef("");
   const historyRef=useRef<HTMLDivElement|null>(null);
+  const historyRequest=useRef<AbortController|null>(null);
+  const activeHistoryScope=useRef("");
   const historyThread=useRef<string|null>(null);
   const followingLatest=useRef(true);
 
   const load=useCallback(async(silent=false)=>{
+    if(silent&&inboxRequest.current)return;
+    inboxRequest.current?.abort();
+    const request=new AbortController();
+    inboxRequest.current=request;
     const revision=accountGeneration.current;
     const sequence=++loadSequence.current;
     if(!silent)setSyncing(true);
     const valid=()=>revision===accountGeneration.current&&sequence===loadSequence.current;
     try{
-      const {data:{user},error:authError}=await supabase.auth.getUser();
-      if(!valid())return;
-      if(authError){
-        // Fail closed: an invalid session cannot keep the last account's messages visible.
-        userIdRef.current="";
-        setUserId("");setRequests([]);setMessages([]);setContacts({});setSelectedId(null);
-        throw new Error("We couldn't verify your HoopChat session.");
-      }
-      if(!user){
-        userIdRef.current="";
-        setUserId("");setRequests([]);setMessages([]);setContacts({});setSelectedId(null);
-        return;
-      }
-      // If an auth transition occurred before the event handler cleared state,
-      // never render the previous account's private thread under the new identity.
-      if(userIdRef.current&&userIdRef.current!==user.id){
-        setRequests([]);setMessages([]);setContacts({});setSelectedId(null);
-      }
-      userIdRef.current=user.id;
-      setUserId(user.id);
-      const {data:requestRows,error:requestError}=await supabase.from("player_contact_requests")
-        .select("id,requester_id,player_id,message,status,created_at")
-        .or(`requester_id.eq.${user.id},player_id.eq.${user.id}`)
-        .order("created_at",{ascending:false}).limit(100);
-      if(!valid())return;
-      if(requestError)throw new Error("Could not load private conversations.");
-      const rows=(requestRows||[]) as ChatRequest[];
-      const peers=[...new Set(rows.map(r=>r.requester_id===user.id?r.player_id:r.requester_id))];
-      const accepted=rows.filter(r=>r.status==="accepted").map(r=>r.id);
-      const [history,profileResult]=await Promise.all([
-        accepted.length?supabase.from("player_contact_messages")
-          .select("id,request_id,sender_id,body,created_at").in("request_id",accepted)
-          .order("created_at",{ascending:false}).limit(600)
-          :Promise.resolve({data:[] as ChatMessage[],error:null}),
-        peers.length?supabase.from("profiles").select("id,display_name,username,account_type").in("id",peers)
-          :Promise.resolve({data:[] as ChatContact[],error:null})
-      ]);
-      if(!valid())return;
-      if(history.error)throw new Error("Message history could not be loaded.");
-      setRequests(rows);setMessages((history.data||[]) as ChatMessage[]);
-      setContacts(Object.fromEntries(((profileResult.data||[]) as ChatContact[]).map(c=>[c.id,c])));
-      setSelectedId(current=>{
-        const fromUrl=new URLSearchParams(window.location.search).get("thread");
-        if(fromUrl&&rows.some(r=>r.id===fromUrl))return fromUrl;
-        if(current&&rows.some(r=>r.id===current))return current;
-        return rows[0]?.id||null;
-      });
-      setError("");
+      await withHoopChatDeadline(async signal=>{
+        const {data:{user},error:authError}=await supabase.auth.getUser();
+        if(!valid()||signal.aborted)return;
+        if(authError){
+          // Fail closed: an invalid session cannot keep the last account's messages visible.
+          userIdRef.current="";
+          setUserId("");setRequests([]);setMessages([]);setContacts({});setSelectedId(null);
+          throw new Error("We couldn't verify your HoopChat session.");
+        }
+        if(!user){
+          userIdRef.current="";
+          setUserId("");setRequests([]);setMessages([]);setContacts({});setSelectedId(null);
+          return;
+        }
+        // If an auth transition occurred before the event handler cleared state,
+        // never render the previous account's private thread under the new identity.
+        if(userIdRef.current&&userIdRef.current!==user.id){
+          pendingMessages.current.clear();
+          setRequests([]);setMessages([]);setContacts({});setSelectedId(null);
+        }
+        userIdRef.current=user.id;
+        setUserId(user.id);
+        const {data:{session},error:sessionError}=await supabase.auth.getSession();
+        if(!valid()||signal.aborted)return;
+        if(sessionError||session?.user.id!==user.id){
+          setRequests([]);setMessages([]);setContacts({});setSelectedId(null);
+          throw new Error("We couldn't verify your HoopChat session.");
+        }
+        const header="Bearer "+session.access_token;
+        const blocked=await supabase.from("user_blocks").select("blocked_id")
+          .eq("blocker_id",user.id).limit(501).setHeader("Authorization",header).abortSignal(signal);
+        if(!valid()||signal.aborted)return;
+        if(blocked.error||!blocked.data||blocked.data.length>500){
+          setRequests([]);setMessages([]);setContacts({});setSelectedId(null);
+          throw new Error("Blocked accounts could not be verified.");
+        }
+        const blockedIds=new Set(blocked.data.map(row=>row.blocked_id));
+        const {data:requestRows,error:requestError}=await supabase.from("player_contact_requests")
+          .select("id,requester_id,player_id,message,status,created_at")
+          .or(`requester_id.eq.${user.id},player_id.eq.${user.id}`)
+          .order("created_at",{ascending:false}).limit(100).setHeader("Authorization",header).abortSignal(signal);
+        if(!valid()||signal.aborted)return;
+        if(requestError)throw new Error("Could not load private conversations.");
+        const rows=((requestRows||[]) as ChatRequest[]).filter(row=>
+          !blockedIds.has(row.requester_id===user.id?row.player_id:row.requester_id));
+        const peers=[...new Set(rows.map(r=>r.requester_id===user.id?r.player_id:r.requester_id))];
+        const accepted=rows.filter(r=>r.status==="accepted").map(r=>r.id);
+        const [history,profileResult]=await Promise.all([
+          accepted.length?supabase.from("player_contact_messages")
+            .select("id,request_id,sender_id,body,created_at").in("request_id",accepted)
+            .order("created_at",{ascending:false}).limit(600).setHeader("Authorization",header).abortSignal(signal)
+            :Promise.resolve({data:[] as ChatMessage[],error:null}),
+          peers.length?supabase.from("profiles").select("id,display_name,username,account_type").in("id",peers)
+            .setHeader("Authorization",header).abortSignal(signal)
+            :Promise.resolve({data:[] as ChatContact[],error:null})
+        ]);
+        if(!valid()||signal.aborted)return;
+        if(history.error)throw new Error("Message history could not be loaded.");
+        setRequests(rows);setMessages((history.data||[]) as ChatMessage[]);
+        setContacts(Object.fromEntries(((profileResult.data||[]) as ChatContact[]).map(c=>[c.id,c])));
+        setSelectedId(current=>{
+          const fromUrl=new URLSearchParams(window.location.search).get("thread");
+          if(fromUrl&&rows.some(r=>r.id===fromUrl))return fromUrl;
+          if(current&&rows.some(r=>r.id===current))return current;
+          return rows[0]?.id||null;
+        });
+        setError("");
+      },undefined,request);
     }catch(e){
-      if(valid())setError(e instanceof Error?e.message:"HoopChat could not load. Please retry.");
+      if(valid()){
+        setRequests([]);setMessages([]);setContacts({});setSelectedId(null);
+        setError(e instanceof Error?e.message:"HoopChat could not load. Please retry.");
+      }
     }finally{
+      if(inboxRequest.current===request)inboxRequest.current=null;
       if(valid()){setLoading(false);setSyncing(false);}
     }
   },[]);
@@ -111,15 +152,21 @@ export default function HoopChatCourtside(){
   useEffect(()=>{
     accountGeneration.current+=1;loadSequence.current+=1;
     userIdRef.current="";
+    pendingMessages.current.clear();
     setUserId("");setRequests([]);setMessages([]);setContacts({});
     setSelectedId(null);setDrafts({});setError("");setFeedback("");setLoading(true);setSending(false);
     void load();
-    return ()=>{accountGeneration.current+=1;loadSequence.current+=1;};
+    return ()=>{
+      accountGeneration.current+=1;loadSequence.current+=1;
+      inboxRequest.current?.abort();
+      inboxRequest.current=null;
+    };
   },[load,sessionRevision]);
 
   useEffect(()=>{
-    const {data:{subscription}}=supabase.auth.onAuthStateChange(event=>{
+    const {data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{
       if(event!=="SIGNED_IN"&&event!=="SIGNED_OUT"&&event!=="USER_UPDATED")return;
+      if(event==="SIGNED_IN"&&session?.user.id===userIdRef.current)return;
       // React state change, never await another Supabase request in the auth callback.
       accountGeneration.current+=1;loadSequence.current+=1;
       setSessionRevision(n=>n+1);
@@ -132,26 +179,89 @@ export default function HoopChatCourtside(){
     setPrefs(parseThreadPreferences(safeStorageGet(threadsKey(userId))));
     setSettingsOpen(false);
   },[userId]);
-  useEffect(()=>{
-    if(!userId)return;
-    const onFocus=()=>{if(document.visibilityState==="visible")void load(true);};
-    const timer=window.setInterval(onFocus,25000);
-    window.addEventListener("focus",onFocus);
-    return()=>{window.clearInterval(timer);window.removeEventListener("focus",onFocus);};
-  },[load,userId]);
   // Do not reconnect the socket whenever the 25-second inbox refresh recreates requests[].
   // Only the selected conversation, account, or its accepted status should change this subscription.
   const selectedStatus=requests.find(r=>r.id===selectedId)?.status;
+  const historyScope=userId&&selectedId&&selectedStatus==="accepted"?userId+":"+selectedId:"";
+  const loadHistory=useCallback(async(viewer:string,thread:string,older?:ChatMessage,refresh=false)=>{
+    const scope=viewer+":"+thread;
+    if(historyRequest.current||activeHistoryScope.current!==scope)return;
+    const request=new AbortController();
+    historyRequest.current=request;
+    const revision=accountGeneration.current;
+    const valid=()=>historyRequest.current===request&&revision===accountGeneration.current;
+    if(!refresh)setHistoryBusy(scope);
+    setHistoryError(null);
+    try{
+      const rows=await withHoopChatDeadline(async signal=>{
+        const {data:{session},error:sessionError}=await supabase.auth.getSession();
+        if(signal.aborted||sessionError||session?.user.id!==viewer)throw new Error("Your session changed.");
+        const header="Bearer "+session.access_token;
+        const target=await supabase.from("player_contact_requests").select("requester_id,player_id,status")
+          .eq("id",thread).setHeader("Authorization",header).abortSignal(signal).maybeSingle();
+        if(target.error||target.data?.status!=="accepted"||![target.data.requester_id,target.data.player_id].includes(viewer)){
+          throw new Error("Conversation unavailable.");
+        }
+        const peer=target.data.requester_id===viewer?target.data.player_id:target.data.requester_id;
+        const blocked=await supabase.from("user_blocks").select("blocked_id")
+          .eq("blocker_id",viewer).eq("blocked_id",peer).setHeader("Authorization",header).abortSignal(signal).maybeSingle();
+        if(blocked.error||blocked.data)throw new Error("Conversation unavailable. Check your blocked accounts.");
+        return readConversationPage(supabase,thread,signal,older,header);
+      },undefined,request);
+      if(!valid())return;
+      setHistoryPage(previous=>{
+        const hasMore=rows.length===CHAT_HISTORY_PAGE_SIZE;
+        if(previous?.scope!==scope)return {scope,rows,hasMore};
+        if(older)return {scope,rows:appendConversationPage(previous.rows,rows),hasMore};
+        const latest=refreshConversationPage(previous.rows,rows);
+        return {scope,rows:latest,hasMore:latest.length>rows.length?previous.hasMore:hasMore};
+      });
+    }catch(e){
+      if(valid()){
+        setHistoryPage(null);
+        setHistoryError({scope,message:e instanceof Error?e.message:"Conversation history could not be loaded."});
+      }
+    }finally{
+      if(historyRequest.current===request){
+        historyRequest.current=null;
+        setHistoryBusy(null);
+      }
+    }
+  },[]);
+  useEffect(()=>{
+    if(!userId)return;
+    const onFocus=()=>{
+      if(document.visibilityState!=="visible")return;
+      void load(true);
+      if(selectedId&&historyScope)void loadHistory(userId,selectedId,undefined,true);
+    };
+    const timer=window.setInterval(onFocus,25000);
+    window.addEventListener("focus",onFocus);
+    return()=>{window.clearInterval(timer);window.removeEventListener("focus",onFocus);};
+  },[historyScope,load,loadHistory,selectedId,userId]);
+  useEffect(()=>{
+    activeHistoryScope.current=historyScope;
+    setHistoryPage(null);setHistoryError(null);setHistoryBusy(null);
+    if(userId&&selectedId&&historyScope)void loadHistory(userId,selectedId);
+    return ()=>{
+      activeHistoryScope.current="";
+      historyRequest.current?.abort();
+      historyRequest.current=null;
+    };
+  },[historyScope,loadHistory,selectedId,userId]);
   useEffect(()=>{
     if(!userId||!selectedId||selectedStatus!=="accepted")return;
     const rev=accountGeneration.current;
     const channel=supabase.channel("courtside-thread-"+userId+"-"+selectedId)
 
       .on("postgres_changes",{event:"INSERT",schema:"public",table:"player_contact_messages",filter:"request_id=eq."+selectedId},()=>{
-        if(rev===accountGeneration.current)void load(true);
+        if(rev===accountGeneration.current){
+          void loadHistory(userId,selectedId,undefined,true);
+          void load(true);
+        }
       }).subscribe();
     return()=>{void supabase.removeChannel(channel);};
-  },[load,selectedId,selectedStatus,userId]);
+  },[load,loadHistory,selectedId,selectedStatus,userId]);
 
   const latest=useMemo(()=>lastByThread(messages),[messages]);
   const ordered=useMemo(()=>sortThreads(requests,latest,prefs.pinned),[requests,latest,prefs.pinned]);
@@ -176,7 +286,9 @@ export default function HoopChatCourtside(){
     return !q||[peerName(r),contacts[peerId(r)]?.username||"",r.message||""].some(v=>v.toLocaleLowerCase().includes(q));
   });
   const selected=requests.find(r=>r.id===selectedId)||null;
-  const activeMessages=messages.filter(m=>m.request_id===selectedId).slice().reverse();
+  const selectedHistory=historyScope&&historyPage?.scope===historyScope?historyPage:null;
+  const activeMessages=selectedHistory?.rows.slice().reverse()||[];
+  const selectedHistoryError=historyScope&&historyError?.scope===historyScope?historyError.message:"";
   const latestMessageId=activeMessages[activeMessages.length-1]?.id||"";
   useEffect(()=>{
     const pane=historyRef.current;
@@ -237,6 +349,11 @@ export default function HoopChatCourtside(){
   },[messages,selectedId,userId,prefs]);
 
   function choose(id:string){
+    if(id!==selectedId){
+      activeHistoryScope.current="";
+      historyRequest.current?.abort();
+      historyRequest.current=null;
+    }
     setSelectedId(id);setFeedback("");setSettingsOpen(false);
     if(typeof window!=="undefined"){
       const url=new URL(window.location.href);
@@ -277,14 +394,23 @@ export default function HoopChatCourtside(){
     mutationGeneration.current=rev;
     setSending(true);setError("");setFeedback("");
     try{
-      const {data:{user}}=await supabase.auth.getUser();
-      if(user?.id!==userId||rev!==accountGeneration.current)throw new Error("Session changed. Please sign in again.");
-      const {error:sendError}=await supabase.from("player_contact_messages")
-        .insert({request_id:thread,sender_id:userId,body:body.slice(0,2000)});
+      await withHoopChatDeadline(async signal=>{
+        const {data:{user}}=await supabase.auth.getUser();
+        if(user?.id!==userId||rev!==accountGeneration.current)throw new Error("Session changed. Please sign in again.");
+        const {data:{session},error:sessionError}=await supabase.auth.getSession();
+        if(signal.aborted||sessionError||session?.user.id!==userId||rev!==accountGeneration.current)throw new Error("Session changed. Please sign in again.");
+        const header="Bearer "+session.access_token;
+        const blocked=await supabase.from("user_blocks").select("blocked_id")
+          .eq("blocker_id",userId).eq("blocked_id",peerId(selected)).setHeader("Authorization",header).abortSignal(signal).maybeSingle();
+        if(blocked.error||blocked.data||signal.aborted||rev!==accountGeneration.current)throw new Error("Conversation unavailable.");
+        const message=prepareConversationMessage(pendingMessages.current,thread,userId,submittedDraft,()=>crypto.randomUUID());
+        await sendConversationMessage(supabase,message,signal,header);
+      });
       if(rev!==accountGeneration.current)return;
-      if(sendError)throw new Error("Message not sent. Your text is still here.");
+      pendingMessages.current.delete(thread);
       setDrafts(prev=>prev[thread]===submittedDraft?{...prev,[thread]:""}:prev);
       setFeedback("Message sent.");
+      void loadHistory(userId,thread,undefined,true);
       await load(true);
     }catch(e){if(rev===accountGeneration.current)setError(e instanceof Error?e.message:"Message could not be sent.");}
     finally{if(mutationGeneration.current===rev)mutationGeneration.current=null;if(rev===accountGeneration.current)setSending(false);}
@@ -367,10 +493,17 @@ export default function HoopChatCourtside(){
         <div ref={historyRef} onScroll={onHistoryScroll} className="hc-courtside-history" role="log" aria-label={"Messages with "+peerName(selected)}>
           <div className="hc-courtside-center-note">🏀 THE COURTSIDE THREAD <span>·</span> Only accepted contacts can read this conversation.</div>
           {selected.message&&<div className="hc-courtside-introduction"><small>CONNECTION INTRODUCTION</small><p>{selected.message}</p></div>}
+          {selectedHistoryError?<div role="alert">
+            <p>{selectedHistoryError}</p>
+            <button type="button" onClick={()=>void loadHistory(userId,selected.id)}>Retry history</button>
+          </div>:selectedHistory?.hasMore?<button type="button" disabled={historyBusy===historyScope}
+            onClick={()=>void loadHistory(userId,selected.id,selectedHistory.rows.at(-1))}>
+            {historyBusy===historyScope?"Loading older messages…":"Load older messages"}
+          </button>:historyScope&&historyBusy===historyScope?<p role="status">Loading messages…</p>:null}
           {activeMessages.map(m=><article className={"hc-courtside-message"+(m.sender_id===userId?" is-mine":"")} key={m.id}>
             <span className="hc-courtside-message-sender">{m.sender_id===userId?"You":peerName(selected)}</span>
             <p>{m.body}</p><time dateTime={m.created_at}>{formatTime(m.created_at)}</time></article>)}
-          {selected.status==="accepted"&&!activeMessages.length&&<div className="hc-courtside-no-messages">
+          {selectedHistory&&!activeMessages.length&&<div className="hc-courtside-no-messages">
             <strong>Your court is ready.</strong><p>Start with a basketball conversation, not a cold DM.</p></div>}
         </div>
         {feedback&&<p className="hc-courtside-feedback" role="status">{feedback}</p>}

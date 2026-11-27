@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppState, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { randomUUID } from "expo-crypto";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Button } from "../src/primitives";
@@ -14,6 +15,7 @@ import { supabase } from "../src/lib/supabase";
 import { requireOnline, useNetwork } from "../src/native/network";
 import { hoopChatAuthAction, withHoopChatDeadline } from "../src/native/hoopChatLoad";
 import { appendConversationPage, CHAT_HISTORY_PAGE_SIZE, matchesConversationSearch, readConversationPage, refreshConversationPage, type ContactMessage } from "../src/native/hoopChatHistory";
+import { prepareConversationMessage, sendConversationMessage } from "../src/native/hoopChatSend";
 
 type ContactRequest = {
   id: string; requester_id: string; player_id: string; message: string | null;
@@ -50,6 +52,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
   const [sending, setSending] = useState(false);
   // React state updates are not synchronous; prevent duplicate mutations before the next render.
   const mutationLocked = useRef(false);
+  const pendingMessages = useRef(new Map<string, Omit<ContactMessage, "created_at">>());
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [threadPage, setThreadPage] = useState<{scope:string;rows:ContactMessage[];hasMore:boolean}|null>(null);
@@ -130,6 +133,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       reloadTimer.current = null;
       generation.current++;
       authIdentity.current = nextUserId;
+      pendingMessages.current.clear();
       setRequests([]); setMessages([]); setContacts({}); setUserId(""); setSelectedId(""); setOpenedId(""); setDraft(""); setSearch(""); setThreadPage(null); setThreadError(null); historyRequest.current++; historyPaging.current=false; setHistoryBusy(false);
       if (action === "clear") {
         setLoading(false);
@@ -251,10 +255,10 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       if(user?.id!==userId || actionGeneration!==generation.current || !focused.current)throw new Error("Your session changed.");
       const header=await withHoopChatDeadline(signal=>verifyChatPeer(userId,peerId(selected),signal));
       if(actionGeneration!==generation.current||!focused.current)throw Error("Your session changed.");
-      const {error:updateError}=await supabase.from("player_contact_requests")
+      const {data:updated,error:updateError}=await supabase.from("player_contact_requests")
         .update({status,responded_at:new Date().toISOString()})
-        .eq("id",selected.id).eq("player_id",userId).eq("status","pending").setHeader("Authorization",header);
-      if(updateError)throw new Error("Could not update the request.");
+        .eq("id",selected.id).eq("player_id",userId).eq("status","pending").setHeader("Authorization",header).select("id");
+      if(updateError||!updated?.length)throw new Error("Could not update the request.");
       if(actionGeneration===generation.current && focused.current) await load();
     }catch(failure){if(actionGeneration===generation.current && focused.current)setError(failure instanceof Error?failure.message:"Unable to update request.");}
     finally{mutationLocked.current=false;setSending(false);}
@@ -266,15 +270,20 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
     const actionGeneration = generation.current;
     setSending(true);setError("");
     try{
-      await requireOnline();
-      const {data:{user}}=await supabase.auth.getUser();
-      if(user?.id!==userId || actionGeneration!==generation.current || !focused.current)throw new Error("Your session changed.");
-      const header=await withHoopChatDeadline(signal=>verifyChatPeer(userId,peerId(selected),signal));
-      if(actionGeneration!==generation.current||!focused.current)throw Error("Your session changed.");
-      const {error:sendError}=await supabase.from("player_contact_messages")
-        .insert({request_id:selected.id,sender_id:userId,body:submittedDraft.trim().slice(0,2000)}).setHeader("Authorization",header);
-      if(sendError)throw new Error("The message was not sent.");
-      if(actionGeneration===generation.current && focused.current){setDraft(current=>current===submittedDraft?"":current);await load();}
+      await withHoopChatDeadline(async signal=>{
+        await requireOnline();
+        const {data:{user}}=await supabase.auth.getUser();
+        if(signal.aborted||user?.id!==userId||actionGeneration!==generation.current||!focused.current)throw new Error("Your session changed.");
+        const header=await verifyChatPeer(userId,peerId(selected),signal);
+        if(signal.aborted||actionGeneration!==generation.current||!focused.current)throw new Error("Your session changed.");
+        const message=prepareConversationMessage(pendingMessages.current,selected.id,userId,submittedDraft,randomUUID);
+        await sendConversationMessage(supabase,message,signal,header);
+      });
+      if(actionGeneration===generation.current && focused.current){
+        pendingMessages.current.delete(selected.id);
+        setDraft(current=>current===submittedDraft?"":current);
+        await load();
+      }
     }catch(failure){if(actionGeneration===generation.current && focused.current)setError(failure instanceof Error?failure.message:"Message failed.");}
     finally{mutationLocked.current=false;setSending(false);}
   }

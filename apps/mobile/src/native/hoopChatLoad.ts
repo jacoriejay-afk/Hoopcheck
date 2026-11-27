@@ -5,9 +5,9 @@
 export async function withHoopChatDeadline<T>(
   task: (signal: AbortSignal) => Promise<T>,
   timeoutMs = 12000,
+  controller = new AbortController(),
 ): Promise<T> {
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1) throw new Error("Invalid conversation timeout.");
-  const controller = new AbortController();
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     const deadline = new Promise<never>((_, reject) => {
