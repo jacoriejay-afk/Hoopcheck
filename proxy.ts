@@ -3,6 +3,7 @@ import { requestMfaState } from "./lib/server/mfa-enforcement";
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { GOOGLE_SIGNUP_COOKIE, GOOGLE_SIGNUP_PATH, GOOGLE_SIGNUP_ROLE } from "./lib/google-auth";
+import { appRecoveryPath } from "./lib/auth/password-recovery";
 
 const protectedPage = /^\/(?:dashboard|account|settings|profile|feed|admin|owner-hq|ambassador-hq)(?:\/|$)|^\/(?:teams|coaches|leagues)\/[^/]+\/review\/?$/;
 const pendingAllowed = new Set([GOOGLE_SIGNUP_PATH, "/auth/callback", "/login", "/terms", "/privacy", "/community-guidelines"]);
@@ -21,6 +22,7 @@ function isPendingBearer(header: string | null) {
 
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
+  if (path === appRecoveryPath || path === "/reset-password") return NextResponse.next({ request });
   if (path.startsWith("/api/")) {
     if (isPendingBearer(request.headers.get("authorization"))) {
       return NextResponse.json({ error: "Finish setting up your HoopCheck account first." }, { status: 403 });

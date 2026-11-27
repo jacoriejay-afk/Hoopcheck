@@ -5,6 +5,7 @@ import { nativeDestination } from "../src/native/deepLinks.ts";
 import { rememberDestination, takeDestination } from "../src/native/pendingDestination.ts";
 import { legalDocuments } from "../src/native/legalDocuments.ts";
 import { bindAuthIntents, createAuthIntents } from "../../../lib/auth/auth-intents.ts";
+import { nativeRecoveryRedirect, requestRecoveryEmail } from "../../../lib/auth/password-recovery.ts";
 
 test("implemented account and legal destinations never bounce to the website", () => {
   for (const path of ["/account/network", "/account/career-history", "/account/owner-hq", "/account/ambassador-hq", "/messages", "/about", "/forgot-password", "/sign-in", "/sign-up"]) {
@@ -18,10 +19,32 @@ test("implemented account and legal destinations never bounce to the website", (
 });
 test("recovery links preserve only recognized fields", () => {
   assert.equal(nativeDestination("hoopcheck://reset-password?token_hash=fixture&type=recovery&redirect=https://evil.example"), "/reset-password?token_hash=fixture&type=recovery");
-  assert.equal(nativeDestination("hoopcheck://reset-password?token_hash=fixture&type=signup"), "/reset-password");
+  assert.equal(nativeDestination("hoopcheck://reset-password?token_hash=fixture&type=signup"), "/reset-password?error_code=invalid_link");
   assert.equal(nativeDestination("hoopcheck://auth/callback?token_hash=fixture&type=recovery"), "/auth/callback");
-  assert.equal(nativeDestination("hoopcheck://reset-password#access_token=secret&error_code=otp_expired"), "/reset-password?error_code=otp_expired");
-  assert.equal(nativeDestination("hoopcheck://reset-password?code=a&code=b"), "/reset-password");
+  assert.equal(nativeDestination("hoopcheck://reset-password#access_token=secret&error_code=otp_expired"), "/reset-password?error_code=invalid_link");
+  assert.equal(nativeDestination("hoopcheck://reset-password?code=a&code=b"), "/reset-password?error_code=invalid_link");
+  assert.equal(nativeDestination("hoopcheck://reset-password?code=legacy-fixture"), "/reset-password?code=legacy-fixture");
+  assert.equal(nativeDestination("https://hoopcheck.online/recover-password?token_hash=fixture&type=recovery"), "/reset-password?token_hash=fixture&type=recovery");
+  for (const query of ["code=fixture", "token_hash=%00&type=recovery", "token_hash=fixture&type=recovery&type=signup", "token_hash=fixture&type=recovery#code=other", "token_hash=fixture&type=recovery&error="]) {
+    assert.equal(nativeDestination(`https://hoopcheck.online/recover-password?${query}`), "/reset-password?error_code=invalid_link");
+  }
+  assert.equal(nativeDestination("https://other.test/recover-password?token_hash=fixture&type=recovery"), "/");
+});
+test("native reset requests use an HTTPS landing path and throttle failures and pending requests", async t => {
+  assert.equal(nativeRecoveryRedirect("https://hoopcheck.online"), "https://hoopcheck.online/recover-password");
+  assert.equal(nativeRecoveryRedirect("http://localhost:3000"), "http://localhost:3000/recover-password");
+  assert.throws(() => nativeRecoveryRedirect("http://example.test"));
+  assert.throws(() => nativeRecoveryRedirect("https://user:secret@example.test"));
+  let now = 100_000;
+  t.mock.method(Date, "now", () => now);
+  let finish;
+  const first = requestRecoveryEmail(() => new Promise((_, reject) => { finish = reject; }));
+  assert.equal(await requestRecoveryEmail(() => assert.fail("duplicate provider request")), false);
+  finish(new Error("synthetic provider rejection"));
+  assert.equal(await first, true);
+  assert.equal(await requestRecoveryEmail(() => assert.fail("missing cooldown after error")), false);
+  now += 60_000;
+  assert.equal(await requestRecoveryEmail(async () => ({ error: { code: "user_not_found" } })), true);
 });
 test("native support and report links retain only validated report destinations", () => {
   const id = "11111111-1111-4111-8111-111111111111";
@@ -47,7 +70,7 @@ test("recovery update is denied for a different user or session and signs out on
   let current = session("A", "first"), updates = 0, signouts = 0;
   const auth = {
     signInWithPassword: async () => ({}), signUp: async () => ({}), setSession: async () => ({}), exchangeCodeForSession: async () => ({}),
-    signOut: async () => { signouts++; return { error: null }; },
+    signOut: async options => { assert.deepEqual(options, { scope: "global" }); signouts++; return { error: null }; },
     getSession: async () => ({ data: { session: current }, error: null }),
     updateUser: async () => { updates++; return { error: null }; },
   };

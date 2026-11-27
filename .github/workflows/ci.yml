@@ -304,6 +304,9 @@ jobs:
       - name: Verify membership providers, role offers and billing recovery
         run: node scripts/check-membership-provider-browser.cjs
 
+      - name: Verify password recovery in a browser against mocked Auth
+        run: node scripts/check-password-recovery-browser.cjs
+
       - name: Verify canonical sitemap and robots host
         run: node scripts/domain-url-check.mjs
 

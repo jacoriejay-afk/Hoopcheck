@@ -7,6 +7,7 @@ import AuthPasswordField from "../../components/AuthPasswordField";
 import GoogleSignInButton from "../../components/GoogleSignInButton";
 import { googleAuthMessage } from "../../lib/google-auth";
 import { supabase } from "../../lib/supabase";
+import { recoveryRequestMessage, requestRecoveryEmail } from "../../lib/auth/password-recovery";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,11 +17,13 @@ export default function LoginPage() {
   const [message, setMessage] = useState("");
   const [messageIsSuccess, setMessageIsSuccess] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
+  const [resetRequested, setResetRequested] = useState(false);
   const [loading, setLoading] = useState(false);
   const [returnTo, setReturnTo] = useState("");
   useEffect(() => {
     const query = new URLSearchParams(window.location.search);
     const candidate = query.get("returnTo") || "";
+    if (query.get("recover") === "1") emailInput.current?.focus();
     if (query.has("google_error")) setMessage(googleAuthMessage(query.get("google_error")));
     if (query.has("auth_error")) {
       setMessage("This email confirmation link is invalid, expired, or already used. Try signing in or request a fresh email from your signup screen.");
@@ -84,15 +87,13 @@ export default function LoginPage() {
     setMessage("");
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+      const started = await requestRecoveryEmail(() => supabase.auth.resetPasswordForEmail(normalizedEmail, {
         redirectTo: new URL("/reset-password", window.location.origin).href,
-      });
-      if (error) throw error;
+      }));
+      if (!started) { setMessage("Wait one minute before requesting another recovery email."); return; }
+      setResetRequested(true);
       setMessageIsSuccess(true);
-      setMessage("If an account exists for that email, we sent a password reset link.");
-    } catch (error) {
-      console.error("Password reset request failed:", error);
-      setMessage(error instanceof Error ? error.message : "Unable to send a reset link right now. Please try again.");
+      setMessage(recoveryRequestMessage);
     } finally {
       setResetLoading(false);
     }
@@ -116,7 +117,7 @@ export default function LoginPage() {
               placeholder="Your password" autoComplete="current-password" required />
 
             <button type="button" onClick={handlePasswordReset} disabled={loading || resetLoading} className="hc-auth-action hc-reset-link">
-              {resetLoading ? "Sending reset link…" : "Forgot password?"}
+              {resetLoading ? "Sending reset link…" : resetRequested ? "Resend reset link" : "Forgot password?"}
             </button>
 
             <button type="submit" className="btn hc-auth-submit" disabled={loading || resetLoading}>

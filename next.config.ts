@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { appRecoveryPath } from "./lib/auth/password-recovery";
 
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -38,8 +39,15 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       { source: "/(.*)", headers: securityHeaders },
-      { source: "/reset-password", headers: [{ key: "Referrer-Policy", value: "no-referrer" }] },
+      ...["/reset-password", appRecoveryPath].map(source => ({ source, headers: [
+        { key: "Referrer-Policy", value: "no-referrer" },
+        { key: "Cache-Control", value: "no-store" },
+        { key: "X-Robots-Tag", value: "noindex" },
+      ] })),
     ];
+  },
+  async rewrites() {
+    return [{ source: appRecoveryPath, destination: "/reset-password" }];
   },
 };
 
