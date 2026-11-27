@@ -52,3 +52,33 @@ test("a lost acknowledgement followed by a duplicate confirms exactly one caller
   readable = false;
   await assert.rejects(sendConversationMessage(client, message, signal, bearer), /could not be confirmed/);
 });
+
+test("structured reply duplicate acknowledgement requires matching private reply target", async () => {
+ const reply="44444444-4444-4444-8444-444444444444";
+ const message={id:"33333333-3333-4333-8333-333333333333",request_id:thread,sender_id:viewer,body:"Private reply",reply_to_id:reply};
+ let returnedReply=reply;
+ const calls=[];
+ const client=createClient("https://fixture.supabase.co","fixture-key",{
+  auth:{persistSession:false,autoRefreshToken:false},
+  global:{fetch:async(input,init)=>{
+   const url=new URL(String(input));
+   assert.equal(new Headers(init.headers).get("authorization"),bearer);
+   calls.push(init.method);
+   if(init.method==="POST"){
+    assert.deepEqual(JSON.parse(init.body),message);
+    return Response.json({code:"23505"},{status:409});
+   }
+   assert.equal(url.searchParams.get("id"),"eq."+message.id);
+   assert.equal(url.searchParams.get("request_id"),"eq."+thread);
+   assert.equal(url.searchParams.get("sender_id"),"eq."+viewer);
+   assert.equal(url.searchParams.get("select"),"body,reply_to_id");
+   return Response.json([{body:message.body,reply_to_id:returnedReply}]);
+  }}
+ });
+ await sendConversationMessage(client,message,signal,bearer);
+ returnedReply="55555555-5555-4555-8555-555555555555";
+ await assert.rejects(sendConversationMessage(client,message,signal,bearer),/could not be confirmed/);
+ returnedReply=null;
+ await assert.rejects(sendConversationMessage(client,message,signal,bearer),/could not be confirmed/);
+ assert.deepEqual(calls,["POST","GET","POST","GET","POST","GET"]);
+});
