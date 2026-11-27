@@ -12,6 +12,15 @@ const require=createRequire(import.meta.url);
 function compile(path,imports=require){const compiled={exports:{}};const js=ts.transpileModule(readFileSync(new URL(path,import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;new Function('require','exports','module',js)(imports,compiled.exports,compiled);return compiled.exports;}
 const core=compile('../lib/auth/mfa-core.ts');
 const enforcement=compile('../lib/server/mfa-enforcement.ts',name=>name==='../auth/mfa-core'?core:require(name));
+const workspaceAccess=compile('../lib/ambassador/session-access.ts');
+test("web privacy requests pin the verified bearer and recheck the account before publishing", () => {
+ const page = readFileSync(new URL("../app/privacy-center/page.tsx",import.meta.url),"utf8");
+ assert.match(page,/getUser\(token\)/);
+ assert.match(page,/\.eq\("requester_id", owner\)[\s\S]*?\.setHeader\("Authorization", "Bearer " \+ token\)/);
+ assert.match(page,/requester_id: userId,[\s\S]*?\.setHeader\("Authorization", "Bearer " \+ token\)/);
+ assert.match(page,/current\.current = \{ owner, generation: current\.current\.generation \+ 1 \}/);
+ assert.match(page,/await verifiedPrivacyToken\(userId\);\s*if \(current\.current !== scope\) return;\s*setMessage/);
+});
 const {NextRequest}=require('next/server');
 const owner='11111111-1111-4111-8111-111111111111',factor='22222222-2222-4222-8222-222222222222';
 const token=(aal='aal1',role='authenticated')=>Buffer.from('{"alg":"HS256"}').toString('base64url')+'.'+Buffer.from(JSON.stringify({sub:owner,aal,role,exp:Math.floor(Date.now()/1000)+3600})).toString('base64url')+'.fixture';
@@ -73,6 +82,7 @@ test('second-factor verification never bypasses existing pending-signup restrict
 function workspaceSession(client){return compile('../lib/ambassador/server.ts',name=>{
  if(name==='../auth/mfa-core')return core;
  if(name==='../server/supabase-auth')return{createAuthClient:async()=>client};
+ if(name==='./session-access')return workspaceAccess;
  if(name==='./identifiers')return{uuidPattern:/^[0-9a-f-]{36}$/};
  if(name==='next/navigation')return{redirect:path=>{throw Error('redirect:'+path);},notFound:()=>{throw Error('not-found');}};
  return require(name);
@@ -81,6 +91,27 @@ test('Owner HQ enforces MFA again before any privileged workspace/owner query',a
  const f=fixture();let checkedOwner=false;f.client.rpc=async()=>{checkedOwner=true;return{data:true,error:null};};
  await assert.rejects(workspaceSession(f.client)('/owner-hq',true),/redirect:\/auth\/verify/);assert.equal(checkedOwner,false);
 });
+test('Owner and Ambassador HQ deny revoked, suspended and unverifiable accounts',async()=>{
+ for (const {active,moderation,error} of [
+  {active:false,moderation:'normal'},
+  {active:true,moderation:'suspended'},
+  {active:true,moderation:'normal',error:Error('unverified')},
+ ]) {
+  const f=fixture({aal:'aal2'});
+  f.client.rpc=async name=>{assert.equal(name,'confirm_active_account_session');return {data:active,error};};
+  f.client.from=table=>{
+   assert.equal(table,'profiles');
+   return {select:()=>({eq:(key,id)=>{
+    assert.equal(key,'id');assert.equal(id,owner);
+    return {maybeSingle:async()=>({data:{moderation_status:moderation}})};
+   }})};
+  };
+  for (const [path,ownerOnly] of [['/ambassador-hq',false],['/owner-hq',true]]) {
+   await assert.rejects(workspaceSession(f.client)(path,ownerOnly),/not-found/);
+  }
+ }
+});
+
 test('AAL2 does not grant the owner role',async()=>{
  const f=fixture({aal:'aal2'});f.client.rpc=async()=>({data:false,error:null});await assert.rejects(workspaceSession(f.client)('/owner-hq',true),/not-found/);
 });
