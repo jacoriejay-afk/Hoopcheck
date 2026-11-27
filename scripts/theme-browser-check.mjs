@@ -220,6 +220,40 @@ try {
         assert.equal(await password.getAttribute("type"), "password");
       }
     }
+    // First-party bio hub: actual built route, local fonts, no anonymous member tabs.
+    await guestPage.addInitScript(() => {
+      Object.defineProperty(navigator, "share", { configurable: true, value: async ({url}) => { window.__bioSharedURL = url; } });
+      Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async (url) => { window.__bioCopiedURL = url; } } });
+    });
+    for (const width of [320, 390, 1440]) {
+      await guestPage.setViewportSize({ width, height: 844 });
+      const response = await guestPage.goto(baseURL + "/links?utm_source=instagram");
+      assert.equal(response.status(), 200, "Public bio hub responds without authentication");
+      const heading = guestPage.getByRole("heading", { name: /know who you’re signing with/i });
+      await heading.waitFor({ state: "visible" });
+      await guestPage.evaluate(() => document.fonts.ready);
+      const layout = await heading.evaluate(el => {
+        const primary = getComputedStyle(el).fontFamily.split(",")[0].trim().replace(/^["']|["']$/g, "");
+        const loaded = [...document.fonts].some(face => face.family.replace(/^["']|["']$/g, "") === primary && face.status === "loaded");
+        return { loaded, fits: document.documentElement.scrollWidth <= window.innerWidth + 2 };
+      });
+      assert.ok(layout.loaded, "Custom display face loaded, not a fallback");
+      assert.ok(layout.fits, "Bio hub fits viewport");
+      const quick = guestPage.getByRole("navigation", { name: "Quick navigation" });
+      assert.equal(await quick.getByRole("link").count(), 5);
+      assert.equal(await guestPage.locator("nav.bottom-nav").count(), 0);
+      const cta = guestPage.getByRole("link", { name: /create your free account/i });
+      assert.equal(await cta.getAttribute("href"), "/signup?utm_source=instagram&utm_medium=link_in_bio&utm_campaign=hoopcheck_links");
+      assert.ok((await cta.boundingBox()).height >= 44, "Signup touch target");
+      await guestPage.getByRole("button", { name: "Share HoopCheck links" }).click();
+      await guestPage.waitForFunction(url => window.__bioSharedURL === url, baseURL + "/links");
+      await guestPage.evaluate(() => { Object.defineProperty(navigator, "share", { configurable: true, value: undefined }); });
+      await guestPage.getByRole("button", { name: "Share HoopCheck links" }).click();
+      await guestPage.waitForFunction(url => window.__bioCopiedURL === url, baseURL + "/links");
+      await guestPage.getByText("Link copied.", { exact: true }).waitFor();
+      await guestPage.screenshot({ path: `${artifactsDir}/routes/bio-hub-${theme}-${width}.png`, fullPage: true, animations: "disabled" });
+    }
+    // Restore the next existing responsive test's theme/viewport setup.
     for (const width of [320, 375, 390, 740, 768, 1024, 1280, 1440]) {
       await guestPage.setViewportSize({ width, height: 844 });
       await guestPage.goto(baseURL + "/");
@@ -806,6 +840,13 @@ try {
     }
     await page.waitForFunction((expected) => document.documentElement.lang === expected, testLanguage, { timeout: 10000 });
     await page.waitForTimeout(150);
+
+    // A signed-in visitor gets the existing role-aware nav, never duplicate guest tabs.
+    await page.goto(baseURL + "/links", { waitUntil: "domcontentloaded" });
+    await page.getByRole("heading", { name: /know who you’re signing with/i }).waitFor();
+    await page.locator("nav.bottom-nav").waitFor({ state: "visible", timeout: 15000 });
+    assert.equal(await page.getByRole("navigation", { name: "Quick navigation" }).count(), 0);
+    console.log("BIO_HUB_MEMBER_NAV=PASS");
 
     for (const requestedPath of mainRoutes) {
       let navigationError = null;
