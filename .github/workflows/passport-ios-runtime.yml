@@ -4,13 +4,19 @@ name: Passport iOS Runtime Verification
 on:
   workflow_dispatch:
   pull_request:
-    branches: ["integration/appstore-compliance-candidate"]
+    branches: ["integration/appstore-compliance-candidate", "qa/hoopcheck-master-acceptance"]
     paths:
       - "apps/mobile/components/PlayerPassport.tsx"
       - "apps/mobile/src/native/passportSharing.ts"
       - "apps/mobile/src/native/playerPassport.ts"
       - "apps/mobile/scripts/ios-passport-smoke/**"
       - "apps/mobile/scripts/*passport*.test.mjs"
+      - ".github/workflows/passport-ios-runtime.yml"
+      - ".github/workflows/ios-native-compile.yml"
+      - "apps/mobile/package-lock.json"
+      - "apps/mobile/package.json"
+      - "apps/mobile/plugins/**"
+      - "apps/mobile/app.config.*"
 permissions:
   contents: read
 concurrency:
@@ -56,6 +62,12 @@ jobs:
         run: npx --no-install expo prebuild --platform ios --no-install
       - name: Verify generated permissions
         run: python3 scripts/verify-ios-permissions.py
+      # Cache downloaded pod sources only; regenerate and compile the native app at HEAD.
+      - name: Cache CocoaPods downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/CocoaPods
+          key: ${{ runner.os }}-${{ runner.arch }}-pod-downloads-v1-${{ hashFiles('apps/mobile/package-lock.json') }}
       - name: Install native pods
         run: pod install --project-directory=ios
       - name: Compile the simulator app without signing or EAS
