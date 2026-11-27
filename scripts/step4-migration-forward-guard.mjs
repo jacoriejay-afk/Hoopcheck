@@ -1,7 +1,12 @@
 // Offline forward-only migration guard; no network, SQL execution or schema repair.
 import { readFileSync } from "node:fs";
 function inspect(base,candidate) {
-  const version = /^\d{14}$/;
+  function validVersion(value) {
+    if (typeof value !== "string" || !/^\d{14}$/.test(value)) return false;
+    const iso = value.slice(0,4)+"-"+value.slice(4,6)+"-"+value.slice(6,8)+"T"+value.slice(8,10)+":"+value.slice(10,12)+":"+value.slice(12,14)+".000Z";
+    const time=Date.parse(iso);
+    return Number.isFinite(time) && new Date(time).toISOString()===iso;
+  }
   const filename = /^(\d{14})_[A-Za-z0-9][A-Za-z0-9_.-]*\.sql$/;
   const sha = /^[0-9a-f]{40}$/;
   function object(x, keys) {
@@ -14,12 +19,12 @@ function inspect(base,candidate) {
         !Array.isArray(s.files) || !s.files.length || s.files.length>10000) throw Error("invalid_snapshot");
     const result = new Map();
     for (const f of s.files) {
-      if (!object(f,["name","sha"]) || typeof f.name!=="string" || !filename.test(f.name) ||
+      if (!object(f,["name","sha"]) || typeof f.name!=="string" || !filename.test(f.name) || !validVersion(f.name.slice(0,14)) ||
           typeof f.sha!=="string" || !sha.test(f.sha) || result.has(f.name)) throw Error("invalid_file_inventory");
       result.set(f.name,f.sha);
     }
     if (isBase && (!Array.isArray(s.ledgerVersions) || !s.ledgerVersions.length || s.ledgerVersions.length>10000 ||
-      s.ledgerVersions.some(v=>typeof v!=="string"||!version.test(v)) ||
+      s.ledgerVersions.some(v=>!validVersion(v)) ||
       new Set(s.ledgerVersions).size!==s.ledgerVersions.length)) throw Error("invalid_ledger");
     return result;
   }
@@ -65,11 +70,11 @@ function selfTest() {
     ["same count rename",x=>x.files[1].name="20261103000000_renamed.sql",false]
   ];
   for(const [name,mutate,want] of tests){const x=next();mutate(x);const r=inspect(old,x);if(r.forward_only_guard_passed!==want||r.full_schema_parity_verified||r.migration_replay_authorized||r.historical_duplicate_versions.length!==1)throw Error(name);}
-  for(const [name,mutate] of [["malformed filename",x=>x.files.push({name:"../secret.sql",sha:h})],["duplicate file",x=>x.files.push(x.files[0])],["invalid hash",x=>x.files[0].sha="bad"],["extra field",x=>x.files[0].body="not accepted"]]){
+  for(const [name,mutate] of [["malformed filename",x=>x.files.push({name:"../secret.sql",sha:h})],["duplicate file",x=>x.files.push(x.files[0])],["invalid hash",x=>x.files[0].sha="bad"],["impossible date",x=>x.files.push(file("20261131000000","invalid"))],["extra field",x=>x.files[0].body="not accepted"]]){
     const x=next();mutate(x);let rejected=false;try{inspect(old,x)}catch{rejected=true}if(!rejected)throw Error(name);
   }
   let rejected=false;try{inspect({...old,ledgerVersions:[]},next())}catch{rejected=true}if(!rejected)throw Error("missing ledger");
-  return tests.length+5;
+  return tests.length+6;
 }
 function readManifest(path) {
   const bytes=readFileSync(path);
