@@ -152,8 +152,10 @@ export default function HoopGroupsPage() {
     const generation=loadGeneration.current;
     const current=()=>active&&generation===loadGeneration.current&&channelRef.current===currentChannel;
     setPostSnapshot(null);setPostLoading(true);setPostError("");
+    // Visibility can change during awaited Auth or PostgREST calls.
+    const isHidden=()=>document.visibilityState==="hidden";
     async function readMessages() {
-      if(document.visibilityState==="hidden"||running||!current())return;
+      if(isHidden()||running||!current())return;
       const request=new AbortController();running=request;
       try{
         const rows=await withHoopChatDeadline(async signal=>{
@@ -173,7 +175,7 @@ export default function HoopGroupsPage() {
           if(after!==header||!current()||signal.aborted)throw Error("Session changed. Refresh messages.");
           return visibleGroupPosts((data||[]) as Post[],userId,new Set(blocks.data.map(row=>row.blocked_id))).reverse();
         },undefined,request);
-        if(current()&&running===request&&document.visibilityState!=="hidden"){setPostSnapshot({scope,value:rows});setPostError("");}
+        if(current()&&running===request&&!isHidden()){setPostSnapshot({scope,value:rows});setPostError("");}
       }catch{if(current()&&running===request){setPostSnapshot(null);setPostError("Messages or membership could not be verified. Refresh to retry.");}}
       finally{if(running===request){running=null;if(current())setPostLoading(false);}}
     }
