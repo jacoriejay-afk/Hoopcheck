@@ -7,6 +7,9 @@ import { preparePhoto } from "../src/native/mediaSelection";
 import { CAMERA_MAX_BYTES, CAMERA_MAX_SECONDS, discardCameraFile, isCameraCacheFile, prepareCameraVideo, type NativeCapture } from "../src/native/cameraCapture";
 
 type Props = { onClose:()=>void; onCapture:(capture:NativeCapture)=>boolean };
+function CameraControl({label,onPress,disabled=false,selected=false}:{label:string;onPress:()=>void;disabled?:boolean;selected?:boolean}) {
+  return <Pressable accessibilityRole="button" accessibilityState={{disabled,selected}} disabled={disabled} onPress={onPress} style={{minHeight:44,paddingHorizontal:12,justifyContent:"center",borderRadius:20,borderWidth:1,borderColor:selected?"#ff7a25":"#777",opacity:disabled?.45:1}}><Text style={{color:"#fff",fontWeight:"700",textAlign:"center"}}>{label}</Text></Pressable>;
+}
 export function HoopCheckCamera({onClose,onCapture}:Props) {
   const [permission,requestPermission] = useCameraPermissions();
   const [microphone,requestMicrophone] = useMicrophonePermissions();
@@ -102,26 +105,26 @@ export function HoopCheckCamera({onClose,onCapture}:Props) {
     try {const allowed=microphone?.granted?microphone:await requestMicrophone();if(!alive.current)return;setAudio(allowed.granted);if(!allowed.granted)setMessage("Microphone access was denied. Silent video is available.");}
     catch {if(alive.current)setMessage("Microphone is unavailable. Silent video is available.");}
   }
-  const control=(label:string,action:()=>void,disabled=false,selected=false)=><Pressable key={label} accessibilityRole="button" accessibilityState={{disabled,selected}} disabled={disabled} onPress={action} style={{minHeight:44,paddingHorizontal:12,justifyContent:"center",borderRadius:20,borderWidth:1,borderColor:selected?"#ff7a25":"#777",opacity:disabled?.45:1}}><Text style={{color:"#fff",fontWeight:"700",textAlign:"center"}}>{label}</Text></Pressable>;
+
   return <Modal visible animationType="slide" presentationStyle="fullScreen" onRequestClose={cancel}>
     <SafeAreaView style={{flex:1,backgroundColor:"#090909"}}>
       <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between",padding:12}}>
-        <Text accessibilityRole="header" style={{color:"#fff",fontSize:19,fontWeight:"900"}}>HoopCheck Camera</Text>{control("Close",cancel)}
+        <Text accessibilityRole="header" style={{color:"#fff",fontSize:19,fontWeight:"900"}}>HoopCheck Camera</Text><CameraControl label="Close" onPress={cancel} />
       </View>
       {!permission?.granted ? <View style={{flex:1,justifyContent:"center",padding:24,gap:14}}>
         <Text style={{color:"#fff",fontSize:17}}>Allow camera access to capture basketball photos and videos. Nothing is published automatically.</Text>
-        {control("Allow camera",()=>{void requestPermission().catch(()=>{if(alive.current)setMessage("Camera permission is unavailable.");});},!permission)}
-        {permission&&!permission.canAskAgain?control("Device Settings",()=>{void Linking.openSettings().catch(()=>{if(alive.current)setMessage("Open device Settings to allow camera access.");});}):null}
+        <CameraControl label="Allow camera" disabled={!permission} onPress={()=>{void requestPermission().catch(()=>{if(alive.current)setMessage("Camera permission is unavailable.");});}} />
+        {permission&&!permission.canAskAgain?<CameraControl label="Device Settings" onPress={()=>{void Linking.openSettings().catch(()=>{if(alive.current)setMessage("Open device Settings to allow camera access.");});}} />:null}
       </View>:<>
         <View style={{flex:1,overflow:"hidden",borderRadius:16,marginHorizontal:8,backgroundColor:"#181818"}}>
           <CameraView key={mode+":"+facing} ref={camera} style={{flex:1}} facing={facing} mode={mode} flash={facing==="back"&&mode==="picture"?flash:"off"} zoom={zoom} mute={!audio||!microphone?.granted} videoQuality="1080p" onCameraReady={()=>{if(alive.current)setReady(true);}} onMountError={()=>{if(alive.current){setReady(false);setMessage("Camera preview could not start. Close and reopen or use the system camera.");}}} />
         </View>
         <View style={{gap:8,padding:10}}>
           <View style={{flexDirection:"row",flexWrap:"wrap",justifyContent:"center",gap:6}}>
-            {control("Photo",()=>setCameraMode("picture"),busy,mode==="picture")}{control("Video",()=>setCameraMode("video"),busy,mode==="video")}
-            {control("Flip",flip,busy)}{control("Zoom −",()=>setZoom(z=>Math.max(0,Math.round((z-.1)*10)/10)),busy||zoom===0)}
-            {control("Zoom +",()=>setZoom(z=>Math.min(1,Math.round((z+.1)*10)/10)),busy||zoom===1)}
-            {mode==="picture"?<>{control("Flash "+flash,()=>setFlash(f=>f==="off"?"auto":f==="auto"?"on":"off"),busy||facing==="front")}{control(timer?`Timer ${timer}s`:"Timer off",()=>setTimer(t=>t===0?3:t===3?10:0),busy)}</>:control(audio?"Audio on":"Audio off",()=>void toggleAudio(),busy,audio)}
+            <CameraControl label="Photo" onPress={()=>setCameraMode("picture")} disabled={busy} selected={mode==="picture"}/><CameraControl label="Video" onPress={()=>setCameraMode("video")} disabled={busy} selected={mode==="video"}/>
+            <CameraControl label="Flip" onPress={flip} disabled={busy}/><CameraControl label="Zoom −" onPress={()=>setZoom(z=>Math.max(0,Math.round((z-.1)*10)/10))} disabled={busy||zoom===0}/>
+            <CameraControl label="Zoom +" onPress={()=>setZoom(z=>Math.min(1,Math.round((z+.1)*10)/10))} disabled={busy||zoom===1}/>
+            {mode==="picture"?<><CameraControl label={"Flash "+flash} onPress={()=>setFlash(f=>f==="off"?"auto":f==="auto"?"on":"off")} disabled={busy||facing==="front"}/><CameraControl label={timer?`Timer ${timer}s`:"Timer off"} onPress={()=>setTimer(t=>t===0?3:t===3?10:0)} disabled={busy}/></>:<CameraControl label={audio?"Audio on":"Audio off"} onPress={()=>void toggleAudio()} disabled={busy} selected={audio}/>}
           </View>
           <Pressable accessibilityRole="button" accessibilityLabel={mode==="picture"?"Take photo":recording?"Stop recording":"Record video; tap to start or hold to record"} disabled={!ready||(busy&&!recording)} onPress={()=>{if(mode==="picture")photo();else if(running.current)stop();else if(!held.current)void startVideo();}} onLongPress={mode==="video"?()=>void startVideo(true):undefined} delayLongPress={250} onPressOut={()=>{if(held.current)stop();}} style={{alignSelf:"center",width:76,height:76,borderRadius:38,borderWidth:5,borderColor:"#fff",backgroundColor:mode==="video"?"#f04444":"#fff",opacity:!ready?.5:1,alignItems:"center",justifyContent:"center"}}>
             {recording?<View style={{width:26,height:26,borderRadius:5,backgroundColor:"#fff"}}/>:null}
