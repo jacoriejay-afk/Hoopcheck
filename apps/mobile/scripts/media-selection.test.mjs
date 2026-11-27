@@ -8,7 +8,7 @@ function native(overrides={}) {
  const image={uri:'file:///private/image.jpg',width:4000,height:3000};
  const stubs={
   'react-native':{Platform:{OS:'ios'}},
-  'expo-image-picker':{VideoExportPreset:{MediumQuality:2},launchImageLibraryAsync:async options=>{calls.push(['picker',options]);return {canceled:false,assets:[image]};},requestMediaLibraryPermissionsAsync:async()=>permission},
+  'expo-image-picker':{VideoExportPreset:{MediumQuality:2,HighestQuality:3},launchImageLibraryAsync:async options=>{calls.push(['picker',options]);return {canceled:false,assets:[image]};},requestMediaLibraryPermissionsAsync:async()=>permission},
   'expo-image-manipulator':{SaveFormat:{JPEG:'jpeg'},ImageManipulator:{manipulate:()=>({rotate:value=>calls.push(['rotate',value]),crop:value=>calls.push(['crop',value]),resize:value=>calls.push(['resize',value]),release:()=>calls.push(['release-context']),renderAsync:async()=>({saveAsync:async options=>{calls.push(['save',options]);return {...image,width:720,height:720};},release:()=>calls.push(['release-image'])})})}},
   'expo-file-system':{File:class{get size(){return fileSize;}get exists(){return true;}}},
   'expo-file-system/legacy':{FileSystemUploadType:{BINARY_CONTENT:0},FileSystemSessionType:{FOREGROUND:1}},
@@ -27,14 +27,14 @@ test('avatar preparation crops centrally, resizes to 720 and emits JPEG without 
 });
 test('oversized or remote images fail before decoding and rotations resize the resulting orientation',async()=>{
  const f=native();await assert.rejects(f.api.preparePhoto({...f.image,uri:'https://evil.test/image.jpg'}));await assert.rejects(f.api.preparePhoto({...f.image,width:10000,height:10000}));assert.equal(f.calls.length,0);
- await f.api.preparePhoto(f.image,false,true);assert.deepEqual(f.calls.find(c=>c[0]==='rotate'),['rotate',90]);assert.deepEqual(f.calls.find(c=>c[0]==='resize')[1],{height:1440});
+ await f.api.preparePhoto(f.image,false,true);assert.deepEqual(f.calls.find(c=>c[0]==='rotate'),['rotate',90]);assert.deepEqual(f.calls.find(c=>c[0]==='resize')[1],{height:1920});
 });
 test('failed compression is bounded and releases native references',async()=>{
  const f=native();f.setSize(800000);await assert.rejects(f.api.preparePhoto(f.image),/smaller/);assert.equal(f.calls.filter(c=>c[0]==='save').length,3);assert.ok(f.calls.some(c=>c[0]==='release-image'));assert.ok(f.calls.some(c=>c[0]==='release-context'));
 });
 test('library denial never opens a video picker; limited access and cancellation are supported',async()=>{
  let picked=0;
- const picker={VideoExportPreset:{MediumQuality:2},requestMediaLibraryPermissionsAsync:async()=>({granted:false,accessPrivileges:'none'}),launchImageLibraryAsync:async()=>{picked++;return {canceled:true,assets:null};}};
+ const picker={VideoExportPreset:{MediumQuality:2,HighestQuality:3},requestMediaLibraryPermissionsAsync:async()=>({granted:false,accessPrivileges:'none'}),launchImageLibraryAsync:async()=>{picked++;return {canceled:true,assets:null};}};
  const denied=native({'expo-image-picker':picker});await assert.rejects(denied.api.chooseVideo(),denied.api.MediaPermissionError);assert.equal(picked,0);
  picker.requestMediaLibraryPermissionsAsync=async()=>({granted:false,accessPrivileges:'limited'});assert.equal(await denied.api.chooseVideo(),null);assert.equal(picked,1);
 });
@@ -49,14 +49,14 @@ test('native video upload is file-backed binary, foreground-only, abortable and 
 });
 
 test('camera permission denial and cancellation never select or publish media',async()=>{
- let calls=0;const picker={requestCameraPermissionsAsync:async()=>({granted:false}),launchCameraAsync:async()=>{calls++;return {canceled:true,assets:null};},UIImagePickerControllerQualityType:{Medium:1}};
+ let calls=0;const picker={requestCameraPermissionsAsync:async()=>({granted:false}),launchCameraAsync:async()=>{calls++;return {canceled:true,assets:null};},UIImagePickerControllerQualityType:{Medium:1,High:0}};
  const f=native({'expo-image-picker':picker});await assert.rejects(f.api.capturePhoto(),f.api.MediaPermissionError);assert.equal(calls,0);
  picker.requestCameraPermissionsAsync=async()=>({granted:true});
  assert.equal(await f.api.capturePhoto(),null);assert.equal(await f.api.captureVideo(),null);assert.equal(calls,2);
 });
 test('capture photo uses bounded JPEG preparation and video validates duration, size and local URI',async()=>{
  let options,asset={uri:'file:///private/camera.jpg',width:4000,height:3000};
- const f=native({'expo-image-picker':{requestCameraPermissionsAsync:async()=>({granted:true}),launchCameraAsync:async value=>{options=value;return {canceled:false,assets:[asset]};},UIImagePickerControllerQualityType:{Medium:1}}});
+ const f=native({'expo-image-picker':{requestCameraPermissionsAsync:async()=>({granted:true}),launchCameraAsync:async value=>{options=value;return {canceled:false,assets:[asset]};},UIImagePickerControllerQualityType:{Medium:1,High:0}}});
  const photo=await f.api.capturePhoto();assert.equal(photo.type,'image/jpeg');assert.deepEqual(options.mediaTypes,['images']);assert.equal(options.exif,false);assert.equal(options.base64,false);
  asset={uri:'file:///private/camera.mov',mimeType:'video/quicktime',duration:45000};
  const video=await f.api.captureVideo();assert.equal(video.type,'video/quicktime');assert.equal(options.videoMaxDuration,60);
@@ -71,7 +71,7 @@ test('web capture never requests native permissions',async()=>{
 
 test('explicit front and rear camera choices are forwarded only to user-triggered native capture',async()=>{
  let options;let asset={uri:'file:///private/camera.jpg',width:4000,height:3000};
- const f=native({'expo-image-picker':{CameraType:{front:'front',back:'back'},requestCameraPermissionsAsync:async()=>({granted:true}),launchCameraAsync:async value=>{options=value;return {canceled:false,assets:[asset]};},UIImagePickerControllerQualityType:{Medium:1}}});
+ const f=native({'expo-image-picker':{CameraType:{front:'front',back:'back'},requestCameraPermissionsAsync:async()=>({granted:true}),launchCameraAsync:async value=>{options=value;return {canceled:false,assets:[asset]};},UIImagePickerControllerQualityType:{Medium:1,High:0}}});
  await f.api.capturePhoto('front');assert.equal(options.cameraType,'front');assert.deepEqual(options.mediaTypes,['images']);
  asset={uri:'file:///private/camera.mov',mimeType:'video/quicktime',duration:3000};
  await f.api.captureVideo('back');assert.equal(options.cameraType,'back');assert.equal(options.videoMaxDuration,60);
@@ -95,7 +95,7 @@ test('center crop presets retain bounds and native crop occurs before resize',as
  assert.throws(()=>f.api.centerCrop(0,30,'square'),/dimensions/);
  await f.api.preparePhoto(f.image,false,false,'portrait');
  assert.deepEqual(f.calls.find(c=>c[0]==='crop')[1],{originX:800,originY:0,width:2400,height:3000});
- assert.deepEqual(f.calls.find(c=>c[0]==='resize')[1],{height:1440});
+ assert.deepEqual(f.calls.find(c=>c[0]==='resize')[1],{height:1920});
  assert.ok(f.calls.findIndex(c=>c[0]==='crop') < f.calls.findIndex(c=>c[0]==='resize'));
 });
 test('photo order swaps are immutable and bounded',()=>{
@@ -106,4 +106,23 @@ test('photo order swaps are immutable and bounded',()=>{
  assert.equal(f.api.movePhoto(photos,0,-1),photos);
  assert.equal(f.api.movePhoto(photos,2,1),photos);
  assert.equal(f.api.movePhoto(photos,-1,1),photos);
+});
+
+test('feed photos preserve aspect ratio, avoid upscaling, and request higher JPEG quality',async()=>{
+ const f=native();await f.api.choosePhoto(false);
+ const options=f.calls.find(c=>c[0]==='picker')[1];
+ assert.equal(options.allowsEditing,false);assert.equal(options.aspect,undefined);
+ assert.deepEqual(f.calls.find(c=>c[0]==='resize')[1],{width:1920});
+ assert.equal(f.calls.find(c=>c[0]==='save')[1].compress,0.92);
+ assert.equal(f.calls.some(c=>c[0]==='crop'),false);
+ const small=native();await small.api.preparePhoto({uri:'file:///private/small.jpg',width:640,height:480});
+ assert.equal(small.calls.some(c=>c[0]==='resize'),false);
+});
+test('video selection and capture request highest supported quality without removing upload bounds',async()=>{
+ let options;
+ const asset={uri:'file:///private/video.mov',mimeType:'video/quicktime',duration:3000};
+ const f=native({'expo-image-picker':{VideoExportPreset:{HighestQuality:3},UIImagePickerControllerQualityType:{High:0},requestMediaLibraryPermissionsAsync:async()=>({granted:true}),requestCameraPermissionsAsync:async()=>({granted:true}),launchImageLibraryAsync:async value=>{options=value;return {canceled:false,assets:[asset]};},launchCameraAsync:async value=>{options=value;return {canceled:false,assets:[asset]};}}});
+ assert.equal((await f.api.chooseVideo()).type,'video/quicktime');assert.equal(options.videoExportPreset,3);
+ await f.api.captureVideo();assert.equal(options.videoQuality,0);assert.equal(options.videoMaxDuration,60);
+ f.setSize(51*1024*1024);await assert.rejects(f.api.chooseVideo(),/50 MB/);
 });

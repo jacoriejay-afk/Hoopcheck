@@ -39,11 +39,11 @@ export async function preparePhoto(input: { uri: string; width: number; height: 
       context.crop(region);
       width = region.width; height = region.height;
     }
-    const maximum = avatar ? 720 : 1440;
+    const maximum = avatar ? 720 : 1920;
     if (Math.max(width, height) > maximum) context.resize(width >= height ? { width: maximum } : { height: maximum });
     const rendered = await readWithDeadline(() => context.renderAsync(), 20000);
     try {
-      for (const compress of [0.8, 0.55, 0.3]) {
+      for (const compress of avatar ? [0.8, 0.55, 0.3] : [0.92, 0.72, 0.48]) {
         const result = await readWithDeadline(() => rendered.saveAsync({ format: SaveFormat.JPEG, compress, base64: false }), 20000);
         const size = Platform.OS === "web" ? (await (await fetch(result.uri)).blob()).size : new File(result.uri).size;
         if (Number.isSafeInteger(size) && size > 0 && size <= 750000) return { ...result, name: "photo.jpg", type: "image/jpeg", size };
@@ -55,7 +55,7 @@ export async function preparePhoto(input: { uri: string; width: number; height: 
 export async function choosePhoto(avatar = false) {
   // PHPicker grants only the selected asset; no camera, microphone or blanket
   // photo-library permission is needed for the image-only flow.
-  const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], allowsEditing: true, aspect: avatar ? [1, 1] : [4, 3], quality: 1, exif: false, base64: false });
+  const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], allowsEditing: avatar, ...(avatar ? { aspect: [1, 1] as [number, number] } : {}), quality: 1, exif: false, base64: false });
   return result.canceled ? null : preparePhoto(result.assets[0], avatar);
 }
 export async function chooseVideo(): Promise<Video | null> {
@@ -63,7 +63,7 @@ export async function chooseVideo(): Promise<Video | null> {
   // sufficient; never request a camera or microphone for library uploads.
   const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (!permission.granted && permission.accessPrivileges !== "limited") throw new MediaPermissionError("Allow photo-library access in Settings to choose a video, then try again.");
-  const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["videos"], allowsEditing: true, videoMaxDuration: 180, videoExportPreset: ImagePicker.VideoExportPreset.MediumQuality, exif: false, base64: false });
+  const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["videos"], allowsEditing: true, videoMaxDuration: 180, videoExportPreset: ImagePicker.VideoExportPreset.HighestQuality, exif: false, base64: false });
   if (result.canceled) return null;
   return prepareVideo(result.assets[0]);
 }
@@ -86,12 +86,12 @@ function cameraOptions(facing?: CameraFacing) {
 }
 export async function capturePhoto(facing?: CameraFacing): Promise<Photo | null> {
   await requireCamera();
-  const result = await ImagePicker.launchCameraAsync({ ...cameraOptions(facing), mediaTypes: ["images"], allowsEditing: true, aspect: [4, 3], quality: 1, exif: false, base64: false });
+  const result = await ImagePicker.launchCameraAsync({ ...cameraOptions(facing), mediaTypes: ["images"], allowsEditing: false, quality: 1, exif: false, base64: false });
   return result.canceled ? null : preparePhoto(result.assets[0]);
 }
 export async function captureVideo(facing?: CameraFacing): Promise<Video | null> {
   await requireCamera();
-  const result = await ImagePicker.launchCameraAsync({ ...cameraOptions(facing), mediaTypes: ["videos"], allowsEditing: false, videoMaxDuration: 60, videoQuality: ImagePicker.UIImagePickerControllerQualityType.Medium, exif: false, base64: false });
+  const result = await ImagePicker.launchCameraAsync({ ...cameraOptions(facing), mediaTypes: ["videos"], allowsEditing: false, videoMaxDuration: 60, videoQuality: ImagePicker.UIImagePickerControllerQualityType.High, exif: false, base64: false });
   if (result.canceled) return null;
   const asset = result.assets[0];
   if (typeof asset.duration !== "number" || !Number.isFinite(asset.duration) || asset.duration <= 0 || asset.duration > 60000) throw new Error("Record a video of up to 60 seconds.");

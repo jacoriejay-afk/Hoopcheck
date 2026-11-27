@@ -15,9 +15,11 @@ import { MediaPostComposer } from "../components/MediaPostComposer";
 import { FeedPoll } from "../components/FeedPoll";
 import { FeedCheckAction } from "../components/FeedCheckAction";
 import { FeedReport } from "../components/FeedReport";
+import { exploreFilters, matchesFeedExplore, type ExploreFilter } from "../src/native/feedExplore";
 import { supabase } from "../src/lib/supabase";
 import { useEntryTheme } from "../src/theme";
 import { useNativeAccount } from "../src/native/useNativeAccount";
+import { useNativeDraft } from "../src/native/drafts";
 import { useNetwork, requireOnline } from "../src/native/network";
 import { readWithDeadline } from "../src/native/readDeadline";
 import { deleteOwnedFeedPost, feedAction, isFeedId, moderateFeedText, publishFeedPoll, readFeedChecks, readFeedComments, readFeedPage, readSavedFeedPage, readFeedSaved, readSharedFeedPost, toggleFeedCheck, validatedPollOptions, type FeedComment, type FeedCursor, type FeedPost } from "../src/native/feedClient";
@@ -42,7 +44,10 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
   const [reels, setReels] = useState(initialReels);
   const [savedMode, setSavedMode] = useState<{ owner: string; enabled: boolean }>({ owner: "", enabled: false });
   const savedOnly = !reels && savedMode.owner === uid && savedMode.enabled;
-  useEffect(() => { if (linkedId) setSavedMode({ owner: "", enabled: false }); }, [linkedId]);
+  const [explore, setExplore] = useState<{ owner: string; active: boolean; search: string; filter: ExploreFilter }>({ owner: "", active: false, search: "", filter: "all" });
+  const exploring = !reels && !savedOnly && explore.owner === uid && explore.active;
+  useEffect(() => { setExplore({ owner: "", active: false, search: "", filter: "all" }); }, [uid]);
+  useEffect(() => { if (linkedId) { setSavedMode({ owner: "", enabled: false }); setExplore({ owner: "", active: false, search: "", filter: "all" }); } }, [linkedId]);
   const scope = `${uid ?? ""}:${reels}:${savedOnly}`;
   const viewer = useRef({ uid, canRead, scope });
   useLayoutEffect(() => { viewer.current = { uid, canRead, scope }; }, [uid, canRead, scope]);
@@ -59,7 +64,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
   const [saved, setSaved] = useState<Record<string, boolean | undefined>>({});
   const requests = useRef(new Set<string>());
   const [pending, setPending] = useState<Record<string, boolean>>({});
-  const [draft, setDraft] = useState({ owner: "", text: "" });
+  const [draft, setDraft] = useNativeDraft(`feed:post:${uid ?? ""}`, uid);
   const [locationDraft,setLocationDraft]=useState({owner:"",text:"",open:false});
   const location=locationDraft.owner===uid?locationDraft.text:"";
   const [poll, setPoll] = useState({ owner: "", enabled: false, options: ["", ""] });
@@ -183,12 +188,12 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
     finally { requests.current.delete(requestKey); if (viewer.current.uid === uid) setPending(value => ({ ...value, [key]: false })); }
   }
   async function publish() {
-    if (!canWrite || draft.owner !== uid || !draft.text.trim() || !pollValid) return;
-    const text = draft.text;
+    if (!canWrite || !draft.trim() || !pollValid) return;
+    const text = draft;
     await action("post", async () => {
       if (pollEnabled) await publishFeedPoll(origin, await token(), text, pollOptions, undefined, location);
       else await moderateFeedText(origin, await token(), "post", text, undefined, undefined, undefined, location);
-      setDraft(current => current.owner === uid && current.text === text ? { owner: uid!, text: "" } : current);
+      setDraft(current => current === text ? "" : current);
       setPoll(current => current.owner === uid ? { owner: uid!, enabled: false, options: ["", ""] } : current);
       setLocationDraft(current=>current.owner===uid&&current.text===location?{owner:uid!,text:"",open:false}:current);
       if (viewer.current.scope === scope && viewer.current.canRead) { setMessage("Published after safety checks."); await load(); }
@@ -218,6 +223,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
       (mutedCreators.owner !== uid || !mutedCreators.ids.includes(post.author_id))
     )),
   ) : [];
+  const displayPosts = exploring ? posts.filter(post => matchesFeedExplore(post, explore.filter, explore.search)) : posts;
   const currentReelIndex = reels ? posts.findIndex(post => visible.has(post.id)) : -1;
   const nextReelId = currentReelIndex >= 0 ? posts[currentReelIndex + 1]?.id ?? null : null;
   async function hideCreator(authorId: string) {
@@ -302,7 +308,12 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
         </Pressable>)}
       </View>
     </GlassSurface>
-    {!reels && <View accessibilityRole="tablist" style={{flexDirection:"row",gap:8,paddingHorizontal:14,paddingBottom:4}}>{[false,true].map(value => <Pressable key={String(value)} accessibilityRole="tab" accessibilityState={{selected:savedOnly===value}} onPress={()=>setSavedMode({owner:uid!,enabled:value})} style={{minHeight:44,paddingHorizontal:16,justifyContent:"center",borderRadius:22,borderWidth:1,borderColor:savedOnly===value?theme.accent:theme.border}}><Text style={{color:savedOnly===value?theme.accent:theme.foreground,fontWeight:"700"}}>{value?"Saved posts":"All posts"}</Text></Pressable>)}</View>}
+    {!reels && <View accessibilityRole="tablist" style={{flexDirection:"row",gap:6,paddingHorizontal:14,paddingBottom:4}}>{(["all","saved","explore"] as const).map(value => { const selected = value === "explore" ? exploring : value === "saved" ? savedOnly : !savedOnly && !exploring; return <Pressable key={value} testID={`feed-tab-${value}`} accessibilityRole="tab" accessibilityState={{selected}} onPress={()=>{setSavedMode({owner:uid!,enabled:value==="saved"});setExplore(current=>({owner:uid!,active:value==="explore",search:current.owner===uid?current.search:"",filter:current.owner===uid?current.filter:"all"}));}} style={{flex:1,minHeight:44,paddingHorizontal:6,alignItems:"center",justifyContent:"center",borderRadius:22,borderWidth:1,borderColor:selected?theme.accent:theme.border}}><Text style={{color:selected?theme.accent:theme.foreground,fontWeight:"700",textAlign:"center"}}>{value==="saved"?"Saved posts":value==="explore"?"Explore":"All posts"}</Text></Pressable>;})}</View>}
+    {exploring ? <View style={{paddingHorizontal:14,paddingVertical:6,gap:6}} testID="hoopfeed-explore">
+      <TextInput accessibilityLabel="Search loaded HoopFeed posts and creators" placeholder="Search posts or creators" placeholderTextColor={theme.muted} maxLength={100} value={explore.search} onChangeText={search=>setExplore(current=>current.owner===uid?{...current,search}:current)} returnKeyType="search" style={{color:theme.foreground,backgroundColor:theme.input,minHeight:44,borderWidth:1,borderColor:theme.border,borderRadius:12,paddingHorizontal:12}} />
+      <View style={{flexDirection:"row",flexWrap:"wrap",gap:5}}>{exploreFilters.map(filter=><Pressable key={filter} accessibilityRole="button" accessibilityState={{selected:explore.filter===filter}} onPress={()=>setExplore(current=>current.owner===uid?{...current,filter}:current)} style={{minHeight:44,justifyContent:"center",paddingHorizontal:10,borderRadius:16,borderWidth:1,borderColor:explore.filter===filter?theme.accent:theme.border}}><Text style={{color:explore.filter===filter?theme.accent:theme.foreground}}>{filter==="all"?"All":filter==="discussion"?"Discussion":filter==="media"?"Media":"Polls"}</Text></Pressable>)}</View>
+      <Text style={{color:theme.muted,fontSize:12}}>Search posts already loaded for your account. Load more to explore additional posts.</Text>
+    </View>:null}
     {message || loadError ? <Text accessibilityLiveRegion="polite"
       style={{ color: theme.muted, paddingHorizontal: 18, marginTop: 4 }}>{loadError || message}</Text> : null}
     {reels ? <View testID="hoopreels-provider-hold" style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 12, padding: 24, paddingBottom: 100 }}>
@@ -310,8 +321,8 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
       <CommunityWordmark reels size={22} />
       <Text style={{ color: theme.muted, textAlign: "center" }}>HoopReels is not available yet.</Text>
       <Button secondary onPress={() => setReels(false)}>Back to HoopFeed</Button>
-    </View> : <FlatList key={reels ? "reels" : savedOnly ? "saved-posts" : "posts"} keyboardDismissMode="on-drag" style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={posts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 9, paddingTop: 4, paddingBottom: 20, gap: reels ? 0 : 8 }} keyboardShouldPersistTaps="handled" initialNumToRender={reels ? 2 : 4} maxToRenderPerBatch={reels ? 2 : 4} windowSize={reels ? 3 : 5} pagingEnabled={reels} getItemLayout={reels && height > 0 ? (_items, index) => ({ length: height, offset: height * index, index }) : undefined} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
-      ListHeaderComponent={!reels && !savedOnly ? <View style={{ marginBottom: 2, gap: 7 }}>
+    </View> : <FlatList key={reels ? "reels" : savedOnly ? "saved-posts" : "posts"} keyboardDismissMode="on-drag" style={{ flex: 1 }} onLayout={event => setHeight(event.nativeEvent.layout.height)} data={displayPosts} keyExtractor={post => post.id} contentContainerStyle={{ padding: reels ? 0 : 9, paddingTop: 4, paddingBottom: 20, gap: reels ? 0 : 8 }} keyboardShouldPersistTaps="handled" initialNumToRender={reels ? 2 : 4} maxToRenderPerBatch={reels ? 2 : 4} windowSize={reels ? 3 : 5} pagingEnabled={reels} getItemLayout={reels && height > 0 ? (_items, index) => ({ length: height, offset: height * index, index }) : undefined} viewabilityConfig={viewability} onViewableItemsChanged={viewChanged}
+      ListHeaderComponent={!reels && !savedOnly && !exploring ? <View style={{ marginBottom: 2, gap: 7 }}>
         {!composerExpanded ? <View style={{flexDirection:"row",alignItems:"center",gap:4,borderBottomWidth:1,borderColor:theme.border,paddingHorizontal:6}}>
           <Pressable accessibilityRole="button" accessibilityLabel="Create HoopFeed post" disabled={!canWrite} onPress={()=>{setComposerExpanded(true);setMediaMode(false);}} style={{flex:1,minHeight:44,flexDirection:"row",alignItems:"center",gap:7}}><Ionicons name="create-outline" size={20} color={theme.accent}/><Text numberOfLines={1} style={{color:theme.muted,fontSize:13,flex:1}}>Share a basketball update…</Text></Pressable>
           {Platform.OS!=="web"?<Pressable accessibilityRole="button" testID="hoopfeed-quick-camera" accessibilityLabel="Open HoopCheck Camera and media composer" disabled={!canWrite||pending.post} onPress={()=>{setMediaSource("camera");setComposerExpanded(true);setMediaMode(true);setPoll(current=>({...current,owner:uid!,enabled:false}));}} style={{minWidth:44,minHeight:44,alignItems:"center",justifyContent:"center"}}><Ionicons name="camera-outline" size={22} color={theme.accent}/></Pressable>:null}
@@ -321,16 +332,16 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}><Text style={{ ...textStyle, fontFamily: theme.type.ui.fontFamily, fontSize: 18, fontWeight: "700" }}>Create a post</Text><Pressable accessibilityRole="button" onPress={() => setComposerExpanded(false)} style={touch}><Text style={textStyle}>Close</Text></Pressable></View>
           <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 8 }}>{[false, true].map(enabled => <Pressable key={String(enabled)} accessibilityRole="tab" accessibilityState={{ selected: !mediaMode && pollEnabled === enabled }} disabled={pending.post} onPress={() => { setMediaMode(false); setPoll(current => ({ owner: uid!, enabled, options: current.owner === uid ? current.options : ["", ""] })); }} style={[touch, { borderColor: !mediaMode && pollEnabled === enabled ? theme.accent : theme.border }]}><Text style={textStyle}>{enabled ? "Poll" : "Discussion"}</Text></Pressable>)}</View>
           <Pressable accessibilityRole="button" accessibilityLabel="Photo or video" disabled={pending.post} onPress={() => { setMediaSource("library");setMediaMode(true); setPoll(current => ({ ...current, owner: uid!, enabled: false })); }} style={{...touch,flexDirection:"row",justifyContent:"flex-start",alignItems:"center",gap:7}}><Ionicons name="images-outline" size={20} color={theme.accent}/><Text style={linkStyle}>Photo or video</Text></Pressable>
-          <TextInput accessibilityLabel="Write a HoopFeed post" multiline maxLength={2000} editable={!pending.post} placeholder={pollEnabled ? "Ask your poll question…" : "Start a post... (ask, share, discuss, update)"} placeholderTextColor={theme.muted} value={draft.owner === uid ? draft.text : ""} onChangeText={text => setDraft({ owner: uid!, text })} style={{ ...textStyle, fontSize: 15, lineHeight: 23, minHeight: 66, maxHeight: 180, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: theme.radius.control, backgroundColor: theme.input }} />
+          <TextInput accessibilityLabel="Write a HoopFeed post" multiline maxLength={2000} editable={!pending.post} placeholder={pollEnabled ? "Ask your poll question…" : "Start a post... (ask, share, discuss, update)"} placeholderTextColor={theme.muted} value={draft} onChangeText={setDraft} style={{ ...textStyle, fontSize: 15, lineHeight: 23, minHeight: 66, maxHeight: 180, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: theme.radius.control, backgroundColor: theme.input }} />
           <Pressable accessibilityRole="button" accessibilityLabel="Add or edit post location" accessibilityState={{expanded:locationDraft.owner===uid&&locationDraft.open}} disabled={pending.post} onPress={()=>setLocationDraft(current=>({owner:uid!,text:current.owner===uid?current.text:"",open:current.owner!==uid||!current.open}))} style={{...touch,flexDirection:"row",alignItems:"center",justifyContent:"flex-start",gap:6}}><Ionicons name="location-outline" size={20} color={theme.accent}/><Text style={linkStyle}>{location?location:"Add location (optional)"}</Text></Pressable>
           {locationDraft.owner===uid&&locationDraft.open?<View style={{gap:4}}><TextInput accessibilityLabel="Post location" placeholder="City, arena or region" placeholderTextColor={theme.muted} value={location} editable={!pending.post} maxLength={100} onChangeText={text=>setLocationDraft({owner:uid!,text,open:true})} style={{...textStyle,minHeight:44,borderWidth:1,borderColor:theme.border,borderRadius:10,paddingHorizontal:10}}/><Text style={{color:theme.muted,fontSize:11}}>Optional. Visible with your post; never uses GPS. Avoid sharing private addresses.</Text></View>:null}
           {pollEnabled && !mediaMode ? <View style={{ gap: 8 }}><Text style={{ color: theme.muted }}>Add 2–4 different answers, up to 60 characters each. Polls are text only.</Text>{pollOptions.map((option, index) => <View key={index} style={{ flexDirection: "row", gap: 8, alignItems: "center" }}><TextInput accessibilityLabel={`Poll answer ${index + 1}`} value={option} maxLength={60} editable={!pending.post} onChangeText={value => setPoll(current => current.owner === uid ? { ...current, options: current.options.map((item, i) => i === index ? value : item) } : current)} style={{ ...textStyle, flex: 1, minHeight: 48, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: theme.radius.control, backgroundColor: theme.input }} />{pollOptions.length > 2 ? <Pressable accessibilityRole="button" accessibilityLabel={`Remove poll answer ${index + 1}`} disabled={pending.post} onPress={() => setPoll(current => current.owner === uid ? { ...current, options: current.options.filter((_, i) => i !== index) } : current)} style={touch}><Text style={linkStyle}>Remove</Text></Pressable> : null}</View>)}{pollOptions.length < 4 ? <Button secondary disabled={pending.post} onPress={() => setPoll(current => current.owner === uid ? { ...current, options: [...current.options, ""] } : current)}>Add poll answer</Button> : null}</View> : null}
-          {mediaMode && uid ? <MediaPostComposer key={uid} preferredSource={mediaSource} userId={uid} enabled={canWrite} caption={draft.owner === uid ? draft.text : ""} location={location} token={token} onRefresh={() => load()} onPublished={async () => { setDraft(current => current.owner === uid && current.text === draft.text ? { owner: uid, text: "" } : current); setLocationDraft(current=>current.owner===uid&&current.text===location?{owner:uid,text:"",open:false}:current); await load(); }} /> : <Button style={{ minHeight: 44, borderRadius: 999, alignSelf: "flex-end", paddingHorizontal: 24 }} disabled={!canWrite || pending.post || draft.owner !== uid || !draft.text.trim() || !pollValid} onPress={() => void publish()}>{pending.post ? "Checking safety…" : "Post"}</Button>}
+          {mediaMode && uid ? <MediaPostComposer key={uid} preferredSource={mediaSource} userId={uid} enabled={canWrite} caption={draft} location={location} token={token} onRefresh={() => load()} onPublished={async () => { setDraft(current => current === draft ? "" : current); setLocationDraft(current=>current.owner===uid&&current.text===location?{owner:uid,text:"",open:false}:current); await load(); }} /> : <Button style={{ minHeight: 44, borderRadius: 999, alignSelf: "flex-end", paddingHorizontal: 24 }} disabled={!canWrite || pending.post || !draft.trim() || !pollValid} onPress={() => void publish()}>{pending.post ? "Checking safety…" : "Post"}</Button>}
         </View>}
         {!canWrite ? <Text style={{ color: theme.muted, marginTop: 8 }}>Your membership does not include posting.</Text> : null}
       </View> : null}
       refreshControl={<RefreshControl refreshing={loading} onRefresh={() => { setBlocksVersion(version => version + 1); void load(); }} />}
-      ListEmptyComponent={loading || (canRead && (!focused || blockedCreators.owner !== uid || !blockedCreators.ready)) ? <HoopCheckLoading label="Loading HoopFeed…" /> : <View style={{ padding: 24, gap: 12 }}><Text style={textStyle}>{loadError || (blockedCreators.failed ? "Blocked accounts could not be verified. Refresh to retry." : savedOnly ? (next ? "No accessible saved posts in this page. Load more to check the next page." : "No accessible saved posts found.") : reels ? "No video posts are available in this page." : "No posts are available in this page.")}</Text><Button secondary onPress={() => { setBlocksVersion(version => version + 1); void load(); }}>Refresh</Button></View>}
+      ListEmptyComponent={loading || (canRead && (!focused || blockedCreators.owner !== uid || !blockedCreators.ready)) ? <HoopCheckLoading label="Loading HoopFeed…" /> : <View style={{ padding: 24, gap: 12 }}><Text style={textStyle}>{loadError || (blockedCreators.failed ? "Blocked accounts could not be verified. Refresh to retry." : savedOnly ? (next ? "No accessible saved posts in this page. Load more to check the next page." : "No accessible saved posts found.") : exploring ? (next ? "No matches in loaded posts. Load more to continue searching." : "No matching accessible posts.") : reels ? "No video posts are available in this page." : "No posts are available in this page.")}</Text><Button secondary onPress={() => { setBlocksVersion(version => version + 1); void load(); }}>Refresh</Button></View>}
       renderItem={({ item: post }) => {
         const rawPage = comments.owner === uid ? comments.values[post.id] : undefined;
         const page = rawPage ? {...rawPage, rows:rawPage.rows.filter(comment=>!blockedCreators.ids.includes(comment.author_id))} : undefined;
