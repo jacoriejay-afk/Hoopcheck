@@ -28,7 +28,7 @@ export default function PreSignScreen() {
             <Pressable
               accessibilityRole="checkbox"
               accessibilityLabel={check.title + " reviewed"}
-              accessibilityState={{ checked }}
+              aria-checked={checked}
               onPress={() => setReviewed(current => current.includes(check.id) ? current.filter(id => id !== check.id) : [...current, check.id])}
               style={({ pressed }) => ({
                 minHeight: 48, flexDirection: "row", alignItems: "center", gap: theme.spacing.sm,

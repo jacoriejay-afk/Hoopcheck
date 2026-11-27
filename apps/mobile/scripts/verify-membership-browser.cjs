@@ -53,9 +53,11 @@ async function verify(browser,theme,role){
   await page.waitForURL(url=>url.origin===new URL(base).origin&&url.pathname==='/legal'&&url.searchParams.get('document')==='terms');
   await page.goto(base+'/pre-sign');
   const check=page.getByRole('checkbox',{name:'Verify the club reviewed'});
-  await check.click();assert.equal(await check.isChecked(),true);
+  await check.click();
   await page.getByText('1 of 6 reviewed',{exact:true}).waitFor();
+  assert.equal(await check.isChecked(),true);
   await page.getByRole('button',{name:'Reset checklist',exact:true}).click();
+  await page.getByText('0 of 6 reviewed',{exact:true}).waitFor();
   assert.equal(await check.isChecked(),false);
   await page.goto(base+'/link-unavailable');
   await page.getByText('This page is unavailable',{exact:true}).waitFor();
