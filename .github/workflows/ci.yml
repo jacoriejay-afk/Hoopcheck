@@ -48,6 +48,14 @@ jobs:
           node-version: 20
           cache: npm
 
+      - name: Verify Step 4 offline release evidence and local probe fixtures
+        run: |
+          node scripts/step4-release-evidence.mjs --self-test
+          node scripts/step4-local-smoke.mjs --self-test
+
+      - name: Rehearse synthetic backup restore on disposable PostgreSQL
+        run: bash scripts/step4-restore-fixture.sh
+
       - name: Install dependencies
         run: npm ci
 
@@ -288,6 +296,9 @@ jobs:
         run: |
           npm run start -- --hostname 127.0.0.1 > /tmp/hoopcheck-next.log 2>&1 &
           echo $! > /tmp/hoopcheck-next.pid
+
+      - name: Verify core public routes on loopback only
+        run: node scripts/step4-local-smoke.mjs --local
 
       - name: Verify men’s and women’s team discovery
         run: node scripts/check-team-discovery-browser.mjs
