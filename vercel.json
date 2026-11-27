@@ -24,7 +24,9 @@
       "integration/build9-native-final-gates-20261122": false,
       "ops/step4-release-readiness": false,
       "ops/step4b-acceptance": false,
-      "qa/hoopcheck-ios-ci-efficiency": false
+      "qa/hoopcheck-ios-ci-efficiency": false,
+      "ops/step4b-media-cancellation": false,
+      "ops/step4b-pg17-recovery": false
     }
   }
 }
