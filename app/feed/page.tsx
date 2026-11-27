@@ -14,6 +14,7 @@ import FollowButton from "../../components/FollowButton";
 import HoopFeedCommentsDialog from "../../components/HoopFeedCommentsDialog";
 import HoopFeedEntityTag from "../../components/HoopFeedEntityTag";
 import HoopFeedToday from "../../components/HoopFeedToday";
+import HoopFeedReportAction from "../../components/HoopFeedReportAction";
 import { compareFeedPosts, entityHref, loadFeedWorld, SEGMENTS, type EntityTag, type FeedSort, type FeedWorld, type Segment, type TaggedPost } from "../../lib/hoopfeed-organization";
 import { classifyFeedPublication } from "../../apps/mobile/src/native/publicationResult";
 import "./feed-organization.css";
@@ -619,7 +620,7 @@ export default function Feed(){
       }} aria-label={comments[p.id] ? `View ${cs.length} comments` : "View comments"}><HoopIcon name="message-square" size={17} /><span>{cs.length || "Reply"}</span></button><button type="button" className="hc-feed-action-pill hc-feed-action-pill--share" disabled={posting} aria-label="Share post" onClick={()=>void sharePost(p)}><HoopIcon name="arrow-up-right" size={17} /><span>Share</span></button><button type="button" className={"hc-feed-action-pill hc-feed-action-pill--save"+(savedMap[p.id]?" is-active":"")} onClick={()=>void toggleSave(p)} aria-label={savedMap[p.id]?"Unsave post":"Save post"} aria-pressed={Boolean(savedMap[p.id])}><span aria-hidden="true">{savedMap[p.id]?"▣":"▢"}</span><span>{savedMap[p.id]?"Saved":"Save"}</span></button>{p.author_id===user?.id&&<details className="hc-feed-post-more">
         <summary aria-label="More post actions">•••</summary>
         <div className="hc-feed-post-more__menu"><button type="button" onClick={()=>void del(p)}>Delete post</button></div>
-      </details>}</FeedActionRow>
+      </details>}{p.author_id!==user.id&&<HoopFeedReportAction key={user.id+":"+p.id} uid={user.id} postId={p.id} authorId={p.author_id} />}</FeedActionRow>
       {openComments === p.id && <HoopFeedCommentsDialog onClose={() => setOpenComments(null)}>
         <div className="hc-feed-comment-list">
           {cs.map(c => <article key={c.id} style={{ marginInlineStart: Math.min(c.depth * 12, 36) }}>
@@ -629,6 +630,7 @@ export default function Feed(){
               {canReply && <button type="button" onClick={() => setReplyTargets(current => ({
                 ...current, [p.id]: { id: c.id, name: c.profiles?.display_name || "Member" },
               }))}>Reply</button>}
+              {c.author_id!==user.id&&<HoopFeedReportAction key={user.id+":"+c.id} uid={user.id} postId={p.id} authorId={c.author_id} commentId={c.id} />}
             </div>
           </article>)}
           {!cs.length && (comments[p.id] ? <p>No comments yet.</p> : !commentErrors[p.id] && <p role="status">Loading comments…</p>)}

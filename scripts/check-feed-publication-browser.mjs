@@ -4,6 +4,10 @@ import { chromium } from "playwright";
 const baseURL = process.env.THEME_TEST_BASE_URL || "http://127.0.0.1:3000";
 if (!["127.0.0.1", "localhost"].includes(new URL(baseURL).hostname)) throw new Error("Loopback fixture required.");
 const uid = "11111111-1111-4111-8111-111111111111";
+const author = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+const postId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+const commentId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+const fixturePost = { id: postId, author_id: author, body: "Fixture post to report", created_at: new Date().toISOString(), video_url: null, post_kind: "discussion" };
 const videoPath = uid + "/22222222-2222-4222-8222-222222222222.mp4";
 const user = { id: uid, aud: "authenticated", role: "authenticated", user_metadata: {}, app_metadata: {} };
 const part = value => Buffer.from(JSON.stringify(value)).toString("base64url");
@@ -21,6 +25,8 @@ try {
   const page = await context.newPage();
   let responseStatus = 503;
   let posts = 0, uploads = 0, cleanup = 0;
+  let allowReport = false;
+  const tickets = [];
   await page.route("**/*", async route => {
     const request = route.request();
     const url = new URL(request.url());
@@ -56,6 +62,16 @@ try {
     if (url.pathname === "/auth/v1/user") data = user;
     if (url.pathname.endsWith("/profiles") && url.searchParams.has("id")) data = [{ id: uid, account_type: "player", display_name: "Fixture Player" }];
     if (url.pathname.endsWith("/get_current_user_admin_role")) data = null;
+    if (url.pathname.endsWith("/feed_posts")) data = url.searchParams.has("id") && !allowReport ? [] : [fixturePost];
+    if (url.pathname.endsWith("/feed_post_comments")) {
+      assert.equal(url.searchParams.get("post_id"), "eq." + postId);
+      data = [{ id: commentId, post_id: postId, author_id: author, body: "Fixture comment", created_at: fixturePost.created_at }];
+    }
+    if (url.pathname.endsWith("/support_tickets") && request.method() === "POST") {
+      assert.equal(request.headers().authorization, "Bearer " + access_token);
+      tickets.push(request.postDataJSON());
+      return route.fulfill({ headers, status: 201 });
+    }
     if (url.pathname.startsWith("/storage/v1/object/upload/sign/")) { uploads++; data = { Key: videoPath }; }
     return route.fulfill({ headers, json: data });
   });
@@ -83,6 +99,25 @@ try {
   assert.equal(await draft.inputValue(), "Fixture caption");
   assert.deepEqual([posts, uploads, cleanup], [2, 2, 1]);
   console.log("PASS web HoopFeed double-submit guard, retained draft, and safe cleanup");
+  async function report(kind) {
+    await page.getByRole("button", { name: "Report this " + kind, exact: true }).click();
+    await page.getByLabel("Why are you reporting this content?", { exact: true }).filter({ visible: true })
+      .fill("Synthetic moderation report");
+    await page.getByRole("button", { name: "Submit confidential report", exact: true }).click();
+  }
+  await report("post");
+  await page.getByText(/Report could not be confirmed/).waitFor();
+  assert.deepEqual(tickets, []);
+  allowReport = true;
+  await page.getByRole("button", { name: "Submit confidential report", exact: true }).click();
+  await page.getByText("Confidential report submitted to HoopCheck staff.", { exact: true }).waitFor();
+  await page.getByRole("button", { name: "View comments", exact: true }).click();
+  await report("comment");
+  await page.getByRole("dialog").getByText("Confidential report submitted to HoopCheck staff.", { exact: true }).waitFor();
+  assert.deepEqual(tickets.map(ticket => ticket.subject), ["Report a HoopFeed post", "Report a HoopFeed comment"]);
+  assert.ok(tickets.every(ticket => ticket.requester_id === uid && ticket.category === "security"));
+  assert.ok(tickets[1].description.includes("Comment ID: " + commentId));
+  console.log("PASS web HoopFeed reports, caller scoping and removed-post denial");
 } finally {
   await browser.close();
 }
