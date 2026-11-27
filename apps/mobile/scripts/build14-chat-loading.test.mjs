@@ -69,7 +69,8 @@ test("HoopChat locks mutations before awaits and preserves unsent draft text", (
   assert.match(chat, /const mutationLocked = useRef\(false\)/);
   assert.match(chat, /async function respond[\s\S]*?mutationLocked\.current\) return;\s*mutationLocked\.current=true;\s*const actionGeneration/);
   assert.match(chat, /async function send\(\)[\s\S]*?mutationLocked\.current\) return;\s*mutationLocked\.current=true;\s*const submittedDraft=draft/);
-  assert.match(chat, /body:submittedDraft\.trim\(\)\.slice\(0,2000\)/);
+  assert.match(chat, /prepareConversationMessage\(pendingMessages\.current,selected\.id,userId,submittedDraft,randomUUID\)/);
+  assert.match(chat, /await sendConversationMessage\(supabase,message,signal,header\)/);
   assert.match(chat, /setDraft\(current=>current===submittedDraft\?"":current\)/);
   assert.match(chat, /if\(!mutationLocked\.current\)void load\(\)/);
   assert.match(chat, /editable=\{!sending && !offline\}/);

@@ -115,7 +115,7 @@ test("directory screens retain Search selection and safe bottom clearance", asyn
       assert.equal(tree.root.findAllByType("Pressable").filter(tab => tab.props.accessibilityState.selected).length, 1);
     } finally { await act(async () => tree.unmount()); }
   }
-  for (const file of ["../components/TeamDirectoryScreen.tsx", "../app/coaches.tsx", "../app/leagues.tsx"]) {
+  for (const file of ["../components/TeamDirectoryScreen.tsx", "../app/coaches.tsx", "../components/LeagueDirectoryScreen.tsx"]) {
     const screen = readFileSync(new URL(file, import.meta.url), "utf8");
     assert.match(screen, /edges=\{\["left", "right", "bottom"\]\}/);
     assert.match(screen, /paddingBottom: 100/);

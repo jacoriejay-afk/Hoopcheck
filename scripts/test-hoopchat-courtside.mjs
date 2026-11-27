@@ -18,6 +18,7 @@ test("Courtside routes share one private messenger",()=>{
 });
 test("Messages retain consent and role restrictions from existing HoopChat",()=>{
  const ui=read("components/HoopChatCourtside.tsx");
+ const delivery=read("apps/mobile/src/native/hoopChatSend.ts");
  const requestSql=read("supabase/migrations/20261008105244_enable_player_hoopchat_realtime.sql");
  assert.match(ui,/selected\.status!=="accepted"/);
  assert.match(ui,/selected\.player_id!==userId/);
@@ -25,7 +26,9 @@ test("Messages retain consent and role restrictions from existing HoopChat",()=>
  assert.match(ui,/\.eq\("player_id",userId\)/);
  assert.match(ui,/supabase\.auth\.getUser\(\)/);
  assert.match(ui,/\.from\("player_contact_messages"\)/);
- assert.match(ui,/sender_id:userId/);
+ assert.match(ui,/prepareConversationMessage\(pendingMessages\.current,thread,userId,submittedDraft/);
+ assert.match(delivery,/sender_id: viewer/);
+ assert.match(delivery,/\.insert\(message\)\s*\.setHeader\("Authorization", bearer\)/);
  assert.match(requestSql,/accepted participants can view messages/);
  assert.match(requestSql,/accepted participants can send messages/);
  assert.doesNotMatch(ui,/SUPABASE_SERVICE_ROLE_KEY|service_role|dangerouslySetInnerHTML/);
@@ -78,7 +81,7 @@ test("Messages tab does not wait on unrelated notification requests",()=>{
 test("Realtime channel does not reconnect on every inbox refresh",()=>{
  const ui=read("components/HoopChatCourtside.tsx");
  assert.match(ui,/const selectedStatus=requests\.find\(r=>r\.id===selectedId\)\?\.status/);
- assert.match(ui,/\},\[load,selectedId,selectedStatus,userId\]\)/);
+ assert.match(ui,/\},\[load,loadHistory,selectedId,selectedStatus,userId\]\)/);
  assert.doesNotMatch(ui,/\},\[load,requests,selectedId,userId\]\)/);
  assert.match(ui,/loadSequence\.current/);
 });

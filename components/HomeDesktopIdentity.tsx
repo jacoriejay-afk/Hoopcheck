@@ -5,7 +5,7 @@ import Link from "next/link";
 import { supabase } from "../lib/supabase";
 import TeamLogo from "./TeamLogo";
 import TrustScoreDial from "./TrustScoreDial";
-import HomeDirectoryStats from "./HomeDirectoryStats";
+import HomeDirectoryStats, { type HomeDirectoryStat } from "./HomeDirectoryStats";
 
 type Team = { id:string; name:string; country:string|null; city:string|null; league_name:string|null; logo_url:string|null; logo_bg:"transparent"|"light"|"dark"|null };
 type Game = { id:string; team_id:string; opponent_team_id:string|null; opponent_name:string; status:string; scheduled_at:string|null };
@@ -24,20 +24,23 @@ for (let y=8;y<=91;y+=7) for(let x=3;x<=97;x+=4.5) {
   if(land) DOTS.push([x,y]);
 }
 
-export default function HomeDesktopIdentity() {
+export default function HomeDesktopIdentity({ enabled, stats }: { enabled: boolean; stats: HomeDirectoryStat[] }) {
   const [countryCounts,setCountryCounts]=useState<TeamCount[]>([]);
   const [featured,setFeatured]=useState<Team|null>(null);
   const [trust,setTrust]=useState<{score:number|null;reviewCount:number|null;verifiedReviewCount:number|null;explanation:string|null;locked?:boolean}|null>(null);
   const [ticker,setTicker]=useState<Array<{id:string;home:string;away:string;status:string;time:string}>>([]);
 
   useEffect(()=>{
+    if (!enabled) return;
     let active=true;
+    const controller = new AbortController();
+    const { signal } = controller;
     void (async()=>{
       const [countryResult,womensCountryResult,teamResult,gameResult]=await Promise.all([
-        supabase.from("teams").select("country").eq("active",true).eq("basketball_type","mens").not("country","is",null).limit(5000),
-        supabase.from("womens_teams").select("country").eq("active",true).not("country","is",null).limit(5000),
-        supabase.from("teams").select("id,name,country,city,league_name,logo_url,logo_bg").eq("active",true).eq("basketball_type","mens").order("name").limit(1).maybeSingle(),
-        supabase.from("fan_live_games").select("id,team_id,opponent_team_id,opponent_name,status,scheduled_at").in("status",["live","scheduled"]).order("scheduled_at",{ascending:true,nullsFirst:false}).limit(12)
+        supabase.from("teams").select("country").eq("active",true).eq("basketball_type","mens").not("country","is",null).limit(5000).abortSignal(signal),
+        supabase.from("womens_teams").select("country").eq("active",true).not("country","is",null).limit(5000).abortSignal(signal),
+        supabase.from("teams").select("id,name,country,city,league_name,logo_url,logo_bg").eq("active",true).eq("basketball_type","mens").order("name").limit(1).abortSignal(signal).maybeSingle(),
+        supabase.from("fan_live_games").select("id,team_id,opponent_team_id,opponent_name,status,scheduled_at").in("status",["live","scheduled"]).order("scheduled_at",{ascending:true,nullsFirst:false}).limit(12).abortSignal(signal)
       ]);
       if(!active)return;
       const counts=new Map<string,number>();
@@ -46,21 +49,23 @@ export default function HomeDesktopIdentity() {
       if(teamResult.data){setFeatured(teamResult.data as Team);}
       const games=(gameResult.data||[]) as Game[];
       const ids=[...new Set(games.flatMap(g=>[g.team_id,g.opponent_team_id].filter((v):v is string=>Boolean(v))))];
-      const {data: names}=ids.length?await supabase.from("teams").select("id,name").in("id",ids):{data:[] as {id:string;name:string}[]};
+      const {data: names}=ids.length?await supabase.from("teams").select("id,name").in("id",ids).abortSignal(signal):{data:[] as {id:string;name:string}[]};
+      if (!active) return;
       const nameMap=new Map((names||[]).map(t=>[t.id,t.name]));
       setTicker(games.map(g=>({id:g.id,home:nameMap.get(g.team_id)||"",away:(g.opponent_team_id?nameMap.get(g.opponent_team_id):null)||g.opponent_name||"",status:g.status,time:g.scheduled_at?new Date(g.scheduled_at).toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"}):"—"})).filter(g=>g.home&&g.away));
     })().catch(()=>{if(active){setCountryCounts([]);setTicker([]);}});
-    return()=>{active=false;};
-  },[]);
+    return()=>{active=false;controller.abort();};
+  },[enabled]);
 
   useEffect(()=>{
-    if(!featured?.id)return;
+    if(!enabled || !featured?.id)return;
     let active=true;
-    fetch("/api/trust-score?entityType=team&entityId="+encodeURIComponent(featured.id),{cache:"no-store"})
+    const controller = new AbortController();
+    fetch("/api/trust-score?entityType=team&entityId="+encodeURIComponent(featured.id),{cache:"no-store",signal:controller.signal})
       .then(r=>r.ok?r.json():null).then(data=>{if(active&&data)setTrust(data);})
       .catch(()=>{if(active)setTrust(null);});
-    return()=>{active=false;};
-  },[featured?.id]);
+    return()=>{active=false;controller.abort();};
+  },[enabled,featured?.id]);
 
   const pins=useMemo(()=>countryCounts.flatMap(item=>{
     const point=COUNTRY_POINTS[item.country];
@@ -75,7 +80,7 @@ export default function HomeDesktopIdentity() {
           <p className="hc-d3-eyebrow">THE GLOBAL BASKETBALL INTELLIGENCE HUB</p>
           <h1>KNOW WHO YOU’RE <em>SIGNING WITH.</em></h1>
           <p className="hc-d3-hero__sub">Explore teams, coaches, leagues, and real basketball experiences. Built for players and fans worldwide.</p>
-          <HomeDirectoryStats/>
+          <HomeDirectoryStats stats={enabled ? stats : []}/>
           <div className="hc-home-hero-actions"><Link href="/signup" className="hc-template-cta hc-home-cta">CREATE YOUR ACCOUNT</Link><Link href="/login" className="hc-home-signin">SIGN IN</Link></div>
         </div>
         <div className="hc-d3-hero__visual">

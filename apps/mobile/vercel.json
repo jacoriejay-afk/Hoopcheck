@@ -1,6 +1,9 @@
 {
   "git": {
     "deploymentEnabled": {
+      "qa/hoopcheck-master-acceptance": false,
+      "qa/step1-verified-reconciliation": false,
+      "qa/step1-hoopchat-web-history": false,
       "reconcile/build8-mobile-705-700-710-711": false,
       "reconcile/build9-phase1-20261120": false,
       "completion/build9-20261120": false,
@@ -19,7 +22,9 @@
       "integration/build9-arena-ui-20261122": false,
       "feature/build9-opening-login-motion-20261122": false,
       "integration/build9-role-hoopchat-completion-20261122": false,
-      "integration/build9-native-final-gates-20261122": false
+      "integration/build9-native-final-gates-20261122": false,
+      "qa/step1-womens-league-directory": false,
+      "ops/step4-migration-forward-guard": false
     }
   }
 }
