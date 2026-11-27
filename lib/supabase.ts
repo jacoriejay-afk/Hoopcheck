@@ -33,7 +33,10 @@ function captureRecoveryEntry() {
   // The SSR client always detects Auth credentials in the browser URL. Own the
   // recovery exchange explicitly and keep its credentials out of browser history.
   window.history.replaceState(window.history.state, "", url.pathname);
-  return { path: url.pathname, link };
+  // Claim the legacy recovery verifier before the shared Auth client initializes.
+  // Do not consume OAuth/signup verifiers or credentials from the native fallback path.
+  const verifier = url.pathname === "/reset-password" && link && "code" in link && link.code ? takeRecoveryCodeVerifier() : null;
+  return { path: url.pathname, link, verifier };
 }
 
 let recoveryEntry = captureRecoveryEntry();
