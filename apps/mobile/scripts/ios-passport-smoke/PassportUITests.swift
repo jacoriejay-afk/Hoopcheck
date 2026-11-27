@@ -58,7 +58,7 @@ final class PassportUITests: XCTestCase {
     )
     let actionCell = sheetRoot.descendants(matching: .cell)
       .matching(identifier: "actionGroupCell")
-      .containing(.staticText, predicate: titlePredicate).firstMatch
+      .containing(titlePredicate).firstMatch
     guard actionCell.waitForExistence(timeout: 45) else {
       XCTFail("Real UIKit PDF action cell with nested action title must appear"); return
     }
