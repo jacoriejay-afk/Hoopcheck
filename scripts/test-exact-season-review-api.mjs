@@ -139,3 +139,25 @@ test("review access performs live authorization before using service credentials
   }
  }
 });
+
+test("staff review queue requires moderator authorization and preserves scoped IDs", async () => {
+ const { NextResponse } = await import("next/server.js");
+ const page=read("app/admin/reviews/page.tsx");
+ assert.match(page,/fetch\("\/api\/admin\/reviews"/);
+ assert.doesNotMatch(page,/\.from\("reviews"\)/);
+ assert.match(page,/current !== accountGeneration.current/);
+ const source=ts.transpileModule(read("app/api/admin/reviews/route.ts"),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+ for(const sample of [{denied:true},{scopeError:true},{authorError:true},{empty:true},{}]){
+  const seen=[];
+  const data=sample.empty?[]:[{id:"visible",status:"pending",author_id:"do-not-trust",secret:"not-in-projection"}];
+  const scoped={from:table=>{seen.push("scope");assert.equal(table,"reviews");const q={select:cols=>{assert.doesNotMatch(cols,/author_id/);return q;},order:()=>q,limit:async n=>{assert.equal(n,1000);return {data,error:sample.scopeError?Error():null};}};return q;}};
+  const service={from:table=>{seen.push("service");assert.equal(table,"reviews");return {select:cols=>{assert.equal(cols,"id,author_id");return {in:async (key,ids)=>{assert.equal(key,"id");assert.deepEqual(ids,["visible"]);return {data:[{id:"visible",author_id:"verified"},{id:"outside",author_id:"private"}],error:sample.authorError?Error():null};}};}};}};
+  const route={};
+  new Function("require","exports",source)(name=>name==="next/server"?{NextResponse}:{authorizeModeratorRequest:async()=>sample.denied?{ok:false,response:NextResponse.json({}, {status:403})}:{ok:true,scoped,supabase:service}},route);
+  const response=await route.GET(new Request("https://fixture.invalid/api/admin/reviews?ids=outside"));
+  assert.match(response.headers.get("Cache-Control"),/no-store/);
+  assert.equal(response.status,sample.denied?403:sample.scopeError||sample.authorError?503:200);
+  assert.deepEqual(seen,sample.denied?[]:sample.scopeError||sample.empty?["scope"]:["scope","service"]);
+  if(response.ok){const body=await response.json();assert.deepEqual(body.reviews.map(r=>r.author_id),sample.empty?[]:["verified"]);assert.equal(body.reviews.some(r=>"secret" in r),false);}
+ }
+});
