@@ -13,6 +13,8 @@ test("Courtside routes share one private messenger",()=>{
  assert.match(notifications,/Open full Courtside inbox/);
  assert.match(read("app/dashboard/HomeCourtSpace.tsx"),/href:"\/messages"/);
  assert.match(read("components/RoleQuickLinks.tsx"),/href:"\/messages"/);
+ assert.match(read("app/connections/page.tsx"),/href="\/messages"/);
+ assert.doesNotMatch(read("next.config.ts"), /source:\s*"\/messages"/);
 });
 test("Messages retain consent and role restrictions from existing HoopChat",()=>{
  const ui=read("components/HoopChatCourtside.tsx");

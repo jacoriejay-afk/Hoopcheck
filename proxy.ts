@@ -4,7 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { GOOGLE_SIGNUP_COOKIE, GOOGLE_SIGNUP_PATH, GOOGLE_SIGNUP_ROLE } from "./lib/google-auth";
 
-const protectedPage = /^\/(?:dashboard|account|settings|profile|feed|admin|owner-hq|ambassador-hq)(?:\/|$)|^\/(?:teams|coaches|leagues)\/[^/]+\/review\/?$/;
+const protectedPage = /^\/(?:dashboard|account|settings|profile|feed|messages|admin|owner-hq|ambassador-hq)(?:\/|$)|^\/(?:teams|coaches|leagues)\/[^/]+\/review\/?$/;
 const pendingAllowed = new Set([GOOGLE_SIGNUP_PATH, "/auth/callback", "/login", "/terms", "/privacy", "/community-guidelines"]);
 
 function isPendingBearer(header: string | null) {
@@ -161,6 +161,7 @@ export const config = {
     "/settings/:path*",
     "/profile/:path*",
     "/feed/:path*",
+    "/messages/:path*",
     "/admin/:path*",
     "/ambassador-hq",
     "/owner-hq",

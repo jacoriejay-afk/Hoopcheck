@@ -48,6 +48,24 @@ test('SSR cookie API sessions require the same challenge',async()=>{
 test('protected SSR pages redirect to challenge before private profile reads',async()=>{
  const f=fixture();const response=await f.handler(new NextRequest('https://fixture.test/account/security?tab=devices',{headers:{cookie:'sb-fixture-auth-token=fixture'}}));const target=new URL(response.headers.get('location'));assert.equal(target.pathname,'/auth/verify');assert.equal(target.searchParams.get('returnTo'),'/account/security?tab=devices');assert.equal(f.counts().tableReads,0);
 });
+test('the full HoopChat inbox requires sign-in and the existing MFA assurance', async () => {
+ const path = '/messages?thread=fixture';
+ const guest = fixture();
+ guest.client.auth.getClaims = async () => ({ data: null });
+ const guestResponse = await guest.handler(new NextRequest(`https://fixture.test${path}`));
+ const login = new URL(guestResponse.headers.get('location'));
+ assert.equal(login.pathname, '/login');
+ assert.equal(login.searchParams.get('returnTo'), path);
+ const enrolled = fixture();
+ const enrolledResponse = await enrolled.handler(new NextRequest(`https://fixture.test${path}`));
+ const challenge = new URL(enrolledResponse.headers.get('location'));
+ assert.equal(challenge.pathname, '/auth/verify');
+ assert.equal(challenge.searchParams.get('returnTo'), path);
+ assert.equal(enrolled.counts().tableReads, 0);
+ const verified = fixture({aal:'aal2'});
+ const verifiedResponse = await verified.handler(new NextRequest(`https://fixture.test${path}`));
+ assert.equal(verifiedResponse.headers.get('x-middleware-next'), '1');
+});
 test('second-factor verification never bypasses existing pending-signup restrictions',async()=>{
  const f=fixture({aal:'aal2'});const response=await f.handler(new NextRequest('https://fixture.test/api/account/delete',{headers:{authorization:`Bearer ${token('aal2','pending_google_signup')}`}}));assert.equal(response.status,403);assert.equal(f.counts().verified,0);
 });
