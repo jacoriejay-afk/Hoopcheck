@@ -19,8 +19,12 @@ test("privacy center routes natively without retaining sensitive URL fields",()=
   rememberDestination("/account/privacy-center?token=private");assert.equal(takeDestination(),"/account/privacy-center");
   const source=readFileSync(new URL("../app/account/privacy-center.tsx",import.meta.url),"utf8");
   assert.match(source,/\.eq\("requester_id",owner\)/);
-  assert.match(source,/before\.data\.user\?\.id!==owner/);
-  assert.match(source,/after\.data\.user\?\.id!==owner/);
+  assert.match(source,/data\.session\?\.user\.id !== owner/);
+  assert.match(source,/getUser\(token\)/);
+  assert.match(source,/verified\.data\.user\?\.id !== owner/);
+  assert.match(source,/\.range\(0,limit\)\.setHeader\("Authorization", "Bearer "\+token\)/);
+  assert.match(source,/\.insert\(payload\)\.setHeader\("Authorization", "Bearer "\+token\)/);
+  assert.match(source,/activeRead\.current\?\.abort\(\)/);
   assert.match(source,/inFlight\.current\|\|offline\|\|uncertain/);
   assert.doesNotMatch(source,/AsyncStorage|admin_notes|service_role/);
 });

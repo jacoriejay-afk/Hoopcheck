@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { feedMediaId, resolveFeedMedia } from "../../../../lib/feed-media-reference";
+import { expiringFeedMediaTtl, feedMediaId, resolveFeedMedia } from "../../../../lib/feed-media-reference";
 
 export const runtime = "nodejs";
 
@@ -21,13 +21,17 @@ export async function POST(request: Request) {
   if (kind !== "image" && kind !== "video") return NextResponse.json({ error: "Invalid media type" }, { status: 400 });
 
   const { data: post, error: postError } = await viewer.from("fan_feed_posts")
-    .select("image_url,video_url,author_id").eq("id", postId).eq("status", "approved").gt("expires_at", new Date().toISOString()).maybeSingle();
+    .select("image_url,video_url,author_id,expires_at").eq("id", postId).eq("status", "approved").gt("expires_at", new Date().toISOString()).maybeSingle();
   if (postError || !post) return NextResponse.json({ error: "Post unavailable" }, { status: 404 });
+
+  const expiry = typeof post.expires_at === "string" ? Date.parse(post.expires_at) : NaN;
+  const ttl = expiringFeedMediaTtl(expiry);
+  if (!Number.isFinite(ttl) || ttl < 1) return NextResponse.json({ error: "Post unavailable" }, { status: 404 });
 
   const media = resolveFeedMedia((kind === "image" ? post.image_url : post.video_url) ?? "", url, post.author_id, kind);
   if (!media) return NextResponse.json({ error: "Unsupported media" }, { status: 404 });
   const admin = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
-  const { data, error } = await admin.storage.from(media.bucket).createSignedUrl(media.path, 60);
-  if (error || !data?.signedUrl) return NextResponse.json({ error: "Media unavailable" }, { status: 404 });
+  const { data, error } = await admin.storage.from(media.bucket).createSignedUrl(media.path, ttl);
+  if (error || !data?.signedUrl || Date.now() + ttl * 1000 > expiry) return NextResponse.json({ error: "Media unavailable" }, { status: 404 });
   return NextResponse.json({ url: data.signedUrl }, { headers: { "Cache-Control": "no-store" } });
 }

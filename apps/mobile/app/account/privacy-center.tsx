@@ -7,7 +7,17 @@ import { useEntryTheme } from "../../src/theme";
 import { useNativeAccount } from "../../src/native/useNativeAccount";
 import { useNetwork } from "../../src/native/network";
 import { supabase } from "../../src/lib/supabase";
+import { readWithDeadline } from "../../src/native/readDeadline";
 import { privacyRequestLabels, privacyRequestPayload, privacyRequestRows, type PrivacyRequest, type PrivacyRequestType } from "../../src/native/privacyRequests";
+
+async function privacyRequestToken(owner: string) {
+  const {data, error} = await readWithDeadline(() => supabase.auth.getSession());
+  if (error || data.session?.user.id !== owner) throw Error("Account changed.");
+  const token = data.session.access_token;
+  const verified = await readWithDeadline(() => supabase.auth.getUser(token));
+  if (verified.error || verified.data.user?.id !== owner) throw Error("Account changed.");
+  return token;
+}
 
 export default function PrivacyCenter() {
   const t = useEntryTheme(), { account, loading, retry } = useNativeAccount();
@@ -23,11 +33,15 @@ function Requests({owner}:{owner:string}) {
   const [rows,setRows]=useState<PrivacyRequest[]|null>(null),[loadError,setLoadError]=useState("");
   const [limit,setLimit]=useState(50),[more,setMore]=useState(false),[refresh,setRefresh]=useState(0);
   const [saving,setSaving]=useState(false),[feedback,setFeedback]=useState(""),[uncertain,setUncertain]=useState(false);
-  const inFlight=useRef(false),authGeneration=useRef(0),mounted=useRef(true);
+  const inFlight=useRef(false),authGeneration=useRef(0),mounted=useRef(true),activeRead=useRef<AbortController|null>(null);
   useEffect(()=>{
     mounted.current=true;
     const {data}=supabase.auth.onAuthStateChange((event,session)=>{
-      if(event==="SIGNED_OUT"||session?.user.id!==owner){authGeneration.current++;setRows(null);setDetails("");setFeedback("");setRefresh(v=>v+1);}
+      if(event==="SIGNED_OUT"||session?.user.id!==owner){
+        authGeneration.current++;
+        activeRead.current?.abort();
+        setRows(null);setDetails("");setFeedback("");setRefresh(v=>v+1);
+      }
     });
     return ()=>{mounted.current=false;authGeneration.current++;data.subscription.unsubscribe();};
   },[owner]);
@@ -35,16 +49,19 @@ function Requests({owner}:{owner:string}) {
     let live=true;const generation=authGeneration.current,controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
     setRows(null);setMore(false);setLoadError("");
     if(offline){clearTimeout(timer);return;}
+    activeRead.current=controller;
     void(async()=>{try{
-      const before=await supabase.auth.getUser();
-      if(before.error||before.data.user?.id!==owner)throw Error("session");
-      const result=await supabase.from("privacy_requests").select("id,request_type,status,details,created_at").eq("requester_id",owner).order("created_at",{ascending:false}).order("id",{ascending:false}).range(0,limit).abortSignal(controller.signal);
-      const after=await supabase.auth.getUser();
-      if(result.error||after.error||after.data.user?.id!==owner)throw Error("read");
+      const token=await privacyRequestToken(owner);
+      if(!live||generation!==authGeneration.current)return;
+      if(controller.signal.aborted)throw Error("read");
+      const result=await supabase.from("privacy_requests").select("id,request_type,status,details,created_at").eq("requester_id",owner).order("created_at",{ascending:false}).order("id",{ascending:false}).range(0,limit).setHeader("Authorization", "Bearer "+token).abortSignal(controller.signal);
+      if(result.error||controller.signal.aborted)throw Error("read");
+      await privacyRequestToken(owner);
+      if(controller.signal.aborted)throw Error("read");
       const values=privacyRequestRows(result.data??[]);
       if(live&&generation===authGeneration.current){setRows(values.slice(0,limit));setMore(values.length>limit);setUncertain(false);}
     }catch{if(live&&generation===authGeneration.current)setLoadError("Privacy requests could not load. Try again.");}finally{clearTimeout(timer);}})();
-    return()=>{live=false;clearTimeout(timer);controller.abort();};
+    return()=>{live=false;clearTimeout(timer);controller.abort();if(activeRead.current===controller)activeRead.current=null;};
   },[owner,offline,revision,refresh,limit]);
   async function submit(){
     if(inFlight.current||offline||uncertain)return;
@@ -53,12 +70,12 @@ function Requests({owner}:{owner:string}) {
     const generation=authGeneration.current;
     const current=()=>mounted.current&&generation===authGeneration.current;
     try{
-      const before=await supabase.auth.getUser();
-      if(!current()||before.error||before.data.user?.id!==owner)throw Error("session");
-      const result=await supabase.from("privacy_requests").insert(payload);
+      const token=await privacyRequestToken(owner);
+      if(!current())return;
+      const result=await supabase.from("privacy_requests").insert(payload).setHeader("Authorization", "Bearer "+token);
       if(result.error)throw result.error;
-      const after=await supabase.auth.getUser();
-      if(!current()||after.error||after.data.user?.id!==owner)return;
+      await privacyRequestToken(owner);
+      if(!current())return;
       setDetails("");setFeedback("Your privacy request was submitted. HoopCheck will review it.");setRefresh(v=>v+1);
     }catch{if(current()){setUncertain(true);setFeedback("Submission could not be confirmed. Refresh your requests before trying again.");}}
     finally{inFlight.current=false;if(mounted.current)setSaving(false);}

@@ -119,7 +119,8 @@ export async function POST(req:Request){
    } catch (releaseError) {
      console.error("Unable to release failed review slot:", releaseError);
    }
-   console.error("Review submission failed:", { code: error.code, message: error.message });
+   if (error.code === "PT429") return NextResponse.json({error:"Review limit reached. You can submit up to 5 reviews in a 24-hour period."},{status:429});
+   console.error("Review submission failed:", { code: error.code });
    return NextResponse.json({error:"Unable to submit review. Please check your entries and try again."},{status:error.code==="42501"?403:error.code==="23505"?409:400});
  }
  return NextResponse.json(data,{status:201});

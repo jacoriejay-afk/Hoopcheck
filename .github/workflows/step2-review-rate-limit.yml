@@ -1,0 +1,66 @@
+name: Step 2 review submission quota (synthetic)
+on:
+  pull_request:
+    paths:
+      - "supabase/candidates/step2_review_submission_rate_guard_review_only.sql"
+      - "supabase/tests/step2_review_submission_rate_guard_isolated.sql"
+      - ".github/workflows/step2-review-rate-limit.yml"
+permissions:
+  contents: read
+jobs:
+  review-submission-quota:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hoopcheck_review_quota_fixture
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d hoopcheck_review_quota_fixture"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: hoopcheck_review_quota_fixture
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Rehearse shared quota and concurrent writes across both review tables
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = "127.0.0.1"
+          test "$PGDATABASE" = "hoopcheck_review_quota_fixture"
+          psql -X -Atqc 'SHOW server_version_num' | grep '^17'
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/step2_review_submission_rate_guard_isolated.sql
+          temp="$(mktemp -d)"
+          trap 'rm -rf "$temp"' EXIT
+          pids=()
+          for id in {100..107}; do
+            table=reviews
+            if (( id % 2 )); then table=womens_team_reviews; fi
+            psql -X -v ON_ERROR_STOP=1 >"$temp/$id.log" 2>&1 <<SQL &
+          SET ROLE authenticated;
+          SET request.jwt.claims = '{"role":"authenticated"}';
+          SET request.jwt.claim.sub = '55555555-5555-4555-8555-555555555555';
+          INSERT INTO $table(id,author_id) VALUES($id,auth.uid());
+          SQL
+            pids+=("$!")
+          done
+          accepted=0
+          for pid in "${pids[@]}"; do
+            if wait "$pid"; then accepted=$((accepted+1)); fi
+          done
+          cat "$temp"/*.log
+          test "$accepted" -eq 5
+          test "$(grep -l 'Review submission rate limit reached' "$temp"/*.log | wc -l)" -eq 3
+          test "$(psql -X -Atqc "SELECT cardinality(accepted_at) FROM hoopcheck_review_security.submission_windows WHERE author_id='55555555-5555-4555-8555-555555555555'")" -eq 5

@@ -3,6 +3,7 @@ on:
   pull_request:
     branches: ["integration/appstore-compliance-candidate", "qa/post16-reconcile-repair-compliance", "integration/post16-release-reconciliation", "qa/hoopcheck-master-acceptance", "integration/build17-development"]
     paths:
+      - "supabase/tests/appstore_deletion_apple_revocations_fixture.sql"
       - "supabase/candidates/appstore_deletion_request_only.sql"
       - "supabase/tests/appstore_deletion_request_fixture.sql"
       - "supabase/candidates/appstore_deletion_worker_state.sql"
@@ -49,11 +50,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: actions/checkout@v4
-        with:
-          ref: 19a564eb7ac53e228fcbdba82011708d07a9fcb0
-          path: .compliance-apple
-          persist-credentials: false
       - name: Verify local fixture database and run SQL
         shell: bash
         run: |
