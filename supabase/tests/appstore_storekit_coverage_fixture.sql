@@ -153,5 +153,8 @@ SELECT set_config('request.jwt.claims','{"role":"anon"}',true);
 DO $$ BEGIN IF (SELECT count(*) FROM public.membership_entitlements)<>0 OR (SELECT count(*) FROM public.apple_memberships)<>0 THEN RAISE EXCEPTION 'anonymous membership leak'; END IF; END $$;
 RESET ROLE;
 DO $$ BEGIN IF (SELECT count(*) FROM public.subscriptions)<>1 OR (SELECT stripe_subscription_id FROM public.subscriptions)<>'sub_fixture' THEN RAISE EXCEPTION 'Stripe record was rewritten'; END IF; END $$;
+\if :{?combined_rehearsal}
+\ir appstore_combined_boundary_fixture.sql
+\endif
 ROLLBACK;
 SELECT 'PASS: Apple ownership/idempotency/trials/MFA/RLS/Stripe coexistence/refund/lease; fixtures rolled back' AS result;

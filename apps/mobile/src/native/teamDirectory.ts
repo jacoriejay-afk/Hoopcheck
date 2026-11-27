@@ -11,3 +11,8 @@ export function teamDirectoryQuery(client: SupabaseClient, women: boolean, searc
   if (clean) query = query.or(`name.ilike.%${clean}%,country.ilike.%${clean}%,city.ilike.%${clean}%,league_name.ilike.%${clean}%`);
   return query;
 }
+
+/** Retain one row per canonical ID while preserving first-seen order. */
+export function mergeTeamDirectoryRows<T extends { id: string }>(current: T[], page: T[]): T[] {
+  return [...new Map([...current, ...page].map(row => [row.id, row])).values()];
+}
