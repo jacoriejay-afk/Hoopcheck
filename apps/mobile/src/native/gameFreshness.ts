@@ -7,6 +7,7 @@ export const GAME_PAST_WINDOW_MS = 36 * 60 * 60 * 1000;
 export const GAME_FUTURE_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
 const MAX_REPORTED_LIVE_AGE_MS = 12 * 60 * 60 * 1000;
 const MAX_LAST_CHECK_AGE_MS = 2 * 60 * 1000;
+const IN_PROGRESS_PERIOD = /^(?:q[1-4]|quarter\s*[1-4]|(?:first|second|third|fourth)\s+quarter|half[\s-]?time|break\s*time|bt|ht|ot\d*|overtime)$/i;
 // One scheduled slot may be devoted to tomorrow's fixtures; 30 minutes is
 // the maximum acceptable receipt age, not a promise of real-time scoring.
 export const MAX_PROVIDER_RECEIPT_AGE_MS = 30 * 60 * 1000;
@@ -19,7 +20,7 @@ export type GameDisplayState = {
 };
 
 export function gameDisplayState(
-  game: Pick<LiveGame, "status" | "scheduled_at" | "started_at" | "score_updated_at" | "score_source">,
+  game: Pick<LiveGame, "status" | "scheduled_at" | "started_at" | "score_updated_at" | "score_source"> & Partial<Pick<LiveGame, "period_label">>,
   nowMs = Date.now(),
   lastCheckedMs: number | null = null,
 ): GameDisplayState {
@@ -34,9 +35,12 @@ export function gameDisplayState(
     && (game.score_source !== "balldontlie-nba" || receipt <= nowMs);
   const awaiting = { kind: "awaiting", label: "Awaiting score update", isLive: false, needsVerification: true } as const;
   if (raw === "final" || raw === "finished") {
+    if (IN_PROGRESS_PERIOD.test((game.period_label || "").trim())) {
+      return { kind: "awaiting", label: "RESULT PENDING", isLive: false, needsVerification: true };
+    }
     return { kind: "final", label: "FINAL", isLive: false, needsVerification: false };
   }
-  if (raw === "cancelled" || raw === "abandoned") {
+  if (raw === "cancelled" || raw === "canceled" || raw === "abandoned") {
     return { kind: "cancelled", label: raw === "abandoned" ? "ABANDONED" : "CANCELLED", isLive: false, needsVerification: false };
   }
   if (raw === "postponed") return { kind: "postponed", label: "POSTPONED", isLive: false, needsVerification: false };

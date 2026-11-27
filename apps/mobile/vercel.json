@@ -25,7 +25,8 @@
       "integration/build9-native-final-gates-20261122": false,
       "qa/step1-womens-league-directory": false,
       "qa/step1-web-feed-report": false,
-      "qa/step1-web-media-recovery": false
+      "qa/step1-web-media-recovery": false,
+      "qa/step1-native-live-status": false
     }
   }
 }
