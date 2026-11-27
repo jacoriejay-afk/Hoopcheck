@@ -18,6 +18,8 @@ concurrency:
 
 jobs:
   sync:
+    # Disable GitHub triggers when Supabase Cron owns the same request budget.
+    if: ${{ vars.LIVE_SCORES_SCHEDULER != 'supabase' }}
     runs-on: ubuntu-latest
     timeout-minutes: 1
     steps:
@@ -52,9 +54,9 @@ jobs:
             echo "::error::Live-score endpoint did not return a valid provider receipt."
             exit 1
           fi
-          jq -c '{fixtureDate, providerSnapshotReceivedAt, providerGamesForDate, matchedGames}' "$body"
-          if jq -e '.providerGamesForDate > 0 and .matchedGames == 0' "$body" >/dev/null; then
-            echo "::warning::Provider returned fixtures but none matched HoopCheck teams. Review mapping coverage."
+          jq -c '{fixtureDate, providerSnapshotReceivedAt, providerGamesForDate, approvedGamesForDate, matchedGames}' "$body"
+          if jq -e '(.approvedGamesForDate // .providerGamesForDate) > 0 and .matchedGames == 0' "$body" >/dev/null; then
+            echo "::warning::Provider returned fixtures in covered competitions but none matched HoopCheck teams. Review mapping coverage."
           fi
           if jq -e '.providerGamesForDate == 0' "$body" >/dev/null; then
             echo "::notice::Provider returned no fixtures for this date; no game freshness claimed."

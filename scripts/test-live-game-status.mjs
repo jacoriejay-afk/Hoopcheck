@@ -26,6 +26,11 @@ assert.equal(present({ ...active, status: "final", period_label: null }, now).la
   "Real provider final may be displayed");
 assert.equal(present({ ...active, started_at: "2026-11-22T06:00:00Z" }, now).label, "UPDATE DELAYED",
   "Overdue live rows must not be silently finalized or marked as live");
+assert.equal(present({ ...active, score_updated_at: "2026-11-22T11:15:00Z" }, now).label, "UPDATE DELAYED");
+assert.equal(present({ ...active, score_updated_at: "2026-11-22T11:15:01Z" }, now).label, "LIVE");
+for (const status of ["postponed", "cancelled", "abandoned"]) {
+  assert.equal(present({ ...active, status }, now).label, status.toUpperCase());
+}
 assert.equal(present({ ...active, status: "scheduled", period_label: null }, now).label, "UPCOMING");
 
 const sync = read("app/api/cron/live-basketball/route.ts");

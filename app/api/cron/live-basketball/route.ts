@@ -20,9 +20,11 @@ type ProviderGame = {
 };
 type ProviderResponse = { response?: ProviderGame[]; errors?: unknown; results?: number };
 
+const providerSource = "api-sports-basketball";
+
 function score(value?: ProviderScore): number | null {
   const n = value?.total ?? value?.points;
-  return typeof n === "number" && Number.isFinite(n) ? n : null;
+  return typeof n === "number" && Number.isSafeInteger(n) && n >= 0 && n <= 2147483647 ? n : null;
 }
 
 export async function GET(request: NextRequest) {
@@ -38,6 +40,14 @@ export async function GET(request: NextRequest) {
   if (!apiKey || !supabaseUrl || !serviceRoleKey) {
     return NextResponse.json({ error: "Live-score sync is not configured." }, { status: 503, headers: { "Cache-Control": "no-store" } });
   }
+  // An API subscription grants feed access. Only competitions covered by
+  // HoopCheck's documented publication rights may be imported.
+  const approvedLeagueIds = (process.env.API_SPORTS_APPROVED_BASKETBALL_LEAGUE_IDS ?? "")
+    .split(",").map(value => Number(value.trim()));
+  if (approvedLeagueIds.some(id => !Number.isSafeInteger(id) || id <= 0)) {
+    return NextResponse.json({ error: "Approved basketball coverage is not configured." }, { status: 503, headers: { "Cache-Control": "no-store" } });
+  }
+  const approvedLeagues = new Set(approvedLeagueIds);
 
   try {
     const db = createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
@@ -54,18 +64,29 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Basketball data provider returned an error." }, { status: 502, headers: { "Cache-Control": "no-store" } });
     }
 
-    const payload = await response.json() as ProviderResponse;
-    if (!Array.isArray(payload.response) || (Array.isArray(payload.errors) ? payload.errors.length > 0 :
+    const payload = await response.json().catch(() => null) as ProviderResponse | null;
+    if (!payload || !Array.isArray(payload.response) || (Array.isArray(payload.errors) ? payload.errors.length > 0 :
       payload.errors && typeof payload.errors === "object" ? Object.keys(payload.errors).length > 0 :
       Boolean(payload.errors))) {
       return NextResponse.json({ error: "Basketball data provider returned an invalid response." }, { status: 502, headers: { "Cache-Control": "no-store" } });
     }
 
     const receivedAt = new Date().toISOString();
-    const mappings: {team_id:string;provider_team_id:number}[] = [];
+    const approvedFixtures = new Map<string, ProviderGame>();
+    for (const game of payload.response) {
+      if (!game || typeof game.league?.id !== "number" || !approvedLeagues.has(game.league.id)) continue;
+      const id = typeof game.id === "number" || typeof game.id === "string" ? String(game.id) : "";
+      if (!/^[1-9]\d*$/.test(id)) continue;
+      if (approvedFixtures.has(id)) {
+        return NextResponse.json({ error: "Basketball data provider returned duplicate fixtures." }, { status: 502, headers: { "Cache-Control": "no-store" } });
+      }
+      approvedFixtures.set(id, game);
+    }
+    const games = [...approvedFixtures.values()];
+    const mappings: {team_id:string;provider_team_id:number;active:boolean}[] = [];
     for (let offset = 0; offset < 10000; offset += 500) {
       const {data,error} = await db.from("fan_live_team_provider_map")
-        .select("team_id,provider_team_id").eq("active",true)
+        .select("team_id,provider_team_id,active")
         .order("provider_team_id").range(offset,offset+499);
       if (error) throw error;
       mappings.push(...(data || []));
@@ -74,27 +95,41 @@ export async function GET(request: NextRequest) {
     }
 
     const byProviderId = new Map<number, string>();
-    for (const mapping of mappings || []) byProviderId.set(Number(mapping.provider_team_id), mapping.team_id);
+    const reservedProviderIds = new Set<number>();
+    const mappedInternalIds = new Set<string>();
+    for (const mapping of mappings) {
+      const providerId = Number(mapping.provider_team_id);
+      reservedProviderIds.add(providerId);
+      mappedInternalIds.add(mapping.team_id);
+      if (mapping.active) byProviderId.set(providerId, mapping.team_id);
+    }
 
-    // Name matching gives the integration a useful default before manual aliases
-    // are configured. Explicit provider-ID mappings always take precedence.
-    const teams: {id:string;name:string}[] = [];
+    // Use the full directory to detect ambiguous names, including names
+    // shared by men's and women's teams.
+    const teams: {id:string;name:string;country:string|null}[] = [];
     for (let offset = 0; offset < 10000; offset += 500) {
-      const {data,error} = await db.from("teams").select("id,name")
-        .or("source.is.null,source.neq.womens_teams_mirror")
+      const {data,error} = await db.from("teams").select("id,name,country")
         .order("id").range(offset,offset+499);
       if (error) throw error;
       teams.push(...(data || []));
       if ((data || []).length < 500) break;
       if (offset === 9500) throw Error("Team page limit reached");
     }
-    const normalize = (name: string) => name.toLocaleLowerCase("en-US").replace(/\b(basketball club|basketball|bc|club|team)\b/g, " ").replace(/[^a-z0-9]/g, "");
+    const normalize = (name: string) => name.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("en-US")
+      .replace(/\b(basketball club|basketball|bc|club|team)\b/g, " ").replace(/[^\p{L}\p{N}]/gu, "");
+    const countryOf = (game: ProviderGame) => {
+      const country = game.country?.name;
+      if (typeof country === "string" && country.trim()) return country.trim();
+      return typeof game.league?.country === "string" ? game.league.country.trim() || null : null;
+    };
     const internalTeamByName = new Map<string, string>();
     const ambiguousTeamNames = new Set<string>();
     for (const team of teams || []) {
-      if (typeof team.name === "string" && team.name.trim()) {
-        const key = normalize(team.name);
-        if (!key || ambiguousTeamNames.has(key)) continue;
+      if (team.country && typeof team.name === "string") {
+        const name = normalize(team.name);
+        const country = normalize(team.country);
+        const key = country + ":" + name;
+        if (!name || !country || ambiguousTeamNames.has(key)) continue;
         if (internalTeamByName.has(key)) {
           // Never assign a provider game to an arbitrary duplicate team record.
           internalTeamByName.delete(key);
@@ -106,23 +141,34 @@ export async function GET(request: NextRequest) {
     }
     // Learn provider IDs from date-scoped fixtures only when the normalized name maps to
     // exactly one internal team. This discovers verified IDs before games tip off; never overwrite mappings or guess IDs.
-    const mappedInternalIds = new Set((mappings || []).map((mapping: { team_id: string }) => mapping.team_id));
     const discovered = new Map<number, { team_id: string; provider_team_name: string; active: true }>();
-    for (const game of payload.response) {
+    const candidatesByTeam = new Map<string, Set<number>>();
+    const candidatesByProvider = new Map<number, Map<string, string>>();
+    for (const game of games) {
+      const country = countryOf(game);
+      if (!country) continue;
       const sides = [game.teams?.home, (game.teams?.away ?? game.teams?.visitors)];
       for (const side of sides) {
         const providerId = Number(side?.id);
         const providerName = side?.name;
-        if (!Number.isInteger(providerId) || providerId <= 0 || !providerName) continue;
-        if (byProviderId.has(providerId) || discovered.has(providerId)) continue;
-        const internalId = internalTeamByName.get(normalize(providerName));
+        if (!Number.isSafeInteger(providerId) || providerId <= 0 || providerId > 2147483647 || typeof providerName !== "string") continue;
+        if (reservedProviderIds.has(providerId)) continue;
+        const internalId = internalTeamByName.get(normalize(country) + ":" + normalize(providerName));
         if (!internalId || mappedInternalIds.has(internalId)) continue;
-        discovered.set(providerId, {
-          team_id: internalId,
-          provider_team_name: providerName,
-          active: true
-        });
-        mappedInternalIds.add(internalId);
+        const providerIds = candidatesByTeam.get(internalId) ?? new Set<number>();
+        providerIds.add(providerId);
+        candidatesByTeam.set(internalId, providerIds);
+        const matchingTeams = candidatesByProvider.get(providerId) ?? new Map<string, string>();
+        matchingTeams.set(internalId, providerName);
+        candidatesByProvider.set(providerId, matchingTeams);
+      }
+    }
+    for (const [providerId, matchingTeams] of candidatesByProvider) {
+      if (matchingTeams.size !== 1) continue;
+      for (const [teamId, providerName] of matchingTeams) {
+        if (candidatesByTeam.get(teamId)?.size === 1) {
+          discovered.set(providerId, { team_id: teamId, provider_team_name: providerName, active: true });
+        }
       }
     }
 
@@ -142,16 +188,13 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const internalIdFor = (providerId: number, providerName?: string) =>
-      byProviderId.get(providerId) || (providerName ? internalTeamByName.get(normalize(providerName)) : undefined);
-
     const liveStatuses = new Set(["Q1", "Q2", "Q3", "Q4", "OT", "BT", "HT"]);
     const scheduledStatuses = new Set(["NS", "TBD"]);
     const finalStatuses = new Set(["FT", "AOT", "AP", "AWD"]);
     const cancelledStatuses = new Set(["POST", "CANC", "ABD", "SUSP"]);
     const statusOf = (game: ProviderGame) => String(game.status?.short || "").toUpperCase();
-    const liveGames = payload.response.filter(game => liveStatuses.has(statusOf(game)));
-    const trackedGames = payload.response.filter(game =>
+    const liveGames = games.filter(game => liveStatuses.has(statusOf(game)));
+    const trackedGames = games.filter(game =>
       liveStatuses.has(statusOf(game)) || scheduledStatuses.has(statusOf(game)) ||
       finalStatuses.has(statusOf(game)) || cancelledStatuses.has(statusOf(game))
     );
@@ -162,8 +205,9 @@ export async function GET(request: NextRequest) {
     for (const game of trackedGames) {
       const homeProviderId = Number(game.teams?.home?.id);
       const awayProviderId = Number((game.teams?.away ?? game.teams?.visitors)?.id);
-      const homeInternalId = internalIdFor(homeProviderId, game.teams?.home?.name);
-      const awayInternalId = internalIdFor(awayProviderId, (game.teams?.away ?? game.teams?.visitors)?.name);
+      const homeInternalId = byProviderId.get(homeProviderId);
+      const awayInternalId = byProviderId.get(awayProviderId);
+      if (homeInternalId && homeInternalId === awayInternalId) continue;
       if (!homeInternalId && !awayInternalId) continue;
 
       // Use the followed/mapped side as the primary team so score order is always
@@ -174,39 +218,42 @@ export async function GET(request: NextRequest) {
       const opponentName = primaryIsHome ? (game.teams?.away ?? game.teams?.visitors)?.name : game.teams?.home?.name;
       const primaryScore = primaryIsHome ? score(game.scores?.home) : score((game.scores?.away ?? game.scores?.visitors));
       const opponentScore = primaryIsHome ? score((game.scores?.away ?? game.scores?.visitors)) : score(game.scores?.home);
-      if (!primaryId || !opponentName || !game.id) continue;
+      if (!primaryId || typeof opponentName !== "string" || !opponentName.trim()) continue;
       if (!opponentId && scheduledStatuses.has(statusOf(game))) {
         incompleteMatchups++;
         const missingId = primaryIsHome ? awayProviderId : homeProviderId;
         if (missingMatchupMappings.length < 20) missingMatchupMappings.push({providerGameId:String(game.id),providerTeamId:Number.isSafeInteger(missingId)&&missingId>0?missingId:null,providerTeamName:opponentName.slice(0,120),leagueId:typeof game.league?.id==="number"?game.league.id:null});
       }
 
-      const startDate = game.timestamp ? new Date(game.timestamp * 1000).toISOString()
-        : (game.date && !Number.isNaN(Date.parse(game.date)) ? new Date(game.date).toISOString() : null);
+      const timestamp = typeof game.timestamp === "number" ? new Date(game.timestamp * 1000).getTime() : NaN;
+      const start = Number.isFinite(timestamp) && timestamp > 0 ? timestamp : Date.parse(game.date ?? "");
+      const startDate = Number.isFinite(start) ? new Date(start).toISOString() : null;
       const providerLeagueId = game.league?.id;
       const providerStatus = statusOf(game);
       const storedStatus = liveStatuses.has(providerStatus) ? "live"
         : scheduledStatuses.has(providerStatus) ? "scheduled"
         : finalStatuses.has(providerStatus) ? "final"
+        : providerStatus === "POST" || providerStatus === "SUSP" ? "postponed"
+        : providerStatus === "ABD" ? "abandoned"
         : "cancelled";
       rows.push({
         team_id: primaryId,
         opponent_team_id: opponentId,
         opponent_name: opponentName,
-        provider_source: "api-sports-basketball",
+        provider_source: providerSource,
         provider_game_id: String(game.id),
         provider_league_id: typeof providerLeagueId === "number" && Number.isSafeInteger(providerLeagueId) && providerLeagueId > 0 ? providerLeagueId : null,
         status: storedStatus,
         score_updated_at: receivedAt,
-        home_score: storedStatus === "scheduled" ? null : primaryScore,
-        away_score: storedStatus === "scheduled" ? null : opponentScore,
-        started_at: storedStatus === "scheduled" ? null : startDate,
+        home_score: storedStatus === "live" || storedStatus === "final" ? primaryScore : null,
+        away_score: storedStatus === "live" || storedStatus === "final" ? opponentScore : null,
+        started_at: storedStatus === "live" || storedStatus === "final" ? startDate : null,
         // Only a genuine provider terminal event receives a completion time.
         // A later provider correction to live/scheduled clears a stale end.
         ends_at: null as string | null,
         scheduled_at: startDate,
         league_name: game.league?.name || null,
-        country: typeof game.country?.name === "string" && game.country.name.trim() ? game.country.name.trim() : typeof game.league?.country === "string" && game.league.country.trim() ? game.league.country.trim() : null,
+        country: countryOf(game),
         period_label: liveStatuses.has(providerStatus) ? (game.status?.long || providerStatus) : null
       });
     }
@@ -220,7 +267,7 @@ export async function GET(request: NextRequest) {
       const { data: previous, error: previousError } = await db
         .from("fan_live_games")
         .select("provider_game_id,ends_at")
-        .eq("provider_source", "api-sports-basketball")
+        .eq("provider_source", providerSource)
         .in("provider_game_id", providerIds);
       if (previousError) throw previousError;
       const endingByProviderId = new Map((previous || []).map(row => [row.provider_game_id, row.ends_at]));
@@ -282,8 +329,7 @@ export async function GET(request: NextRequest) {
       .filter(game => {
         const homeProviderId = Number(game.teams?.home?.id);
         const awayProviderId = Number((game.teams?.away ?? game.teams?.visitors)?.id);
-        return !internalIdFor(homeProviderId, game.teams?.home?.name)
-          && !internalIdFor(awayProviderId, (game.teams?.away ?? game.teams?.visitors)?.name);
+        return !byProviderId.has(homeProviderId) && !byProviderId.has(awayProviderId);
       })
       .slice(0, 10)
       .map(game => ({
@@ -299,6 +345,7 @@ export async function GET(request: NextRequest) {
       dayOffset,
       providerSnapshotReceivedAt: receivedAt,
       providerGamesForDate: payload.response.length,
+      approvedGamesForDate: games.length,
       providerLiveGames: liveGames.length,
       providerScheduledGames: rows.filter(row => row.status === "scheduled").length,
       providerFinishedGames: rows.filter(row => row.status === "final").length,
