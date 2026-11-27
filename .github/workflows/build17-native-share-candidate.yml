@@ -1,0 +1,26 @@
+name: Build 17 native share candidate
+on:
+  pull_request:
+    paths:
+      - "apps/mobile/native-candidates/share-extension/**"
+      - ".github/workflows/build17-native-share-candidate.yml"
+permissions:
+  contents: read
+jobs:
+  source-verification:
+    runs-on: macos-15
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/mobile/native-candidates/share-extension
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Exercise synthetic public-link and file lifecycle tests
+        run: |
+          swiftc ShareHandoff.swift ShareHandoffTests.swift -o /tmp/hoopcheck-share-tests
+          /tmp/hoopcheck-share-tests
+      - name: Typecheck the real extension controller with iOS SDK
+        run: |
+          xcrun --sdk iphonesimulator swiftc -swift-version 5 -typecheck -application-extension -target arm64-apple-ios15.1-simulator -sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)" ShareHandoff.swift ShareViewController.swift
