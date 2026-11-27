@@ -1,0 +1,7 @@
+# ActivityKit / Dynamic Island candidate
+
+Real Apple ActivityKit controller and WidgetKit lock-screen, compact, minimal and expanded Dynamic Island presentations for an explicitly selected 15/30/60-minute personal game reminder. No score, fixture, provider content, account identifier, push token, network service or APNs entitlement. The timer is not a game-start prediction. A stale or elapsed reminder displays check-schedule guidance; the host reconciles and ends expired activities on foreground.
+
+**Source candidate only.** No native target is installed; no Info.plist capability is enabled. Before activation: integrate shared sources and widget bundle into an iOS 16.2+ extension target, wire the opt-in start/stop controls and authenticated app lifecycle (including serialized account changes, sign-out and opt-out cleanup), add NSSupportsLiveActivities only to approved candidate config, verify device/lock-screen/Dynamic Island behavior and test interruption/stale handling. System dismissal when the app is suspended must be verified, not promised. Provider scores and automatic updates require separate explicit display/lock-screen rights, a verified live source, stale/error state and approved update architecture. No new paid service, app registration, signed build or public release.
+
+Apple reference: https://developer.apple.com/documentation/activitykit/displaying-live-data-with-live-activities
