@@ -1,6 +1,7 @@
 {
   "git": {
     "deploymentEnabled": {
+      "qa/step1-alerts-session": false,
       "qa/step1-story-publish-session": false,
       "qa/step1-hoopchat-forward-drafts": false,
       "qa/step1-structured-replies": false,
@@ -9,9 +10,9 @@
       "qa/step1-creator-studio-account-boundary": false,
       "qa/step1-feed-live-reconciliation": false,
       "qa/hoopcheck-master-acceptance": false,
+      "qa/steps-1-4-live-feed": false,
       "qa/step1-verified-reconciliation": false,
       "qa/step1-hoopchat-web-history": false,
-      "qa/steps-1-4-operations": false,
       "reconcile/build8-mobile-705-700-710-711": false,
       "reconcile/build9-phase1-20261120": false,
       "completion/build9-20261120": false,
@@ -41,7 +42,8 @@
       "qa/step1-hoopchat-quote-replies": false,
       "qa/step1-community-messaging-reconciliation": false,
       "qa/step2-security-boundaries": false,
-      "ops/step4-migration-forward-guard": false
+      "ops/step4-migration-forward-guard": false,
+      "qa/steps-1-4-operations": false
     }
   }
 }
