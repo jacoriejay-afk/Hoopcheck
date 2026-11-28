@@ -140,7 +140,23 @@ test("Courtside guards duplicate mutations and preserves edits made during send"
  assert.match(ui,/async function send[\s\S]*?submittedDraft=currentDraft;\s*if\(structuredReplies&&replyTarget\?\.scope===historyScope&&!replyId\)\{[^}]*return;\}\s*if\(mutationGeneration\.current===rev\)return;\s*mutationGeneration\.current=rev/);
  assert.match(ui,/setDrafts\(prev=>prev\[thread\]===submittedDraft\?\{\.\.\.prev,\[thread\]:""\}:prev\)/);
  assert.equal((ui.match(/if\(user\?\.id!==userId\|\|rev!==accountGeneration\.current\)throw new Error/g)||[]).length,2);
- assert.equal((ui.match(/finally\{if\(mutationGeneration\.current===rev\)mutationGeneration\.current=null;if\(rev===accountGeneration\.current\)setSending\(false\);\}/g)||[]).length,3);
+ const mutation=name=>{
+  const start=ui.indexOf("async function "+name+"(");
+  assert.ok(start>=0,name);
+  const end=ui.indexOf("\n  async function ",start+1);
+  return ui.slice(start,end<0?ui.indexOf("\n  function applyStarter",start):end);
+ };
+ for(const name of ["respond","send","checkDelivery","forwardTo"]){
+  const body=mutation(name);
+  assert.match(body,/if\(mutationGeneration\.current===rev\)return;\s*mutationGeneration\.current=rev/,name);
+  assert.ok(body.indexOf("mutationGeneration.current=rev")<body.indexOf("await "),name+" acquires before awaiting");
+  assert.match(body,/finally\{if\(mutationGeneration\.current===rev\)mutationGeneration\.current=null;if\(rev===accountGeneration\.current\)setSending\(false\);\}/,name);
+ }
+ const recovery=mutation("checkDelivery");
+ assert.match(recovery,/user\?\.id!==userId\|\|session\?\.user\.id!==userId\|\|signal\.aborted\|\|rev!==accountGeneration\.current/);
+ assert.match(recovery,/blocked\.error\|\|blocked\.data\|\|signal\.aborted\|\|rev!==accountGeneration\.current/);
+ assert.match(recovery,/webChatOutbox\.status\(supabase,userId,thread,header,signal,structuredReplies\)/);
+ assert.doesNotMatch(recovery,/\.send\(|\.insert\(/);
  assert.match(ui,/async function forwardTo[\s\S]*?if\(mutationGeneration\.current===rev\)return;\s*mutationGeneration\.current=rev;setSending\(true\)/);
  const forward=ui.slice(ui.indexOf("async function forwardTo"),ui.indexOf("async function respond"));
  assert.match(forward,/readForwardDraft\(supabase,userId,source,forwardSelection\.messageId,destination,signal\)/);

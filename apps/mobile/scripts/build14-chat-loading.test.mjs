@@ -88,5 +88,21 @@ test("HoopChat locks mutations before awaits and preserves unsent draft text", (
   assert.match(chat, /setDraft\(current=>current===submittedDraft\?"":current\)/);
   assert.match(chat, /if\(!mutationLocked\.current\)void load\(\)/);
   assert.match(chat, /editable=\{!sending && !offline\}/);
-  assert.equal((chat.match(/finally\{mutationLocked\.current=false;setSending\(false\);\}/g) || []).length, 2);
+  const mutation = name => {
+    const start=chat.indexOf("async function "+name+"(");
+    assert.ok(start>=0,name);
+    const end=chat.indexOf("\n  async function ",start+1);
+    return chat.slice(start,end<0?chat.indexOf("\n  return <SafeAreaView",start):end);
+  };
+  for(const name of ["respond","send","checkDelivery","forwardTo"]){
+    const body=mutation(name);
+    assert.match(body,/mutationLocked\.current\) return;|mutationLocked\.current\)return;|mutationLocked\.current\|\|!userId\)return;/,name);
+    assert.ok(body.indexOf("mutationLocked.current=true")<body.indexOf("await "),name+" acquires before awaiting");
+    assert.match(body,/finally\{mutationLocked\.current=false;setSending\(false\);\}/,name);
+  }
+  const recovery=mutation("checkDelivery");
+  assert.match(recovery,/verifyChatPeer\(userId,peerId\(selected\),signal\)/);
+  assert.match(recovery,/nativeChatOutbox\.status\(supabase,userId,selected\.id,header,signal,structuredReplies\)/);
+  assert.match(recovery,/rev===generation\.current&&focused\.current/);
+  assert.doesNotMatch(recovery,/\.send\(|\.insert\(/);
 });

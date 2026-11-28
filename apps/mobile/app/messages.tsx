@@ -323,7 +323,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       if(!writeForwardDraft(userId,destination,body))throw Error("Finish or clear the recipient’s existing draft first.");
       setReplyTarget(null);setForwardSelection(null);setSelectedId(destination);setOpenedMode(mode);setOpenedId(destination);
     }catch(e){if(revision===generation.current&&focused.current)setError(e instanceof Error?e.message:"Forward unavailable.");}
-    finally{mutationLocked.current=false;if(revision===generation.current&&focused.current)setSending(false);}
+    finally{mutationLocked.current=false;setSending(false);}
   }
   async function respond(status:"accepted"|"rejected") {
     if(!selected || selected.player_id!==userId || selected.status!=="pending" || !opened || sending || offline || mutationLocked.current) return;
