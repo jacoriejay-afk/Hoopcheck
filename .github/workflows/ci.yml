@@ -55,6 +55,7 @@ jobs:
           node scripts/step4b-local-burst.mjs --self-test
           node scripts/step4-migration-forward-guard.mjs --self-test
           node scripts/test-step4-migration-forward-guard-cli.mjs
+          node scripts/step2-deletion-retention-preflight.mjs docs/appstore-deletion-schema-inventory.json --self-test
 
       - name: Rehearse synthetic backup restore on disposable PostgreSQL
         env:
