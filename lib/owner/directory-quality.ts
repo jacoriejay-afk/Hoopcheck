@@ -121,6 +121,15 @@ export const verifiedRosters: RosterEvidence[] = [{
     ["La Laguna Tenerife","Lenovo Tenerife"],["Leyma Coruña","Leyma Basquet Coruña"],["Monbus Obradoiro"],["Real Madrid"],["Recoletas Salud Burgos","San Pablo Burgos","Recoletas Salud San Pablo Burgos"],["Río Breogán"],
     ["Surne Bilbao Basket","Bilbao Basket"],["UCAM Murcia"],["Unicaja Malaga","Unicaja"],["Valencia Basket"]
   ].map(([name,...aliases])=>({name,country:"Spain",aliases})).concat([{name:"MoraBanc Andorra",country:"Andorra",aliases:["BC Andorra"]}])
+},{
+ name:"Korisliiga",country:"Finland",season:"2026-27",side:"mens",
+ source:"https://basket.fi/uutiset/paasarjojen-sarjalisenssit-kaudelle-2026-2027-myonnetty-keski-suomi-palaa-liigakartalle-ennatysmaara-joukkueita-paasarjoissa/",
+ verifiedAt:"2026-11-28",confidence:"Federation confirmed 12 competition licenses",
+ clubs:[["Bisons Loimaa","Loimaan Korikonkarit"],["Helsinki Seagulls"],["Kataja Basket","Joensuun Kataja"],["Kauhajoki","Karhu Basket","Kauhajoki Karhu Basket"],["Kipinä Basket"],["Korihait","UU-Korihait"],["Kouvot","Kouvot Basket"],["KTP-Basket"],["Lahti Basketball"],["Salon Vilpas","Salon Vilpas Koripallo"],["Tampereen Pyrintö"],["Tapiolan Honka"]].map(([name,...aliases])=>({name,country:"Finland",aliases}))
+},{
+ name:"PGE Basket Liga",country:"Poland",season:"2026-27",side:"mens",leagueAliases:["ORLEN Basket Liga","Polish Basketball League"],
+ source:"https://plk.pl/druzyny",verifiedAt:"2026-11-28",confidence:"Official league 16-team list; current sponsorship PGE, legacy stored label ORLEN",
+ clubs:[["AMW Arka Gdynia","Arka Gdynia"],["Anwil Włocławek"],["Arriva Lotto Twarde Pierniki Toruń","Twarde Pierniki Toruń"],["Energa Czarni Słupsk","Czarni Słupsk"],["Dziki Warszawa"],["Enea Łaciate Astoria Bydgoszcz"],["Energa Trefl Sopot","Trefl Sopot"],["Górnik Zamek Książ Wałbrzych"],["GTK Gliwice","Euvic GTK Gliwice"],["King Szczecin"],["Legia Warszawa"],["MKS Dąbrowa Górnicza"],["PGE Start Lublin","Start Lublin"],["Tasomix Rosiek Stal Ostrów Wielkopolski"],["WKS Śląsk Wrocław","Śląsk Wrocław"],["Zastal Zielona Góra"]].map(([name,...aliases])=>({name,country:"Poland",aliases}))
 }];
 const normalized=(v:string|null)=> (v||"").normalize("NFKD").replace(/\p{M}/gu,"").toLocaleLowerCase("en").replace(/[^\p{L}\p{N}]+/gu,"");
 const identityKey=(row:DirectoryIdentity)=>[normalized(row.country),row.basketball_type,normalized(row.name)].join(":");
