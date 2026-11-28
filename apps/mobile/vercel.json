@@ -48,7 +48,8 @@
       "qa/steps-1-4-chat-read-sync": false,
       "ops/step5-launch-preparation": false,
       "qa/android-play-billing-foundation": false,
-      "qa/android-play-verified-api": false
+      "qa/android-play-verified-api": false,
+      "qa/step2-review-author-column-acl-rehearsal": false
     }
   }
 }
