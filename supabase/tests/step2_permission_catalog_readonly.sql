@@ -8,7 +8,7 @@ BEGIN TRANSACTION READ ONLY;
 SET LOCAL search_path = pg_catalog;
 WITH ns AS (
  SELECT oid,nspname,nspowner,nspacl FROM pg_namespace
- WHERE nspname NOT LIKE 'pg\\_%' ESCAPE '\\' AND nspname <> 'information_schema'
+ WHERE left(nspname::text, 3) <> 'pg_' AND nspname <> 'information_schema'
 ), rel AS (
  SELECT c.*,n.nspname FROM pg_class c JOIN ns n ON n.oid=c.relnamespace
  WHERE c.relkind IN ('r','p','v','m','f','S')
