@@ -270,6 +270,41 @@ insert into pg_temp.ld1_teams(id,name,country,league_id,league_name,basketball_t
 ('ed22da58-ada3-44e4-8c5d-6f83b0b6df1d','Sangiorgese Basket','Italy',null,'Serie B Nazionale','mens',true),
 ('ed45e3f5-b33f-48ad-98ce-ab15274ec538','Felice Scandone Avellino','Italy',null,'Serie B Nazionale','mens',true),
 ('f3da7305-9f68-46a7-ada3-dbc7d65e6947','PSA Napoli Est','Italy',null,'Serie B Nazionale','mens',true);
+insert into pg_temp.ld1_teams(id,name,country,league_id,league_name,basketball_type,active) values
+('0cb91473-6e77-446c-8088-2f67285f9948','Phoenix Mercury','United States',null,'Women''s National Basketball Association (WNBA)','womens',true),
+('18f29d86-aac8-4466-91a8-3c7ea5681174','Golden State Valkyries','United States',null,'Women''s National Basketball Association (WNBA)','womens',true),
+('1d4b3f2c-b046-402e-b244-6f96dc6cdb17','Chicago Sky','United States',null,'Women''s National Basketball Association (WNBA)','womens',true),
+('397a6d3a-b047-432d-942d-25a84cf562c4','Toronto Tempo','Canada',null,'Women''s National Basketball Association (WNBA)','womens',true),
+('4dd7249b-fd23-4392-90af-f7f6cd1353e8','New York Liberty','United States',null,'Women''s National Basketball Association (WNBA)','womens',true),
+('63b5bede-a37e-4699-81a4-17ef29f6f9bb','Seattle Storm','United States',null,'Women''s National Basketball Association (WNBA)','womens',true),
+('90e9a8ee-da8a-4434-84d5-c43328a75ad0','Las Vegas Aces','United States',null,'Women''s National Basketball Association (WNBA)','womens',true),
+('b4d5020c-2cef-42b6-8f02-632daa028d3d','Indiana Fever','United States',null,'Women''s National Basketball Association (WNBA)','womens',true),
+('bd8e9670-b4ad-412e-b22c-59f183ff818b','Atlanta Dream','United States',null,'Women''s National Basketball Association (WNBA)','womens',true),
+('c4fbab1d-7664-4d88-88ea-de9aac96db08','Minnesota Lynx','United States',null,'Women''s National Basketball Association (WNBA)','womens',true),
+('e98489aa-63c4-4c68-9317-9a8462d1ce1a','Portland Fire','United States',null,'Women''s National Basketball Association (WNBA)','womens',true),
+('eb5cfa61-b802-408e-a6e3-1df6f1872755','Connecticut Sun','United States',null,'Women''s National Basketball Association (WNBA)','womens',true),
+('f182c7ec-83e4-455b-9870-d1a23b1c33cb','Washington Mystics','United States',null,'Women''s National Basketball Association (WNBA)','womens',true),
+('fb6dd5a3-f927-4bfb-b5d9-f0840d4cd5ad','Dallas Wings','United States',null,'Women''s National Basketball Association (WNBA)','womens',true),
+('ff0e2bcf-b30b-42be-bcfe-88b8deee9252','Los Angeles Sparks','United States',null,'Women''s National Basketball Association (WNBA)','womens',true);
+insert into pg_temp.ld1_legacy_leagues(id,name,country,active) values
+('3e0e1b7c-b14c-4bf3-b0a7-a94b271ffed4','Women''s National Basketball Association (WNBA)','United States',true),
+('bd8a3864-10ed-4ad3-8d31-51158c553401','WNBA','United States',false);
+insert into pg_temp.ld1_legacy_teams(id,name,country,league_id,league_name,active) values
+('0cb91473-6e77-446c-8088-2f67285f9948','Phoenix Mercury','United States','3e0e1b7c-b14c-4bf3-b0a7-a94b271ffed4','Women''s National Basketball Association (WNBA)',true),
+('18f29d86-aac8-4466-91a8-3c7ea5681174','Golden State Valkyries','United States','3e0e1b7c-b14c-4bf3-b0a7-a94b271ffed4','Women''s National Basketball Association (WNBA)',true),
+('1d4b3f2c-b046-402e-b244-6f96dc6cdb17','Chicago Sky','United States','3e0e1b7c-b14c-4bf3-b0a7-a94b271ffed4','Women''s National Basketball Association (WNBA)',true),
+('397a6d3a-b047-432d-942d-25a84cf562c4','Toronto Tempo','Canada','3e0e1b7c-b14c-4bf3-b0a7-a94b271ffed4','Women''s National Basketball Association (WNBA)',true),
+('4dd7249b-fd23-4392-90af-f7f6cd1353e8','New York Liberty','United States','3e0e1b7c-b14c-4bf3-b0a7-a94b271ffed4','Women''s National Basketball Association (WNBA)',true),
+('63b5bede-a37e-4699-81a4-17ef29f6f9bb','Seattle Storm','United States','3e0e1b7c-b14c-4bf3-b0a7-a94b271ffed4','Women''s National Basketball Association (WNBA)',true),
+('90e9a8ee-da8a-4434-84d5-c43328a75ad0','Las Vegas Aces','United States','3e0e1b7c-b14c-4bf3-b0a7-a94b271ffed4','Women''s National Basketball Association (WNBA)',true),
+('b4d5020c-2cef-42b6-8f02-632daa028d3d','Indiana Fever','United States','3e0e1b7c-b14c-4bf3-b0a7-a94b271ffed4','Women''s National Basketball Association (WNBA)',true),
+('bd8e9670-b4ad-412e-b22c-59f183ff818b','Atlanta Dream','United States','3e0e1b7c-b14c-4bf3-b0a7-a94b271ffed4','Women''s National Basketball Association (WNBA)',true),
+('c4fbab1d-7664-4d88-88ea-de9aac96db08','Minnesota Lynx','United States','3e0e1b7c-b14c-4bf3-b0a7-a94b271ffed4','Women''s National Basketball Association (WNBA)',true),
+('e98489aa-63c4-4c68-9317-9a8462d1ce1a','Portland Fire','United States','3e0e1b7c-b14c-4bf3-b0a7-a94b271ffed4','Women''s National Basketball Association (WNBA)',true),
+('eb5cfa61-b802-408e-a6e3-1df6f1872755','Connecticut Sun','United States','3e0e1b7c-b14c-4bf3-b0a7-a94b271ffed4','Women''s National Basketball Association (WNBA)',true),
+('f182c7ec-83e4-455b-9870-d1a23b1c33cb','Washington Mystics','United States','3e0e1b7c-b14c-4bf3-b0a7-a94b271ffed4','Women''s National Basketball Association (WNBA)',true),
+('fb6dd5a3-f927-4bfb-b5d9-f0840d4cd5ad','Dallas Wings','United States','3e0e1b7c-b14c-4bf3-b0a7-a94b271ffed4','Women''s National Basketball Association (WNBA)',true),
+('ff0e2bcf-b30b-42be-bcfe-88b8deee9252','Los Angeles Sparks','United States','3e0e1b7c-b14c-4bf3-b0a7-a94b271ffed4','Women''s National Basketball Association (WNBA)',true);
 create temporary table before_ld1_leagues on commit drop as select * from pg_temp.ld1_leagues;
 create temporary table before_ld1_teams on commit drop as select * from pg_temp.ld1_teams;
 create temporary table before_ld1_memberships on commit drop as select * from pg_temp.ld1_memberships;
@@ -285,6 +320,7 @@ create temporary table before_ld1_legacy_teams on commit drop as select * from p
 \ir ../../reports/league-data-1/finland-poland-shadow-memberships.sql
 \ir ../../reports/league-data-1/austria-shadow-memberships.sql
 \ir ../../reports/league-data-1/italy-serie-b-shadow-correction.sql
+\ir ../../reports/league-data-1/wnba-shadow-correction.sql
 create temporary table after_ld1_leagues on commit drop as select * from pg_temp.ld1_leagues;
 create temporary table after_ld1_teams on commit drop as select * from pg_temp.ld1_teams;
 create temporary table after_ld1_memberships on commit drop as select * from pg_temp.ld1_memberships;
@@ -300,14 +336,15 @@ create temporary table after_ld1_legacy_teams on commit drop as select * from pg
 \ir ../../reports/league-data-1/finland-poland-shadow-memberships.sql
 \ir ../../reports/league-data-1/austria-shadow-memberships.sql
 \ir ../../reports/league-data-1/italy-serie-b-shadow-correction.sql
+\ir ../../reports/league-data-1/wnba-shadow-correction.sql
 do $combined$ begin
-if (select count(*) from pg_temp.ld1_leagues)<>(select count(*)+6 from pg_temp.before_ld1_leagues) then raise exception 'ld1_leagues: unexpected delta';end if;
+if (select count(*) from pg_temp.ld1_leagues)<>(select count(*)+7 from pg_temp.before_ld1_leagues) then raise exception 'ld1_leagues: unexpected delta';end if;
 if exists(select * from pg_temp.after_ld1_leagues except select * from pg_temp.ld1_leagues) or exists(select * from pg_temp.ld1_leagues except select * from pg_temp.after_ld1_leagues) then raise exception 'ld1_leagues: second run changed state';end if;
 if exists(select id from pg_temp.before_ld1_leagues except select id from pg_temp.ld1_leagues) then raise exception 'ld1_leagues: lost existing ID';end if;
 if (select count(*) from pg_temp.ld1_teams)<>(select count(*)+22 from pg_temp.before_ld1_teams) then raise exception 'ld1_teams: unexpected delta';end if;
 if exists(select * from pg_temp.after_ld1_teams except select * from pg_temp.ld1_teams) or exists(select * from pg_temp.ld1_teams except select * from pg_temp.after_ld1_teams) then raise exception 'ld1_teams: second run changed state';end if;
 if exists(select id from pg_temp.before_ld1_teams except select id from pg_temp.ld1_teams) then raise exception 'ld1_teams: lost existing ID';end if;
-if (select count(*) from pg_temp.ld1_memberships)<>(select count(*)+184 from pg_temp.before_ld1_memberships) then raise exception 'ld1_memberships: unexpected delta';end if;
+if (select count(*) from pg_temp.ld1_memberships)<>(select count(*)+199 from pg_temp.before_ld1_memberships) then raise exception 'ld1_memberships: unexpected delta';end if;
 if exists(select * from pg_temp.after_ld1_memberships except select * from pg_temp.ld1_memberships) or exists(select * from pg_temp.ld1_memberships except select * from pg_temp.after_ld1_memberships) then raise exception 'ld1_memberships: second run changed state';end if;
 if exists(select id from pg_temp.before_ld1_memberships except select id from pg_temp.ld1_memberships) then raise exception 'ld1_memberships: lost existing ID';end if;
 if (select count(*) from pg_temp.ld1_legacy_leagues)<>(select count(*)+1 from pg_temp.before_ld1_legacy_leagues) then raise exception 'ld1_legacy_leagues: unexpected delta';end if;
@@ -320,7 +357,7 @@ if exists(select 1 from pg_temp.before_ld1_leagues b join pg_temp.ld1_leagues a 
 if exists(select * from pg_temp.before_ld1_memberships except select * from pg_temp.ld1_memberships) then raise exception 'ld1_memberships: existing record changed';end if;
 if exists(select * from pg_temp.before_ld1_legacy_leagues except select * from pg_temp.ld1_legacy_leagues) then raise exception 'ld1_legacy_leagues: existing record changed';end if;
 if exists(select * from pg_temp.before_ld1_legacy_teams except select * from pg_temp.ld1_legacy_teams) then raise exception 'ld1_legacy_teams: existing record changed';end if;
-if (select count(*) from (select * from pg_temp.before_ld1_teams except select * from pg_temp.ld1_teams) q)<>42 then raise exception 'unexpected existing team changes';end if;
+if (select count(*) from (select * from pg_temp.before_ld1_teams except select * from pg_temp.ld1_teams) q)<>57 then raise exception 'unexpected existing team changes';end if;
 if exists(select 1 from pg_temp.before_ld1_teams b join pg_temp.ld1_teams a using(id) where (b.name,b.country,b.basketball_type,b.active) is distinct from (a.name,a.country,a.basketball_type,a.active)) then raise exception 'team identity altered';end if;
 end $combined$;
 select 'PASS: combined league data correction, twice applied, original identities and historical records preserved' result;
