@@ -186,6 +186,10 @@ export const verifiedRosters: RosterEvidence[] = [{
  name:"A1 Liga BiH",country:"Bosnia and Herzegovina",season:"2026-27",side:"mens",
  source:"https://www.bhbasket.ba/klubovi-koji-ce-igrati-u-a1-ligi/",verifiedAt:"2026-11-28",confidence:"Published 13-club season list corroborated by federation-attributed opening round and current results; Živinice canonical ID remains unresolved",
  clubs:[["KK Bosna Spars","Spars No1"],["KK Bošnjak","Bošnjak Hadžići"],["KK Gradačac"],["KK Kakanj"],["KK Konjic"],["KK Travnik"],["KK Turbina","Turbina Jablanica"],["KK Vogošća"],["KK Željo 1971","Željo 1971 Bihać"],["KK Živinice","Basket Živinice","KK Basket Živinice"],["OKK Čelik","OKK Čelik Zenica"],["OKK Gradina Srebrenik","Gradina Yavuz Srebrenik"],["UKK IUS-Famos","IUS Wolves Sarajevo"]].map(([name,...aliases])=>({name,country:"Bosnia and Herzegovina",aliases}))
+},{
+ name:"Druga ženska liga Srbije",country:"Serbia",season:"2026-27",side:"womens",leagueAliases:["2. ŽLS","Serbian Second Women's League"],
+ source:"https://wbasket.org/druga-zenska-liga-srbije-sa-9-klubova/",verifiedAt:"2026-11-28",confidence:"Published nine-club season list corroborated by federation-attributed current fixture records",
+ clubs:[["Karaburma Women","KK Karaburma"],["Novi Pazar Women","ŽKK Novi Pazar"],["Plej of Užice Women","ŽKK Play off"],["Proleter Novi Sad Women","ŽKK Proleter"],["Rudar 1903 Women","KK Rudar 1903"],["Sloga Požega Women","KK Sloga"],["SPD Radnički Kragujevac Women","ŽKK SPD Radnički"],["Srbobran Women","KK Srbobran"],["Zlatar Nova Varoš Women","ŽKK Zlatar"]].map(([name,...aliases])=>({name,country:"Serbia",aliases}))
 }];
 const normalized=(v:string|null)=> (v||"").normalize("NFKD").replace(/\p{M}/gu,"").toLocaleLowerCase("en").replace(/[^\p{L}\p{N}]+/gu,"");
 const identityKey=(row:DirectoryIdentity)=>[normalized(row.country),row.basketball_type,normalized(row.name)].join(":");
