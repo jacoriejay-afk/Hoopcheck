@@ -29,7 +29,7 @@ export async function readLeagueClubs(client: SupabaseClient, leagueId: string, 
   try {
     let currentSeason: string | null = null;
     if (!season) {
-      const league = await client.from("leagues").select("season").eq("id", leagueId).maybeSingle().abortSignal(controller.signal);
+      const league = await client.from("leagues").select("season").eq("id", leagueId).abortSignal(controller.signal).maybeSingle();
       if (league.error || !league.data || controller.signal.aborted) throw Error("League clubs could not load. Try again.");
       currentSeason = typeof league.data.season === "string" && league.data.season.trim() ? league.data.season : null;
     }
