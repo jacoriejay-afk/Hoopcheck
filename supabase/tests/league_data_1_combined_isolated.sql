@@ -233,6 +233,43 @@ insert into pg_temp.ld1_teams(id,name,country,league_id,league_name,basketball_t
 ('d6651191-c56d-4d60-ac30-cc7b8a5edbfb','Raiffeisen Mattersburg Rocks','Austria','551948e7-410a-4cab-b39f-feb5ff10cf6d','Basketball Zweite Liga','mens',true),
 ('e02748c0-22b9-443c-9eed-dfb2cfe0e8b7','Raiffeisen Swans Gmunden','Austria','ea2c29f1-229b-478b-9df3-ac25e0ce76e5','Basketball Superliga','mens',true),
 ('e867479f-71a5-4bdd-81d8-35b2da7b1e88','Union Deutsch Wagram Alligators','Austria','551948e7-410a-4cab-b39f-feb5ff10cf6d','Basketball Zweite Liga','mens',true);
+insert into pg_temp.ld1_teams(id,name,country,league_id,league_name,basketball_type,active) values
+('00569c78-42e1-4640-9eda-74e475e2f6d0','Treviglio Brianza Basket','Italy',null,'Serie B Nazionale','mens',true),
+('057cdd3d-ae06-4bdc-81cb-d5cc546faff4','Ristopro Fabriano','Italy',null,'Serie B Nazionale','mens',true),
+('060b9cc6-ee4f-49de-9f52-041b1659bf58','Andrea Costa Imola','Italy',null,'Serie B Nazionale','mens',true),
+('10003fcd-48bd-4727-892d-3d0365323619','Logiman Orzinuovi','Italy',null,'Serie B Nazionale','mens',true),
+('143cc422-e4ca-42d6-8695-c3dcc9b04d0d','Luiss Roma','Italy',null,'Serie B Nazionale','mens',true),
+('16480fe4-f14c-47bf-b9b5-19efd257c425','Infodrive Capo d''Orlando','Italy',null,'Serie B Nazionale','mens',true),
+('26eee4ff-0e9a-4547-ac32-4951ef08d573','Siaz Basket Piazza Armerina','Italy',null,'Serie B Nazionale','mens',true),
+('2c738e6d-bcb5-4faf-95f5-eb9c32eccbb3','Benacquista Latina','Italy',null,'Serie B Nazionale','mens',true),
+('36ca461a-6a29-4a1c-a4b3-5ebbb3eb2115','Dany Quarrata','Italy',null,'Serie B Nazionale','mens',true),
+('38680007-e2df-4558-b585-139d0b74411b','Umana San Giobbe Chiusi','Italy',null,'Serie B Nazionale','mens',true),
+('5512c9ac-a50a-4436-b5e7-961036407aea','Luxarm Lumezzane','Italy',null,'Serie B Nazionale','mens',true),
+('556ba16a-9851-419d-8cee-507d8a98d9ca','Tema Sinergie Faenza','Italy',null,'Serie B Nazionale','mens',true),
+('55ac1cf3-4c31-4815-9bfe-9d71af5f4825','Pallacanestro Viola Reggio Calabria','Italy',null,'Serie B Nazionale','mens',true),
+('61461ba4-8fc9-4ea7-9f48-c13b545d5e27','Fiorenzuola Bees','Italy',null,'Serie B Nazionale','mens',true),
+('64362e1c-0e9a-4c8e-82c9-840a3cf996ec','Moncada Energy Agrigento','Italy',null,'Serie B Nazionale','mens',true),
+('935019ac-5117-4e73-954d-3a6bb7ca9114','Legnano Knights','Italy',null,'Serie B Nazionale','mens',true),
+('a138f18a-187b-479b-908e-9eaf8294781b','Cestistica San Severo','Italy',null,'Serie B Nazionale','mens',true),
+('a31ba911-1405-4d8a-812d-e5b1564b2cc5','A2A Leonessa Brescia','Italy',null,'Serie B Nazionale','mens',true),
+('a3d3c1af-7228-47f5-8f04-cdae1b065162','S4 Energia Vicenza','Italy',null,'Serie B Nazionale','mens',true),
+('a686d321-cea1-446b-af07-011cd4794487','Basketball Club Lucca','Italy',null,'Serie B Nazionale','mens',true),
+('a8b6edfb-ec57-4ff1-9d7f-14052b98fbc6','Adamant Ferrara','Italy',null,'Serie B Nazionale','mens',true),
+('ac2414b7-d25b-49e2-b15e-9ed1e853081e','UCC Assigeco Piacenza','Italy',null,'Serie B Nazionale','mens',true),
+('b8082ede-fabd-4e17-8500-e2150ac9e1bf','Rucker San Vendemiano','Italy',null,'Serie B Nazionale','mens',true),
+('bab7adaa-8115-46df-968f-37ef5679fa01','Rimadesio Desio','Italy',null,'Serie B Nazionale','mens',true),
+('c2e540ff-9baf-411c-b98c-f10f00dbeb1e','Virtus Roma 1960','Italy',null,'Serie B Nazionale','mens',true),
+('c3f57f90-7df3-4bde-a730-21a1a5199244','Pielle Livorno','Italy',null,'Serie B Nazionale','mens',true),
+('c71045f7-7275-4a7a-a400-9467eab96a79','Fabo Herons Montecatini','Italy',null,'Serie B Nazionale','mens',true),
+('cc5a330a-30b5-4a2e-a84a-f2cc0a7a37e1','Fulgor Basket Omegna','Italy',null,'Serie B Nazionale','mens',true),
+('df9a2b9a-0746-4ea8-b09d-da190e9411db','Loreto Pesaro','Italy',null,'Serie B Nazionale','mens',true),
+('e0113861-fa41-4c4c-a815-bb9ee4e9c319','Solbat Golfo Piombino','Italy',null,'Serie B Nazionale','mens',true),
+('e28fa35d-bb54-4ede-b736-2ded1593b039','OraSì Ravenna','Italy',null,'Serie B Nazionale','mens',true),
+('e5dd37ac-df02-4f05-a0fa-cc3c933b4b3a','Liofilchem Roseto','Italy',null,'Serie B Nazionale','mens',true),
+('ec3a7bab-2047-48b8-a832-d412790f5de3','Mens Sana Basketball Siena','Italy',null,'Serie B Nazionale','mens',true),
+('ed22da58-ada3-44e4-8c5d-6f83b0b6df1d','Sangiorgese Basket','Italy',null,'Serie B Nazionale','mens',true),
+('ed45e3f5-b33f-48ad-98ce-ab15274ec538','Felice Scandone Avellino','Italy',null,'Serie B Nazionale','mens',true),
+('f3da7305-9f68-46a7-ada3-dbc7d65e6947','PSA Napoli Est','Italy',null,'Serie B Nazionale','mens',true);
 create temporary table before_ld1_leagues on commit drop as select * from pg_temp.ld1_leagues;
 create temporary table before_ld1_teams on commit drop as select * from pg_temp.ld1_teams;
 create temporary table before_ld1_memberships on commit drop as select * from pg_temp.ld1_memberships;
@@ -247,6 +284,7 @@ create temporary table before_ld1_legacy_teams on commit drop as select * from p
 \ir ../../reports/league-data-1/euroleague-shadow-memberships.sql
 \ir ../../reports/league-data-1/finland-poland-shadow-memberships.sql
 \ir ../../reports/league-data-1/austria-shadow-memberships.sql
+\ir ../../reports/league-data-1/italy-serie-b-shadow-correction.sql
 create temporary table after_ld1_leagues on commit drop as select * from pg_temp.ld1_leagues;
 create temporary table after_ld1_teams on commit drop as select * from pg_temp.ld1_teams;
 create temporary table after_ld1_memberships on commit drop as select * from pg_temp.ld1_memberships;
@@ -261,14 +299,15 @@ create temporary table after_ld1_legacy_teams on commit drop as select * from pg
 \ir ../../reports/league-data-1/euroleague-shadow-memberships.sql
 \ir ../../reports/league-data-1/finland-poland-shadow-memberships.sql
 \ir ../../reports/league-data-1/austria-shadow-memberships.sql
+\ir ../../reports/league-data-1/italy-serie-b-shadow-correction.sql
 do $combined$ begin
-if (select count(*) from pg_temp.ld1_leagues)<>(select count(*)+5 from pg_temp.before_ld1_leagues) then raise exception 'ld1_leagues: unexpected delta';end if;
+if (select count(*) from pg_temp.ld1_leagues)<>(select count(*)+6 from pg_temp.before_ld1_leagues) then raise exception 'ld1_leagues: unexpected delta';end if;
 if exists(select * from pg_temp.after_ld1_leagues except select * from pg_temp.ld1_leagues) or exists(select * from pg_temp.ld1_leagues except select * from pg_temp.after_ld1_leagues) then raise exception 'ld1_leagues: second run changed state';end if;
 if exists(select id from pg_temp.before_ld1_leagues except select id from pg_temp.ld1_leagues) then raise exception 'ld1_leagues: lost existing ID';end if;
 if (select count(*) from pg_temp.ld1_teams)<>(select count(*)+22 from pg_temp.before_ld1_teams) then raise exception 'ld1_teams: unexpected delta';end if;
 if exists(select * from pg_temp.after_ld1_teams except select * from pg_temp.ld1_teams) or exists(select * from pg_temp.ld1_teams except select * from pg_temp.after_ld1_teams) then raise exception 'ld1_teams: second run changed state';end if;
 if exists(select id from pg_temp.before_ld1_teams except select id from pg_temp.ld1_teams) then raise exception 'ld1_teams: lost existing ID';end if;
-if (select count(*) from pg_temp.ld1_memberships)<>(select count(*)+148 from pg_temp.before_ld1_memberships) then raise exception 'ld1_memberships: unexpected delta';end if;
+if (select count(*) from pg_temp.ld1_memberships)<>(select count(*)+184 from pg_temp.before_ld1_memberships) then raise exception 'ld1_memberships: unexpected delta';end if;
 if exists(select * from pg_temp.after_ld1_memberships except select * from pg_temp.ld1_memberships) or exists(select * from pg_temp.ld1_memberships except select * from pg_temp.after_ld1_memberships) then raise exception 'ld1_memberships: second run changed state';end if;
 if exists(select id from pg_temp.before_ld1_memberships except select id from pg_temp.ld1_memberships) then raise exception 'ld1_memberships: lost existing ID';end if;
 if (select count(*) from pg_temp.ld1_legacy_leagues)<>(select count(*)+1 from pg_temp.before_ld1_legacy_leagues) then raise exception 'ld1_legacy_leagues: unexpected delta';end if;
@@ -281,7 +320,7 @@ if exists(select 1 from pg_temp.before_ld1_leagues b join pg_temp.ld1_leagues a 
 if exists(select * from pg_temp.before_ld1_memberships except select * from pg_temp.ld1_memberships) then raise exception 'ld1_memberships: existing record changed';end if;
 if exists(select * from pg_temp.before_ld1_legacy_leagues except select * from pg_temp.ld1_legacy_leagues) then raise exception 'ld1_legacy_leagues: existing record changed';end if;
 if exists(select * from pg_temp.before_ld1_legacy_teams except select * from pg_temp.ld1_legacy_teams) then raise exception 'ld1_legacy_teams: existing record changed';end if;
-if (select count(*) from (select * from pg_temp.before_ld1_teams except select * from pg_temp.ld1_teams) q)<>6 then raise exception 'unexpected existing team changes';end if;
+if (select count(*) from (select * from pg_temp.before_ld1_teams except select * from pg_temp.ld1_teams) q)<>42 then raise exception 'unexpected existing team changes';end if;
 if exists(select 1 from pg_temp.before_ld1_teams b join pg_temp.ld1_teams a using(id) where (b.name,b.country,b.basketball_type,b.active) is distinct from (a.name,a.country,a.basketball_type,a.active)) then raise exception 'team identity altered';end if;
 end $combined$;
 select 'PASS: combined league data correction, twice applied, original identities and historical records preserved' result;
