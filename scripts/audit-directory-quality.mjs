@@ -34,7 +34,7 @@ try{
   const rosterDiscrepancies=quality.coverage.filter(row=>row.evidence&&(row.missing.length||row.unexpected.length||row.ambiguous.length||row.actual!==row.expected));
   const {coverage,...counts}=quality;
   console.log(JSON.stringify({counts,rosterDiscrepancies,changedSameSeasonCounts:changes,unverifiedLeagueSeasons:coverage.length-quality.verifiedLeagueCount,scope:"Active canonical directory only; remote logo health, licenses, sync status and unverified seasons are not certified by this offline check."},null,2));
-  if(strict&&(quality.unlinked||quality.duplicateTeamGroups||quality.duplicateLeagueGroups||quality.missingSeason||quality.missingTeamLogos||quality.missingLeagueLogos||quality.invalidLogoURLs||quality.countryAliasWarnings.length||rosterDiscrepancies.length||changes.length))process.exitCode=1;
+  if(strict&&(quality.unlinked||quality.duplicateTeamGroups||quality.duplicateLeagueGroups||quality.missingSeason||quality.missingTeamLogos||quality.missingLeagueLogos||quality.invalidLogoURLs||quality.countryAliasWarnings.length||quality.missingReviewedCompetitions.length||rosterDiscrepancies.length||changes.length))process.exitCode=1;
 }catch(error){
   console.error(error instanceof Error?error.message:"Invalid directory audit");process.exitCode=2;
 }
