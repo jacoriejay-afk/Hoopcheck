@@ -5,6 +5,7 @@ import HoopChatSafety from "./HoopChatSafety";
 import {useCallback,useEffect,useMemo,useRef,useState,type FormEvent,type UIEvent} from "react";
 import Link from "next/link";
 import {supabase} from "../lib/supabase";
+import {createChatRefreshCoordinator} from "../apps/mobile/src/native/hoopChatRefresh";
 import {withHoopChatDeadline} from "../apps/mobile/src/native/hoopChatLoad";
 import {
   appendConversationPage,CHAT_HISTORY_PAGE_SIZE,readConversationPage,refreshConversationPage
@@ -260,17 +261,6 @@ export default function HoopChatCourtside(){
     }
   },[]);
   useEffect(()=>{
-    if(!userId)return;
-    const onFocus=()=>{
-      if(document.visibilityState!=="visible")return;
-      void load(true);
-      if(selectedId&&historyScope)void loadHistory(userId,selectedId,undefined,true);
-    };
-    const timer=window.setInterval(onFocus,25000);
-    window.addEventListener("focus",onFocus);
-    return()=>{window.clearInterval(timer);window.removeEventListener("focus",onFocus);};
-  },[historyScope,load,loadHistory,selectedId,userId]);
-  useEffect(()=>{
     activeHistoryScope.current=historyScope;
     setHistoryPage(null);setHistoryError(null);setHistoryBusy(null);
     if(userId&&selectedId&&historyScope)void loadHistory(userId,selectedId);
@@ -281,18 +271,22 @@ export default function HoopChatCourtside(){
     };
   },[historyScope,loadHistory,selectedId,userId]);
   useEffect(()=>{
-    if(!userId||!selectedId||selectedStatus!=="accepted")return;
+    if(!userId)return;
     const rev=accountGeneration.current;
-    const channel=supabase.channel("courtside-thread-"+userId+"-"+selectedId)
-
-      .on("postgres_changes",{event:"INSERT",schema:"public",table:"player_contact_messages",filter:"request_id=eq."+selectedId},()=>{
-        if(rev===accountGeneration.current){
-          void loadHistory(userId,selectedId,undefined,true);
-          void load(true);
-        }
-      }).subscribe();
-    return()=>{void supabase.removeChannel(channel);};
-  },[load,loadHistory,selectedId,selectedStatus,userId]);
+    let alive=true;
+    const active=()=>alive&&rev===accountGeneration.current&&userIdRef.current===userId&&document.visibilityState==="visible";
+    const queue=createChatRefreshCoordinator(active,()=>mutationGeneration.current===rev||inboxRequest.current!==null,()=>{
+      void load(true);
+      if(selectedId&&historyScope)void loadHistory(userId,selectedId,undefined,true);
+    });
+    const channel=selectedId&&selectedStatus==="accepted"?supabase.channel("courtside-thread-"+userId+"-"+selectedId)
+      .on("postgres_changes",{event:"INSERT",schema:"public",table:"player_contact_messages",filter:"request_id=eq."+selectedId},()=>queue.request())
+      .subscribe(status=>{if(status==="SUBSCRIBED"||status==="CHANNEL_ERROR"||status==="TIMED_OUT"||status==="CLOSED")queue.request();}):null;
+    const visible=()=>{if(document.visibilityState==="visible")queue.request();else queue.suspend();};
+    const timer=window.setInterval(queue.request,25000);
+    window.addEventListener("focus",queue.request);window.addEventListener("online",queue.request);document.addEventListener("visibilitychange",visible);
+    return()=>{alive=false;queue.dispose();window.clearInterval(timer);window.removeEventListener("focus",queue.request);window.removeEventListener("online",queue.request);document.removeEventListener("visibilitychange",visible);if(channel)void supabase.removeChannel(channel);};
+  },[load,loadHistory,historyScope,selectedId,selectedStatus,userId]);
 
   const latest=useMemo(()=>lastByThread(messages),[messages]);
   const ordered=useMemo(()=>sortThreads(requests,latest,prefs.pinned),[requests,latest,prefs.pinned]);

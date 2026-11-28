@@ -16,6 +16,7 @@ import { HoopCheckLoading } from "../components/HoopCheckLoading";
 import { useEntryTheme } from "../src/theme";
 import { supabase } from "../src/lib/supabase";
 import { requireOnline, useNetwork } from "../src/native/network";
+import {createChatRefreshCoordinator} from "../src/native/hoopChatRefresh";
 import { hoopChatAuthAction, withHoopChatDeadline } from "../src/native/hoopChatLoad";
 import { appendConversationPage, CHAT_HISTORY_PAGE_SIZE, matchesConversationSearch, readConversationPage, refreshConversationPage, type ContactMessage } from "../src/native/hoopChatHistory";
 import {nativeChatOutbox} from "../src/native/hoopChatOutbox";
@@ -90,9 +91,12 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
   const focused = useRef(false);
   const reloadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const load = useCallback(async () => {
+  const inboxLoading=useRef(false);
+  const load = useCallback(async (background=false) => {
+    if(background&&(mutationLocked.current||inboxLoading.current))return;
     const revision = ++generation.current;
-    setLoading(true); setError("");
+    inboxLoading.current=true;
+    if(!background){setLoading(true); setError("");}
     try {
       // Auth and request fetches can stall independently. Only the winning,
       // still-current generation is allowed to update the message screen.
@@ -138,7 +142,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
     } catch (failure) {
       if (revision === generation.current) { setRequests([]);setMessages([]);setContacts({});setOpenedId("");setThreadPage(null);setServerUnread(null);setAllUnread(null);setNextCursor(null);setError(failure instanceof Error ? failure.message : "Unable to load messages."); }
     } finally {
-      if (revision === generation.current) setLoading(false);
+      if (revision === generation.current) {inboxLoading.current=false;setLoading(false);}
     }
   }, [threadHint,mode]);
 
@@ -149,7 +153,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       focused.current = false;consumedLink.current=null;
       if (reloadTimer.current !== null) clearTimeout(reloadTimer.current);
       reloadTimer.current = null;
-      generation.current++;
+      generation.current++;inboxLoading.current=false;
       setServerUnread(null);inboxPages.current=1;setInboxMore(false);setInboxLimit(false);serverQuery.current="";setAppliedServerQuery("");cursorStack.current=[null];setNextCursor(null);setServerPage(1);setAllUnread(null);
       setRequests([]); setMessages([]); setContacts({}); setUserId(""); setSelectedId(""); setOpenedId(""); setSearch(""); setReplyTarget(null); setForwardSelection(null); setThreadPage(null); setThreadError(null); historyRequest.current++; historyPaging.current=false; setHistoryBusy(false);
     };
@@ -162,7 +166,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       if (action === "ignore") return;
       if (reloadTimer.current !== null) clearTimeout(reloadTimer.current);
       reloadTimer.current = null;
-      generation.current++;
+      generation.current++;inboxLoading.current=false;
       setServerUnread(null);
       authIdentity.current = nextUserId;consumedLink.current=null;inboxPages.current=1;setInboxMore(false);setInboxLimit(false);serverQuery.current="";setAppliedServerQuery("");cursorStack.current=[null];setNextCursor(null);setServerPage(1);setAllUnread(null);
       pendingMessages.current.clear();
@@ -272,23 +276,20 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
   },[threadScope,selectedRequestId,userId,loading,loadThread]);
 
   useEffect(() => {
-    if (!threadScope || !selectedRequestId) return;
-    const refresh = () => {
-      if (focused.current && authIdentity.current === userId && (AppState.currentState === "active" || AppState.currentState === null)) {
-        void loadThread(threadScope, selectedRequestId, userId, undefined, true);
-      }
-    };
-    const channel = supabase.channel(`native-hoopchat:${selectedRequestId}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "player_contact_messages", filter: `request_id=eq.${selectedRequestId}` }, refresh)
-      .subscribe();
-    const timer = setInterval(refresh, 25_000);
-    const appState = AppState.addEventListener("change", state => { if (state === "active") refresh(); });
-    return () => {
-      clearInterval(timer);
-      appState.remove();
-      void supabase.removeChannel(channel);
-    };
-  }, [threadScope, selectedRequestId, userId, loadThread]);
+    if (!userId||offline) return;
+    let alive=true;
+    const active=()=>alive&&focused.current&&authIdentity.current===userId&&(AppState.currentState==="active"||AppState.currentState===null);
+    const queue=createChatRefreshCoordinator(active,()=>mutationLocked.current||inboxLoading.current,()=>{
+      void load(true).then(()=>{if(active()&&!mutationLocked.current&&threadScope&&selectedRequestId)void loadThread(threadScope,selectedRequestId,userId,undefined,true);});
+    });
+    const channel=threadScope&&selectedRequestId?supabase.channel(`native-hoopchat:${selectedRequestId}`)
+      .on("postgres_changes",{event:"INSERT",schema:"public",table:"player_contact_messages",filter:`request_id=eq.${selectedRequestId}`},()=>queue.request())
+      .subscribe(status=>{if(status==="SUBSCRIBED"||status==="CHANNEL_ERROR"||status==="TIMED_OUT"||status==="CLOSED")queue.request();}):null;
+    const timer=setInterval(queue.request,25_000);
+    const appState=AppState.addEventListener("change",state=>{if(state==="active")queue.request();else queue.suspend();});
+    queue.request();
+    return()=>{alive=false;queue.dispose();clearInterval(timer);appState.remove();if(channel)void supabase.removeChannel(channel);};
+  },[threadScope,selectedRequestId,userId,offline,load,loadThread]);
 
   async function markRead() {
     if (!syncReadMarkers || !latestIncoming || !threadScope || offline || mutationLocked.current) return;
@@ -331,15 +332,17 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
     const actionGeneration = generation.current;
     setSending(true);setError("");
     try {
-      await requireOnline();
-      const {data:{user}}=await supabase.auth.getUser();
-      if(user?.id!==userId || actionGeneration!==generation.current || !focused.current)throw new Error("Your session changed.");
-      const header=await withHoopChatDeadline(signal=>verifyChatPeer(userId,peerId(selected),signal));
-      if(actionGeneration!==generation.current||!focused.current)throw Error("Your session changed.");
-      const {data:updated,error:updateError}=await supabase.from("player_contact_requests")
-        .update({status,responded_at:new Date().toISOString()})
-        .eq("id",selected.id).eq("player_id",userId).eq("status","pending").setHeader("Authorization",header).select("id");
-      if(updateError||!updated?.length)throw new Error("Could not update the request.");
+      await withHoopChatDeadline(async signal=>{
+        await requireOnline();
+        const {data:{user}}=await supabase.auth.getUser();
+        if(signal.aborted||user?.id!==userId || actionGeneration!==generation.current || !focused.current)throw new Error("Your session changed.");
+        const header=await verifyChatPeer(userId,peerId(selected),signal);
+        if(signal.aborted||actionGeneration!==generation.current||!focused.current)throw Error("Your session changed.");
+        const {data:updated,error:updateError}=await supabase.from("player_contact_requests")
+          .update({status,responded_at:new Date().toISOString()})
+          .eq("id",selected.id).eq("player_id",userId).eq("status","pending").setHeader("Authorization",header).select("id").abortSignal(signal);
+        if(signal.aborted||updateError||!updated?.length)throw new Error("Could not confirm the request update. Refresh before retrying.");
+      });
       if(actionGeneration===generation.current && focused.current) await load();
     }catch(failure){if(actionGeneration===generation.current && focused.current)setError(failure instanceof Error?failure.message:"Unable to update request.");}
     finally{mutationLocked.current=false;setSending(false);}
@@ -351,6 +354,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
     try{
       const status=await withHoopChatDeadline(async signal=>{
         const header=await verifyChatPeer(userId,peerId(selected),signal);
+        if(signal.aborted||rev!==generation.current||authIdentity.current!==userId||!focused.current)throw Error("Conversation changed.");
         return nativeChatOutbox.status(supabase,userId,selected.id,header,signal,structuredReplies);
       });
       if(rev===generation.current&&focused.current){setError(chatDeliveryMessage(status));if(status==="delivered")await load();}

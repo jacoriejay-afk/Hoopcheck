@@ -48,7 +48,7 @@ test("HoopChat propagates genuine request errors and rejects invalid deadlines",
 test("The private HoopChat UI is generation guarded and aborts all PostgREST reads", () => {
   assert.match(screen, /withHoopChatDeadline\(async signal =>/);
   assert.match(screen, /if \(revision !== generation\.current\) return/);
-  assert.match(screen, /if \(revision === generation\.current\) setLoading\(false\)/);
+  assert.match(screen, /if \(revision === generation\.current\) \{inboxLoading\.current=false;setLoading\(false\);\}/);
   assert.match(screen, /hoopChatAuthAction\(event, authIdentity\.current, nextUserId\)/);
   assert.match(screen, /if \(action === "ignore"\) return/);
   assert.match(screen, /if \(action === "clear"\)/);
@@ -60,7 +60,7 @@ test("The private HoopChat UI is generation guarded and aborts all PostgREST rea
   assert.match(screen,/readChatInbox\(supabase,user\.id,header,signal,inboxPages\.current,blockedIds\)/);
   assert.match(screen,/readLinkedChatThread\(supabase,user\.id,threadHint,blockedIds,header,signal\)/);
   assert.match(inbox,/\.abortSignal\(signal\)/);assert.match(linked,/\.abortSignal\(signal\)/);
-  assert.equal((screen.match(/\.abortSignal\(signal\)/g) ?? []).length, 5,
+  assert.equal((screen.match(/\.abortSignal\(signal\)/g) ?? []).length, 6,
     "Inbox, history, profile labels, blocked list, target lookup and peer block check all support abort");
   for (const table of ["user_blocks", "player_contact_requests", "player_contact_messages", "profiles"]) {
     const reads = [...screen.matchAll(new RegExp('from\\("'+table+'"\\)\\s*\\.select[\\s\\S]*?(?:\\.abortSignal\\(signal\\)|;)', 'g'))];
@@ -71,4 +71,12 @@ test("The private HoopChat UI is generation guarded and aborts all PostgREST rea
 
 test("Native navigation names the previous dashboard screen Home", () => {
   assert.match(layout, /name="dashboard" options=\{\{ title: "Home", headerShown: false/);
+});
+
+test("background refresh is fenced by mutations and reconnects with scoped invalidation",()=>{
+ assert.match(screen,/if\(background&&\(mutationLocked\.current\|\|inboxLoading\.current\)\)return/);
+ assert.match(screen,/createChatRefreshCoordinator\(active,\(\)=>mutationLocked\.current\|\|inboxLoading\.current/);
+ assert.match(screen,/subscribe\(status=>\{if\(status==="SUBSCRIBED"/);
+ assert.match(screen,/queue\.dispose\(\)/);
+ assert.match(screen,/\.select\("id"\)\.abortSignal\(signal\)/);
 });
