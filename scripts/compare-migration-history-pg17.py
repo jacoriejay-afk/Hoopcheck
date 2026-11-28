@@ -32,33 +32,54 @@ def key(tree):
                                     ensure_ascii=False).encode()).hexdigest()
 
 def self_test(parser):
-    if not __debug__:
-        raise RuntimeError("Assertions must be enabled")
-    assert canonical(parser, "select 1;") == canonical(parser, "-- note\n SELECT 1")
-    assert canonical(parser, "select 1") != canonical(parser, "select 2")
-    assert canonical(parser, "select 'a'") != canonical(parser, "select 'b'")
-    assert canonical(parser, "select 'a'\n'b'") != canonical(parser, "select 'a'")
-    assert canonical(parser, "select 1; select 2") != canonical(parser, "select 2; select 1")
-    assert canonical(parser, "create function f() returns int language sql as $$select 1$$") != canonical(parser, "create function f() returns int language sql as $$select 2$$")
-    assert canonical(parser, "select 1") != canonical(parser, "select 1; select 1")
-    try:
-        canonical(parser, "select from where")
-    except Exception:
-        pass
-    else:
-        raise AssertionError("Invalid SQL accepted")
-    assert canonical(parser, "select 1 as location") != canonical(parser, "select 1 as stmt_location")
-    assert canonical(parser, "select 'location'") != canonical(parser, "select 'stmt_len'")
-    assert canonical(parser, "select 1 /* outer /* inner */ end */;") == canonical(parser, "select 1")
-    assert canonical(parser, "create function f() returns int language sql as $select 1$") == canonical(parser, "create function f() returns int language sql as $body$select 1$body$")
-    assert canonical(parser, "create function f() returns int language sql security definer as $select 1$") != canonical(parser, "create function f() returns int language sql security invoker as $select 1$")
-    for empty in ("", "-- comment only", ";"):
+    # Only hard-coded synthetic SQL is used here. Never print exception text,
+    # input SQL, paths, or ledger contents, even when a synthetic case fails.
+    cases = [
+        ("formatting", "equal", "select 1;", "-- note\n SELECT 1"),
+        ("numeric_literal", "different", "select 1", "select 2"),
+        ("string_literal", "different", "select 'a'", "select 'b'"),
+        ("newline_string_concatenation", "different", "select 'a'\n'b'", "select 'a'"),
+        ("statement_order", "different", "select 1; select 2", "select 2; select 1"),
+        ("function_body_literal", "different", "create function f() returns int language sql as $$select 1$$", "create function f() returns int language sql as $$select 2$$"),
+        ("duplicate_statement", "different", "select 1", "select 1; select 1"),
+        ("invalid_syntax", "syntax_error", "select from where", None),
+        ("alias_field_names", "different", "select 1 as location", "select 1 as stmt_location"),
+        ("literal_field_names", "different", "select 'location'", "select 'stmt_len'"),
+        ("nested_comments", "equal", "select 1 /* outer /* inner */ end */;", "select 1"),
+        ("dollar_quote_tags", "equal", "create function f() returns int language sql as $$select 1$$", "create function f() returns int language sql as $body$select 1$body$"),
+        ("function_security_mode", "different", "create function f() returns int language sql security definer as $$select 1$$", "create function f() returns int language sql security invoker as $$select 1$$"),
+        ("empty_sql", "empty_error", "", None),
+        ("comment_only", "empty_error", "-- comment only", None),
+        ("separator_only", "empty_error", ";", None),
+    ]
+    failed = 0
+    for name, mode, left, right in cases:
         try:
-            canonical(parser, empty)
-        except ValueError:
-            pass
+            if mode == "syntax_error":
+                try:
+                    canonical(parser, left)
+                except parser.ParseError:
+                    pass
+                else:
+                    raise AssertionError()
+            elif mode == "empty_error":
+                try:
+                    canonical(parser, left)
+                except ValueError:
+                    pass
+                else:
+                    raise AssertionError()
+            else:
+                equal = canonical(parser, left) == canonical(parser, right)
+                if equal != (mode == "equal"):
+                    raise AssertionError()
+        except Exception:
+            failed += 1
+            print("FAIL synthetic parser case: " + name, file=sys.stderr, flush=True)
         else:
-            raise AssertionError("Empty SQL accepted")
+            print("PASS synthetic parser case: " + name, flush=True)
+    if failed:
+        raise RuntimeError("Synthetic parser regression")
     print("16 PG17 parser self-tests passed; no replay authorization.")
 
 def main():
