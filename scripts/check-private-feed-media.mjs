@@ -161,6 +161,10 @@ test("HoopFeed signs nested reshares against the original uploader under viewer 
   assert.ok(expires_in >= 1 && expires_in <= 15);
   assert.equal(signed.at(-1).ttl, expires_in);
   const before = signed.length;
+  records.get(originalId).post_kind = "story";
+  assert.equal((await route.POST(request("allowed"))).status, 404);
+  assert.equal(signed.length, before);
+  records.get(originalId).post_kind = "discussion";
   for (const value of ["not-a-date", new Date(Date.now() - 1000).toISOString(), new Date(Date.now() + 1000).toISOString()]) {
     records.get(middleId).expires_at = value;
     assert.equal((await route.POST(request("allowed"))).status, 404);
