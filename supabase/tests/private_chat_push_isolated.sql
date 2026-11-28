@@ -36,6 +36,9 @@ DO $$BEGIN
  IF NOT public.my_chat_push_preference(true) THEN RAISE EXCEPTION 'Opt-in failed';END IF;
  IF NOT public.my_chat_push_device('44444444-4444-4444-8444-444444444444','ios','ExpoPushToken[fixture_token_123456789]') THEN RAISE EXCEPTION 'Registration failed';END IF;
  IF NOT public.my_chat_push_device('44444444-4444-4444-8444-444444444444','ios','ExpoPushToken[fixture_token_123456789]') THEN RAISE EXCEPTION 'Idempotent registration failed';END IF;
+ IF NOT public.my_chat_push_device('44444444-4444-4444-8444-444444444444','ios','ExpoPushToken['||repeat('a',256)||']') THEN RAISE EXCEPTION 'Maximum token length rejected';END IF;
+ BEGIN PERFORM public.my_chat_push_device('44444444-4444-4444-8444-444444444444','ios','ExpoPushToken['||repeat('a',257)||']');RAISE EXCEPTION 'Oversized token accepted';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
+ PERFORM public.my_chat_push_device('44444444-4444-4444-8444-444444444444','ios','ExpoPushToken[fixture_token_123456789]');
  BEGIN PERFORM public.claim_private_chat_push();RAISE EXCEPTION 'Client claimed queue';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
 END$$;
 SET request.jwt.claims='{"role":"authenticated","sub":"22222222-2222-4222-8222-222222222222","session_id":"a2222222-2222-4222-8222-222222222222"}';

@@ -41,7 +41,7 @@ test("Alerts keeps caller-only notification queries and clears private data at s
   assert.match(alerts, /hoopChatAuthAction\(event, owner\.current, session\?\.user\.id \?\? null\)/);
   assert.match(alerts, /if \(action === "ignore"\) return/);
   assert.match(alerts, /if \(action === "clear"\)/);
-  assert.match(alerts, /owner\.current = null; setRows\(\[\]\)/);
+  assert.match(alerts, /owner\.current = null;setPushPreference\(null\);setPushMessage\(""\);pushLock\.current=null;setPushBusy\(false\); setRows\(\[\]\)/);
   assert.match(alerts, /onPress=\{\(\) => void openNotice\(item\)\}/);
   assert.doesNotMatch(alerts, /onAuthStateChange\(\(\) =>/);
 });

@@ -17,7 +17,7 @@ CREATE TABLE hoopcheck_push_private.devices(
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),owner_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
  session_id uuid NOT NULL REFERENCES auth.sessions(id) ON DELETE CASCADE,installation_id uuid NOT NULL,
  platform text NOT NULL CHECK(platform IN ('ios','android')),
- token text NOT NULL UNIQUE CHECK(token ~ '^(ExpoPushToken|ExponentPushToken)\[[A-Za-z0-9_-]{16,256}\]$'),
+ token text NOT NULL UNIQUE CHECK(token ~ '^(ExpoPushToken|ExponentPushToken)\[[A-Za-z0-9_-]{16,255}[A-Za-z0-9_-]?\]$'),
  revision uuid NOT NULL DEFAULT gen_random_uuid(),updated_at timestamptz NOT NULL DEFAULT clock_timestamp(),
  UNIQUE(owner_id,installation_id)
 );
@@ -66,7 +66,7 @@ BEGIN
  IF p_revoke THEN DELETE FROM hoopcheck_push_private.devices WHERE owner_id=uid AND installation_id=p_installation AND session_id=sid;RETURN true;END IF;
  IF NOT EXISTS(SELECT FROM hoopcheck_push_private.config WHERE singleton AND enabled)
  OR NOT EXISTS(SELECT FROM hoopcheck_push_private.preferences WHERE owner_id=uid AND chat_enabled)
- OR p_platform IS NULL OR p_platform NOT IN ('ios','android') OR p_token IS NULL OR p_token !~ '^(ExpoPushToken|ExponentPushToken)\[[A-Za-z0-9_-]{16,256}\]$'
+ OR p_platform IS NULL OR p_platform NOT IN ('ios','android') OR p_token IS NULL OR p_token !~ '^(ExpoPushToken|ExponentPushToken)\[[A-Za-z0-9_-]{16,255}[A-Za-z0-9_-]?\]$'
  THEN RAISE EXCEPTION 'Push registration unavailable' USING ERRCODE='42501';END IF;
  -- No account can claim another active registration. On logout, revoke
  -- first; a deleted Auth session also removes its devices and queue.

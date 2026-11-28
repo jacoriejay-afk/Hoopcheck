@@ -18,7 +18,7 @@ const pushEnabled=process.env.NEXT_PUBLIC_HOOPCHECK_CHAT_PUSH_PREFERENCES_ENABLE
 export default function NotificationsPage(){
   const [items,setItems]=useState<Notice[]>([]);
   const [pushPreference,setPushPreference]=useState<boolean|null>(null),[pushBusy,setPushBusy]=useState(false),[pushMessage,setPushMessage]=useState("");
-  const pushLock=useRef(false);
+  const pushLock=useRef<number|null>(null);
 
   const generation=useRef(0),owner=useRef<string|null>(null),locked=useRef(false);
   const [loading,setLoading]=useState(true);
@@ -34,10 +34,10 @@ export default function NotificationsPage(){
   useEffect(()=>{if(new URLSearchParams(window.location.search).get("tab")==="messages")setSection("messages");},[]);
   useEffect(()=>{
     let timer:ReturnType<typeof setTimeout>|undefined;
-    const clear=()=>{generation.current++;owner.current=null;setPushPreference(null);setPushMessage("");locked.current=false;setItems([]);setQuery("");setFilter("all");setHasMore(false);setLoadingOlder(false);setMarking(false);};
+    const clear=()=>{generation.current++;owner.current=null;setPushPreference(null);setPushMessage("");pushLock.current=null;setPushBusy(false);locked.current=false;setItems([]);setQuery("");setFilter("all");setHasMore(false);setLoadingOlder(false);setMarking(false);};
     async function loadAlerts(){
       const rev=++generation.current;
-      owner.current=null;setPushPreference(null);setPushMessage("");locked.current=false;setMarking(false);setLoading(true);setErrorMessage("");setLoadFailed(false);setItems([]);setHasMore(false);setLoadingOlder(false);
+      owner.current=null;setPushPreference(null);setPushMessage("");pushLock.current=null;setPushBusy(false);locked.current=false;setMarking(false);setLoading(true);setErrorMessage("");setLoadFailed(false);setItems([]);setHasMore(false);setLoadingOlder(false);
       try{
         const result=await withAlertDeadline(async signal=>{
           const scope=await verifiedAlertSession(supabase,signal);
@@ -93,14 +93,14 @@ export default function NotificationsPage(){
   }
   async function updatePush(enabled:boolean|null){
     const uid=owner.current,rev=generation.current;
-    if(!pushEnabled||!uid||pushLock.current)return;
-    pushLock.current=true;setPushBusy(true);setPushMessage("");
+    if(!pushEnabled||!uid||pushLock.current===rev)return;
+    pushLock.current=rev;setPushBusy(true);setPushMessage("");
     try{
       const value=await withAlertDeadline(signal=>readChatPushPreference(supabase,uid,enabled,signal));
       if(rev!==generation.current||owner.current!==uid)return;
       setPushPreference(value);setPushMessage(enabled===null?"Preference checked.":value?"Preference saved. Device registration and provider acceptance are required for delivery.":"Push disabled and registered devices revoked.");
     }catch{if(rev===generation.current&&owner.current===uid){setPushPreference(null);setPushMessage("Push preference could not be verified.");}}
-    finally{pushLock.current=false;setPushBusy(false);}
+    finally{if(pushLock.current===rev){pushLock.current=null;if(rev===generation.current) setPushBusy(false);}}
   }
   const unreadCount=items.filter(n=>!n.read_at).length;
   const searched=items.filter(n=>matchesAlertSearch(n,query));

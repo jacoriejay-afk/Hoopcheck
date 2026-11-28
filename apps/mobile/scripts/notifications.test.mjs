@@ -111,7 +111,18 @@ test("shared alert pages deduplicate overlapping IDs and stop when the cursor ca
 
 test("old alert completions cannot unlock a new account's operation",()=>{
  const web=readFileSync(new URL('../../../app/notifications/page.tsx',import.meta.url),'utf8');
- assert.match(web,/owner\.current=null;locked\.current=false/);
+ assert.match(web,/owner\.current=null;setPushPreference\(null\);setPushMessage\(""\);pushLock\.current=null;setPushBusy\(false\);locked\.current=false/);
  assert.match(web,/finally\{if\(rev===generation\.current\)\{locked\.current=false;setLoadingOlder\(false\);\}\}/);
  assert.match(web,/finally\{if\(rev===generation\.current\)\{locked\.current=false;setMarking\(false\);\}\}/);
+});
+
+test("push preferences reset at account changes and stale requests cannot unlock current UI",()=>{
+ for(const file of ["../../../app/notifications/page.tsx","../app/notifications.tsx"]){
+ const screen=readFileSync(new URL(file,import.meta.url),"utf8");
+ assert.match(screen,/const pushLock=useRef<number\|null>\(null\)/);
+ assert.match(screen,/pushLock\.current===rev\)return/);
+ assert.match(screen,/pushLock\.current=rev;setPushBusy\(true\)/);
+ assert.match(screen,/finally\{if\(pushLock\.current===rev\)\{pushLock\.current=null;if\(rev===generation\.current\) setPushBusy\(false\);\}\}/);
+ assert.match(screen,/setPushPreference\(null\);setPushMessage\(""\);pushLock\.current=null;setPushBusy\(false\)/);
+ }
 });

@@ -31,7 +31,7 @@ export default function Notifications() {
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [rows, setRows] = useState<Notice[]>([]);
   const [pushPreference,setPushPreference]=useState<boolean|null>(null),[pushBusy,setPushBusy]=useState(false),[pushMessage,setPushMessage]=useState("");
-  const pushLock=useRef(false);
+  const pushLock=useRef<number|null>(null);
 
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -47,7 +47,7 @@ export default function Notifications() {
   }, [tab]);
   const load = useCallback(async () => {
     const current = ++generation.current;
-    owner.current = null;setPushPreference(null);setPushMessage(""); paging.current = false; marking.current=false;setBusy(false);setLoadingOlder(false); setHasMore(false); setRows([]); setLoading(true); setError(""); setFailed(false);
+    owner.current = null;setPushPreference(null);setPushMessage("");pushLock.current=null;setPushBusy(false); paging.current = false; marking.current=false;setBusy(false);setLoadingOlder(false); setHasMore(false); setRows([]); setLoading(true); setError(""); setFailed(false);
     try {
       if (offline) throw new Error("Reconnect to view alerts.");
       await requireOnline();
@@ -66,14 +66,14 @@ export default function Notifications() {
   }, [offline]);
   useFocusEffect(useCallback(() => {
     focused.current = true; void load();
-    return () => { focused.current = false; generation.current++; owner.current = null;setPushPreference(null);setPushMessage(""); setRows([]); marking.current=false;paging.current=false;setBusy(false);setLoadingOlder(false); setQuery(""); setFilter("all"); };
+    return () => { focused.current = false; generation.current++; owner.current = null;setPushPreference(null);setPushMessage("");pushLock.current=null;setPushBusy(false); setRows([]); marking.current=false;paging.current=false;setBusy(false);setLoadingOlder(false); setQuery(""); setFilter("all"); };
   }, [load]));
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       const action = hoopChatAuthAction(event, owner.current, session?.user.id ?? null);
       if (action === "ignore") return;
-      generation.current++; owner.current = null;setPushPreference(null);setPushMessage(""); setRows([]); marking.current=false;paging.current=false;setBusy(false);setLoadingOlder(false); setQuery(""); setFilter("all");
+      generation.current++; owner.current = null;setPushPreference(null);setPushMessage("");pushLock.current=null;setPushBusy(false); setRows([]); marking.current=false;paging.current=false;setBusy(false);setLoadingOlder(false); setQuery(""); setFilter("all");
       clearTimeout(timer);
       if (action === "clear") {
         setLoading(false); setFailed(true); setError("Sign in to view your alerts.");
@@ -145,14 +145,14 @@ export default function Notifications() {
   }
   async function updatePush(enabled:boolean|null){
     const uid=owner.current,rev=generation.current;
-    if(!pushEnabled||offline||!uid||pushLock.current)return;
-    pushLock.current=true;setPushBusy(true);setPushMessage("");
+    if(!pushEnabled||offline||!uid||pushLock.current===rev)return;
+    pushLock.current=rev;setPushBusy(true);setPushMessage("");
     try{
       const value=await withAlertDeadline(signal=>readChatPushPreference(supabase,uid,enabled,signal));
       if(rev!==generation.current||owner.current!==uid||!focused.current)return;
       setPushPreference(value);setPushMessage(enabled===null?"Preference checked.":value?"Preference saved. Device registration and provider acceptance are required for delivery.":"Push disabled and registered devices revoked.");
     }catch{if(rev===generation.current&&owner.current===uid){setPushPreference(null);setPushMessage("Push preference could not be verified.");}}
-    finally{pushLock.current=false;setPushBusy(false);}
+    finally{if(pushLock.current===rev){pushLock.current=null;if(rev===generation.current) setPushBusy(false);}}
   }
   const items = offline ? [] : rows;
   const visibleItems = items.filter(item => noticeMatches(item, filter) && noticeSearchMatches(item, query));
