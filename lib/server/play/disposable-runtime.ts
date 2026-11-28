@@ -38,12 +38,12 @@ export function createDisposablePlayRuntime(p:{
  return {
   intent:(request:Request,action:"issue"|"consume")=>playIntentRequest(request,action,intentPorts),
   async notificationVerify(owner:string,token:string):Promise<Awaited<ReturnType<Provider["verifyRuntime"]>>>{
-   if(!p.enabled()||await p.db.ownerHeld(owner))return {state:"invalid"};
+   if(!p.enabled()||await p.db.ownerHeld(owner))return {state:"invalid",lifecycle:null};
    const fingerprint=(t:string)=>p.vault.fingerprint(t,"test"),current=await p.db.lookup(fingerprint(token));
-   if(!current||current.owner!==owner)return {state:"invalid"};
+   if(!current||current.owner!==owner)return {state:"invalid",lifecycle:null};
    const v=await p.provider.verifyRuntime(owner,token,fingerprint);
    if(v.state==="inactive")return v;
-   if(!p.enabled()||await p.db.ownerHeld(owner)||!await p.db.replacementMatches(current,v.previousFingerprint??null))return {state:"unsupported"};
+   if(!p.enabled()||await p.db.ownerHeld(owner)||!await p.db.replacementMatches(current,v.previousFingerprint??null))return {state:"unsupported",lifecycle:null};
    return v;
   },
   async identity(request:Request){try{const s=await auth(request);return s?{owner:s.owner,accountId:accountId(s.owner),environment:"test"}:null;}catch{return null;}},
@@ -58,8 +58,8 @@ export function createDisposablePlayRuntime(p:{
     if(!product)return null;
     const current=async()=>same(s,await auth(request));
     const previous=first.previousFingerprint;
-    const verify=async(o:string,t:string):Promise<Awaited<ReturnType<Provider["verifyRuntime"]>>>=>{const v=await p.provider.verifyRuntime(o,t,fingerprint);return v.previousFingerprint===previous?v:{state:"unsupported" as const};};
-    const fulfill=(c:Receipt|{owner:string;fingerprint:string;productId:string;basePlanId:string},g:number,state:string,expiry:string)=>previous?p.db.fulfillReplacement(c,g,state,expiry,previous):p.db.fulfill(c,g,state,expiry);
+    const verify=async(o:string,t:string):Promise<Awaited<ReturnType<Provider["verifyRuntime"]>>>=>{const v=await p.provider.verifyRuntime(o,t,fingerprint);return v.previousFingerprint===previous?v:{state:"unsupported" as const,lifecycle:null};};
+    const fulfill=(c:Receipt|{owner:string;fingerprint:string;productId:string;basePlanId:string},g:number,state:string,expiry:string,lifecycle:import("../../billing/play-subscription").PlayLifecycle|null)=>p.db.recordLifecycle(c,g,state,expiry,lifecycle,previous??null,"fulfill");
     const outcome=await reconcileTestPurchase({owner:s.owner,role:s.role,productId,basePlanId:product.basePlanId,token},{
      now:p.now,authorize:current,verify,seal:p.vault.seal,
      claim:(o,v,sealed)=>previous?p.db.claimReplacement(o,accountId(o),previous,v,sealed,intentId):p.db.claimBound(o,accountId(o),v,sealed,intentId),
@@ -67,12 +67,12 @@ export function createDisposablePlayRuntime(p:{
       const c={owner:o,fingerprint:sealed.fingerprint,productId:v.productId,basePlanId:v.basePlanId};
       const g=await p.db.begin(c);if(g===null)return null;
       const verified=await verify(o,token);
-      if(!await current()||verified.product?.productId!==v.productId||verified.product.basePlanId!==v.basePlanId||verified.expiresAt!==expiresAt||!await fulfill(c,g,verified.state,expiresAt))return null;
+      if(!await current()||verified.product?.productId!==v.productId||verified.product.basePlanId!==v.basePlanId||verified.expiresAt!==expiresAt||!await fulfill(c,g,verified.state,expiresAt,verified.lifecycle))return null;
       return {...c,scope:"test",generation:g,expiresAt,committed:true};
      },
      confirmFulfillment:confirm,
      async acknowledgeTest(receipt,t){return await current()&&await confirm(receipt)&&await p.simulateAcknowledgment(receipt,t);},
-     async reconcileTest(receipt,v){const g=await p.db.begin(receipt);return g!==null&&await current()&&v.expiresAt===receipt.expiresAt&&await fulfill(receipt,g,v.state,receipt.expiresAt);}
+     async reconcileTest(receipt,v){const g=await p.db.begin(receipt);return g!==null&&await current()&&v.expiresAt===receipt.expiresAt&&await (async()=>{const latest=await verify(s.owner,token);return latest.state===v.state&&latest.expiresAt===v.expiresAt&&await current()&&await fulfill(receipt,g,v.state,receipt.expiresAt,latest.lifecycle);})();}
     });
     return await current()?{owner:s.owner,environment:"test",outcome,membershipGranted:false}:null;
    }catch{return null;}

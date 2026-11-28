@@ -1,7 +1,7 @@
 import "server-only";
 import {createHmac,createPrivateKey,sign} from "node:crypto";
 import {PLAY_PACKAGE} from "../../billing/play-products";
-import {classifyPlaySubscription,classifyPlayRuntimeSubscription} from "../../billing/play-subscription";
+import {classifyPlaySubscription,classifyPlayRuntimeSubscription,playLifecycle} from "../../billing/play-subscription";
 
 const TOKEN_URL="https://oauth2.googleapis.com/token";
 const API_ORIGIN="https://androidpublisher.googleapis.com";
@@ -75,7 +75,9 @@ export function createPlayVerificationClient(env:Env=process.env,request:Request
   accountId(owner:string){return playAccountId(owner,accountKey);},
   async verify(owner:string,token:unknown){return classifyPlaySubscription(await readSubscription(token),playAccountId(owner,accountKey),"test",clock());},
   async verifyRuntime(owner:string,token:string,fingerprint:(token:string)=>string){
-   return classifyPlayRuntimeSubscription(await readSubscription(token),playAccountId(owner,accountKey),token,fingerprint,clock());
+   const payload=await readSubscription(token);
+   const decision=classifyPlayRuntimeSubscription(payload,playAccountId(owner,accountKey),token,fingerprint,clock());
+   return {...decision,lifecycle:playLifecycle(payload,decision)};
   }
  };
 }

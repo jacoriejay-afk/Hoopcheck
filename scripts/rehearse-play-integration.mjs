@@ -191,11 +191,13 @@ const wake=async(messageId,body)=>{
 replacements.get(up).state="SUBSCRIPTION_STATE_CANCELED";
 await wake("987654323",{subscriptionNotification:{version:"1.0",notificationType:3,purchaseToken:up}});
 assert.equal(sql("select plan from play_billing_candidate.shadow_membership_entitlements where user_id="+q(owner)),"premium");
+assert.equal(sql("select cancel_at_period_end from play_billing_candidate.shadow_play_sources where user_id="+q(owner)),"t");
 replacements.get(up).state="SUBSCRIPTION_STATE_EXPIRED";
 await wake("987654324",{voidedPurchaseNotification:{productType:1,purchaseToken:up}});
 assert.equal(sql("select count(*) from play_billing_candidate.shadow_membership_entitlements where user_id="+q(owner)),"0");
 assert.equal(await synchronize(),"test_fulfillment_confirmed");
 assert.equal(sql("select count(*) from play_billing_candidate.shadow_membership_entitlements where user_id="+q(owner)),"0");
+assert.equal(sql("select provider_state from play_billing_candidate.lifecycle_metadata where fingerprint="+q(vault.fingerprint(up,"test"))+" order by generation desc limit 1"),"SUBSCRIPTION_STATE_EXPIRED");
 console.log("Replacement upgrade/downgrade, same-owner fencing, cancellation and refund/expiry without predecessor resurrection passed.");
 // Privacy hold: stop credential lookup and all future fulfillment; do not
 // claim a legal retention policy or destroy immutable ownership evidence.

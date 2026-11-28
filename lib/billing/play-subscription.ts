@@ -41,3 +41,19 @@ export function classifyPlayRuntimeSubscription(payload:unknown,expectedAccount:
  if(!validAccount(digest)||digest===fingerprint(token))return {state:"unsupported"};
  return {...result,previousFingerprint:digest};
 }
+
+// Metadata is separate from eligibility: unknown renewal intent never implies
+// cancellation or an additional access period. Provider timestamps are trusted
+// only after the account and test-purchase classifier passes.
+export type PlayLifecycle={providerState:string;autoRenewEnabled:boolean|null;periodEnd:string|null};
+export function playLifecycle(payload:unknown,decision:Decision):PlayLifecycle|null{
+ if(!obj(payload)||!["inactive","pending_ack","eligible_for_reconciliation"].includes(decision.state))return null;
+ const state=payload.subscriptionState;
+ if(typeof state!=="string"||!["SUBSCRIPTION_STATE_ACTIVE","SUBSCRIPTION_STATE_IN_GRACE_PERIOD","SUBSCRIPTION_STATE_CANCELED","SUBSCRIPTION_STATE_EXPIRED","SUBSCRIPTION_STATE_PENDING","SUBSCRIPTION_STATE_PAUSED","SUBSCRIPTION_STATE_ON_HOLD","SUBSCRIPTION_STATE_PENDING_PURCHASE_CANCELED"].includes(state))return null;
+ const item=Array.isArray(payload.lineItems)&&payload.lineItems.length===1?payload.lineItems[0]:null;
+ if(!obj(item)||!obj(item.autoRenewingPlan)||!expiry(item.expiryTime))return null;
+ const renew=item.autoRenewingPlan.autoRenewEnabled;
+ if(typeof renew!=="boolean"&&renew!==undefined)return null;
+ if(state==="SUBSCRIPTION_STATE_CANCELED"&&renew===true)return null;
+ return {providerState:state,autoRenewEnabled:typeof renew==="boolean"?renew:null,periodEnd:item.expiryTime};
+}

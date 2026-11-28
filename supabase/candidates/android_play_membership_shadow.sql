@@ -10,12 +10,13 @@ select
  case c.product_id when 'hoopcheck.premium' then 'premium' else 'pro' end as access_status,
  o.expires_at as current_period_end,
  -- Renewal/cancellation status must be independently stored before live use.
- null::boolean as cancel_at_period_end,
+ case when m.provider_state='SUBSCRIPTION_STATE_CANCELED' then true when m.auto_renew_enabled is not null then not m.auto_renew_enabled else null end as cancel_at_period_end,
  case c.base_plan_id when 'monthly' then 'month' when 'six-month' then '6_month' else 'year' end as billing_interval,
  'google_play_test'::text as provider
 from play_billing_candidate.purchase_claims c
 join play_billing_candidate.purchase_observations o using(environment,package_name,fingerprint)
 join play_billing_candidate.test_fulfillments f using(environment,package_name,fingerprint,generation)
+left join play_billing_candidate.lifecycle_metadata m on m.fingerprint=c.fingerprint and m.generation=o.generation and m.owner_id=c.owner_id
 where c.environment='test' and c.package_name='online.hoopcheck.app'
  and not exists(select 1 from play_billing_candidate.owner_holds h where h.owner_id=c.owner_id)
  and not exists(select 1 from play_billing_candidate.purchase_replacements r where r.previous_fingerprint=c.fingerprint and r.owner_id=c.owner_id and r.activated)

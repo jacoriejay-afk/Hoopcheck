@@ -3,7 +3,7 @@ import {playProduct} from "../../billing/play-products";
 import {parseAuthenticatedPlayNotification} from "./rtdn";
 type Job={subscription:string;messageId:string;fingerprint:string;leaseId:string};
 type Claim={owner:string;fingerprint:string;productId:string;basePlanId:string};
-type Verification={state:string;product?:{productId:string;basePlanId:string};expiresAt?:string};
+type Verification={state:string;product?:{productId:string;basePlanId:string};expiresAt?:string;lifecycle?:import("../../billing/play-subscription").PlayLifecycle|null};
 type Ports={
  enabled():boolean;
  lease():Promise<Job|null>;
@@ -13,7 +13,7 @@ type Ports={
  fingerprint(token:string):string;
  begin(claim:Claim):Promise<number|null>;
  verify(owner:string,token:string):Promise<Verification>;
- complete(claim:Claim,generation:number,state:string,expiry:string|null):Promise<boolean>;
+ complete(claim:Claim,generation:number,state:string,expiry:string|null,lifecycle?:Verification["lifecycle"]):Promise<boolean>;
  finish(job:Job,success:boolean):Promise<boolean>;
  now():number;
 };
@@ -64,7 +64,7 @@ export async function reconcileOnePlayNotification(ports:Ports):Promise<"held"|"
   else if((result.state==="pending_ack"||result.state==="eligible_for_reconciliation")&&result.product?.productId===claim.productId&&result.product.basePlanId===claim.basePlanId&&typeof result.expiresAt==="string"&&Date.parse(result.expiresAt)>ports.now()){
    state=result.state;expiry=result.expiresAt;
   }
-  if(!await ports.complete(claim,generation,state,expiry))throw Error("unavailable");
+  if(!await ports.complete(claim,generation,state,expiry,state==="unavailable"?null:result.lifecycle))throw Error("unavailable");
   if(state==="unavailable")throw Error("unavailable");
   return await ports.finish(job,true)?"done":"retry";
  }catch{if(job)try{await ports.finish(job,false);}catch{}return "retry";}

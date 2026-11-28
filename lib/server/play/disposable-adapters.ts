@@ -66,7 +66,12 @@ export function createDisposablePlayAdapters(options:{scope:"disposable_pg17";en
    return {version:1,envelope:v.credential_envelope,fingerprint:c.fingerprint};
   },
   async begin(c:Claim){const v=await run("select play_billing_candidate.begin_test_refresh($1,$2::uuid)",[c.fingerprint,c.owner]);return typeof v==="number"&&Number.isSafeInteger(v)&&v>0?v:null;},
-  async complete(c:Claim,g:number,state:string,expiry:string|null){return await run("select play_billing_candidate.finish_test_reconciliation($1,$2::uuid,$3::bigint,$4,$5::timestamptz)",[c.fingerprint,c.owner,g,state,expiry])===true;},
+  async recordLifecycle(c:Claim,g:number,state:string,expiry:string|null,meta:import("../../billing/play-subscription").PlayLifecycle|null|undefined,previous:string|null,mode:"fulfill"|"notification"){
+   return await run("select play_billing_candidate.finish_test_runtime_lifecycle($1,$2::uuid,$3::bigint,$4,$5::timestamptz,$6,$7::boolean,$8::timestamptz,$9,$10)",[c.fingerprint,c.owner,g,state,expiry,meta?.providerState??null,meta?.autoRenewEnabled??null,meta?.periodEnd??null,previous,mode])===true;
+  },
+  async complete(c:Claim,g:number,state:string,expiry:string|null,meta?:import("../../billing/play-subscription").PlayLifecycle|null){
+   return await run("select play_billing_candidate.finish_test_runtime_lifecycle($1,$2::uuid,$3::bigint,$4,$5::timestamptz,$6,$7::boolean,$8::timestamptz,null,'notification')",[c.fingerprint,c.owner,g,state,expiry,meta?.providerState??null,meta?.autoRenewEnabled??null,meta?.periodEnd??null])===true;
+  },
   async finish(j:Job,success:boolean){return await run("select play_billing_candidate.finish_test_notification($1,$2,$3::uuid,$4)",[j.subscription,j.messageId,j.leaseId,success])===true;}
  };
 }

@@ -356,4 +356,44 @@ end
 $body$;
 revoke all on function play_billing_candidate.purge_test_owner_credentials(uuid,uuid,uuid,text) from public,anon,authenticated,service_role;
 grant execute on function play_billing_candidate.purge_test_owner_credentials(uuid,uuid,uuid,text) to service_role;
+-- Generation-bound provider metadata; missing evidence remains unknown.
+create table play_billing_candidate.lifecycle_metadata(
+ fingerprint text not null check(fingerprint ~ '^[0-9a-f]{64}$'),generation bigint not null,
+ owner_id uuid not null,provider_state text not null check(provider_state in ('SUBSCRIPTION_STATE_ACTIVE','SUBSCRIPTION_STATE_IN_GRACE_PERIOD','SUBSCRIPTION_STATE_CANCELED','SUBSCRIPTION_STATE_EXPIRED','SUBSCRIPTION_STATE_PENDING','SUBSCRIPTION_STATE_PAUSED','SUBSCRIPTION_STATE_ON_HOLD','SUBSCRIPTION_STATE_PENDING_PURCHASE_CANCELED')),
+ auto_renew_enabled boolean,period_end timestamptz not null check(isfinite(period_end)),primary key(fingerprint,generation),
+ check(provider_state<>'SUBSCRIPTION_STATE_CANCELED' or auto_renew_enabled is distinct from true)
+);
+alter table play_billing_candidate.lifecycle_metadata enable row level security;
+alter table play_billing_candidate.lifecycle_metadata force row level security;
+revoke all on play_billing_candidate.lifecycle_metadata from public,anon,authenticated,service_role;
+grant select,insert on play_billing_candidate.lifecycle_metadata to service_role;
+create policy lifecycle_read on play_billing_candidate.lifecycle_metadata for select to service_role using(true);
+create policy lifecycle_insert on play_billing_candidate.lifecycle_metadata for insert to service_role with check(true);
+create trigger hold_metadata_write before insert on play_billing_candidate.lifecycle_metadata for each row execute function play_billing_candidate.guard_test_owner_write();
+create function play_billing_candidate.finish_test_runtime_lifecycle(p_fp text,p_owner uuid,p_gen bigint,p_state text,p_expiry timestamptz,p_provider text,p_renew boolean,p_period timestamptz,p_previous text,p_mode text)
+returns boolean language plpgsql volatile security invoker set search_path='' as $body$
+declare ok boolean;
+begin
+ perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('hoopcheck-play-hold:'||p_owner::text,0));
+ if p_provider is not null and (p_period is null or (p_expiry is not null and p_period<>p_expiry)) then return false; end if;
+ if p_mode='notification' then
+  ok:=play_billing_candidate.finish_test_reconciliation(p_fp,p_owner,p_gen,p_state,p_expiry);
+ elsif p_mode='fulfill' and p_previous is not null then
+  ok:=play_billing_candidate.finish_replacement_test_purchase(p_fp,p_owner,p_gen,p_state,p_expiry,p_previous);
+ elsif p_mode='fulfill' then
+  ok:=play_billing_candidate.finish_and_fulfill_test_purchase(p_fp,p_owner,p_gen,p_state,p_expiry);
+ else return false; end if;
+ if not coalesce(ok,false) then return false; end if;
+ if p_provider is not null then
+  insert into play_billing_candidate.lifecycle_metadata values(p_fp,p_gen,p_owner,p_provider,p_renew,p_period);
+ end if;
+ -- A notification may finish a previously reserved, acknowledged successor.
+ if p_mode='notification' and p_state='eligible_for_reconciliation' and play_billing_candidate.confirm_test_fulfillment(p_fp,p_owner,p_gen,p_expiry) then
+  update play_billing_candidate.purchase_replacements set activated=true where successor_fingerprint=p_fp and owner_id=p_owner and not activated;
+ end if;
+ return true;
+end
+$body$;
+revoke all on function play_billing_candidate.finish_test_runtime_lifecycle(text,uuid,bigint,text,timestamptz,text,boolean,timestamptz,text,text) from public,anon,authenticated,service_role;
+grant execute on function play_billing_candidate.finish_test_runtime_lifecycle(text,uuid,bigint,text,timestamptz,text,boolean,timestamptz,text,text) to service_role;
 commit;
