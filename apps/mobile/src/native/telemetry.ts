@@ -1,9 +1,10 @@
 import * as Sentry from "@sentry/react-native";
-import { privateEvent } from "./telemetryPrivacy";
+import { nativeTelemetryDsn, privateEvent } from "./telemetryPrivacy";
 
+const dsn = nativeTelemetryDsn(process.env.EXPO_PUBLIC_SENTRY_DSN);
 Sentry.init({
-  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
-  enabled: Boolean(process.env.EXPO_PUBLIC_SENTRY_DSN),
+  dsn,
+  enabled: Boolean(dsn),
   sendDefaultPii: false,
   enableAutoSessionTracking: true,
   enableAutoPerformanceTracing: false,

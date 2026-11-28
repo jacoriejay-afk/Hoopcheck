@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { nativeDestination } from "../src/native/deepLinks.ts";
-import { privateEvent } from "../src/native/telemetryPrivacy.ts";
+import { nativeTelemetryDsn, privateEvent } from "../src/native/telemetryPrivacy.ts";
 import { backgroundRequiresLock, lockAfter, recordFreshSignIn, consumeFreshSignIn, lockScreenRequired } from "../src/native/lockPolicy.ts";
 
 test("session and preference hydration conceal content before app-lock state is known", () => {
@@ -153,4 +153,18 @@ test("fresh password authentication cannot unlock a different account", () => {
   recordFreshSignIn("user-a", 1000);
   assert.equal(consumeFreshSignIn("user-b", 1001), false);
   assert.equal(consumeFreshSignIn("user-a", 1002), false);
+});
+
+test("invalid telemetry destinations are disabled and malformed events stay redacted", () => {
+  const dsn = "https://public123@ingest.example.org/sentry/42";
+  assert.equal(nativeTelemetryDsn(dsn), dsn);
+  for (const value of [undefined,"http://public123@ingest.example.org/42","https://ingest.example.org/42",
+    "https://public123:secret@ingest.example.org/42",dsn+"?token=secret","https://public123@ingest.example.org/no-project"]) {
+    assert.equal(nativeTelemetryDsn(value), undefined);
+  }
+  const clean = privateEvent({transaction:{toString:()=>"startup", secret:"raw private data"},exception:{values:[null, {stacktrace:{frames:"raw private data"}}]},debug_meta:{images:42}});
+  assert.equal(clean.transaction, undefined);
+  assert.equal(JSON.stringify(clean).includes("raw private data"), false);
+  assert.equal(clean.exception.values.length, 1);
+  assert.deepEqual(clean.exception.values[0].stacktrace.frames, []);
 });
