@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { deletionSteps, runDeletionCandidate, createDeletionWorkerAdapter, revokeDeletionAppleAuthorizations, createCompletionEffects } from "../lib/server/account-deletion-orchestrator.ts";
+import { deletionSteps, runDeletionCandidate, createDeletionWorkerAdapter, createDeletionWorkerTick, revokeDeletionAppleAuthorizations, createCompletionEffects } from "../lib/server/account-deletion-orchestrator.ts";
 const lease={requestId:"11111111-1111-4111-8111-111111111111",ownerId:"22222222-2222-4222-8222-222222222222",fence:"33333333-3333-4333-8333-333333333333",policyVersion:"fixture-v1",completed:[]};
 function fixture(completed=[]){
  const events=[];let live=true;
@@ -194,4 +194,74 @@ test("real RPC bridge refuses effect dispatch when disabled during its inner lea
   assert.equal(dispatches,0);
   assert.equal(calls.length,3);
  }finally{if(prior===undefined)delete process.env.ACCOUNT_DELETION_WORKER_ENABLED;else process.env.ACCOUNT_DELETION_WORKER_ENABLED=prior;}
+});
+
+function tickFixture(outcomes){
+ const calls=[];let claims=0;let executeHook=async()=>({confirmed:true,receipt:"fixture"});
+ const rpc={rpc:async(name,args)=>{
+  calls.push(name);
+  if(name==="claim_account_deletion_worker"){
+   const outcome=outcomes[claims++];
+   if(outcome==="error")return {data:null,error:true};
+   if(outcome==="idle"||outcome===undefined)return {data:[],error:null};
+   return {data:[{request_id:lease.requestId,owner_id:lease.ownerId,fence:lease.fence,policy_version:lease.policyVersion,completed:deletionSteps.slice(0,-1)}],error:null};
+  }
+  assert.equal(args.p_request,lease.requestId);assert.equal(args.p_owner,lease.ownerId);assert.equal(args.p_fence,lease.fence);
+  return {data:true,error:null};
+ }};
+ const effects=Object.fromEntries(deletionSteps.map(s=>[s,async(l,key)=>{assert.equal(key,l.requestId+":"+s);return executeHook();}]));
+ return {rpc,effects,calls,hook:fn=>{executeHook=fn;}};
+}
+async function withDeletionEnabled(run){
+ const previous=process.env.ACCOUNT_DELETION_WORKER_ENABLED;
+ try{process.env.ACCOUNT_DELETION_WORKER_ENABLED="true";await run();}
+ finally{if(previous===undefined)delete process.env.ACCOUNT_DELETION_WORKER_ENABLED;else process.env.ACCOUNT_DELETION_WORKER_ENABLED=previous;}
+}
+test("scheduler tick is default disabled and requires a complete immutable registry",async()=>{
+ await withDeletionEnabled(async()=>{
+  const f=tickFixture(["work"]);
+  assert.deepEqual(await createDeletionWorkerTick(f.rpc,f.effects)(),{status:"disabled",completed:0});
+  assert.deepEqual(await createDeletionWorkerTick(f.rpc,{}, {enabled:true})(),{status:"disabled",completed:0});
+  assert.deepEqual(f.calls,[]);
+  const tick=createDeletionWorkerTick(f.rpc,f.effects,{enabled:true});
+  f.effects.remove_completion_contact=async()=>{throw Error("late registry mutation");};
+  assert.deepEqual(await tick(),{status:"limit",completed:1});
+  assert.ok(f.calls.includes("complete_account_deletion_worker"));
+ });
+});
+test("scheduler tick bounds jobs, rejects invalid limits and stops on retry or idle",async()=>{
+ await withDeletionEnabled(async()=>{
+  const f=tickFixture(["work","work","work"]);
+  for(const maxJobs of [0,6,1.5,NaN])assert.throws(()=>createDeletionWorkerTick(f.rpc,f.effects,{maxJobs}),/batch limit/);
+  assert.deepEqual(await createDeletionWorkerTick(f.rpc,f.effects,{enabled:true,maxJobs:2})(),{status:"limit",completed:2});
+  assert.equal(f.calls.filter(x=>x==="claim_account_deletion_worker").length,2);
+  const g=tickFixture(["work","idle"]);
+  assert.deepEqual(await createDeletionWorkerTick(g.rpc,g.effects,{enabled:true,maxJobs:5})(),{status:"idle",completed:1});
+  const h=tickFixture(["work","work"]);h.hook(async()=>{throw Error("private error");});
+  assert.deepEqual(await createDeletionWorkerTick(h.rpc,h.effects,{enabled:true,maxJobs:5})(),{status:"retry",completed:0});
+  assert.equal(h.calls.filter(x=>x==="claim_account_deletion_worker").length,1);
+  assert.ok(h.calls.includes("fail_account_deletion_worker"));
+ });
+});
+test("scheduler overlapping tick cannot double claim; abort prevents subsequent work",async()=>{
+ await withDeletionEnabled(async()=>{
+  const f=tickFixture(["work","work"]),abort=new AbortController();
+  let release,entered;const start=new Promise(r=>{entered=r;});const hold=new Promise(r=>{release=r;});
+  f.hook(async()=>{entered();await hold;return{confirmed:true,receipt:"fixture"};});
+  const tick=createDeletionWorkerTick(f.rpc,f.effects,{enabled:true,maxJobs:5});
+  const pending=tick(abort.signal);await start;
+  assert.deepEqual(await tick(),{status:"busy",completed:0});
+  abort.abort();release();
+  assert.deepEqual(await pending,{status:"aborted",completed:1});
+  assert.equal(f.calls.filter(x=>x==="claim_account_deletion_worker").length,1);
+  assert.ok(f.calls.includes("complete_account_deletion_worker"));
+  assert.deepEqual(await tick(abort.signal),{status:"aborted",completed:0});
+ });
+});
+test("scheduler errors expose only controlled aggregate status and release the local lock",async()=>{
+ await withDeletionEnabled(async()=>{
+  const f=tickFixture(["error","idle"]),tick=createDeletionWorkerTick(f.rpc,f.effects,{enabled:true});
+  assert.deepEqual(await tick(),{status:"error",completed:0});
+  assert.deepEqual(await tick(),{status:"idle",completed:0});
+ });
 });
