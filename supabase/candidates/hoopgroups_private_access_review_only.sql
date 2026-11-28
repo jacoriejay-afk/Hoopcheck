@@ -39,12 +39,8 @@ CREATE TABLE hoopcheck_group_access.invitations(
 CREATE UNIQUE INDEX group_pending_invite_unique ON hoopcheck_group_access.invitations(space_id,invitee_id) WHERE state='pending';
 CREATE INDEX group_invite_inbox ON hoopcheck_group_access.invitations(invitee_id,state,expires_at);
 CREATE INDEX group_channel_grant_member ON hoopcheck_group_access.channel_grants(space_id,user_id);
-CREATE TABLE hoopcheck_group_access.action_receipts(
- id uuid PRIMARY KEY,space_id uuid REFERENCES public.hoop_group_spaces(id) ON DELETE CASCADE,
- actor_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
- action text NOT NULL,created_at timestamptz NOT NULL DEFAULT now());
 DO $acl$ DECLARE t text; BEGIN
- FOREACH t IN ARRAY ARRAY['config','moderators','channel_grants','bans','invitations','action_receipts'] LOOP
+ FOREACH t IN ARRAY ARRAY['config','moderators','channel_grants','bans','invitations'] LOOP
  EXECUTE format('ALTER TABLE hoopcheck_group_access.%I ENABLE ROW LEVEL SECURITY',t);
  EXECUTE format('REVOKE ALL ON hoopcheck_group_access.%I FROM PUBLIC,anon,authenticated,service_role',t);
  END LOOP;
@@ -106,7 +102,7 @@ CREATE POLICY group_access_post_write ON public.hoop_group_posts AS RESTRICTIVE 
 -- their unread state cannot be retrieved by a revoked member.
 
 CREATE FUNCTION hoopcheck_group_access.snapshot(p_space uuid) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $f$
-DECLARE uid uuid:=auth.uid(); own boolean:=false; moderates boolean:=false; invitations jsonb; contacts jsonb:='[]'; members jsonb:='[]'; private_channels jsonb:='[]'; pending jsonb:='[]'; queue jsonb:='[]';
+DECLARE uid uuid:=auth.uid(); own boolean:=false; moderates boolean:=false; invitations jsonb; contacts jsonb:='[]'; members jsonb:='[]'; private_channels jsonb:='[]'; banned jsonb:='[]'; pending jsonb:='[]'; queue jsonb:='[]';
 BEGIN
  IF NOT hoopcheck_group_access.active() OR NOT hoopcheck_group_access.enabled() THEN RAISE EXCEPTION 'Group access unavailable' USING ERRCODE='42501'; END IF;
  SELECT coalesce(jsonb_agg(to_jsonb(x)),'[]') INTO invitations FROM (
@@ -132,6 +128,7 @@ BEGIN
     WHERE r.status='accepted' AND uid IN(r.requester_id,r.player_id) AND hoopcheck_group_access.contact(p.id)
     AND NOT EXISTS(SELECT FROM public.hoop_group_members m WHERE m.space_id=p_space AND m.user_id=p.id)
     ORDER BY p.id LIMIT 100) x;
+   SELECT coalesce(jsonb_agg(to_jsonb(x)),'[]') INTO banned FROM (SELECT b.user_id,CASE WHEN p.profile_visibility='public' THEN coalesce(nullif(p.display_name,''),'HoopCheck member') ELSE 'HoopCheck member' END AS name FROM hoopcheck_group_access.bans b LEFT JOIN public.profiles p ON p.id=b.user_id WHERE b.space_id=p_space ORDER BY b.user_id LIMIT 100) x;
    SELECT coalesce(jsonb_agg(to_jsonb(x)),'[]') INTO pending FROM (SELECT i.id,i.invitee_id,i.expires_at FROM hoopcheck_group_access.invitations i WHERE i.space_id=p_space AND i.state='pending' AND i.expires_at>now() ORDER BY i.created_at DESC LIMIT 100) x;
   END IF;
   IF moderates THEN
@@ -142,7 +139,7 @@ BEGIN
   END IF;
  END IF;
  IF NOT hoopcheck_group_access.active() THEN RAISE EXCEPTION 'Group access unavailable' USING ERRCODE='42501'; END IF;
- RETURN jsonb_build_object('space_id',p_space,'is_owner',own,'can_moderate',moderates,'invitations',invitations,'members',members,'contacts',contacts,'private_channels',private_channels,'pending_invites',pending,'queue',queue);
+ RETURN jsonb_build_object('space_id',p_space,'is_owner',own,'can_moderate',moderates,'invitations',invitations,'members',members,'contacts',contacts,'private_channels',private_channels,'banned',banned,'pending_invites',pending,'queue',queue);
 END $f$;
 CREATE FUNCTION hoopcheck_group_access.action(p_action text,p_space uuid,p_target uuid,p_channel uuid,p_name text,p_description text,p_status text) RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $f$
@@ -163,7 +160,7 @@ BEGIN
   IF NOT FOUND THEN RAISE EXCEPTION 'Invitation unavailable' USING ERRCODE='42501'; END IF;
   SELECT * INTO s FROM public.hoop_group_spaces WHERE id=i.space_id FOR UPDATE;
   SELECT * INTO i FROM hoopcheck_group_access.invitations WHERE id=p_target AND invitee_id=uid FOR UPDATE;
-  IF NOT FOUND OR s.owner_id IS DISTINCT FROM i.inviter_id OR hoopcheck_group_access.bilateral_block(uid,i.inviter_id)
+  IF NOT FOUND OR s.owner_id IS DISTINCT FROM i.inviter_id OR NOT hoopcheck_group_access.contact(i.inviter_id)
   OR EXISTS(SELECT FROM hoopcheck_group_access.bans b WHERE b.space_id=i.space_id AND b.user_id=uid) THEN RAISE EXCEPTION 'Invitation unavailable' USING ERRCODE='42501'; END IF;
   IF p_action='accept_invite' AND i.state='accepted' AND EXISTS(SELECT FROM public.hoop_group_members WHERE space_id=i.space_id AND user_id=uid) THEN RETURN jsonb_build_object('ok',true,'id',i.space_id); END IF;
   IF p_action='decline_invite' AND i.state='declined' THEN RETURN jsonb_build_object('ok',true,'id',i.id); END IF;
@@ -197,6 +194,7 @@ BEGIN
   RETURN jsonb_build_object('ok',true,'id',p_target);
  END IF;
  IF p_action='invite' THEN
+  PERFORM pg_advisory_xact_lock(hashtextextended(uid::text,7813));
   IF p_target IS NULL OR NOT hoopcheck_group_access.contact(p_target) OR EXISTS(SELECT FROM public.hoop_group_members WHERE space_id=s.id AND user_id=p_target)
   OR EXISTS(SELECT FROM hoopcheck_group_access.bans WHERE space_id=s.id AND user_id=p_target) THEN RAISE EXCEPTION 'Contact unavailable' USING ERRCODE='42501'; END IF;
   UPDATE hoopcheck_group_access.invitations SET state='revoked' WHERE space_id=s.id AND invitee_id=p_target AND state='pending' AND expires_at<=now();
@@ -217,7 +215,10 @@ BEGIN
   RETURN jsonb_build_object('ok',true,'id',p_target);
  END IF;
  IF p_action IN ('remove_member','ban_member') THEN
-  IF p_action='ban_member' AND EXISTS(SELECT FROM public.hoop_group_members WHERE space_id=s.id AND user_id=p_target) THEN INSERT INTO hoopcheck_group_access.bans VALUES(s.id,p_target) ON CONFLICT DO NOTHING; END IF;
+  IF p_action='ban_member' THEN
+   IF NOT EXISTS(SELECT FROM public.hoop_group_members WHERE space_id=s.id AND user_id=p_target) AND NOT EXISTS(SELECT FROM hoopcheck_group_access.bans WHERE space_id=s.id AND user_id=p_target) THEN RAISE EXCEPTION 'Member unavailable' USING ERRCODE='42501'; END IF;
+   INSERT INTO hoopcheck_group_access.bans VALUES(s.id,p_target) ON CONFLICT DO NOTHING;
+  END IF;
   DELETE FROM public.hoop_group_members WHERE space_id=s.id AND user_id=p_target;
   UPDATE hoopcheck_group_access.invitations SET state='revoked' WHERE space_id=s.id AND invitee_id=p_target AND state IN ('pending','accepted');
   RETURN jsonb_build_object('ok',true,'id',p_target);
