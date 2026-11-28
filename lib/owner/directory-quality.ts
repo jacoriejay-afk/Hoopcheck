@@ -146,6 +146,14 @@ export const verifiedRosters: RosterEvidence[] = [{
  name:"Women's National Basketball Association (WNBA)",country:"United States",season:"2026",side:"womens",leagueAliases:["WNBA"],
  source:"https://www.wnba.com/webview/news/2026-schedule-release",verifiedAt:"2026-11-28",confidence:"Official 2026 schedule confirms 15 franchises including the two expansion clubs",
  clubs:["Atlanta Dream","Chicago Sky","Connecticut Sun","Dallas Wings","Golden State Valkyries","Indiana Fever","Las Vegas Aces","Los Angeles Sparks","Minnesota Lynx","New York Liberty","Phoenix Mercury","Portland Fire","Seattle Storm","Washington Mystics","Toronto Tempo"].map(name=>({name,country:name==="Toronto Tempo"?"Canada":"United States"}))
+},{
+ name:"Brazilian LBF",country:"Brazil",season:"2026",side:"womens",leagueAliases:["LBF","Liga de Basquete Feminino"],
+ source:"https://lbf.com.br/noticias/pronta-para-comecar/",verifiedAt:"2026-11-28",confidence:"Official competition announcement and actual 2026 fixtures confirm ten participating clubs",
+ clubs:[["ADRM Maringá"],["Cerrado Basquete","Cerrado BRB"],["Salvador Basketball"],["Sampaio Basquete","Sampaio Corrêa"],["Santo André"],["São José Basketball","PONTZ São José Basketball"],["SESI Araraquara Basquete"],["Sodiê Mesquita"],["Sport Club do Recife","Sport Uninassau"],["Unimed Campinas Basquete"]].map(([name,...aliases])=>({name,country:"Brazil",aliases}))
+},{
+ name:"Basket Liga Kobiet",country:"Poland",season:"2026-27",side:"womens",leagueAliases:["Polish Women’s Basketball League","Polish Women Basketball League"],
+ source:"https://basketligakobiet.pl/aktualnosci/n/14067/13-klubow-z-licencjami-na-sezon-2026-2027.html",verifiedAt:"2026-11-28",confidence:"Official league licensing announcement confirms 13 clubs",
+ clubs:[["1KS Ślęza Wrocław","Sleza Wroclaw"],["Artego Bydgoszcz"],["Contimax MOSIR Bochnia"],["Enea AZS Politechnika Poznań"],["Energa Toruń"],["Isands JTEC Wichoś Jelenia Góra"],["Lotto AZS UMCS Lublin","AZS UMCS Lublin","AZS UMCS Lublin Women"],["Lotto MKS Pruszków","MKS Pruszków"],["MB Zagłębie Sosnowiec"],["PGE Wisła Kraków","Wisła Kraków"],["Pro-Network Enea AJP Gorzów Wlkp.","KSSSE Enea AJP Gorzów Wielkopolski","KS AZS AJP Gorzow"],["SKK Polonia Warszawa"],["Widzew Łódź"]].map(([name,...aliases])=>({name,country:"Poland",aliases}))
 }];
 const normalized=(v:string|null)=> (v||"").normalize("NFKD").replace(/\p{M}/gu,"").toLocaleLowerCase("en").replace(/[^\p{L}\p{N}]+/gu,"");
 const identityKey=(row:DirectoryIdentity)=>[normalized(row.country),row.basketball_type,normalized(row.name)].join(":");
