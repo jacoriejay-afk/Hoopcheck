@@ -95,8 +95,8 @@ export default function NotificationBell() {
           })}
           <div className="notification-section-title">FOLLOWING</div>
           {watches.filter((w) => w.follow).slice(0, 8).map((watch) => {
-            const path = watch.target_type === "team" ? "teams" : watch.target_type === "coach" ? "coaches" : "leagues";
-            return <a key={watch.id} href={"/" + path + "/" + watch.target_id} className="notification-item"><span>{watch.target_type.toUpperCase()}</span><strong>{names[watch.target_id] || "Basketball organization"}</strong><small>{watch.notify ? "Alerts on" : "Following"}</small></a>;
+            const path = notificationPath(watch);
+            return path && <a key={watch.id} href={path} className="notification-item"><span>{watch.target_type.toUpperCase()}</span><strong>{names[watch.target_id] || "Basketball organization"}</strong><small>{watch.notify ? "Alerts on" : "Following"}</small></a>;
           })}
           {!notices.length && !watches.filter((w) => w.follow).length && <p className="muted">Follow a team, coach, or league manually. Alerts only come from organizations you choose to follow.</p>}
         </div>

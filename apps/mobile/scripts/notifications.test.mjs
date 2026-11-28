@@ -18,7 +18,9 @@ test('alerts read and mark actual read_at fields only for authenticated viewer',
 test('alert targets cannot inject routes and filters match mobile website',()=>{
   for(const [type,path]of[['team','/teams/abc'],['coach','/coaches/abc'],['league','/leagues/abc'],['game','/fan-live?gameId=abc']])assert.equal(notificationPath({target_type:type,target_id:'abc'}),path);
   for(const target of ['../account','abc?token=x','https://other.test'])assert.equal(notificationPath({target_type:'team',target_id:target}),null);
-  assert.equal(notificationPath({target_type:'unknown',target_id:'abc'}),null);
+  for (const type of ['unknown', 'constructor', '__proto__', 'toString']) {
+    assert.equal(notificationPath({target_type:type,target_id:'abc'}),null);
+  }
   const notice={target_type:'team',notification_type:'review',read_at:null};
   assert.equal(noticeMatches(notice,'reviews'),true);assert.equal(noticeMatches(notice,'unread'),true);assert.equal(noticeMatches(notice,'clubs'),false);assert.equal(noticeMatches(notice,'games'),false);
 });

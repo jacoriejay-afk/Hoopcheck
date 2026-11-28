@@ -53,9 +53,14 @@ export async function markNotificationsRead(client: SupabaseClient, userId: stri
 }
 export function notificationPath(notice: Pick<Notice, "target_type" | "target_id">) {
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(notice.target_id)) return null;
-  const route = { team: "teams", coach: "coaches", league: "leagues", "womens-team": "womens" }[notice.target_type];
-  if (route) return `/${route}/${notice.target_id}`;
-  return notice.target_type === "game" ? `/fan-live?gameId=${notice.target_id}` : null;
+  switch (notice.target_type) {
+    case "team": return `/teams/${notice.target_id}`;
+    case "coach": return `/coaches/${notice.target_id}`;
+    case "league": return `/leagues/${notice.target_id}`;
+    case "womens-team": return `/womens/${notice.target_id}`;
+    case "game": return `/fan-live?gameId=${notice.target_id}`;
+    default: return null;
+  }
 }
 export function noticeMatches(notice: Notice, filter: string) {
   const review = ["review", "rating", "trust_score", "pay_warning"].includes(notice.notification_type);
