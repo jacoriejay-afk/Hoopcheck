@@ -174,6 +174,14 @@ export const verifiedRosters: RosterEvidence[] = [{
  name:"Prva ženska liga Srbije",country:"Serbia",season:"2026-27",side:"womens",leagueAliases:["Serbian Women’s Basketball League","1. ŽLS"],
  source:"https://kss.rs/izvuceni-takmicarski-brojevi-prve-zenske-lige-srbije/",verifiedAt:"2026-11-28",confidence:"Official KSS season draw lists twelve teams",
  clubs:[["Crvena zvezda Women","Crvena zvezda"],["Duga Šabac","Duga"],["Korać Akademija 011"],["Mega Basket Women","Mega Superbet"],["Nibak Niš","Nibak"],["Novosadska ženska košarkaška akademija","Novosadska ŽKA"],["Partizan 1953"],["Ras Beograd","Ras"],["Spartak Subotica Women","Spartak"],["Student Niš Women","Student"],["Vojvodina 021"],["ŽKK Kraljevo","Kraljevo"]].map(([name,...aliases])=>({name,country:"Serbia",aliases}))
+},{
+ name:"W League Premier",country:"Japan",season:"2026-27",side:"womens",
+ source:"https://www.wjbl.org/team/?bid=12",verifiedAt:"2026-11-28",confidence:"Official WJBL team list confirms eight Premier participants",
+ clubs:["Denso Iris","Toyota Antelopes","Fujitsu Red Wave","Toyota Boshoku Sunshine Rabbits","ENEOS Sunflowers","Chanson V-Magic","Aisin Wings","Hitachi High-Tech Cougars"].map(name=>({name,country:"Japan"}))
+},{
+ name:"W League Future",country:"Japan",season:"2026-27",side:"womens",
+ source:"https://www.wjbl.org/team/?bid=12",verifiedAt:"2026-11-28",confidence:"Official WJBL team list confirms seven Future participants",
+ clubs:["Tokyo Haneda Vickies","Yamanashi Queen Bees","Prestige International Aranmare","Mitsubishi Electric Koalas","SMBC Tokyo Solua","Hiroshima Egrets","Niigata Albirex BB Rabbits"].map(name=>({name,country:"Japan"}))
 }];
 const normalized=(v:string|null)=> (v||"").normalize("NFKD").replace(/\p{M}/gu,"").toLocaleLowerCase("en").replace(/[^\p{L}\p{N}]+/gu,"");
 const identityKey=(row:DirectoryIdentity)=>[normalized(row.country),row.basketball_type,normalized(row.name)].join(":");
