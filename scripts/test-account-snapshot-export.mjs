@@ -26,7 +26,7 @@ function fixture(opts={}) {
   const db={
     auth:{
       async getUser(t){assert.equal(t,token);return {data:{user:opts.invalid?null:user},error:null};},
-      async getClaims(t){assert.equal(t,token);return {data:{claims:{sub:opts.claimOwner??owner,role:opts.role??"authenticated"}},error:null};},
+      async getClaims(t){assert.equal(t,token);return {data:{claims:{sub:opts.claimOwner??owner,role:opts.role??"authenticated",...("clientId" in opts?{client_id:opts.clientId}:{}),...("claimAnonymous" in opts?{is_anonymous:opts.claimAnonymous}:{})}},error:null};},
     },
     rpc(name){
       calls.push(["rpc",name]);
@@ -92,8 +92,8 @@ test("default-off, malformed bearer and query targeting stop before reads",async
   }
 });
 test("invalid identity, MFA, revoked session and wrong claims deny before profile read",async()=>{
-  for(const opts of [{invalid:true},{unconfirmed:true},{anonymous:true},{mfa:true},{active:false},{claimOwner:other},{role:"anon"}]){
-    const f=fixture(opts);assert.equal((await f.run()).status,403);assert.ok(!f.calls.some(c=>c[1]==="get_own_profile"||c[0]==="table"));
+  for(const opts of [{invalid:true},{unconfirmed:true},{anonymous:true},{mfa:true},{active:false},{claimOwner:other},{role:"anon"},{clientId:"synthetic-oauth-client"},{clientId:null},{claimAnonymous:true},{claimAnonymous:"true"}]){
+    const f=fixture(opts);assert.equal((await f.run()).status,403);assert.ok(!f.calls.some(c=>c[1]==="get_own_profile"||c[1]==="get_own_review_snapshot"||c[0]==="table"));
   }
 });
 test("owner receives explicit partial snapshot without internal fields",async()=>{

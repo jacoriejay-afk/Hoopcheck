@@ -63,7 +63,9 @@ export async function POST(request: Request) {
       const user = data.user;
       if (error || !user?.email_confirmed_at || user.is_anonymous || !uuid.test(user.id)) return null;
       const claims = await scoped.auth.getClaims(token!);
-      if (claims.error || claims.data?.claims.sub !== user.id || claims.data.claims.role !== "authenticated") return null;
+      const verifiedClaims = claims.data?.claims;
+      if (claims.error || !verifiedClaims || verifiedClaims.sub !== user.id || verifiedClaims.role !== "authenticated" ||
+          "client_id" in verifiedClaims || (verifiedClaims.is_anonymous !== undefined && verifiedClaims.is_anonymous !== false)) return null;
       if (assuranceForVerifiedUser(token!,user).required) return null;
       const active = await scoped.rpc("confirm_active_account_session");
       return !active.error && active.data === true ? user.id : null;
