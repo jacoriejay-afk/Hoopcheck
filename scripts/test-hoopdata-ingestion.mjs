@@ -36,7 +36,9 @@ test("snapshot freshness is delayed after 25 minutes; missing or future data is 
 });
 test("ingestion rejects duplicate snapshots before writes and preserves distinct terminal states", () => {
   const route = read("app/api/cron/live-basketball/route.ts");
-  assert.ok(route.indexOf("validateProviderSnapshot(payload.response)") < route.indexOf('.insert(newMappings)'));
+  const validation = route.indexOf("validateProviderSnapshot(payload.response)");
+  assert.ok(validation > 0 && validation < route.indexOf('.from("fan_live_team_provider_map")'));
+  assert.ok(validation < route.indexOf('.upsert(rows,'));
   assert.ok(route.includes('providerStatus === "POST" || providerStatus === "SUSP" ? "postponed"'));
   assert.ok(route.includes('providerStatus === "ABD" ? "abandoned"'));
   assert.ok(route.includes("if (!startDate) continue"));

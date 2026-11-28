@@ -10,6 +10,7 @@
       "qa/step1-creator-studio-account-boundary": false,
       "qa/step1-feed-live-reconciliation": false,
       "qa/hoopcheck-master-acceptance": false,
+      "qa/steps-1-4-live-feed": false,
       "qa/step1-web-midnight": false,
       "qa/step1-verified-reconciliation": false,
       "qa/steps-1-4-web-contrast": false,
@@ -49,12 +50,12 @@
       "qa/step1-web-hoopchat-safety": false,
       "qa/step1-web-hoopgroups-scope": false,
       "qa/step1-hoopchat-quote-replies": false,
-      "qa/steps-1-4-chat-read-sync": false,
       "qa/step1-community-messaging-reconciliation": false,
       "qa/step2-security-boundaries": false,
       "qa/step2-review-rate-limit": false,
       "qa/step2-private-content": false,
-      "ops/step4-migration-forward-guard": false
+      "ops/step4-migration-forward-guard": false,
+      "qa/steps-1-4-chat-read-sync": false
     }
   }
 }
