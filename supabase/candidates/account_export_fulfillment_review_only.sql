@@ -86,6 +86,7 @@ BEGIN
  SELECT * INTO STRICT pol FROM hoopcheck_export_private.policy WHERE singleton FOR SHARE;
  IF NOT pol.enabled THEN RAISE EXCEPTION 'Export disabled' USING ERRCODE='42501'; END IF;
  PERFORM pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(uid::text,771));
+ IF hoopcheck_export_private.verified_owner() IS DISTINCT FROM uid THEN RAISE EXCEPTION 'Export unavailable' USING ERRCODE='42501'; END IF;
  FOR j IN SELECT * FROM hoopcheck_export_private.jobs WHERE owner_id=uid AND state='ready' AND expires_at<=clock_timestamp() LOOP
   PERFORM hoopcheck_export_private.expire_job(j.id);
  END LOOP;
