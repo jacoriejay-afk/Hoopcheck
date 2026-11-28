@@ -7,6 +7,8 @@ type Dependencies={
   available():boolean;
   session():Promise<Session|null>;
   prepare(quote:Quote,token:string):Promise<unknown>;
+  consume(intent:Intent,token:string):Promise<unknown>;
+  accountIdentity(token:string):Promise<unknown>;
   launch(intent:Intent):Promise<unknown>;
   restore(accountId:string):Promise<unknown>;
   sync(intentId:string|null,productId:string,purchaseToken:string,token:string):Promise<unknown>;
@@ -26,7 +28,7 @@ export function createPlayPurchaseCoordinator(deps:Dependencies){
  let generation=0,owner:string|null=null,busy=false,prepared:Intent|null=null,preparedToken:string|null=null;
  // Do not open another sheet until the prior launch has been reconciled.
  // A native exception may occur after the provider sheet has opened.
- let needsRecovery=false;
+ let recoveryOwner:string|null=null;
  const allowed=()=>deps.enabled()&&deps.available();
  function invalidate(){generation++;prepared=null;preparedToken=null;}
  function check(scope:Scope){
@@ -57,7 +59,7 @@ export function createPlayPurchaseCoordinator(deps:Dependencies){
   async prepare(quote:Quote):Promise<boolean>{
    return single(false,async()=>{
     prepared=null;preparedToken=null;
-    if(needsRecovery||!validQuote(quote))return false;
+    if(recoveryOwner!==null||!validQuote(quote))return false;
     const s=await capture(),product=playProduct(quote.productId,quote.basePlanId);
     if(!product||!canPurchasePlayProduct(s.role,product))return false;
     const r=await deps.prepare({...quote},s.token);
@@ -78,10 +80,13 @@ export function createPlayPurchaseCoordinator(deps:Dependencies){
     if(intent.owner!==s.owner||token!==s.token||!product||!canPurchasePlayProduct(s.role,product))return "held";
     await current(s);
     if(!fresh(intent))return "held";
-    needsRecovery=true;
+    const permit=await deps.consume({...intent},s.token);
+    await current(s);
+    if(!fresh(intent)||!obj(permit)||permit.owner!==s.owner||permit.intentId!==intent.intentId||permit.environment!=="test"||permit.outcome!=="sandbox_launch_authorized"||permit.membershipGranted!==false)return "held";
+    recoveryOwner=s.owner;
     const result=await deps.launch({...intent});
     await current(s);
-    if(result==="cancelled")needsRecovery=false;
+    if(result==="cancelled")recoveryOwner=null;
     return result==="launched"||result==="cancelled"||result==="restore_required"?result:"unavailable";
    });
   },
@@ -89,23 +94,30 @@ export function createPlayPurchaseCoordinator(deps:Dependencies){
    return single(null,async()=>{
     if(!hex.test(accountId))return null;
     const s=await capture();
-    // Adapter must obtain the expected account ID from the authenticated
-    // server; this method's argument is not proof of ownership.
+    const identity=await deps.accountIdentity(s.token);await current(s);
+    if(!obj(identity)||identity.owner!==s.owner||identity.environment!=="test"||identity.accountId!==accountId)return null;
     const scan=await deps.restore(accountId);await current(s);
     if(!obj(scan)||scan.accountId!==accountId||!Array.isArray(scan.candidates)||scan.candidates.length>100||
      typeof scan.pendingCount!=="number"||!Number.isInteger(scan.pendingCount)||scan.pendingCount<0||scan.pendingCount>100)return null;
-    let verified=0,failed=0;const seen=new Set<string>();
+    let verified=0,failed=0;const seen=new Map<string,string>();
+    const candidates:{productId:string;token:string}[]=[];
     for(const item of scan.candidates){
      await current(s);
      if(!obj(item)||typeof item.productId!=="string"||!["hoopcheck.pro","hoopcheck.premium"].includes(item.productId)||
       item.accountId!==accountId||typeof item.token!=="string"||!opaque.test(item.token)){failed++;continue;}
-     if(seen.has(item.token))continue;seen.add(item.token);
+     const previous=seen.get(item.token);
+     if(previous!==undefined){if(previous!==item.productId)return null;continue;}
+     seen.set(item.token,item.productId);candidates.push({productId:item.productId,token:item.token});
+    }
+    for(const item of candidates){
+     await current(s);
      const reply=await deps.sync(null,item.productId,item.token,s.token);
      await current(s);
      if(obj(reply)&&reply.owner===s.owner&&reply.environment==="test"&&reply.outcome==="test_fulfillment_confirmed")verified++;
      else failed++;
     }
-    if(scan.pendingCount===0&&failed===0)needsRecovery=false;
+    if(scan.pendingCount===0&&failed===0&&recoveryOwner===s.owner)recoveryOwner=null;
+    else if(scan.pendingCount>0&&recoveryOwner===null)recoveryOwner=s.owner;
     return {verified,pending:scan.pendingCount,failed};
    });
   }

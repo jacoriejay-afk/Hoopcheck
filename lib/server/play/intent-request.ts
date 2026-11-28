@@ -38,8 +38,9 @@ export async function playIntentRequest(request:Request,action:"issue"|"consume"
  try{
   if(!ports.enabled())return held();
   if(request.method!=="POST")return reply(405,{error:"Method not allowed."});
-  const session=await ports.authorize(request);
-  if(!session||!uuid.test(session.owner)||!uuid.test(session.sessionId))return reply(401,{error:"Sign in and verify your account."});
+  const authorized=await ports.authorize(request);
+  if(!authorized||!uuid.test(authorized.owner)||!uuid.test(authorized.sessionId))return reply(401,{error:"Sign in and verify your account."});
+  const session={...authorized};
   const input=await body(request);
   const keys=action==="issue"?"basePlanId,currency,priceMicros,productId":"basePlanId,currency,expiresAt,intentId,priceMicros,productId";
   if(!input||Object.keys(input).sort().join(",")!==keys||typeof input.priceMicros!=="string"||! /^[1-9][0-9]{0,15}$/.test(input.priceMicros)||typeof input.currency!=="string"||! /^[A-Z]{3}$/.test(input.currency))return reply(400,{error:"Invalid purchase intent."});

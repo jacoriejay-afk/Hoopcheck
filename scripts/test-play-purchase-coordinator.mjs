@@ -11,7 +11,7 @@ function fixture(){
  const calls=[],state={enabled:true,available:true,session:{owner,token:"fixture-session",role:"player"},now};
  const intent={...quote,owner,accountId,intentId:"22222222-2222-4222-8222-222222222222",environment:"test",expiresAt:now+30000};
  const item={accountId,productId:quote.productId,token:"synthetic-purchase-token"};
- const deps={enabled:()=>state.enabled,available:()=>state.available,session:async()=>state.session,now:()=>state.now,prepare:async()=>intent,launch:async()=>{calls.push("launch");return "launched";},restore:async()=>({accountId,candidates:[item,item],pendingCount:1}),sync:async()=>{calls.push("sync");return {owner,environment:"test",outcome:"test_fulfillment_confirmed"};}};
+ const deps={enabled:()=>state.enabled,available:()=>state.available,session:async()=>state.session,now:()=>state.now,prepare:async()=>intent,consume:async()=>({owner,intentId:intent.intentId,environment:"test",outcome:"sandbox_launch_authorized",membershipGranted:false}),accountIdentity:async()=>({owner,accountId,environment:"test"}),launch:async()=>{calls.push("launch");return "launched";},restore:async()=>({accountId,candidates:[item,item],pendingCount:1}),sync:async()=>{calls.push("sync");return {owner,environment:"test",outcome:"test_fulfillment_confirmed"};}};
  const client=createPlayPurchaseCoordinator(deps);client.setOwner(owner);
  return {client,state,intent,deps,calls};
 }
@@ -48,4 +48,24 @@ test("launched, ambiguous and pending flows block a second sheet until clean rec
 test("explicit cancellation permits a new intent",async()=>{
  const f=fixture();f.deps.launch=async()=>"cancelled";assert.equal(await f.client.prepare(quote),true);
  assert.equal(await f.client.launch(),"cancelled");assert.equal(await f.client.prepare(quote),true);
+});
+
+test("native launch requires exact server consumption and rechecks account after response",async()=>{
+ for(const permit of [null,{owner,environment:"production"},{owner,environment:"test",intentId:"wrong",outcome:"sandbox_launch_authorized",membershipGranted:false}]){
+  const f=fixture();f.deps.consume=async()=>permit;assert.equal(await f.client.prepare(quote),true);assert.equal(await f.client.launch(),"held");assert.deepEqual(f.calls,[]);
+ }
+ const f=fixture();f.deps.consume=async()=>{f.client.setOwner(null);return {owner,intentId:f.intent.intentId,environment:"test",outcome:"sandbox_launch_authorized",membershipGranted:false};};
+ assert.equal(await f.client.prepare(quote),true);assert.equal(await f.client.launch(),"held");assert.deepEqual(f.calls,[]);
+});
+test("restore requires authenticated identity and rejects conflicting token products before syncing",async()=>{
+ const f=fixture();f.deps.accountIdentity=async()=>({owner,accountId:"b".repeat(64),environment:"test"});assert.equal(await f.client.recover(accountId),null);assert.deepEqual(f.calls,[]);
+ const g=fixture();g.deps.restore=async()=>({accountId,pendingCount:0,candidates:[{accountId,productId:"hoopcheck.pro",token:"synthetic-purchase-token"},{accountId,productId:"hoopcheck.premium",token:"synthetic-purchase-token"}]});assert.equal(await g.client.recover(accountId),null);assert.deepEqual(g.calls,[]);
+});
+test("a different owner cannot clear an interrupted purchase fence",async()=>{
+ const f=fixture();assert.equal(await f.client.prepare(quote),true);assert.equal(await f.client.launch(),"launched");
+ const other="44444444-4444-4444-8444-444444444444",otherAccount="b".repeat(64);
+ f.client.setOwner(other);f.state.session={owner:other,token:"other-session",role:"player"};
+ f.deps.accountIdentity=async()=>({owner:other,accountId:otherAccount,environment:"test"});
+ f.deps.restore=async()=>({accountId:otherAccount,pendingCount:0,candidates:[]});
+ assert.deepEqual(await f.client.recover(otherAccount),{verified:0,pending:0,failed:0});assert.equal(await f.client.prepare(quote),false);
 });
