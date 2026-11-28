@@ -73,3 +73,17 @@ test("Story multipart supports the validated React Native file descriptor and br
  const browser=new FormData();appendStoryPhoto(browser,photo,new Blob(["data"],{type:"image/jpeg"}));assert.equal(browser.get("image").size,4);
  const adapter=readFileSync(new URL("../src/native/mediaSelection.ts",import.meta.url),"utf8");assert.match(adapter,/!file\.exists \|\| file\.size !== photo\.size/);
 });
+
+test("local video draft is preview only; cannot publish or obtain a signed Story URL",()=>{
+ const ui=readFileSync(new URL("../components/PhotoStories.tsx",import.meta.url),"utf8");
+ const moderate=readFileSync(new URL("../../../app/api/hoopfeed/moderate/route.ts",import.meta.url),"utf8");
+ const media=readFileSync(new URL("../../../app/api/hoopfeed/media/route.ts",import.meta.url),"utf8");
+ assert.match(ui,/camera\?captureVideo\(\):chooseVideo\(\)/);
+ assert.match(ui,/setVideoDraft\(result\);setPhoto\(null\)/);
+ assert.match(ui,/FeedVideo key=\{videoDraft.uri\}/);
+ assert.match(ui,/!canWrite\|\|!photo\|\|videoDraft\|\|uncertain/);
+ assert.match(ui,/disabled=\{!photo\|\|Boolean\(videoDraft\)\|\|busy\|\|uncertain\}/);
+ assert.doesNotMatch(ui,/publishMediaPost|uploadVideoFile|video-upload/);
+ assert.match(moderate,/if \(videoPath\) return NextResponse.json\(\{ allowed:false, message:"Video Stories are unavailable until visual and audio moderation is verified." \}, \{status:503\}\)/);
+ assert.match(media,/post.post_kind === "story" && attachedKind === "video"/);
+});

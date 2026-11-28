@@ -4,10 +4,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "../src/primitives";
 import { useEntryTheme } from "../src/theme";
 import { supabase } from "../src/lib/supabase";
-import { choosePhoto,capturePhoto,photoBody,type Photo } from "../src/native/mediaSelection";
+import { choosePhoto,capturePhoto,chooseVideo,captureVideo,photoBody,type Photo,type Video } from "../src/native/mediaSelection";
 import { deleteOwnedFeedPost } from "../src/native/feedClient";
 import { PublicationUnconfirmed } from "../src/native/mediaClient";
 import { readPhotoStories,publishPhotoStory,storyVisible,communityPhotoStoriesEnabled,type StoryAudience,type Story,type StoryCursor } from "../src/native/photoStories";
+import { FeedVideo } from "./FeedVideo";
 import { FeedMedia } from "./FeedMedia";
 import { FeedReport } from "./FeedReport";
 const origin=process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim()||"https://hoopcheck.online";
@@ -17,6 +18,8 @@ export function PhotoStories({uid,canWrite,blockedIds,onClose,onBlock}:Props){
  const [rows,setRows]=useState<Story[]>([]),[next,setNext]=useState<StoryCursor|null>(null),[selected,setSelected]=useState<string|null>(null);
  const [photo,setPhoto]=useState<Photo|null>(null),[caption,setCaption]=useState(""),[busy,setBusy]=useState(false),[message,setMessage]=useState(""),[uncertain,setUncertain]=useState(false),[now,setNow]=useState(()=>Date.now());
  const [audience,setAudience]=useState<StoryAudience>("followers");
+ const [videoDraft,setVideoDraft]=useState<Video|null>(null);
+ const previewFailure=useCallback(()=>{if(alive.current)setMessage("This clip could not be previewed. Choose another video.");},[]);
  const alive=useRef(false),locked=useRef(false),controller=useRef<AbortController|null>(null),closeRef=useRef(onClose);
  useEffect(()=>{closeRef.current=onClose;},[onClose]);
  const close=useCallback(()=>{alive.current=false;controller.current?.abort();closeRef.current();},[]);
@@ -40,12 +43,23 @@ export function PhotoStories({uid,canWrite,blockedIds,onClose,onBlock}:Props){
  async function pick(camera:boolean){
   if(!alive.current||locked.current||!canWrite||uncertain)return;
   locked.current=true;setBusy(true);setMessage("");
-  try{const result=await(camera?capturePhoto():choosePhoto());if(alive.current&&result)setPhoto(result);}
+  try{const result=await(camera?capturePhoto():choosePhoto());if(alive.current&&result){setPhoto(result);setVideoDraft(null);}}
   catch(error){if(alive.current)setMessage(error instanceof Error?error.message:"Photo unavailable.");}
   finally{locked.current=false;if(alive.current)setBusy(false);}
  }
+ // Video drafts remain device-local until actual visual and audio moderation
+ // and a private quarantine contract have been independently accepted.
+ async function pickVideo(camera:boolean){
+  if(!alive.current||locked.current||!canWrite||uncertain)return;
+  locked.current=true;setBusy(true);setMessage("");
+  try{
+   const result=await(camera?captureVideo():chooseVideo());
+   if(alive.current&&result){setVideoDraft(result);setPhoto(null);}
+  }catch(error){if(alive.current)setMessage(error instanceof Error?error.message:"Video unavailable.");}
+  finally{locked.current=false;if(alive.current)setBusy(false);}
+ }
  async function publish(){
-  if(!alive.current||locked.current||!canWrite||!photo||uncertain)return;
+  if(!alive.current||locked.current||!canWrite||!photo||videoDraft||uncertain)return;
   locked.current=true;setBusy(true);setMessage("");
   const abort=new AbortController();controller.current=abort;const deadline=setTimeout(()=>abort.abort(),30000);let success=false;
   try{
@@ -76,9 +90,19 @@ export function PhotoStories({uid,canWrite,blockedIds,onClose,onBlock}:Props){
     <Text style={{color:t.foreground,fontWeight:"700"}}>Create a Story</Text>
     {photo?<Image accessibilityLabel="Selected Story photo" source={{uri:photo.uri}} resizeMode="contain" style={{height:220,width:"100%"}}/>:null}
     <View style={{flexDirection:"row",flexWrap:"wrap",gap:6}}><Button secondary disabled={busy||uncertain} onPress={()=>void pick(false)}>{photo?"Replace photo":"Choose photo"}</Button>{Platform.OS!=="web"?<Button secondary disabled={busy||uncertain} onPress={()=>void pick(true)}>{photo?"Retake":"Take photo"}</Button>:null}{photo&&!uncertain?<Button secondary disabled={busy} onPress={()=>setPhoto(null)}>Remove photo</Button>:null}</View>
+    {videoDraft?<View style={{gap:8}}>
+      <FeedVideo key={videoDraft.uri} uri={videoDraft.uri} enabled={false} loop={false} height={220} onFailure={previewFailure}/>
+      <Text style={{color:t.muted}}>Private device preview · {(videoDraft.size/1024/1024).toFixed(1)} MB. This clip has not been uploaded or moderated.</Text>
+      <Button secondary disabled={busy} onPress={()=>setVideoDraft(null)}>Discard video preview</Button>
+    </View>:null}
+    <View style={{flexDirection:"row",flexWrap:"wrap",gap:6}}>
+      <Button secondary disabled={busy||uncertain} onPress={()=>void pickVideo(false)}>{videoDraft?"Replace video preview":"Choose video to preview"}</Button>
+      {Platform.OS!=="web"?<Button secondary disabled={busy||uncertain} onPress={()=>void pickVideo(true)}>Record video to preview</Button>:null}
+    </View>
+    {videoDraft?<Text accessibilityLiveRegion="polite" style={{color:t.muted}}>Video Stories cannot be published until both visual and audio safety checks are available. Only photo publishing is available.</Text>:null}
     <TextInput accessibilityLabel="Story caption" value={caption} maxLength={2000} editable={!busy&&!uncertain} onChangeText={setCaption} placeholder="Add a caption (optional)" placeholderTextColor={t.muted} style={{color:t.foreground,borderWidth:1,borderColor:t.border,minHeight:48,padding:12,borderRadius:12}}/>
     {communityPhotoStoriesEnabled?<View style={{gap:6}}><Text style={{color:t.foreground}}>Story audience</Text><Button secondary disabled={busy||uncertain} onPress={()=>setAudience("followers")}>{audience==="followers"?"✓ ":""}Followers</Button><Button secondary disabled={busy||uncertain} onPress={()=>setAudience("community")}>{audience==="community"?"✓ ":""}Eligible HoopCheck community</Button></View>:null}
-    <Button disabled={!photo||busy||uncertain} onPress={()=>void publish()}>{audience==="community"?"Post to eligible community":"Post to followers"} · 24h</Button>
+    <Button disabled={!photo||Boolean(videoDraft)||busy||uncertain} onPress={()=>void publish()}>{audience==="community"?"Post to eligible community":"Post to followers"} · 24h</Button>
     {uncertain?<Text style={{color:t.muted}}>Publication was uncertain. Refresh and review before closing this draft. Do not repost automatically.</Text>:null}
    </View>:null}
    <Button secondary disabled={busy} onPress={()=>void refresh()}>{busy?"Working…":"Refresh Stories"}</Button>
