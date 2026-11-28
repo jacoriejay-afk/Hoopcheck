@@ -183,14 +183,16 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
           .eq("channel_id",channel!.id).order("created_at",{ascending:false}).order("id",{ascending:false}).limit(100)
           .setHeader("Authorization","Bearer "+token).abortSignal(controller.signal);
         if(readError||controller.signal.aborted)throw Error("Channel messages could not be loaded.");
-        if(readStateEnabled){try{const counts=await readGroupUnread(supabase,channel!.space_id,"Bearer "+token,controller.signal);if(alive&&!controller.signal.aborted)setUnreadSnapshot({channelId:channel!.id,counts});}catch{if(alive)setUnreadSnapshot(null);}}
+        let counts:GroupUnread|null=null;
+        if(readStateEnabled){try{counts=await readGroupUnread(supabase,channel!.space_id,"Bearer "+token,controller.signal);}catch{/* Do not fabricate unread counts. */}}
         const current=await safetyToken();
         if(!alive||controller.signal.aborted||current!==token)throw Error("Session changed. Refresh the channel.");
         if(AppState.currentState!=="active"&&AppState.currentState!==null)return;
+        if(alive)setUnreadSnapshot(counts?{channelId:channel!.id,counts}:null);
         if(alive)setPostSnapshot({channelId:channel!.id,posts:((data||[]) as Post[]).filter(post=>!blocked.has(post.author_id)).filter(post=>post.moderation_status==="approved"||post.author_id===userId&&post.moderation_status==="pending").reverse()});
         startRealtime();
         setPostError("");
-      }catch{if(alive){stopRealtime();setPostError("Channel messages or block status could not be verified.");setPostSnapshot(null);}}
+      }catch{if(alive){stopRealtime();setUnreadSnapshot(null);setPostError("Channel messages or block status could not be verified.");setPostSnapshot(null);}}
       finally{
         clearTimeout(timer);if(activeController===controller)activeController=null;running=false;initial=false;
         if(alive){setPostLoading(false);if(resumePending){resumePending=false;void loadPosts();}}
@@ -200,7 +202,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
     const refreshTimer=setInterval(()=>void loadPosts(),25000);
     const appState=AppState.addEventListener("change",state=>{
       if(state==="active"){if(running)resumePending=true;else void loadPosts();}
-      else {stopRealtime();resumePending=false;activeController?.abort();setPostSnapshot(null);}
+      else {stopRealtime();resumePending=false;activeController?.abort();setUnreadSnapshot(null);setPostSnapshot(null);}
     });
     return()=>{alive=false;stopRealtime();queue.dispose();clearInterval(refreshTimer);appState.remove();activeController?.abort();setPostSnapshot(null);};
   },[userId,offline,member,channel?.id,revision,postRefresh,safetyToken]));

@@ -59,7 +59,7 @@ export default function HoopGroupsPage() {
   const load = useCallback(async () => {
     // A session transition invalidates every outstanding account-specific read.
     const generation = ++loadGeneration.current;
-    pendingSend.current=null;
+    pendingSend.current=null;setUnreadSnapshot(null);
     setReady(false); setBackendReady(false); setBusy(false);
     setUserId(""); setAccountRole(""); setSpaces([]); setChannels([]);
     setMemberships([]); setSpaceId(""); setChannelId(""); setPostSnapshot(null);
@@ -110,8 +110,7 @@ export default function HoopGroupsPage() {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       // Never await a Supabase request inside the auth callback.
       loadGeneration.current += 1;
-      pendingSend.current=null;
-      setReady(false); setBackendReady(false); setUserId(""); setPostSnapshot(null);
+      pendingSend.current=null;setUnreadSnapshot(null);(false); setBackendReady(false); setUserId(""); setPostSnapshot(null);
       setMemberships([]); setDraftSnapshot(null); setAccountRole(""); setSpaces([]); setChannels([]);
       setSpaceId(""); setChannelId(""); setFeedback(""); setBusy(false);
       setDiscoverQuery(""); setDiscoverFilter("all");
@@ -135,7 +134,7 @@ export default function HoopGroupsPage() {
   const joined = Boolean(selected && memberships.includes(selected.id));
   const scope = groupChannelScope(userId,channel?.id,joined&&backendReady&&ready);
   const posts = scopedGroupValue(postSnapshot,scope,[]);
-  const unread=scopedGroupValue(unreadSnapshot,scope,null);
+  const unread=scopedGroupValue<GroupUnread|null>(unreadSnapshot,scope,null);
   const draft = scopedGroupValue(draftSnapshot,scope,"");
   function setDraft(value:string){if(scope)setDraftSnapshot({scope,value});}
   useEffect(() => { channelRef.current = channel?.id || ""; }, [channel?.id]);
@@ -200,16 +199,18 @@ export default function HoopGroupsPage() {
             .select("id,author_id,body,moderation_status,created_at").eq("channel_id",currentChannel)
             .order("created_at",{ascending:false}).order("id",{ascending:false}).limit(100).setHeader("Authorization",header).abortSignal(signal);
           if(error||signal.aborted)throw Error("Could not load group discussion posts.");
-          if(readStateEnabled){try{const counts=await readGroupUnread(supabase,currentSpace,header,signal);if(current()&&!isHidden()&&!signal.aborted)setUnreadSnapshot({scope,value:counts});}catch{if(current())setUnreadSnapshot(null);}}
+          let counts:GroupUnread|null=null;
+          if(readStateEnabled){try{counts=await readGroupUnread(supabase,currentSpace,header,signal);}catch{/* Do not fabricate unread counts. */}}
           const after=await verifiedHeader(userId,signal);
           if(after!==header||!current()||signal.aborted)throw Error("Session changed. Refresh messages.");
+          if(current()&&!isHidden()&&!signal.aborted)setUnreadSnapshot(counts?{scope,value:counts}:null);
           return visibleGroupPosts((data||[]) as Post[],userId,new Set(blocks.data.map(row=>row.blocked_id))).reverse();
         },undefined,request);
         if(current()&&running===request&&!isHidden()){setPostSnapshot({scope,value:rows});setPostError("");startRealtime();}
-      }catch{if(current()&&running===request){stopRealtime();setPostSnapshot(null);setPostError("Messages or membership could not be verified. Refresh to retry.");}}
+      }catch{if(current()&&running===request){stopRealtime();setUnreadSnapshot(null);setPostSnapshot(null);setPostError("Messages or membership could not be verified. Refresh to retry.");}}
       finally{if(running===request){running=null;if(current()){setPostLoading(false);if(pending){pending=false;queue.request();}}}}
     }
-    const visibility=()=>{if(document.visibilityState==="hidden"){stopRealtime();running?.abort();running=null;setPostSnapshot(null);}else{setPostLoading(true);void readMessages();}};
+    const visibility=()=>{if(document.visibilityState==="hidden"){stopRealtime();running?.abort();running=null;setUnreadSnapshot(null);setPostSnapshot(null);}else{setPostLoading(true);void readMessages();}};
     void readMessages();
     const interval=window.setInterval(()=>{void readMessages();},15000);
     document.addEventListener("visibilitychange",visibility);
