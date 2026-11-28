@@ -1,0 +1,37 @@
+name: Private chat push offline acceptance
+on:
+  pull_request:
+    paths:
+      - 'supabase/candidates/private_chat_push_review_only.sql'
+      - 'supabase/tests/private_chat_push_isolated.sql'
+      - 'scripts/private-chat-push-worker.mjs'
+      - 'scripts/test-private-chat-push-worker.mjs'
+      - '.github/workflows/private-chat-push-fixture.yml'
+permissions:
+  contents: read
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: fixture
+          POSTGRES_DB: fixture
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --test scripts/test-private-chat-push-worker.mjs
+      - name: Standalone synthetic lifecycle fixture
+        env:
+          PGPASSWORD: fixture
+        run: psql -X -h 127.0.0.1 -U postgres -d fixture -v ON_ERROR_STOP=1 -f supabase/tests/private_chat_push_isolated.sql

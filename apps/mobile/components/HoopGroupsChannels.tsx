@@ -9,24 +9,49 @@ import { requireOnline, useNetwork } from "../src/native/network";
 import { useNativeAccount } from "../src/native/useNativeAccount";
 import { GroupModerationPanel } from "./GroupModerationPanel";
 import { HoopCheckLoading } from "./HoopCheckLoading";
+import { randomUUID } from "expo-crypto";
+import { readGroupUnread,markGroupVisibleRead,type GroupUnread } from "../src/native/hoopGroupsRead";
+import { prepareGroupSend, submitGroupSend, type GroupSend } from "../src/native/hoopGroupsSend";
+import {GroupAccessPanel} from "./GroupAccessPanel";
+import {readGroupDirectoryPage,type DirectoryMode} from "../src/native/groupDirectoryPage";
+import {resolveGroupChannelLink} from "../src/native/groupAlertLinks";
+import {readGroupChannelAccess} from "../src/native/hoopGroupsChannelAccess";
+import { createGroupRefreshQueue } from "../src/native/hoopGroupsRefresh";
 import { readWithDeadline } from "../src/native/readDeadline";
+import { withHoopChatDeadline } from "../src/native/hoopChatLoad";
+import { setGroupMembership } from "../src/native/groupMembership";
 import { findInvitedGroup } from "../src/native/deepLinks";
 
 type Space = { id:string;slug:string;name:string;category:string;description:string;owner_id:string|null;accent_color:string;icon_key:string };
 type Channel = { id:string;space_id:string;name:string;slug:string;sort_index:number };
-type Post = { id:string;author_id:string;body:string;moderation_status:string;created_at:string };
+const GROUP_POST_FIELDS: string = "id,author_id,body,moderation_status,created_at";
+const GROUP_POST_REPLY_FIELDS: string = GROUP_POST_FIELDS+",reply_to_id,was_reply";
+type Post = { id:string;author_id:string;body:string;moderation_status:string;created_at:string;reply_to_id?:string|null;was_reply?:boolean };
+function validateGroupPostRows(value:unknown,replies:boolean):Post[]{
+ if(!Array.isArray(value)||value.length>100)throw Error("Invalid group post response.");
+ return value.map(row=>{
+  if(!row||typeof row!=="object"||typeof row.id!=="string"||typeof row.author_id!=="string"||typeof row.body!=="string"||typeof row.moderation_status!=="string"||typeof row.created_at!=="string"||!Number.isFinite(Date.parse(row.created_at))||(replies&&(typeof row.was_reply!=="boolean"||!(row.reply_to_id===null||typeof row.reply_to_id==="string"))))throw Error("Invalid group post response.");
+  return {id:row.id,author_id:row.author_id,body:row.body,moderation_status:row.moderation_status,created_at:row.created_at,...(replies?{reply_to_id:row.reply_to_id,was_reply:row.was_reply}:{})};
+ });
+}
+
+const groupAlertsEnabled=process.env.EXPO_PUBLIC_HOOPGROUPS_ALERTS_ENABLED==="true";
+const privateAccessEnabled=process.env.EXPO_PUBLIC_HOOPGROUPS_PRIVATE_ACCESS_ENABLED==="true";
+const directoryEnabled=privateAccessEnabled&&process.env.EXPO_PUBLIC_HOOPGROUPS_DIRECTORY_ENABLED==="true";
+const repliesEnabled=process.env.EXPO_PUBLIC_HOOPGROUPS_REPLIES_ENABLED==="true";
+const readStateEnabled=process.env.EXPO_PUBLIC_HOOPGROUPS_READ_STATE_ENABLED==="true";
 const colorOptions = { orange:"#FF873C", blue:"#60A5FA", purple:"#A78BFA", green:"#4ADE80", pink:"#F472B6", gold:"#FBBF24" } as const;
 const iconOptions = { basketball:"🏀", flame:"🔥", globe:"🌐", star:"⭐", trophy:"🏆", users:"👥" } as const;
 const accent = (name:string) => colorOptions[name as keyof typeof colorOptions] ?? colorOptions.orange;
 const emblem = (name:string) => iconOptions[name as keyof typeof iconOptions] ?? iconOptions.basketball;
-export default function HoopGroupsChannels({inviteSlug = null}:{inviteSlug?:string|null}) {
+export default function HoopGroupsChannels({inviteSlug = null,invitationHint=null,discussionHint=null}:{inviteSlug?:string|null;invitationHint?:string|null;discussionHint?:string|null}) {
   const {account}=useNativeAccount();
   const {offline}=useNetwork();
   const userId=account?.user.id||"";
   // Never carry a previous account's local membership, drafts or requests across identities.
-  return <ScopedHoopGroups key={JSON.stringify([userId,offline])} userId={userId} offline={offline} role={account?.user.accountType||""} inviteSlug={inviteSlug} />;
+  return <ScopedHoopGroups key={JSON.stringify([userId,offline])} userId={userId} offline={offline} role={account?.user.accountType||""} inviteSlug={inviteSlug} invitationHint={invitationHint} discussionHint={discussionHint} />;
 }
-function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offline:boolean;role:string;inviteSlug:string|null}) {
+function ScopedHoopGroups({userId,offline,role,inviteSlug,invitationHint,discussionHint}:{userId:string;offline:boolean;role:string;inviteSlug:string|null;invitationHint:string|null;discussionHint:string|null}) {
   const theme=useEntryTheme();
   const [spaces,setSpaces]=useState<Space[]>([]);
   const [channels,setChannels]=useState<Channel[]>([]);
@@ -37,15 +62,21 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
   const [channelId,setChannelId]=useState("");
   const [postSnapshot,setPostSnapshot]=useState<{channelId:string;posts:Post[]}|null>(null);
   const [postLoading,setPostLoading]=useState(false);
+  const [unreadSnapshot,setUnreadSnapshot]=useState<{channelId:string;counts:GroupUnread}|null>(null);
   const [postError,setPostError]=useState("");
   const [postRefresh,setPostRefresh]=useState(0);
+  const [replySnapshot,setReplySnapshot]=useState<{channelId:string;id:string}|null>(null);
   const [draftState,setDraftState]=useState<{channelId:string;value:string}|null>(null);
   const [loading,setLoading]=useState(true);
   const [busy,setBusy]=useState(false);
   const mutationLocked=useRef(false);
+  const pendingSend=useRef<GroupSend|null>(null);
   const [error,setError]=useState("");
   const [revision,setRevision]=useState(0);
   const [query,setQuery]=useState("");
+  const ignoredDirectoryLink=useRef<{invite:string|null;discussion:string|null}>({invite:null,discussion:null});
+  const directoryInput=useRef<{query:string;mode:DirectoryMode;stack:(string|null)[];slug:string|null}>({query:"",mode:"all",stack:[null],slug:null});
+  const [directoryNext,setDirectoryNext]=useState<string|null>(null),[directoryPage,setDirectoryPage]=useState(1),[directoryApplied,setDirectoryApplied]=useState("");
   const [filter,setFilter]=useState<"discover"|"joined"|"mine">("discover");
   const [creating,setCreating]=useState(false);
   const [newName,setNewName]=useState("");
@@ -74,12 +105,25 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
     let alive=true;
     const controller=new AbortController(),deadline=setTimeout(()=>controller.abort(),15000);
     async function load() {
-      setLoading(true);setError("");
+      setLoading(true);setError("");setDirectoryNext(null);
       try{
         const token=await safetyToken();
         if(!alive||controller.signal.aborted)return;
         const header="Bearer "+token;
-        const [a,b,c]=await Promise.all([
+        let directory:Awaited<ReturnType<typeof readGroupDirectoryPage>>|null=null;
+        if(directoryEnabled){
+          const d=directoryInput.current;
+          directory=await readGroupDirectoryPage(supabase,userId,header,{query:d.query,mode:d.mode,after:d.stack.at(-1)??null},controller.signal);
+          const shared=d.slug||(inviteSlug!==ignoredDirectoryLink.current.invite?inviteSlug:null);
+          if(shared&&/^[a-z0-9-]{3,60}$/.test(shared)&&!directory.spaces.some(s=>s.slug===shared)){
+            const linked=await readGroupDirectoryPage(supabase,userId,header,{query:"",mode:"all",after:null,slug:shared},controller.signal);
+            directory.spaces.unshift(...linked.spaces);directory.channels.unshift(...linked.channels);directory.joined.push(...linked.joined);
+          }
+          if(!alive||controller.signal.aborted)return;
+        }
+        const [a,b,c]=directory?[
+          {data:directory.spaces,error:null},{data:directory.channels,error:null},{data:directory.joined.map(space_id=>({space_id})),error:null}
+        ]:await Promise.all([
           supabase.from("hoop_group_spaces").select("id,slug,name,category,description,owner_id,accent_color,icon_key").order("name").setHeader("Authorization",header).abortSignal(controller.signal),
           supabase.from("hoop_group_channels").select("id,space_id,name,slug,sort_index").order("sort_index").setHeader("Authorization",header).abortSignal(controller.signal),
           supabase.from("hoop_group_members").select("space_id").eq("user_id",userId).setHeader("Authorization",header).abortSignal(controller.signal),
@@ -88,15 +132,19 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
         if(!alive)return;
         const current=await safetyToken();
         if(!alive||controller.signal.aborted||current!==token)throw Error("Account changed. Refresh HoopGroups.");
-        setSpaces((a.data||[]) as Space[]);setChannels((b.data||[]) as Channel[]);
-        setJoined((c.data||[]).map(row=>row.space_id));
-        setSpaceId(current=>(a.data||[]).some(row=>row.id===current)?current:"");
+        const spaces=(a.data||[]) as Space[],channels=(b.data||[]) as Channel[],memberIds=(c.data||[]).map(row=>row.space_id);
+        const linked=groupAlertsEnabled&&discussionHint&&(!directoryEnabled||discussionHint!==ignoredDirectoryLink.current.discussion)?await resolveGroupChannelLink(supabase,userId,discussionHint,header,controller.signal):null;
+        if(!alive||controller.signal.aborted)return;
+        if(linked){if(!spaces.some(s=>s.id===linked.space.id))spaces.unshift(linked.space);if(!channels.some(c=>c.id===linked.channel.id))channels.unshift(linked.channel);if(!memberIds.includes(linked.space.id))memberIds.push(linked.space.id);setSpaceId(linked.space.id);setChannelId(linked.channel.id);setQuery("");setFilter("discover");}
+        else {if(groupAlertsEnabled&&discussionHint&&(!directoryEnabled||discussionHint!==ignoredDirectoryLink.current.discussion))setError("This discussion is no longer available.");setSpaceId(current=>spaces.some(row=>row.id===current)?current:"");}
+        setSpaces(spaces);setChannels(channels);setJoined(memberIds);
+        if(directory){setDirectoryNext(directory.next);setDirectoryPage(directoryInput.current.stack.length);setDirectoryApplied(directoryInput.current.query);}
       }catch(failure){if(alive){setSpaces([]);setChannels([]);setJoined([]);setPostSnapshot(null);setError(failure instanceof Error?failure.message:"Could not open HoopGroups.");}}
       finally{clearTimeout(deadline);if(alive)setLoading(false);}
     }
     void load();
     return ()=>{alive=false;clearTimeout(deadline);controller.abort();setPostSnapshot(null);setJoined([]);};
-  },[userId,offline,revision,safetyToken]));
+  },[userId,offline,revision,safetyToken,discussionHint,inviteSlug]));
 
   useEffect(()=>{
     if(!inviteSlug){setHandledInvite(null);setInviteUnavailable(false);return;}
@@ -115,16 +163,27 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
     if(filter==="joined" && !joined.includes(space.id))return false;
     if(filter==="mine" && space.owner_id!==userId)return false;
     const needle=query.trim().toLocaleLowerCase();
-    return !needle || [space.name,space.description,space.category].some(value=>value.toLocaleLowerCase().includes(needle));
+    return directoryEnabled || !needle || [space.name,space.description,space.category].some(value=>value.toLocaleLowerCase().includes(needle));
   });
   const selected=filtered.find(item=>item.id===spaceId)||filtered[0];
   const availableChannels=channels.filter(item=>item.space_id===selected?.id);
   const channel=availableChannels.find(item=>item.id===channelId)||availableChannels[0];
   const member=Boolean(selected&&joined.includes(selected.id));
   const posts=member&&channel&&postSnapshot?.channelId===channel.id?postSnapshot.posts:[];
+  const unread=member&&channel&&unreadSnapshot?.channelId===channel.id?unreadSnapshot.counts:null;
   const draft=member&&channel&&draftState?.channelId===channel.id?draftState.value:"";
+  const replyId=member&&channel&&replySnapshot?.channelId===channel.id?replySnapshot.id:"";
+  const replyParent=posts.find(p=>p.id===replyId&&p.moderation_status==="approved");
   function setDraft(value:string) {setDraftState(value&&channel?{channelId:channel.id,value}:null);}
   const managing=editing&&editingGroupId===selected?.id;
+  function navigateDirectory(direction:"search"|"next"|"previous",mode:"discover"|"joined"|"mine"=filter){
+    if(!directoryEnabled||offline||loading||busy||mutationLocked.current||draft.trim())return;
+    const current=directoryInput.current;
+    if(direction==="next"){if(!directoryNext)return;current.stack.push(directoryNext);}
+    else if(direction==="previous"){if(current.stack.length<=1)return;current.stack.pop();}
+    else {current.stack=[null];current.query=query.trim().slice(0,80);current.mode=mode==="discover"?"all":mode;setFilter(mode);}
+    ignoredDirectoryLink.current={invite:inviteSlug,discussion:discussionHint};current.slug=null;setDirectoryNext(null);setSpaceId("");setChannelId("");setPostSnapshot(null);setUnreadSnapshot(null);setDraftState(null);setReplySnapshot(null);setEditing(false);setRevision(v=>v+1);
+  }
 
   useFocusEffect(useCallback(()=>{
     if(!userId||offline||!member||!channel?.id){setPostSnapshot(null);setPostLoading(false);setPostError("");return;}
@@ -133,7 +192,25 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
     let running=false;
     let initial=true;
     let resumePending=false;
-    setPostSnapshot(null);setPostError("");
+    let socketAllowed=!privateAccessEnabled;
+    let realtime:ReturnType<typeof supabase.channel>|null=null;
+    setPostSnapshot(null);setUnreadSnapshot(null);setPostError("");
+    const queue=createGroupRefreshQueue(()=>alive&&(AppState.currentState==="active"||AppState.currentState===null),()=>{
+      if(running)resumePending=true;else void loadPosts();
+    });
+    function stopRealtime(){
+      const previous=realtime;realtime=null;queue.cancel();resumePending=false;
+      if(previous)void supabase.removeChannel(previous);
+    }
+    function startRealtime(){
+      if(realtime||!socketAllowed||!alive||(AppState.currentState!=="active"&&AppState.currentState!==null)||process.env.EXPO_PUBLIC_HOOPGROUPS_REALTIME_ENABLED!=="true")return;
+      const filter="channel_id=eq."+channel!.id;
+      const subscription=supabase.channel("hoopgroups-native:"+userId+":"+channel!.id)
+        .on("postgres_changes",{event:"INSERT",schema:"public",table:"hoop_group_posts",filter},()=>{if(realtime===subscription)queue.request();})
+        .on("postgres_changes",{event:"UPDATE",schema:"public",table:"hoop_group_posts",filter},()=>{if(realtime===subscription)queue.request();});
+      realtime=subscription;
+      subscription.subscribe(status=>{if(realtime===subscription&&status==="SUBSCRIBED")queue.request();});
+    }
     async function loadPosts(){
       if(!alive||running||!(AppState.currentState==="active"||AppState.currentState===null))return;
       running=true;
@@ -149,21 +226,49 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
         if(!alive||controller.signal.aborted)return;
         if(membership.error)throw Error("Membership could not be verified.");
         if(membership.data?.space_id!==channel!.space_id){
-          setJoined(current=>current.filter(id=>id!==channel!.space_id));setPostSnapshot(null);return;
+          stopRealtime();setJoined(current=>current.filter(id=>id!==channel!.space_id));setPostSnapshot(null);setUnreadSnapshot(null);setDraftState(null);setReplySnapshot(null);pendingSend.current=null;if(privateAccessEnabled){setSpaces(previous=>previous.filter(s=>s.id!==channel!.space_id));setChannels(previous=>previous.filter(c=>c.space_id!==channel!.space_id));}return;
+        }
+        if(privateAccessEnabled){
+          const access=await readGroupChannelAccess(supabase,channel!.space_id,channel!.id,"Bearer "+token,controller.signal);
+          if(!alive||controller.signal.aborted)return;
+          socketAllowed=access.channelVisible&&!access.private;
+          if(!socketAllowed)stopRealtime();
+          if(!access.channelVisible){
+            setPostSnapshot(null);setUnreadSnapshot(null);setDraftState(null);setReplySnapshot(null);pendingSend.current=null;
+            setChannels(previous=>previous.filter(c=>access.spaceVisible?c.id!==channel!.id:c.space_id!==channel!.space_id));
+            if(!access.spaceVisible){setSpaces(previous=>previous.filter(s=>s.id!==channel!.space_id));setJoined(previous=>previous.filter(id=>id!==channel!.space_id));}
+            throw Error("Channel access changed.");
+          }
         }
         const blocked=await readOutgoingBlocks(supabase,userId,controller.signal);
         if(!alive||controller.signal.aborted)return;
         const {data,error:readError}=await supabase.from("hoop_group_posts")
-          .select("id,author_id,body,moderation_status,created_at")
+          .select(repliesEnabled?GROUP_POST_REPLY_FIELDS:GROUP_POST_FIELDS)
           .eq("channel_id",channel!.id).order("created_at",{ascending:false}).order("id",{ascending:false}).limit(100)
           .setHeader("Authorization","Bearer "+token).abortSignal(controller.signal);
         if(readError||controller.signal.aborted)throw Error("Channel messages could not be loaded.");
+        let counts:GroupUnread|null=null;
+        if(readStateEnabled){try{counts=await readGroupUnread(supabase,channel!.space_id,"Bearer "+token,controller.signal);}catch{/* Do not fabricate unread counts. */}}
+        if(privateAccessEnabled){
+          const access=await readGroupChannelAccess(supabase,channel!.space_id,channel!.id,"Bearer "+token,controller.signal);
+          if(!alive||controller.signal.aborted)return;
+          socketAllowed=access.channelVisible&&!access.private;
+          if(!socketAllowed)stopRealtime();
+          if(!access.channelVisible){
+            setPostSnapshot(null);setUnreadSnapshot(null);setDraftState(null);setReplySnapshot(null);pendingSend.current=null;
+            setChannels(previous=>previous.filter(c=>access.spaceVisible?c.id!==channel!.id:c.space_id!==channel!.space_id));
+            if(!access.spaceVisible){setSpaces(previous=>previous.filter(s=>s.id!==channel!.space_id));setJoined(previous=>previous.filter(id=>id!==channel!.space_id));}
+            throw Error("Channel access changed.");
+          }
+        }
         const current=await safetyToken();
         if(!alive||controller.signal.aborted||current!==token)throw Error("Session changed. Refresh the channel.");
         if(AppState.currentState!=="active"&&AppState.currentState!==null)return;
-        if(alive)setPostSnapshot({channelId:channel!.id,posts:((data||[]) as Post[]).filter(post=>!blocked.has(post.author_id)).reverse()});
+        if(alive)setUnreadSnapshot(counts?{channelId:channel!.id,counts}:null);
+        if(alive)setPostSnapshot({channelId:channel!.id,posts:(validateGroupPostRows(data??[],repliesEnabled)).filter(post=>!blocked.has(post.author_id)).filter(post=>post.moderation_status==="approved"||post.author_id===userId&&post.moderation_status==="pending").reverse()});
+        startRealtime();
         setPostError("");
-      }catch{if(alive){setPostError("Channel messages or block status could not be verified.");setPostSnapshot(null);}}
+      }catch{if(alive){stopRealtime();setUnreadSnapshot(null);setPostError("Channel messages or block status could not be verified.");setPostSnapshot(null);}}
       finally{
         clearTimeout(timer);if(activeController===controller)activeController=null;running=false;initial=false;
         if(alive){setPostLoading(false);if(resumePending){resumePending=false;void loadPosts();}}
@@ -173,9 +278,9 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
     const refreshTimer=setInterval(()=>void loadPosts(),25000);
     const appState=AppState.addEventListener("change",state=>{
       if(state==="active"){if(running)resumePending=true;else void loadPosts();}
-      else {resumePending=false;activeController?.abort();setPostSnapshot(null);}
+      else {stopRealtime();resumePending=false;activeController?.abort();setUnreadSnapshot(null);setPostSnapshot(null);}
     });
-    return()=>{alive=false;clearInterval(refreshTimer);appState.remove();activeController?.abort();setPostSnapshot(null);};
+    return()=>{alive=false;stopRealtime();queue.dispose();clearInterval(refreshTimer);appState.remove();activeController?.abort();setPostSnapshot(null);};
   },[userId,offline,member,channel?.id,revision,postRefresh,safetyToken]));
 
   async function join() {
@@ -183,10 +288,9 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
     if(mutationLocked.current)return;
     mutationLocked.current=true;setBusy(true);setError("");
     try{
-      const token=await safetyToken();
-      const {error:joinError}=await supabase.from("hoop_group_members").insert({space_id:selected.id,user_id:userId}).setHeader("Authorization","Bearer "+token);
-      if(joinError)throw Error("Could not join community.");
-      setJoined(current=>[...new Set([...current,selected.id])]);
+      await requireOnline();
+      const result=await withHoopChatDeadline(signal=>setGroupMembership(supabase,userId,selected.id,true,signal));
+      setJoined(current=>[...new Set([...current,result.spaceId])]);
     }catch(failure){setError(failure instanceof Error?failure.message:"Join failed.");}
     finally{mutationLocked.current=false;setBusy(false);}
   }
@@ -207,6 +311,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
         .select("id,slug,name,category,description,owner_id,accent_color,icon_key").single();
       if(createError||!data)throw Error("Group creation was not confirmed. You can own up to three groups.");
       setSpaces(current=>[...current,data as Space]);setSpaceId(data.id);
+      if(directoryEnabled)directoryInput.current={query:"",mode:"all",stack:[null],slug:data.slug};
       setFilter("discover");setQuery("");setCreating(false);setNewName("");setNewDescription("");
       setRevision(value=>value+1);
     }catch(failure){setError(failure instanceof Error?failure.message:"Could not create group.");}
@@ -249,11 +354,9 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
     if(mutationLocked.current)return;
     mutationLocked.current=true;setBusy(true);setError("");
     try{
-      const token=await safetyToken();
-      const {error:leaveError}=await supabase.from("hoop_group_members")
-        .delete().eq("space_id",selected.id).eq("user_id",userId).setHeader("Authorization","Bearer "+token);
-      if(leaveError)throw Error("Could not leave this group.");
-      setJoined(current=>current.filter(id=>id!==selected.id));setPostSnapshot(null);setDraft("");
+      await requireOnline();
+      const result=await withHoopChatDeadline(signal=>setGroupMembership(supabase,userId,selected.id,false,signal));
+      setJoined(current=>current.filter(id=>id!==result.spaceId));setPostSnapshot(null);setDraft("");
     }catch(failure){setError(failure instanceof Error?failure.message:"Could not leave group.");}
     finally{mutationLocked.current=false;setBusy(false);}
   }
@@ -280,16 +383,30 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
     catch { setError("Could not share the group invitation. Please try again."); }
   }
 
+  async function markVisibleRead(){
+    if(!readStateEnabled||!member||!channel||offline||busy||postLoading||postError||mutationLocked.current)return;
+    const ids=posts.filter(p=>p.author_id!==userId&&p.moderation_status==="approved").map(p=>p.id);
+    if(!ids.length)return;
+    mutationLocked.current=true;setBusy(true);
+    const abort=new AbortController(),deadline=setTimeout(()=>abort.abort(),15000);
+    try{const token=await safetyToken();await markGroupVisibleRead(supabase,channel.id,ids,"Bearer "+token,abort.signal);if(await safetyToken()!==token)throw Error("Session changed.");setPostRefresh(value=>value+1);}
+    catch{setError("Read state could not be confirmed.");}
+    finally{clearTimeout(deadline);mutationLocked.current=false;setBusy(false);}
+  }
   async function send() {
     if(!channel||!member||!userId||offline||busy||!draft.trim())return;
     if(mutationLocked.current)return;
     mutationLocked.current=true;setBusy(true);setError("");
     try{
       const token=await safetyToken();
-      const {error:sendError}=await supabase.from("hoop_group_posts")
-        .insert({channel_id:channel.id,author_id:userId,body:draft.trim().slice(0,1200),moderation_status:"pending"}).setHeader("Authorization","Bearer "+token);
-      if(sendError)throw Error("Could not submit this post. Slow mode allows one post per 20 seconds.");
-      setDraftState(current=>current?.channelId===channel.id&&current.value===draft?null:current);setPostRefresh(value=>value+1);
+      if(repliesEnabled&&replyId&&!replyParent)throw Error("Reply unavailable. Clear the reply or refresh.");
+      const submittedReply=repliesEnabled&&replyParent?replyParent.id:undefined;
+      const message=prepareGroupSend(pendingSend.current,userId,channel.id,draft,randomUUID,submittedReply);
+      pendingSend.current=message;
+      const abort=new AbortController(),deadline=setTimeout(()=>abort.abort(),15000);
+      try{await submitGroupSend(supabase,message,"Bearer "+token,abort.signal);if(await safetyToken()!==token)throw Error("Session changed.");if(pendingSend.current===message)pendingSend.current=null;}
+      finally{clearTimeout(deadline);}
+      setDraftState(current=>current?.channelId===channel.id&&current.value===draft?null:current);setReplySnapshot(current=>current?.channelId===channel.id&&current.id===submittedReply?null:current);setPostRefresh(value=>value+1);
     }catch(failure){setError(failure instanceof Error?failure.message:"Message was not submitted.");}
     finally{mutationLocked.current=false;setBusy(false);}
   }
@@ -354,20 +471,22 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
       Independent basketball communities, member-created groups and moderated discussion channels.
     </Text>
     {loading?<HoopCheckLoading label="Finding HoopGroups…" />:null}
+    {privateAccessEnabled&&!offline&&userId?<GroupAccessPanel key={userId+":"+(selected?.id||"")} uid={userId} space={selected?.id||null} channel={channel?.id||null} invitationHint={invitationHint} alertsEnabled={groupAlertsEnabled} onChanged={()=>setRevision(v=>v+1)}/>:null}
     {inviteUnavailable?<Text accessibilityRole="alert" style={{color:theme.muted}}>This invited community is unavailable or you do not have access. You can browse other groups below.</Text>:null}
     {error?<Text accessibilityRole="alert" style={{color:theme.accent}}>{error}</Text>:null}
     {offline?<Text style={{color:theme.muted}}>Reconnect to see your groups.</Text>:null}
     {!userId&&!loading?<Text style={{color:theme.muted}}>Sign in to discover HoopGroups.</Text>:null}
     {Boolean(userId)&&!offline?<>
       <TextInput accessibilityLabel="Search HoopGroups" placeholder="Search group names and topics…" placeholderTextColor={theme.muted}
-        value={query} maxLength={100} onChangeText={setQuery}
+        value={query} maxLength={directoryEnabled?80:100} onChangeText={setQuery}
         style={{minHeight:46,paddingHorizontal:12,color:theme.foreground,backgroundColor:theme.input,
           borderColor:theme.glassBorder,borderWidth:1,borderRadius:14}} />
+      {directoryEnabled?<View style={{gap:6}}><Button secondary disabled={loading||busy||!!draft.trim()} onPress={()=>navigateDirectory("search")}>Search all communities</Button><Text style={{color:theme.muted}}>Page {directoryPage}{directoryApplied?` · Search: ${directoryApplied}`:""}</Text><View style={{flexDirection:"row",flexWrap:"wrap",gap:6}}><Button secondary disabled={loading||busy||!!draft.trim()||directoryPage<=1} onPress={()=>navigateDirectory("previous")}>Previous page</Button><Button secondary disabled={loading||busy||!!draft.trim()||!directoryNext} onPress={()=>navigateDirectory("next")}>Next page</Button></View>{draft.trim()?<Text style={{color:theme.muted}}>Finish or clear the discussion draft before changing directory pages.</Text>:null}</View>:null}
       <View accessibilityRole="tablist" style={{flexDirection:"row",gap:6}}>
         {(["discover","joined","mine"] as const).map(value=><Pressable key={value}
           accessibilityRole="tab" accessibilityState={{selected:filter===value}}
           accessibilityLabel={value==="discover"?"Discover groups":value==="joined"?"Joined groups":"My groups"}
-          onPress={()=>setFilter(value)}
+          disabled={directoryEnabled&&(loading||busy||!!draft.trim())} onPress={()=>{if(directoryEnabled)navigateDirectory("search",value);else setFilter(value);}}
           style={{minHeight:44,flex:1,justifyContent:"center",alignItems:"center",borderRadius:12,
             backgroundColor:filter===value?theme.accentSurface:"transparent",
             borderBottomWidth:filter===value?2:0,borderColor:theme.accent}}>
@@ -497,7 +616,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
               onPress={()=>{setChannelId(item.id);setDraft("");}}
               style={{minHeight:44,justifyContent:"center",paddingHorizontal:11,borderRadius:11,
                 backgroundColor:channel?.id===item.id?theme.accentSurface:theme.chip}}>
-              <Text style={{color:theme.foreground,fontWeight:"700"}}># {item.name}</Text>
+              <Text style={{color:theme.foreground,fontWeight:"700"}}># {item.name}{unread&&unread[item.id]>0?` · ${unread[item.id]} unread`:""}</Text>
             </Pressable>)}
           </ScrollView>
           {selected?.owner_id===userId&&availableChannels.length<12?<View style={{flexDirection:"row",gap:8}}>
@@ -513,18 +632,22 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
         <Text style={{color:theme.foreground,fontSize:19,fontFamily:"HoopCheckDisplay"}}># {channel.name}</Text>
         <Text style={{color:theme.muted,fontSize:12}}>Members only · moderated posts · 20-second slow mode</Text>
         <Pressable accessibilityRole="button" accessibilityLabel="Refresh channel messages" disabled={postLoading||busy} onPress={()=>setPostRefresh(value=>value+1)} style={{minHeight:44,justifyContent:"center",alignSelf:"flex-start"}}><Text style={{color:theme.accent,fontWeight:"700"}}>Refresh channel</Text></Pressable>
+        {readStateEnabled?<Button secondary disabled={busy||postLoading||Boolean(postError)||!posts.length} onPress={()=>void markVisibleRead()}>Mark loaded messages read</Button>:null}
         {postLoading?<HoopCheckLoading compact label="Loading channel messages…" />:null}
         {postError?<Text accessibilityRole="alert" style={{color:theme.accent}}>{postError}</Text>:null}
         {posts.length?posts.map(post=><View key={post.id}
           style={{borderBottomWidth:1,borderColor:theme.border,paddingVertical:10,gap:5}}>
           <Text style={{color:theme.foreground,fontWeight:"700"}}>{post.author_id===userId?"You":"Community member"}</Text>
+          {repliesEnabled&&post.was_reply?<Text style={{color:theme.muted}}>{posts.find(p=>p.id===post.reply_to_id&&p.moderation_status==="approved")?.body.slice(0,100)||"Original message unavailable"}</Text>:null}
           <Text style={{color:theme.foreground}}>{post.body}</Text>
+          {repliesEnabled&&post.moderation_status==="approved"?<Button secondary disabled={busy} onPress={()=>setReplySnapshot({channelId:channel.id,id:post.id})}>Reply</Button>:null}
           <Text style={{color:theme.muted,fontSize:11}}>{post.moderation_status==="approved"?"Approved":"Pending review · visible only to you"} · {new Date(post.created_at).toLocaleString()}</Text>
           {post.author_id!==userId&&post.moderation_status==="approved"?<Pressable accessibilityRole="button"
             style={{minHeight:40,justifyContent:"center"}} onPress={()=>actions(post)}>
             <Text style={{color:theme.accent}}>Report or block</Text>
           </Pressable>:null}
         </View>):!postLoading&&!postError&&postSnapshot?.channelId===channel.id?<Text style={{color:theme.muted,marginVertical:12}}>No approved messages yet.</Text>:null}
+        {repliesEnabled&&replyId?<View><Text style={{color:theme.muted}}>{replyParent?"Replying to: "+replyParent.body.slice(0,120):"Original message unavailable"}</Text><Button secondary disabled={busy} onPress={()=>setReplySnapshot(null)}>Clear reply</Button></View>:null}
         <TextInput accessibilityLabel={"Message in "+channel.name} multiline maxLength={1200}
           editable={!busy&&!offline} value={draft} onChangeText={setDraft} placeholder="Post to this discussion…" placeholderTextColor={theme.muted}
           style={{backgroundColor:theme.input,color:theme.foreground,borderWidth:1,borderColor:theme.border,

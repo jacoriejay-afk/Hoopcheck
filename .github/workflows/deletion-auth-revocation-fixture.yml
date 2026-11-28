@@ -1,0 +1,38 @@
+name: Deletion Auth catalog revocation synthetic fixture
+on:
+  pull_request:
+    branches: ["qa/hoopcheck-master-acceptance"]
+    paths:
+      - 'supabase/candidates/appstore_deletion_auth_session_revocation_review_only.sql'
+      - 'supabase/tests/appstore_deletion_auth_session_revocation_fixture.sql'
+      - '.github/workflows/deletion-auth-revocation-fixture.yml'
+permissions:
+  contents: read
+jobs:
+  fixture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: synthetic_fixture_only
+          POSTGRES_DB: hoopcheck_auth_revocation_fixture
+        options: >-
+          --health-cmd "pg_isready -U postgres -d hoopcheck_auth_revocation_fixture"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Run isolated Auth revocation fixture
+        env:
+          FIXTURE_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          set -euo pipefail
+          docker exec "$FIXTURE_CONTAINER" mkdir -p /tmp/auth-fixture/candidates /tmp/auth-fixture/tests
+          docker cp supabase/candidates/appstore_deletion_auth_session_revocation_review_only.sql "$FIXTURE_CONTAINER:/tmp/auth-fixture/candidates/"
+          docker cp supabase/tests/appstore_deletion_auth_session_revocation_fixture.sql "$FIXTURE_CONTAINER:/tmp/auth-fixture/tests/"
+          docker exec "$FIXTURE_CONTAINER" psql -X -v ON_ERROR_STOP=1 -U postgres -d hoopcheck_auth_revocation_fixture -f /tmp/auth-fixture/tests/appstore_deletion_auth_session_revocation_fixture.sql

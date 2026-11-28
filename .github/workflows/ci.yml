@@ -48,6 +48,25 @@ jobs:
           node-version: 20
           cache: npm
 
+      - name: Verify migration evidence against checked-out SQL bytes (QA PR 1198 only)
+        if: github.event_name == 'pull_request' && github.event.pull_request.number == 1198
+        run: node scripts/verify-migration-history-evidence.mjs
+
+      - name: Setup Python for PostgreSQL 17 parser (QA PR 1198 only)
+        if: github.event_name == 'pull_request' && github.event.pull_request.number == 1198
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Verify PostgreSQL 17 parser synthetic fixtures (QA PR 1198 only)
+        if: github.event_name == 'pull_request' && github.event.pull_request.number == 1198
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m venv "$RUNNER_TEMP/hoopcheck-pg17-parser"
+          "$RUNNER_TEMP/hoopcheck-pg17-parser/bin/python" -m pip --isolated install --disable-pip-version-check --no-deps --only-binary=:all: --require-hashes --index-url https://pypi.org/simple -r scripts/requirements-migration-parser-ci.txt
+          "$RUNNER_TEMP/hoopcheck-pg17-parser/bin/python" -I scripts/compare-migration-history-pg17.py --self-test
+
       - name: Verify Step 4 offline release evidence and local probe fixtures
         run: |
           node scripts/step4-release-evidence.mjs --self-test
@@ -270,6 +289,20 @@ jobs:
 
       - name: Verify HOOPDATA ingestion and freshness contracts
         run: node --test scripts/test-hoopdata-ingestion.mjs scripts/test-hoopdata-balldontlie.mjs
+
+      - name: Rehearse combined league corrections and rollback in disposable PostgreSQL
+        env:
+          PGPASSWORD: postgres
+        run: |
+          set -euo pipefail
+          createdb -h 127.0.0.1 -U postgres hoopcheck_league_data_test
+          psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_league_data_test -f supabase/tests/league_data_1_combined_isolated.sql
+          test "$(psql -h 127.0.0.1 -U postgres -d hoopcheck_league_data_test -Atc "select count(*) from pg_tables where schemaname='public'")" = 0
+          if psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_rls_test -f supabase/tests/league_data_1_combined_isolated.sql > /tmp/league-data-wrong-target.log 2>&1; then
+            echo "Wrong-target league correction guard failed"
+            exit 1
+          fi
+          grep -Fq 'Only the disposable league-data test database is permitted' /tmp/league-data-wrong-target.log
 
       - name: Rehearse HOOPDATA provider quotas in isolated PostgreSQL
         env:

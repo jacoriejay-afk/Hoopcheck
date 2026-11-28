@@ -26,7 +26,9 @@ const messages = Array.from({ length: 51 }, (_, index) => ({
   request_id: thread, sender_id: peer, body: `Fixture message ${index + 1}`, created_at,
 }));
 const scopedReads = [];
-let failNext = true;
+// Keep the outage active until the test observes the manual retry control.
+// Realtime/focus refreshes must not silently consume a one-shot fixture failure.
+let historyUnavailable = true;
 let blocks = [];
 const reports = [], blockWrites = [], messageWrites = [];
 const markerWrites = [];
@@ -92,27 +94,32 @@ try {
       return route.fulfill({ status: 201, headers, json: [] });
     }
     if (url.pathname.endsWith("/player_contact_messages") && query.has("request_id")) {
-      scopedReads.push({ id: query.get("request_id"), order: query.get("order"), cursor: query.get("or"), bearer: request.headers().authorization });
       if (!query.get("request_id").startsWith("eq.")) data = messages.slice(0, 1);
-      else if (failNext) {
-        failNext = false;
+      else if (historyUnavailable) {
         status = 503;
         data = { message: "Temporary fixture outage" };
       } else data = query.has("or") ? messages.slice(50) : messages.slice(0, 50);
+      scopedReads.push({ id: query.get("request_id"), order: query.get("order"), cursor: query.get("or"), bearer: request.headers().authorization, status });
     }
     await route.fulfill({ status, headers, json: data });
   });
   await page.goto(`${baseURL}/messages?thread=${thread}`);
   const history = page.getByRole("log");
   const loadOlder = history.getByRole("button", { name: "Load older messages" });
-  await history.getByRole("button", { name: "Retry history" }).click();
+  const retry = history.getByRole("button", { name: "Retry history" });
+  await retry.waitFor({ state: "visible" });
+  assert.ok(scopedReads.some(read => read.id === `eq.${thread}` && read.status === 503), "Retry must follow an observed scoped failure");
+  historyUnavailable = false;
+  await retry.click();
   await loadOlder.click();
   await history.getByText("Fixture message 51", { exact: true }).waitFor();
   assert.equal(await history.locator("article").count(), 51);
   const pages = scopedReads.filter(read => read.id.startsWith("eq."));
-  assert.equal(pages.length, 3);
+  assert.ok(pages.some(read => read.status === 503));
   assert.ok(pages.every(read => read.id === `eq.${thread}` && read.order === "created_at.desc,id.desc" && read.bearer === `Bearer ${token}`));
-  assert.ok(pages[2].cursor.includes(`id.lt.${messages[49].id}`));
+  const successful = pages.filter(read => read.status === 200);
+  assert.ok(successful.some(read => !read.cursor), "Initial page must recover");
+  assert.ok(successful.some(read => read.cursor?.includes(`id.lt.${messages[49].id}`)), "Older page must use exact cursor");
   if (testReadSync) {
     const badge = page.locator(".hc-courtside-unread");
     await page.getByText("7 new in loaded inbox", { exact: true }).waitFor();
@@ -144,11 +151,12 @@ try {
   await safety.getByRole("button", { name: "Submit confidential report" }).click();
   await safety.getByRole("status").filter({ hasText: "Action could not be confirmed" }).waitFor();
   assert.equal(reports.length, 1);
+  const beforeBlockedRead = scopedReads.filter(read => read.id === `eq.${thread}`).length;
   blocks = [{ blocked_id: peer }];
   await page.getByRole("button", { name: /Fixture Teammate/ }).click();
   await history.getByText(/Check your blocked accounts/).waitFor();
   assert.equal(await history.locator("article").count(), 0);
-  assert.equal(scopedReads.filter(read => read.id === `eq.${thread}`).length, 3);
+  assert.equal(scopedReads.filter(read => read.id === `eq.${thread}`).length, beforeBlockedRead, "Blocked selection cannot read new history, including after background refresh");
   blocks = [];
   await safety.getByRole("button", { name: "Block account" }).click();
   await safety.getByRole("button", { name: "Confirm block" }).click();

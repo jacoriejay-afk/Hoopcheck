@@ -1,0 +1,57 @@
+name: Account export fulfillment synthetic fixture
+on:
+  pull_request:
+    paths:
+      - 'supabase/candidates/account_export_fulfillment_review_only.sql'
+      - 'supabase/tests/account_export_fulfillment_isolated.sql'
+      - '.github/workflows/account-export-fulfillment-fixture.yml'
+      - 'supabase/candidates/account_export_media_review_only.sql'
+      - 'supabase/tests/account_export_media_isolated.sql'
+      - 'lib/server/account-export-media.ts'
+      - 'app/api/account/export-media/route.ts'
+      - 'scripts/test-account-export-media.mjs'
+      - 'scripts/run-account-export-worker.mjs'
+      - 'supabase/candidates/appstore_deletion_export_cleanup_review_only.sql'
+      - 'supabase/tests/account_export_deletion_cleanup_isolated.sql'
+      - 'lib/server/account-deletion-export-review.ts'
+      - 'scripts/test-account-deletion-export-review.mjs'
+permissions:
+  contents: read
+jobs:
+  fixture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: synthetic_fixture_only
+          POSTGRES_DB: hoopcheck_export_fixture
+        options: >-
+          --health-cmd "pg_isready -U postgres -d hoopcheck_export_fixture"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Run isolated synthetic lifecycle
+        env:
+          FIXTURE_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          set -euo pipefail
+          docker exec "$FIXTURE_CONTAINER" mkdir -p /tmp/export-fixture/candidates /tmp/export-fixture/tests
+          docker cp supabase/candidates/account_export_fulfillment_review_only.sql "$FIXTURE_CONTAINER:/tmp/export-fixture/candidates/"
+          docker cp supabase/tests/account_export_fulfillment_isolated.sql "$FIXTURE_CONTAINER:/tmp/export-fixture/tests/"
+          docker exec "$FIXTURE_CONTAINER" psql -X -v ON_ERROR_STOP=1 -U postgres -d hoopcheck_export_fixture -f /tmp/export-fixture/tests/account_export_fulfillment_isolated.sql
+          docker cp supabase/candidates/account_export_media_review_only.sql "$FIXTURE_CONTAINER:/tmp/export-fixture/candidates/"
+          docker cp supabase/tests/account_export_media_isolated.sql "$FIXTURE_CONTAINER:/tmp/export-fixture/tests/"
+          docker exec "$FIXTURE_CONTAINER" psql -X -v ON_ERROR_STOP=1 -U postgres -d hoopcheck_export_fixture -f /tmp/export-fixture/tests/account_export_media_isolated.sql
+          docker cp supabase/candidates/appstore_deletion_export_cleanup_review_only.sql "$FIXTURE_CONTAINER:/tmp/export-fixture/candidates/"
+          docker cp supabase/tests/account_export_deletion_cleanup_isolated.sql "$FIXTURE_CONTAINER:/tmp/export-fixture/tests/"
+          docker exec "$FIXTURE_CONTAINER" psql -X -v ON_ERROR_STOP=1 -U postgres -d hoopcheck_export_fixture -f /tmp/export-fixture/tests/account_export_deletion_cleanup_isolated.sql
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --experimental-strip-types --test scripts/test-account-export-media.mjs scripts/test-account-deletion-export-review.mjs

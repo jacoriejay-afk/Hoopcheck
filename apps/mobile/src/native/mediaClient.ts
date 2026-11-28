@@ -1,5 +1,6 @@
+import { requirePublicationAck } from "./publicationReceiptCore.ts";
 import { appendPostLocation } from "./feedClient.ts";
-import type { Photo, Video } from "./mediaSelection";
+import type { Photo, Video } from "./mediaTypes.ts";
 import { classifyFeedPublication } from "./publicationResult.ts";
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function originUrl(origin: string, path: string) {
@@ -13,7 +14,7 @@ export type MediaTransport = {
   uploadVideo: (url: string, headers: Record<string, string>, video: Video, signal: AbortSignal) => Promise<{ status: number }>;
   request?: typeof fetch;
 };
-export async function publishMediaPost(api: string, project: string, owner: string, token: string, caption: string, photos: Photo[], video: Video | null, signal: AbortSignal, transport: MediaTransport, location = "") {
+export async function publishMediaPost(api: string, project: string, owner: string, token: string, caption: string, photos: Photo[], video: Video | null, signal: AbortSignal, transport: MediaTransport, location = "", publicationId?:string) {
   const target = originUrl(api, "/api/hoopfeed/moderate");
   const storage = originUrl(project, "/storage/v1/object/upload/sign/");
   if (!uuid.test(owner) || !token || caption.trim().length > 2000 || (video && !caption.trim()) || (!photos.length && !video) || photos.length > 4 || (photos.length && video)) throw new Error("Choose up to four photos or one video with a caption.");
@@ -25,7 +26,7 @@ export async function publishMediaPost(api: string, project: string, owner: stri
   const ensureActive = () => { if (signal.aborted) throw new Error("Media upload was cancelled. Your draft is unchanged."); };
   try {
     ensureActive();
-    const form = new FormData(); form.append("kind", "post"); form.append("post_kind", "discussion"); form.append("audience", "community"); form.append("text", caption.trim()); appendPostLocation(form,location);
+    const form = new FormData(); form.append("kind", "post"); form.append("post_kind", "discussion"); form.append("audience", "community"); form.append("text", caption.trim()); appendPostLocation(form,location); if(publicationId)form.append("publication_id",publicationId);
     for (let index = 0; index < photos.length; index++) {
       ensureActive();
       const body = await transport.photoBody(photos[index]);
@@ -49,7 +50,7 @@ export async function publishMediaPost(api: string, project: string, owner: stri
     const response = await request(target, { method: "POST", headers, body: form, cache: "no-store", redirect: "error", signal });
     const result = await response.json().catch(() => null);
     const outcome = classifyFeedPublication(response.status, result?.allowed);
-    if (outcome === "published") return;
+    if (outcome === "published") { requirePublicationAck(publicationId,result); return; }
     definitiveRejection = outcome === "rejected";
     if (!definitiveRejection) throw new PublicationUnconfirmed("Publication could not be confirmed. Refresh and review your feed before creating another post. Your draft is kept.");
     throw new Error(typeof result?.message === "string" ? result.message.slice(0, 300) : "This media could not be published. Your draft is unchanged.");

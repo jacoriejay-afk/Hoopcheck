@@ -1,3 +1,4 @@
+import { requirePublicationAck } from "./publicationReceiptCore.ts";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { cleanExploreSearch, exploreFilters, matchesFeedExplore, type ExploreFilter, type ExploreTarget } from "./feedExplore.ts";
 export const FEED_PAGE_SIZE = 20;
@@ -149,12 +150,12 @@ export function appendPostLocation(form: FormData, location: string) {
   if(value.length>100)throw new Error("Enter a location of up to 100 characters.");
   if(value)form.append("post_location",value);
 }
-export async function moderateFeedText(origin: string, token: string, kind: "post" | "comment", text: string, postId?: string, request: typeof fetch = fetch, parentId?: string, location = "") {
+export async function moderateFeedText(origin: string, token: string, kind: "post" | "comment", text: string, postId?: string, request: typeof fetch = fetch, parentId?: string, location = "", publicationId?:string) {
   const target = apiUrl(origin, "/api/hoopfeed/moderate");
   const clean = text.trim();
   if (!token || !clean || clean.length > (kind === "comment" ? 1000 : 2000) || (kind === "comment" && (!postId || !uuid.test(postId)))) throw new Error("Invalid post or comment");
   if (parentId && (kind !== "comment" || !uuid.test(parentId))) throw new Error("Invalid reply target");
-  const form = new FormData(); form.append("kind", kind); form.append("text", clean);
+  const form = new FormData(); form.append("kind", kind); form.append("text", clean); if(publicationId)form.append("publication_id",publicationId);
   if (parentId) form.append("parent_id", parentId);
   if (kind === "post") { form.append("audience", "community"); form.append("post_kind", "discussion"); appendPostLocation(form,location); }
   else if(location.trim())throw new Error("Location is only available on posts.");
@@ -162,6 +163,7 @@ export async function moderateFeedText(origin: string, token: string, kind: "pos
   const response = await request(target, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form, cache: "no-store", redirect: "error" });
   const result = await response.json().catch(() => null);
   if (!response.ok || result?.allowed !== true) throw new Error(typeof result?.message === "string" ? result.message.slice(0, 300) : "This content could not be published. Your draft is unchanged.");
+  requirePublicationAck(publicationId,result);
   const comment = result?.comment;
   if (kind === "comment" && comment && comment.post_id === postId && validCursor(comment) && uuid.test(comment.author_id) && typeof comment.body === "string") return {
     id: comment.id as string, author_id: comment.author_id as string, body: comment.body as string, created_at: comment.created_at as string,
@@ -174,16 +176,17 @@ export function validatedPollOptions(input: unknown): string[] {
   if (new Set(options.map(value => value.toLowerCase())).size !== options.length) throw new Error("Poll answers must be different.");
   return options;
 }
-export async function publishFeedPoll(origin: string, token: string, question: string, input: readonly string[], request: typeof fetch = fetch, location = "") {
+export async function publishFeedPoll(origin: string, token: string, question: string, input: readonly string[], request: typeof fetch = fetch, location = "", publicationId?:string) {
   const target = apiUrl(origin, "/api/hoopfeed/moderate"); const text = question.trim();
   const options = validatedPollOptions(input);
   if (!token || !text || text.length > 2000) throw new Error("Add a poll question of up to 2,000 characters.");
-  const form = new FormData(); form.append("kind", "post"); form.append("text", text); form.append("post_kind", "poll"); form.append("poll_options", JSON.stringify(options)); form.append("audience", "community"); appendPostLocation(form,location);
+  const form = new FormData(); form.append("kind", "post"); form.append("text", text); form.append("post_kind", "poll"); form.append("poll_options", JSON.stringify(options)); if(publicationId)form.append("publication_id",publicationId); form.append("audience", "community"); appendPostLocation(form,location);
   const controller = new AbortController(); const deadline = setTimeout(() => controller.abort(), 15000);
   try {
     const response = await request(target, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form, cache: "no-store", redirect: "error", signal: controller.signal });
     const result = await response.json().catch(() => null);
     if (!response.ok || result?.allowed !== true) throw new Error(typeof result?.message === "string" ? result.message.slice(0, 300) : "Publication could not be confirmed. Refresh before retrying; your draft is kept.");
+  requirePublicationAck(publicationId,result);
     // The current post endpoint acknowledges publication with { allowed: true };
     // unlike comments and reshares, ordinary posts do not return a post ID.
   } finally { clearTimeout(deadline); }

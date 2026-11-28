@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { calculateTrustScore } from "../../../../../lib/trust-score";
+import { resolveTrustReviewVerification } from "../../../../../lib/server/review-trust-verification";
 import { authorizeModeratorRequest } from "../../../../../lib/server/review-moderation";
 
 const reviewStatuses = [
@@ -22,24 +23,17 @@ async function notifyTrustScoreMovement(teamId: string) {
     auth: { autoRefreshToken: false, persistSession: false },
   });
   const { data: reviews, error: reviewError } = await db.from("reviews")
-    .select("overall_rating,created_at,author_id")
+    .select("id,overall_rating,created_at,author_id")
     .eq("team_id", teamId).eq("status", "approved");
   if (reviewError) throw reviewError;
   const rows = reviews || [];
-  const authorIds = Array.from(new Set(rows.map(row => row.author_id).filter(Boolean)));
-  const verified: Record<string, boolean> = {};
-  if (authorIds.length) {
-    const { data: profiles, error: profileError } = await db.from("profiles")
-      .select("id,player_verified").in("id", authorIds);
-    if (profileError) throw profileError;
-    for (const profile of profiles || []) verified[profile.id] = profile.player_verified === true;
-  }
+  const verified = await resolveTrustReviewVerification(db, "men", rows);
 
   const ratings = rows.map(row => Number(row.overall_rating)).filter(value => Number.isFinite(value) && value >= 1 && value <= 5);
   const averageRating = ratings.length ? ratings.reduce((sum, value) => sum + value, 0) / ratings.length : null;
   const result = calculateTrustScore({
     averageRating,
-    reviews: rows.map(row => ({ createdAt: row.created_at, reviewerVerified: Boolean(verified[row.author_id]) })),
+    reviews: rows.map(row => ({ createdAt: row.created_at, reviewerVerified: verified.get(row.id) === true })),
   });
   if (result.score === null) return;
 

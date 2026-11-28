@@ -67,7 +67,26 @@ export async function POST(request: Request) {
     // Never sign a video Story on the strength of row approval alone,
     // including when the attachment is reached through a source chain.
     if (post.post_kind === "story" && attachedKind === "video") {
-      return NextResponse.json({ error:"Video Stories are unavailable" }, {status:404});
+      if(process.env.HOOPCHECK_REVIEWED_VIDEO_STORIES_ENABLED!=="true"||visited.size!==1||post.shared_post_id||!mediaUrl.startsWith("hoopfeed-private-videos/story-processed/"))return NextResponse.json({ error:"Video Stories are unavailable" }, {status:404});
+      const admin=createClient(url,serviceKey,{auth:{autoRefreshToken:false,persistSession:false}});
+      const args={p_post:postId,p_ref:mediaUrl};
+      const verified=await viewer.rpc("confirm_active_account_session");
+      if(verified.error||verified.data!==true)return NextResponse.json({error:"Media unavailable"},{status:404});
+      const receipt=await admin.rpc("resolve_reviewed_story_video",args);
+      const asset=receipt.data;
+      const path=mediaUrl.slice("hoopfeed-private-videos/".length);
+      const expiry=typeof asset?.expires_at==="string"?Date.parse(asset.expires_at):NaN;
+      if(receipt.error||!asset||asset.path!==path||!/^story-processed\/[0-9a-f-]{36}\/[0-9a-f-]{36}\/[0-9a-f-]{36}\/video\.mp4$/i.test(path)||!Number.isFinite(expiry)||expiry!==earliestExpiry)return NextResponse.json({error:"Media unavailable"},{status:404});
+      const bucket=await admin.storage.getBucket("hoopfeed-private-videos");
+      if(bucket.error||bucket.data?.public!==false)return NextResponse.json({error:"Media unavailable"},{status:404});
+      const ttl=expiringFeedMediaTtl(expiry);
+      if(ttl<1)return NextResponse.json({error:"Media unavailable"},{status:404});
+      const signed=await admin.storage.from("hoopfeed-private-videos").createSignedUrl(path,ttl);
+      const after=await admin.rpc("resolve_reviewed_story_video",args);
+      const current=await viewer.from("feed_posts").select("id,video_url,expires_at,post_kind").eq("id",postId).eq("status","approved").maybeSingle();
+      const active=await viewer.rpc("confirm_active_account_session");
+      if(signed.error||!signed.data?.signedUrl||after.error||JSON.stringify(after.data)!==JSON.stringify(asset)||current.error||current.data?.id!==postId||current.data?.video_url!==mediaUrl||current.data?.post_kind!=="story"||Date.parse(current.data?.expires_at||"")!==expiry||active.error||active.data!==true||Date.now()+ttl*1000>expiry)return NextResponse.json({error:"Media unavailable"},{status:404});
+      return NextResponse.json({url:signed.data.signedUrl,expires_in:ttl},{headers:{"Cache-Control":"no-store"}});
     }
     kind = attachedKind;
     if (!post.shared_post_id) {

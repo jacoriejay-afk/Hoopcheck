@@ -1,6 +1,7 @@
 "use client";
 
 import HoopLoading from "../../components/HoopLoading";
+import AccountExportJobs from "../../components/AccountExportJobs";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -165,6 +166,7 @@ export default function PrivacyCenterPage() {
         <textarea value={details} onChange={e=>setDetails(e.target.value)} minLength={10} maxLength={5000} aria-label="Privacy request details" placeholder="Tell us what information or action you are requesting." style={{width:"100%",minHeight:140,marginTop:8}} />
         <button className="btn" onClick={submit} disabled={submitting || uncertain || !userId}>{submitting ? "Submitting..." : "Submit privacy request"}</button>
 
+        {process.env.NEXT_PUBLIC_ACCOUNT_EXPORT_FULFILLMENT_ENABLED==="true"&&userId&&<AccountExportJobs key={userId} uid={userId}/>}
         <h2 style={{marginTop:36}}>Your requests</h2>
         <button className="btn" disabled={!userId || loading || submitting} onClick={() => { setError(""); setRefresh(value => value + 1); }}>Refresh requests</button>
         {loading ? <HoopLoading variant="inline" label="Loading..." /> : requests === null ? null : requests.length === 0 ? <p className="muted">You have not submitted a privacy request.</p> :

@@ -20,7 +20,9 @@ const fields={
 const profileFields="id,display_name,username,first_name,last_name,bio,account_type,current_country,current_country_public,current_team,position,years_pro,profile_visibility,free_agent,created_at,updated_at,agreed_to_terms";
 function fixture(opts={}) {
   const calls=[];
-  let checks=0;
+  let checks=0,profileReads=0;
+  const controller=new AbortController();
+  if(opts.cancelBefore)controller.abort();
   const token="e30."+Buffer.from(JSON.stringify({sub:owner,exp:Math.floor(Date.now()/1000)+600,aal:opts.aal??"aal1"})).toString("base64url")+".fixture";
   const user={id:owner,email_confirmed_at:opts.unconfirmed?null:"2026-11-01",is_anonymous:opts.anonymous??false,factors:opts.mfa?[{id:other,factor_type:"totp",status:"verified"}]:[]};
   const db={
@@ -41,13 +43,16 @@ function fixture(opts={}) {
           return opts.empty?[]:opts.duplicate&&table==="reviews"?[row,row]:[row];
         };
         const men=build("reviews"),women=build("womens_team_reviews");
+        if(opts.cancelDuringReviews)controller.abort();
         return {data:{owner_id:opts.reviewOwner??owner,reviews:men,reviews_count:opts.count!==undefined?opts.count:men.length,womens_reviews:women,womens_reviews_count:women.length},error:opts.readError?Error("fixture"):null};
       }};
       assert.equal(name,"get_own_profile");
       return {async abortSignal(signal){
         assert.ok(signal instanceof AbortSignal);
         const data=Object.fromEntries(profileFields.split(",").map(k=>[k,null]));
-        Object.assign(data,{id:opts.profileOwner??owner,display_name:"Synthetic player",moderation_note:"internal",stripe_identity_session_id:"secret"});
+        profileReads++;
+        Object.assign(data,{id:opts.profileOwner??owner,display_name:"Synthetic player",moderation_status:profileReads>1&&opts.lateSuspension?"suspended":opts.moderationStatus??"normal",moderation_note:"internal",stripe_identity_session_id:"secret"});
+        if(opts.missingModerationStatus)delete data.moderation_status;
         if(opts.missingField)delete data.username;
         return {data,error:null};
       }};
@@ -62,7 +67,7 @@ function fixture(opts={}) {
         async abortSignal(signal){
           assert.ok(signal instanceof AbortSignal);
           const row=Object.fromEntries(fields[table].split(",").map(k=>[k,null]));
-          row.id=id;row[table==="membership_sources"?"user_id":"author_id"]=opts.foreignRow&&table==="reviews"?other:owner;
+          row.id=id;row[table==="membership_sources"?"user_id":"author_id"]=opts.foreignTable===table?other:owner;
           row.admin_notes="internal";row.stripe_subscription_id="secret";
           const data=opts.empty?[]:opts.duplicate&&table==="reviews"?[row,row]:[row];
           return {data,count:table==="reviews"&&opts.count!==undefined?opts.count:data.length,error:opts.readError&&table==="reviews"?Error("fixture"):null};
@@ -82,7 +87,7 @@ function fixture(opts={}) {
     const keys=["ACCOUNT_SNAPSHOT_EXPORT_ENABLED","NEXT_PUBLIC_SUPABASE_URL","NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"],old=keys.map(k=>process.env[k]);
     try{
       process.env[keys[0]]=opts.disabled?"false":"true";process.env[keys[1]]="https://fixture.invalid";process.env[keys[2]]="fixture-public";
-      return await POST(new Request("https://fixture.invalid/api/account/account-snapshot-export"+query,{method:"POST",headers:{authorization},body:JSON.stringify({owner:other})}));
+      return await POST(new Request("https://fixture.invalid/api/account/account-snapshot-export"+query,{method:"POST",headers:{authorization},body:JSON.stringify({owner:other}),signal:controller.signal}));
     }finally{keys.forEach((k,i)=>{if(old[i]===undefined)delete process.env[k];else process.env[k]=old[i];});}
   }};
 }
@@ -102,11 +107,18 @@ test("owner receives explicit partial snapshot without internal fields",async()=
   const body=await r.json();assert.equal(body.complete,false);assert.equal(body.scope,"currently_accessible_account_snapshot_only");
   assert.equal(body.data.profile.id,owner);assert.equal(body.data.profile.display_name,"Synthetic player");
   assert.equal(body.data.reviews.length,1);assert.equal(body.data.womens_reviews.length,1);assert.equal(body.data.player_posts.length,1);assert.equal(body.data.fan_posts.length,1);assert.equal(body.data.membership_sources.length,1);
-  assert.doesNotMatch(JSON.stringify(body),/moderation_note|stripe_identity_session_id|admin_notes|stripe_subscription_id|requester_id|author_id|user_id/);
+  assert.doesNotMatch(JSON.stringify(body),/moderation_status|moderation_note|stripe_identity_session_id|admin_notes|stripe_subscription_id|requester_id|author_id|user_id/);
 });
 test("foreign records, missing fields, incomplete counts and late revocation never download",async()=>{
   for(const [opts,status] of [[{profileOwner:other},503],[{reviewOwner:other},503],[{foreignRow:true},503],[{missingField:true},503],[{count:null},503],[{count:2},503],[{count:101},409],[{duplicate:true},503],[{readError:true},503],[{revoked:true},403]]){
     const r=await fixture(opts).run();assert.equal(r.status,status);assert.equal(r.headers.get("content-disposition"),null);assert.ok(!("data" in await r.json()));
+  }
+});
+test("late moderation, unknown status, foreign post and membership data, and cancellation never download",async()=>{
+  for(const [opts,status] of [[{lateSuspension:true},403],[{moderationStatus:"suspended"},403],[{moderationStatus:"unknown"},403],[{missingModerationStatus:true},403],[{foreignTable:"feed_posts"},503],[{foreignTable:"fan_feed_posts"},503],[{foreignTable:"membership_sources"},503],[{cancelBefore:true},503],[{cancelDuringReviews:true},503]]){
+    const f=fixture(opts),r=await f.run();assert.equal(r.status,status);assert.equal(r.headers.get("content-disposition"),null);assert.ok(!("data" in await r.json()));
+    if(opts.cancelBefore)assert.deepEqual(f.calls,[]);
+    if(opts.cancelDuringReviews)assert.ok(!f.calls.some(c=>c[0]==="table"));
   }
 });
 test("empty visible records do not claim the complete account is empty",async()=>{
@@ -119,7 +131,7 @@ test("snapshot profile allowlist is a subset of the reviewed owner RPC contract"
  assert.ok(projection);
  const keys=new Set([...projection[1].matchAll(/'([a-z_]+)',p\.[a-z_]+/g)].map(m=>m[1]));
  assert.ok(keys.size>0);
- for(const field of profileFields.split(",")) assert.ok(keys.has(field),field+" absent from owner RPC");
+ for(const field of [...profileFields.split(","),"moderation_status"]) assert.ok(keys.has(field),field+" absent from owner RPC");
  const route=readFileSync(new URL("../app/api/account/account-snapshot-export/route.ts",import.meta.url),"utf8");
  const fields=route.match(/const profileFields = \[([^\]]+)\] as const;/);
  assert.ok(fields);

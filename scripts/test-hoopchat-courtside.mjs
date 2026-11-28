@@ -81,7 +81,17 @@ test("Messages tab does not wait on unrelated notification requests",()=>{
 test("Realtime channel does not reconnect on every inbox refresh",()=>{
  const ui=read("components/HoopChatCourtside.tsx");
  assert.match(ui,/const selectedStatus=requests\.find\(r=>r\.id===selectedId\)\?\.status/);
- assert.match(ui,/\},\[load,loadHistory,selectedId,selectedStatus,userId\]\)/);
+ assert.match(ui,/const historyScope=userId&&selectedId&&selectedStatus==="accepted"\?userId\+":"\+selectedId:""/);
+ assert.match(ui,/\},\[load,loadHistory,historyScope,selectedId,selectedStatus,userId\]\)/);
+ const start=ui.indexOf('const queue=createChatRefreshCoordinator(active,');
+ const end=ui.indexOf('\n  const latest=useMemo',start);
+ assert.ok(start>=0&&end>start);
+ const subscription=ui.slice(start,end);
+ assert.match(subscription,/mutationGeneration\.current===rev\|\|inboxRequest\.current!==null/);
+ assert.match(subscription,/subscribe\(status=>\{if\(status==="SUBSCRIBED"/);
+ assert.match(subscription,/window\.addEventListener\("online",queue\.request\)/);
+ assert.match(subscription,/queue\.dispose\(\)/);
+ assert.doesNotMatch(subscription,/\},\[[^\]]*(requests|messages|serverUnread|syncing)[^\]]*\]\)/);
  assert.doesNotMatch(ui,/\},\[load,requests,selectedId,userId\]\)/);
  assert.match(ui,/loadSequence\.current/);
 });
@@ -122,7 +132,14 @@ test("Alert search and category counts stay within the loaded caller-owned list"
  assert.match(helper,/\.eq\("user_id", userId\)[\s\S]*?\.limit\(NOTIFICATION_PAGE_SIZE\)/);
  assert.match(helper,/setHeader\("Authorization",scope\.bearer\)\.abortSignal\(scope\.signal\)/);
  assert.ok(page.includes("searched.filter(n=>matchesAlertFilter(n,key))"));
- assert.ok(page.includes("Latest 100 loaded; older alerts are not included."));
+ assert.ok(page.includes("load older alerts to search more"));
+ assert.ok(page.includes("Load older alerts"));
+ assert.ok(page.includes("readNotifications(supabase,uid,cursor,scope)"));
+ assert.match(page,/appendNotificationPage\(items,older as Notice\[\]\)/);
+ assert.match(page,/setHasMore\(page\.hasMore\)/);
+ assert.match(page,/if\(rev!==generation\.current\|\|owner\.current!==uid\)return/);
+ assert.match(page,/disabled=\{loadingOlder\|\|marking\|\|loading\}/);
+ assert.doesNotMatch(page,/older alerts are not included/);
  assert.ok(page.includes('Unread alerts in loaded list'));
 });
 
@@ -133,7 +150,23 @@ test("Courtside guards duplicate mutations and preserves edits made during send"
  assert.match(ui,/async function send[\s\S]*?submittedDraft=currentDraft;\s*if\(structuredReplies&&replyTarget\?\.scope===historyScope&&!replyId\)\{[^}]*return;\}\s*if\(mutationGeneration\.current===rev\)return;\s*mutationGeneration\.current=rev/);
  assert.match(ui,/setDrafts\(prev=>prev\[thread\]===submittedDraft\?\{\.\.\.prev,\[thread\]:""\}:prev\)/);
  assert.equal((ui.match(/if\(user\?\.id!==userId\|\|rev!==accountGeneration\.current\)throw new Error/g)||[]).length,2);
- assert.equal((ui.match(/finally\{if\(mutationGeneration\.current===rev\)mutationGeneration\.current=null;if\(rev===accountGeneration\.current\)setSending\(false\);\}/g)||[]).length,3);
+ const mutation=name=>{
+  const start=ui.indexOf("async function "+name+"(");
+  assert.ok(start>=0,name);
+  const end=ui.indexOf("\n  async function ",start+1);
+  return ui.slice(start,end<0?ui.indexOf("\n  function applyStarter",start):end);
+ };
+ for(const name of ["respond","send","checkDelivery","forwardTo"]){
+  const body=mutation(name);
+  assert.match(body,/if\(mutationGeneration\.current===rev\)return;\s*mutationGeneration\.current=rev/,name);
+  assert.ok(body.indexOf("mutationGeneration.current=rev")<body.indexOf("await "),name+" acquires before awaiting");
+  assert.match(body,/finally\{if\(mutationGeneration\.current===rev\)mutationGeneration\.current=null;if\(rev===accountGeneration\.current\)setSending\(false\);\}/,name);
+ }
+ const recovery=mutation("checkDelivery");
+ assert.match(recovery,/user\?\.id!==userId\|\|session\?\.user\.id!==userId\|\|signal\.aborted\|\|rev!==accountGeneration\.current/);
+ assert.match(recovery,/blocked\.error\|\|blocked\.data\|\|signal\.aborted\|\|rev!==accountGeneration\.current/);
+ assert.match(recovery,/webChatOutbox\.status\(supabase,userId,thread,header,signal,structuredReplies\)/);
+ assert.doesNotMatch(recovery,/\.send\(|\.insert\(/);
  assert.match(ui,/async function forwardTo[\s\S]*?if\(mutationGeneration\.current===rev\)return;\s*mutationGeneration\.current=rev;setSending\(true\)/);
  const forward=ui.slice(ui.indexOf("async function forwardTo"),ui.indexOf("async function respond"));
  assert.match(forward,/readForwardDraft\(supabase,userId,source,forwardSelection\.messageId,destination,signal\)/);

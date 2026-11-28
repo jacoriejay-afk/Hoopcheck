@@ -17,7 +17,10 @@ test("Members can join, leave and manually refresh moderated channels",()=>{
   const css=read("app/hoopgroups/hoopgroups.css");
   assert.match(page,/async function join\(\)/);
   assert.match(page,/async function leave\(\)/);
-  assert.match(page,/\.delete\(\)\.eq\("space_id",selected\.id\)\.eq\("user_id",userId\)/);
+  const membership=read("apps/mobile/src/native/groupMembership.ts");
+  assert.match(membership,/\.delete\(\)\.eq\("space_id",spaceId\)\.eq\("user_id",uid\)/);
+  assert.match(membership,/\.select\("space_id,user_id"\)\.eq\("space_id",spaceId\)\.eq\("user_id",uid\)/);
+  assert.match(page,/setGroupMembership\(supabase,owner,groupId,joining,signal\)/);
   assert.match(page,/async function refresh\(\)/);
   assert.match(page,/Refresh messages/);
   assert.match(page,/Leave group/);

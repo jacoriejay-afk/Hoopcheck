@@ -29,6 +29,8 @@ function fixture(options = {}) {
     status: "completed", details: "Synthetic request", created_at: "2026-11-01T00:00:00Z",
     admin_notes: "must not escape", assigned_to: other, unexpected: "must not escape" };
   let sessionChecks = 0;
+  const controller = new AbortController();
+  if (options.cancelBefore) controller.abort();
   const q = {
     select(columns, opts) { calls.push(["select", columns, opts]); return this; },
     eq(key, value) { calls.push(["eq", key, value]); return this; },
@@ -37,13 +39,14 @@ function fixture(options = {}) {
     async abortSignal(signal) {
       assert.ok(signal instanceof AbortSignal);
       const data = options.rows ?? [row];
+      if (options.cancelDuringRead) controller.abort();
       return { data, count: options.count === undefined ? data.length : options.count, error: options.readError ?? null };
     },
   };
   const db = {
     auth: {
       async getUser(t) { assert.equal(t, token); calls.push(["user"]); return { data: { user: options.invalid ? null : user }, error: null }; },
-      async getClaims(t) { assert.equal(t, token); return { data: { claims: { sub: options.claimOwner ?? owner, role: options.role ?? "authenticated" } }, error: null }; },
+      async getClaims(t) { assert.equal(t, token); return { data: { claims: { sub: options.claimOwner ?? owner, role: options.role ?? "authenticated", ...("clientId" in options ? {client_id:options.clientId} : {}), ...("claimAnonymous" in options ? {is_anonymous:options.claimAnonymous} : {}) } }, error: null }; },
     },
     async rpc(name) {
       assert.equal(name, "confirm_active_account_session");
@@ -70,7 +73,7 @@ function fixture(options = {}) {
       process.env[keys[1]] = "https://fixture.invalid";
       process.env[keys[2]] = "fixture-public";
       return await POST(new Request("https://fixture.invalid/api/account/privacy-history-export" + query,
-        { method: "POST", headers: { authorization: auth }, body }));
+        { method: "POST", headers: { authorization: auth }, body, signal: controller.signal }));
     } finally {
       keys.forEach((k, i) => { if (previous[i] === undefined) delete process.env[k]; else process.env[k] = previous[i]; });
     }
@@ -86,7 +89,7 @@ test("default-off and malformed bearer never read account data", async () => {
 });
 test("unverified, anonymous, wrong-claim, inactive and insufficient-MFA callers are denied", async () => {
   for (const opts of [{ invalid: true }, { unconfirmed: true }, { anonymous: true }, { claimOwner: other },
-    { role: "anon" }, { active: false }, { mfa: true }]) {
+    { role: "anon" }, { active: false }, { mfa: true }, {clientId:"oauth-fixture"}, {clientId:null}, {claimAnonymous:true}, {claimAnonymous:"false"}]) {
     const f = fixture(opts);
     assert.equal((await f.run()).status, 403);
     assert.ok(!f.calls.some(c => c[0] === "from"));
@@ -123,4 +126,13 @@ test("empty confirmed history is an honest empty export", async () => {
   const result = await fixture({ rows: [] }).run();
   assert.equal(result.status, 200);
   assert.deepEqual((await result.json()).requests, []);
+});
+
+test("cancelled history export never releases a download", async () => {
+  for (const opts of [{cancelBefore:true},{cancelDuringRead:true}]) {
+    const f=fixture(opts), result=await f.run();
+    assert.equal(result.status,503);assert.equal(result.headers.get("content-disposition"),null);
+    assert.ok(!("requests" in await result.json()));
+    if(opts.cancelBefore)assert.deepEqual(f.calls,[]);
+  }
 });

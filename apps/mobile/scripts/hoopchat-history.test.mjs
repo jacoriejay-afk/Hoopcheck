@@ -46,3 +46,12 @@ test("verified block check bearer is preserved for the history request",async()=
  await assert.rejects(readConversationPage(db,req,stopped.signal,undefined,"Bearer verified-fixture-token"),/expired/);
  assert.equal(calls.length,1);
 });
+
+test("a history response that arrives after cancellation is discarded",async()=>{
+ const controller=new AbortController();
+ const db=createClient("https://fixture.supabase.co","key",{auth:{persistSession:false,autoRefreshToken:false},global:{fetch:async()=>{
+  controller.abort();
+  return Response.json([row]);
+ }}});
+ await assert.rejects(readConversationPage(db,req,controller.signal,undefined,"Bearer verified-fixture-token"),/expired/);
+});

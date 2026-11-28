@@ -5,17 +5,22 @@ import HoopChatSafety from "./HoopChatSafety";
 import {useCallback,useEffect,useMemo,useRef,useState,type FormEvent,type UIEvent} from "react";
 import Link from "next/link";
 import {supabase} from "../lib/supabase";
+import {createChatRefreshCoordinator} from "../apps/mobile/src/native/hoopChatRefresh";
 import {withHoopChatDeadline} from "../apps/mobile/src/native/hoopChatLoad";
 import {
   appendConversationPage,CHAT_HISTORY_PAGE_SIZE,readConversationPage,refreshConversationPage
 } from "../apps/mobile/src/native/hoopChatHistory";
+import {webChatOutbox} from "../lib/hoopchat-outbox";
+import {chatDeliveryMessage} from "../apps/mobile/src/native/hoopChatOutboxCore";
 import {prepareConversationMessage,sendConversationMessage} from "../apps/mobile/src/native/hoopChatSend";
 import {quoteConversationMessage} from "../apps/mobile/src/native/hoopChatQuote";
 import {forwardDestinations,forwardDraft,readForwardDraft,type ForwardSelection} from "../apps/mobile/src/native/hoopChatForward";
 import {makeReplyTarget,scopedReplyTarget,type ReplyTarget} from "../apps/mobile/src/native/hoopChatReply";
-import {markServerChatRead,readServerChatCounts} from "../apps/mobile/src/native/hoopChatReadSync";
+import {markServerChatRead,readPagedChatCounts} from "../apps/mobile/src/native/hoopChatReadSync";
+const durableDelivery=process.env.NEXT_PUBLIC_HOOPCHECK_CHAT_DURABLE_DELIVERY_ENABLED==="true";
 const structuredReplies=process.env.NEXT_PUBLIC_HOOPCHECK_STRUCTURED_REPLIES_ENABLED==="true";
-const syncReadMarkers=process.env.NEXT_PUBLIC_HOOPCHECK_CHAT_READ_SYNC_ENABLED==="true";
+const serverInboxEnabled=process.env.NEXT_PUBLIC_HOOPCHECK_SERVER_INBOX_ENABLED==="true";
+const syncReadMarkers=serverInboxEnabled||process.env.NEXT_PUBLIC_HOOPCHECK_CHAT_READ_SYNC_ENABLED==="true";
 import {
   DEFAULT_APPEARANCE,STARTERS,lastByThread,parseAppearance,parseThreadPreferences,
   sortThreads,unreadCount,advanceSeenMarker,
@@ -33,10 +38,20 @@ const safeStorageSet=(key:string,value:string)=>{try{window.localStorage.setItem
 const formatTime=(date:string)=>new Date(date).toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});
 const initials=(name:string)=>name.trim().split(/\s+/).slice(0,2).map(part=>part[0]).join("").toUpperCase()||"HC";
 
+import {parseChatThread,readLinkedChatThread} from "../apps/mobile/src/native/hoopChatLink";
+import {readChatInbox,chatInboxBatches,CHAT_INBOX_MAX_PAGES} from "../apps/mobile/src/native/hoopChatInbox";
+
+import {readServerInbox,readAllUnread,type InboxCursor} from "../apps/mobile/src/native/hoopChatServerInbox";
+
 export default function HoopChatCourtside(){
   const [userId,setUserId]=useState("");
   const [sessionRevision,setSessionRevision]=useState(0);
   const [requests,setRequests]=useState<ChatRequest[]>([]);
+  const inboxPages=useRef(1);
+  const [appliedServerQuery,setAppliedServerQuery]=useState("");
+  const serverQuery=useRef(""),cursorStack=useRef<(InboxCursor|null)[]>([null]);
+  const [nextCursor,setNextCursor]=useState<InboxCursor|null>(null),[serverPage,setServerPage]=useState(1),[allUnread,setAllUnread]=useState<number|null>(null);
+  const [inboxMore,setInboxMore]=useState(false),[inboxLimit,setInboxLimit]=useState(false);
   const [messages,setMessages]=useState<ChatMessage[]>([]);
   const [serverUnread,setServerUnread]=useState<{owner:string;counts:Map<string,number>}|null>(null);
   const [historyPage,setHistoryPage]=useState<HistoryPage|null>(null);
@@ -119,34 +134,34 @@ export default function HoopChatCourtside(){
           throw new Error("Blocked accounts could not be verified.");
         }
         const blockedIds=new Set(blocked.data.map(row=>row.blocked_id));
-        const {data:requestRows,error:requestError}=await supabase.from("player_contact_requests")
-          .select("id,requester_id,player_id,message,status,created_at")
-          .or(`requester_id.eq.${user.id},player_id.eq.${user.id}`)
-          .order("created_at",{ascending:false}).limit(100).setHeader("Authorization",header).abortSignal(signal);
+        const inbox=serverInboxEnabled?await readServerInbox(supabase,user.id,header,signal,serverQuery.current,"all",cursorStack.current.at(-1)??null,blockedIds):{...(await readChatInbox(supabase,user.id,header,signal,inboxPages.current,blockedIds)),next:null};
         if(!valid()||signal.aborted)return;
-        if(requestError)throw new Error("Could not load private conversations.");
-        const rows=((requestRows||[]) as ChatRequest[]).filter(row=>
-          !blockedIds.has(row.requester_id===user.id?row.player_id:row.requester_id));
+        const rows=inbox.rows;
+        const fromUrl=parseChatThread(new URLSearchParams(window.location.search).get("thread"));
+        if(fromUrl&&!rows.some(r=>r.id===fromUrl)){
+          const linked=await readLinkedChatThread(supabase,user.id,fromUrl,blockedIds,header,signal);
+          if(!valid()||signal.aborted)return;
+          if(linked)rows.unshift(linked);
+        }
         const peers=[...new Set(rows.map(r=>r.requester_id===user.id?r.player_id:r.requester_id))];
         const accepted=rows.filter(r=>r.status==="accepted").map(r=>r.id);
-        const [history,profileResult,unread]=await Promise.all([
-          accepted.length?supabase.from("player_contact_messages")
-            .select("id,request_id,sender_id,body,created_at").in("request_id",accepted)
-            .order("created_at",{ascending:false}).limit(600).setHeader("Authorization",header).abortSignal(signal)
-            :Promise.resolve({data:[] as ChatMessage[],error:null}),
-          peers.length?supabase.from("profiles").select("id,display_name,username,account_type").in("id",peers)
-            .setHeader("Authorization",header).abortSignal(signal)
-            :Promise.resolve({data:[] as ChatContact[],error:null}),
-          syncReadMarkers?readServerChatCounts(supabase,rows.map(row=>row.id),{bearer:header,signal}).catch(()=>null):null,
+        const [historyPages,profilePages,unread,accountUnread]=await Promise.all([
+          Promise.all(chatInboxBatches(accepted).map(ids=>supabase.from("player_contact_messages")
+            .select("id,request_id,sender_id,body,created_at").in("request_id",ids).order("created_at",{ascending:false}).limit(600).setHeader("Authorization",header).abortSignal(signal))),
+          Promise.all(chatInboxBatches(peers).map(ids=>supabase.from("profiles").select("id,display_name,username,account_type").in("id",ids).setHeader("Authorization",header).abortSignal(signal))),
+          syncReadMarkers?readPagedChatCounts(supabase,rows.map(row=>row.id),{bearer:header,signal}).catch(()=>null):null,
+          serverInboxEnabled?readAllUnread(supabase,header,signal).catch(()=>null):null,
         ]);
+        const latestSession=await supabase.auth.getSession();
+        if(latestSession.error||latestSession.data.session?.user.id!==user.id||latestSession.data.session.access_token!==session.access_token)throw Error("Account changed.");
         if(!valid()||signal.aborted)return;
-        if(history.error)throw new Error("Message history could not be loaded.");
+        if(historyPages.some(result=>result.error)||profilePages.some(result=>result.error))throw new Error("Conversation previews could not be loaded.");
+        setInboxMore(inbox.hasMore);setInboxLimit(inbox.atLimit);setNextCursor(inbox.next);setServerPage(cursorStack.current.length);setAllUnread(accountUnread);
         setServerUnread(unread?{owner:user.id,counts:unread}:null);
-        setRequests(rows);setMessages((history.data||[]) as ChatMessage[]);
-        setContacts(Object.fromEntries(((profileResult.data||[]) as ChatContact[]).map(c=>[c.id,c])));
+        setRequests(rows);setMessages(historyPages.flatMap(result=>(result.data||[]) as ChatMessage[]));
+        setContacts(Object.fromEntries(profilePages.flatMap(result=>(result.data||[]) as ChatContact[]).map(c=>[c.id,c])));
         setSelectedId(current=>{
-          const fromUrl=new URLSearchParams(window.location.search).get("thread");
-          if(fromUrl&&rows.some(r=>r.id===fromUrl))return fromUrl;
+          if(fromUrl)return rows.some(r=>r.id===fromUrl)?fromUrl:null;
           if(current&&rows.some(r=>r.id===current))return current;
           return rows[0]?.id||null;
         });
@@ -154,7 +169,7 @@ export default function HoopChatCourtside(){
       },undefined,request);
     }catch(e){
       if(valid()){
-        setRequests([]);setMessages([]);setContacts({});setSelectedId(null);
+        setRequests([]);setMessages([]);setContacts({});setSelectedId(null);setAllUnread(null);setNextCursor(null);
         setError(e instanceof Error?e.message:"HoopChat could not load. Please retry.");
       }
     }finally{
@@ -165,7 +180,7 @@ export default function HoopChatCourtside(){
 
   useEffect(()=>{
     accountGeneration.current+=1;loadSequence.current+=1;
-    userIdRef.current="";
+    userIdRef.current="";inboxPages.current=1;setInboxMore(false);setInboxLimit(false);serverQuery.current="";setAppliedServerQuery("");cursorStack.current=[null];setNextCursor(null);setServerPage(1);setAllUnread(null);setSearch("");
     pendingMessages.current.clear();
     setUserId("");setRequests([]);setMessages([]);setContacts({});
     setServerUnread(null);
@@ -246,17 +261,6 @@ export default function HoopChatCourtside(){
     }
   },[]);
   useEffect(()=>{
-    if(!userId)return;
-    const onFocus=()=>{
-      if(document.visibilityState!=="visible")return;
-      void load(true);
-      if(selectedId&&historyScope)void loadHistory(userId,selectedId,undefined,true);
-    };
-    const timer=window.setInterval(onFocus,25000);
-    window.addEventListener("focus",onFocus);
-    return()=>{window.clearInterval(timer);window.removeEventListener("focus",onFocus);};
-  },[historyScope,load,loadHistory,selectedId,userId]);
-  useEffect(()=>{
     activeHistoryScope.current=historyScope;
     setHistoryPage(null);setHistoryError(null);setHistoryBusy(null);
     if(userId&&selectedId&&historyScope)void loadHistory(userId,selectedId);
@@ -267,18 +271,22 @@ export default function HoopChatCourtside(){
     };
   },[historyScope,loadHistory,selectedId,userId]);
   useEffect(()=>{
-    if(!userId||!selectedId||selectedStatus!=="accepted")return;
+    if(!userId)return;
     const rev=accountGeneration.current;
-    const channel=supabase.channel("courtside-thread-"+userId+"-"+selectedId)
-
-      .on("postgres_changes",{event:"INSERT",schema:"public",table:"player_contact_messages",filter:"request_id=eq."+selectedId},()=>{
-        if(rev===accountGeneration.current){
-          void loadHistory(userId,selectedId,undefined,true);
-          void load(true);
-        }
-      }).subscribe();
-    return()=>{void supabase.removeChannel(channel);};
-  },[load,loadHistory,selectedId,selectedStatus,userId]);
+    let alive=true;
+    const active=()=>alive&&rev===accountGeneration.current&&userIdRef.current===userId&&document.visibilityState==="visible";
+    const queue=createChatRefreshCoordinator(active,()=>mutationGeneration.current===rev||inboxRequest.current!==null,()=>{
+      void load(true);
+      if(selectedId&&historyScope)void loadHistory(userId,selectedId,undefined,true);
+    });
+    const channel=selectedId&&selectedStatus==="accepted"?supabase.channel("courtside-thread-"+userId+"-"+selectedId)
+      .on("postgres_changes",{event:"INSERT",schema:"public",table:"player_contact_messages",filter:"request_id=eq."+selectedId},()=>queue.request())
+      .subscribe(status=>{if(status==="SUBSCRIBED"||status==="CHANNEL_ERROR"||status==="TIMED_OUT"||status==="CLOSED")queue.request();}):null;
+    const visible=()=>{if(document.visibilityState==="visible")queue.request();else queue.suspend();};
+    const timer=window.setInterval(queue.request,25000);
+    window.addEventListener("focus",queue.request);window.addEventListener("online",queue.request);document.addEventListener("visibilitychange",visible);
+    return()=>{alive=false;queue.dispose();window.clearInterval(timer);window.removeEventListener("focus",queue.request);window.removeEventListener("online",queue.request);document.removeEventListener("visibilitychange",visible);if(channel)void supabase.removeChannel(channel);};
+  },[load,loadHistory,historyScope,selectedId,selectedStatus,userId]);
 
   const latest=useMemo(()=>lastByThread(messages),[messages]);
   const ordered=useMemo(()=>sortThreads(requests,latest,prefs.pinned),[requests,latest,prefs.pinned]);
@@ -301,7 +309,7 @@ export default function HoopChatCourtside(){
     if(filter==="pinned"&&!prefs.pinned.includes(r.id))return false;
     if(filter==="unread"&&(!unread||prefs.muted.includes(r.id)))return false;
     const q=search.trim().toLocaleLowerCase();
-    return !q||[peerName(r),contacts[peerId(r)]?.username||"",r.message||""].some(v=>v.toLocaleLowerCase().includes(q));
+    return serverInboxEnabled||!q||[peerName(r),contacts[peerId(r)]?.username||"",r.message||""].some(v=>v.toLocaleLowerCase().includes(q));
   });
   const selected=requests.find(r=>r.id===selectedId)||null;
   const renderGeneration=accountGeneration.current;
@@ -393,6 +401,14 @@ export default function HoopChatCourtside(){
     return()=>document.removeEventListener("visibilitychange",markVisible);
   },[selectedHistory,selectedId,historyScope,userId,prefs,prefsOwner,atLatest]);
 
+  function navigateInbox(direction:"search"|"next"|"previous"|"first"){
+    if(!serverInboxEnabled||sending||syncing||loading||inboxRequest.current)return;
+    if(direction==="next"){if(!nextCursor)return;cursorStack.current.push(nextCursor);}
+    else if(direction==="previous"){if(cursorStack.current.length<=1)return;cursorStack.current.pop();}
+    else {cursorStack.current=[null];serverQuery.current=direction==="search"?search.trim().slice(0,80):"";setAppliedServerQuery(serverQuery.current);if(direction==="first")setSearch("");}
+    const url=new URL(window.location.href);url.searchParams.delete("thread");window.history.replaceState(null,"",url.pathname+url.search+url.hash);
+    activeHistoryScope.current="";historyRequest.current?.abort();setSelectedId(null);setReplyTarget(null);setForwardSelection(null);setNextCursor(null);void load();
+  }
   function choose(id:string){
     if(id!==selectedId){
       activeHistoryScope.current="";
@@ -460,6 +476,25 @@ export default function HoopChatCourtside(){
     }catch(e){if(rev===accountGeneration.current)setError(e instanceof Error?e.message:"Could not respond.");}
     finally{if(mutationGeneration.current===rev)mutationGeneration.current=null;if(rev===accountGeneration.current)setSending(false);}
   }
+  async function checkDelivery(){
+    if(!selected||selected.status!=="accepted"||!userId||sending)return;
+    const rev=accountGeneration.current,thread=selected.id;
+    if(mutationGeneration.current===rev)return;
+    mutationGeneration.current=rev;setSending(true);setError("");setFeedback("");
+    try{
+      const status=await withHoopChatDeadline(async signal=>{
+        const {data:{user}}=await supabase.auth.getUser();
+        const {data:{session},error}=await supabase.auth.getSession();
+        if(error||user?.id!==userId||session?.user.id!==userId||signal.aborted||rev!==accountGeneration.current)throw Error("Session changed.");
+        const header="Bearer "+session.access_token;
+        const blocked=await supabase.from("user_blocks").select("blocked_id").eq("blocker_id",userId).eq("blocked_id",peerId(selected)).setHeader("Authorization",header).abortSignal(signal).maybeSingle();
+        if(blocked.error||blocked.data||signal.aborted||rev!==accountGeneration.current)throw Error("Conversation unavailable.");
+        return webChatOutbox.status(supabase,userId,thread,header,signal,structuredReplies);
+      });
+      if(rev===accountGeneration.current){setFeedback(chatDeliveryMessage(status));if(status==="delivered"){void loadHistory(userId,thread,undefined,true);await load(true);}}
+    }catch(e){if(rev===accountGeneration.current)setError(e instanceof Error?e.message:"Delivery unavailable.");}
+    finally{if(mutationGeneration.current===rev)mutationGeneration.current=null;if(rev===accountGeneration.current)setSending(false);}
+  }
   async function send(event:FormEvent<HTMLFormElement>){
     event.preventDefault();
     const body=currentDraft.trim();
@@ -479,8 +514,9 @@ export default function HoopChatCourtside(){
         const blocked=await supabase.from("user_blocks").select("blocked_id")
           .eq("blocker_id",userId).eq("blocked_id",peerId(selected)).setHeader("Authorization",header).abortSignal(signal).maybeSingle();
         if(blocked.error||blocked.data||signal.aborted||rev!==accountGeneration.current)throw new Error("Conversation unavailable.");
-        const message=prepareConversationMessage(pendingMessages.current,thread,userId,submittedDraft,()=>crypto.randomUUID(),replyId);
-        await sendConversationMessage(supabase,message,signal,header);
+        if(durableDelivery){const result=await webChatOutbox.send(supabase,userId,thread,submittedDraft,replyId,header,signal,structuredReplies);if(result==="previous_delivered")throw Error("Previous message delivered. Your current draft is kept; review the conversation before sending.");}
+        else {const message=prepareConversationMessage(pendingMessages.current,thread,userId,submittedDraft,()=>crypto.randomUUID(),replyId);
+        await sendConversationMessage(supabase,message,signal,header);}
       });
       if(rev!==accountGeneration.current)return;
       pendingMessages.current.delete(thread);
@@ -528,7 +564,8 @@ export default function HoopChatCourtside(){
         <div className="hc-courtside-rail-search">
           <label htmlFor="hc-courtside-search">Find a conversation</label>
           <input id="hc-courtside-search" type="search" value={search} onChange={event=>setSearch(event.target.value)}
-            placeholder="Search names or requests"/>
+            maxLength={80} placeholder={serverInboxEnabled?"Search all conversations":"Search names or requests"}/>
+          {serverInboxEnabled&&<div><button type="button" disabled={syncing||sending} onClick={()=>navigateInbox("search")}>Search all</button><button type="button" disabled={syncing||sending} onClick={()=>navigateInbox("first")}>Clear search</button></div>}
         </div>
         <div className="hc-courtside-filters" role="group" aria-label="Filter conversations">
           {(["all","unread","requests","pinned"] as const).map(v=><button key={v} type="button"
@@ -553,6 +590,8 @@ export default function HoopChatCourtside(){
             <p>{requests.length?"Change your search or filters.":"Connect with another player to start a private thread."}</p>
             <Link href="/players">Discover players</Link></div>}
         </nav>
+        {serverInboxEnabled?<><small role="status">Page {serverPage} · {requests.length} conversations · {allUnread===null?"Account unread unavailable":`${allUnread} unread across account`}{appliedServerQuery?` · Search: ${appliedServerQuery}`:""}</small><button type="button" disabled={syncing||sending||loading||serverPage<=1} onClick={()=>navigateInbox("previous")}>Previous page</button><button type="button" disabled={syncing||sending||loading||!nextCursor} onClick={()=>navigateInbox("next")}>Next page</button></>:<><small role="status">{requests.length} conversations loaded{inboxLimit?" · loading limit reached":inboxMore?" · older conversations available":""}. Search covers loaded conversations.</small>
+        {inboxMore&&!inboxLimit&&<button type="button" disabled={syncing||sending||loading} onClick={()=>{if(inboxRequest.current||inboxPages.current>=CHAT_INBOX_MAX_PAGES)return;inboxPages.current++;void load();}}>Load older conversations</button>}</>}
       </aside>
       <div className="hc-courtside-stage">
         {selected?<><header className="hc-courtside-stage-header">
@@ -601,6 +640,7 @@ export default function HoopChatCourtside(){
           <div className="hc-courtside-starters"><span>PLAYBOOK</span>
             {STARTERS.map(starter=><button type="button" key={starter.key} onClick={()=>applyStarter(starter.message)}
               title="Insert a suggestion into your draft; nothing sends automatically">{starter.emoji} {starter.label}</button>)}</div>
+          {durableDelivery?<button type="button" disabled={sending} onClick={()=>void checkDelivery()}>Check previous delivery</button>:null}
           <form className="hc-courtside-compose" onSubmit={event=>void send(event)}>
             {structuredReplies&&replyTarget?.scope===historyScope?<div><span>{replyId?"Reply linked to a message":"Reply target unavailable"}</span><button type="button" disabled={sending} onClick={()=>setReplyTarget(null)}>Remove reply link</button></div>:null}
             <label htmlFor="hc-courtside-compose">Message {peerName(selected)}</label>

@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { readFileSync } from 'node:fs';
 import { createClient } from '@supabase/supabase-js';
-import { readNotifications, markNotificationsRead, notificationPath, noticeMatches, noticeSearchMatches, verifiedAlertSession } from '../src/native/notifications.ts';
+import { appendNotificationPage, NOTIFICATION_PAGE_SIZE, readNotifications, markNotificationsRead, notificationPath, noticeMatches, noticeSearchMatches, verifiedAlertSession } from '../src/native/notifications.ts';
 const uid='11111111-1111-4111-8111-111111111111';
 test('alerts read and mark actual read_at fields only for authenticated viewer',async()=>{
   const calls=[];
@@ -69,4 +70,59 @@ test("verified alert session pins caller for read and write, rejects wrong ident
  assert.ok(calls.every(c=>c.auth==="Bearer fixture-token"&&c.url.searchParams.get("user_id")==="eq."+uid));
  await assert.rejects(readNotifications(db,id,undefined,scope));ctrl.abort();await assert.rejects(markNotificationsRead(db,uid,new Date(),id,scope));
  db.auth.getUser=async()=>({error:null,data:{user:{id}}});await assert.rejects(verifiedAlertSession(db,new AbortController().signal,uid));assert.equal(calls.length,2);
+});
+
+test('older notification pages deduplicate and stop if the cursor cannot advance',()=>{
+  const rows=Array.from({length:100},(_,i)=>({id:String(i)}));
+  const older=Array.from({length:100},(_,i)=>({id:String(i+99)}));
+  assert.deepEqual(appendNotificationPage(rows,older),{rows:[...rows,...older.slice(1)],hasMore:true});
+  assert.deepEqual(appendNotificationPage(rows,rows),{rows,hasMore:false});
+  assert.deepEqual(appendNotificationPage(rows,[{id:"100"},{id:"100"}]),{rows:[...rows,{id:"100"}],hasMore:false});
+  assert.deepEqual(appendNotificationPage(rows,[]),{rows,hasMore:false});
+});
+test('late cancellation never returns alert content or a confirmed read marker',async()=>{
+  for(const write of [false,true]){
+    const controller=new AbortController();
+    const db=createClient('https://fixture.supabase.co','key',{auth:{persistSession:false,autoRefreshToken:false},global:{fetch:async()=>{controller.abort();return Response.json([{id:uid}]);}}});
+    const scope={uid,bearer:"Bearer fixture-token",signal:controller.signal};
+    await assert.rejects(write?markNotificationsRead(db,uid,new Date(),uid,scope):readNotifications(db,uid,undefined,scope),/Invalid alert session/);
+  }
+});
+test('web alerts use the same scoped paging and per-notification read contract',()=>{
+  const web=readFileSync(new URL('../../../app/notifications/page.tsx',import.meta.url),'utf8');
+  const native=readFileSync(new URL('../app/notifications.tsx',import.meta.url),'utf8');
+  assert.match(web,/readNotifications\(supabase,uid,cursor,scope\)/);
+  assert.match(web,/appendNotificationPage\(items,older as Notice\[\]\)/);
+  assert.match(web,/markNotificationsRead\(supabase,uid,new Date\(\),notificationId,scope\)/);
+  assert.match(web,/void markRead\(n.id\)/);
+  assert.match(web,/rev!==generation.current\|\|owner.current!==uid/);
+  assert.match(native,/appendNotificationPage\(rows, older\)/);
+});
+
+test("shared alert pages deduplicate overlapping IDs and stop when the cursor cannot advance",()=>{
+ const first=[{id:"a"},{id:"b"}];
+ assert.deepEqual(appendNotificationPage(first,[{id:"b"},{id:"c"},{id:"c"}]),{rows:[...first,{id:"c"}],hasMore:false});
+ const full=Array.from({length:NOTIFICATION_PAGE_SIZE},(_,i)=>({id:"older-"+i}));
+ assert.equal(appendNotificationPage(first,full).hasMore,true);
+ assert.equal(appendNotificationPage(first,[...full.slice(0,-1),{id:"b"}]).hasMore,false);
+ assert.deepEqual(appendNotificationPage(full,full),{rows:full,hasMore:false});
+ assert.deepEqual(appendNotificationPage(first,[]),{rows:first,hasMore:false});
+});
+
+test("old alert completions cannot unlock a new account's operation",()=>{
+ const web=readFileSync(new URL('../../../app/notifications/page.tsx',import.meta.url),'utf8');
+ assert.match(web,/owner\.current=null;setPushPreference\(null\);setPushMessage\(""\);pushLock\.current=null;setPushBusy\(false\);locked\.current=false/);
+ assert.match(web,/finally\{if\(rev===generation\.current\)\{locked\.current=false;setLoadingOlder\(false\);\}\}/);
+ assert.match(web,/finally\{if\(rev===generation\.current\)\{locked\.current=false;setMarking\(false\);\}\}/);
+});
+
+test("push preferences reset at account changes and stale requests cannot unlock current UI",()=>{
+ for(const file of ["../../../app/notifications/page.tsx","../app/notifications.tsx"]){
+ const screen=readFileSync(new URL(file,import.meta.url),"utf8");
+ assert.match(screen,/const pushLock=useRef<number\|null>\(null\)/);
+ assert.match(screen,/pushLock\.current===rev\)return/);
+ assert.match(screen,/pushLock\.current=rev;setPushBusy\(true\)/);
+ assert.match(screen,/finally\{if\(pushLock\.current===rev\)\{pushLock\.current=null;if\(rev===generation\.current\) setPushBusy\(false\);\}\}/);
+ assert.match(screen,/setPushPreference\(null\);setPushMessage\(""\);pushLock\.current=null;setPushBusy\(false\)/);
+ }
 });

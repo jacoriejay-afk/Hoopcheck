@@ -30,9 +30,12 @@ export default function WomensLeagueScreen() {
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const generation = useRef(0);
+  const pageRequest = useRef<number | null>(null);
   const resultsId = useRef<string | undefined>(undefined);
   useEffect(() => {
     const current = ++generation.current;
+    pageRequest.current = null;
+    resultsId.current = undefined;
     setLoading(true); setFailed(false); setMore(false); setTeams([]);
     const load = async () => {
       try {
@@ -53,8 +56,9 @@ export default function WomensLeagueScreen() {
     return () => { generation.current = current + 1; };
   }, [id, revision, refresh, read]);
   async function nextPage() {
-    if (loading || !more || !id || resultsId.current !== id) return;
+    if (loading || pageRequest.current !== null || !more || !id || resultsId.current !== id) return;
     const current = generation.current;
+    pageRequest.current = current;
     setLoading(true); setFailed(false);
     try {
       const offset = page + 40;
@@ -62,9 +66,12 @@ export default function WomensLeagueScreen() {
       if (current !== generation.current) return;
       if (result.error) throw result.error;
       const data = (result.data ?? []) as Team[];
-      setTeams(previous => [...previous, ...data.slice(0, 40)]); setMore(data.length > 40); setPage(offset);
+      setTeams(previous => [...new Map([...previous, ...data.slice(0, 40)].map(team => [team.id, team])).values()]); setMore(data.length > 40); setPage(offset);
     } catch { if (current === generation.current) setFailed(true); }
-    finally { if (current === generation.current) setLoading(false); }
+    finally {
+      if (pageRequest.current === current) pageRequest.current = null;
+      if (current === generation.current) setLoading(false);
+    }
   }
   const visible = league?.id === id ? league : null;
   return <SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: theme.background }}>

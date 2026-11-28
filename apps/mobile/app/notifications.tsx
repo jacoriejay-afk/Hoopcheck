@@ -1,3 +1,4 @@
+import {readChatPushPreference} from "../src/native/chatPush";
 import { useHaptics } from "../src/native/haptics";
 import { HoopCheckLoading } from "../components/HoopCheckLoading";
 import MessagesScreen from "./messages";
@@ -12,8 +13,9 @@ import { useEntryTheme } from "../src/theme";
 import { supabase } from "../src/lib/supabase";
 import { requireOnline, useNetwork } from "../src/native/network";
 import { nativeDestination } from "../src/native/deepLinks";
-import { markNotificationsRead, verifiedAlertSession, withAlertDeadline, noticeMatches, noticeSearchMatches, notificationPath, readNotifications, NOTIFICATION_PAGE_SIZE, type Notice } from "../src/native/notifications";
+import { refreshGroupAlerts,appendNotificationPage, markNotificationsRead, verifiedAlertSession, withAlertDeadline, noticeMatches, noticeSearchMatches, notificationPath, readNotifications, NOTIFICATION_PAGE_SIZE, type Notice } from "../src/native/notifications";
 
+const pushEnabled=process.env.EXPO_PUBLIC_HOOPCHECK_CHAT_PUSH_PREFERENCES_ENABLED==="true";
 export default function Notifications() {
   const theme = useEntryTheme();
   const router = useRouter();
@@ -28,6 +30,9 @@ export default function Notifications() {
   const [hasMore, setHasMore] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [rows, setRows] = useState<Notice[]>([]);
+  const [pushPreference,setPushPreference]=useState<boolean|null>(null),[pushBusy,setPushBusy]=useState(false),[pushMessage,setPushMessage]=useState("");
+  const pushLock=useRef<number|null>(null);
+
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -42,12 +47,14 @@ export default function Notifications() {
   }, [tab]);
   const load = useCallback(async () => {
     const current = ++generation.current;
-    owner.current = null; paging.current = false; setLoadingOlder(false); setHasMore(false); setRows([]); setLoading(true); setError(""); setFailed(false);
+    owner.current = null;setPushPreference(null);setPushMessage("");pushLock.current=null;setPushBusy(false); paging.current = false; marking.current=false;setBusy(false);setLoadingOlder(false); setHasMore(false); setRows([]); setLoading(true); setError(""); setFailed(false);
     try {
       if (offline) throw new Error("Reconnect to view alerts.");
       await requireOnline();
       const {uid,items}=await withAlertDeadline(async signal=>{
         const scope=await verifiedAlertSession(supabase,signal);
+        if(current!==generation.current||!focused.current)throw Error("Account session changed.");
+        if(process.env.EXPO_PUBLIC_HOOPGROUPS_ALERTS_ENABLED==="true")await refreshGroupAlerts(supabase,scope);
         if(current!==generation.current||!focused.current)throw Error("Account session changed.");
         return {uid:scope.uid,items:await readNotifications(supabase,scope.uid,undefined,scope)};
       });
@@ -59,14 +66,14 @@ export default function Notifications() {
   }, [offline]);
   useFocusEffect(useCallback(() => {
     focused.current = true; void load();
-    return () => { focused.current = false; generation.current++; owner.current = null; setRows([]); setQuery(""); setFilter("all"); };
+    return () => { focused.current = false; generation.current++; owner.current = null;setPushPreference(null);setPushMessage("");pushLock.current=null;setPushBusy(false); setRows([]); marking.current=false;paging.current=false;setBusy(false);setLoadingOlder(false); setQuery(""); setFilter("all"); };
   }, [load]));
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       const action = hoopChatAuthAction(event, owner.current, session?.user.id ?? null);
       if (action === "ignore") return;
-      generation.current++; owner.current = null; setRows([]); setQuery(""); setFilter("all");
+      generation.current++; owner.current = null;setPushPreference(null);setPushMessage("");pushLock.current=null;setPushBusy(false); setRows([]); marking.current=false;paging.current=false;setBusy(false);setLoadingOlder(false); setQuery(""); setFilter("all");
       clearTimeout(timer);
       if (action === "clear") {
         setLoading(false); setFailed(true); setError("Sign in to view your alerts.");
@@ -91,11 +98,9 @@ export default function Notifications() {
         return readNotifications(supabase,userId,cursor,scope);
       });
       if (current !== generation.current || owner.current !== userId) return;
-      setRows(previous => {
-        const seen = new Set(previous.map(row => row.id));
-        return [...previous, ...older.filter(row => !seen.has(row.id))];
-      });
-      setHasMore(older.length === NOTIFICATION_PAGE_SIZE);
+      const page = appendNotificationPage(rows, older);
+      setRows(page.rows);
+      setHasMore(page.hasMore);
     } catch (failure) {
       if (current === generation.current) setError(failure instanceof Error ? failure.message : "Older alerts could not load. Try again.");
     } finally {
@@ -116,7 +121,7 @@ export default function Notifications() {
       });
       if (current === generation.current && owner.current === userId) setRows(previous => previous.map(item => result.ids.includes(item.id) ? { ...item, read_at: item.read_at || result.readAt } : item));
     } catch (failure) { if (current === generation.current) setError(failure instanceof Error ? failure.message : "Alerts could not be marked as read."); }
-    finally { marking.current = false; setBusy(false); }
+    finally { if(current===generation.current){marking.current = false; setBusy(false);} }
   }
   async function openNotice(item: Notice, navigate = true) {
     const path = notificationPath(item);
@@ -136,7 +141,18 @@ export default function Notifications() {
       }
       if (navigate && path && current === generation.current && owner.current === userId) { haptic("tab"); router.push(nativeDestination(path) as "/dashboard"); }
     } catch (failure) { if (current === generation.current) setError(failure instanceof Error ? failure.message : "Activity could not be opened."); }
-    finally { marking.current = false; setBusy(false); }
+    finally { if(current===generation.current){marking.current = false; setBusy(false);} }
+  }
+  async function updatePush(enabled:boolean|null){
+    const uid=owner.current,rev=generation.current;
+    if(!pushEnabled||offline||!uid||pushLock.current===rev)return;
+    pushLock.current=rev;setPushBusy(true);setPushMessage("");
+    try{
+      const value=await withAlertDeadline(signal=>readChatPushPreference(supabase,uid,enabled,signal));
+      if(rev!==generation.current||owner.current!==uid||!focused.current)return;
+      setPushPreference(value);setPushMessage(enabled===null?"Preference checked.":value?"Preference saved. Device registration and provider acceptance are required for delivery.":"Push disabled and registered devices revoked.");
+    }catch{if(rev===generation.current&&owner.current===uid){setPushPreference(null);setPushMessage("Push preference could not be verified.");}}
+    finally{if(pushLock.current===rev){pushLock.current=null;if(rev===generation.current) setPushBusy(false);}}
   }
   const items = offline ? [] : rows;
   const visibleItems = items.filter(item => noticeMatches(item, filter) && noticeSearchMatches(item, query));
@@ -169,7 +185,8 @@ export default function Notifications() {
       ? <MessagesScreen embedded mode={section === "chat" ? "conversations" : "requests"} />
       : <FlatList ListHeaderComponent={<View style={{ gap: 8, paddingBottom: 9 }}>
       <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:8}}><Text style={{ color: theme.muted, fontSize: 12,flex:1 }}>{loading ? "Checking activity…" : `${items.filter(item => !item.read_at).length} unread · ${items.length} loaded${hasMore ? " · more available" : ""}`}</Text><Pressable accessibilityRole="button" disabled={!canMarkAll} accessibilityState={{disabled:!canMarkAll}} onPress={()=>void markAll()} style={{minHeight:44,justifyContent:"center",paddingHorizontal:5}}><Text style={{color:canMarkAll?theme.accent:theme.muted,fontSize:12,fontWeight:"700"}}>{busy?"Updating…":"Mark all as read"}</Text></Pressable></View>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{["all", "unread", "games", "clubs", "reviews"].map(value => <Pressable key={value} accessibilityRole="button" aria-pressed={filter === value} accessibilityState={{ selected: filter === value }} onPress={() => setFilter(value)} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 9, borderRadius: 14, backgroundColor: filter === value ? theme.accentSurface : theme.chip }}><Text style={{ color: filter === value ? theme.accent : theme.foreground, fontSize: 12, textTransform: "capitalize" }}>{value}</Text></Pressable>)}</View>
+      {pushEnabled&&!loading&&!failed&&!offline?<View style={{gap:6}}><Text style={{color:theme.foreground,fontWeight:"700"}}>Private HoopChat push preference</Text><Text style={{color:theme.muted}}>Generic alerts only. Message content stays in HoopChat. Device registration and provider acceptance are required.</Text><Button secondary disabled={pushBusy} onPress={()=>void updatePush(pushPreference===null?null:!pushPreference)}>{pushPreference===null?"Check push preference":pushPreference?"Disable chat push":"Allow chat push"}</Button>{pushMessage?<Text accessibilityLiveRegion="polite" style={{color:theme.muted}}>{pushMessage}</Text>:null}</View>:null}
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{["all", "unread", "messages", "groups", "games", "clubs", "reviews"].map(value => <Pressable key={value} accessibilityRole="button" aria-pressed={filter === value} accessibilityState={{ selected: filter === value }} onPress={() => setFilter(value)} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 9, borderRadius: 14, backgroundColor: filter === value ? theme.accentSurface : theme.chip }}><Text style={{ color: filter === value ? theme.accent : theme.foreground, fontSize: 12, textTransform: "capitalize" }}>{value}</Text></Pressable>)}</View>
       <View style={{flexDirection:"row",alignItems:"center",gap:8,borderWidth:1,borderColor:theme.glassBorder,borderRadius:12,paddingHorizontal:10}}>
         <Ionicons name="search-outline" size={18} color={theme.muted}/>
         <TextInput accessibilityLabel="Search loaded alerts" placeholder="Search loaded alerts" placeholderTextColor={theme.muted} value={query} onChangeText={setQuery} autoCorrect={false} autoCapitalize="none" maxLength={160} returnKeyType="search" style={{flex:1,minHeight:44,color:theme.foreground,fontSize:14}}/>

@@ -1,3 +1,5 @@
+import { publicationReceiptsEnabled,recoverNativePublication,sendWithPublicationReceipt } from "../src/native/publicationReceipt";
+import { recoveryMessage } from "../src/native/publicationReceiptCore";
 import { GlassSurface } from "../components/GlassSurface";
 import { CommunityWordmark } from "../components/BrandLockup";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -197,12 +199,24 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
     if (!canWrite || !draft.trim() || !pollValid) return;
     const text = draft;
     await action("post", async () => {
-      if (pollEnabled) await publishFeedPoll(origin, await token(), text, pollOptions, undefined, location);
-      else await moderateFeedText(origin, await token(), "post", text, undefined, undefined, undefined, location);
+      if(!uid)throw Error("Sign in required.");
+      await sendWithPublicationReceipt(uid,async publicationId=>{
+        if (pollEnabled) await publishFeedPoll(origin, await token(), text, pollOptions, undefined, location,publicationId);
+        else await moderateFeedText(origin, await token(), "post", text, undefined, undefined, undefined, location,publicationId);
+      });
       setDraft(current => current === text ? "" : current);
       setPoll(current => current.owner === uid ? { owner: uid!, enabled: false, options: ["", ""] } : current);
       setLocationDraft(current=>current.owner===uid&&current.text===location?{owner:uid!,text:"",open:false}:current);
       if (viewer.current.scope === scope && viewer.current.canRead) { setMessage("Published after safety checks."); await load(); }
+    });
+  }
+  async function recoverPublication(){
+    if(!uid||!canWrite)return;
+    await action("publication-recovery",async()=>{
+      const state=await recoverNativePublication(origin,uid,await token());
+      if(viewer.current.uid!==uid)return;
+      setMessage(state?recoveryMessage(state):"No pending publication.");
+      if(state==="published")await load();
     });
   }
   const loadComments = useCallback(async (postId: string, offset = 0) => {
@@ -346,6 +360,7 @@ export function FeedScreen({ initialReels = false }: { initialReels?: boolean })
           <Pressable accessibilityRole="button" accessibilityLabel="Add or edit post location" accessibilityState={{expanded:locationDraft.owner===uid&&locationDraft.open}} disabled={pending.post} onPress={()=>setLocationDraft(current=>({owner:uid!,text:current.owner===uid?current.text:"",open:current.owner!==uid||!current.open}))} style={{...touch,flexDirection:"row",alignItems:"center",justifyContent:"flex-start",gap:6}}><Ionicons name="location-outline" size={20} color={theme.accent}/><Text style={linkStyle}>{location?location:"Add location (optional)"}</Text></Pressable>
           {locationDraft.owner===uid&&locationDraft.open?<View style={{gap:4}}><TextInput accessibilityLabel="Post location" placeholder="City, arena or region" placeholderTextColor={theme.muted} value={location} editable={!pending.post} maxLength={100} onChangeText={text=>setLocationDraft({owner:uid!,text,open:true})} style={{...textStyle,minHeight:44,borderWidth:1,borderColor:theme.border,borderRadius:10,paddingHorizontal:10}}/><Text style={{color:theme.muted,fontSize:11}}>Optional. Visible with your post; never uses GPS. Avoid sharing private addresses.</Text></View>:null}
           {pollEnabled && !mediaMode ? <View style={{ gap: 8 }}><Text style={{ color: theme.muted }}>Add 2–4 different answers, up to 60 characters each. Polls are text only.</Text>{pollOptions.map((option, index) => <View key={index} style={{ flexDirection: "row", gap: 8, alignItems: "center" }}><TextInput accessibilityLabel={`Poll answer ${index + 1}`} value={option} maxLength={60} editable={!pending.post} onChangeText={value => setPoll(current => current.owner === uid ? { ...current, options: current.options.map((item, i) => i === index ? value : item) } : current)} style={{ ...textStyle, flex: 1, minHeight: 48, padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: theme.radius.control, backgroundColor: theme.input }} />{pollOptions.length > 2 ? <Pressable accessibilityRole="button" accessibilityLabel={`Remove poll answer ${index + 1}`} disabled={pending.post} onPress={() => setPoll(current => current.owner === uid ? { ...current, options: current.options.filter((_, i) => i !== index) } : current)} style={touch}><Text style={linkStyle}>Remove</Text></Pressable> : null}</View>)}{pollOptions.length < 4 ? <Button secondary disabled={pending.post} onPress={() => setPoll(current => current.owner === uid ? { ...current, options: [...current.options, ""] } : current)}>Add poll answer</Button> : null}</View> : null}
+          {publicationReceiptsEnabled?<Button secondary disabled={!canWrite||pending["publication-recovery"]} onPress={()=>void recoverPublication()}>Check previous publication / cancel if unfinished</Button>:null}
           {mediaMode && uid ? <MediaPostComposer key={uid} preferredSource={mediaSource} userId={uid} enabled={canWrite} caption={draft} location={location} token={token} onRefresh={() => load()} onPublished={async () => { setDraft(current => current === draft ? "" : current); setLocationDraft(current=>current.owner===uid&&current.text===location?{owner:uid,text:"",open:false}:current); await load(); }} /> : <Button style={{ minHeight: 44, borderRadius: 999, alignSelf: "flex-end", paddingHorizontal: 24 }} disabled={!canWrite || pending.post || !draft.trim() || !pollValid} onPress={() => void publish()}>{pending.post ? "Checking safety…" : "Post"}</Button>}
         </View>}
         {!canWrite ? <Text style={{ color: theme.muted, marginTop: 8 }}>Your membership does not include posting.</Text> : null}

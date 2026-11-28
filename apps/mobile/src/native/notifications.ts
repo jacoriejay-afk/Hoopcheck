@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {parseChatThread} from "./hoopChatLink.ts";
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export type Notice = { id: string; target_type: string; target_id: string; notification_type: string; title: string; body: string; read_at: string | null; created_at: string };
 export const NOTIFICATION_PAGE_SIZE = 100;
@@ -36,6 +37,7 @@ export async function readNotifications(client: SupabaseClient, userId: string, 
   requireAlertScope(userId,scope);
   if(scope)query=query.setHeader("Authorization",scope.bearer).abortSignal(scope.signal);
   const result = await query;
+  requireAlertScope(userId,scope);
   if (result.error) throw new Error("Alerts could not load. Try again.");
   return (result.data ?? []) as Notice[];
 }
@@ -48,8 +50,20 @@ export async function markNotificationsRead(client: SupabaseClient, userId: stri
   requireAlertScope(userId,scope);
   if(scope)query=query.setHeader("Authorization",scope.bearer).abortSignal(scope.signal);
   const result = await query.select("id");
+  requireAlertScope(userId,scope);
   if (result.error) throw new Error("Alerts could not be marked as read. Try again.");
   return { ids: (result.data ?? []).map(row => row.id as string), readAt };
+}
+// Stable keyset pages can overlap during concurrent refreshes. Never duplicate
+// rows or loop on a page that did not advance the cursor.
+export function appendNotificationPage<T extends {id:string}>(previous: readonly T[], older: readonly T[]) {
+  const seen = new Set(previous.map(row => row.id));
+  const additions = older.filter(row => {
+    if (seen.has(row.id)) return false;
+    seen.add(row.id);
+    return true;
+  });
+  return { rows: [...previous, ...additions], hasMore: older.length === NOTIFICATION_PAGE_SIZE && additions.length > 0 && additions[additions.length - 1].id === older[older.length - 1].id };
 }
 export function notificationPath(notice: Pick<Notice, "target_type" | "target_id">) {
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(notice.target_id)) return null;
@@ -59,12 +73,15 @@ export function notificationPath(notice: Pick<Notice, "target_type" | "target_id
     case "league": return `/leagues/${notice.target_id}`;
     case "womens-team": return `/womens/${notice.target_id}`;
     case "game": return `/fan-live?gameId=${notice.target_id}`;
+    case "conversation": {const id=parseChatThread(notice.target_id);return id?`/messages?thread=${id}`:null;}
+    case "group_invite": {const id=parseChatThread(notice.target_id);return id?`/hoopgroups?invitation=${id}`:null;}
+    case "group_discussion": {const id=parseChatThread(notice.target_id);return id?`/hoopgroups?channel=${id}`:null;}
     default: return null;
   }
 }
 export function noticeMatches(notice: Notice, filter: string) {
   const review = ["review", "rating", "trust_score", "pay_warning"].includes(notice.notification_type);
-  return filter === "all" || (filter === "unread" && !notice.read_at) || (filter === "games" && notice.target_type === "game") || (filter === "reviews" && review) || (filter === "clubs" && notice.target_type !== "game" && !review);
+  return filter === "all" || (filter === "unread" && !notice.read_at) || (filter === "games" && notice.target_type === "game") || (filter === "reviews" && review) || (filter === "messages" && notice.target_type === "conversation") || (filter === "groups" && ["group_invite","group_discussion"].includes(notice.target_type)) || (filter === "clubs" && !["game","conversation","group_invite","group_discussion"].includes(notice.target_type) && !review);
 }
 
 // Search only the already authorized, loaded activity rows. No query is sent to the server.
@@ -73,4 +90,12 @@ export function noticeSearchMatches(notice: Pick<Notice, "title" | "body" | "not
   if (!terms.length) return true;
   const text = [notice.title, notice.body, notice.notification_type.replaceAll("_", " ")].join(" ").toLowerCase();
   return terms.every(term => text.includes(term));
+}
+
+export async function refreshGroupAlerts(client:SupabaseClient,scope:AlertSession){
+ requireAlertScope(scope.uid,scope);
+ const r=await client.rpc("refresh_my_hoop_group_alerts").setHeader("Authorization",scope.bearer).abortSignal(scope.signal);
+ requireAlertScope(scope.uid,scope);
+ if(r.error||!Number.isInteger(r.data)||r.data<0||r.data>100)throw Error("Group alerts could not be refreshed.");
+ return r.data as number;
 }

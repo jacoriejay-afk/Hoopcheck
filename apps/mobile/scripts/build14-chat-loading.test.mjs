@@ -6,7 +6,9 @@ test("HoopChat starts with inbox and requires explicit, mode-scoped thread selec
   const chat = read("../app/messages.tsx");
   assert.match(chat, /const \[openedId, setOpenedId\] = useState\(""\)/);
   assert.match(chat, /selected\.id === openedId && openedMode === mode/);
-  assert.match(chat, /!opened&&visibleThreads\.length>0/);
+  assert.match(chat, /!opened&&\(visibleThreads\.length>0\|\|serverInboxEnabled\)/);
+  assert.match(chat, /if\(linkKey&&consumedLink\.current!==linkKey\)/);
+  assert.match(chat, /const linked=result\.rows\.find\(row=>row\.id===threadHint&&row\.status==="accepted"\)/);
   assert.match(chat, /opened&&selected/);
   assert.match(chat, /accessibilityLabel="Back to conversations"/);
   assert.doesNotMatch(chat, /<ScrollView horizontal/);
@@ -67,8 +69,11 @@ test("HoopGroups resets local state across account changes and scopes private ch
   assert.match(groups, /const managing=editing&&editingGroupId===selected\?\.id/);
   assert.match(groups, /if\(!selected \|\| !managing \|\| !userId/);
   const join = groups.slice(groups.indexOf("async function join()"), groups.indexOf("async function createGroup()"));
-  assert.match(join, /const token=await safetyToken\(\)/);
-  assert.match(join, /setHeader\("Authorization","Bearer "\+token\)/);
+  assert.match(join, /setGroupMembership\(supabase,userId,/);
+  const membership = read("../src/native/groupMembership.ts");
+  assert.match(membership, /client\.auth\.getUser\(token\)/);
+  assert.match(membership, /latest\.data\.session\?\.user\.id!==uid/);
+  assert.match(membership, /setHeader\("Authorization",header\)\.abortSignal\(signal\)/);
   assert.match(groups, /supabase\.auth\.getUser\(token\)/);
   assert.match(groups, /verified\.data\.user\?\.id!==userId/);
 });
@@ -83,5 +88,21 @@ test("HoopChat locks mutations before awaits and preserves unsent draft text", (
   assert.match(chat, /setDraft\(current=>current===submittedDraft\?"":current\)/);
   assert.match(chat, /if\(!mutationLocked\.current\)void load\(\)/);
   assert.match(chat, /editable=\{!sending && !offline\}/);
-  assert.equal((chat.match(/finally\{mutationLocked\.current=false;setSending\(false\);\}/g) || []).length, 2);
+  const mutation = name => {
+    const start=chat.indexOf("async function "+name+"(");
+    assert.ok(start>=0,name);
+    const end=chat.indexOf("\n  async function ",start+1);
+    return chat.slice(start,end<0?chat.indexOf("\n  return <SafeAreaView",start):end);
+  };
+  for(const name of ["respond","send","checkDelivery","forwardTo"]){
+    const body=mutation(name);
+    assert.match(body,/mutationLocked\.current\) return;|mutationLocked\.current\)return;|mutationLocked\.current\|\|!userId\)return;/,name);
+    assert.ok(body.indexOf("mutationLocked.current=true")<body.indexOf("await "),name+" acquires before awaiting");
+    assert.match(body,/finally\{mutationLocked\.current=false;setSending\(false\);\}/,name);
+  }
+  const recovery=mutation("checkDelivery");
+  assert.match(recovery,/verifyChatPeer\(userId,peerId\(selected\),signal\)/);
+  assert.match(recovery,/nativeChatOutbox\.status\(supabase,userId,selected\.id,header,signal,structuredReplies\)/);
+  assert.match(recovery,/rev===generation\.current&&focused\.current/);
+  assert.doesNotMatch(recovery,/\.send\(|\.insert\(/);
 });

@@ -68,6 +68,10 @@ export function nativeDestination(path: string): string {
     if (parts.length === 3 && parts[0] === "womens" && parts[1] === "teams" && safeId.test(parts[2])) return `/womens/${parts[2]}`;
     if (parts.length === 3 && parts[0] === "womens" && parts[1] === "leagues" && safeId.test(parts[2])) return `/womens/leagues/${parts[2]}`;
     if (parts.length === 2 && ["teams", "womens", "leagues", "players", "coaches"].includes(parts[0]) && safeId.test(parts[1])) return `/${parts[0]}/${parts[1]}`;
+    if (url.pathname === "/messages") {
+      const thread=url.searchParams.getAll("thread");const id=thread.length===1&&/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(thread[0])?thread[0].toLowerCase():null;
+      return "/messages"+(id?"?thread="+id:"");
+    }
     if (parts.length === 1 && ["account", "teams", "womens", "leagues", "players", "coaches", "dashboard", "settings", "membership", "messages", "feed-welcome", "about", "sign-in", "sign-up", "forgot-password", "choose-username"].includes(parts[0])) return url.pathname;
     if (url.pathname === "/feed" || url.pathname === "/fan-feed") {
       const post = url.searchParams.get("post") || /^#post-([0-9a-f-]{36})$/i.exec(url.hash)?.[1];
@@ -88,6 +92,7 @@ export function nativeDestination(path: string): string {
     if (url.pathname === "/connections") return "/connections";
     if (url.pathname === "/reels") return "/reels";
     if (url.pathname === "/hoopgroups") {
+      for(const field of ["invitation","channel"]){const values=url.searchParams.getAll(field);if(values.length===1&&/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(values[0]))return "/hoopgroups?"+field+"="+values[0].toLowerCase();}
       const slug = parseGroupInvite(url.searchParams.get("group"));
       return "/hoopgroups" + (slug ? `?group=${encodeURIComponent(slug)}` : "");
     }

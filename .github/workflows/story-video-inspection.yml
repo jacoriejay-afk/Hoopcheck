@@ -1,0 +1,46 @@
+name: Video Story technical inspection
+on:
+  pull_request:
+    paths:
+      - 'scripts/run-story-video-inspection.mjs'
+      - 'scripts/test-story-video-inspection.mjs'
+      - 'scripts/run-story-video-transcode.mjs'
+      - 'scripts/test-story-video-transcode.mjs'
+      - 'supabase/candidates/hoop_story_video_transcode_review_only.sql'
+      - 'supabase/candidates/hoop_story_video_review_lifecycle_review_only.sql'
+      - 'supabase/candidates/hoop_story_video_publication_review_only.sql'
+      - 'supabase/candidates/hoop_story_video_jobs_review_only.sql'
+      - 'supabase/candidates/hoop_story_video_inspection_review_only.sql'
+      - 'supabase/tests/hoop_story_video_inspection_isolated.sql'
+      - '.github/workflows/story-video-inspection.yml'
+permissions:
+  contents: read
+jobs:
+  isolated:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: fixture
+          POSTGRES_DB: fixture
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install local media tools
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Decode locally generated video and verify worker contract
+        run: node --test scripts/test-story-video-inspection.mjs scripts/test-story-video-transcode.mjs
+      - name: Synthetic PostgreSQL lifecycle fixture
+        env:
+          PGPASSWORD: fixture
+        run: psql -X -h 127.0.0.1 -U postgres -d fixture -v ON_ERROR_STOP=1 -f supabase/tests/hoop_story_video_inspection_isolated.sql

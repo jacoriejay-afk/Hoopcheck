@@ -5,8 +5,8 @@ import { File } from "expo-file-system";
 import * as FileSystem from "expo-file-system/legacy";
 import { readWithDeadline } from "./readDeadline";
 
-export type Photo = { uri: string; name: string; type: "image/jpeg"; size: number; width: number; height: number };
-export type Video = { uri: string; name: string; type: "video/mp4" | "video/quicktime" | "video/webm"; size: number; durationMs?:number };
+import type { Photo, Video } from "./mediaTypes";
+export type { Photo, Video } from "./mediaTypes";
 export class MediaPermissionError extends Error {}
 function localUri(uri: string) {
   if (!/^(file:|content:|blob:|data:image\/)/.test(uri)) throw new Error("Choose media from your device library.");

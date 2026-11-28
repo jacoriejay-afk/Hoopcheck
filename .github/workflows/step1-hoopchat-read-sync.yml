@@ -7,6 +7,10 @@ on:
       - "supabase/candidates/step1_hoopchat_read_sync_review_only.sql"
       - "supabase/tests/step1_hoopchat_read_sync_isolated.sql"
       - "supabase/tests/hoopchat_structured_replies_isolated.sql"
+      - "supabase/candidates/step1_hoopchat_notifications_review_only.sql"
+      - "supabase/tests/step1_hoopchat_notifications_isolated.sql"
+      - "supabase/candidates/step1_hoopchat_server_inbox_review_only.sql"
+      - "supabase/tests/step1_hoopchat_server_inbox_isolated.sql"
 permissions:
   contents: read
 jobs:
@@ -36,5 +40,6 @@ jobs:
           test -n "$PG_CONTAINER"
           docker exec "$PG_CONTAINER" mkdir -p /repository
           docker cp supabase "$PG_CONTAINER":/repository/supabase
+          docker exec "$PG_CONTAINER" sed -i -e '/^BEGIN;$/d' -e '/^COMMIT;$/d' /repository/supabase/candidates/step1_hoopchat_notifications_review_only.sql
           docker exec -w /repository "$PG_CONTAINER" psql -X -v ON_ERROR_STOP=1 -U postgres \
             -f supabase/tests/step1_hoopchat_read_sync_isolated.sql

@@ -81,3 +81,47 @@ test("ban acknowledgement and session absence require independent proof",async()
  const h=sessionFixture();h.guards.assertFrozen=async()=>{throw Error("not frozen");};
  await assert.rejects(blockAndRevokeApprovedSessions(h.admin,lease,h.guards,"owner-bearer"),/not frozen/);assert.deepEqual(h.calls,[]);
 });
+
+test("approved media targets and lease are snapshotted before asynchronous proofs",async()=>{
+ const f=fixture(),mutableLease={...lease},mutableObject={...object},mutablePlan={...plan,objects:[mutableObject]};
+ f.guards.assertFrozen=async()=>{mutableLease.ownerId=lease.requestId;mutableObject.path="foreign/path.png";mutablePlan.objects.push({...object,path:"foreign/path.png"});};
+ assert.equal((await removeApprovedAccountMedia(f.admin,mutableLease,mutablePlan,f.guards)).confirmed,true);
+ assert.deepEqual(f.calls,[["remove",object.bucket,[object.path]]]);
+});
+test("a lease lost while reading the media catalog prevents effect dispatch",async()=>{
+ const f=fixture();let reads=0,lost=false;
+ f.guards.readObject=async()=>{if(++reads===2)lost=true;return object;};
+ f.guards.assertLease=async()=>{if(lost)throw Error("lease expired");};
+ await assert.rejects(removeApprovedAccountMedia(f.admin,lease,plan,f.guards),/lease expired/);
+ assert.deepEqual(f.calls,[]);
+});
+test("a lease lost during the final Auth deletion proof prevents dispatch",async()=>{
+ const f=fixture();let proofs=0,lost=false;
+ f.guards.assertReadyForAuthDeletion=async()=>{if(++proofs===2)lost=true;};
+ f.guards.assertLease=async()=>{if(lost)throw Error("lease expired");};
+ await assert.rejects(removeApprovedAuthIdentity(f.admin,lease,f.guards),/lease expired/);
+ assert.deepEqual(f.calls,[]);
+});
+
+test("scheduled revocation is independently disabled and requires positive readback",async()=>{
+ const prior=process.env.ACCOUNT_DELETION_AUTH_CATALOG_REVOCATION_ENABLED;
+ try{
+  const f=sessionFixture();let calls=0;const original=f.admin.rpc;
+  f.admin.rpc=async(name,args)=>{
+   if(name==="revoke_approved_deletion_auth_sessions"){calls++;assert.equal(args.p_owner,lease.ownerId);f.clearSessions();return {error:null,data:true};}
+   return original(name,args);
+  };
+  delete process.env.ACCOUNT_DELETION_AUTH_CATALOG_REVOCATION_ENABLED;
+  await assert.rejects(blockAndRevokeApprovedSessions(f.admin,lease,f.guards,undefined,{allowReviewedCatalogRevocation:true}),/Existing sessions require/);
+  process.env.ACCOUNT_DELETION_AUTH_CATALOG_REVOCATION_ENABLED="true";
+  await assert.rejects(blockAndRevokeApprovedSessions(f.admin,lease,f.guards),/Existing sessions require/);
+  assert.equal(calls,0);
+  assert.equal((await blockAndRevokeApprovedSessions(f.admin,lease,f.guards,undefined,{allowReviewedCatalogRevocation:true})).confirmed,true);
+  assert.equal(calls,1);
+  assert.equal((await blockAndRevokeApprovedSessions(f.admin,lease,f.guards,undefined,{allowReviewedCatalogRevocation:true})).confirmed,true);
+  assert.equal(calls,1);
+  const g=sessionFixture();const r=g.admin.rpc;
+  g.admin.rpc=async(name,args)=>name==="revoke_approved_deletion_auth_sessions"?{error:null,data:true}:r(name,args);
+  await assert.rejects(blockAndRevokeApprovedSessions(g.admin,lease,g.guards,undefined,{allowReviewedCatalogRevocation:true}),/sessions or login block not verified/);
+ }finally{if(prior===undefined)delete process.env.ACCOUNT_DELETION_AUTH_CATALOG_REVOCATION_ENABLED;else process.env.ACCOUNT_DELETION_AUTH_CATALOG_REVOCATION_ENABLED=prior;}
+});

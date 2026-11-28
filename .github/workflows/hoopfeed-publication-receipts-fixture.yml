@@ -1,0 +1,31 @@
+name: HoopFeed publication receipt synthetic fixture
+on:
+  pull_request:
+    paths:
+      - 'supabase/candidates/hoopfeed_publication_receipts_review_only.sql'
+      - 'supabase/tests/hoopfeed_publication_receipts_isolated.sql'
+      - '.github/workflows/hoopfeed-publication-receipts-fixture.yml'
+permissions:
+  contents: read
+jobs:
+  fixture:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: fixture
+          POSTGRES_DB: fixture
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run isolated synthetic fixture only
+        env:
+          PGPASSWORD: fixture
+        run: psql -X -h 127.0.0.1 -U postgres -d fixture -v ON_ERROR_STOP=1 -f supabase/tests/hoopfeed_publication_receipts_isolated.sql
