@@ -1,5 +1,5 @@
 import type {SupabaseClient} from "@supabase/supabase-js";
-import {withHoopChatDeadline} from "./hoopChatLoad";
+import {withHoopChatDeadline} from "./hoopChatLoad.ts";
 const uuid=/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 function record(v:unknown):v is Record<string,unknown>{return !!v&&typeof v==="object"&&!Array.isArray(v);}
 function id(v:unknown):v is string{return typeof v==="string"&&uuid.test(v);}
@@ -12,7 +12,8 @@ export type GroupAccessSnapshot={space_id:string|null;is_owner:boolean;can_moder
 export type GroupAccessAction={action:"create_private_group"|"create_private_channel"|"invite"|"accept_invite"|"decline_invite"|"revoke_invite"|"remove_member"|"ban_member"|"unban"|"promote_moderator"|"remove_moderator"|"grant_channel"|"revoke_channel"|"moderate";target:string;channel?:string;name?:string;description?:string;status?:"approved"|"rejected"|"removed"};
 export function decodeGroupAccessSnapshot(v:unknown,space:string|null):GroupAccessSnapshot{
  if(!record(v)||v.space_id!==space||typeof v.is_owner!=="boolean"||typeof v.can_moderate!=="boolean"||(v.is_owner&&!v.can_moderate))throw Error("Group permissions unavailable.");
- function list(key:string,limit:number){const rows=v[key];if(!Array.isArray(rows)||rows.length>limit||!rows.every(record))throw Error("Group permissions unavailable.");return rows as Record<string,unknown>[];}
+ const data=v;
+ function list(key:string,limit:number){const rows=data[key];if(!Array.isArray(rows)||rows.length>limit||!rows.every(record))throw Error("Group permissions unavailable.");return rows as Record<string,unknown>[];}
  const members=list("members",100).map(x=>{
   if(!id(x.user_id)||!label(x.name)||!(x.role==="owner"||x.role==="moderator"||x.role==="member")||!Array.isArray(x.channels)||x.channels.length>12||!x.channels.every(id))throw Error("Invalid member list.");
   return {user_id:x.user_id,name:x.name,role:x.role,channels:x.channels as string[]} as Member;

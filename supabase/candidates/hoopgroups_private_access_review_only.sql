@@ -94,6 +94,8 @@ GRANT EXECUTE ON FUNCTION hoopcheck_group_access.see_space(uuid),hoopcheck_group
 -- and session/freeze policies. No new broad permissive grant.
 CREATE POLICY group_access_space_read ON public.hoop_group_spaces AS RESTRICTIVE FOR SELECT TO authenticated USING(hoopcheck_group_access.see_space(id));
 CREATE POLICY group_access_channel_read ON public.hoop_group_channels AS RESTRICTIVE FOR SELECT TO authenticated USING(hoopcheck_group_access.see_channel(id));
+CREATE POLICY group_access_public_space_insert ON public.hoop_group_spaces AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK(visibility='public');
+CREATE POLICY group_access_public_channel_insert ON public.hoop_group_channels AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK(visibility='public');
 CREATE POLICY group_access_member_join ON public.hoop_group_members AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK(hoopcheck_group_access.join_public(space_id));
 CREATE POLICY group_access_member_leave ON public.hoop_group_members AS RESTRICTIVE FOR DELETE TO authenticated USING(hoopcheck_group_access.leave_group(space_id));
 CREATE POLICY group_access_post_read ON public.hoop_group_posts AS RESTRICTIVE FOR SELECT TO authenticated USING(hoopcheck_group_access.post_visible(channel_id,author_id));
