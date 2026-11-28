@@ -30,8 +30,9 @@ async function verify(browser,theme){
    if(table==='team_league_memberships'){
     assert.equal(u.searchParams.get('league_id'),'eq.'+league);
     const season=u.searchParams.get('season');
+    if(season==='eq.2026–27'&&u.searchParams.has('active')){assert.equal(u.searchParams.get('active'),'eq.true');return json([{team_id:current}]);}
     if(season){assert.equal(u.searchParams.has('active'),false);if(season==='eq.2025–26')return json([{team_id:past}]);if(season==='eq.unavailable'&&failSeason)return json({message:'Synthetic outage'},503);return json([]);}
-    assert.equal(u.searchParams.get('active'),'eq.true');return json([{team_id:current}]);
+    throw Error('Current membership request must include the recorded league season');
    }
    if(table==='teams'){
     const row={id:current,name:'Current Club',country:'Spain',city:'Madrid',league_name:'Season League',website:null};

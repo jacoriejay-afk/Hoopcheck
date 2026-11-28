@@ -1,7 +1,24 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export type LeagueClub = { id: string; name: string; country: string | null };
-/** Season labels are opaque stored text; never guess current season or infer playing statistics. */
+const PAGE_SIZE = 100;
+const MAX_PAGES = 100; // explicit safety ceiling; never report a capped result as complete.
+type PageResult<T> = { data: T[] | null; error: unknown };
+async function readPages<T>(query: (from: number, to: number) => PromiseLike<PageResult<T>>, signal: AbortSignal) {
+  const rows: T[] = [];
+  for (let page = 0; page < MAX_PAGES; page++) {
+    if (signal.aborted) throw Error("League clubs could not load. Try again.");
+    const { data, error } = await query(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+    if (error || !data || data.length > PAGE_SIZE || signal.aborted) throw Error("League clubs could not load. Try again.");
+    rows.push(...data);
+    if (data.length < PAGE_SIZE) return { rows, limited: false };
+  }
+  return { rows, limited: true };
+}
+/** Explicit historical labels are opaque stored text. For current mode use the
+ * league's recorded season when available, retaining legacy primary links.
+ * Missing season metadata is not evidence that a club stopped participating.
+ */
 export async function readLeagueClubs(client: SupabaseClient, leagueId: string, options: { season?: string; signal?: AbortSignal } = {}) {
   if (!uuid.test(leagueId) || options.season !== undefined && (typeof options.season !== "string" || options.season.trim().length > 80)) throw Error("Check the league and season.");
   const season = options.season?.trim() || null;
@@ -10,23 +27,41 @@ export async function readLeagueClubs(client: SupabaseClient, leagueId: string, 
   options.signal?.addEventListener("abort", cancel, { once: true });
   const timer = setTimeout(cancel, 15000);
   try {
-    let membership = client.from("team_league_memberships").select("team_id").eq("league_id", leagueId);
-    membership = season ? membership.eq("season", season) : membership.eq("active", true);
+    let currentSeason: string | null = null;
+    if (!season) {
+      const league = await client.from("leagues").select("season").eq("id", leagueId).abortSignal(controller.signal).maybeSingle();
+      if (league.error || !league.data || controller.signal.aborted) throw Error("League clubs could not load. Try again.");
+      currentSeason = typeof league.data.season === "string" && league.data.season.trim() ? league.data.season : null;
+    }
     const [direct, linked] = await Promise.all([
-      season ? Promise.resolve({ data: [] as LeagueClub[], error: null }) : client.from("teams").select("id,name,country").eq("league_id", leagueId).eq("active", true).order("name").limit(50).abortSignal(controller.signal),
-      membership.order("team_id").limit(100).abortSignal(controller.signal),
+      season ? Promise.resolve({ rows: [] as LeagueClub[], limited: false }) :
+        readPages<LeagueClub>((from, to) => client.from("teams").select("id,name,country").eq("league_id", leagueId).eq("active", true).order("id").range(from, to).abortSignal(controller.signal), controller.signal),
+      readPages<{team_id: string}>((from, to) => {
+        let membership = client.from("team_league_memberships").select("team_id").eq("league_id", leagueId);
+        if (season) membership = membership.eq("season", season);
+        else {
+          membership = membership.eq("active", true);
+          if (currentSeason) membership = membership.eq("season", currentSeason);
+        }
+        return membership.order("id").range(from, to).abortSignal(controller.signal);
+      }, controller.signal),
     ]);
-    if (direct.error || linked.error) throw Error("League clubs could not load. Try again.");
-    const ids = [...new Set((linked.data || []).map(row => row.team_id).filter(id => typeof id === "string" && uuid.test(id)))];
-    const details = ids.length ? await client.from("teams").select("id,name,country").in("id", ids).eq("active", true).order("name").limit(50).abortSignal(controller.signal) : { data: [], error: null };
-    if (details.error || controller.signal.aborted) throw Error("League clubs could not load. Try again.");
-    const clubs = [...new Map([...(direct.data || []), ...(details.data || [])].filter(row => uuid.test(row.id) && typeof row.name === "string").map(row => [row.id, { id: row.id, name: row.name.slice(0, 200), country: typeof row.country === "string" ? row.country.slice(0, 120) : null }])).values()].sort((a, b) => a.name.localeCompare(b.name));
-    return { clubs, season, limited: (direct.data?.length || 0) === 50 || (linked.data?.length || 0) === 100 || (details.data?.length || 0) === 50 };
+    const ids = [...new Set(linked.rows.map(row => row.team_id).filter(id => typeof id === "string" && uuid.test(id)))];
+    const details: LeagueClub[] = [];
+    let limited = direct.limited || linked.limited;
+    for (let i = 0; i < ids.length; i += PAGE_SIZE) {
+      const batch = ids.slice(i, i + PAGE_SIZE);
+      const result = await readPages<LeagueClub>((from, to) => client.from("teams").select("id,name,country").in("id", batch).eq("active", true).order("id").range(from, to).abortSignal(controller.signal), controller.signal);
+      details.push(...result.rows); limited ||= result.limited;
+    }
+    if (controller.signal.aborted) throw Error("League clubs could not load. Try again.");
+    const clubs = [...new Map([...direct.rows, ...details].filter(row => uuid.test(row.id) && typeof row.name === "string").map(row => [row.id, { id: row.id, name: row.name.slice(0, 200), country: typeof row.country === "string" ? row.country.slice(0, 120) : null }])).values()].sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
+    return { clubs, season, limited };
   } finally { clearTimeout(timer); options.signal?.removeEventListener("abort", cancel); }
 }
 
-/** Bounded sample of visible membership records. Exact stored labels, not inferred seasons.
- * A full sample or hidden membership means the list must not claim complete coverage.
+/** Page through visible recorded seasons in stable order. Exact stored labels,
+ * not inferred seasons; a safety-capped result is explicitly incomplete.
  */
 export async function readRecordedLeagueSeasons(client: SupabaseClient, leagueId: string, signal?: AbortSignal) {
   if (!uuid.test(leagueId) || signal?.aborted) throw Error("Check the league or retry.");
@@ -35,12 +70,13 @@ export async function readRecordedLeagueSeasons(client: SupabaseClient, leagueId
   signal?.addEventListener("abort", cancel, { once: true });
   const timer = setTimeout(cancel, 15000);
   try {
-    const { data, error } = await client.from("team_league_memberships")
-      .select("season").eq("league_id", leagueId).not("season", "is", null)
-      .order("season", { ascending: false }).order("id").limit(201).abortSignal(controller.signal);
-    if (error || controller.signal.aborted || !data) throw Error("Season records could not load.");
-    const seasons = [...new Set(data.slice(0, 200).map(row => row.season)
-      .filter((value): value is string => typeof value === "string" && value.trim() === value && value.length > 0 && value.length <= 80))];
-    return { seasons, limited: data.length >= 200 };
+    try {
+      const result = await readPages<{season: string | null}>((from, to) => client.from("team_league_memberships")
+        .select("season").eq("league_id", leagueId).not("season", "is", null)
+        .order("season", { ascending: false }).order("id").range(from, to).abortSignal(controller.signal), controller.signal);
+      const seasons = [...new Set(result.rows.map(row => row.season)
+        .filter((value): value is string => typeof value === "string" && value.trim() === value && value.length > 0 && value.length <= 80))];
+      return { seasons, limited: result.limited };
+    } catch { throw Error("Season records could not load."); }
   } finally { clearTimeout(timer); signal?.removeEventListener("abort", cancel); }
 }

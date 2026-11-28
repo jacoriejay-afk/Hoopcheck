@@ -425,3 +425,136 @@ test("women's legacy directory requires a unique current reviewed canonical alia
  assert.deepEqual(resolve([a]),{canonicalLeagueId,expiresAt:"2026-11-25T13:45:00.000Z"});
  for(const rows of [[],[a,a],[{...a,status:"revoked"}],[{...a,evidence:""}],[{...a,validUntil:now.toISOString()}],[a,{...a,legacyLeagueId:canonicalLeagueId}]])assert.equal(resolve(rows),null);
 });
+
+test("directory quality compares verified identities, not arbitrary counts, and retains foreign origins", async () => {
+  const compiled=ts.transpileModule(read("lib/owner/directory-quality.ts"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+  const {deriveDirectoryQuality,verifiedRosters}=await import("data:text/javascript;base64,"+Buffer.from(compiled).toString("base64"));
+  const league={id:"arm",name:"Armenian Basketball League A",country:"Armenia",basketball_type:"mens",logo_url:null,season:"2026-27"};
+  const other={id:"other",name:"Unverified",country:"Kazakhstan",basketball_type:"mens",logo_url:null,season:"2026"};
+  const expected=verifiedRosters[0].clubs;
+  const teams=expected.filter(x=>x.name!=="BKMA").map((x,i)=>({id:"club"+i,name:x.name,country:x.country,basketball_type:"mens",logo_url:null,league_id:x.country==="Kazakhstan"?"other":"arm"}));
+  teams.push({id:"erebuni",name:"BK Erebuni",country:"Armenia",basketball_type:"mens",logo_url:"http://example.com/logo.png",league_id:"arm"});
+  teams.push({id:"legacy",name:"Historical",country:"Armenia",basketball_type:"mens",logo_url:null,league_id:null});
+  const barsy=teams.find(t=>t.name==="Barsy Atyrau");
+  const memberships=[{team_id:barsy.id,league_id:"arm",season:"2026-27"},{team_id:"legacy",league_id:"arm",season:"2025-26"}];
+  const quality=deriveDirectoryQuality([league,other],teams,memberships);
+  const coverage=quality.coverage.find(row=>row.id==="arm");
+  assert.equal(coverage.actual,10);assert.equal(coverage.expected,10);
+  assert.deepEqual(coverage.missing,["BKMA"]);assert.deepEqual(coverage.unexpected,["BK Erebuni"]);
+  assert.equal(quality.coverage.find(row=>row.id==="other").expected,null);
+  assert.equal(quality.invalidLogoURLs,1);assert.equal(quality.unlinked,1);
+  assert.equal(quality.countries,5);
+  assert.throws(()=>deriveDirectoryQuality([league,league],teams,memberships),/changed during paging/);
+  const duplicated=deriveDirectoryQuality([league,other],[...teams,{...barsy,id:"alias",name:"BC BARSY ATYRAU",league_id:"arm"}],memberships);
+  assert.deepEqual(duplicated.coverage.find(row=>row.id==="arm").ambiguous,["Barsy Atyrau"]);
+});
+
+test("Kosovo roster evidence does not conflate Bora with Borea or guess Rahoveci identity",async()=>{
+ const compiled=ts.transpileModule(read("lib/owner/directory-quality.ts"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+ const {deriveDirectoryQuality,verifiedRosters}=await import("data:text/javascript;base64,"+Buffer.from(compiled).toString("base64"));
+ const evidence=verifiedRosters.find(row=>row.country==="Kosovo");
+ assert.equal(evidence.clubs.length,8);
+ const league={id:"ks",name:"Kosovo Superleague",country:"Kosovo",basketball_type:"mens",logo_url:null,season:"2026-27"};
+ const teams=evidence.clubs.map((club,i)=>({id:"club"+i,country:club.country,name:club.name==="KB Bora"?"KB Borea":club.name==="KB Rahoveci 029"?"KB Rahoveci":club.name,basketball_type:"mens",logo_url:null,league_id:"ks"}));
+ const row=deriveDirectoryQuality([league],teams,[]).coverage[0];
+ assert.equal(row.actual,8);assert.equal(row.expected,8);
+ assert.deepEqual(row.missing,["KB Bora","KB Rahoveci 029"]);
+ assert.deepEqual(row.unexpected,["KB Borea","KB Rahoveci"]);
+});
+test("Georgia evidence counts participating clubs, accepts verified CIU alias, and flags stale direct links",async()=>{
+ const compiled=ts.transpileModule(read("lib/owner/directory-quality.ts"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+ const {deriveDirectoryQuality,verifiedRosters}=await import("data:text/javascript;base64,"+Buffer.from(compiled).toString("base64"));
+ const evidence=verifiedRosters.find(row=>row.country==="Georgia");
+ assert.equal(evidence.clubs.length,11);
+ const league={id:"ge",name:"Superleague",country:"Georgia",basketball_type:"mens",logo_url:null,season:"2026-27"};
+ const teams=evidence.clubs.filter(c=>c.name!=="BC Orbi").map((club,i)=>({id:"ge"+i,country:club.country,name:club.name==="BC Kavkasia"?"CIU":club.name,basketball_type:"mens",logo_url:null,league_id:"ge"}));
+ teams.push({id:"stale",country:"Georgia",name:"BC Olimpi",basketball_type:"mens",logo_url:null,league_id:"ge"});
+ const row=deriveDirectoryQuality([league],teams,[]).coverage[0];
+ assert.equal(row.actual,11);assert.equal(row.expected,11);
+ assert.deepEqual(row.missing,["BC Orbi"]);assert.deepEqual(row.unexpected,["BC Olimpi"]);
+});
+
+test("missing Iceland women's league is visible even without any stored league or team records",async()=>{
+ const compiled=ts.transpileModule(read("lib/owner/directory-quality.ts"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+ const {deriveDirectoryQuality,verifiedRosters}=await import("data:text/javascript;base64,"+Buffer.from(compiled).toString("base64"));
+ const women=verifiedRosters.find(row=>row.country==="Iceland"&&row.side==="womens");
+ assert.equal(women.clubs.length,10);
+ const men={id:"men",name:"Úrvalsdeild karla",country:"Iceland",basketball_type:"mens",logo_url:null,season:null};
+ const missing=deriveDirectoryQuality([men],[],[]).missingReviewedCompetitions.filter(row=>row.country==="Iceland");
+ assert.equal(missing.find(row=>row.side==="mens").existingNameWithoutSeason,true);
+ assert.equal(missing.find(row=>row.side==="womens").existingNameWithoutSeason,false);
+ assert.equal(missing.find(row=>row.side==="womens").expected,10);
+ const league={...men,id:"women",name:"Úrvalsdeild kvenna",basketball_type:"womens",season:"2026-27"};
+ const teams=women.clubs.map((club,i)=>({id:"women"+i,name:club.name,country:"Iceland",basketball_type:"womens",logo_url:null,league_id:league.id}));
+ const repaired=deriveDirectoryQuality([league],teams,[]);
+ assert.equal(repaired.coverage[0].actual,10);assert.equal(repaired.coverage[0].expected,10);assert.deepEqual(repaired.coverage[0].missing,[]);
+ assert.equal(repaired.missingReviewedCompetitions.some(row=>row.country==="Iceland"&&row.side==="womens"),false);
+});
+
+test("women's parity is identity-based and flags ambiguous league labels without auto-linking",async()=>{
+ const compiled=ts.transpileModule(read("lib/owner/directory-quality.ts"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+ const {deriveWomensCatalogParity,verifiedRosters}=await import("data:text/javascript;base64,"+Buffer.from(compiled).toString("base64"));
+ const women={id:"wc",name:"WNBL",country:"Australia",basketball_type:"womens",logo_url:null,season:"2026-27"};
+ const men={...women,id:"mc",basketball_type:"mens"};
+ const canonical=[{...women,id:"shared",name:"Townsville Fire",league_id:null},{...women,id:"canonical-only",name:"Townsville Fire",league_id:"wc"},{...men,id:"men-team",name:"Townsville Fire",league_id:"mc"}];
+ const legacy=[{id:"shared",name:"Townsville Fire",country:"Australia",league_id:"wl"},{id:"legacy-only",name:"New club",country:"Australia",league_id:"wl"}];
+ const leagues=[{id:"wl",name:"WNBL",country:"Australia"}];
+ const parity=deriveWomensCatalogParity([women,men],canonical,leagues,legacy);
+ assert.equal(parity.sharedIds,1);assert.equal(parity.missingLegacy,1);assert.equal(parity.missingCanonical,1);assert.equal(parity.linkedLegacyWithoutCanonicalPrimary,1);
+ assert.deepEqual(parity.legacyLeagueCandidates[0].candidateIds,["wc"]);
+ const ambiguous=deriveWomensCatalogParity([women,{...women,id:"duplicate"}],canonical,leagues,legacy);
+ assert.equal(ambiguous.exactLeagueCandidates,0);
+ assert.equal(verifiedRosters.find(row=>row.name==="WNBL").clubs.length,9);
+ assert.equal(verifiedRosters.filter(row=>row.country==="Portugal").length,2);
+});
+
+test("unlinked review distinguishes actual season memberships, reviewed identities and wrong-side rows",async()=>{
+ const compiled=ts.transpileModule(read("lib/owner/directory-quality.ts"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+ const {deriveDirectoryQuality}=await import("data:text/javascript;base64,"+Buffer.from(compiled).toString("base64"));
+ const league={id:"pt",name:"Liga Betclic",country:"Portugal",basketball_type:"mens",logo_url:null,season:"2026-27"};
+ const make=(id,name,league_id,basketball_type="mens")=>({id,name,league_id,basketball_type,country:"Portugal",logo_url:null});
+ const quality=deriveDirectoryQuality([league],[
+   make("linked","FC Porto","pt"),make("duplicate","FC Porto",null),make("current","CD Póvoa",null),make("old","SL Benfica",null),make("wrong","FC Porto","pt","womens"),make("orphan","Another club","missing")
+ ],[{team_id:"current",league_id:"pt",season:"2026-27"},{team_id:"old",league_id:"pt",season:"2025-26"},{team_id:"wrong",league_id:"pt",season:"2026-27"}]);
+ assert.equal(quality.wrongSidePrimary,1);assert.equal(quality.unavailablePrimary,1);assert.equal(quality.wrongSideMemberships,1);
+ assert.equal(quality.unlinkedWithCurrentMembership,1);assert.equal(quality.unlinkedWithReviewedRoster,3);assert.equal(quality.unlinkedWithSameNameLinked,1);
+ assert.deepEqual(quality.unlinkedReview.find(row=>row.id==="duplicate").sameNameLinkedIds,["linked"]);
+ assert.deepEqual(quality.unlinkedReview.find(row=>row.id==="old").currentMembershipLeagueIds,[]);
+ assert.equal(quality.coverage[0].actual,2);
+});
+
+test("EuroLeague source aliases distinguish domestic duplicate candidates from exact IDs",async()=>{
+ const compiled=ts.transpileModule(read("lib/owner/directory-quality.ts"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+ const {deriveDirectoryQuality,verifiedRosters}=await import("data:text/javascript;base64,"+Buffer.from(compiled).toString("base64"));
+ const euro={id:"el",name:"EuroLeague",country:"Europe",basketball_type:"mens",logo_url:null,season:"2026-27"};
+ const acb={...euro,id:"acb",name:"Liga Endesa",country:"Spain"};
+ const base={country:"Spain",basketball_type:"mens",logo_url:null};
+ const teams=[{...base,id:"international",name:"FC Barcelona",league_id:null},{...base,id:"domestic",name:"Barça",league_id:"acb"},{...base,id:"women",name:"Barça",league_id:"acb",basketball_type:"womens"}];
+ const q=deriveDirectoryQuality([euro,acb],teams,[{team_id:"international",league_id:"el",season:"2026-27"}]);
+ assert.equal(verifiedRosters.find(row=>row.name==="EuroLeague").clubs.length,20);
+ assert.equal(verifiedRosters.find(row=>row.name==="Liga Endesa").clubs.length,18);
+ assert.equal(q.unlinkedWithReviewedAlias,1);
+ assert.deepEqual(q.unlinkedReview[0].reviewedAliasLinkedIds,["domestic"]);
+ assert.deepEqual(q.unlinkedReview[0].sameNameLinkedIds,[]);
+ assert.equal(q.coverage.find(row=>row.id==="el").actual,1);
+});
+
+test("directory regression compares exact club IDs even when counts are unchanged",async()=>{
+ const compiled=ts.transpileModule(read("lib/owner/directory-quality.ts"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+ const {deriveDirectoryQuality,compareDirectoryCoverage}=await import("data:text/javascript;base64,"+Buffer.from(compiled).toString("base64"));
+ const league={id:"same",name:"Unverified",country:"Spain",basketball_type:"mens",logo_url:null,season:"2026-27"};
+ const other={...league,id:"deleted",name:"Other"};
+ const club={id:"old",name:"Club",country:"Spain",basketball_type:"mens",logo_url:null,league_id:"same"};
+ const before=deriveDirectoryQuality([league,other],[club],[]);
+ const after=deriveDirectoryQuality([league,{...other,id:"added"}],[{...club,id:"new"}],[]);
+ const delta=compareDirectoryCoverage(before,after);
+ assert.deepEqual(delta.rosterChanges,[{id:"same",name:"Unverified",season:"2026-27",before:1,after:1,added:["new"],removed:["old"]}]);
+ assert.deepEqual(delta.removedLeagues.map(x=>x.id),["deleted"]);
+ assert.deepEqual(delta.addedLeagues.map(x=>x.id),["added"]);
+ const rolled=deriveDirectoryQuality([{...league,season:"2027-28"}],[club],[]);
+ const rollover=compareDirectoryCoverage(before,rolled);
+ assert.equal(rollover.rosterChanges.length,0);assert.equal(rollover.seasonChanges.length,1);
+ const ge={...league,id:"ge",country:"Georgia",name:"Superleague"};
+ const provisional=deriveDirectoryQuality([ge],[],[]);
+ assert.equal(provisional.verifiedLeagueCount,0);assert.equal(provisional.provisionalLeagueCount,1);
+});
