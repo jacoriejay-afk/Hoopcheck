@@ -6,6 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import {parseChatThread,readLinkedChatThread} from "../src/native/hoopChatLink";
 import {readChatInbox,chatInboxBatches,CHAT_INBOX_MAX_PAGES} from "../src/native/hoopChatInbox";
+import {readServerInbox,readAllUnread,type InboxCursor} from "../src/native/hoopChatServerInbox";
 import { Button } from "../src/primitives";
 import {PlayerReferencePanel} from "../components/PlayerReferencePanel";
 import { ConversationSafety } from "../components/ConversationSafety";
@@ -22,7 +23,8 @@ import { quoteConversationMessage } from "../src/native/hoopChatQuote";
 import { makeReplyTarget, scopedReplyTarget, type ReplyTarget } from "../src/native/hoopChatReply";
 import { markServerChatRead, readPagedChatCounts } from "../src/native/hoopChatReadSync";
 const structuredReplies=process.env.EXPO_PUBLIC_HOOPCHECK_STRUCTURED_REPLIES_ENABLED==="true";
-const syncReadMarkers=process.env.EXPO_PUBLIC_HOOPCHECK_CHAT_READ_SYNC_ENABLED==="true";
+const serverInboxEnabled=process.env.EXPO_PUBLIC_HOOPCHECK_SERVER_INBOX_ENABLED==="true";
+const syncReadMarkers=serverInboxEnabled||process.env.EXPO_PUBLIC_HOOPCHECK_CHAT_READ_SYNC_ENABLED==="true";
 import { useNativeDraft,useNativeForwardDraft } from "../src/native/drafts";
 import {forwardDestinations,readForwardDraft,type ForwardSelection} from "../src/native/hoopChatForward";
 
@@ -55,6 +57,8 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
   const [userId, setUserId] = useState("");
   const [requests, setRequests] = useState<ContactRequest[]>([]);
   const inboxPages=useRef(1);
+  const serverQuery=useRef(""),cursorStack=useRef<(InboxCursor|null)[]>([null]);
+  const [nextCursor,setNextCursor]=useState<InboxCursor|null>(null),[serverPage,setServerPage]=useState(1),[allUnread,setAllUnread]=useState<number|null>(null);
   const [inboxMore,setInboxMore]=useState(false),[inboxLimit,setInboxLimit]=useState(false);
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [serverUnread, setServerUnread] = useState<{owner:string;counts:Map<string,number>} | null>(null);
@@ -96,26 +100,27 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
         const blocked=await supabase.from("user_blocks").select("blocked_id").eq("blocker_id",user.id).limit(501).setHeader("Authorization",header).abortSignal(signal);
         if(blocked.error||!Array.isArray(blocked.data)||blocked.data.length>500)throw Error("Blocked accounts could not be verified.");
         const blockedIds=new Set(blocked.data.map(row=>row.blocked_id));
-        const inbox=await readChatInbox(supabase,user.id,header,signal,inboxPages.current,blockedIds);
+        const inbox=serverInboxEnabled?await readServerInbox(supabase,user.id,header,signal,serverQuery.current,mode,cursorStack.current.at(-1)??null,blockedIds):await readChatInbox(supabase,user.id,header,signal,inboxPages.current,blockedIds);
         const rows=inbox.rows;
-        if(threadHint&&!rows.some(row=>row.id===threadHint)){
+        if(threadHint&&!consumedLink.current&&!rows.some(row=>row.id===threadHint)){
           const linked=await readLinkedChatThread(supabase,user.id,threadHint,blockedIds,header,signal);
           if(linked)rows.unshift(linked);
         }
         const accepted = rows.filter(item => item.status === "accepted").map(item => item.id);
         const peerIds = [...new Set(rows.map(item => item.requester_id === user.id ? item.player_id : item.requester_id))];
-        const [historyPages,peoplePages,unread] = await Promise.all([
+        const [historyPages,peoplePages,unread,accountUnread] = await Promise.all([
           Promise.all(chatInboxBatches(accepted).map(ids=>supabase.from("player_contact_messages").select("id,request_id,sender_id,body,created_at").in("request_id",ids).order("created_at",{ascending:false}).limit(500).setHeader("Authorization",header).abortSignal(signal))),
           Promise.all(chatInboxBatches(peerIds).map(ids=>supabase.from("profiles").select("id,display_name,username").in("id",ids).setHeader("Authorization",header).abortSignal(signal))),
           syncReadMarkers ? readPagedChatCounts(supabase,rows.map(row=>row.id),{bearer:header,signal}).catch(()=>null):null,
+          serverInboxEnabled?readAllUnread(supabase,header,signal).catch(()=>null):null,
         ]);
         if(historyPages.some(result=>result.error)||peoplePages.some(result=>result.error)||signal.aborted)throw Error("Conversation previews unavailable.");
         const latest=await supabase.auth.getSession();
         if(signal.aborted||latest.error||latest.data.session?.user.id!==user.id||"Bearer "+latest.data.session.access_token!==header)throw Error("Account changed.");
-        return {userId:user.id,rows,messages:historyPages.flatMap(result=>(result.data||[]) as ContactMessage[]),contacts:peoplePages.flatMap(result=>(result.data||[]) as ContactName[]),unread,hasMore:inbox.hasMore,atLimit:inbox.atLimit};
+        return {userId:user.id,rows,messages:historyPages.flatMap(result=>(result.data||[]) as ContactMessage[]),contacts:peoplePages.flatMap(result=>(result.data||[]) as ContactName[]),unread,hasMore:inbox.hasMore,atLimit:inbox.atLimit,next:"next" in inbox?inbox.next:null,accountUnread};
       });
       if (revision !== generation.current) return;
-      authIdentity.current = result.userId;setInboxMore(result.hasMore);setInboxLimit(result.atLimit);
+      authIdentity.current = result.userId;setInboxMore(result.hasMore);setInboxLimit(result.atLimit);setNextCursor(result.next);setServerPage(cursorStack.current.length);setAllUnread(result.accountUnread);
       setUserId(result.userId); setRequests(result.rows); setMessages(result.messages);
       setServerUnread(result.unread ? { owner:result.userId, counts:result.unread } : null);
       setContacts(Object.fromEntries(result.contacts.map(person => [person.id, person])));
@@ -127,7 +132,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
         if(!linked)setError("Conversation unavailable.");
       }else setSelectedId(current => result.rows.some(item => item.id === current) ? current : (result.rows[0]?.id || ""));
     } catch (failure) {
-      if (revision === generation.current) { setRequests([]);setMessages([]);setContacts({});setOpenedId("");setThreadPage(null);setServerUnread(null);setError(failure instanceof Error ? failure.message : "Unable to load messages."); }
+      if (revision === generation.current) { setRequests([]);setMessages([]);setContacts({});setOpenedId("");setThreadPage(null);setServerUnread(null);setAllUnread(null);setNextCursor(null);setError(failure instanceof Error ? failure.message : "Unable to load messages."); }
     } finally {
       if (revision === generation.current) setLoading(false);
     }
@@ -141,7 +146,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       if (reloadTimer.current !== null) clearTimeout(reloadTimer.current);
       reloadTimer.current = null;
       generation.current++;
-      setServerUnread(null);inboxPages.current=1;setInboxMore(false);setInboxLimit(false);
+      setServerUnread(null);inboxPages.current=1;setInboxMore(false);setInboxLimit(false);serverQuery.current="";cursorStack.current=[null];setNextCursor(null);setServerPage(1);setAllUnread(null);
       setRequests([]); setMessages([]); setContacts({}); setUserId(""); setSelectedId(""); setOpenedId(""); setSearch(""); setReplyTarget(null); setForwardSelection(null); setThreadPage(null); setThreadError(null); historyRequest.current++; historyPaging.current=false; setHistoryBusy(false);
     };
   }, [load]));
@@ -155,7 +160,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       reloadTimer.current = null;
       generation.current++;
       setServerUnread(null);
-      authIdentity.current = nextUserId;consumedLink.current=null;inboxPages.current=1;setInboxMore(false);setInboxLimit(false);
+      authIdentity.current = nextUserId;consumedLink.current=null;inboxPages.current=1;setInboxMore(false);setInboxLimit(false);serverQuery.current="";cursorStack.current=[null];setNextCursor(null);setServerPage(1);setAllUnread(null);
       pendingMessages.current.clear();
       setRequests([]); setMessages([]); setContacts({}); setUserId(""); setSelectedId(""); setOpenedId(""); setSearch(""); setReplyTarget(null); setForwardSelection(null); setThreadPage(null); setThreadError(null); historyRequest.current++; historyPaging.current=false; setHistoryBusy(false);
       if (action === "clear") {
@@ -212,7 +217,14 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
   const replyId=structuredReplies?scopedReplyTarget(threadScope,replyTarget,verifiedThreadRows):undefined;
   const motionActive=Boolean(threadScope && currentPage);
   const freshIds=useConfirmedMessageMotion(`${userId}:${openedId}:${mode}`,verifiedThreadRows,motionActive,selectedRequestId);
-  const matchingThreads=visibleThreads.filter(row=>matchesConversationSearch(search,name(row),contacts[peerId(row)]?.username));
+  const matchingThreads=visibleThreads.filter(row=>serverInboxEnabled||matchesConversationSearch(search,name(row),contacts[peerId(row)]?.username));
+  function navigateInbox(direction:"search"|"next"|"previous"|"first"){
+    if(!serverInboxEnabled||loading||offline||sending||mutationLocked.current)return;
+    if(direction==="next"){if(!nextCursor)return;cursorStack.current.push(nextCursor);}
+    else if(direction==="previous"){if(cursorStack.current.length<=1)return;cursorStack.current.pop();}
+    else {cursorStack.current=[null];serverQuery.current=direction==="search"?search.trim().slice(0,80):"";if(direction==="first")setSearch("");}
+    setOpenedId("");setReplyTarget(null);setForwardSelection(null);setNextCursor(null);void load();
+  }
   const loadThread=useCallback(async (scope:string,requestId:string,viewerId:string,older?:ContactMessage,refresh=false) => {
     if (historyPaging.current || !scope || !focused.current) return;
     const revision=++historyRequest.current;
@@ -372,9 +384,10 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
         <Text style={{color:theme.muted}}>Approved player connections and incoming requests will appear here.</Text>
         <Button secondary onPress={()=>router.push("/players")}>Find players</Button>
       </View>:null}
-      {!opened&&visibleThreads.length>0?<View style={{gap:4}}>
+      {!opened&&(visibleThreads.length>0||serverInboxEnabled)?<View style={{gap:4}}>
         <Text style={{color:theme.foreground,fontWeight:"800",fontSize:17}}>{mode==="requests"?"Contact requests":"Conversations"}</Text>
-        <TextInput accessibilityLabel="Search conversations by name or username" value={search} onChangeText={setSearch} maxLength={80} placeholder="Search by name or @username" placeholderTextColor={theme.muted} style={{minHeight:44,paddingHorizontal:12,backgroundColor:theme.input,color:theme.foreground,borderColor:theme.border,borderWidth:1,borderRadius:theme.radius.control}} />
+        <TextInput accessibilityLabel="Search conversations by name or username" value={search} onChangeText={setSearch} maxLength={80} placeholder={serverInboxEnabled?"Search all conversations":"Search by name or @username"} placeholderTextColor={theme.muted} style={{minHeight:44,paddingHorizontal:12,backgroundColor:theme.input,color:theme.foreground,borderColor:theme.border,borderWidth:1,borderRadius:theme.radius.control}} />
+        {serverInboxEnabled?<View style={{flexDirection:"row",flexWrap:"wrap",gap:6}}><Button secondary disabled={loading||offline||sending} onPress={()=>navigateInbox("search")}>Search all</Button><Button secondary disabled={loading||offline||sending} onPress={()=>navigateInbox("first")}>Clear search</Button></View>:null}
         {!matchingThreads.length?<Text style={{color:theme.muted,paddingVertical:10}}>No matching conversations in your loaded inbox.</Text>:null}
         <View style={{gap:0}}>
           {matchingThreads.map(row=>{
@@ -393,7 +406,8 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
           })}
         </View>
       </View>:null}
-      {!opened?<><Text style={{color:theme.muted}}>{requests.length} conversations loaded{inboxLimit?" · loading limit reached":inboxMore?" · older conversations available":""}. Search covers loaded conversations.</Text>{inboxMore&&!inboxLimit?<Button secondary disabled={loading||offline||sending} onPress={()=>{if(mutationLocked.current||inboxPages.current>=CHAT_INBOX_MAX_PAGES)return;inboxPages.current++;void load();}}>Load older conversations</Button>:null}{syncReadMarkers&&!syncedCounts?<Text style={{color:theme.muted}}>Synced unread counts unavailable.</Text>:null}</>:null}
+      {!opened&&serverInboxEnabled?<><Text style={{color:theme.muted}}>Page {serverPage} · {requests.length} conversations · {allUnread===null?"Account unread unavailable":`${allUnread} unread across account`}{serverQuery.current?` · Search: ${serverQuery.current}`:""}</Text><Button secondary disabled={loading||offline||sending||serverPage<=1} onPress={()=>navigateInbox("previous")}>Previous page</Button><Button secondary disabled={loading||offline||sending||!nextCursor} onPress={()=>navigateInbox("next")}>Next page</Button></>:null}
+      {!opened&&!serverInboxEnabled?<><Text style={{color:theme.muted}}>{requests.length} conversations loaded{inboxLimit?" · loading limit reached":inboxMore?" · older conversations available":""}. Search covers loaded conversations.</Text>{inboxMore&&!inboxLimit?<Button secondary disabled={loading||offline||sending} onPress={()=>{if(mutationLocked.current||inboxPages.current>=CHAT_INBOX_MAX_PAGES)return;inboxPages.current++;void load();}}>Load older conversations</Button>:null}{syncReadMarkers&&!syncedCounts?<Text style={{color:theme.muted}}>Synced unread counts unavailable.</Text>:null}</>:null}
       {opened&&selected?<View style={{gap:8}}>
         <Pressable accessibilityRole="button" accessibilityLabel="Back to conversations" disabled={sending} onPress={()=>{setForwardSelection(null);setOpenedId("");}} style={{minHeight:44,flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="chevron-back" size={20} color={theme.accent}/><Text style={{color:theme.accent,fontWeight:"700"}}>Conversations</Text></Pressable>
         <Text style={{color:theme.foreground,fontWeight:"900",fontSize:19}}>{name(selected)}</Text>
