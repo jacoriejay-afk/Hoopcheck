@@ -6,6 +6,10 @@ on:
       - 'supabase/candidates/appstore_deletion_review_retention_review_only.sql'
       - 'supabase/tests/appstore_deletion_review_retention_fixture.sql'
       - '.github/workflows/review-retention-fixture.yml'
+      - 'lib/server/review-trust-verification.ts'
+      - 'scripts/test-review-trust-verification.mjs'
+      - 'app/api/trust-score/route.ts'
+      - 'app/api/admin/reviews/[reviewId]/route.ts'
 permissions:
   contents: read
 jobs:
@@ -36,3 +40,8 @@ jobs:
           docker cp supabase/candidates/appstore_deletion_review_retention_review_only.sql "$FIXTURE_CONTAINER:/tmp/review-fixture/candidates/"
           docker cp supabase/tests/appstore_deletion_review_retention_fixture.sql "$FIXTURE_CONTAINER:/tmp/review-fixture/tests/"
           docker exec "$FIXTURE_CONTAINER" psql -X -v ON_ERROR_STOP=1 -U postgres -d hoopcheck_review_retention_fixture -f /tmp/review-fixture/tests/appstore_deletion_review_retention_fixture.sql
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run retained review trust adapter regressions
+        run: node --experimental-strip-types --test scripts/test-review-trust-verification.mjs

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { hasActiveMembershipAtLeast } from "../../../lib/membership-tier";
 import { calculateTrustScore, type TrustScoreReview } from "../../../lib/trust-score";
+import { resolveTrustReviewVerification } from "../../../lib/server/review-trust-verification";
 import { getHoopCheckEntitlements } from "../../../lib/membership-tier";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +14,7 @@ type ReviewRow = {
   womens_team_id?: string | null;
   overall_rating: number | null;
   created_at: string;
-  author_id: string;
+  author_id: string | null;
 };
 
 export async function GET(request: Request) {
@@ -83,14 +84,7 @@ export async function GET(request: Request) {
     if (error) throw error;
 
     const reviews = (rows || []) as unknown as ReviewRow[];
-    const authorIds = Array.from(new Set(reviews.map(row => row.author_id).filter(Boolean)));
-    const verifiedByAuthor: Record<string, boolean> = {};
-    if (authorIds.length) {
-      const { data: authors, error: authorError } = await db.from("profiles")
-        .select("id,player_verified").in("id", authorIds);
-      if (authorError) throw authorError;
-      for (const author of authors || []) verifiedByAuthor[author.id] = author.player_verified === true;
-    }
+    const verifiedByReview = await resolveTrustReviewVerification(db, entityType === "womens-team" ? "women" : "men", reviews);
 
     const scores: Record<string, ReturnType<typeof calculateTrustScore> & { averageRating: number | null; tier: string }> = {};
     for (const id of ids) {
@@ -99,7 +93,7 @@ export async function GET(request: Request) {
       const averageRating = ratings.length ? ratings.reduce((sum, value) => sum + value, 0) / ratings.length : null;
       const scoreReviews: TrustScoreReview[] = entityReviews.map(row => ({
         createdAt: row.created_at,
-        reviewerVerified: Boolean(verifiedByAuthor[row.author_id]),
+        reviewerVerified: verifiedByReview.get(row.id) === true,
       }));
       const calculated = calculateTrustScore({ averageRating, reviews: scoreReviews });
       scores[id] = { ...calculated, averageRating, tier: displayTier };
