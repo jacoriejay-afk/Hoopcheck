@@ -26,3 +26,30 @@ test("private upload retries same job and never publishes a story",async()=>{
  await assert.rejects(uploadStoryDraft("https://api.test","https://storage.test",owner,"token",input,signal,upload,async()=>Response.json({id:input.id,state:"awaiting_upload",bucket:"hoopfeed-private-videos",path:"other",token:"signed"})),/Invalid staging ticket/);
  assert.equal(uploads,1);
 });
+
+test("reconciles an uncertain transfer once, without sending the bytes again", async () => {
+ const path=storyVideoPath(owner,input);
+ for (const conflict of [false,true]) {
+  let calls=0,uploads=0;
+  const request=async()=>Response.json(++calls===1
+    ? {id:input.id,state:"awaiting_upload",bucket:"hoopfeed-private-videos",path,token:"signed"}
+    : {id:input.id,state:"awaiting_moderation"});
+  const upload=async()=>{uploads++;if(conflict)return {status:409};throw Error("Connection dropped before receipt");};
+  assert.equal(await uploadStoryDraft("https://api.test","https://storage.test",owner,"token",input,new AbortController().signal,upload,request), "awaiting_moderation");
+  assert.equal(calls,2);
+  assert.equal(uploads,1);
+ }
+});
+
+test("cancellation stops confirmation and an incomplete transfer never reports staged", async () => {
+ const path=storyVideoPath(owner,input);
+ const ticket={id:input.id,state:"awaiting_upload",bucket:"hoopfeed-private-videos",path,token:"signed"};
+ const controller=new AbortController();
+ let calls=0;
+ const request=async()=>{calls++;return Response.json(ticket);};
+ const args=["https://api.test","https://storage.test",owner,"token",input];
+ await assert.rejects(uploadStoryDraft(...args,controller.signal,async()=>{controller.abort();throw Error("Cancel");},request),/cancelled/);
+ assert.equal(calls,1);
+ await assert.rejects(uploadStoryDraft(...args,new AbortController().signal,async()=>({status:503}),request),/confirmation unavailable/);
+ assert.equal(calls,3);
+});
