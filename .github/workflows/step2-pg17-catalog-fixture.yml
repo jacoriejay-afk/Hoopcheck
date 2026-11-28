@@ -8,6 +8,7 @@ on:
       - 'supabase/tests/step2_review_author_column_acl_isolated.sql'
       - 'supabase/tests/step2_review_moderation_read_guard_isolated.sql'
       - 'supabase/tests/step2_review_baseline_policy_shape_isolated.sql'
+      - 'supabase/tests/step2_review_author_column_isolated.sql'
       - 'supabase/candidates/step2_review_moderation_read_guard_review_only.sql'
       - '.github/workflows/step2-pg17-catalog-fixture.yml'
 permissions:
@@ -110,6 +111,14 @@ jobs:
           done
           docker exec "$FIXTURE_CONTAINER" psql -X -v ON_ERROR_STOP=1 -U postgres -d hoopcheck_review_baseline_fixture -f /tmp/review-fixture/tests/step2_review_baseline_policy_shape_isolated.sql
           docker exec "$FIXTURE_CONTAINER" psql -X -v ON_ERROR_STOP=1 -U postgres -d hoopcheck_review_adversarial_fixture -f /tmp/review-fixture/tests/step2_review_moderation_read_guard_isolated.sql
+
+      - name: Verify review author column privilege boundary and rollback
+        env:
+          FIXTURE_CONTAINER: ${{ job.services.postgres.id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec -i "$FIXTURE_CONTAINER" psql -X -v ON_ERROR_STOP=1 -U postgres -d hoopcheck_review_baseline_fixture < supabase/tests/step2_review_author_column_isolated.sql
 
       - name: Rehearse direct review author-column ACL in a separate synthetic database
         env:
