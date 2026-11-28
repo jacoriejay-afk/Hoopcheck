@@ -1548,6 +1548,9 @@ html.theme-dark .hc-team-entity-profile .hc-team-profile-hero :where(p,.hc-team-
   letter-spacing: .12em !important;
   max-width: 100%;
 }
+.hc-entity-profile-page.hc-team-entity-profile .hc-team-profile-hero > .eyebrow {
+  color: var(--hc-accent-text) !important;
+}
 .hc-team-entity-profile .hc-team-profile-hero .hc-team-profile-stats {
   border-top-color: var(--hc-border, rgba(128,128,128,.28)) !important;
 }

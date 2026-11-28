@@ -1,0 +1,40 @@
+name: Step 1 HoopChat unread synchronization (synthetic)
+on:
+  pull_request:
+    branches: ["qa/hoopcheck-master-acceptance", "integration/build17-development"]
+    paths:
+      - ".github/workflows/step1-hoopchat-read-sync.yml"
+      - "supabase/candidates/step1_hoopchat_read_sync_review_only.sql"
+      - "supabase/tests/step1_hoopchat_read_sync_isolated.sql"
+      - "supabase/tests/hoopchat_structured_replies_isolated.sql"
+permissions:
+  contents: read
+jobs:
+  unread-markers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Verify bounded counts, acknowledgements and scope
+        env:
+          PG_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          set -euo pipefail
+          test -n "$PG_CONTAINER"
+          docker exec "$PG_CONTAINER" mkdir -p /repository
+          docker cp supabase "$PG_CONTAINER":/repository/supabase
+          docker exec -w /repository "$PG_CONTAINER" psql -X -v ON_ERROR_STOP=1 -U postgres \
+            -f supabase/tests/step1_hoopchat_read_sync_isolated.sql

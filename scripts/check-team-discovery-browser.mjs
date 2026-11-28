@@ -144,13 +144,15 @@ try {
       }
       const loader = page.locator('.hc-brand-loader--screen');
       await loader.waitFor({ state: 'visible' });
-      await page.waitForFunction(() => {
+      // Read the visible loader's bounds in the same frame that finds it.
+      const boundsHandle = await page.waitForFunction(() => {
         const el = document.querySelector('.hc-brand-loader--screen');
         if (!el) return false;
         const rect = el.getBoundingClientRect();
-        return rect.width > 0 && rect.height > 0;
+        return rect.width > 0 && rect.height > 0 ? rect.toJSON() : false;
       });
-      const bounds = await loader.boundingBox();
+      const bounds = await boundsHandle.jsonValue();
+      await boundsHandle.dispose();
       assert.ok(bounds && Math.abs(bounds.x + bounds.width / 2 - width / 2) < 8, 'HoopCheck loader is horizontally centered');
       assert.ok(bounds && Math.abs(bounds.y + bounds.height / 2 - 450) < 120, 'HoopCheck loader is vertically centered in available content');
       await loader.getByRole('img', { name: 'HoopCheck', exact: true }).waitFor();
