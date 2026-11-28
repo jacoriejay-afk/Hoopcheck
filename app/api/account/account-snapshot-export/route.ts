@@ -14,9 +14,11 @@ const maxBytes = 4 * 1024 * 1024;
 const uuid = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 // Keep this allowlist within the reviewed get_own_profile RPC projection.
 const profileFields = ["id","display_name","username","first_name","last_name","bio","account_type","current_country","current_country_public","current_team","position","years_pro","profile_visibility","free_agent","created_at","updated_at","agreed_to_terms"] as const;
-const sections = [
+const reviewSections = [
   { name:"reviews", table:"reviews", owner:"author_id", fields:["id","title","body","status","overall_rating","player_season","team_id","coach_id","league_id","is_anonymous","created_at"] },
   { name:"womens_reviews", table:"womens_team_reviews", owner:"author_id", fields:["id","title","body","status","overall_rating","womens_team_id","is_anonymous","created_at"] },
+ ] as const;
+const sections = [
   { name:"player_posts", table:"feed_posts", owner:"author_id", fields:["id","body","created_at"] },
   { name:"fan_posts", table:"fan_feed_posts", owner:"author_id", fields:["id","body","created_at"] },
   { name:"membership_sources", table:"membership_sources", owner:"user_id", fields:["id","plan","status","access_status","current_period_end","cancel_at_period_end","billing_interval","provider"] },
@@ -74,6 +76,27 @@ export async function POST(request: Request) {
     const profile = record(own.data);
     if (profile.id !== owner) return fail("Account snapshot could not be verified.",503);
     const data: Record<string,unknown> = { profile:project(profile,profileFields) };
+    // Caller-bound RPC stays compatible when direct author_id SELECT is removed.
+    // No service-role fallback and no client-supplied owner ID.
+    const ownReviews = await scoped.rpc("get_own_review_snapshot").abortSignal(deadline);
+    if (ownReviews.error) return fail("Account snapshot could not be verified.",503);
+    const envelope = record(ownReviews.data);
+    if (envelope.owner_id !== owner) return fail("Account snapshot could not be verified.",503);
+    for (const section of reviewSections) {
+      const rows = envelope[section.name];
+      const count = envelope[section.name+"_count"];
+      if (!Array.isArray(rows) || typeof count !== "number" || !Number.isSafeInteger(count) || count < 0 || count > limit+1 || count !== rows.length)
+        return fail("Account snapshot could not be verified.",503);
+      if (count > limit) return fail("Account snapshot exceeds the download limit. Request a complete copy through Privacy Center.",409);
+      const seen = new Set<string>();
+      data[section.name] = rows.map(value => {
+        const row = record(value);
+        if (row.author_id !== owner || typeof row.id !== "string" || !uuid.test(row.id) || seen.has(row.id))
+          throw Error("Account snapshot scope mismatch.");
+        seen.add(row.id);
+        return project(row,section.fields);
+      });
+    }
     for (const section of sections) {
       const query = await scoped.from(section.table)
         .select([section.owner,...section.fields].join(","),{count:"exact"})
