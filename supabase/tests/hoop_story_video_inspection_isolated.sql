@@ -77,7 +77,11 @@ DO $f$ DECLARE owner uuid:='11111111-1111-4111-8111-111111111111';job uuid:='222
  IF public.record_story_video_review(actor,job,f,repeat('b',64),repeat('c',64),'rejected','approved') THEN RAISE EXCEPTION 'Review mutable';END IF;
  IF public.story_video_owner_status(owner,job)->>'phase' IS DISTINCT FROM 'review_approved' OR (public.story_video_owner_status(owner,job)->>'published')::boolean THEN RAISE EXCEPTION 'Review erroneously publishes';END IF;
  IF jsonb_array_length(public.story_video_review_queue(actor)->'jobs')<>0 THEN RAISE EXCEPTION 'Resolved review queued';END IF;
- IF public.revoke_story_video_review(other,job,f) OR NOT public.revoke_story_video_review(actor,job,f) OR public.story_video_owner_status(owner,job)->>'phase' IS DISTINCT FROM 'rejected' THEN RAISE EXCEPTION 'Review revocation failed';END IF;
+ IF public.revoke_story_video_review(other,job,f) THEN RAISE EXCEPTION 'Unauthorized revocation accepted';END IF;
+ IF NOT public.revoke_story_video_review(actor,job,f) THEN RAISE EXCEPTION 'Authorized revocation failed';END IF;
+ -- STABLE status functions use the calling statement snapshot; read after
+ -- the mutation statement, as the status API does in a separate request.
+ IF public.story_video_owner_status(owner,job)->>'phase' IS DISTINCT FROM 'rejected' THEN RAISE EXCEPTION 'Revocation status not reflected';END IF;
  UPDATE storage.objects SET version='changed' WHERE name LIKE '%/video.mp4' AND name LIKE 'story-processed/%';
  IF public.story_video_review_asset(actor,job) IS NOT NULL OR public.story_video_owner_status(owner,job)->>'phase' IS DISTINCT FROM 'retry_required' THEN RAISE EXCEPTION 'Changed output still approved';END IF;
 END $f$;

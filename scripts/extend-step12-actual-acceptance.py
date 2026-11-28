@@ -19,6 +19,8 @@ def once(old,new):
         raise SystemExit("Original runner structure changed")
     s=s.replace(old,new,1)
 once("expected=f7910eeb505254d027ee414d309eaa1112f195ae","expected="+a.candidate_sha)
+once('git -C "$repo" fetch --no-tags origin refs/pull/1198/head\n[[ $(git -C "$repo" rev-parse FETCH_HEAD) == "$expected" ]] || { echo \'PR head changed: obtain a repinned runner\' >&2; exit 1; }',
+     'git -C "$repo" cat-file -e "$expected^{commit}" 2>/dev/null || git -C "$repo" fetch --no-tags origin "$expected"\n[[ $(git -C "$repo" rev-parse "$expected^{commit}") == "$expected" ]] || { echo \'Immutable candidate mismatch\' >&2; exit 1; }')
 anchor='get supabase/candidates/step2_review_moderation_read_guard_review_only.sql "$work/moderation.sql"'
 inputs=[
  ("supabase/candidates/account_export_fulfillment_review_only.sql","export.sql"),
@@ -60,4 +62,4 @@ with a.output.open("x",encoding="utf-8") as f:
     f.write(s)
 a.output.chmod(0o700)
 subprocess.run(["bash","-n",str(a.output)],check=True)
-print("Generated extended runner. Original baseline, remote exact-head, image, catalog, ledger and rollback checks preserved.")
+print("Generated extended runner. Original baseline, immutable commit, image, catalog, ledger and rollback checks preserved.")
