@@ -9,6 +9,10 @@ import { requireOnline, useNetwork } from "../src/native/network";
 import { useNativeAccount } from "../src/native/useNativeAccount";
 import { GroupModerationPanel } from "./GroupModerationPanel";
 import { HoopCheckLoading } from "./HoopCheckLoading";
+import { randomUUID } from "expo-crypto";
+import { readGroupUnread,markGroupVisibleRead,type GroupUnread } from "../src/native/hoopGroupsRead";
+import { prepareGroupSend, submitGroupSend, type GroupSend } from "../src/native/hoopGroupsSend";
+import { createGroupRefreshQueue } from "../src/native/hoopGroupsRefresh";
 import { readWithDeadline } from "../src/native/readDeadline";
 import { withHoopChatDeadline } from "../src/native/hoopChatLoad";
 import { setGroupMembership } from "../src/native/groupMembership";
@@ -16,7 +20,19 @@ import { findInvitedGroup } from "../src/native/deepLinks";
 
 type Space = { id:string;slug:string;name:string;category:string;description:string;owner_id:string|null;accent_color:string;icon_key:string };
 type Channel = { id:string;space_id:string;name:string;slug:string;sort_index:number };
-type Post = { id:string;author_id:string;body:string;moderation_status:string;created_at:string };
+const GROUP_POST_FIELDS: string = "id,author_id,body,moderation_status,created_at";
+const GROUP_POST_REPLY_FIELDS: string = GROUP_POST_FIELDS+",reply_to_id,was_reply";
+type Post = { id:string;author_id:string;body:string;moderation_status:string;created_at:string;reply_to_id?:string|null;was_reply?:boolean };
+function validateGroupPostRows(value:unknown,replies:boolean):Post[]{
+ if(!Array.isArray(value)||value.length>100)throw Error("Invalid group post response.");
+ return value.map(row=>{
+  if(!row||typeof row!=="object"||typeof row.id!=="string"||typeof row.author_id!=="string"||typeof row.body!=="string"||typeof row.moderation_status!=="string"||typeof row.created_at!=="string"||!Number.isFinite(Date.parse(row.created_at))||(replies&&(typeof row.was_reply!=="boolean"||!(row.reply_to_id===null||typeof row.reply_to_id==="string"))))throw Error("Invalid group post response.");
+  return {id:row.id,author_id:row.author_id,body:row.body,moderation_status:row.moderation_status,created_at:row.created_at,...(replies?{reply_to_id:row.reply_to_id,was_reply:row.was_reply}:{})};
+ });
+}
+
+const repliesEnabled=process.env.EXPO_PUBLIC_HOOPGROUPS_REPLIES_ENABLED==="true";
+const readStateEnabled=process.env.EXPO_PUBLIC_HOOPGROUPS_READ_STATE_ENABLED==="true";
 const colorOptions = { orange:"#FF873C", blue:"#60A5FA", purple:"#A78BFA", green:"#4ADE80", pink:"#F472B6", gold:"#FBBF24" } as const;
 const iconOptions = { basketball:"🏀", flame:"🔥", globe:"🌐", star:"⭐", trophy:"🏆", users:"👥" } as const;
 const accent = (name:string) => colorOptions[name as keyof typeof colorOptions] ?? colorOptions.orange;
@@ -39,12 +55,15 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
   const [channelId,setChannelId]=useState("");
   const [postSnapshot,setPostSnapshot]=useState<{channelId:string;posts:Post[]}|null>(null);
   const [postLoading,setPostLoading]=useState(false);
+  const [unreadSnapshot,setUnreadSnapshot]=useState<{channelId:string;counts:GroupUnread}|null>(null);
   const [postError,setPostError]=useState("");
   const [postRefresh,setPostRefresh]=useState(0);
+  const [replySnapshot,setReplySnapshot]=useState<{channelId:string;id:string}|null>(null);
   const [draftState,setDraftState]=useState<{channelId:string;value:string}|null>(null);
   const [loading,setLoading]=useState(true);
   const [busy,setBusy]=useState(false);
   const mutationLocked=useRef(false);
+  const pendingSend=useRef<GroupSend|null>(null);
   const [error,setError]=useState("");
   const [revision,setRevision]=useState(0);
   const [query,setQuery]=useState("");
@@ -124,7 +143,10 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
   const channel=availableChannels.find(item=>item.id===channelId)||availableChannels[0];
   const member=Boolean(selected&&joined.includes(selected.id));
   const posts=member&&channel&&postSnapshot?.channelId===channel.id?postSnapshot.posts:[];
+  const unread=member&&channel&&unreadSnapshot?.channelId===channel.id?unreadSnapshot.counts:null;
   const draft=member&&channel&&draftState?.channelId===channel.id?draftState.value:"";
+  const replyId=member&&channel&&replySnapshot?.channelId===channel.id?replySnapshot.id:"";
+  const replyParent=posts.find(p=>p.id===replyId&&p.moderation_status==="approved");
   function setDraft(value:string) {setDraftState(value&&channel?{channelId:channel.id,value}:null);}
   const managing=editing&&editingGroupId===selected?.id;
 
@@ -135,7 +157,24 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
     let running=false;
     let initial=true;
     let resumePending=false;
-    setPostSnapshot(null);setPostError("");
+    let realtime:ReturnType<typeof supabase.channel>|null=null;
+    setPostSnapshot(null);setUnreadSnapshot(null);setPostError("");
+    const queue=createGroupRefreshQueue(()=>alive&&(AppState.currentState==="active"||AppState.currentState===null),()=>{
+      if(running)resumePending=true;else void loadPosts();
+    });
+    function stopRealtime(){
+      const previous=realtime;realtime=null;queue.cancel();resumePending=false;
+      if(previous)void supabase.removeChannel(previous);
+    }
+    function startRealtime(){
+      if(realtime||!alive||(AppState.currentState!=="active"&&AppState.currentState!==null)||process.env.EXPO_PUBLIC_HOOPGROUPS_REALTIME_ENABLED!=="true")return;
+      const filter="channel_id=eq."+channel!.id;
+      const subscription=supabase.channel("hoopgroups-native:"+userId+":"+channel!.id)
+        .on("postgres_changes",{event:"INSERT",schema:"public",table:"hoop_group_posts",filter},()=>{if(realtime===subscription)queue.request();})
+        .on("postgres_changes",{event:"UPDATE",schema:"public",table:"hoop_group_posts",filter},()=>{if(realtime===subscription)queue.request();});
+      realtime=subscription;
+      subscription.subscribe(status=>{if(realtime===subscription&&status==="SUBSCRIBED")queue.request();});
+    }
     async function loadPosts(){
       if(!alive||running||!(AppState.currentState==="active"||AppState.currentState===null))return;
       running=true;
@@ -151,21 +190,25 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
         if(!alive||controller.signal.aborted)return;
         if(membership.error)throw Error("Membership could not be verified.");
         if(membership.data?.space_id!==channel!.space_id){
-          setJoined(current=>current.filter(id=>id!==channel!.space_id));setPostSnapshot(null);return;
+          stopRealtime();setJoined(current=>current.filter(id=>id!==channel!.space_id));setPostSnapshot(null);return;
         }
         const blocked=await readOutgoingBlocks(supabase,userId,controller.signal);
         if(!alive||controller.signal.aborted)return;
         const {data,error:readError}=await supabase.from("hoop_group_posts")
-          .select("id,author_id,body,moderation_status,created_at")
+          .select(repliesEnabled?GROUP_POST_REPLY_FIELDS:GROUP_POST_FIELDS)
           .eq("channel_id",channel!.id).order("created_at",{ascending:false}).order("id",{ascending:false}).limit(100)
           .setHeader("Authorization","Bearer "+token).abortSignal(controller.signal);
         if(readError||controller.signal.aborted)throw Error("Channel messages could not be loaded.");
+        let counts:GroupUnread|null=null;
+        if(readStateEnabled){try{counts=await readGroupUnread(supabase,channel!.space_id,"Bearer "+token,controller.signal);}catch{/* Do not fabricate unread counts. */}}
         const current=await safetyToken();
         if(!alive||controller.signal.aborted||current!==token)throw Error("Session changed. Refresh the channel.");
         if(AppState.currentState!=="active"&&AppState.currentState!==null)return;
-        if(alive)setPostSnapshot({channelId:channel!.id,posts:((data||[]) as Post[]).filter(post=>!blocked.has(post.author_id)).reverse()});
+        if(alive)setUnreadSnapshot(counts?{channelId:channel!.id,counts}:null);
+        if(alive)setPostSnapshot({channelId:channel!.id,posts:(validateGroupPostRows(data??[],repliesEnabled)).filter(post=>!blocked.has(post.author_id)).filter(post=>post.moderation_status==="approved"||post.author_id===userId&&post.moderation_status==="pending").reverse()});
+        startRealtime();
         setPostError("");
-      }catch{if(alive){setPostError("Channel messages or block status could not be verified.");setPostSnapshot(null);}}
+      }catch{if(alive){stopRealtime();setUnreadSnapshot(null);setPostError("Channel messages or block status could not be verified.");setPostSnapshot(null);}}
       finally{
         clearTimeout(timer);if(activeController===controller)activeController=null;running=false;initial=false;
         if(alive){setPostLoading(false);if(resumePending){resumePending=false;void loadPosts();}}
@@ -175,9 +218,9 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
     const refreshTimer=setInterval(()=>void loadPosts(),25000);
     const appState=AppState.addEventListener("change",state=>{
       if(state==="active"){if(running)resumePending=true;else void loadPosts();}
-      else {resumePending=false;activeController?.abort();setPostSnapshot(null);}
+      else {stopRealtime();resumePending=false;activeController?.abort();setUnreadSnapshot(null);setPostSnapshot(null);}
     });
-    return()=>{alive=false;clearInterval(refreshTimer);appState.remove();activeController?.abort();setPostSnapshot(null);};
+    return()=>{alive=false;stopRealtime();queue.dispose();clearInterval(refreshTimer);appState.remove();activeController?.abort();setPostSnapshot(null);};
   },[userId,offline,member,channel?.id,revision,postRefresh,safetyToken]));
 
   async function join() {
@@ -279,16 +322,30 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
     catch { setError("Could not share the group invitation. Please try again."); }
   }
 
+  async function markVisibleRead(){
+    if(!readStateEnabled||!member||!channel||offline||busy||postLoading||postError||mutationLocked.current)return;
+    const ids=posts.filter(p=>p.author_id!==userId&&p.moderation_status==="approved").map(p=>p.id);
+    if(!ids.length)return;
+    mutationLocked.current=true;setBusy(true);
+    const abort=new AbortController(),deadline=setTimeout(()=>abort.abort(),15000);
+    try{const token=await safetyToken();await markGroupVisibleRead(supabase,channel.id,ids,"Bearer "+token,abort.signal);if(await safetyToken()!==token)throw Error("Session changed.");setPostRefresh(value=>value+1);}
+    catch{setError("Read state could not be confirmed.");}
+    finally{clearTimeout(deadline);mutationLocked.current=false;setBusy(false);}
+  }
   async function send() {
     if(!channel||!member||!userId||offline||busy||!draft.trim())return;
     if(mutationLocked.current)return;
     mutationLocked.current=true;setBusy(true);setError("");
     try{
       const token=await safetyToken();
-      const {error:sendError}=await supabase.from("hoop_group_posts")
-        .insert({channel_id:channel.id,author_id:userId,body:draft.trim().slice(0,1200),moderation_status:"pending"}).setHeader("Authorization","Bearer "+token);
-      if(sendError)throw Error("Could not submit this post. Slow mode allows one post per 20 seconds.");
-      setDraftState(current=>current?.channelId===channel.id&&current.value===draft?null:current);setPostRefresh(value=>value+1);
+      if(repliesEnabled&&replyId&&!replyParent)throw Error("Reply unavailable. Clear the reply or refresh.");
+      const submittedReply=repliesEnabled&&replyParent?replyParent.id:undefined;
+      const message=prepareGroupSend(pendingSend.current,userId,channel.id,draft,randomUUID,submittedReply);
+      pendingSend.current=message;
+      const abort=new AbortController(),deadline=setTimeout(()=>abort.abort(),15000);
+      try{await submitGroupSend(supabase,message,"Bearer "+token,abort.signal);if(await safetyToken()!==token)throw Error("Session changed.");if(pendingSend.current===message)pendingSend.current=null;}
+      finally{clearTimeout(deadline);}
+      setDraftState(current=>current?.channelId===channel.id&&current.value===draft?null:current);setReplySnapshot(current=>current?.channelId===channel.id&&current.id===submittedReply?null:current);setPostRefresh(value=>value+1);
     }catch(failure){setError(failure instanceof Error?failure.message:"Message was not submitted.");}
     finally{mutationLocked.current=false;setBusy(false);}
   }
@@ -496,7 +553,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
               onPress={()=>{setChannelId(item.id);setDraft("");}}
               style={{minHeight:44,justifyContent:"center",paddingHorizontal:11,borderRadius:11,
                 backgroundColor:channel?.id===item.id?theme.accentSurface:theme.chip}}>
-              <Text style={{color:theme.foreground,fontWeight:"700"}}># {item.name}</Text>
+              <Text style={{color:theme.foreground,fontWeight:"700"}}># {item.name}{unread&&unread[item.id]>0?` · ${unread[item.id]} unread`:""}</Text>
             </Pressable>)}
           </ScrollView>
           {selected?.owner_id===userId&&availableChannels.length<12?<View style={{flexDirection:"row",gap:8}}>
@@ -512,18 +569,22 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
         <Text style={{color:theme.foreground,fontSize:19,fontFamily:"HoopCheckDisplay"}}># {channel.name}</Text>
         <Text style={{color:theme.muted,fontSize:12}}>Members only · moderated posts · 20-second slow mode</Text>
         <Pressable accessibilityRole="button" accessibilityLabel="Refresh channel messages" disabled={postLoading||busy} onPress={()=>setPostRefresh(value=>value+1)} style={{minHeight:44,justifyContent:"center",alignSelf:"flex-start"}}><Text style={{color:theme.accent,fontWeight:"700"}}>Refresh channel</Text></Pressable>
+        {readStateEnabled?<Button secondary disabled={busy||postLoading||Boolean(postError)||!posts.length} onPress={()=>void markVisibleRead()}>Mark loaded messages read</Button>:null}
         {postLoading?<HoopCheckLoading compact label="Loading channel messages…" />:null}
         {postError?<Text accessibilityRole="alert" style={{color:theme.accent}}>{postError}</Text>:null}
         {posts.length?posts.map(post=><View key={post.id}
           style={{borderBottomWidth:1,borderColor:theme.border,paddingVertical:10,gap:5}}>
           <Text style={{color:theme.foreground,fontWeight:"700"}}>{post.author_id===userId?"You":"Community member"}</Text>
+          {repliesEnabled&&post.was_reply?<Text style={{color:theme.muted}}>{posts.find(p=>p.id===post.reply_to_id&&p.moderation_status==="approved")?.body.slice(0,100)||"Original message unavailable"}</Text>:null}
           <Text style={{color:theme.foreground}}>{post.body}</Text>
+          {repliesEnabled&&post.moderation_status==="approved"?<Button secondary disabled={busy} onPress={()=>setReplySnapshot({channelId:channel.id,id:post.id})}>Reply</Button>:null}
           <Text style={{color:theme.muted,fontSize:11}}>{post.moderation_status==="approved"?"Approved":"Pending review · visible only to you"} · {new Date(post.created_at).toLocaleString()}</Text>
           {post.author_id!==userId&&post.moderation_status==="approved"?<Pressable accessibilityRole="button"
             style={{minHeight:40,justifyContent:"center"}} onPress={()=>actions(post)}>
             <Text style={{color:theme.accent}}>Report or block</Text>
           </Pressable>:null}
         </View>):!postLoading&&!postError&&postSnapshot?.channelId===channel.id?<Text style={{color:theme.muted,marginVertical:12}}>No approved messages yet.</Text>:null}
+        {repliesEnabled&&replyId?<View><Text style={{color:theme.muted}}>{replyParent?"Replying to: "+replyParent.body.slice(0,120):"Original message unavailable"}</Text><Button secondary disabled={busy} onPress={()=>setReplySnapshot(null)}>Clear reply</Button></View>:null}
         <TextInput accessibilityLabel={"Message in "+channel.name} multiline maxLength={1200}
           editable={!busy&&!offline} value={draft} onChangeText={setDraft} placeholder="Post to this discussion…" placeholderTextColor={theme.muted}
           style={{backgroundColor:theme.input,color:theme.foreground,borderWidth:1,borderColor:theme.border,

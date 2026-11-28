@@ -24,7 +24,9 @@ test("new owner appearance controls do not bypass the independent HoopGroups rol
   const groups=read("../components/HoopGroupsChannels.tsx");
   assert.match(route,/EXPO_PUBLIC_HOOPGROUPS_CHANNELS_ENABLED === "true"/);
   assert.match(route, /enabled \? <HoopGroupsChannels inviteSlug=\{inviteSlug\} \/>/);
-  assert.match(groups,/moderation_status:"pending"/);
+  const send=read("../src/native/hoopGroupsSend.ts");
+  assert.match(groups,/submitGroupSend\(supabase,message,"Bearer "\+token,abort.signal\)/);
+  assert.match(send,/moderation_status:"pending"/);
   assert.match(groups,/hoop_group_reports/);
   assert.match(groups,/hoop_group_blocks/);
   assert.doesNotMatch(route,/Browse official Team Fan Groups/);
@@ -54,6 +56,9 @@ test("group read and mutation requests pin the verified caller token and seriali
     assert.match(helper,/latest\.data\.session\.access_token!==token/);
     assert.match(helper,/setHeader\("Authorization",header\)\.abortSignal\(signal\)/);
     assert.match(helper,/await verify\(\);[\s\S]*?return \{spaceId,joined:join\}/);
+  }else if(name==="send"){
+    assert.match(body,/const token=await safetyToken\(\)/);assert.match(body,/submitGroupSend\(supabase,message,"Bearer "\+token,abort.signal\)/);
+    const helper=read("../src/native/hoopGroupsSend.ts");assert.equal((helper.match(/setHeader\("Authorization",bearer\)\.abortSignal\(signal\)/g)||[]).length,2);
   }else{
     assert.match(body,/const token=await safetyToken\(\)/);assert.match(body,/setHeader\("Authorization",\s*"Bearer "\+token\)/);
   }
