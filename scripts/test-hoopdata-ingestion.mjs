@@ -522,3 +522,19 @@ test("unlinked review distinguishes actual season memberships, reviewed identiti
  assert.deepEqual(quality.unlinkedReview.find(row=>row.id==="old").currentMembershipLeagueIds,[]);
  assert.equal(quality.coverage[0].actual,2);
 });
+
+test("EuroLeague source aliases distinguish domestic duplicate candidates from exact IDs",async()=>{
+ const compiled=ts.transpileModule(read("lib/owner/directory-quality.ts"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+ const {deriveDirectoryQuality,verifiedRosters}=await import("data:text/javascript;base64,"+Buffer.from(compiled).toString("base64"));
+ const euro={id:"el",name:"EuroLeague",country:"Europe",basketball_type:"mens",logo_url:null,season:"2026-27"};
+ const acb={...euro,id:"acb",name:"Liga Endesa",country:"Spain"};
+ const base={country:"Spain",basketball_type:"mens",logo_url:null};
+ const teams=[{...base,id:"international",name:"FC Barcelona",league_id:null},{...base,id:"domestic",name:"Barça",league_id:"acb"},{...base,id:"women",name:"Barça",league_id:"acb",basketball_type:"womens"}];
+ const q=deriveDirectoryQuality([euro,acb],teams,[{team_id:"international",league_id:"el",season:"2026-27"}]);
+ assert.equal(verifiedRosters.find(row=>row.name==="EuroLeague").clubs.length,20);
+ assert.equal(verifiedRosters.find(row=>row.name==="Liga Endesa").clubs.length,18);
+ assert.equal(q.unlinkedWithReviewedAlias,1);
+ assert.deepEqual(q.unlinkedReview[0].reviewedAliasLinkedIds,["domestic"]);
+ assert.deepEqual(q.unlinkedReview[0].sameNameLinkedIds,[]);
+ assert.equal(q.coverage.find(row=>row.id==="el").actual,1);
+});
