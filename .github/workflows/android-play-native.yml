@@ -1,0 +1,53 @@
+name: Android Play Billing unsigned native compilation
+on:
+  pull_request:
+    branches: ["qa/hoopcheck-master-acceptance", "integration/build17-development"]
+    paths:
+      - "apps/mobile/modules/hoopcheck-play-billing/**"
+      - ".github/workflows/android-play-native.yml"
+permissions:
+  contents: read
+jobs:
+  android-compile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: apps/mobile
+    env:
+      EXPO_NO_TELEMETRY: "1"
+      EXPO_PUBLIC_SUPABASE_URL: https://fixture.supabase.co
+      EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: fixture-publishable-key
+      EXPO_PUBLIC_HOOPCHECK_API_URL: https://api.test
+      SENTRY_DISABLE_AUTO_UPLOAD: "true"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      # GitHub's hosted image already supplies a supported SDK. The legacy
+      # setup-android v3 action requests the removed "tools" SDK package.
+      - name: Verify runner Android SDK
+        run: |
+          set -euo pipefail
+          sdk="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          test -n "$sdk" && test -d "$sdk/platforms" && test -d "$sdk/build-tools"
+          test -x "$sdk/platform-tools/adb"
+          printf 'ANDROID_HOME=%s\nANDROID_SDK_ROOT=%s\n' "$sdk" "$sdk" >> "$GITHUB_ENV"
+          ls "$sdk/platforms" "$sdk/build-tools"
+          java -version
+      - run: npm ci --no-audit
+      - name: Generate Android project locally
+        run: npx --no-install expo prebuild --platform android --no-install
+      - name: Compile actual native module against pinned Play Billing library without signing or EAS
+        working-directory: apps/mobile/android
+        run: ./gradlew :hoopcheck-play-billing:compileDebugKotlin --no-daemon --stacktrace
