@@ -122,6 +122,8 @@ test("Live Games links preserve the canonical game and reject malformed IDs", ()
   const id = "11111111-1111-4111-8111-000000000001";
   assert.equal(nativeDestination(`hoopcheck://fan-live?gameId=${id}`), `/fan-live?gameId=${id}`);
   assert.equal(nativeDestination("/fan-live?gameId=../secret"), "/fan-live");
+  assert.equal(nativeDestination(`https://hoopcheck.online/fan-live/room/${id}`), `/fan-live?gameId=${id}`);
+  assert.equal(nativeDestination("/fan-live/room/----------------------------"), "/link-unavailable");
 });
 
 

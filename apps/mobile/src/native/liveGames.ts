@@ -106,6 +106,47 @@ export async function readLiveGames(client: SupabaseClient, side: "mens" | "wome
     return { teams, games: matched.filter(game => teams[game.team_id] || teams[game.opponent_team_id || ""]) };
   } finally { timer.clear(); }
 }
+/** Exact ID reads use the same RLS as discovery without its date, side or row cap. */
+export async function readLinkedLiveGame(client: SupabaseClient, id: string, owner: string, token: string) {
+  validId(id);
+  validId(owner);
+  if (!token || /\s/.test(token)) throw Error("Verify access again.");
+  const timer = deadline();
+  const bearer = "Bearer " + token;
+  async function verifySession() {
+    const { data, error } = await client.auth.getSession();
+    if (timer.signal.aborted || error || data.session?.user.id !== owner || data.session.access_token !== token) {
+      throw Error("Game session changed.");
+    }
+  }
+  try {
+    await verifySession();
+    const read = (selection: string) => client.from("fan_live_games").select(selection).eq("id", id)
+      .setHeader("Authorization", bearer).abortSignal(timer.signal).maybeSingle();
+    let result = await read(fields + ",score_updated_at,provider_source");
+    if (result.error?.code === "42703") result = await read(fields + ",score_updated_at");
+    if (result.error?.code === "42703") result = await read(fields);
+    if (result.error || timer.signal.aborted) throw Error("Game room unavailable.");
+    if (!result.data) return { games: [] as LiveGame[], teams: {} as Record<string, GameTeam> };
+    const game = result.data as unknown as LiveGame;
+    if (game.id !== id || !uuid.test(game.team_id) || (game.opponent_team_id && !uuid.test(game.opponent_team_id))) {
+      throw Error("Invalid game response.");
+    }
+    const ids = [game.team_id, game.opponent_team_id].filter((value): value is string => Boolean(value));
+    const [canonical, legacy] = await Promise.all([
+      client.from("teams").select("id,name,logo_url,logo_bg").in("id", ids).setHeader("Authorization", bearer).abortSignal(timer.signal),
+      client.from("womens_teams").select("id,name,logo_url,logo_bg").in("id", ids).setHeader("Authorization", bearer).abortSignal(timer.signal),
+    ]);
+    if (canonical.error || legacy.error) throw Error("Game teams unavailable.");
+    await verifySession();
+    const teams = Object.fromEntries([...legacy.data ?? [], ...canonical.data ?? []]
+      .filter(team => ids.includes(team.id)).map(team => [team.id, team]));
+    return { games: [game], teams };
+  } finally {
+    timer.clear();
+  }
+}
+
 export async function readGameRoom(client: SupabaseClient, gameId: string, userId: string) {
   const timer = deadline();
   try {

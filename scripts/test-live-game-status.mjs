@@ -6,7 +6,7 @@ const read = name => readFileSync(new URL("../" + name, import.meta.url), "utf8"
 const compiled = ts.transpileModule(read("lib/live-game-status.ts"), {
   compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
 }).outputText;
-const { getLiveGameStatusPresentation: present } = await import(
+const { getLiveGameStatusPresentation: present, gameRoomBadge, readWithScoreTimestamp } = await import(
   "data:text/javascript;base64," + Buffer.from(compiled).toString("base64")
 );
 
@@ -32,6 +32,25 @@ for (const status of ["postponed", "cancelled", "abandoned"]) {
   assert.equal(present({ ...active, status }, now).label, status.toUpperCase());
 }
 assert.equal(present({ ...active, status: "scheduled", period_label: null }, now).label, "UPCOMING");
+
+const delayed = present({ ...active, score_updated_at: "2026-11-22T11:15:00Z" }, now);
+assert.equal(gameRoomBadge(delayed, true), "UPDATE DELAYED");
+assert.equal(gameRoomBadge(present({ ...active, status: "postponed" }, now), true), "POSTPONED");
+assert.equal(gameRoomBadge(present({ ...active, status: "scheduled" }, now), true), "CHAT OPEN");
+let scoreReads = [];
+const legacy = await readWithScoreTimestamp(async include => {
+  scoreReads.push(include);
+  return include ? { error: { code: "42703" } } : { error: null, data: "legacy" };
+});
+assert.deepEqual(scoreReads, [true, false]);
+assert.equal(legacy.data, "legacy");
+scoreReads = [];
+const denied = await readWithScoreTimestamp(async include => {
+  scoreReads.push(include);
+  return { error: { code: "42501" } };
+});
+assert.deepEqual(scoreReads, [true]);
+assert.equal(denied.error.code, "42501");
 
 const sync = read("app/api/cron/live-basketball/route.ts");
 assert.ok(sync.includes('finalStatuses.has(providerStatus) ? "final"'), "Provider must explicitly confirm finals");

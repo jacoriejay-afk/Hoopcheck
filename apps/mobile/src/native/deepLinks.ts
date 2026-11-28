@@ -73,6 +73,11 @@ export function nativeDestination(path: string): string {
       const post = url.searchParams.get("post") || /^#post-([0-9a-f-]{36})$/i.exec(url.hash)?.[1];
       return "/feed" + (post && /^[0-9a-f-]{36}$/i.test(post) ? `?post=${post}` : "");
     }
+    if (parts.length === 3 && parts[0] === "fan-live" && parts[1] === "room") {
+      const id = parts[2];
+      return /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(id)
+        ? "/fan-live?gameId=" + id.toLowerCase() : "/link-unavailable";
+    }
     if (url.pathname === "/fan-live" || url.pathname === "/live-games") {
       const query = new URLSearchParams();
       const id = url.searchParams.get("gameId"), side = url.searchParams.get("side");

@@ -21,7 +21,7 @@ async function verify(browser,theme,role='fan',paid=true){
  await context.route('**/*',async route=>{
   const request=route.request(),url=new URL(request.url()),method=request.method();
   if(url.origin===new URL(base).origin)return route.continue();
-  const body=request.postData()||'';calls.push({path:url.pathname,method,body});
+  const body=request.postData()||'';calls.push({path:url.pathname,method,body,exact:url.searchParams.get("id")});
   const json=(data,status=200)=>route.fulfill({status,contentType:'application/json',headers:{'access-control-allow-origin':'*','access-control-allow-headers':'*'},body:JSON.stringify(data)});
   if(method==='OPTIONS')return json({});
   if(url.hostname==='api.test'){
@@ -43,9 +43,22 @@ async function verify(browser,theme,role='fan',paid=true){
     }
     return json([{id:other,display_name:'Other member'},{id:uid,display_name:'Fixture Member'}]);
    }
-   if(table==='fan_live_games'){assert.equal(paid,true);return json(games);}
+   if(table==='fan_live_games'){
+    assert.equal(paid,true);
+    const exact=url.searchParams.get('id')?.slice(3);
+    if(exact){
+     assert.equal(request.headers().authorization,'Bearer '+token);
+     assert.equal(url.searchParams.has('scheduled_at'),false);
+     return json(games.filter(game=>game.id===exact));
+    }
+    return json(games);
+   }
    if(table==='fan_live_chat_presence'){assert.equal(paid,true);return json([{game_id:id(1)}]);}
-   if(table==='teams')return json(url.searchParams.get('basketball_type')==='eq.mens'?[{id:id(10),name:'Home Men'},{id:id(11),name:'Away Men'},{id:id(14),name:'Pending Men'}]:[]);
+   if(table==='teams'){
+    const lookup=url.searchParams.get('id')||'';
+    const rows=[{id:id(10),name:'Home Men'},{id:id(11),name:'Away Men'},{id:id(14),name:'Pending Men'}];
+    return json(url.searchParams.get('basketball_type')==='eq.womens'?[]:rows.filter(row=>lookup.includes(row.id)));
+   }
    if(table==='womens_teams')return json([{id:id(13),name:'Away Women'}]);
    if(table==='user_blocks'){assert.equal(paid,true);assert.equal(method,'GET');assert.equal(url.searchParams.get('blocker_id'),`eq.${uid}`);assert.equal(request.headers().authorization,'Bearer '+token);return json([]);}
    if(table==='fan_live_chat_room_open'){assert.equal(paid,true);return json(true);}
@@ -93,6 +106,7 @@ async function verify(browser,theme,role='fan',paid=true){
    assert.ok(calls.some(c=>c.path==='/api/game-predictions'&&c.method==='GET'));
   }else{
    await page.getByText('Fixture room message',{exact:true}).waitFor();
+   assert.ok(calls.some(call=>call.path==='/rest/v1/fan_live_games' && call.exact===`eq.${id(1)}`), 'Opening a paid room loads the exact game');
    const draft=page.getByRole('textbox',{name:'Game chat message',exact:true});await draft.fill('Fixture retained draft');
    await page.getByRole('button',{name:'Send message',exact:true}).click();await page.getByText('Wait two seconds between messages. Your draft is retained.',{exact:true}).waitFor();assert.equal(await draft.inputValue(),'Fixture retained draft');
    await page.getByRole('tab',{name:'Predictions',exact:true}).click();await page.getByRole('heading',{name:'Pick the winner',exact:true}).waitFor();await page.getByRole('tab',{name:'Chat',exact:true}).click();await draft.waitFor();assert.equal(await draft.inputValue(),'Fixture retained draft');
