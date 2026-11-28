@@ -448,3 +448,28 @@ test("directory quality compares verified identities, not arbitrary counts, and 
   const duplicated=deriveDirectoryQuality([league,other],[...teams,{...barsy,id:"alias",name:"BC BARSY ATYRAU",league_id:"arm"}],memberships);
   assert.deepEqual(duplicated.coverage.find(row=>row.id==="arm").ambiguous,["Barsy Atyrau"]);
 });
+
+test("Kosovo roster evidence does not conflate Bora with Borea or guess Rahoveci identity",async()=>{
+ const compiled=ts.transpileModule(read("lib/owner/directory-quality.ts"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+ const {deriveDirectoryQuality,verifiedRosters}=await import("data:text/javascript;base64,"+Buffer.from(compiled).toString("base64"));
+ const evidence=verifiedRosters.find(row=>row.country==="Kosovo");
+ assert.equal(evidence.clubs.length,8);
+ const league={id:"ks",name:"Kosovo Superleague",country:"Kosovo",basketball_type:"mens",logo_url:null,season:"2026-27"};
+ const teams=evidence.clubs.map((club,i)=>({id:"club"+i,country:club.country,name:club.name==="KB Bora"?"KB Borea":club.name==="KB Rahoveci 029"?"KB Rahoveci":club.name,basketball_type:"mens",logo_url:null,league_id:"ks"}));
+ const row=deriveDirectoryQuality([league],teams,[]).coverage[0];
+ assert.equal(row.actual,8);assert.equal(row.expected,8);
+ assert.deepEqual(row.missing,["KB Bora","KB Rahoveci 029"]);
+ assert.deepEqual(row.unexpected,["KB Borea","KB Rahoveci"]);
+});
+test("Georgia evidence counts participating clubs, accepts verified CIU alias, and flags stale direct links",async()=>{
+ const compiled=ts.transpileModule(read("lib/owner/directory-quality.ts"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+ const {deriveDirectoryQuality,verifiedRosters}=await import("data:text/javascript;base64,"+Buffer.from(compiled).toString("base64"));
+ const evidence=verifiedRosters.find(row=>row.country==="Georgia");
+ assert.equal(evidence.clubs.length,11);
+ const league={id:"ge",name:"Superleague",country:"Georgia",basketball_type:"mens",logo_url:null,season:"2026-27"};
+ const teams=evidence.clubs.filter(c=>c.name!=="BC Orbi").map((club,i)=>({id:"ge"+i,country:club.country,name:club.name==="BC Kavkasia"?"CIU":club.name,basketball_type:"mens",logo_url:null,league_id:"ge"}));
+ teams.push({id:"stale",country:"Georgia",name:"BC Olimpi",basketball_type:"mens",logo_url:null,league_id:"ge"});
+ const row=deriveDirectoryQuality([league],teams,[]).coverage[0];
+ assert.equal(row.actual,11);assert.equal(row.expected,11);
+ assert.deepEqual(row.missing,["BC Orbi"]);assert.deepEqual(row.unexpected,["BC Olimpi"]);
+});
