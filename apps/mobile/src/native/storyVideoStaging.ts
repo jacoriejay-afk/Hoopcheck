@@ -37,9 +37,14 @@ export async function uploadStoryDraft(api:string,project:string,owner:string,to
  if(first.state==="awaiting_moderation")return "awaiting_moderation" as const;
  if(first.state!=="awaiting_upload"||first.bucket!=="hoopfeed-private-videos"||first.path!==path||typeof first.token!=="string"||!first.token||first.token.length>8192)throw Error("Invalid staging ticket.");
  storage.pathname="/storage/v1/object/upload/sign/hoopfeed-private-videos/"+path;storage.searchParams.set("token",first.token);
- const transfer=await upload(storage.toString(),{"Content-Type":metadata.content_type,"x-upsert":"false","cache-control":"no-store"},signal);
- if(signal.aborted||transfer.status<200||transfer.status>=300)throw Error("Upload not confirmed. Retry the same draft.");
- const done=await reserve();
- if(done.state!=="awaiting_moderation")throw Error("Upload confirmation unavailable. Retry the same draft.");
+ try {
+  await upload(storage.toString(), {"Content-Type":metadata.content_type,"x-upsert":"false","cache-control":"no-store"}, signal);
+ } catch {
+  // A transport error can arrive after storage accepted the complete PUT.
+  // Confirm the same ID through the authenticated API before offering retry.
+ }
+ if (signal.aborted) throw Error("Upload cancelled. Retry the same draft to check its status.");
+ const done = await reserve();
+ if (done.state !== "awaiting_moderation") throw Error("Upload confirmation unavailable. Retry the same draft.");
  return "awaiting_moderation" as const;
 }
