@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import {test} from "node:test";
 import {parseNativeAccount} from "../src/native/accountClient.ts";
-import {readWorkspace,parseWorkspace} from "../src/native/workspaceClient.ts";
+import {commissionBreakdown,readWorkspace,parseWorkspace} from "../src/native/workspaceClient.ts";
 const owner="11111111-1111-4111-8111-111111111111";
 const base={user:{id:owner,displayName:"Fixture",accountType:"player"},entitlements:{tier:"free",hasPaidMembership:false,canReadHoopFeed:false,canWriteHoopFeed:false,canUseLiveGameHub:false,canUseLiveGameChat:false,canSwitchBasketballSide:false,canUseFanGroups:false}};
 test("old and malformed bootstrap grants default to denied",()=>{
@@ -46,4 +46,24 @@ test("stale workspace permissions cannot render for the newly verified identity"
  const source=readFileSync(new URL("../src/native/useNativeAccount.ts",import.meta.url),"utf8");
  assert.ok(source.includes('!offline && security.phase === "ready" && account?.user.id === security.owner ? account : null'));
  assert.ok(source.includes('account: verifiedAccount'));
+});
+
+test("commission parity uses authoritative referral, adjustments and earnings, preserving old payloads", () => {
+ const invoice={id:"invoice",currency:"usd",earnings:0,subscription_plan:"pro",paid_invoice_at:"2026-11-24T00:00:00Z",commission_rate_bps:1300,status:"pending"};
+ const details={attribution_id:"abc12345-other",gross_minor:4000,tax_minor:100,fee_minor:200,discount_minor:250,adjustment_minor:3700};
+ const dashboard={code:"TEST",active:true,status:"active",clicks:1,signups:1,conversions:1,totals:[],referrals:[],payouts:[]};
+ const payload=commission=>({kind:"ambassador",owner,dashboard:{...dashboard,commissions:[commission]}});
+ const full={...invoice,...details};
+ assert.deepEqual(commissionBreakdown(parseWorkspace(payload(full),owner,"ambassador").dashboard.commissions[0]),{referral:"abc12345",gross:4000,deductions:4000,discount:250,status:"Reversed"});
+ assert.equal(commissionBreakdown(parseWorkspace(payload(invoice),owner,"ambassador").dashboard.commissions[0]),null);
+ assert.throws(()=>parseWorkspace(payload({...invoice,gross_minor:4000}),owner,"ambassador"),/Invalid workspace data/);
+ assert.throws(()=>parseWorkspace(payload({...full,tax_minor:"100"}),owner,"ambassador"),/Invalid workspace data/);
+});
+
+test("revoked workspace request cannot consume a successful late response", async () => {
+ const controller=new AbortController();
+ await assert.rejects(readWorkspace("https://fixture.example","token",owner,"ambassador",controller.signal,async()=>{
+   controller.abort();
+   return Response.json({kind:"ambassador",owner});
+ }),/cancelled/);
 });
