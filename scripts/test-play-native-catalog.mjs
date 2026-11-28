@@ -22,3 +22,20 @@ test("native candidate exposes read-only catalog; does not launch or acknowledge
  assert.deepEqual(JSON.parse(read(base+"expo-module.config.json")).platforms,["android"]);
  assert.doesNotMatch(read("../apps/mobile/app/membership.tsx"),/playReadOnlyNative/);
 });
+
+test("internal purchase operations use reviewed current quotes and account-scoped restore without exposing a payment API",()=>{
+ const base="../apps/mobile/modules/hoopcheck-play-billing/";
+ const kt=read(base+"android/src/main/java/expo/modules/hoopcheckplaybilling/PlayPurchaseOperations.kt");
+ assert.match(kt,/internal object PlayPurchaseOperations/);
+ assert.match(kt,/launchBillingFlow\(activity, params\)/);
+ assert.match(kt,/setObfuscatedAccountId\(quote.obfuscatedAccountId\)/);
+ assert.match(kt,/phase.priceAmountMicros == quote.priceMicros/);
+ assert.match(kt,/age > 60_000L/);
+ assert.match(kt,/queryPurchasesAsync\(params\)/);
+ assert.match(kt,/purchase.accountIdentifiers\?\.obfuscatedAccountId != accountId/);
+ assert.match(kt,/Purchase.PurchaseState.PENDING/);
+ assert.match(kt,/Purchase.PurchaseState.PURCHASED/);
+ assert.doesNotMatch(kt,/acknowledgePurchase\(|consumeAsync\(|AsyncFunction\(/);
+ assert.doesNotMatch(read(base+"index.ts"),/launch|restore|purchaseToken/);
+ assert.doesNotMatch(read(base+"android/src/main/java/expo/modules/hoopcheckplaybilling/HoopcheckPlayBillingModule.kt"),/PlayPurchaseOperations/);
+});
