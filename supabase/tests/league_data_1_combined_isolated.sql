@@ -305,6 +305,49 @@ insert into pg_temp.ld1_legacy_teams(id,name,country,league_id,league_name,activ
 ('f182c7ec-83e4-455b-9870-d1a23b1c33cb','Washington Mystics','United States','3e0e1b7c-b14c-4bf3-b0a7-a94b271ffed4','Women''s National Basketball Association (WNBA)',true),
 ('fb6dd5a3-f927-4bfb-b5d9-f0840d4cd5ad','Dallas Wings','United States','3e0e1b7c-b14c-4bf3-b0a7-a94b271ffed4','Women''s National Basketball Association (WNBA)',true),
 ('ff0e2bcf-b30b-42be-bcfe-88b8deee9252','Los Angeles Sparks','United States','3e0e1b7c-b14c-4bf3-b0a7-a94b271ffed4','Women''s National Basketball Association (WNBA)',true);
+insert into pg_temp.ld1_teams(id,name,country,league_id,league_name,basketball_type,active) values
+('0512ffba-fed9-470f-8034-82f3e5344712','Sport Club do Recife','Brazil',null,'Brazilian LBF','womens',true),
+('08ff30d3-2d32-4e19-ad87-d982f2410704','Pro-Network Enea AJP Gorzów Wlkp.','Poland',null,'Polish Women Basketball League','womens',true),
+('11437f39-d6dd-4547-b6c0-7af83ef839a8','Santo André','Brazil',null,'Brazilian LBF','womens',true),
+('19109739-148d-47a7-8899-c38e797a36fb','Lotto AZS UMCS Lublin','Poland',null,'Polish Women Basketball League','womens',true),
+('3ddb8217-a6fb-4c0f-943d-2059c882f17c','SESI Araraquara Basquete','Brazil',null,'Brazilian LBF','womens',true),
+('4b078b6b-d144-4f9e-adbb-6ec4fa832167','Corinthians Basquete Feminino','Brazil',null,'Brazilian LBF','womens',true),
+('52dbdd2a-c2c2-404c-a9a3-0f995cce0b39','Cerrado Basquete','Brazil',null,'Brazilian LBF','womens',true),
+('5ca1f3b4-ab64-45bf-b642-84283cc136b5','Salvador Basketball','Brazil',null,'Brazilian LBF','womens',true),
+('5ecdbfd5-83cd-4c90-9594-1e8833aa8a39','Isands JTEC Wichoś Jelenia Góra','Poland',null,'Polish Women Basketball League','womens',true),
+('85b88d4e-ee35-4f4c-b59d-b4735412e84d','Artego Bydgoszcz','Poland',null,'Polish Women Basketball League','womens',true),
+('88b100f7-768b-4a1e-afbe-74fb80ca51e1','Contimax MOSIR Bochnia','Poland',null,'Polish Women Basketball League','womens',true),
+('8a51fc72-9b7d-4889-8c92-16ec1e144c8e','PGE Wisła Kraków','Poland',null,'Polish Women Basketball League','womens',true),
+('9296954d-81f8-4bc0-aaed-af63e5c83ed0','São José Basketball','Brazil',null,'Brazilian LBF','womens',true),
+('99e3ffff-9fe4-40b6-be90-915d41fcb286','Enea AZS Politechnika Poznań','Poland',null,'Polish Women Basketball League','womens',true),
+('a846b49a-9afc-4486-819f-c28b91630ae9','Energa Toruń','Poland',null,'Polish Women Basketball League','womens',true),
+('ad04901c-6d65-4978-aa1a-f53af3c988e7','MB Zagłębie Sosnowiec','Poland',null,'Polish Women Basketball League','womens',true),
+('b00de2f6-554c-44a9-b191-0f58844a40f6','ADRM Maringá','Brazil',null,'Brazilian LBF','womens',true),
+('b94c4917-26a7-4d85-8dcb-87218ec7e11b','1KS Ślęza Wrocław','Poland',null,'Polish Women Basketball League','womens',true),
+('c16fed56-66c8-4869-8a2c-4dadcd1906e4','Unimed Campinas Basquete','Brazil',null,'Brazilian LBF','womens',true),
+('cc80c12d-27fb-4185-8ade-ebd71457a0b9','Widzew Łódź','Poland',null,'Polish Women Basketball League','womens',true),
+('d8407e8e-4f36-4ef9-87e0-38fdfb8a64d4','SKK Polonia Warszawa','Poland',null,'Polish Women Basketball League','womens',true),
+('d9979ede-9fd5-4b26-8c6d-6a10f6726d4e','Sampaio Basquete','Brazil',null,'Brazilian LBF','womens',true),
+('de27044d-fe82-48f1-aea8-340f6b99f1f4','Lotto MKS Pruszków','Poland',null,'Polish Women Basketball League','womens',true),
+('ea76f41d-588c-499b-8228-229fb6b61f23','Sodiê Mesquita','Brazil',null,'Brazilian LBF','womens',true);
+insert into pg_temp.ld1_legacy_leagues(id,name,country,active) values
+('656c1095-d1ef-4aaf-8291-f57cbb9123a6','Brazilian LBF','Brazil',true),
+('8198b77d-8ad4-4ca5-b8c9-1f4cfc9e3992','Polish Women’s Basketball League','Poland',true);
+insert into pg_temp.ld1_legacy_teams(id,name,country,league_id,league_name,active) values
+('0512ffba-fed9-470f-8034-82f3e5344712','Sport Club do Recife','Brazil','656c1095-d1ef-4aaf-8291-f57cbb9123a6','Brazilian LBF',true),
+('11437f39-d6dd-4547-b6c0-7af83ef839a8','Santo André','Brazil','656c1095-d1ef-4aaf-8291-f57cbb9123a6','Brazilian LBF',true),
+('3db06745-8313-4a7d-b9c8-40023c99bc26','Arka Gdynia Women','Poland','8198b77d-8ad4-4ca5-b8c9-1f4cfc9e3992','Polish Women’s Basketball League',true),
+('3ddb8217-a6fb-4c0f-943d-2059c882f17c','SESI Araraquara Basquete','Brazil','656c1095-d1ef-4aaf-8291-f57cbb9123a6','Brazilian LBF',true),
+('4b078b6b-d144-4f9e-adbb-6ec4fa832167','Corinthians Basquete Feminino','Brazil','656c1095-d1ef-4aaf-8291-f57cbb9123a6','Brazilian LBF',true),
+('52dbdd2a-c2c2-404c-a9a3-0f995cce0b39','Cerrado Basquete','Brazil','656c1095-d1ef-4aaf-8291-f57cbb9123a6','Brazilian LBF',true),
+('5ca1f3b4-ab64-45bf-b642-84283cc136b5','Salvador Basketball','Brazil','656c1095-d1ef-4aaf-8291-f57cbb9123a6','Brazilian LBF',true),
+('7dc74ca5-1d2b-440f-ba2e-345c6e95b3cf','Polkowice Women','Poland','8198b77d-8ad4-4ca5-b8c9-1f4cfc9e3992','Polish Women’s Basketball League',true),
+('9296954d-81f8-4bc0-aaed-af63e5c83ed0','São José Basketball','Brazil','656c1095-d1ef-4aaf-8291-f57cbb9123a6','Brazilian LBF',true),
+('b00de2f6-554c-44a9-b191-0f58844a40f6','ADRM Maringá','Brazil','656c1095-d1ef-4aaf-8291-f57cbb9123a6','Brazilian LBF',true),
+('c16fed56-66c8-4869-8a2c-4dadcd1906e4','Unimed Campinas Basquete','Brazil','656c1095-d1ef-4aaf-8291-f57cbb9123a6','Brazilian LBF',true),
+('d9979ede-9fd5-4b26-8c6d-6a10f6726d4e','Sampaio Basquete','Brazil','656c1095-d1ef-4aaf-8291-f57cbb9123a6','Brazilian LBF',true),
+('ea76f41d-588c-499b-8228-229fb6b61f23','Sodiê Mesquita','Brazil','656c1095-d1ef-4aaf-8291-f57cbb9123a6','Brazilian LBF',true),
+('f65ab92b-240a-4a7e-a990-4e4d796fd31d','AZS UMCS Lublin Women','Poland','8198b77d-8ad4-4ca5-b8c9-1f4cfc9e3992','Polish Women’s Basketball League',true);
 create temporary table before_ld1_leagues on commit drop as select * from pg_temp.ld1_leagues;
 create temporary table before_ld1_teams on commit drop as select * from pg_temp.ld1_teams;
 create temporary table before_ld1_memberships on commit drop as select * from pg_temp.ld1_memberships;
@@ -321,6 +364,7 @@ create temporary table before_ld1_legacy_teams on commit drop as select * from p
 \ir ../../reports/league-data-1/austria-shadow-memberships.sql
 \ir ../../reports/league-data-1/italy-serie-b-shadow-correction.sql
 \ir ../../reports/league-data-1/wnba-shadow-correction.sql
+\ir ../../reports/league-data-1/brazil-poland-womens-shadow-correction.sql
 create temporary table after_ld1_leagues on commit drop as select * from pg_temp.ld1_leagues;
 create temporary table after_ld1_teams on commit drop as select * from pg_temp.ld1_teams;
 create temporary table after_ld1_memberships on commit drop as select * from pg_temp.ld1_memberships;
@@ -337,14 +381,15 @@ create temporary table after_ld1_legacy_teams on commit drop as select * from pg
 \ir ../../reports/league-data-1/austria-shadow-memberships.sql
 \ir ../../reports/league-data-1/italy-serie-b-shadow-correction.sql
 \ir ../../reports/league-data-1/wnba-shadow-correction.sql
+\ir ../../reports/league-data-1/brazil-poland-womens-shadow-correction.sql
 do $combined$ begin
-if (select count(*) from pg_temp.ld1_leagues)<>(select count(*)+7 from pg_temp.before_ld1_leagues) then raise exception 'ld1_leagues: unexpected delta';end if;
+if (select count(*) from pg_temp.ld1_leagues)<>(select count(*)+9 from pg_temp.before_ld1_leagues) then raise exception 'ld1_leagues: unexpected delta';end if;
 if exists(select * from pg_temp.after_ld1_leagues except select * from pg_temp.ld1_leagues) or exists(select * from pg_temp.ld1_leagues except select * from pg_temp.after_ld1_leagues) then raise exception 'ld1_leagues: second run changed state';end if;
 if exists(select id from pg_temp.before_ld1_leagues except select id from pg_temp.ld1_leagues) then raise exception 'ld1_leagues: lost existing ID';end if;
 if (select count(*) from pg_temp.ld1_teams)<>(select count(*)+22 from pg_temp.before_ld1_teams) then raise exception 'ld1_teams: unexpected delta';end if;
 if exists(select * from pg_temp.after_ld1_teams except select * from pg_temp.ld1_teams) or exists(select * from pg_temp.ld1_teams except select * from pg_temp.after_ld1_teams) then raise exception 'ld1_teams: second run changed state';end if;
 if exists(select id from pg_temp.before_ld1_teams except select id from pg_temp.ld1_teams) then raise exception 'ld1_teams: lost existing ID';end if;
-if (select count(*) from pg_temp.ld1_memberships)<>(select count(*)+199 from pg_temp.before_ld1_memberships) then raise exception 'ld1_memberships: unexpected delta';end if;
+if (select count(*) from pg_temp.ld1_memberships)<>(select count(*)+222 from pg_temp.before_ld1_memberships) then raise exception 'ld1_memberships: unexpected delta';end if;
 if exists(select * from pg_temp.after_ld1_memberships except select * from pg_temp.ld1_memberships) or exists(select * from pg_temp.ld1_memberships except select * from pg_temp.after_ld1_memberships) then raise exception 'ld1_memberships: second run changed state';end if;
 if exists(select id from pg_temp.before_ld1_memberships except select id from pg_temp.ld1_memberships) then raise exception 'ld1_memberships: lost existing ID';end if;
 if (select count(*) from pg_temp.ld1_legacy_leagues)<>(select count(*)+1 from pg_temp.before_ld1_legacy_leagues) then raise exception 'ld1_legacy_leagues: unexpected delta';end if;
@@ -357,7 +402,7 @@ if exists(select 1 from pg_temp.before_ld1_leagues b join pg_temp.ld1_leagues a 
 if exists(select * from pg_temp.before_ld1_memberships except select * from pg_temp.ld1_memberships) then raise exception 'ld1_memberships: existing record changed';end if;
 if exists(select * from pg_temp.before_ld1_legacy_leagues except select * from pg_temp.ld1_legacy_leagues) then raise exception 'ld1_legacy_leagues: existing record changed';end if;
 if exists(select * from pg_temp.before_ld1_legacy_teams except select * from pg_temp.ld1_legacy_teams) then raise exception 'ld1_legacy_teams: existing record changed';end if;
-if (select count(*) from (select * from pg_temp.before_ld1_teams except select * from pg_temp.ld1_teams) q)<>57 then raise exception 'unexpected existing team changes';end if;
+if (select count(*) from (select * from pg_temp.before_ld1_teams except select * from pg_temp.ld1_teams) q)<>80 then raise exception 'unexpected existing team changes';end if;
 if exists(select 1 from pg_temp.before_ld1_teams b join pg_temp.ld1_teams a using(id) where (b.name,b.country,b.basketball_type,b.active) is distinct from (a.name,a.country,a.basketball_type,a.active)) then raise exception 'team identity altered';end if;
 end $combined$;
 select 'PASS: combined league data correction, twice applied, original identities and historical records preserved' result;
