@@ -27,6 +27,15 @@ export function createDisposablePlayAdapters(options:{scope:"disposable_pg17";en
    return {intentId:v.intentId,expiresAt:v.expiresAt};
   },
   async consume(i:Intent){return await run("select play_billing_candidate.consume_test_intent_bound($1::uuid,$2::uuid,$3::uuid,$4,$5,$6,$7,$8,$9::bigint)",[i.intentId,...args(i),i.expiresAt])===true;},
+  async claimBound(owner:string,accountId:string,product:{productId:string;basePlanId:string},sealed:SealedPurchase){
+   const v=await run("select play_billing_candidate.claim_bound_test_purchase($1::uuid,$2,$3,$4,$5,$6)",[owner,accountId,sealed.fingerprint,sealed.envelope,product.productId,product.basePlanId]);
+   if(v==="claimed"||v==="already_claimed"||v==="foreign_owner"||v==="catalog_conflict"||v==="retry")return v;
+   throw Error("Invalid claim result");
+  },
+  async fulfill(c:Claim,g:number,state:string,expiry:string){return await run("select play_billing_candidate.finish_and_fulfill_test_purchase($1,$2::uuid,$3::bigint,$4,$5::timestamptz)",[c.fingerprint,c.owner,g,state,expiry])===true;},
+  async confirm(c:Claim,g:number,expiry:string){return await run("select play_billing_candidate.confirm_test_fulfillment($1,$2::uuid,$3::bigint,$4::timestamptz)",[c.fingerprint,c.owner,g,expiry])===true;},
+  async ownerHeld(owner:string){return await run("select exists(select 1 from play_billing_candidate.owner_holds where owner_id=$1::uuid)",[owner])!==false;},
+  async holdOwner(owner:string){return await run("select play_billing_candidate.hold_test_owner($1::uuid)",[owner])===true;},
   async enqueue(s:string,m:string,f:string){const v=await run("select play_billing_candidate.enqueue_test_notification($1,$2,$3)",[s,m,f]);if(v==="queued"||v==="duplicate"||v==="conflict")return v;throw Error("Invalid queue receipt");},
   async lease():Promise<Job|null>{
    const v=await run("select row_to_json(x) from play_billing_candidate.lease_test_notification() x");

@@ -19,6 +19,7 @@ const {ingestPlayPush,reconcileOnePlayNotification}=load("../lib/server/play/not
 const {authenticatePlayPush}=load("../lib/server/play/push-auth.ts",base);
 const {playIntentRequest}=load("../lib/server/play/intent-request.ts",base);
 const {createDisposablePlayAdapters}=load("../lib/server/play/disposable-adapters.ts",base);
+const {createDisposablePlayRuntime}=load("../lib/server/play/disposable-runtime.ts",{...base,"./intent-request":{playIntentRequest},"./test-fulfillment":{reconcileTestPurchase}});
 // All SQL input is generated fixture data; strict literal escaping and no
 // raw purchase token in SQL, arguments or logs.
 const q=v=>{if(typeof v!=="string"||! /^[A-Za-z0-9._:~+\/-]{1,5600}$/.test(v))throw Error("invalid fixture literal");return "'"+v+"'";};
@@ -68,34 +69,21 @@ assert.equal((await playIntentRequest(req(consume),"consume",intentPorts)).statu
 assert.equal((await playIntentRequest(req(consume),"consume",intentPorts)).status,409);
 const claimArgs=(owner,sealed)=>[q(sealed.fingerprint),q(owner),"1::smallint",q(sealed.envelope),q(product.productId),q(product.basePlanId)].join(",");
 const args=(owner,g,expires)=>[q(fp),q(owner),integer(g),q(expires)].join(",");
-const begin=owner=>Number(sql("select play_billing_candidate.begin_test_refresh("+q(fp)+","+q(owner)+")"));
-const finish=(owner,g,state,expires)=>sql("select play_billing_candidate.finish_test_refresh("+[q(fp),q(owner),integer(g),q(state),expires===null?"null":q(expires)].join(",")+")")==="t";
-const commit=(owner,g,expires)=>sql("select play_billing_candidate.commit_test_fulfillment("+args(owner,g,expires)+")")==="t";
-const confirm=receipt=>sql("select play_billing_candidate.confirm_test_fulfillment("+args(receipt.owner,receipt.generation,receipt.expiresAt)+")")==="t";
 let allowed=true;
-const deps={
- now:Date.now,authorize:async input=>allowed&&input.owner===owner&&input.role==="player",
- verify:(o,t)=>client.verify(o,t),
- seal:(t,o)=>vault.seal(t,o,"test"),
- claim:async(o,p,s)=>sql("select play_billing_candidate.claim_test_purchase("+claimArgs(o,s)+")"),
- fulfillTest:async(o,p,s,expires)=>{
-  const g=begin(o),v=await client.verify(o,token);
-  if(!finish(o,g,v.state,expires)||!commit(o,g,expires))return null;
-  return {scope:"test",owner:o,fingerprint:s.fingerprint,productId:p.productId,basePlanId:p.basePlanId,generation:g,expiresAt:expires,committed:true};
- },
- confirmFulfillment:async receipt=>confirm(receipt),
- acknowledgeTest:async(receipt,t)=>(await acknowledgeTestPurchase(receipt,t,{verify:(o,x)=>client.verify(o,x),fingerprint:x=>vault.fingerprint(x,"test"),confirmDurableFulfillment:async r=>confirm(r),accessToken:async()=>"fixture-oauth",request:fakeRequest,now:Date.now}))==="reverify_required",
- reconcileTest:async(receipt,v)=>{const g=begin(receipt.owner);return finish(receipt.owner,g,v.state,v.expiresAt)&&commit(receipt.owner,g,v.expiresAt);},
-};
-const input={owner,role:"player",productId:product.productId,basePlanId:product.basePlanId,token};
-assert.equal(await reconcileTestPurchase(input,deps),"test_fulfillment_confirmed");
+const runtime=createDisposablePlayRuntime({scope:"disposable_pg17",enabled:()=>true,authorize:async request=>allowed&&request.headers.get("authorization")==="Bearer synthetic-session"?{owner,sessionId:session,role:"player"}:null,
+ catalog:async()=>[{...localized,environment:"test",expiresAt:Date.now()+30000}],db:adapter,vault,provider:client,
+ simulateAcknowledgment:async(receipt,t)=>(await acknowledgeTestPurchase(receipt,t,{verify:(o,x)=>client.verify(o,x),fingerprint:x=>vault.fingerprint(x,"test"),confirmDurableFulfillment:r=>adapter.confirm(r,r.generation,r.expiresAt),accessToken:async()=>"fixture-oauth",request:fakeRequest,now:Date.now}))==="reverify_required",now:Date.now});
+const authenticated=new Request("https://fixture.invalid/sync",{headers:{authorization:"Bearer synthetic-session"}});
+const synchronize=async()=> (await runtime.sync(authenticated,product.productId,token))?.outcome??"held";
+assert.equal(await runtime.sync(new Request("https://fixture.invalid/sync"),product.productId,token),null);
+assert.equal(await synchronize(),"test_fulfillment_confirmed");
 assert.equal(ackCount,1);
 assert.equal(sql("select provider||':'||plan from play_billing_candidate.shadow_membership_entitlements where user_id="+q(owner)),"google_play_test:premium");
 assert.equal(sql("select count(*) from public.membership_sources where user_id="+q(owner)),"0");
-assert.equal(await reconcileTestPurchase(input,deps),"test_fulfillment_confirmed");
+assert.equal(await synchronize(),"test_fulfillment_confirmed");
 assert.equal(ackCount,1);
 assert.equal(sql("select play_billing_candidate.claim_test_purchase("+claimArgs(foreign,vault.seal(token,foreign,"test"))+")"),"foreign_owner");
-allowed=false;assert.equal(await reconcileTestPurchase(input,deps),"held");assert.equal(ackCount,1);
+allowed=false;assert.equal(await synchronize(),"held");assert.equal(ackCount,1);
 // Signed synthetic push -> actual durable queue -> actual generation-fenced
 // observation -> revoked shadow access; Google provider is still mocked.
 const sub="projects/fixture-project/subscriptions/fixture-play";
@@ -125,13 +113,13 @@ console.log("End-to-end synthetic Google Play integration passed: intent, encryp
 // Restore active test evidence before holding the owner, to prove immediate removal.
 revoked=false;
 allowed=true;
-assert.equal(await reconcileTestPurchase(input,deps),"test_fulfillment_confirmed");
+assert.equal(await synchronize(),"test_fulfillment_confirmed");
 assert.equal(sql("select provider||':'||plan from play_billing_candidate.shadow_membership_entitlements where user_id="+q(owner)),"google_play_test:premium");
 const activeGeneration=Number(sql("select generation from play_billing_candidate.purchase_observations where fingerprint="+q(fp)));
 assert.equal(sql("select play_billing_candidate.confirm_test_fulfillment("+args(owner,activeGeneration,expiry)+")"),"t");
 // Privacy hold: stop credential lookup and all future fulfillment; do not
 // claim a legal retention policy or destroy immutable ownership evidence.
-assert.equal(sql("select play_billing_candidate.hold_test_owner("+q(owner)+")"),"t");
+assert.equal(await adapter.holdOwner(owner),true);
 assert.equal(sql("select play_billing_candidate.confirm_test_fulfillment("+args(owner,activeGeneration,expiry)+")"),"f");
 assert.equal(await adapter.lookup(fp),null);
 await assert.rejects(()=>adapter.credential({owner,fingerprint:fp,productId:product.productId,basePlanId:product.basePlanId}));

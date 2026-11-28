@@ -215,4 +215,56 @@ create trigger hold_receipt_write before insert on play_billing_candidate.test_f
 revoke all on function play_billing_candidate.hold_test_owner(uuid),play_billing_candidate.guard_test_owner_write() from public,anon,authenticated,service_role;
 grant execute on function play_billing_candidate.hold_test_owner(uuid),play_billing_candidate.guard_test_owner_write() to service_role;
 
+-- Runtime first claim is tied to exactly one consumed intent. Restores may
+-- reuse an existing same-owner binding, but cannot allocate another token
+-- against an already bound intent. Lock the owner before inspecting intents.
+create table play_billing_candidate.intent_purchase_bindings(
+ intent_id uuid primary key references play_billing_candidate.purchase_intents(intent_id),
+ fingerprint text not null unique check(fingerprint ~ '^[0-9a-f]{64}),
+ owner_id uuid not null
+);
+alter table play_billing_candidate.intent_purchase_bindings enable row level security;
+alter table play_billing_candidate.intent_purchase_bindings force row level security;
+revoke all on play_billing_candidate.intent_purchase_bindings from public,anon,authenticated,service_role;
+grant select,insert on play_billing_candidate.intent_purchase_bindings to service_role;
+create policy binding_read on play_billing_candidate.intent_purchase_bindings for select to service_role using(true);
+create policy binding_write on play_billing_candidate.intent_purchase_bindings for insert to service_role with check(true);
+create trigger hold_binding_write before insert on play_billing_candidate.intent_purchase_bindings for each row execute function play_billing_candidate.guard_test_owner_write();
+create function play_billing_candidate.claim_bound_test_purchase(
+ p_owner uuid,p_account text,p_fingerprint text,p_envelope text,p_product text,p_plan text
+) returns text language plpgsql volatile security invoker set search_path='' as $body$
+declare i uuid; existing uuid; result text;
+begin
+ perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('hoopcheck-play-hold:'||p_owner::text,0));
+ if exists(select 1 from play_billing_candidate.owner_holds where owner_id=p_owner) then return 'retry'; end if;
+ select owner_id into existing from play_billing_candidate.intent_purchase_bindings where fingerprint=p_fingerprint;
+ if found then
+  if existing<>p_owner then return 'foreign_owner'; end if;
+  if not exists(select 1 from play_billing_candidate.intent_purchase_bindings b join play_billing_candidate.purchase_intents t using(intent_id)
+    where b.fingerprint=p_fingerprint and t.owner_id=p_owner and t.account_id=p_account and t.product_id=p_product and t.base_plan_id=p_plan) then return 'catalog_conflict'; end if;
+  return play_billing_candidate.claim_test_purchase(p_fingerprint,p_owner,1::smallint,p_envelope,p_product,p_plan);
+ end if;
+ if exists(select 1 from play_billing_candidate.purchase_claims where fingerprint=p_fingerprint and owner_id<>p_owner) then return 'foreign_owner'; end if;
+ select t.intent_id into i from play_billing_candidate.purchase_intents t
+ where t.owner_id=p_owner and t.account_id=p_account and t.product_id=p_product and t.base_plan_id=p_plan and t.consumed_at is not null
+ and not exists(select 1 from play_billing_candidate.intent_purchase_bindings b where b.intent_id=t.intent_id)
+ order by t.consumed_at desc,t.intent_id limit 1 for update of t;
+ if not found then return 'retry'; end if;
+ result:=play_billing_candidate.claim_test_purchase(p_fingerprint,p_owner,1::smallint,p_envelope,p_product,p_plan);
+ if result not in ('claimed','already_claimed') then return result; end if;
+ insert into play_billing_candidate.intent_purchase_bindings(intent_id,fingerprint,owner_id) values(i,p_fingerprint,p_owner);
+ return result;
+end
+$body$;
+create function play_billing_candidate.finish_and_fulfill_test_purchase(p_fingerprint text,p_owner uuid,p_generation bigint,p_state text,p_expiry timestamptz)
+returns boolean language plpgsql volatile security invoker set search_path='' as $body$
+begin
+ if p_state not in ('pending_ack','eligible_for_reconciliation') then return false; end if;
+ if not exists(select 1 from play_billing_candidate.intent_purchase_bindings where fingerprint=p_fingerprint and owner_id=p_owner) then return false; end if;
+ if not play_billing_candidate.finish_test_refresh(p_fingerprint,p_owner,p_generation,p_state,p_expiry) then return false; end if;
+ return play_billing_candidate.commit_test_fulfillment(p_fingerprint,p_owner,p_generation,p_expiry);
+end
+$body$;
+revoke all on function play_billing_candidate.claim_bound_test_purchase(uuid,text,text,text,text,text),play_billing_candidate.finish_and_fulfill_test_purchase(text,uuid,bigint,text,timestamptz) from public,anon,authenticated,service_role;
+grant execute on function play_billing_candidate.claim_bound_test_purchase(uuid,text,text,text,text,text),play_billing_candidate.finish_and_fulfill_test_purchase(text,uuid,bigint,text,timestamptz) to service_role;
 commit;
