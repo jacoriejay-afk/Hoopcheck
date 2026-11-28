@@ -61,7 +61,7 @@ export function appendNotificationPage<T extends {id:string}>(previous: readonly
     seen.add(row.id);
     return true;
   });
-  return { rows: [...previous, ...added], hasMore: older.length === NOTIFICATION_PAGE_SIZE && added.length > 0 };
+  return { rows: [...previous, ...added], hasMore: older.length === NOTIFICATION_PAGE_SIZE && added.length > 0 && added[added.length - 1].id === older[older.length - 1].id };
 }
 export function notificationPath(notice: Pick<Notice, "target_type" | "target_id">) {
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(notice.target_id)) return null;

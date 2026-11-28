@@ -76,6 +76,7 @@ test("shared alert pages deduplicate overlapping IDs and stop when the cursor ca
  assert.deepEqual(appendNotificationPage(first,[{id:"b"},{id:"c"},{id:"c"}]),{rows:[...first,{id:"c"}],hasMore:false});
  const full=Array.from({length:NOTIFICATION_PAGE_SIZE},(_,i)=>({id:"older-"+i}));
  assert.equal(appendNotificationPage(first,full).hasMore,true);
+ assert.equal(appendNotificationPage(first,[...full.slice(0,-1),{id:"b"}]).hasMore,false);
  assert.deepEqual(appendNotificationPage(full,full),{rows:full,hasMore:false});
  assert.deepEqual(appendNotificationPage(first,[]),{rows:first,hasMore:false});
 });
