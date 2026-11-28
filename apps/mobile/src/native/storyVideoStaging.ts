@@ -17,3 +17,29 @@ export function storyVideoMetadataMatches(metadata:unknown,input:StoryVideoInput
  const m=metadata as Record<string,unknown>;
  return m.size===input.size&&m.mimetype===input.content_type;
 }
+
+/** Stage a private draft only. Retrying the same input ID first reconciles
+ * an existing complete object. No publication, signed playback or approval. */
+export async function uploadStoryDraft(api:string,project:string,owner:string,token:string,input:StoryVideoInput,signal:AbortSignal,upload:(url:string,headers:Record<string,string>,signal:AbortSignal)=>Promise<{status:number}>,request:typeof fetch=fetch){
+ const metadata=validateStoryVideoInput(input),path=storyVideoPath(owner,metadata);
+ function origin(value:string){const url=new URL(value);if(url.protocol!=="https:"||url.username||url.password||url.pathname!=="/"||url.search||url.hash)throw Error("Invalid media service.");return url;}
+ const endpoint=origin(api);endpoint.pathname="/api/hoopfeed/story-video-upload";
+ const storage=origin(project);
+ if(!token||/\s/.test(token)||signal.aborted)throw Error("Verify your account.");
+ async function reserve(){
+  if(signal.aborted)throw Error("Upload cancelled.");
+  const r=await request(endpoint,{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify(metadata),cache:"no-store",redirect:"error",signal});
+  const result=await r.json().catch(()=>null);
+  if(signal.aborted||!r.ok||result?.id!==metadata.id)throw Error("Private staging could not be confirmed. Retry the same draft.");
+  return result;
+ }
+ const first=await reserve();
+ if(first.state==="awaiting_moderation")return "awaiting_moderation" as const;
+ if(first.state!=="awaiting_upload"||first.bucket!=="hoopfeed-private-videos"||first.path!==path||typeof first.token!=="string"||!first.token||first.token.length>8192)throw Error("Invalid staging ticket.");
+ storage.pathname="/storage/v1/object/upload/sign/hoopfeed-private-videos/"+path;storage.searchParams.set("token",first.token);
+ const transfer=await upload(storage.toString(),{"Content-Type":metadata.content_type,"x-upsert":"false","cache-control":"no-store"},signal);
+ if(signal.aborted||transfer.status<200||transfer.status>=300)throw Error("Upload not confirmed. Retry the same draft.");
+ const done=await reserve();
+ if(done.state!=="awaiting_moderation")throw Error("Upload confirmation unavailable. Retry the same draft.");
+ return "awaiting_moderation" as const;
+}
