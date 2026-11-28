@@ -12,7 +12,7 @@ import { useEntryTheme } from "../src/theme";
 import { supabase } from "../src/lib/supabase";
 import { requireOnline, useNetwork } from "../src/native/network";
 import { nativeDestination } from "../src/native/deepLinks";
-import { markNotificationsRead, noticeMatches, noticeSearchMatches, notificationPath, readNotifications, NOTIFICATION_PAGE_SIZE, type Notice } from "../src/native/notifications";
+import { markNotificationsRead, verifiedAlertSession, withAlertDeadline, noticeMatches, noticeSearchMatches, notificationPath, readNotifications, NOTIFICATION_PAGE_SIZE, type Notice } from "../src/native/notifications";
 
 export default function Notifications() {
   const theme = useEntryTheme();
@@ -46,11 +46,13 @@ export default function Notifications() {
     try {
       if (offline) throw new Error("Reconnect to view alerts.");
       await requireOnline();
-      const { data, error: authError } = await supabase.auth.getSession();
-      if (authError || !data.session) throw new Error("Sign in again to view your alerts.");
-      const items = await readNotifications(supabase, data.session.user.id);
-      if (current !== generation.current) return;
-      owner.current = data.session.user.id; setRows(items); setHasMore(items.length === NOTIFICATION_PAGE_SIZE);
+      const {uid,items}=await withAlertDeadline(async signal=>{
+        const scope=await verifiedAlertSession(supabase,signal);
+        if(current!==generation.current||!focused.current)throw Error("Account session changed.");
+        return {uid:scope.uid,items:await readNotifications(supabase,scope.uid,undefined,scope)};
+      });
+      if (current !== generation.current||!focused.current) return;
+      owner.current = uid; setRows(items); setHasMore(items.length === NOTIFICATION_PAGE_SIZE);
     } catch (failure) {
       if (current === generation.current) { setFailed(true); setError(failure instanceof Error ? failure.message : "Alerts could not load. Try again."); }
     } finally { if (current === generation.current) setLoading(false); }
@@ -83,9 +85,11 @@ export default function Notifications() {
     paging.current = true; setLoadingOlder(true); setError("");
     try {
       await requireOnline();
-      const session = await supabase.auth.getSession();
-      if (session.error || session.data.session?.user.id !== userId || current !== generation.current) throw Error("Verify your session again.");
-      const older = await readNotifications(supabase, userId, cursor);
+      const older=await withAlertDeadline(async signal=>{
+        const scope=await verifiedAlertSession(supabase,signal,userId);
+        if(current!==generation.current||owner.current!==userId)throw Error("Account session changed.");
+        return readNotifications(supabase,userId,cursor,scope);
+      });
       if (current !== generation.current || owner.current !== userId) return;
       setRows(previous => {
         const seen = new Set(previous.map(row => row.id));
@@ -105,9 +109,11 @@ export default function Notifications() {
     const userId = owner.current;
     try {
       await requireOnline();
-      const { data, error: authError } = await supabase.auth.getSession();
-      if (authError || data.session?.user.id !== userId || current !== generation.current) throw new Error("Verify your session to reload alerts.");
-      const result = await markNotificationsRead(supabase, userId);
+      const result=await withAlertDeadline(async signal=>{
+        const scope=await verifiedAlertSession(supabase,signal,userId);
+        if(current!==generation.current||owner.current!==userId)throw Error("Account session changed.");
+        return markNotificationsRead(supabase,userId,new Date(),undefined,scope);
+      });
       if (current === generation.current && owner.current === userId) setRows(previous => previous.map(item => result.ids.includes(item.id) ? { ...item, read_at: item.read_at || result.readAt } : item));
     } catch (failure) { if (current === generation.current) setError(failure instanceof Error ? failure.message : "Alerts could not be marked as read."); }
     finally { marking.current = false; setBusy(false); }
@@ -119,10 +125,12 @@ export default function Notifications() {
     marking.current = true; setBusy(true); setError("");
     try {
       await requireOnline();
-      const session = await supabase.auth.getSession();
-      if (session.error || session.data.session?.user.id !== userId || current !== generation.current) throw Error("Verify your session again.");
-      if (!item.read_at) {
-        const result = await markNotificationsRead(supabase, userId, new Date(), item.id);
+      const result=await withAlertDeadline(async signal=>{
+        const scope=await verifiedAlertSession(supabase,signal,userId);
+        if(current!==generation.current||owner.current!==userId)throw Error("Account session changed.");
+        return item.read_at?null:markNotificationsRead(supabase,userId,new Date(),item.id,scope);
+      });
+      if (result) {
         if (current !== generation.current || owner.current !== userId) return;
         setRows(previous => previous.map(row => result.ids.includes(row.id) ? { ...row, read_at: result.readAt } : row));
       }

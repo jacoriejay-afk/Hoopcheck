@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
-import { readPhotoStories,publishPhotoStory,storyVisible } from "../src/native/photoStories.ts";
+import { readPhotoStories,publishPhotoStory,storyVisible,appendStoryPhoto } from "../src/native/photoStories.ts";
 import { resolveStoryPhoto } from "../src/native/storyPhotoReference.ts";
 const uid="11111111-1111-4111-8111-111111111111",other="22222222-2222-4222-8222-222222222222";
 const now=new Date("2026-11-27T12:00:00Z"),id=n=>"33333333-3333-4333-8333-"+String(n).padStart(12,"0");
@@ -51,6 +51,7 @@ test("single photo publication sends explicit follower audience, no client expir
 test("native Stories stay default off and are separated from ordinary posts",()=>{
  const feed=readFileSync(new URL("../app/feed.tsx",import.meta.url),"utf8"),ui=readFileSync(new URL("../components/PhotoStories.tsx",import.meta.url),"utf8"),helper=readFileSync(new URL("../src/native/photoStories.ts",import.meta.url),"utf8");
  assert.match(helper,/EXPO_PUBLIC_HOOPCHECK_PHOTO_STORIES_ENABLED === "true"/);
+ assert.match(helper,/EXPO_PUBLIC_HOOPCHECK_COMMUNITY_PHOTO_STORIES_ENABLED==="true"/);
  assert.match(feed,/post.post_kind !== "story"/);assert.match(feed,/storyOwner===uid && focused && canRead && blocksVerified/);
  assert.match(ui,/storyVisible\(row,now\)/);assert.match(ui,/FeedReport/);assert.match(ui,/onBlock\(current.author_id\)/);
  assert.doesNotMatch(ui,/FeedSharePanel|AsyncStorage|localStorage/);
@@ -61,4 +62,14 @@ test("photo story media reference rejects arbitrary URLs, other owners, traversa
  assert.equal(resolveStoryPhoto(other,photoRef,[photoRef]),false);
  for(const invalid of ["https://example.test/a.jpg","hoopfeed-private-images/"+uid+"/../"+id(99)+".jpg",photoRef+".mp4"])assert.equal(resolveStoryPhoto(uid,invalid,[invalid]),false);
  assert.equal(resolveStoryPhoto(uid,photoRef,[photoRef,photoRef]),false);
+});
+
+test("Story multipart supports the validated React Native file descriptor and browser Blob",()=>{
+ const photo={uri:"file:///private/photo.jpg",name:"photo.jpg",type:"image/jpeg",size:4,width:720,height:720};
+ const parts=[];const nativeForm={append:(...args)=>parts.push(args)};
+ const descriptor={uri:photo.uri,name:photo.name,type:photo.type};
+ appendStoryPhoto(nativeForm,photo,descriptor);assert.deepEqual(parts,[["image",descriptor]]);
+ for(const invalid of [{...descriptor,uri:"https://example.test/photo.jpg"},{...descriptor,uri:"file:///private/other.jpg"},{...descriptor,name:"other.jpg"},{...descriptor,type:"image/png"},new Blob(["bad"],{type:"image/jpeg"})])assert.throws(()=>appendStoryPhoto(nativeForm,photo,invalid),/valid JPEG/);
+ const browser=new FormData();appendStoryPhoto(browser,photo,new Blob(["data"],{type:"image/jpeg"}));assert.equal(browser.get("image").size,4);
+ const adapter=readFileSync(new URL("../src/native/mediaSelection.ts",import.meta.url),"utf8");assert.match(adapter,/!file\.exists \|\| file\.size !== photo\.size/);
 });

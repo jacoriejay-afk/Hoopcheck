@@ -5,32 +5,62 @@ export const NOTIFICATION_PAGE_SIZE = 100;
 export type NotificationCursor = Pick<Notice, "created_at" | "id">;
 // Keep the original database timestamp, including microseconds, for stable keyset paging.
 const cursorTimestamp = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})$/;
-export async function readNotifications(client: SupabaseClient, userId: string, before?: NotificationCursor) {
+export type AlertSession={uid:string;bearer:string;signal:AbortSignal};
+export async function verifiedAlertSession(client:SupabaseClient,signal:AbortSignal,expected?:string):Promise<AlertSession>{
+ const session=await client.auth.getSession();
+ if(signal.aborted||session.error||!session.data.session)throw Error("Sign in again to view alerts.");
+ const uid=session.data.session.user.id, token=session.data.session.access_token;
+ if(!uuid.test(uid)||!token||(expected&&uid!==expected))throw Error("Verify your account.");
+ const identity=await client.auth.getUser(token);
+ if(signal.aborted||identity.error||identity.data.user?.id!==uid)throw Error("Verify your account.");
+ const latest=await client.auth.getSession();
+ if(signal.aborted||latest.error||latest.data.session?.user.id!==uid||latest.data.session.access_token!==token)throw Error("Account session changed.");
+ return {uid,bearer:"Bearer "+token,signal};
+}
+export async function withAlertDeadline<T>(task:(signal:AbortSignal)=>Promise<T>):Promise<T>{
+ const controller=new AbortController();
+ let timer:ReturnType<typeof setTimeout>|undefined;
+ try{return await Promise.race([Promise.resolve().then(()=>task(controller.signal)),new Promise<never>((_,reject)=>{timer=setTimeout(()=>{reject(Error("Alerts are taking too long. Try again."));controller.abort();},12000);})]);}
+ finally{if(timer!==undefined)clearTimeout(timer);controller.abort();}
+}
+function requireAlertScope(uid:string,scope?:AlertSession){
+ if(scope&&(scope.uid!==uid||scope.signal.aborted||!/^Bearer [^\s]+$/.test(scope.bearer)))throw Error("Invalid alert session.");
+}
+export async function readNotifications(client: SupabaseClient, userId: string, before?: NotificationCursor, scope?:AlertSession) {
   if (!uuid.test(userId)) throw new Error("Invalid notification request");
   let query = client.from("notifications").select("id,target_type,target_id,notification_type,title,body,read_at,created_at").eq("user_id", userId).order("created_at", { ascending: false }).order("id", { ascending: false }).limit(NOTIFICATION_PAGE_SIZE);
   if (before) {
     if (!uuid.test(before.id) || !cursorTimestamp.test(before.created_at) || !Number.isFinite(Date.parse(before.created_at))) throw new Error("Invalid notification history cursor");
     query = query.or(`created_at.lt.${before.created_at},and(created_at.eq.${before.created_at},id.lt.${before.id})`);
   }
+  requireAlertScope(userId,scope);
+  if(scope)query=query.setHeader("Authorization",scope.bearer).abortSignal(scope.signal);
   const result = await query;
   if (result.error) throw new Error("Alerts could not load. Try again.");
   return (result.data ?? []) as Notice[];
 }
-export async function markNotificationsRead(client: SupabaseClient, userId: string, now = new Date(), notificationId?: string) {
+export async function markNotificationsRead(client: SupabaseClient, userId: string, now = new Date(), notificationId?: string, scope?:AlertSession) {
   if (!uuid.test(userId)) throw new Error("Invalid notification request");
   if (notificationId && !uuid.test(notificationId)) throw new Error("Invalid notification request");
   const readAt = now.toISOString();
   let query = client.from("notifications").update({ read_at: readAt }).eq("user_id", userId).is("read_at", null);
   if (notificationId) query = query.eq("id", notificationId);
+  requireAlertScope(userId,scope);
+  if(scope)query=query.setHeader("Authorization",scope.bearer).abortSignal(scope.signal);
   const result = await query.select("id");
   if (result.error) throw new Error("Alerts could not be marked as read. Try again.");
   return { ids: (result.data ?? []).map(row => row.id as string), readAt };
 }
 export function notificationPath(notice: Pick<Notice, "target_type" | "target_id">) {
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(notice.target_id)) return null;
-  const route = { team: "teams", coach: "coaches", league: "leagues", "womens-team": "womens" }[notice.target_type];
-  if (route) return `/${route}/${notice.target_id}`;
-  return notice.target_type === "game" ? `/fan-live?gameId=${notice.target_id}` : null;
+  switch (notice.target_type) {
+    case "team": return `/teams/${notice.target_id}`;
+    case "coach": return `/coaches/${notice.target_id}`;
+    case "league": return `/leagues/${notice.target_id}`;
+    case "womens-team": return `/womens/${notice.target_id}`;
+    case "game": return `/fan-live?gameId=${notice.target_id}`;
+    default: return null;
+  }
 }
 export function noticeMatches(notice: Notice, filter: string) {
   const review = ["review", "rating", "trust_score", "pay_warning"].includes(notice.notification_type);

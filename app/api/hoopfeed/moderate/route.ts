@@ -362,16 +362,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ allowed: false, message: "Only HoopCheck administrators can publish official news." }, { status: 403 });
     }
     const isStory = kind === "post" && submittedKind === "story";
+    let storyCommunity = false;
     if (isStory) {
       if (process.env.HOOPCHECK_PHOTO_STORIES_ENABLED !== "true") {
         return NextResponse.json({ allowed: false, message: "Photo Stories are not available yet." }, { status: 403 });
       }
-      // Pilot uses only the existing follower-scoped read boundary. No public
-      // audience, custom visibility, video, location, tags or client expiry.
+      // Community is a distinct default-off rollout, requiring the reviewed Story policy.
+      // No anonymous audience, video, tags, location or client-specified expiry.
       const audience = form.getAll("audience");
-      if (!viewerDb || audience.length !== 1 || audience[0] !== "followers" || allImages.length !== 1 || videoPath ||
+      storyCommunity=audience.length===1&&audience[0]==="community"&&process.env.HOOPCHECK_COMMUNITY_PHOTO_STORIES_ENABLED==="true";
+      if (!viewerDb || audience.length !== 1 || (audience[0] !== "followers"&&!storyCommunity) || allImages.length !== 1 || videoPath ||
           ["expires_at", "poll_options", "post_location", "post_country", "share_country", "topic_tag", "club_id", "womens_club_id", "league_id", "womens_league_id"].some(field => form.has(field))) {
-        return NextResponse.json({ allowed: false, message: "Choose one photo for a follower-only Story, without location or tags." }, { status: 400 });
+        return NextResponse.json({ allowed: false, message: "Choose one photo and an available Story audience, without location or tags." }, { status: 400 });
+      }
+      if (storyCommunity) {
+        const ready=await viewerDb.rpc("confirm_community_photo_story_policy");
+        if(ready.error||ready.data!==true)return NextResponse.json({allowed:false,message:"Community Stories are not available yet."},{status:403});
       }
       if (!user.email_confirmed_at || ["suspended","banned","removed"].includes(profile.moderation_status)) {
         return NextResponse.json({ allowed:false, message:"Verify your account before publishing a Story." }, {status:403});
@@ -532,7 +538,7 @@ export async function POST(request: Request) {
       game_day_score_for: submittedTopicTag === "Game Day" ? scoreFor : null,
       game_day_score_against: submittedTopicTag === "Game Day" ? scoreAgainst : null,
       location_country:shareCountry && profile?.current_country_public !== false ? (submittedCountry || profile?.current_country || null) : null,
-      ...(isStory ? { community_visible: false, created_at: storyCreatedAt!.toISOString() } : form.get("audience") === "community" ? { community_visible: true } : {}),
+      ...(isStory ? { community_visible: storyCommunity, created_at: storyCreatedAt!.toISOString() } : form.get("audience") === "community" ? { community_visible: true } : {}),
       ...(location ? { post_location: location } : {}),
       ...(tag ? { [tag.column]: tag.id } : {}),
       status:"approved", expires_at:storyExpiresAt
