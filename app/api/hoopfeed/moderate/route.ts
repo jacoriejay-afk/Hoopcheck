@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getHoopCheckEntitlements } from "../../../../lib/membership-tier";
@@ -496,8 +495,8 @@ export async function POST(request: Request) {
     let digest:string|undefined;
     if(typeof receiptKey==="string"){
       if(!viewerDb || !user.email_confirmed_at || assuranceForVerifiedUser(token,user).required || (await viewerDb.rpc("confirm_active_account_session")).data!==true) return NextResponse.json({allowed:false,message:"Verify your account before publishing."},{status:403});
-      const entries=await Promise.all(Array.from(form.entries()).filter(([key])=>key!=="publication_id").map(async ([key,value])=>[key,typeof value==="string"?value:{type:value.type,sha256:createHash("sha256").update(Buffer.from(await value.arrayBuffer())).digest("hex")}]));
-      digest=createHash("sha256").update(JSON.stringify(entries)).digest("hex");
+      const entries=await Promise.all(Array.from(form.entries()).filter(([key])=>key!=="publication_id").map(async ([key,value])=>[key,typeof value==="string"?value:{type:value.type,sha256:Buffer.from(await crypto.subtle.digest("SHA-256",await value.arrayBuffer())).toString("hex")} ]));
+      digest=Buffer.from(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(JSON.stringify(entries)))).toString("hex");
     }
     const moderationText = [text, ...(postKind === "poll" ? pollOptions ?? [] : []), location].filter(Boolean).join("\n");
     const result = await moderate(moderationText, allImages[0] ?? null);
