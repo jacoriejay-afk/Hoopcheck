@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import { readGroupUnread,markGroupVisibleRead,type GroupUnread } from "../../apps/mobile/src/native/hoopGroupsRead";
 import { prepareGroupSend, submitGroupSend, type GroupSend } from "../../apps/mobile/src/native/hoopGroupsSend";
+import {readGroupChannelAccess} from "../../apps/mobile/src/native/hoopGroupsChannelAccess";
 import { createGroupRefreshQueue } from "../../apps/mobile/src/native/hoopGroupsRefresh";
 import { withHoopChatDeadline } from "../../apps/mobile/src/native/hoopChatLoad";
 import { setGroupMembership } from "../../apps/mobile/src/native/groupMembership";
@@ -176,6 +177,7 @@ export default function HoopGroupsPage() {
     let running:AbortController|null=null;
     let realtime:ReturnType<typeof supabase.channel>|null=null;
     let pending=false;
+    let socketAllowed=!privateAccessEnabled;
     const currentChannel=channel.id,currentSpace=channel.space_id;
     const generation=loadGeneration.current;
     const current=()=>active&&generation===loadGeneration.current&&channelRef.current===currentChannel;
@@ -190,7 +192,7 @@ export default function HoopGroupsPage() {
       if(previous)void supabase.removeChannel(previous);
     }
     function startRealtime(){
-      if(realtime||!current()||isHidden()||process.env.NEXT_PUBLIC_HOOPGROUPS_REALTIME_ENABLED!=="true")return;
+      if(realtime||!socketAllowed||!current()||isHidden()||process.env.NEXT_PUBLIC_HOOPGROUPS_REALTIME_ENABLED!=="true")return;
       // Only after a caller-bound membership and RLS read succeeded. Do not
       // consume payloads, publish tables, or subscribe across channels.
       const filter="channel_id=eq."+currentChannel;
@@ -210,7 +212,19 @@ export default function HoopGroupsPage() {
           const membership=await supabase.from("hoop_group_members").select("space_id")
             .eq("space_id",currentSpace).eq("user_id",userId).setHeader("Authorization",header).abortSignal(signal).maybeSingle();
           if(membership.error)throw Error("Group membership could not be verified.");
-          if(membership.data?.space_id!==currentSpace){if(current()&&!signal.aborted){stopRealtime();setMemberships(previous=>previous.filter(id=>id!==currentSpace));setUnreadSnapshot(null);setReplySnapshot(null);setPostSnapshot(null);}throw Error("Group membership could not be verified.");}
+          if(membership.data?.space_id!==currentSpace){if(current()&&!signal.aborted){stopRealtime();setMemberships(previous=>previous.filter(id=>id!==currentSpace));setUnreadSnapshot(null);setReplySnapshot(null);setPostSnapshot(null);setDraftSnapshot(null);pendingSend.current=null;if(privateAccessEnabled){setSpaces(previous=>previous.filter(s=>s.id!==currentSpace));setChannels(previous=>previous.filter(c=>c.space_id!==currentSpace));}}throw Error("Group membership could not be verified.");}
+          if(privateAccessEnabled){
+            const access=await readGroupChannelAccess(supabase,currentSpace,currentChannel,header,signal);
+            if(!current()||signal.aborted)throw Error("Channel changed.");
+            socketAllowed=access.channelVisible&&!access.private;
+            if(!socketAllowed)stopRealtime();
+            if(!access.channelVisible){
+              setPostSnapshot(null);setUnreadSnapshot(null);setDraftSnapshot(null);setReplySnapshot(null);pendingSend.current=null;
+              setChannels(previous=>previous.filter(c=>access.spaceVisible?c.id!==currentChannel:c.space_id!==currentSpace));
+              if(!access.spaceVisible){setSpaces(previous=>previous.filter(s=>s.id!==currentSpace));setMemberships(previous=>previous.filter(id=>id!==currentSpace));}
+              throw Error("Channel access changed.");
+            }
+          }
           const blocks=await supabase.from("user_blocks").select("blocked_id").eq("blocker_id",userId).limit(501).setHeader("Authorization",header).abortSignal(signal);
           if(blocks.error||!Array.isArray(blocks.data)||blocks.data.length>500)throw Error("Blocked accounts could not be verified.");
           if(!current()||signal.aborted)throw Error("Channel changed.");
@@ -220,6 +234,18 @@ export default function HoopGroupsPage() {
           if(error||signal.aborted)throw Error("Could not load group discussion posts.");
           let counts:GroupUnread|null=null;
           if(readStateEnabled){try{counts=await readGroupUnread(supabase,currentSpace,header,signal);}catch{/* Do not fabricate unread counts. */}}
+          if(privateAccessEnabled){
+            const access=await readGroupChannelAccess(supabase,currentSpace,currentChannel,header,signal);
+            if(!current()||signal.aborted)throw Error("Channel changed.");
+            socketAllowed=access.channelVisible&&!access.private;
+            if(!socketAllowed)stopRealtime();
+            if(!access.channelVisible){
+              setPostSnapshot(null);setUnreadSnapshot(null);setDraftSnapshot(null);setReplySnapshot(null);pendingSend.current=null;
+              setChannels(previous=>previous.filter(c=>access.spaceVisible?c.id!==currentChannel:c.space_id!==currentSpace));
+              if(!access.spaceVisible){setSpaces(previous=>previous.filter(s=>s.id!==currentSpace));setMemberships(previous=>previous.filter(id=>id!==currentSpace));}
+              throw Error("Channel access changed.");
+            }
+          }
           const after=await verifiedHeader(userId,signal);
           if(after!==header||!current()||signal.aborted)throw Error("Session changed. Refresh messages.");
           if(current()&&!isHidden()&&!signal.aborted)setUnreadSnapshot(counts?{scope,value:counts}:null);

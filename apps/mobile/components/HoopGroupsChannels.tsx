@@ -13,6 +13,7 @@ import { randomUUID } from "expo-crypto";
 import { readGroupUnread,markGroupVisibleRead,type GroupUnread } from "../src/native/hoopGroupsRead";
 import { prepareGroupSend, submitGroupSend, type GroupSend } from "../src/native/hoopGroupsSend";
 import {GroupAccessPanel} from "./GroupAccessPanel";
+import {readGroupChannelAccess} from "../src/native/hoopGroupsChannelAccess";
 import { createGroupRefreshQueue } from "../src/native/hoopGroupsRefresh";
 import { readWithDeadline } from "../src/native/readDeadline";
 import { withHoopChatDeadline } from "../src/native/hoopChatLoad";
@@ -159,6 +160,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
     let running=false;
     let initial=true;
     let resumePending=false;
+    let socketAllowed=!privateAccessEnabled;
     let realtime:ReturnType<typeof supabase.channel>|null=null;
     setPostSnapshot(null);setUnreadSnapshot(null);setPostError("");
     const queue=createGroupRefreshQueue(()=>alive&&(AppState.currentState==="active"||AppState.currentState===null),()=>{
@@ -169,7 +171,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
       if(previous)void supabase.removeChannel(previous);
     }
     function startRealtime(){
-      if(realtime||!alive||(AppState.currentState!=="active"&&AppState.currentState!==null)||process.env.EXPO_PUBLIC_HOOPGROUPS_REALTIME_ENABLED!=="true")return;
+      if(realtime||!socketAllowed||!alive||(AppState.currentState!=="active"&&AppState.currentState!==null)||process.env.EXPO_PUBLIC_HOOPGROUPS_REALTIME_ENABLED!=="true")return;
       const filter="channel_id=eq."+channel!.id;
       const subscription=supabase.channel("hoopgroups-native:"+userId+":"+channel!.id)
         .on("postgres_changes",{event:"INSERT",schema:"public",table:"hoop_group_posts",filter},()=>{if(realtime===subscription)queue.request();})
@@ -192,7 +194,19 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
         if(!alive||controller.signal.aborted)return;
         if(membership.error)throw Error("Membership could not be verified.");
         if(membership.data?.space_id!==channel!.space_id){
-          stopRealtime();setJoined(current=>current.filter(id=>id!==channel!.space_id));setPostSnapshot(null);return;
+          stopRealtime();setJoined(current=>current.filter(id=>id!==channel!.space_id));setPostSnapshot(null);setUnreadSnapshot(null);setDraftState(null);setReplySnapshot(null);pendingSend.current=null;if(privateAccessEnabled){setSpaces(previous=>previous.filter(s=>s.id!==channel!.space_id));setChannels(previous=>previous.filter(c=>c.space_id!==channel!.space_id));}return;
+        }
+        if(privateAccessEnabled){
+          const access=await readGroupChannelAccess(supabase,channel!.space_id,channel!.id,"Bearer "+token,controller.signal);
+          if(!alive||controller.signal.aborted)return;
+          socketAllowed=access.channelVisible&&!access.private;
+          if(!socketAllowed)stopRealtime();
+          if(!access.channelVisible){
+            setPostSnapshot(null);setUnreadSnapshot(null);setDraftState(null);setReplySnapshot(null);pendingSend.current=null;
+            setChannels(previous=>previous.filter(c=>access.spaceVisible?c.id!==channel!.id:c.space_id!==channel!.space_id));
+            if(!access.spaceVisible){setSpaces(previous=>previous.filter(s=>s.id!==channel!.space_id));setJoined(previous=>previous.filter(id=>id!==channel!.space_id));}
+            throw Error("Channel access changed.");
+          }
         }
         const blocked=await readOutgoingBlocks(supabase,userId,controller.signal);
         if(!alive||controller.signal.aborted)return;
@@ -203,6 +217,18 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
         if(readError||controller.signal.aborted)throw Error("Channel messages could not be loaded.");
         let counts:GroupUnread|null=null;
         if(readStateEnabled){try{counts=await readGroupUnread(supabase,channel!.space_id,"Bearer "+token,controller.signal);}catch{/* Do not fabricate unread counts. */}}
+        if(privateAccessEnabled){
+          const access=await readGroupChannelAccess(supabase,channel!.space_id,channel!.id,"Bearer "+token,controller.signal);
+          if(!alive||controller.signal.aborted)return;
+          socketAllowed=access.channelVisible&&!access.private;
+          if(!socketAllowed)stopRealtime();
+          if(!access.channelVisible){
+            setPostSnapshot(null);setUnreadSnapshot(null);setDraftState(null);setReplySnapshot(null);pendingSend.current=null;
+            setChannels(previous=>previous.filter(c=>access.spaceVisible?c.id!==channel!.id:c.space_id!==channel!.space_id));
+            if(!access.spaceVisible){setSpaces(previous=>previous.filter(s=>s.id!==channel!.space_id));setJoined(previous=>previous.filter(id=>id!==channel!.space_id));}
+            throw Error("Channel access changed.");
+          }
+        }
         const current=await safetyToken();
         if(!alive||controller.signal.aborted||current!==token)throw Error("Session changed. Refresh the channel.");
         if(AppState.currentState!=="active"&&AppState.currentState!==null)return;
