@@ -47,7 +47,8 @@ const owner="66666666-6666-4666-8666-666666666666",foreign="77777777-7777-4777-8
 const token="synthetic-e2e-"+crypto.randomBytes(16).toString("hex");
 const product=products.playProduct("hoopcheck.premium","annual");
 const vault=createPlayTokenVault("ab".repeat(32),"cd".repeat(32));
-const fp=vault.fingerprint(token,"test"),expiry=new Date(Date.now()+86400000).toISOString();
+const fp=vault.fingerprint(token,"test");
+let expiry=new Date(Date.now()+86400000).toISOString();
 const {privateKey,publicKey}=crypto.generateKeyPairSync("rsa",{modulusLength:2048});
 const env={HOOPCHECK_PLAY_VERIFICATION_ENABLED:"true",HOOPCHECK_PLAY_ENVIRONMENT:"test",NEXT_PUBLIC_SUPABASE_URL:"https://fixture.supabase.co",HOOPCHECK_PLAY_ISOLATED_SUPABASE_URL:"https://fixture.supabase.co",HOOPCHECK_PLAY_SERVICE_ACCOUNT_EMAIL:"fixture@fixture.iam.gserviceaccount.com",HOOPCHECK_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY:privateKey.export({format:"pem",type:"pkcs8"}).toString(),HOOPCHECK_PLAY_ACCOUNT_HMAC_KEY:"ef".repeat(32)};
 let acknowledged=false,revoked=false,ackCount=0,client;
@@ -159,7 +160,7 @@ const now=Date.now(),sec=Math.floor(now/1000),b64=v=>Buffer.from(JSON.stringify(
 const unsigned=b64({alg:"RS256",kid:"fixture"})+"."+b64({iss:"https://accounts.google.com",aud:config.audience,email:config.email,email_verified:true,sub:config.subject,iat:sec-1,exp:sec+3590});
 const auth="Bearer "+unsigned+"."+crypto.sign("RSA-SHA256",Buffer.from(unsigned),privateKey).toString("base64url");
 const keyRequest=async(url,init)=>{assert.equal(url,"https://www.googleapis.com/oauth2/v3/certs");assert.equal(init.method,"GET");return json({keys:[{...publicKey.export({format:"jwk"}),kid:"fixture",alg:"RS256",use:"sig"}]});};
-const event={subscription:sub,message:{messageId:"987654321",data:Buffer.from(JSON.stringify({version:"1.0",packageName:"online.hoopcheck.app",eventTimeMillis:String(now),subscriptionNotification:{version:"1.0",notificationType:13,purchaseToken:token}})).toString("base64")}};
+const event={subscription:sub,message:{messageId:"987654321",data:Buffer.from(JSON.stringify({version:"1.0",packageName:"online.hoopcheck.app",eventTimeMillis:String(now),subscriptionNotification:{version:"1.0",notificationType:2,purchaseToken:token}})).toString("base64")}};
 const ingress={enabled:()=>true,authenticate:a=>authenticatePlayPush(a,config,keyRequest,now),subscription:sub,fingerprint:t=>vault.fingerprint(t,"test"),enqueue:adapter.enqueue,now:()=>now};
 const pushOptions={scope:"disposable_pg17",config:{...config,subscription:sub},db:adapter,runtime,vault,keyRequest,now:()=>now};
 const push={POST:app.notificationPOST,tick:app.tick};
@@ -171,8 +172,14 @@ assert.equal((await send(event,"Bearer invalid")).status,503);
 assert.equal((await send(event)).status,204);assert.equal((await send(event)).status,204);
 assert.equal(sql("select count(*) from play_billing_candidate.notification_jobs where message_id='987654321'"),"1");
 const ports={enabled:()=>true,lease:adapter.lease,lookup:adapter.lookup,open:async c=>vault.open(await adapter.credential(c),c.owner,"test"),fingerprint:t=>vault.fingerprint(t,"test"),begin:adapter.begin,verify:runtime.notificationVerify,complete:adapter.complete,finish:adapter.finish,now:Date.now};
-// A renewal/refresh must preserve a fulfilled shadow membership at the new generation.
+// A renewal must advance the provider period end and carry a durable receipt into the new generation.
+const previousExpiry=expiry;
+expiry=new Date(Date.parse(expiry)+30*86400000).toISOString();
 assert.equal(await push.tick(),"done");
+assert.equal(sql("select current_period_end="+q(expiry)+"::timestamptz and current_period_end>"+q(previousExpiry)+"::timestamptz and cancel_at_period_end=false from play_billing_candidate.shadow_play_sources where source_id="+q(fp)),"t");
+assert.equal(sql("select auto_renew_enabled and period_end="+q(expiry)+"::timestamptz from play_billing_candidate.lifecycle_metadata where fingerprint="+q(fp)+" order by generation desc limit 1"),"t");
+assert.equal(ackCount,1);
+console.log("Renewal period extension and auto-renew metadata verified.");
 assert.equal(sql("select provider||':'||plan from play_billing_candidate.shadow_membership_entitlements where user_id="+q(owner)),"google_play_test:premium");
 const expiredEvent={...event,message:{...event.message,messageId:"987654322"}};
 assert.equal((await send(expiredEvent)).status,204);
