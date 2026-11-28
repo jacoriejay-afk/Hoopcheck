@@ -1,3 +1,4 @@
+import { refreshNativeChatPush, subscribeChatPushRefresh } from "../src/native/nativeChatPush";
 import {readChatPushPreference} from "../src/native/chatPush";
 import { useHaptics } from "../src/native/haptics";
 import { HoopCheckLoading } from "../components/HoopCheckLoading";
@@ -64,6 +65,9 @@ export default function Notifications() {
       if (current === generation.current) { setFailed(true); setError(failure instanceof Error ? failure.message : "Alerts could not load. Try again."); }
     } finally { if (current === generation.current) setLoading(false); }
   }, [offline]);
+  useEffect(() => subscribeChatPushRefresh(uid => {
+    if (focused.current && owner.current === uid) void load();
+  }), [load]);
   useFocusEffect(useCallback(() => {
     focused.current = true; void load();
     return () => { focused.current = false; generation.current++; owner.current = null;setPushPreference(null);setPushMessage("");pushLock.current=null;setPushBusy(false); setRows([]); marking.current=false;paging.current=false;setBusy(false);setLoadingOlder(false); setQuery(""); setFilter("all"); };
@@ -150,6 +154,7 @@ export default function Notifications() {
     try{
       const value=await withAlertDeadline(signal=>readChatPushPreference(supabase,uid,enabled,signal));
       if(rev!==generation.current||owner.current!==uid||!focused.current)return;
+      if (enabled !== null) refreshNativeChatPush(value);
       setPushPreference(value);setPushMessage(enabled===null?"Preference checked.":value?"Preference saved. Device registration and provider acceptance are required for delivery.":"Push disabled and registered devices revoked.");
     }catch{if(rev===generation.current&&owner.current===uid){setPushPreference(null);setPushMessage("Push preference could not be verified.");}}
     finally{if(pushLock.current===rev){pushLock.current=null;if(rev===generation.current) setPushBusy(false);}}

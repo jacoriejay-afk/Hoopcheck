@@ -1,3 +1,4 @@
+import { revokeNativeChatPushBeforeSignOut } from "../src/native/nativeChatPush";
 import { useEffect, useState, type ReactNode } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
@@ -117,6 +118,7 @@ export default function AccountScreen() {
     if (signingOut) return;
     setSigningOut(true); setSignOutError("");
     try {
+      await revokeNativeChatPushBeforeSignOut();
       const result = await supabase.auth.signOut({ scope: "local" });
       if (result.error) throw result.error;
       router.replace("/sign-in");

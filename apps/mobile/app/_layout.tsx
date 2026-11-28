@@ -11,6 +11,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import * as SplashScreen from "expo-splash-screen";
 import { DevicePreferences } from "../src/native/preferences";
+import { NativeChatPush } from "../src/native/nativeChatPush";
 import { NetworkProvider } from "../src/native/network";
 import { MotionProvider } from "../src/motion/Provider";
 import { PublicSystemNavigation } from "../components/PublicSystemLinks";
@@ -111,6 +112,7 @@ function RootLayout() {
   // Router from mounting or leave a blank screen after the splash deadline.
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.background }}><SafeAreaProvider><MotionProvider><DevicePreferences><NetworkProvider><MfaSessionProvider userId={session.userId}><NativeAccountProvider><StoreKitProvider><NativeDraftProvider><BottomSheetModalProvider>
+      <NativeChatPush owner={sessionReady && !session.pendingSocialSignup ? session.userId : null} />
       <StatusBar style={theme.dark ? "light" : "dark"} />
       <Stack
         screenOptions={{

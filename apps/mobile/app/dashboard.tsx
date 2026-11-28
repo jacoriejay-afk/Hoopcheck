@@ -1,3 +1,4 @@
+import { revokeNativeChatPushBeforeSignOut } from "../src/native/nativeChatPush";
 import { HomeCourtside } from "../components/HomeCourtside";
 import { RoleHub } from "../components/RoleHub";
 import { useNativeAccount } from "../src/native/useNativeAccount";
@@ -64,6 +65,7 @@ export default function DashboardScreen() {
 
   async function signOut() {
     setBusy(true);
+    await revokeNativeChatPushBeforeSignOut();
     const { error } = await supabase.auth.signOut();
     setBusy(false);
     if (error) {
