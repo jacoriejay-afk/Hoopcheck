@@ -42,7 +42,7 @@ export default function Notifications() {
   }, [tab]);
   const load = useCallback(async () => {
     const current = ++generation.current;
-    owner.current = null; paging.current = false; setLoadingOlder(false); setHasMore(false); setRows([]); setLoading(true); setError(""); setFailed(false);
+    owner.current = null; paging.current = false; marking.current=false;setBusy(false);setLoadingOlder(false); setHasMore(false); setRows([]); setLoading(true); setError(""); setFailed(false);
     try {
       if (offline) throw new Error("Reconnect to view alerts.");
       await requireOnline();
@@ -59,14 +59,14 @@ export default function Notifications() {
   }, [offline]);
   useFocusEffect(useCallback(() => {
     focused.current = true; void load();
-    return () => { focused.current = false; generation.current++; owner.current = null; setRows([]); setQuery(""); setFilter("all"); };
+    return () => { focused.current = false; generation.current++; owner.current = null; marking.current=false;paging.current=false;setBusy(false);setLoadingOlder(false);setRows([]); setQuery(""); setFilter("all"); };
   }, [load]));
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       const action = hoopChatAuthAction(event, owner.current, session?.user.id ?? null);
       if (action === "ignore") return;
-      generation.current++; owner.current = null; setRows([]); setQuery(""); setFilter("all");
+      generation.current++; owner.current = null; marking.current=false;paging.current=false;setBusy(false);setLoadingOlder(false);setRows([]); setQuery(""); setFilter("all");
       clearTimeout(timer);
       if (action === "clear") {
         setLoading(false); setFailed(true); setError("Sign in to view your alerts.");
@@ -114,7 +114,7 @@ export default function Notifications() {
       });
       if (current === generation.current && owner.current === userId) setRows(previous => previous.map(item => result.ids.includes(item.id) ? { ...item, read_at: item.read_at || result.readAt } : item));
     } catch (failure) { if (current === generation.current) setError(failure instanceof Error ? failure.message : "Alerts could not be marked as read."); }
-    finally { marking.current = false; setBusy(false); }
+    finally { if(current===generation.current){marking.current = false; setBusy(false);} }
   }
   async function openNotice(item: Notice, navigate = true) {
     const path = notificationPath(item);
@@ -134,7 +134,7 @@ export default function Notifications() {
       }
       if (navigate && path && current === generation.current && owner.current === userId) { haptic("tab"); router.push(nativeDestination(path) as "/dashboard"); }
     } catch (failure) { if (current === generation.current) setError(failure instanceof Error ? failure.message : "Activity could not be opened."); }
-    finally { marking.current = false; setBusy(false); }
+    finally { if(current===generation.current){marking.current = false; setBusy(false);} }
   }
   const items = offline ? [] : rows;
   const visibleItems = items.filter(item => noticeMatches(item, filter) && noticeSearchMatches(item, query));
@@ -167,7 +167,7 @@ export default function Notifications() {
       ? <MessagesScreen embedded mode={section === "chat" ? "conversations" : "requests"} />
       : <FlatList ListHeaderComponent={<View style={{ gap: 8, paddingBottom: 9 }}>
       <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:8}}><Text style={{ color: theme.muted, fontSize: 12,flex:1 }}>{loading ? "Checking activity…" : `${items.filter(item => !item.read_at).length} unread · ${items.length} loaded${hasMore ? " · more available" : ""}`}</Text><Pressable accessibilityRole="button" disabled={!canMarkAll} accessibilityState={{disabled:!canMarkAll}} onPress={()=>void markAll()} style={{minHeight:44,justifyContent:"center",paddingHorizontal:5}}><Text style={{color:canMarkAll?theme.accent:theme.muted,fontSize:12,fontWeight:"700"}}>{busy?"Updating…":"Mark all as read"}</Text></Pressable></View>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{["all", "unread", "games", "clubs", "reviews"].map(value => <Pressable key={value} accessibilityRole="button" aria-pressed={filter === value} accessibilityState={{ selected: filter === value }} onPress={() => setFilter(value)} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 9, borderRadius: 14, backgroundColor: filter === value ? theme.accentSurface : theme.chip }}><Text style={{ color: filter === value ? theme.accent : theme.foreground, fontSize: 12, textTransform: "capitalize" }}>{value}</Text></Pressable>)}</View>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{["all", "unread", "messages", "games", "clubs", "reviews"].map(value => <Pressable key={value} accessibilityRole="button" aria-pressed={filter === value} accessibilityState={{ selected: filter === value }} onPress={() => setFilter(value)} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 9, borderRadius: 14, backgroundColor: filter === value ? theme.accentSurface : theme.chip }}><Text style={{ color: filter === value ? theme.accent : theme.foreground, fontSize: 12, textTransform: "capitalize" }}>{value}</Text></Pressable>)}</View>
       <View style={{flexDirection:"row",alignItems:"center",gap:8,borderWidth:1,borderColor:theme.glassBorder,borderRadius:12,paddingHorizontal:10}}>
         <Ionicons name="search-outline" size={18} color={theme.muted}/>
         <TextInput accessibilityLabel="Search loaded alerts" placeholder="Search loaded alerts" placeholderTextColor={theme.muted} value={query} onChangeText={setQuery} autoCorrect={false} autoCapitalize="none" maxLength={160} returnKeyType="search" style={{flex:1,minHeight:44,color:theme.foreground,fontSize:14}}/>

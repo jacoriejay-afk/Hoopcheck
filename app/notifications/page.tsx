@@ -11,7 +11,7 @@ import HoopChatInbox from "../../components/HoopChatInbox";
 import { ALERT_FILTERS, matchesAlertFilter, matchesAlertSearch, type AlertFilter } from "../../lib/alert-list";
 import "./notifications-threads.css";
 
-type Notice={id:string;target_type:"team"|"coach"|"league"|"game";target_id:string;notification_type:"review"|"rating"|"update"|"trust_score"|"roster_spot"|"pay_warning"|"game_reminder";title:string;body:string;read_at:string|null;created_at:string};
+type Notice={id:string;target_type:"team"|"coach"|"league"|"game"|"conversation";target_id:string;notification_type:"review"|"rating"|"update"|"trust_score"|"roster_spot"|"pay_warning"|"game_reminder"|"chat_message";title:string;body:string;read_at:string|null;created_at:string};
 
 export default function NotificationsPage(){
   const [items,setItems]=useState<Notice[]>([]);
@@ -114,6 +114,7 @@ export default function NotificationsPage(){
           roster_spot: { label: "ROSTER SPOT", icon: "users" },
           pay_warning: { label: "PAY WARNING", icon: "whistle" },
           game_reminder: { label: "GAME REMINDER", icon: "bell" },
+          chat_message: {label:"HOOPCHAT MESSAGE",icon:"message-square"},
         };
         const item = meta[n.notification_type] || meta.update;
         return <article key={n.id} className={"hc-alert-card " + (!n.read_at ? "unread" : "")}>
@@ -121,7 +122,7 @@ export default function NotificationsPage(){
             <span className={"hc-alert-type hc-alert-type--" + n.notification_type}><HoopIcon name={item.icon} size={14} />{item.label} · {new Date(n.created_at).toLocaleString()}</span>
             <strong>{n.title}</strong><small>{n.body}</small>
           </Link>
-          {(!n.read_at||(href&&n.target_type!=="game"))&&<div className="hc-alert-card__controls">{!n.read_at&&<button type="button" disabled={marking||loadingOlder} onClick={()=>void markRead(n.id)} aria-label={"Mark alert as read: "+n.title}>Mark read</button>}{href&&n.target_type!=="game"&&<WatchButton targetType={n.target_type} targetId={n.target_id} targetName={n.title}/>}</div>}
+          {(!n.read_at||(href&&n.target_type!=="game"&&n.target_type!=="conversation"))&&<div className="hc-alert-card__controls">{!n.read_at&&<button type="button" disabled={marking||loadingOlder} onClick={()=>void markRead(n.id)} aria-label={"Mark alert as read: "+n.title}>Mark read</button>}{href&&n.target_type!=="game"&&n.target_type!=="conversation"&&<WatchButton targetType={n.target_type} targetId={n.target_id} targetName={n.title}/>}</div>}
         </article>;
       }) : <div className="hc-alerts-empty" role="status"><strong>{items.length?(query.trim()?"No matching alerts":"No alerts in this category"):"No notifications yet"}</strong><p>{items.length?(query.trim()?"Try another search or filter.":"Try a different filter."):"Follow a team to get updates here."}</p>{!items.length&&<Link href="/teams">Explore teams</Link>}</div>}
       {hasMore&&<button type="button" className="hc-alerts-heading__read" disabled={loadingOlder||marking||loading} onClick={()=>void loadOlder()} aria-busy={loadingOlder}>{loadingOlder?"Loading older alerts…":"Load older alerts"}</button>}

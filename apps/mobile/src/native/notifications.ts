@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {parseChatThread} from "./hoopChatLink.ts";
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export type Notice = { id: string; target_type: string; target_id: string; notification_type: string; title: string; body: string; read_at: string | null; created_at: string };
 export const NOTIFICATION_PAGE_SIZE = 100;
@@ -72,12 +73,13 @@ export function notificationPath(notice: Pick<Notice, "target_type" | "target_id
     case "league": return `/leagues/${notice.target_id}`;
     case "womens-team": return `/womens/${notice.target_id}`;
     case "game": return `/fan-live?gameId=${notice.target_id}`;
+    case "conversation": {const id=parseChatThread(notice.target_id);return id?`/messages?thread=${id}`:null;}
     default: return null;
   }
 }
 export function noticeMatches(notice: Notice, filter: string) {
   const review = ["review", "rating", "trust_score", "pay_warning"].includes(notice.notification_type);
-  return filter === "all" || (filter === "unread" && !notice.read_at) || (filter === "games" && notice.target_type === "game") || (filter === "reviews" && review) || (filter === "clubs" && notice.target_type !== "game" && !review);
+  return filter === "all" || (filter === "unread" && !notice.read_at) || (filter === "games" && notice.target_type === "game") || (filter === "reviews" && review) || (filter === "messages" && notice.target_type === "conversation") || (filter === "clubs" && notice.target_type !== "game" && notice.target_type !== "conversation" && !review);
 }
 
 // Search only the already authorized, loaded activity rows. No query is sent to the server.

@@ -33,6 +33,8 @@ const safeStorageSet=(key:string,value:string)=>{try{window.localStorage.setItem
 const formatTime=(date:string)=>new Date(date).toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});
 const initials=(name:string)=>name.trim().split(/\s+/).slice(0,2).map(part=>part[0]).join("").toUpperCase()||"HC";
 
+import {parseChatThread,readLinkedChatThread} from "../apps/mobile/src/native/hoopChatLink";
+
 export default function HoopChatCourtside(){
   const [userId,setUserId]=useState("");
   const [sessionRevision,setSessionRevision]=useState(0);
@@ -127,6 +129,12 @@ export default function HoopChatCourtside(){
         if(requestError)throw new Error("Could not load private conversations.");
         const rows=((requestRows||[]) as ChatRequest[]).filter(row=>
           !blockedIds.has(row.requester_id===user.id?row.player_id:row.requester_id));
+        const fromUrl=parseChatThread(new URLSearchParams(window.location.search).get("thread"));
+        if(fromUrl&&!rows.some(r=>r.id===fromUrl)){
+          const linked=await readLinkedChatThread(supabase,user.id,fromUrl,blockedIds,header,signal);
+          if(!valid()||signal.aborted)return;
+          if(linked){rows.unshift(linked);if(rows.length>100)rows.pop();}
+        }
         const peers=[...new Set(rows.map(r=>r.requester_id===user.id?r.player_id:r.requester_id))];
         const accepted=rows.filter(r=>r.status==="accepted").map(r=>r.id);
         const [history,profileResult,unread]=await Promise.all([
@@ -145,8 +153,7 @@ export default function HoopChatCourtside(){
         setRequests(rows);setMessages((history.data||[]) as ChatMessage[]);
         setContacts(Object.fromEntries(((profileResult.data||[]) as ChatContact[]).map(c=>[c.id,c])));
         setSelectedId(current=>{
-          const fromUrl=new URLSearchParams(window.location.search).get("thread");
-          if(fromUrl&&rows.some(r=>r.id===fromUrl))return fromUrl;
+          if(fromUrl)return rows.some(r=>r.id===fromUrl&&r.status==="accepted")?fromUrl:null;
           if(current&&rows.some(r=>r.id===current))return current;
           return rows[0]?.id||null;
         });

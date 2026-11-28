@@ -1,4 +1,5 @@
 import { supportTopic } from "./supportTopic.ts";
+import {parseChatThread} from "./hoopChatLink.ts";
 import { appRecoveryPath, recoveryLink } from "../../../../lib/auth/password-recovery.ts";
 
 /** A shared group slug is a navigation hint, never an access credential. */
@@ -68,6 +69,10 @@ export function nativeDestination(path: string): string {
     if (parts.length === 3 && parts[0] === "womens" && parts[1] === "teams" && safeId.test(parts[2])) return `/womens/${parts[2]}`;
     if (parts.length === 3 && parts[0] === "womens" && parts[1] === "leagues" && safeId.test(parts[2])) return `/womens/leagues/${parts[2]}`;
     if (parts.length === 2 && ["teams", "womens", "leagues", "players", "coaches"].includes(parts[0]) && safeId.test(parts[1])) return `/${parts[0]}/${parts[1]}`;
+    if (url.pathname === "/messages") {
+      const thread=url.searchParams.getAll("thread");const id=thread.length===1?parseChatThread(thread[0]):null;
+      return "/messages"+(id?"?thread="+id:"");
+    }
     if (parts.length === 1 && ["account", "teams", "womens", "leagues", "players", "coaches", "dashboard", "settings", "membership", "messages", "feed-welcome", "about", "sign-in", "sign-up", "forgot-password", "choose-username"].includes(parts[0])) return url.pathname;
     if (url.pathname === "/feed" || url.pathname === "/fan-feed") {
       const post = url.searchParams.get("post") || /^#post-([0-9a-f-]{36})$/i.exec(url.hash)?.[1];

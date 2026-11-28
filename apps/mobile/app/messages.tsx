@@ -3,7 +3,8 @@ import { AppState, Pressable, ScrollView, Text, TextInput, View } from "react-na
 import { Ionicons } from "@expo/vector-icons";
 import { randomUUID } from "expo-crypto";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import {parseChatThread,readLinkedChatThread} from "../src/native/hoopChatLink";
 import { Button } from "../src/primitives";
 import {PlayerReferencePanel} from "../components/PlayerReferencePanel";
 import { ConversationSafety } from "../components/ConversationSafety";
@@ -46,6 +47,9 @@ async function verifyChatPeer(uid:string,peer:string,signal:AbortSignal){
 export default function MessagesScreen({ embedded = false, mode = "all" }: { embedded?: boolean; mode?: "all" | "conversations" | "requests" } = {}) {
   const theme = useEntryTheme();
   const router = useRouter();
+  const params=useLocalSearchParams<{thread?:string}>();
+  const threadHint=embedded?null:parseChatThread(params.thread);
+  const consumedLink=useRef<string|null>(null);
   const { offline } = useNetwork();
   const [userId, setUserId] = useState("");
   const [requests, setRequests] = useState<ContactRequest[]>([]);
@@ -95,6 +99,10 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
           .order("created_at", { ascending: false }).limit(100).setHeader("Authorization",header).abortSignal(signal);
         if (requestError) throw new Error("Messages could not be loaded.");
         const rows = ((data || []) as ContactRequest[]).filter(row=>!blockedIds.has(row.requester_id===user.id?row.player_id:row.requester_id));
+        if(threadHint&&!rows.some(row=>row.id===threadHint)){
+          const linked=await readLinkedChatThread(supabase,user.id,threadHint,blockedIds,header,signal);
+          if(linked){rows.unshift(linked);if(rows.length>100)rows.pop();}
+        }
         const accepted = rows.filter(item => item.status === "accepted").map(item => item.id);
         const peerIds = [...new Set(rows.map(item => item.requester_id === user.id ? item.player_id : item.requester_id))];
         const [history, people, unread] = await Promise.all([
@@ -116,19 +124,25 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       setUserId(result.userId); setRequests(result.rows); setMessages(result.messages);
       setServerUnread(result.unread ? { owner:result.userId, counts:result.unread } : null);
       setContacts(Object.fromEntries(result.contacts.map(person => [person.id, person])));
-      setSelectedId(current => result.rows.some(item => item.id === current) ? current : (result.rows[0]?.id || ""));
+      const linkKey=threadHint?result.userId+":"+threadHint:null;
+      if(linkKey&&consumedLink.current!==linkKey){
+        consumedLink.current=linkKey;
+        const linked=result.rows.find(row=>row.id===threadHint&&row.status==="accepted");
+        setSelectedId(linked?.id||"");setOpenedId(linked?.id||"");setOpenedMode(mode);
+        if(!linked)setError("Conversation unavailable.");
+      }else setSelectedId(current => result.rows.some(item => item.id === current) ? current : (result.rows[0]?.id || ""));
     } catch (failure) {
       if (revision === generation.current) { setRequests([]);setMessages([]);setContacts({});setOpenedId("");setThreadPage(null);setServerUnread(null);setError(failure instanceof Error ? failure.message : "Unable to load messages."); }
     } finally {
       if (revision === generation.current) setLoading(false);
     }
-  }, []);
+  }, [threadHint,mode]);
 
   useFocusEffect(useCallback(() => {
     focused.current = true;
     void load();
     return () => {
-      focused.current = false;
+      focused.current = false;consumedLink.current=null;
       if (reloadTimer.current !== null) clearTimeout(reloadTimer.current);
       reloadTimer.current = null;
       generation.current++;
@@ -146,7 +160,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       reloadTimer.current = null;
       generation.current++;
       setServerUnread(null);
-      authIdentity.current = nextUserId;
+      authIdentity.current = nextUserId;consumedLink.current=null;
       pendingMessages.current.clear();
       setRequests([]); setMessages([]); setContacts({}); setUserId(""); setSelectedId(""); setOpenedId(""); setSearch(""); setReplyTarget(null); setForwardSelection(null); setThreadPage(null); setThreadError(null); historyRequest.current++; historyPaging.current=false; setHistoryBusy(false);
       if (action === "clear") {
