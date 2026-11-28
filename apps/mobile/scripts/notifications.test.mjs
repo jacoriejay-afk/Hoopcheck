@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createClient } from '@supabase/supabase-js';
-import { readNotifications, markNotificationsRead, notificationPath, noticeMatches, noticeSearchMatches, verifiedAlertSession } from '../src/native/notifications.ts';
+import { readNotifications, markNotificationsRead, notificationPath, noticeMatches, noticeSearchMatches, verifiedAlertSession, appendNotificationPage, NOTIFICATION_PAGE_SIZE } from '../src/native/notifications.ts';
 const uid='11111111-1111-4111-8111-111111111111';
 test('alerts read and mark actual read_at fields only for authenticated viewer',async()=>{
   const calls=[];
@@ -69,4 +69,21 @@ test("verified alert session pins caller for read and write, rejects wrong ident
  assert.ok(calls.every(c=>c.auth==="Bearer fixture-token"&&c.url.searchParams.get("user_id")==="eq."+uid));
  await assert.rejects(readNotifications(db,id,undefined,scope));ctrl.abort();await assert.rejects(markNotificationsRead(db,uid,new Date(),id,scope));
  db.auth.getUser=async()=>({error:null,data:{user:{id}}});await assert.rejects(verifiedAlertSession(db,new AbortController().signal,uid));assert.equal(calls.length,2);
+});
+
+test("shared alert pages deduplicate overlapping IDs and stop when the cursor cannot advance",()=>{
+ const first=[{id:"a"},{id:"b"}];
+ assert.deepEqual(appendNotificationPage(first,[{id:"b"},{id:"c"},{id:"c"}]),{rows:[...first,{id:"c"}],hasMore:false});
+ const full=Array.from({length:NOTIFICATION_PAGE_SIZE},(_,i)=>({id:"older-"+i}));
+ assert.equal(appendNotificationPage(first,full).hasMore,true);
+ assert.deepEqual(appendNotificationPage(full,full),{rows:full,hasMore:false});
+ assert.deepEqual(appendNotificationPage(first,[]),{rows:first,hasMore:false});
+});
+test("late alert responses cannot acknowledge a cancelled read or mutation",async()=>{
+ for(const write of [false,true]){
+  const controller=new AbortController();
+  const db=createClient("https://fixture.supabase.co","key",{auth:{persistSession:false,autoRefreshToken:false},global:{fetch:async()=>{controller.abort();return Response.json([{id:uid}]);}}});
+  const scope={uid,bearer:"Bearer fixture-token",signal:controller.signal};
+  await assert.rejects(write?markNotificationsRead(db,uid,new Date(),uid,scope):readNotifications(db,uid,undefined,scope),/Invalid alert session/);
+ }
 });

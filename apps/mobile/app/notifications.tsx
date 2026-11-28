@@ -12,7 +12,7 @@ import { useEntryTheme } from "../src/theme";
 import { supabase } from "../src/lib/supabase";
 import { requireOnline, useNetwork } from "../src/native/network";
 import { nativeDestination } from "../src/native/deepLinks";
-import { markNotificationsRead, verifiedAlertSession, withAlertDeadline, noticeMatches, noticeSearchMatches, notificationPath, readNotifications, NOTIFICATION_PAGE_SIZE, type Notice } from "../src/native/notifications";
+import { markNotificationsRead, verifiedAlertSession, withAlertDeadline, noticeMatches, noticeSearchMatches, notificationPath, readNotifications, NOTIFICATION_PAGE_SIZE, appendNotificationPage, type Notice } from "../src/native/notifications";
 
 export default function Notifications() {
   const theme = useEntryTheme();
@@ -91,11 +91,8 @@ export default function Notifications() {
         return readNotifications(supabase,userId,cursor,scope);
       });
       if (current !== generation.current || owner.current !== userId) return;
-      setRows(previous => {
-        const seen = new Set(previous.map(row => row.id));
-        return [...previous, ...older.filter(row => !seen.has(row.id))];
-      });
-      setHasMore(older.length === NOTIFICATION_PAGE_SIZE);
+      const page=appendNotificationPage(rows,older);
+      setRows(page.rows);setHasMore(page.hasMore);
     } catch (failure) {
       if (current === generation.current) setError(failure instanceof Error ? failure.message : "Older alerts could not load. Try again.");
     } finally {
