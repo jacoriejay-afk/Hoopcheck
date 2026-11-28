@@ -65,7 +65,11 @@ export function createPlayPurchaseCoordinator(deps:Dependencies){
     const scan=await deps.restore(accountId);await current(s);
     if(!obj(scan)||scan.accountId!==accountId||!Array.isArray(scan.candidates)||scan.candidates.length>100||
      typeof scan.pendingCount!=="number"||!Number.isInteger(scan.pendingCount)||scan.pendingCount<0||scan.pendingCount>100)return null;
-    let verified=0,failed=0;const seen=new Map<string,string>();
+    const marker=await deps.journal.read();await current(s);
+    const matching=marker?.owner===s.owner&&marker.accountId===accountId?marker:null;
+    const unmatched=scan.unmatchedCount??0;
+    if(typeof unmatched!=="number"||!Number.isInteger(unmatched)||unmatched<0||unmatched>100)return null;
+    let verified=0,failed=unmatched;const seen=new Map<string,string>();
     const candidates:{productId:string;token:string}[]=[];
     for(const item of scan.candidates){
      await current(s);
@@ -77,7 +81,8 @@ export function createPlayPurchaseCoordinator(deps:Dependencies){
     }
     for(const item of candidates){
      await current(s);
-     const reply=await deps.sync(null,item.productId,item.token,s.token);
+     const exactIntent=matching?.productId===item.productId?matching.intentId??null:null;
+     const reply=await deps.sync(exactIntent,item.productId,item.token,s.token);
      await current(s);
      if(obj(reply)&&reply.owner===s.owner&&reply.environment==="test"&&reply.outcome==="test_fulfillment_confirmed")verified++;
      else failed++;
@@ -121,7 +126,7 @@ export function createPlayPurchaseCoordinator(deps:Dependencies){
     const permit=await deps.consume({...intent},s.token);
     await current(s);
     if(!fresh(intent)||!obj(permit)||permit.owner!==s.owner||permit.intentId!==intent.intentId||permit.environment!=="test"||permit.outcome!=="sandbox_launch_authorized"||permit.membershipGranted!==false)return "held";
-    if(await deps.journal.read()||!await deps.journal.mark(s.owner,intent.accountId))return "held";
+    if(await deps.journal.read()||!await deps.journal.mark(s.owner,intent.accountId,{intentId:intent.intentId,productId:intent.productId}))return "held";
     await current(s);
     if(!fresh(intent))return "held";
     const result=await deps.launch({...intent});

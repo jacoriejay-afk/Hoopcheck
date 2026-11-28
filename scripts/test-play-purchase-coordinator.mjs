@@ -76,7 +76,7 @@ test("a different owner cannot clear an interrupted purchase fence",async()=>{
 
 test("interruption survives process restart and is cleared only by same-account clean recovery",async()=>{
  const f=fixture();assert.equal(await f.client.prepare(quote),true);assert.equal(await f.client.launch(),"launched");
- const raw=await f.storage.read();assert.deepEqual(JSON.parse(raw),{version:1,owner,accountId,environment:"test"});assert.doesNotMatch(raw,/fixture-session|synthetic-purchase-token/);
+ const raw=await f.storage.read();assert.deepEqual(JSON.parse(raw),{version:1,owner,accountId,environment:"test",intentId:f.intent.intentId,productId:quote.productId});assert.doesNotMatch(raw,/fixture-session|synthetic-purchase-token/);
  const restarted=createPlayPurchaseCoordinator({...f.deps,journal:createPlayRecoveryJournal(f.storage)});restarted.setOwner(owner);
  assert.equal(await restarted.prepare(quote),false);
  f.deps.restore=async()=>({accountId,pendingCount:0,candidates:[]});
@@ -99,4 +99,13 @@ test("foreground and purchase callbacks always query authenticated account and n
 test("foreground rejects expired or MFA-invalid session without restoring",async()=>{
  const f=fixture();f.state.session=null;let calls=0;f.deps.restore=async()=>{calls++;return {};};
  assert.equal(await f.client.foreground(),null);assert.equal(calls,0);
+});
+
+test("recovery sends the exact durable intent only for matching product and account",async()=>{
+ const f=fixture(),seen=[];f.deps.sync=async(i,p,t)=>{seen.push([i,p]);return {owner,environment:"test",outcome:"test_fulfillment_confirmed"};};
+ assert.equal(await f.client.prepare(quote),true);assert.equal(await f.client.launch(),"launched");
+ const next=createPlayPurchaseCoordinator({...f.deps,journal:createPlayRecoveryJournal(f.storage)});next.setOwner(owner);
+ f.deps.restore=async()=>({accountId,pendingCount:0,candidates:[{accountId,productId:"hoopcheck.premium",token:"synthetic-other-purchase"},{accountId,productId:quote.productId,token:"synthetic-purchase-token"}]});
+ assert.deepEqual(await next.foreground(),{verified:2,pending:0,failed:0});
+ assert.deepEqual(seen,[[null,"hoopcheck.premium"],[f.intent.intentId,quote.productId]]);
 });

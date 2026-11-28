@@ -47,10 +47,10 @@ export function createDisposablePlayRuntime(p:{
    return v;
   },
   async identity(request:Request){try{const s=await auth(request);return s?{owner:s.owner,accountId:accountId(s.owner),environment:"test"}:null;}catch{return null;}},
-  async sync(request:Request,productId:string,token:string){
+  async sync(request:Request,productId:string,token:string,intentId:string|null=null){
    try{
     const s=await auth(request);
-    if(!s||typeof token!=="string"||! /^[A-Za-z0-9._~-]{16,4096}$/.test(token))return null;
+    if(!s||typeof token!=="string"||! /^[A-Za-z0-9._~-]{16,4096}$/.test(token)||(intentId!==null&&(typeof intentId!=="string"||!uuid.test(intentId))))return null;
     const fingerprint=(t:string)=>p.vault.fingerprint(t,"test");
     const first=await p.provider.verifyRuntime(s.owner,token,fingerprint);
     if(!first.product||first.product.productId!==productId||!canPurchasePlayProduct(s.role,first.product)||!same(s,await auth(request)))return null;
@@ -62,7 +62,7 @@ export function createDisposablePlayRuntime(p:{
     const fulfill=(c:Receipt|{owner:string;fingerprint:string;productId:string;basePlanId:string},g:number,state:string,expiry:string)=>previous?p.db.fulfillReplacement(c,g,state,expiry,previous):p.db.fulfill(c,g,state,expiry);
     const outcome=await reconcileTestPurchase({owner:s.owner,role:s.role,productId,basePlanId:product.basePlanId,token},{
      now:p.now,authorize:current,verify,seal:p.vault.seal,
-     claim:(o,v,sealed)=>previous?p.db.claimReplacement(o,accountId(o),previous,v,sealed):p.db.claimBound(o,accountId(o),v,sealed),
+     claim:(o,v,sealed)=>previous?p.db.claimReplacement(o,accountId(o),previous,v,sealed,intentId):p.db.claimBound(o,accountId(o),v,sealed,intentId),
      async fulfillTest(o,v,sealed,expiresAt){
       const c={owner:o,fingerprint:sealed.fingerprint,productId:v.productId,basePlanId:v.basePlanId};
       const g=await p.db.begin(c);if(g===null)return null;

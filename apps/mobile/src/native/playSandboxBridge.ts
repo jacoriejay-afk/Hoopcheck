@@ -20,6 +20,6 @@ export function createPlaySandboxBridge(p:{
   consume:(i,t)=>p.request("consume",t,{...quote(i),intentId:i.intentId,expiresAt:i.expiresAt}),
   accountIdentity:t=>p.request("identity",t),
   launch:i=>p.native.launch(i),restore:a=>p.native.restore(a),
-  sync:(_intent,productId,purchaseToken,t)=>p.request("sync",t,{productId,purchaseToken})
+  sync:(intentId,productId,purchaseToken,t)=>p.request("sync",t,{intentId,productId,purchaseToken})
  });
 }

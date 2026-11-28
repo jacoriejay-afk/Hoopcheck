@@ -79,11 +79,12 @@ const runtime=createDisposablePlayRuntime({scope:"disposable_pg17",enabled:()=>t
 const authenticated=new Request("https://fixture.invalid/sync",{headers:{authorization:"Bearer synthetic-session"}});
 const synchronize=async()=> (await runtime.sync(authenticated,product.productId,token))?.outcome??"held";
 assert.equal(await runtime.sync(new Request("https://fixture.invalid/sync"),product.productId,token),null);
+assert.equal((await runtime.sync(authenticated,product.productId,token))?.outcome,"pending_fulfillment");
 let marker=null,launches=0,storeState="empty",launchOutcome="cancelled";
 const storage={read:async()=>marker,write:async v=>{marker=v;},remove:async()=>{marker=null;}};
 const request=async(action,t,body)=>{
  if(action==="identity")return runtime.identity(req({},t));
- if(action==="sync"){const result=await runtime.sync(req({},t),body.productId,body.purchaseToken);console.log("Synthetic sync outcome:",result?.outcome??"held");return result;}
+ if(action==="sync"){const result=await runtime.sync(req({},t),body.productId,body.purchaseToken,body.intentId);console.log("Synthetic sync outcome:",result?.outcome??"held");return result;}
  const response=await runtime.intent(req(body,t),action);
  return response.ok?response.json():null;
 };
