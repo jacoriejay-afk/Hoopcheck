@@ -35,9 +35,9 @@ function validateGroupPostRows(value:unknown,replies:boolean):Post[]{
  });
 }
 
-const directoryEnabled=process.env.EXPO_PUBLIC_HOOPGROUPS_DIRECTORY_ENABLED==="true";
 const groupAlertsEnabled=process.env.EXPO_PUBLIC_HOOPGROUPS_ALERTS_ENABLED==="true";
 const privateAccessEnabled=process.env.EXPO_PUBLIC_HOOPGROUPS_PRIVATE_ACCESS_ENABLED==="true";
+const directoryEnabled=privateAccessEnabled&&process.env.EXPO_PUBLIC_HOOPGROUPS_DIRECTORY_ENABLED==="true";
 const repliesEnabled=process.env.EXPO_PUBLIC_HOOPGROUPS_REPLIES_ENABLED==="true";
 const readStateEnabled=process.env.EXPO_PUBLIC_HOOPGROUPS_READ_STATE_ENABLED==="true";
 const colorOptions = { orange:"#FF873C", blue:"#60A5FA", purple:"#A78BFA", green:"#4ADE80", pink:"#F472B6", gold:"#FBBF24" } as const;
@@ -74,6 +74,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug,invitationHint,discuss
   const [error,setError]=useState("");
   const [revision,setRevision]=useState(0);
   const [query,setQuery]=useState("");
+  const ignoredDirectoryLink=useRef<{invite:string|null;discussion:string|null}>({invite:null,discussion:null});
   const directoryInput=useRef<{query:string;mode:DirectoryMode;stack:(string|null)[];slug:string|null}>({query:"",mode:"all",stack:[null],slug:null});
   const [directoryNext,setDirectoryNext]=useState<string|null>(null),[directoryPage,setDirectoryPage]=useState(1),[directoryApplied,setDirectoryApplied]=useState("");
   const [filter,setFilter]=useState<"discover"|"joined"|"mine">("discover");
@@ -104,7 +105,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug,invitationHint,discuss
     let alive=true;
     const controller=new AbortController(),deadline=setTimeout(()=>controller.abort(),15000);
     async function load() {
-      setLoading(true);setError("");
+      setLoading(true);setError("");setDirectoryNext(null);
       try{
         const token=await safetyToken();
         if(!alive||controller.signal.aborted)return;
@@ -113,7 +114,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug,invitationHint,discuss
         if(directoryEnabled){
           const d=directoryInput.current;
           directory=await readGroupDirectoryPage(supabase,userId,header,{query:d.query,mode:d.mode,after:d.stack.at(-1)??null},controller.signal);
-          const shared=d.slug||inviteSlug;
+          const shared=d.slug||(inviteSlug!==ignoredDirectoryLink.current.invite?inviteSlug:null);
           if(shared&&/^[a-z0-9-]{3,60}$/.test(shared)&&!directory.spaces.some(s=>s.slug===shared)){
             const linked=await readGroupDirectoryPage(supabase,userId,header,{query:"",mode:"all",after:null,slug:shared},controller.signal);
             directory.spaces.unshift(...linked.spaces);directory.channels.unshift(...linked.channels);directory.joined.push(...linked.joined);
@@ -132,10 +133,10 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug,invitationHint,discuss
         const current=await safetyToken();
         if(!alive||controller.signal.aborted||current!==token)throw Error("Account changed. Refresh HoopGroups.");
         const spaces=(a.data||[]) as Space[],channels=(b.data||[]) as Channel[],memberIds=(c.data||[]).map(row=>row.space_id);
-        const linked=groupAlertsEnabled&&discussionHint?await resolveGroupChannelLink(supabase,userId,discussionHint,header,controller.signal):null;
+        const linked=groupAlertsEnabled&&discussionHint&&(!directoryEnabled||discussionHint!==ignoredDirectoryLink.current.discussion)?await resolveGroupChannelLink(supabase,userId,discussionHint,header,controller.signal):null;
         if(!alive||controller.signal.aborted)return;
         if(linked){if(!spaces.some(s=>s.id===linked.space.id))spaces.unshift(linked.space);if(!channels.some(c=>c.id===linked.channel.id))channels.unshift(linked.channel);if(!memberIds.includes(linked.space.id))memberIds.push(linked.space.id);setSpaceId(linked.space.id);setChannelId(linked.channel.id);setQuery("");setFilter("discover");}
-        else {if(groupAlertsEnabled&&discussionHint)setError("This discussion is no longer available.");setSpaceId(current=>spaces.some(row=>row.id===current)?current:"");}
+        else {if(groupAlertsEnabled&&discussionHint&&(!directoryEnabled||discussionHint!==ignoredDirectoryLink.current.discussion))setError("This discussion is no longer available.");setSpaceId(current=>spaces.some(row=>row.id===current)?current:"");}
         setSpaces(spaces);setChannels(channels);setJoined(memberIds);
         if(directory){setDirectoryNext(directory.next);setDirectoryPage(directoryInput.current.stack.length);setDirectoryApplied(directoryInput.current.query);}
       }catch(failure){if(alive){setSpaces([]);setChannels([]);setJoined([]);setPostSnapshot(null);setError(failure instanceof Error?failure.message:"Could not open HoopGroups.");}}
@@ -181,7 +182,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug,invitationHint,discuss
     if(direction==="next"){if(!directoryNext)return;current.stack.push(directoryNext);}
     else if(direction==="previous"){if(current.stack.length<=1)return;current.stack.pop();}
     else {current.stack=[null];current.query=query.trim().slice(0,80);current.mode=mode==="discover"?"all":mode;setFilter(mode);}
-    current.slug=null;setDirectoryNext(null);setSpaceId("");setChannelId("");setPostSnapshot(null);setUnreadSnapshot(null);setDraftState(null);setReplySnapshot(null);setEditing(false);setRevision(v=>v+1);
+    ignoredDirectoryLink.current={invite:inviteSlug,discussion:discussionHint};current.slug=null;setDirectoryNext(null);setSpaceId("");setChannelId("");setPostSnapshot(null);setUnreadSnapshot(null);setDraftState(null);setReplySnapshot(null);setEditing(false);setRevision(v=>v+1);
   }
 
   useFocusEffect(useCallback(()=>{

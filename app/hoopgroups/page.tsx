@@ -33,9 +33,9 @@ function validateGroupPostRows(value:unknown,replies:boolean):Post[]{
 }
 
 const enabled = process.env.NEXT_PUBLIC_HOOPGROUPS_CHANNELS_ENABLED === "true";
-const directoryEnabled=process.env.NEXT_PUBLIC_HOOPGROUPS_DIRECTORY_ENABLED==="true";
 const groupAlertsEnabled=process.env.NEXT_PUBLIC_HOOPGROUPS_ALERTS_ENABLED==="true";
 const privateAccessEnabled=process.env.NEXT_PUBLIC_HOOPGROUPS_PRIVATE_ACCESS_ENABLED==="true";
+const directoryEnabled=privateAccessEnabled&&process.env.NEXT_PUBLIC_HOOPGROUPS_DIRECTORY_ENABLED==="true";
 const repliesEnabled=process.env.NEXT_PUBLIC_HOOPGROUPS_REPLIES_ENABLED==="true";
 const readStateEnabled=process.env.NEXT_PUBLIC_HOOPGROUPS_READ_STATE_ENABLED==="true";
 const planned = [
@@ -83,6 +83,7 @@ export default function HoopGroupsPage() {
   const load = useCallback(async () => {
     // A session transition invalidates every outstanding account-specific read.
     const generation = ++loadGeneration.current;
+    setDirectoryNext(null);
     pendingSend.current=null;sendingPost.current=false;setUnreadSnapshot(null);setReplySnapshot(null);
     setReady(false); setBackendReady(false); setBusy(false);
     setUserId(""); setAccountRole(""); setSpaces([]); setChannels([]);
