@@ -9,16 +9,16 @@ new Function('require','exports',compile('sync-directory'))(name=>{assert.equal(
 const {syncNormalizedDirectory}=mod.exports;
 const ambiguous={code:'PGRST116',message:'Multiple records'};
 function fake(matches){
- const writes=[],lookups=[];
+ const writes=[],lookups=[],payloads=[];
  const db={from(table){
   const filters=[];let max=Infinity;
   const q={select(){return q},eq(k,v){filters.push([k,v]);return q},ilike(k,v){filters.push([k,v]);return q},is(k,v){filters.push([k,v]);return q},limit(n){max=n;return q},async maybeSingle(){
     lookups.push({table,filters,max});
     const rows=matches(table,filters).slice(0,max);
     return rows.length>1?{data:null,error:ambiguous}:{data:rows[0]??null,error:null};
-  },insert(){writes.push(['insert',table]);return q},update(){writes.push(['update',table]);return q},upsert(){writes.push(['upsert',table]);return q},async single(){return {data:{id:'one'},error:null}}};return q;
+  },insert(payload){writes.push(['insert',table]);payloads.push({table,kind:'insert',payload});return q},update(payload){writes.push(['update',table]);payloads.push({table,kind:'update',payload});return q},upsert(payload,options){writes.push(['upsert',table]);payloads.push({table,kind:'upsert',payload,options});return q},async single(){return {data:{id:'one'},error:null}}};return q;
  }};
- return {db,writes,lookups};
+ return {db,writes,lookups,payloads};
 }
 const base={leagues:[],teams:[],coaches:[]};
 for(const [entity,row] of [
@@ -46,3 +46,26 @@ const result=await syncNormalizedDirectory(f.db,'source','teams',{...base,teams:
 assert.equal(result.updated,1);
 assert.deepEqual(f.writes,[['update','teams'],['insert','directory_change_log']]);
 console.log('PASS: ambiguous legacy directory lookups and wildcard names stop before writes; unique provider identity can update');
+
+const oldClub={id:'club',league_id:'domestic',league_name:'Domestic League'};
+const sparse=fake(table=>table==='teams'?[oldClub]:[]);
+await syncNormalizedDirectory(sparse.db,'source','teams',{...base,teams:[{name:'Club',country:'Spain',externalId:'club-key'}]});
+const sparseUpdate=sparse.payloads.find(row=>row.table==='teams');
+assert.ok(!Object.hasOwn(sparseUpdate.payload,'league_id'));
+assert.ok(!Object.hasOwn(sparseUpdate.payload,'league_name'));
+assert.ok(!sparse.writes.some(([kind,table])=>table==='team_league_memberships'));
+const multi=fake(table=>table==='teams'?[oldClub]:table==='leagues'?[{id:'continental'}]:[]);
+await syncNormalizedDirectory(multi.db,'source','teams',{...base,teams:[{name:'Club',country:'Spain',externalId:'club-key',leagueExternalId:'continental-key',leagueName:'Continental League',season:'2026-27'}]});
+assert.ok(!Object.hasOwn(multi.payloads.find(row=>row.table==='teams').payload,'league_id'));
+const membership=multi.payloads.find(row=>row.table==='team_league_memberships');
+assert.equal(membership.payload.league_id,'continental');
+assert.equal(membership.payload.season,'2026-27');
+assert.equal(membership.options.ignoreDuplicates,true);
+assert.ok(multi.lookups.filter(q=>q.table==='leagues'||q.table==='teams').every(q=>q.filters.some(([k,v])=>k==='basketball_type'&&v==='mens')));
+const missing=fake(()=>[]);
+await assert.rejects(syncNormalizedDirectory(missing.db,'source','teams',{...base,teams:[{name:'New Club',country:'Spain',leagueExternalId:'unknown'}]}),/unresolved competition/);
+assert.equal(missing.writes.length,0);
+const undated=fake(table=>table==='teams'?[oldClub]:table==='leagues'?[{id:'continental'}]:[]);
+await syncNormalizedDirectory(undated.db,'source','teams',{...base,teams:[{name:'Club',country:'Spain',externalId:'club-key',leagueExternalId:'continental-key'}]});
+assert.ok(!undated.writes.some(([kind,table])=>table==='team_league_memberships'));
+console.log('PASS: sparse provider records preserve primary links; secondary membership writes require season, preserve history and reject unresolved new teams');

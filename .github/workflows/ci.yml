@@ -271,6 +271,20 @@ jobs:
       - name: Verify HOOPDATA ingestion and freshness contracts
         run: node --test scripts/test-hoopdata-ingestion.mjs scripts/test-hoopdata-balldontlie.mjs
 
+      - name: Rehearse combined league corrections and rollback in disposable PostgreSQL
+        env:
+          PGPASSWORD: postgres
+        run: |
+          set -euo pipefail
+          createdb -h 127.0.0.1 -U postgres hoopcheck_league_data_test
+          psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_league_data_test -f supabase/tests/league_data_1_combined_isolated.sql
+          test "$(psql -h 127.0.0.1 -U postgres -d hoopcheck_league_data_test -Atc "select count(*) from pg_tables where schemaname='public'")" = 0
+          if psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_rls_test -f supabase/tests/league_data_1_combined_isolated.sql > /tmp/league-data-wrong-target.log 2>&1; then
+            echo "Wrong-target league correction guard failed"
+            exit 1
+          fi
+          grep -Fq 'Only the disposable league-data test database is permitted' /tmp/league-data-wrong-target.log
+
       - name: Rehearse HOOPDATA provider quotas in isolated PostgreSQL
         env:
           PGPASSWORD: postgres
