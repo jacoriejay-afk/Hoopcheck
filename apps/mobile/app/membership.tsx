@@ -11,30 +11,37 @@ import { useNativeAccount } from "../src/native/useNativeAccount";
 import { useMfaSession } from "../src/native/mfa";
 import { useStoreKit } from "../src/native/storekit";
 import { appleProduct } from "../../../lib/billing/apple-products";
+import { playReadOnlyNative } from "../modules/hoopcheck-play-billing";
+import { parsePlayCatalog, type PlayCatalogRow } from "../../../lib/billing/play-catalog";
+import { canPurchasePlayProduct, playProduct } from "../../../lib/billing/play-products";
 import type { EffectiveMembership } from "../../../lib/billing/membership";
 import type { PreparedPurchase, StoreProduct } from "../src/native/storekitClient";
 const periods: Record<number, string> = { 1: "month", 6: "6 months", 12: "year" };
 export default function MembershipScreen() {
   const router = useRouter();
   const android = Platform.OS === "android";
+  // Deliberately development-only; a release binary cannot enable this via JS environment alone.
+  const playDiagnostic = android && __DEV__ && process.env.EXPO_PUBLIC_HOOPCHECK_PLAY_CATALOG_DIAGNOSTIC === "true";
   const theme = useEntryTheme(), store = useStoreKit(), { account, retry } = useNativeAccount();
   const [products, setProducts] = useState<StoreProduct[]>([]), [membership, setMembership] = useState<EffectiveMembership | null>(null);
   const [loading, setLoading] = useState(true), [busy, setBusy] = useState(false), [message, setMessage] = useState(""), [error, setError] = useState("");
   const [prepared, setPrepared] = useState<PreparedPurchase | null>(null);
+  const [playRows, setPlayRows] = useState<PlayCatalogRow[]>([]), [playNotice, setPlayNotice] = useState("");
+  const playGeneration = useRef(0), playBusy = useRef(false);
   const security = useMfaSession();
   const owner = security.phase === "ready" ? security.owner : null;
   const identity = useRef(0);
   const generation = useRef(0), mounted = useRef(true), acting = useRef(false);
   useEffect(() => {
     mounted.current = true;
-    const listener = AppState.addEventListener("change", state => { if (state !== "active") setPrepared(null); });
+    const listener = AppState.addEventListener("change", state => { if (state !== "active") { setPrepared(null); playGeneration.current++; setPlayRows([]); setPlayNotice(""); } });
     return () => { mounted.current = false; listener.remove(); };
   }, []);
   const load = useCallback(async () => {
     const current = ++generation.current;
     if (!owner) { setLoading(false); return; }
     setLoading(true); setError(""); setMessage(""); setProducts([]); setPrepared(null); setMembership(null);
-    const [status, catalog] = await Promise.allSettled([store.membership(), store.catalog()]);
+    const [status, catalog] = await Promise.allSettled([store.membership(), android ? Promise.resolve({products: [], canPurchase: false, reason: ""}) : store.catalog()]);
     if (!mounted.current || current !== generation.current) return;
     if (status.status === "fulfilled") setMembership(status.value);
     if (catalog.status === "fulfilled") { setProducts(status.status === "fulfilled" ? catalog.value.products : []); if (!catalog.value.canPurchase && !android) setMessage(catalog.value.reason); }
@@ -42,8 +49,8 @@ export default function MembershipScreen() {
     if (status.status === "rejected" && catalog.status === "fulfilled") setError("Your current membership could not be verified. Refresh before purchasing.");
     setLoading(false);
   }, [store, owner, android]);
-  useFocusEffect(useCallback(() => { void load(); return () => { generation.current++; setPrepared(null); }; }, [load]));
-  useLayoutEffect(() => { identity.current++; setPrepared(null); setProducts([]); setMembership(null); setMessage(""); setError(""); }, [owner]);
+  useFocusEffect(useCallback(() => { void load(); return () => { generation.current++; playGeneration.current++; setPrepared(null); setPlayRows([]); setPlayNotice(""); }; }, [load]));
+  useLayoutEffect(() => { identity.current++; playGeneration.current++; setPlayRows([]); setPlayNotice(""); setPrepared(null); setProducts([]); setMembership(null); setMessage(""); setError(""); }, [owner]);
   async function act(work: (live: () => boolean) => Promise<void>) {
     if (acting.current) return;
     const capturedIdentity = identity.current;
@@ -52,6 +59,23 @@ export default function MembershipScreen() {
     try { await work(live); }
     catch (value) { if (live()) setError(value instanceof Error ? value.message : "Apple could not complete this action. Try again."); }
     finally { acting.current = false; if (mounted.current) setBusy(false); }
+  }
+  async function checkPlayCatalog() {
+    if (!playDiagnostic || !owner || account?.user.id !== owner || playBusy.current) return;
+    const role = account.user.accountType;
+    if (!["player","scout","agent","club_admin","coach","manager"].includes(role)) return;
+    const captured = ++playGeneration.current;
+    const live = () => mounted.current && captured === playGeneration.current;
+    playBusy.current = true; setPlayRows([]); setPlayNotice("Checking Google Play catalog…");
+    try {
+      if (!playReadOnlyNative) throw Error("unavailable");
+      const rows = parsePlayCatalog(await playReadOnlyNative.queryCatalog()).filter(row => {
+        const product = playProduct(row.productId, row.basePlanId);
+        return product !== null && canPurchasePlayProduct(role, product);
+      });
+      if (live()) { setPlayRows(rows); setPlayNotice("Catalog verified on this device. Test preview only; purchasing is disabled."); }
+    } catch { if (live()) setPlayNotice("Google Play catalog could not be verified on this device."); }
+    finally { playBusy.current = false; }
   }
   const text = { color: theme.foreground }, muted = { color: theme.muted };
   return <SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: theme.background }}>
@@ -66,6 +90,13 @@ export default function MembershipScreen() {
       {error ? <Text accessibilityRole="alert" style={text}>{error}</Text> : null}
       {message ? <Text accessibilityLiveRegion="polite" style={text}>{message}</Text> : null}
       {android ? <Text style={muted}>New Google Play purchases are not available in this release. Existing verified HoopCheck membership access is unchanged.</Text> : !store.supported ? <Text style={muted}>Apple purchasing is not available on this device. Your existing membership stays unchanged.</Text> : null}
+      {playDiagnostic && owner && account?.user.id === owner && ["player","scout","agent","club_admin","coach","manager"].includes(account.user.accountType) ? <GlassCard style={{ gap: 8 }}>
+        <Text accessibilityRole="header" style={{ ...text, fontWeight: "800" }}>Google Play catalog diagnostic</Text>
+        <Text style={muted}>Development preview only. No purchase or restoration is available.</Text>
+        <Button secondary disabled={busy || loading || playNotice === "Checking Google Play catalog…"} onPress={() => void checkPlayCatalog()}>Check Google Play catalog</Button>
+        {playNotice ? <Text accessibilityLiveRegion="polite" style={muted}>{playNotice}</Text> : null}
+        {playRows.map(row => <Text key={row.productId + ":" + row.basePlanId} style={text}>{playProduct(row.productId,row.basePlanId)?.plan === "premium" ? "Premium" : "Pro"} · {row.displayPrice} / {periods[playProduct(row.productId,row.basePlanId)?.months ?? 1]}</Text>)}
+      </GlassCard> : null}
       {account?.user.accountType === "fan" ? <Text style={muted}>No paid fan products are offered. Existing membership access and purchase restoration are preserved.</Text> : null}
       {!android && !prepared && account?.user.accountType !== "fan" ? products.map(product => <GlassCard key={product.id} style={{ gap: 10 }}>
         <Text accessibilityRole="header" style={{ ...text, fontSize: 21, fontWeight: "800" }}>{appleProduct(product.id)?.plan === "premium" ? "Premium" : "Pro"} · {periods[product.months]}</Text>

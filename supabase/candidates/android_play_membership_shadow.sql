@@ -20,8 +20,8 @@ where c.environment='test' and c.package_name='online.hoopcheck.app'
  and f.owner_id=c.owner_id and f.product_id=c.product_id and f.base_plan_id=c.base_plan_id
  and f.expires_at=o.expires_at and o.generation=o.completed_generation
  and o.state='eligible_for_reconciliation'
- and o.expires_at>now()
- and o.checked_at between now()-interval '30 minutes' and now();
+ and o.expires_at>clock_timestamp()
+ and o.checked_at between clock_timestamp()-interval '30 minutes' and clock_timestamp();
 
 create view play_billing_candidate.shadow_membership_sources with(security_invoker=true) as
 select id::text as source_id,user_id,plan,status,access_status,current_period_end,cancel_at_period_end,billing_interval,provider
