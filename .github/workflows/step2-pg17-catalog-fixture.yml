@@ -18,7 +18,7 @@ jobs:
           POSTGRES_PASSWORD: synthetic_fixture_only
           POSTGRES_DB: hoopcheck_step2_catalog_fixture
         options: >-
-          --health-cmd 'pg_isready -U postgres -d hoopcheck_step2_catalog_fixture'
+          --health-cmd "pg_isready -U postgres -d hoopcheck_step2_catalog_fixture"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
