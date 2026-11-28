@@ -16,7 +16,17 @@ import "./hoopgroups.css";
 
 type Space = GroupSpace;
 type Channel = GroupChannel;
+const GROUP_POST_FIELDS: string = "id,author_id,body,moderation_status,created_at";
+const GROUP_POST_REPLY_FIELDS: string = GROUP_POST_FIELDS+",reply_to_id,was_reply";
 type Post = { id: string; author_id: string; body: string; moderation_status: string; created_at: string; reply_to_id?:string|null; was_reply?:boolean };
+function validateGroupPostRows(value:unknown,replies:boolean):Post[]{
+ if(!Array.isArray(value)||value.length>100)throw Error("Invalid group post response.");
+ return value.map(row=>{
+  if(!row||typeof row!=="object"||typeof row.id!=="string"||typeof row.author_id!=="string"||typeof row.body!=="string"||typeof row.moderation_status!=="string"||typeof row.created_at!=="string"||!Number.isFinite(Date.parse(row.created_at))||(replies&&(typeof row.was_reply!=="boolean"||!(row.reply_to_id===null||typeof row.reply_to_id==="string"))))throw Error("Invalid group post response.");
+  return {id:row.id,author_id:row.author_id,body:row.body,moderation_status:row.moderation_status,created_at:row.created_at,...(replies?{reply_to_id:row.reply_to_id,was_reply:row.was_reply}:{})};
+ });
+}
+
 const enabled = process.env.NEXT_PUBLIC_HOOPGROUPS_CHANNELS_ENABLED === "true";
 const repliesEnabled=process.env.NEXT_PUBLIC_HOOPGROUPS_REPLIES_ENABLED==="true";
 const readStateEnabled=process.env.NEXT_PUBLIC_HOOPGROUPS_READ_STATE_ENABLED==="true";
@@ -201,7 +211,7 @@ export default function HoopGroupsPage() {
           if(blocks.error||!Array.isArray(blocks.data)||blocks.data.length>500)throw Error("Blocked accounts could not be verified.");
           if(!current()||signal.aborted)throw Error("Channel changed.");
           const {data,error}=await supabase.from("hoop_group_posts")
-            .select(repliesEnabled?"id,author_id,body,moderation_status,created_at,reply_to_id,was_reply":"id,author_id,body,moderation_status,created_at").eq("channel_id",currentChannel)
+            .select(repliesEnabled?GROUP_POST_REPLY_FIELDS:GROUP_POST_FIELDS).eq("channel_id",currentChannel)
             .order("created_at",{ascending:false}).order("id",{ascending:false}).limit(100).setHeader("Authorization",header).abortSignal(signal);
           if(error||signal.aborted)throw Error("Could not load group discussion posts.");
           let counts:GroupUnread|null=null;
@@ -209,7 +219,7 @@ export default function HoopGroupsPage() {
           const after=await verifiedHeader(userId,signal);
           if(after!==header||!current()||signal.aborted)throw Error("Session changed. Refresh messages.");
           if(current()&&!isHidden()&&!signal.aborted)setUnreadSnapshot(counts?{scope,value:counts}:null);
-          return visibleGroupPosts((data||[]) as Post[],userId,new Set(blocks.data.map(row=>row.blocked_id))).reverse();
+          return visibleGroupPosts(validateGroupPostRows(data??[],repliesEnabled),userId,new Set(blocks.data.map(row=>row.blocked_id))).reverse();
         },undefined,request);
         if(current()&&running===request&&!isHidden()){setPostSnapshot({scope,value:rows});setPostError("");startRealtime();}
       }catch{if(current()&&running===request){stopRealtime();setUnreadSnapshot(null);setPostSnapshot(null);setPostError("Messages or membership could not be verified. Refresh to retry.");}}

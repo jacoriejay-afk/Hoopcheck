@@ -18,7 +18,17 @@ import { findInvitedGroup } from "../src/native/deepLinks";
 
 type Space = { id:string;slug:string;name:string;category:string;description:string;owner_id:string|null;accent_color:string;icon_key:string };
 type Channel = { id:string;space_id:string;name:string;slug:string;sort_index:number };
+const GROUP_POST_FIELDS: string = "id,author_id,body,moderation_status,created_at";
+const GROUP_POST_REPLY_FIELDS: string = GROUP_POST_FIELDS+",reply_to_id,was_reply";
 type Post = { id:string;author_id:string;body:string;moderation_status:string;created_at:string;reply_to_id?:string|null;was_reply?:boolean };
+function validateGroupPostRows(value:unknown,replies:boolean):Post[]{
+ if(!Array.isArray(value)||value.length>100)throw Error("Invalid group post response.");
+ return value.map(row=>{
+  if(!row||typeof row!=="object"||typeof row.id!=="string"||typeof row.author_id!=="string"||typeof row.body!=="string"||typeof row.moderation_status!=="string"||typeof row.created_at!=="string"||!Number.isFinite(Date.parse(row.created_at))||(replies&&(typeof row.was_reply!=="boolean"||!(row.reply_to_id===null||typeof row.reply_to_id==="string"))))throw Error("Invalid group post response.");
+  return {id:row.id,author_id:row.author_id,body:row.body,moderation_status:row.moderation_status,created_at:row.created_at,...(replies?{reply_to_id:row.reply_to_id,was_reply:row.was_reply}:{})};
+ });
+}
+
 const repliesEnabled=process.env.EXPO_PUBLIC_HOOPGROUPS_REPLIES_ENABLED==="true";
 const readStateEnabled=process.env.EXPO_PUBLIC_HOOPGROUPS_READ_STATE_ENABLED==="true";
 const colorOptions = { orange:"#FF873C", blue:"#60A5FA", purple:"#A78BFA", green:"#4ADE80", pink:"#F472B6", gold:"#FBBF24" } as const;
@@ -183,7 +193,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
         const blocked=await readOutgoingBlocks(supabase,userId,controller.signal);
         if(!alive||controller.signal.aborted)return;
         const {data,error:readError}=await supabase.from("hoop_group_posts")
-          .select(repliesEnabled?"id,author_id,body,moderation_status,created_at,reply_to_id,was_reply":"id,author_id,body,moderation_status,created_at")
+          .select(repliesEnabled?GROUP_POST_REPLY_FIELDS:GROUP_POST_FIELDS)
           .eq("channel_id",channel!.id).order("created_at",{ascending:false}).order("id",{ascending:false}).limit(100)
           .setHeader("Authorization","Bearer "+token).abortSignal(controller.signal);
         if(readError||controller.signal.aborted)throw Error("Channel messages could not be loaded.");
@@ -193,7 +203,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
         if(!alive||controller.signal.aborted||current!==token)throw Error("Session changed. Refresh the channel.");
         if(AppState.currentState!=="active"&&AppState.currentState!==null)return;
         if(alive)setUnreadSnapshot(counts?{channelId:channel!.id,counts}:null);
-        if(alive)setPostSnapshot({channelId:channel!.id,posts:((data||[]) as Post[]).filter(post=>!blocked.has(post.author_id)).filter(post=>post.moderation_status==="approved"||post.author_id===userId&&post.moderation_status==="pending").reverse()});
+        if(alive)setPostSnapshot({channelId:channel!.id,posts:(validateGroupPostRows(data??[],repliesEnabled)).filter(post=>!blocked.has(post.author_id)).filter(post=>post.moderation_status==="approved"||post.author_id===userId&&post.moderation_status==="pending").reverse()});
         startRealtime();
         setPostError("");
       }catch{if(alive){stopRealtime();setUnreadSnapshot(null);setPostError("Channel messages or block status could not be verified.");setPostSnapshot(null);}}
