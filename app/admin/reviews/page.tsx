@@ -1,7 +1,7 @@
 "use client";
 
 import HoopLoading from "../../../components/HoopLoading";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import SearchBar from "../../../components/SearchBar";
 import { supabase } from "../../../lib/supabase";
@@ -11,7 +11,7 @@ type ReportStatus = "open" | "resolved" | "dismissed";
 
 type Review = {
   id: string;
-  author_id: string;
+  author_id: string | null;
   coach_id: string | null;
   team_id: string | null;
   league_id: string | null;
@@ -87,154 +87,105 @@ export default function AdminReviewsPage() {
     useState<ConfirmAction | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
+  const accountGeneration = useRef(0);
+  const detailGeneration = useRef(0);
+  const accountOwner = useRef<string | null>(null);
+
   useEffect(() => {
     let mounted = true;
+    let pending: ReturnType<typeof setTimeout>;
+    let controller: AbortController | undefined;
 
-    async function loadAdminPage() {
-      const { data: isAdmin, error: roleError } = await supabase.rpc(
-        "is_current_user_admin_or_moderator"
-      );
-
-      if (!mounted) return;
-
-      if (roleError) {
-        console.error("Unable to verify moderation access:", roleError);
-        setError("Unable to verify moderation access.");
-        setLoading(false);
-        return;
-      }
-
-      if (!isAdmin) {
-        setAuthorized(false);
-        setLoading(false);
-        return;
-      }
-
-      setAuthorized(true);
-      await loadAdminData();
-
-      if (mounted) {
-        setLoading(false);
-      }
+    function clearPrivateState() {
+      setAuthorized(false);
+      setReviews([]);
+      setReports([]);
+      setProfiles([]);
+      setCoaches([]);
+      setTeams([]);
+      setLeagues([]);
+      setSelectedReview(null);
+      setModerationEvents([]);
+      setConfirmAction(null);
+      setEventsLoading(false);
+      setActionLoading(null);
+      setError("");
     }
 
-    async function loadAdminData() {
-      const [
-        reviewsResult,
-        reportsResult,
-        profilesResult,
-        coachesResult,
-        teamsResult,
-        leaguesResult,
-      ] = await Promise.all([
-        supabase
-          .from("reviews")
-          .select(
-            `
-              id, author_id, coach_id, team_id, league_id, player_season,
-              overall_rating, communication_rating,
-              professionalism_rating, development_rating,
-              payment_rating, title, body, status, created_at
-            `
-          )
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("review_reports")
-          .select("id, review_id, reporter_id, reason, status, created_at")
-          .order("created_at", { ascending: false }),
-        supabase.from("profiles").select("id, display_name"),
-        supabase.from("coaches").select("id, name").order("name"),
-        supabase.from("teams").select("id, name").order("name"),
-        supabase.from("leagues").select("id, name").order("name"),
+    async function loadAdminPage(current: number, owner: string) {
+      const request = new AbortController();
+      controller = request;
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      const valid = () => mounted && current === accountGeneration.current;
+      if (!valid()) return;
+      if (sessionError || session?.user.id !== owner) {
+        setLoading(false);
+        return;
+      }
+      const authorization = "Bearer " + session.access_token;
+      const response = await fetch("/api/admin/reviews", {
+        headers: { Authorization: authorization }, cache: "no-store", signal: request.signal,
+      });
+      if (!valid()) return;
+      if (!response.ok) {
+        setError("Unable to verify moderation access or load reviews.");
+        setLoading(false);
+        return;
+      }
+      const payload = await response.json() as { reviews: Review[] };
+      if (!valid()) return;
+      if (!Array.isArray(payload.reviews)) throw Error("Invalid review queue.");
+      const [reportsResult, profilesResult, coachesResult, teamsResult, leaguesResult] = await Promise.all([
+        supabase.from("review_reports").select("id, review_id, reporter_id, reason, status, created_at")
+          .order("created_at", { ascending: false }).setHeader("Authorization", authorization).abortSignal(request.signal),
+        supabase.from("profiles").select("id, display_name").setHeader("Authorization", authorization).abortSignal(request.signal),
+        supabase.from("coaches").select("id, name").order("name").setHeader("Authorization", authorization).abortSignal(request.signal),
+        supabase.from("teams").select("id, name").order("name").setHeader("Authorization", authorization).abortSignal(request.signal),
+        supabase.from("leagues").select("id, name").order("name").setHeader("Authorization", authorization).abortSignal(request.signal),
       ]);
-
-      if (!mounted) return;
-      if (reviewsResult.error) {
-        console.error("Error loading reviews:", reviewsResult.error);
-        setError("Unable to load reviews.");
-        return;
-      }
-      if (reportsResult.error) {
-        console.error("Error loading reports:", reportsResult.error);
-        setError("Unable to load reports.");
-        return;
-      }
-
-      setReviews((reviewsResult.data || []) as Review[]);
+      if (!valid()) return;
+      if (reportsResult.error) throw Error("Unable to load reports.");
+      setReviews(payload.reviews);
       setReports((reportsResult.data || []) as Report[]);
-
-      if (profilesResult.error) {
-        console.error("Error loading profile names:", profilesResult.error);
-      } else {
-        setProfiles((profilesResult.data || []) as Profile[]);
-      }
-      if (coachesResult.error) {
-        console.error("Error loading coach names:", coachesResult.error);
-      } else {
-        setCoaches((coachesResult.data || []) as DirectoryItem[]);
-      }
-      if (teamsResult.error) {
-        console.error("Error loading team names:", teamsResult.error);
-      } else {
-        setTeams((teamsResult.data || []) as DirectoryItem[]);
-      }
-      if (leaguesResult.error) {
-        console.error("Error loading league names:", leaguesResult.error);
-      } else {
-        setLeagues((leaguesResult.data || []) as DirectoryItem[]);
-      }
+      setProfiles((profilesResult.data || []) as Profile[]);
+      setCoaches((coachesResult.data || []) as DirectoryItem[]);
+      setTeams((teamsResult.data || []) as DirectoryItem[]);
+      setLeagues((leaguesResult.data || []) as DirectoryItem[]);
+      setAuthorized(true);
+      setLoading(false);
     }
 
-    async function initializeAdminPage() {
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession();
-
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return;
-
-      if (sessionError || !session?.user) {
-        setLoading(false);
+      const owner = session?.user.id ?? null;
+      const current = ++accountGeneration.current;
+      ++detailGeneration.current;
+      accountOwner.current = owner;
+      controller?.abort();
+      clearTimeout(pending);
+      clearPrivateState();
+      setLoading(Boolean(owner));
+      if (!owner) {
         window.location.href = "/login";
         return;
       }
-
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (!mounted) return;
-
-      if (userError || !user) {
-        setLoading(false);
-        window.location.href = "/login";
-        return;
-      }
-
-      await loadAdminPage();
-    }
-
-    initializeAdminPage();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        if (!mounted) return;
-
-        if (!session?.user) {
+      // Defer database calls until the auth callback returns.
+      pending = setTimeout(() => {
+        void loadAdminPage(current, owner).catch(() => {
+          if (!mounted || current !== accountGeneration.current) return;
+          clearPrivateState();
+          setError("Unable to load moderation data.");
           setLoading(false);
-          window.location.href = "/login";
-          return;
-        }
-
-        await loadAdminPage();
-      }
-    );
-
+        });
+      }, 0);
+    });
     return () => {
       mounted = false;
+      ++accountGeneration.current;
+      ++detailGeneration.current;
+      accountOwner.current = null;
+      clearTimeout(pending);
+      controller?.abort();
       subscription.unsubscribe();
     };
   }, []);
@@ -302,7 +253,7 @@ export default function AdminReviewsPage() {
 
       const searchableText = [
         getTargetName(review),
-        profileMap.get(review.author_id),
+        profileMap.get(review.author_id ?? ""),
         review.title,
         review.body || "",
       ]
@@ -350,6 +301,8 @@ export default function AdminReviewsPage() {
     if (!confirmAction) return;
 
     const action = confirmAction;
+    const current = accountGeneration.current;
+    const owner = accountOwner.current;
     setActionLoading(action.id);
     setError("");
 
@@ -359,8 +312,9 @@ export default function AdminReviewsPage() {
         : `/api/admin/review-reports/${encodeURIComponent(action.id)}`;
     const errorMessage = await updateModerationRecord(
       endpoint,
-      action.action
+      action.action, owner, current
     );
+    if (current !== accountGeneration.current) return;
 
     if (errorMessage) {
       setError(errorMessage);
@@ -393,7 +347,7 @@ export default function AdminReviewsPage() {
 
   async function updateModerationRecord(
     endpoint: string,
-    status: string
+    status: string, owner: string | null, current: number
   ): Promise<string | null> {
     const {
       data: { session },
@@ -405,7 +359,7 @@ export default function AdminReviewsPage() {
       return "Could not verify your session. Please try again.";
     }
 
-    if (!session?.access_token) {
+    if (!session?.access_token || session.user.id !== owner || current !== accountGeneration.current) {
       return "Your session has expired. Please log in again.";
     }
 
@@ -465,17 +419,24 @@ export default function AdminReviewsPage() {
   }
 
   async function openReviewDetails(review: Review) {
+    const current = accountGeneration.current;
+    const detail = ++detailGeneration.current;
+    const owner = accountOwner.current;
     setSelectedReview(review);
     setEventsLoading(true);
     setModerationEvents([]);
 
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session || session.user.id !== owner || current !== accountGeneration.current || detail !== detailGeneration.current) return;
     const { data, error } = await supabase
       .from("review_moderation_events")
       .select(
         "id, review_id, report_id, actor_id, entity_type, from_status, to_status, created_at"
       )
       .eq("review_id", review.id)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .setHeader("Authorization", "Bearer " + session.access_token);
+    if (current !== accountGeneration.current || detail !== detailGeneration.current) return;
 
     if (error) {
       console.error("Unable to load moderation history:", error);
@@ -624,7 +585,7 @@ export default function AdminReviewsPage() {
 
                   <div className="moderation-meta">
                     <span>
-                      Author: {profileMap.get(review.author_id) || "Unknown user"}
+                      Author: {profileMap.get(review.author_id ?? "") || "Unknown user"}
                     </span>
                     <span>{formatDate(review.created_at)}</span>
                   </div>
@@ -904,7 +865,7 @@ export default function AdminReviewsPage() {
 
             <div className="moderation-meta">
               <span>
-                Author: {profileMap.get(selectedReview.author_id) || "Unknown user"}
+                Author: {profileMap.get(selectedReview.author_id ?? "") || "Unknown user"}
               </span>
               <span>Status: {selectedReview.status}</span>
               <span>{formatDate(selectedReview.created_at)}</span>

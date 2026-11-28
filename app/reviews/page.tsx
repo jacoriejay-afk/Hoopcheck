@@ -34,7 +34,6 @@ type ReviewCardData = ReviewRow & {
 
 const filters = ["All", "Overall", "Coaching", "Teams", "Leagues"] as const;
 type Filter = (typeof filters)[number];
-const reviewColumns = "id,status,title,body,overall_rating,created_at,is_anonymous,coach_id,team_id,league_id";
 
 function initials(name: string) {
   return name
@@ -92,27 +91,22 @@ export default function ReviewsAnalyticsPage() {
       if (!session) { setLoading(false); return; }
       const authorization = "Bearer " + session.access_token;
 
-      const [anonymous, attributed] = await Promise.all([
-        supabase.from("reviews").select(reviewColumns).eq("status", "approved").eq("is_anonymous", true)
-          .order("created_at", { ascending: false }).order("id", { ascending: false }).limit(100)
-          .setHeader("Authorization", authorization).abortSignal(read.signal),
-        supabase.from("reviews").select(`${reviewColumns},author_id`).eq("status", "approved").eq("is_anonymous", false)
-          .order("created_at", { ascending: false }).order("id", { ascending: false }).limit(100)
-          .setHeader("Authorization", authorization).abortSignal(read.signal),
-      ]);
-
+      const response = await fetch("/api/reviews/published", {
+        headers: { Authorization: authorization }, cache: "no-store", signal: read.signal,
+      });
       if (!active || current !== generation) return;
-      if (anonymous.error || attributed.error) {
+      if (!response.ok) {
         setErrorMessage("Published reviews could not be loaded right now. Please try again later.");
         setItems([]);
         setLoading(false);
         return;
       }
-
-      const rows: ReviewRow[] = [
-        ...(anonymous.data ?? []).map(row => ({ ...row, is_anonymous: true, author_id: null })),
-        ...(attributed.data ?? []).map(row => ({ ...row, author_id: row.is_anonymous === false ? row.author_id : null })),
-      ].sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at) || b.id.localeCompare(a.id)).slice(0, 100);
+      const payload = await response.json() as { reviews: ReviewRow[] };
+      if (!active || current !== generation) return;
+      if (!Array.isArray(payload.reviews)) throw Error("Invalid review response.");
+      const rows = payload.reviews.map(row => ({
+        ...row, author_id: row.is_anonymous === false ? row.author_id : null,
+      }));
       const authorIds = [...new Set(rows.flatMap(row => row.author_id ? [row.author_id] : []))];
       const coachIds = Array.from(new Set(rows.map((row) => row.coach_id).filter(Boolean))) as string[];
       const teamIds = Array.from(new Set(rows.map((row) => row.team_id).filter(Boolean))) as string[];

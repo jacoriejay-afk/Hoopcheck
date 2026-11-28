@@ -43,12 +43,27 @@ test("review access exposes only the caller's verified season labels",async()=>{
  assert.match(route,/canWrite=verifiedSeasons\.length>0/);
 });
 
-test("published reviews exclude anonymous identities from the visitor's request", () => {
- const page = read("app/reviews/page.tsx");
- assert.match(page, /select\(reviewColumns\).*eq\("is_anonymous", true\)/);
- assert.match(page, /select\(\x60\$\{reviewColumns\},author_id\x60\).*eq\("is_anonymous", false\)/);
- assert.match(page, /is_anonymous: true, author_id: null/);
- assert.match(page, /item\.is_anonymous \? "Anonymous reviewer"/);
+test("published review attribution is server-only, scoped, and fail closed", async () => {
+ const { NextResponse } = await import("next/server.js");
+ const page=read("app/reviews/page.tsx");
+ assert.match(page,/fetch\("\/api\/reviews\/published"/);
+ assert.doesNotMatch(page,/\.from\("reviews"\)/);
+ assert.match(page,/item\.is_anonymous \? "Anonymous reviewer"/);
+ const source=ts.transpileModule(read("app/api/reviews/published/route.ts"),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+ for(const sample of [{denied:true},{scopeError:true},{authorError:true},{}]){
+  const calls=[];
+  const data=[{id:"anonymous",status:"approved",is_anonymous:true,author_id:"never-return"},{id:"named",status:"approved",is_anonymous:false},{id:"changed",status:"approved",is_anonymous:false},{id:"unknown",status:"approved",is_anonymous:null}];
+  const scoped={from:table=>{assert.equal(table,"reviews");const q={select:cols=>{assert.doesNotMatch(cols,/author_id/);return q;},eq:(...args)=>{assert.deepEqual(args,["status","approved"]);return q;},order:()=>q,limit:async n=>{assert.equal(n,100);return {data,error:sample.scopeError?Error():null};}};return q;}};
+  const service={from:table=>{assert.equal(table,"reviews");const q={select:cols=>{assert.equal(cols,"id,author_id,is_anonymous");return q;},in:(key,ids)=>{assert.equal(key,"id");assert.deepEqual(ids,["named","changed"]);return q;},eq:(...args)=>{calls.push(args);if(args[0]==="status")return q;return Promise.resolve({data:[{id:"named",is_anonymous:false,author_id:"named-author"},{id:"changed",is_anonymous:true,author_id:"hidden"},{id:"outside",is_anonymous:false,author_id:"outside"}],error:sample.authorError?Error():null});}};return q;}};
+  const route={};
+  new Function("require","exports",source)(name=>name==="next/server"?{NextResponse}:{authenticateModerationRequest:async()=>sample.denied?{ok:false,response:NextResponse.json({}, {status:403})}:{ok:true,scoped,supabase:service}},route);
+  const response=await route.GET(new Request("https://fixture.invalid/api/reviews/published?ids=outside"));
+  assert.match(response.headers.get("Cache-Control"),/no-store/);
+  assert.equal(response.status,sample.denied?403:sample.scopeError||sample.authorError?503:200);
+  if(sample.denied||sample.scopeError)assert.deepEqual(calls,[]);
+  else assert.deepEqual(calls,[["status","approved"],["is_anonymous",false]]);
+  if(response.ok){const body=await response.json();assert.deepEqual(body.reviews.map(r=>r.author_id),[null,"named-author",null,null]);assert.equal(body.reviews[3].is_anonymous,true);}
+ }
 });
 
 test("review access performs live authorization before using service credentials", async () => {
@@ -122,5 +137,27 @@ test("review access performs live authorization before using service credentials
    assert.match(projections[0],/is_anonymous/);
    assert.doesNotMatch(projections[0],/author_id/);
   }
+ }
+});
+
+test("staff review queue requires moderator authorization and preserves scoped IDs", async () => {
+ const { NextResponse } = await import("next/server.js");
+ const page=read("app/admin/reviews/page.tsx");
+ assert.match(page,/fetch\("\/api\/admin\/reviews"/);
+ assert.doesNotMatch(page,/\.from\("reviews"\)/);
+ assert.match(page,/current !== accountGeneration.current/);
+ const source=ts.transpileModule(read("app/api/admin/reviews/route.ts"),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+ for(const sample of [{denied:true},{scopeError:true},{authorError:true},{empty:true},{}]){
+  const seen=[];
+  const data=sample.empty?[]:[{id:"visible",status:"pending",author_id:"do-not-trust",secret:"not-in-projection"}];
+  const scoped={from:table=>{seen.push("scope");assert.equal(table,"reviews");const q={select:cols=>{assert.doesNotMatch(cols,/author_id/);return q;},order:()=>q,limit:async n=>{assert.equal(n,1000);return {data,error:sample.scopeError?Error():null};}};return q;}};
+  const service={from:table=>{seen.push("service");assert.equal(table,"reviews");return {select:cols=>{assert.equal(cols,"id,author_id");return {in:async (key,ids)=>{assert.equal(key,"id");assert.deepEqual(ids,["visible"]);return {data:[{id:"visible",author_id:"verified"},{id:"outside",author_id:"private"}],error:sample.authorError?Error():null};}};}};}};
+  const route={};
+  new Function("require","exports",source)(name=>name==="next/server"?{NextResponse}:{authorizeModeratorRequest:async()=>sample.denied?{ok:false,response:NextResponse.json({}, {status:403})}:{ok:true,scoped,supabase:service}},route);
+  const response=await route.GET(new Request("https://fixture.invalid/api/admin/reviews?ids=outside"));
+  assert.match(response.headers.get("Cache-Control"),/no-store/);
+  assert.equal(response.status,sample.denied?403:sample.scopeError||sample.authorError?503:200);
+  assert.deepEqual(seen,sample.denied?[]:sample.scopeError||sample.empty?["scope"]:["scope","service"]);
+  if(response.ok){const body=await response.json();assert.deepEqual(body.reviews.map(r=>r.author_id),sample.empty?[]:["verified"]);assert.equal(body.reviews.some(r=>"secret" in r),false);}
  }
 });

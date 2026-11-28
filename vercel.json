@@ -52,7 +52,8 @@
       "qa/step1-community-messaging-reconciliation": false,
       "qa/step2-security-boundaries": false,
       "qa/step2-review-rate-limit": false,
-      "qa/step2-private-content": false
+      "qa/step2-private-content": false,
+      "ops/step4-migration-forward-guard": false
     }
   }
 }

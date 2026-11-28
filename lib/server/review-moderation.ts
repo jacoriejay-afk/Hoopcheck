@@ -12,7 +12,7 @@ type ModerationDatabase = {
   public: {
     Tables: {
       reviews: {
-        Row: { id: string; status: string | null; team_id: string | null };
+        Row: { id: string; status: string | null; team_id: string | null; author_id: string | null; is_anonymous: boolean | null };
         Insert: Record<string, unknown>;
         Update: { status?: string; updated_at?: string };
         Relationships: [];
