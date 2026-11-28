@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     }
     visited.add(sourceId);
     const { data: post, error } = await viewer.from("feed_posts")
-      .select("author_id,image_url,image_urls,video_url,shared_post_id,expires_at")
+      .select("author_id,image_url,image_urls,video_url,shared_post_id,expires_at,post_kind")
       .eq("id", sourceId).eq("status", "approved").maybeSingle();
     if (error || !post) return NextResponse.json({ error: "Post unavailable" }, { status: 404 });
     if (post.expires_at !== null) {
@@ -63,6 +63,11 @@ export async function POST(request: Request) {
       : undefined;
     if (!attachedKind || (kind && attachedKind !== kind)) {
       return NextResponse.json({ error: "Media not attached to post" }, { status: 403 });
+    }
+    // Never sign a video Story on the strength of row approval alone,
+    // including when the attachment is reached through a source chain.
+    if (post.post_kind === "story" && attachedKind === "video") {
+      return NextResponse.json({ error:"Video Stories are unavailable" }, {status:404});
     }
     kind = attachedKind;
     if (!post.shared_post_id) {

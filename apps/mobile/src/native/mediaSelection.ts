@@ -6,7 +6,7 @@ import * as FileSystem from "expo-file-system/legacy";
 import { readWithDeadline } from "./readDeadline";
 
 export type Photo = { uri: string; name: string; type: "image/jpeg"; size: number; width: number; height: number };
-export type Video = { uri: string; name: string; type: "video/mp4" | "video/quicktime" | "video/webm"; size: number };
+export type Video = { uri: string; name: string; type: "video/mp4" | "video/quicktime" | "video/webm"; size: number; durationMs?:number };
 export class MediaPermissionError extends Error {}
 function localUri(uri: string) {
   if (!/^(file:|content:|blob:|data:image\/)/.test(uri)) throw new Error("Choose media from your device library.");
@@ -101,7 +101,7 @@ function prepareVideo(asset: ImagePicker.ImagePickerAsset): Video {
   const type = asset.mimeType === "video/mp4" || asset.mimeType === "video/quicktime" || asset.mimeType === "video/webm" ? asset.mimeType : /\.mov$/i.test(asset.fileName ?? asset.uri) ? "video/quicktime" : /\.mp4$/i.test(asset.fileName ?? asset.uri) ? "video/mp4" : null;
   const size = Platform.OS === "web" ? asset.file?.size ?? asset.fileSize : new File(asset.uri).size;
   if (!type || !Number.isSafeInteger(size) || !size || size < 0 || size > 50 * 1024 * 1024) throw new Error("Choose an MP4, MOV or WebM video up to 50 MB.");
-  return { uri: asset.uri, type, size, name: "video." + (type === "video/quicktime" ? "mov" : type === "video/webm" ? "webm" : "mp4") };
+  return { uri: asset.uri, type, size, ...(typeof asset.duration==="number"&&Number.isFinite(asset.duration)?{durationMs:Math.ceil(asset.duration)}:{}), name: "video." + (type === "video/quicktime" ? "mov" : type === "video/webm" ? "webm" : "mp4") };
 }
 // Capture is explicitly user-triggered and native-only; it never publishes.
 async function requireCamera() {

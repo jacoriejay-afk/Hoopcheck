@@ -364,6 +364,8 @@ export async function POST(request: Request) {
     const isStory = kind === "post" && submittedKind === "story";
     let storyCommunity = false;
     if (isStory) {
+      // Caption moderation cannot establish visual or audio moderation.
+      if (videoPath) return NextResponse.json({ allowed:false, message:"Video Stories are unavailable until visual and audio moderation is verified." }, {status:503});
       if (process.env.HOOPCHECK_PHOTO_STORIES_ENABLED !== "true") {
         return NextResponse.json({ allowed: false, message: "Photo Stories are not available yet." }, { status: 403 });
       }
