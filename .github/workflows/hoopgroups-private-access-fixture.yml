@@ -8,6 +8,8 @@ on:
       - 'supabase/tests/hoopgroups_member_page_isolated.sql'
       - 'supabase/candidates/hoopgroups_alerts_review_only.sql'
       - 'supabase/tests/hoopgroups_alerts_isolated.sql'
+      - 'supabase/candidates/hoopgroups_directory_page_review_only.sql'
+      - 'supabase/tests/hoopgroups_directory_page_isolated.sql'
       - '.github/workflows/hoopgroups-private-access-fixture.yml'
 permissions:
   contents: read
