@@ -9,6 +9,8 @@ import { requireOnline, useNetwork } from "../src/native/network";
 import { useNativeAccount } from "../src/native/useNativeAccount";
 import { GroupModerationPanel } from "./GroupModerationPanel";
 import { HoopCheckLoading } from "./HoopCheckLoading";
+import { randomUUID } from "expo-crypto";
+import { prepareGroupSend, submitGroupSend, type GroupSend } from "../src/native/hoopGroupsSend";
 import { createGroupRefreshQueue } from "../src/native/hoopGroupsRefresh";
 import { readWithDeadline } from "../src/native/readDeadline";
 import { findInvitedGroup } from "../src/native/deepLinks";
@@ -44,6 +46,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
   const [loading,setLoading]=useState(true);
   const [busy,setBusy]=useState(false);
   const mutationLocked=useRef(false);
+  const pendingSend=useRef<GroupSend|null>(null);
   const [error,setError]=useState("");
   const [revision,setRevision]=useState(0);
   const [query,setQuery]=useState("");
@@ -305,9 +308,11 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
     mutationLocked.current=true;setBusy(true);setError("");
     try{
       const token=await safetyToken();
-      const {error:sendError}=await supabase.from("hoop_group_posts")
-        .insert({channel_id:channel.id,author_id:userId,body:draft.trim().slice(0,1200),moderation_status:"pending"}).setHeader("Authorization","Bearer "+token);
-      if(sendError)throw Error("Could not submit this post. Slow mode allows one post per 20 seconds.");
+      const message=prepareGroupSend(pendingSend.current,userId,channel.id,draft,randomUUID);
+      pendingSend.current=message;
+      const abort=new AbortController(),deadline=setTimeout(()=>abort.abort(),15000);
+      try{await submitGroupSend(supabase,message,"Bearer "+token,abort.signal);if(await safetyToken()!==token)throw Error("Session changed.");if(pendingSend.current===message)pendingSend.current=null;}
+      finally{clearTimeout(deadline);}
       setDraftState(current=>current?.channelId===channel.id&&current.value===draft?null:current);setPostRefresh(value=>value+1);
     }catch(failure){setError(failure instanceof Error?failure.message:"Message was not submitted.");}
     finally{mutationLocked.current=false;setBusy(false);}

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
+import { prepareGroupSend, submitGroupSend, type GroupSend } from "../../apps/mobile/src/native/hoopGroupsSend";
 import { createGroupRefreshQueue } from "../../apps/mobile/src/native/hoopGroupsRefresh";
 import { withHoopChatDeadline } from "../../apps/mobile/src/native/hoopChatLoad";
 import { groupChannelScope, scopedGroupValue, visibleGroupPosts } from "../../lib/hoopgroups-channel-scope";
@@ -39,6 +40,7 @@ export default function HoopGroupsPage() {
   const [postLoading,setPostLoading]=useState(false);
   const [postError,setPostError]=useState("");
   const sendingPost=useRef(false);
+  const pendingSend=useRef<GroupSend|null>(null);
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [ready, setReady] = useState(false);
@@ -54,6 +56,7 @@ export default function HoopGroupsPage() {
   const load = useCallback(async () => {
     // A session transition invalidates every outstanding account-specific read.
     const generation = ++loadGeneration.current;
+    pendingSend.current=null;
     setReady(false); setBackendReady(false); setBusy(false);
     setUserId(""); setAccountRole(""); setSpaces([]); setChannels([]);
     setMemberships([]); setSpaceId(""); setChannelId(""); setPostSnapshot(null);
@@ -104,6 +107,7 @@ export default function HoopGroupsPage() {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       // Never await a Supabase request inside the auth callback.
       loadGeneration.current += 1;
+      pendingSend.current=null;
       setReady(false); setBackendReady(false); setUserId(""); setPostSnapshot(null);
       setMemberships([]); setDraftSnapshot(null); setAccountRole(""); setSpaces([]); setChannels([]);
       setSpaceId(""); setChannelId(""); setFeedback(""); setBusy(false);
@@ -247,17 +251,17 @@ export default function HoopGroupsPage() {
         if(!current()||signal.aborted)throw Error("Channel changed.");
         const membership=await supabase.from("hoop_group_members").select("space_id").eq("space_id",activeSpace).eq("user_id",userId).setHeader("Authorization",header).abortSignal(signal).maybeSingle();
         if(membership.error||membership.data?.space_id!==activeSpace||!current()||signal.aborted)throw Error("Group membership could not be verified.");
-        const {error}=await supabase.from("hoop_group_posts").insert({
-          channel_id:activeChannel,author_id:userId,body:submitted.trim().slice(0,1200),moderation_status:"pending"
-        }).setHeader("Authorization",header).abortSignal(signal);
-        if(error)throw Error("Post submission could not be confirmed.");
+        const message=prepareGroupSend(pendingSend.current,userId,activeChannel,submitted,()=>crypto.randomUUID());
+        pendingSend.current=message;
+        await submitGroupSend(supabase,message,header,signal);
+        if(current()&&pendingSend.current===message)pendingSend.current=null;
       });
       if(current()){
         setDraftSnapshot(previous=>previous?.scope===scope&&previous.value===submitted?null:previous);
         setFeedback("Post submitted for approval. It is visible only to you until approved.");
         setPostRevision(value=>value+1);
       }
-    }catch{if(current())setFeedback("Post could not be confirmed. Refresh messages before retrying.");}
+    }catch{if(current())setFeedback("Post could not be confirmed. Retry the unchanged draft to reconcile the same message.");}
     finally{sendingPost.current=false;if(generation===loadGeneration.current)setBusy(false);}
   }
   async function report(post: Post) {
