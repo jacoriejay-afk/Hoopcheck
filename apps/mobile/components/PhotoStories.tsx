@@ -9,10 +9,12 @@ import { deleteOwnedFeedPost } from "../src/native/feedClient";
 import { PublicationUnconfirmed } from "../src/native/mediaClient";
 import { readPhotoStories,publishPhotoStory,storyVisible,adjacentStoryId,communityPhotoStoriesEnabled,type StoryAudience,type Story,type StoryCursor } from "../src/native/photoStories";
 import { randomUUID } from "expo-crypto";
+import {readVideoStoryStatus,videoStoryPhaseLabel,type VideoStoryPhase} from "../src/native/storyVideoReview";
 import { uploadStoryDraft } from "../src/native/storyVideoStaging";
 import { FeedVideo } from "./FeedVideo";
 import { FeedMedia } from "./FeedMedia";
 import { FeedReport } from "./FeedReport";
+const reviewStatusEnabled=process.env.EXPO_PUBLIC_HOOPCHECK_VIDEO_STORY_REVIEW_LIFECYCLE_ENABLED==="true";
 const stagingEnabled=process.env.EXPO_PUBLIC_HOOPCHECK_VIDEO_STORY_STAGING_ENABLED==="true";
 const origin=process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim()||"https://hoopcheck.online";
 type Props={uid:string;canWrite:boolean;blockedIds:string[];onClose:()=>void;onBlock:(author:string)=>Promise<void>};
@@ -21,6 +23,7 @@ export function PhotoStories({uid,canWrite,blockedIds,onClose,onBlock}:Props){
  const [rows,setRows]=useState<Story[]>([]),[next,setNext]=useState<StoryCursor|null>(null),[selected,setSelected]=useState<string|null>(null);
  const [photo,setPhoto]=useState<Photo|null>(null),[caption,setCaption]=useState(""),[busy,setBusy]=useState(false),[message,setMessage]=useState(""),[uncertain,setUncertain]=useState(false),[now,setNow]=useState(()=>Date.now());
  const [audience,setAudience]=useState<StoryAudience>("followers");
+ const [videoPhase,setVideoPhase]=useState<VideoStoryPhase|null>(null);
  const [videoDraft,setVideoDraft]=useState<Video|null>(null);
  const [videoId,setVideoId]=useState<string|null>(null),[staged,setStaged]=useState(false),[transfer,setTransfer]=useState<number|null>(null);
  const previewFailure=useCallback(()=>setMessage("This clip could not be previewed. Choose another video."),[]);
@@ -57,7 +60,7 @@ export function PhotoStories({uid,canWrite,blockedIds,onClose,onBlock}:Props){
   locked.current=true;setBusy(true);setMessage("");
   try{
    const result=await(camera?captureVideo():chooseVideo());
-   if(alive.current&&result){if(!result.durationMs||result.durationMs>60000)throw Error("Choose a video with known duration up to 60 seconds.");setVideoDraft(result);setPhoto(null);setVideoId(randomUUID());setStaged(false);}
+   if(alive.current&&result){if(!result.durationMs||result.durationMs>60000)throw Error("Choose a video with known duration up to 60 seconds.");setVideoDraft(result);setPhoto(null);setVideoId(randomUUID());setStaged(false);setVideoPhase(null);}
   }catch(error){if(alive.current)setMessage(error instanceof Error?error.message:"Video unavailable.");}
   finally{locked.current=false;if(alive.current)setBusy(false);}
  }
@@ -76,6 +79,21 @@ export function PhotoStories({uid,canWrite,blockedIds,onClose,onBlock}:Props){
    setStaged(true);setMessage("Private video staged. Awaiting visual and audio moderation. Not published.");
   }catch{if(alive.current)setMessage("Private staging was not confirmed. Retry this same draft; it has not been published.");}
   finally{clearTimeout(deadline);locked.current=false;if(alive.current){setBusy(false);setTransfer(null);}}
+ }
+ async function refreshVideoStatus(){
+  if(!reviewStatusEnabled||!videoId||!staged||locked.current||!alive.current)return;
+  locked.current=true;setBusy(true);
+  const abort=new AbortController();controller.current=abort;const timer=setTimeout(()=>abort.abort(),12000);
+  try{
+   const session=await supabase.auth.getSession();
+   if(session.error||session.data.session?.user.id!==uid||abort.signal.aborted)throw Error("Verify account.");
+   const token=session.data.session.access_token;
+   const phase=await readVideoStoryStatus(origin,token,videoId,abort.signal);
+   const latest=await supabase.auth.getSession();
+   if(latest.error||latest.data.session?.user.id!==uid||latest.data.session.access_token!==token||!alive.current||abort.signal.aborted)throw Error("Account changed.");
+   setVideoPhase(phase);setMessage(videoStoryPhaseLabel[phase]);
+  }catch{if(alive.current){setVideoPhase(null);setMessage("Processing status could not be verified.");}}
+  finally{clearTimeout(timer);locked.current=false;if(alive.current)setBusy(false);}
  }
  async function publish(){
   if(!alive.current||locked.current||!canWrite||!photo||videoDraft||uncertain)return;
@@ -114,9 +132,10 @@ export function PhotoStories({uid,canWrite,blockedIds,onClose,onBlock}:Props){
     {videoDraft?<View style={{gap:8}}>
       <FeedVideo key={videoDraft.uri} uri={videoDraft.uri} enabled={false} loop={false} height={220} onFailure={previewFailure}/>
       <Text style={{color:t.muted}}>Private device preview · {(videoDraft.size/1024/1024).toFixed(1)} MB. {staged?"Staged privately; awaiting moderation.":"This clip has not been confirmed as uploaded or moderated."}</Text>
+      {reviewStatusEnabled&&staged?<View style={{gap:6}}><Text accessibilityLiveRegion="polite" style={{color:t.muted}}>{videoPhase?videoStoryPhaseLabel[videoPhase]:"Processing status not checked."}</Text><Button secondary disabled={busy} onPress={()=>void refreshVideoStatus()}>Check video processing status</Button></View>:null}
       {stagingEnabled&&!staged?<Button disabled={busy} onPress={()=>void stageVideo()}>Stage privately for moderation</Button>:null}
       {transfer!==null?<><Text accessibilityLiveRegion="polite" style={{color:t.muted}}>Uploading privately · {Math.floor(transfer*100)}%</Text><Button secondary onPress={()=>controller.current?.abort()}>Cancel upload</Button></>:null}
-      <Button secondary disabled={busy} onPress={()=>{setVideoDraft(null);setVideoId(null);setStaged(false);}}>Discard local preview</Button>
+      <Button secondary disabled={busy} onPress={()=>{setVideoDraft(null);setVideoId(null);setStaged(false);setVideoPhase(null);}}>Discard local preview</Button>
     </View>:null}
     <View style={{flexDirection:"row",flexWrap:"wrap",gap:6}}>
       <Button secondary disabled={busy||uncertain} onPress={()=>void pickVideo(false)}>{videoDraft?"Replace video preview":"Choose video to preview"}</Button>
