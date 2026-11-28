@@ -21,6 +21,14 @@ export async function POST(request:Request){
     return {owner:user.id,role:profile.data.account_type};
    }catch{return null;}
   },
+  async takeBudget(req,session){
+   if(!enabled())throw Error("Test verification unavailable");
+   const {db,user}=await appleRequest(req);
+   if(user.id!==session.owner)throw Error("Session changed");
+   const result=await db.rpc("play_take_test_verification_budget",{p_owner:user.id});
+   if(result.error||typeof result.data!=="boolean")throw Error("Verification budget unavailable");
+   return result.data;
+  },
   verify:(owner,token)=>createPlayVerificationClient().verify(owner,token),
   now:Date.now
  });

@@ -2,7 +2,7 @@ import "server-only";
 import {playProduct,canPurchasePlayProduct} from "../../billing/play-products";
 type Session={owner:string;role:string};
 type Verified={state:string;product?:{productId:string;basePlanId:string};expiresAt?:string};
-type Ports={enabled():boolean;authorize(request:Request):Promise<Session|null>;verify(owner:string,token:string):Promise<Verified>;now():number};
+type Ports={enabled():boolean;authorize(request:Request):Promise<Session|null>;takeBudget(request:Request,session:Session):Promise<boolean>;verify(owner:string,token:string):Promise<Verified>;now():number};
 const reply=(status:number,body:object)=>new Response(JSON.stringify(body),{status,headers:{"Content-Type":"application/json","Cache-Control":"private, no-store","X-Content-Type-Options":"nosniff"}});
 const unavailable=()=>reply(503,{error:"Google Play test verification is unavailable."});
 const uuid=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
@@ -26,6 +26,8 @@ export async function verifyPlayRequest(request:Request,ports:Ports):Promise<Res
   if(!body||Object.keys(body).sort().join(",")!=="basePlanId,productId,purchaseToken"||typeof body.purchaseToken!=="string"||! /^[A-Za-z0-9._~-]{16,4096}$/.test(body.purchaseToken))return reply(400,{error:"Invalid purchase verification request."});
   const product=playProduct(body.productId,body.basePlanId);
   if(!product||!canPurchasePlayProduct(auth.role,product))return reply(403,{error:"This membership option is unavailable."});
+  if(!await ports.takeBudget(request,auth))return reply(429,{error:"Too many test verification attempts. Try again later."});
+  if(!ports.enabled())return unavailable();
   const result=await ports.verify(auth.owner,body.purchaseToken);
   const current=await ports.authorize(request);
   if(!ports.enabled()||!current||current.owner!==auth.owner||current.role!==auth.role)return unavailable();
