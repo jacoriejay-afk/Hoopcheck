@@ -1,6 +1,6 @@
 import {test} from "node:test";
 import assert from "node:assert/strict";
-import {decodeGroupAccessSnapshot,readGroupAccess,mutateGroupAccess} from "../src/native/groupAccess.ts";
+import {decodeGroupAccessSnapshot,readGroupAccess,mutateGroupAccess,readGroupMemberPage} from "../src/native/groupAccess.ts";
 const uid="11111111-1111-4111-8111-111111111111",other="22222222-2222-4222-8222-222222222222",space="33333333-3333-4333-8333-333333333333";
 const empty={space_id:space,is_owner:false,can_moderate:false,members:[],contacts:[],private_channels:[],banned:[],invitations:[],pending_invites:[],queue:[]};
 test("private group snapshot rejects mismatched group, unauthorized member data, and malformed rows",()=>{
@@ -20,4 +20,13 @@ test("read and write pin the verified caller; reject switched account before pub
  assert.equal(await mutateGroupAccess(write.client,uid,space,{action:"invite",target:other},signal),other);
  assert.equal(write.calls[0].args.p_target,other);
  await assert.rejects(mutateGroupAccess(mock({ok:false}).client,uid,space,{action:"invite",target:other},signal));
+});
+
+test("roster cursor and owner scoping keep older members accessible",async()=>{
+ const signal=new AbortController().signal,member={user_id:other,name:"Member",role:"member",channels:[]},f=mock({space_id:space,rows:[member],has_more:false});
+ assert.deepEqual(await readGroupMemberPage(f.client,uid,space,null,"Member",signal),{members:[member],next:null});
+ assert.equal(f.calls[0].name,"hoop_group_member_page");
+ assert.deepEqual(f.calls[0].args,{p_space:space,p_after:null,p_query:"Member"});
+ await assert.rejects(readGroupMemberPage(mock({space_id:other,rows:[member],has_more:false}).client,uid,space,null,"",signal));
+ await assert.rejects(readGroupMemberPage(mock({space_id:space,rows:[member],has_more:false}).client,uid,space,other,"",signal));
 });

@@ -6,7 +6,9 @@ test("HoopChat starts with inbox and requires explicit, mode-scoped thread selec
   const chat = read("../app/messages.tsx");
   assert.match(chat, /const \[openedId, setOpenedId\] = useState\(""\)/);
   assert.match(chat, /selected\.id === openedId && openedMode === mode/);
-  assert.match(chat, /!opened&&visibleThreads\.length>0/);
+  assert.match(chat, /!opened&&\(visibleThreads\.length>0\|\|serverInboxEnabled\)/);
+  assert.match(chat, /if\(linkKey&&consumedLink\.current!==linkKey\)/);
+  assert.match(chat, /const linked=result\.rows\.find\(row=>row\.id===threadHint&&row\.status==="accepted"\)/);
   assert.match(chat, /opened&&selected/);
   assert.match(chat, /accessibilityLabel="Back to conversations"/);
   assert.doesNotMatch(chat, /<ScrollView horizontal/);
