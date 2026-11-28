@@ -3,7 +3,8 @@
 // acknowledgement. Callers must bind the plan to an approved privacy request,
 // use caller-authorized projections, and supply the approved expiry.
 import { createHash } from "node:crypto";
-import { chmod, mkdtemp, open, rm } from "node:fs/promises";
+import { constants } from "node:fs";
+import { chmod, link, lstat, mkdtemp, open, readdir, rm, unlink } from "node:fs/promises";
 import { join } from "node:path";
 
 type Scalar = string|number|boolean|null;
@@ -129,4 +130,153 @@ export async function stagePersonalExport(input:PersonalExportPlan,readers:Reade
   // Do not expose private source rows, paths, identifiers or provider errors.
   throw Error("Personal export staging could not be confirmed.");
  }
+}
+
+type Receipt = { rows: number; bytes: number; sha256: string };
+type Scope = { plan: PersonalExportPlan; name: string; path: string; expires: number; fingerprint: string };
+const headerSize = 512;
+const chunkSize = 65536;
+const unavailable = () => Error("Personal export unavailable.");
+
+function isMissing(error: unknown) {
+  return (error as NodeJS.ErrnoException | null)?.code === "ENOENT";
+}
+
+/** Worker and download adapters for an approved private, persistent volume.
+ * The caller supplies the approved plan and a live authorization check.
+ * Each request publishes one immutable file via a same-volume atomic link. */
+export function createPersonalExportArtifacts(privateRoot: string, authorize: Authorize, now = Date.now) {
+  async function scope(input: PersonalExportPlan): Promise<Scope> {
+    const plan = structuredClone(input);
+    const dir = await lstat(privateRoot);
+    if (!dir.isDirectory() || (dir.mode & 0o077) !== 0 || !uuid.test(plan.ownerId) || !uuid.test(plan.requestId)) throw unavailable();
+    const expires = Date.parse(plan.expiresAt);
+    if (!Number.isFinite(expires)) throw unavailable();
+    const name = `${plan.ownerId}.${plan.requestId}`;
+    const fingerprint = createHash("sha256")
+      .update(JSON.stringify([plan.policyVersion, plan.expiresAt, plan.byteLimit, plan.sections.map(section => [section.name, section.fields])]))
+      .digest("hex");
+    return { plan, expires, name, path: join(privateRoot, name), fingerprint };
+  }
+
+  async function verify(entry: Scope, signal: AbortSignal) {
+    if (signal.aborted || now() >= entry.expires || await authorize(entry.plan, signal) !== true ||
+      signal.aborted || now() >= entry.expires) throw unavailable();
+  }
+
+  async function readHeader(file: Awaited<ReturnType<typeof open>>, entry: Scope): Promise<Receipt> {
+    const stat = await file.stat();
+    const header = Buffer.alloc(headerSize);
+    const result = await file.read(header, 0, header.length, 0);
+    if (!stat.isFile() || (stat.mode & 0o077) !== 0 || result.bytesRead !== header.length) throw unavailable();
+    const row = JSON.parse(header.toString("utf8"));
+    const { rows, bytes, sha256 } = row;
+    if (row.version !== 1 || row.fingerprint !== entry.fingerprint || !Number.isSafeInteger(rows) || rows < 0 ||
+      !Number.isSafeInteger(bytes) || bytes < 1 || bytes > entry.plan.byteLimit || bytes + headerSize !== stat.size ||
+      typeof sha256 !== "string" || !/^[0-9a-f]{64}$/.test(sha256)) throw unavailable();
+    return { rows, bytes, sha256 };
+  }
+
+  async function inspect(entry: Scope) {
+    let file;
+    try { file = await open(entry.path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK); }
+    catch (error) { if (isMissing(error)) return null; throw error; }
+    try { return await readHeader(file, entry); }
+    finally { await file.close(); }
+  }
+
+  async function syncDirectory() {
+    const root = await open(privateRoot, constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW);
+    try { await root.sync(); }
+    finally { await root.close(); }
+  }
+
+  return {
+    async generate(input: PersonalExportPlan, readers: ReaderMap, signal: AbortSignal): Promise<Receipt> {
+      try {
+        const entry = await scope(input);
+        await verify(entry, signal);
+        const existing = await inspect(entry);
+        if (existing) {
+          await syncDirectory();
+          await verify(entry, signal);
+          return existing;
+        }
+        const work = await mkdtemp(join(privateRoot, `.${entry.name}.`));
+        try {
+          const staged = await stagePersonalExport(entry.plan, readers, authorize, work, signal);
+          const temporary = join(work, "artifact");
+          const file = await open(temporary, "wx", 0o600);
+          try {
+            const header = Buffer.alloc(headerSize, " ");
+            const { rows, bytes, sha256 } = staged;
+            const encoded = Buffer.from(JSON.stringify({ version: 1, fingerprint: entry.fingerprint, rows, bytes, sha256 }));
+            if (encoded.length > header.length) throw unavailable();
+            encoded.copy(header);
+            await file.writeFile(header);
+            const digest = createHash("sha256");
+            let written = 0;
+            for await (const chunk of staged.read(entry.plan.ownerId, entry.plan.requestId, signal)) {
+              digest.update(chunk);
+              written += chunk.length;
+              await file.writeFile(chunk);
+            }
+            if (written !== bytes || digest.digest("hex") !== sha256) throw unavailable();
+            await file.sync();
+          } finally { await file.close(); }
+          await verify(entry, signal);
+          try { await link(temporary, entry.path); }
+          catch (error) { if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error; }
+          await syncDirectory();
+          const receipt = await inspect(entry);
+          await verify(entry, signal);
+          if (!receipt) throw unavailable();
+          return receipt;
+        } finally { await rm(work, { recursive: true, force: true }); }
+      } catch { throw unavailable(); }
+    },
+
+    async *read(input: PersonalExportPlan, authenticatedOwner: string, signal: AbortSignal): AsyncGenerator<Buffer> {
+      try {
+        if (authenticatedOwner !== input.ownerId) throw unavailable();
+        const entry = await scope(input);
+        await verify(entry, signal);
+        const file = await open(entry.path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+        try {
+          const receipt = await readHeader(file, entry);
+          for (let offset = 0; offset < receipt.bytes;) {
+            await verify(entry, signal);
+            const chunk = Buffer.alloc(Math.min(chunkSize, receipt.bytes - offset));
+            const { bytesRead } = await file.read(chunk, 0, chunk.length, offset + headerSize);
+            if (bytesRead === 0) throw unavailable();
+            await verify(entry, signal);
+            offset += bytesRead;
+            yield chunk.subarray(0, bytesRead);
+          }
+        } finally { await file.close(); }
+      } catch { throw unavailable(); }
+    },
+
+    /** Invoke only from the approved request registry with its recorded plan. */
+    async expire(input: PersonalExportPlan, signal: AbortSignal) {
+      try {
+        const entry = await scope(input);
+        if (signal.aborted || now() < entry.expires) return false;
+        const receipt = await inspect(entry);
+        if (receipt) {
+          if (signal.aborted) return false;
+          await unlink(entry.path).catch(error => { if (!isMissing(error)) throw error; });
+        }
+        const prefix = `.${entry.name}.`;
+        for (const name of await readdir(privateRoot)) {
+          if (signal.aborted) return false;
+          if (name.startsWith(prefix) && /^[a-zA-Z0-9]{6}$/.test(name.slice(prefix.length))) {
+            await rm(join(privateRoot, name), { recursive: true, force: true });
+          }
+        }
+        await syncDirectory();
+        return true;
+      } catch { throw unavailable(); }
+    },
+  };
 }
