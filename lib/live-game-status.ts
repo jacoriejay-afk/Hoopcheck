@@ -56,3 +56,15 @@ export function getLiveGameStatusPresentation(game: LiveGameStatusInput, now = n
 
   return { label, isVerifiedLive, isVerifiedFinal, isUnverified, showPeriod: isVerifiedLive && Boolean(period) };
 }
+
+/** Older catalogs may omit the optional provider freshness timestamp. */
+export async function readWithScoreTimestamp<T extends {error: {code?: string} | null}>(
+  read: (includeTimestamp: boolean) => PromiseLike<T>,
+) {
+  const result = await read(true);
+  return result.error?.code === "42703" ? read(false) : result;
+}
+
+export function gameRoomBadge(presentation: LiveGameStatusPresentation, joinable: boolean) {
+  return presentation.label === "UPCOMING" && joinable ? "CHAT OPEN" : presentation.label;
+}
