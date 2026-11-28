@@ -62,7 +62,8 @@
       "qa/android-play-billing-foundation": false,
       "qa/android-play-verified-api": false,
       "qa/step4c-explicit-release-gates-20261128": false,
-      "qa/league-data-1-worldwide-correction": false
+      "qa/league-data-1-worldwide-correction": false,
+      "qa/independent-directory-parity": false
     }
   }
 }

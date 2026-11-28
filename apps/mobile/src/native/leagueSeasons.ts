@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-export type LeagueClub = { id: string; name: string; country: string | null };
+export type LeagueClub = { id: string; name: string; country: string | null; archived?: true };
 const PAGE_SIZE = 100;
 const MAX_PAGES = 100; // explicit safety ceiling; never report a capped result as complete.
 type PageResult<T> = { data: T[] | null; error: unknown };
@@ -47,15 +47,27 @@ export async function readLeagueClubs(client: SupabaseClient, leagueId: string, 
       }, controller.signal),
     ]);
     const ids = [...new Set(linked.rows.map(row => row.team_id).filter(id => typeof id === "string" && uuid.test(id)))];
-    const details: LeagueClub[] = [];
+    const details: (LeagueClub & { active?: boolean })[] = [];
     let limited = direct.limited || linked.limited;
     for (let i = 0; i < ids.length; i += PAGE_SIZE) {
       const batch = ids.slice(i, i + PAGE_SIZE);
-      const result = await readPages<LeagueClub>((from, to) => client.from("teams").select("id,name,country").in("id", batch).eq("active", true).order("id").range(from, to).abortSignal(controller.signal), controller.signal);
+      const result = await readPages<LeagueClub & { active?: boolean }>((from, to) => {
+        const query = client.from("teams").select("id,name,country,active").in("id", batch);
+        return (season ? query : query.eq("active", true)).order("id").range(from, to).abortSignal(controller.signal);
+      }, controller.signal);
       details.push(...result.rows); limited ||= result.limited;
     }
     if (controller.signal.aborted) throw Error("League clubs could not load. Try again.");
-    const clubs = [...new Map([...direct.rows, ...details].filter(row => uuid.test(row.id) && typeof row.name === "string").map(row => [row.id, { id: row.id, name: row.name.slice(0, 200), country: typeof row.country === "string" ? row.country.slice(0, 120) : null }])).values()].sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
+    const byId = new Map<string, LeagueClub>();
+    for (const row of [...direct.rows, ...details] as (LeagueClub & { active?: boolean })[]) {
+      if (!uuid.test(row.id) || typeof row.name !== "string") continue;
+      byId.set(row.id, {
+        id: row.id, name: row.name.slice(0, 200),
+        country: typeof row.country === "string" ? row.country.slice(0, 120) : null,
+        ...(season && row.active === false ? { archived: true } : {}),
+      });
+    }
+    const clubs = [...byId.values()].sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
     return { clubs, season, limited };
   } finally { clearTimeout(timer); options.signal?.removeEventListener("abort", cancel); }
 }

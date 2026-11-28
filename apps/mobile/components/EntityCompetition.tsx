@@ -42,9 +42,14 @@ export function LeagueClubs({ id }: { id: string }) {
     <Input accessibilityLabel="League season" placeholder="Exact season, e.g. 2026–27" maxLength={80} value={draft} onChangeText={setDraft} returnKeyType="search" onSubmitEditing={apply} />
     <View style={{ gap: t.spacing.sm }}><Button secondary onPress={apply}>Apply season</Button>{season ? <Button secondary onPress={() => { setDraft(""); setSeason(""); }}>Current clubs</Button> : null}</View>
     <Text accessibilityLiveRegion="polite" style={{ color: t.accent, ...t.type.caption }}>{season ? `Season: ${season}` : "Current active directory clubs"}</Text>
-    {offline ? <Text style={{ color: t.muted }}>Reconnect for league clubs.</Text> : !current ? <Skeleton review /> : current.error ? <><Text accessibilityRole="alert" style={{ color: t.muted }}>League clubs could not load.</Text><Button secondary onPress={() => setRefresh(value => value + 1)}>Retry league clubs</Button></> : !current.data?.clubs.length ? <Text style={{ color: t.muted }}>{season ? "No active directory clubs recorded for this season." : "No active clubs linked to this league."}</Text> : current.data.clubs.slice(0, visibleLimit).map(club => <PressableCard key={club.id} accessibilityRole="link" onPress={() => router.push({ pathname: "/teams/[id]", params: { id: club.id } })}><Text style={{ color: t.foreground, ...t.type.section }}>{club.name}</Text><Text style={{ color: t.muted }}>{club.country || "Country not listed"}</Text></PressableCard>)}
+    {offline ? <Text style={{ color: t.muted }}>Reconnect for league clubs.</Text> : !current ? <Skeleton review /> : current.error ? <><Text accessibilityRole="alert" style={{ color: t.muted }}>League clubs could not load.</Text><Button secondary onPress={() => setRefresh(value => value + 1)}>Retry league clubs</Button></> : !current.data?.clubs.length ? <Text style={{ color: t.muted }}>{season ? "No visible directory clubs recorded for this season." : "No active clubs linked to this league."}</Text> : current.data.clubs.slice(0, visibleLimit).map(club => {
+      const details = <><Text style={{ color: t.foreground, ...t.type.section }}>{club.name}</Text>
+        <Text style={{ color: t.muted }}>{club.country || "Country not listed"}{club.archived ? " · Archived club" : ""}</Text></>;
+      return club.archived ? <View key={club.id} style={{padding: t.spacing.md}}>{details}</View> :
+        <PressableCard key={club.id} accessibilityRole="link" onPress={() => router.push({ pathname: "/teams/[id]", params: { id: club.id } })}>{details}</PressableCard>;
+    })}
     {current?.data && current.data.clubs.length > visibleLimit ? <Button secondary onPress={() => setVisibleLimit(value => value+8)}>Show more recorded clubs</Button> : null}
     {current?.data?.limited ? <Text style={{ color: t.muted }}>Results are bounded and may be incomplete.</Text> : null}
-    {season ? <Text style={{color:t.muted}}>Names are from the current visible directory; archived or removed clubs and historical names may be missing. Membership records are not official standings.</Text> : null}
+    {season ? <Text style={{color:t.muted}}>Names come from visible directory records. Some historical records and historical club names may be unavailable.</Text> : null}
   </View>;
 }
