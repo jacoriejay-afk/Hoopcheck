@@ -15,7 +15,8 @@ export async function resolveGroupChannelLink(client:SupabaseClient,uid:string,h
  ]);
  if(s.error||m.error||signal.aborted)throw Error("Discussion unavailable.");
  if(!s.data||m.data?.space_id!==spaceId||m.data.user_id!==uid)return null;
- if(s.data.id!==spaceId||["slug","name","category","description","accent_color","icon_key"].some(k=>typeof s.data[k]!=="string")||!(s.data.owner_id===null||groupAlertId(s.data.owner_id)))throw Error("Invalid discussion.");
+ const spaceData:Record<string,unknown>=s.data;
+ if(s.data.id!==spaceId||["slug","name","category","description","accent_color","icon_key"].some(k=>typeof spaceData[k]!=="string")||!(s.data.owner_id===null||groupAlertId(s.data.owner_id)))throw Error("Invalid discussion.");
  const latest=await client.auth.getSession();
  if(signal.aborted||latest.error||latest.data.session?.user.id!==uid||"Bearer "+latest.data.session.access_token!==bearer)throw Error("Account changed.");
  return {space:s.data as Space,channel:c.data as Channel};
