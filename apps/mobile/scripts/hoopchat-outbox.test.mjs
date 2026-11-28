@@ -1,0 +1,20 @@
+import {test} from "node:test";
+import assert from "node:assert/strict";
+import {createChatOutbox,chatOutboxKey} from "../src/native/hoopChatOutboxCore.ts";
+const owner="11111111-1111-4111-8111-111111111111",thread="22222222-2222-4222-8222-222222222222",id="33333333-3333-4333-8333-333333333333",token="Bearer fixture";
+test("lost acknowledgement across restart preserves only opaque ID and does not duplicate",async()=>{
+ const data=new Map(),storage={get:async k=>data.get(k)??null,set:async(k,v)=>data.set(k,v),remove:async k=>data.delete(k)};
+ const lock=async(k,run)=>run();let saved=null,attempts=0;
+ const client={auth:{getSession:async()=>({data:{session:{user:{id:owner},access_token:"fixture"}}})},from(){const q={select(){return q},eq(){return q},setHeader(){return q},abortSignal(){return q},maybeSingle:async()=>({data:saved,error:null}),insert(m){attempts++;saved=m;return {setHeader:()=>({abortSignal:async()=>({error:{code:"503"}})})}}};return q;}};
+ const make=()=>createChatOutbox(storage,lock,()=>id),signal=new AbortController().signal;
+ await assert.rejects(make().send(client,owner,thread,"private body",undefined,token,signal,false));
+ assert.equal(data.get(chatOutboxKey(owner,thread)),id);assert.equal(data.size,1);
+ assert.equal(await make().send(client,owner,thread,"private body",undefined,token,signal,false),"sent");
+ assert.equal(attempts,1);assert.equal(data.size,0);
+ await storage.set(chatOutboxKey(owner,thread),id);saved=null;
+ assert.equal(await make().status(client,owner,thread,token,signal,false),"unconfirmed");
+ assert.equal(data.size,1);
+ saved={id,request_id:thread,sender_id:owner,body:"prior"};
+ assert.equal(await make().send(client,owner,thread,"different draft",undefined,token,signal,false),"previous_delivered");
+ assert.equal(attempts,1);assert.equal(data.size,0);
+});

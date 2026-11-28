@@ -9,11 +9,14 @@ import {withHoopChatDeadline} from "../apps/mobile/src/native/hoopChatLoad";
 import {
   appendConversationPage,CHAT_HISTORY_PAGE_SIZE,readConversationPage,refreshConversationPage
 } from "../apps/mobile/src/native/hoopChatHistory";
+import {webChatOutbox} from "../lib/hoopchat-outbox";
+import {chatDeliveryMessage} from "../apps/mobile/src/native/hoopChatOutboxCore";
 import {prepareConversationMessage,sendConversationMessage} from "../apps/mobile/src/native/hoopChatSend";
 import {quoteConversationMessage} from "../apps/mobile/src/native/hoopChatQuote";
 import {forwardDestinations,forwardDraft,readForwardDraft,type ForwardSelection} from "../apps/mobile/src/native/hoopChatForward";
 import {makeReplyTarget,scopedReplyTarget,type ReplyTarget} from "../apps/mobile/src/native/hoopChatReply";
 import {markServerChatRead,readPagedChatCounts} from "../apps/mobile/src/native/hoopChatReadSync";
+const durableDelivery=process.env.NEXT_PUBLIC_HOOPCHECK_CHAT_DURABLE_DELIVERY_ENABLED==="true";
 const structuredReplies=process.env.NEXT_PUBLIC_HOOPCHECK_STRUCTURED_REPLIES_ENABLED==="true";
 const serverInboxEnabled=process.env.NEXT_PUBLIC_HOOPCHECK_SERVER_INBOX_ENABLED==="true";
 const syncReadMarkers=serverInboxEnabled||process.env.NEXT_PUBLIC_HOOPCHECK_CHAT_READ_SYNC_ENABLED==="true";
@@ -479,6 +482,25 @@ export default function HoopChatCourtside(){
     }catch(e){if(rev===accountGeneration.current)setError(e instanceof Error?e.message:"Could not respond.");}
     finally{if(mutationGeneration.current===rev)mutationGeneration.current=null;if(rev===accountGeneration.current)setSending(false);}
   }
+  async function checkDelivery(){
+    if(!selected||selected.status!=="accepted"||!userId||sending)return;
+    const rev=accountGeneration.current,thread=selected.id;
+    if(mutationGeneration.current===rev)return;
+    mutationGeneration.current=rev;setSending(true);setError("");setFeedback("");
+    try{
+      const status=await withHoopChatDeadline(async signal=>{
+        const {data:{user}}=await supabase.auth.getUser();
+        const {data:{session},error}=await supabase.auth.getSession();
+        if(error||user?.id!==userId||session?.user.id!==userId||signal.aborted||rev!==accountGeneration.current)throw Error("Session changed.");
+        const header="Bearer "+session.access_token;
+        const blocked=await supabase.from("user_blocks").select("blocked_id").eq("blocker_id",userId).eq("blocked_id",peerId(selected)).setHeader("Authorization",header).abortSignal(signal).maybeSingle();
+        if(blocked.error||blocked.data||signal.aborted||rev!==accountGeneration.current)throw Error("Conversation unavailable.");
+        return webChatOutbox.status(supabase,userId,thread,header,signal,structuredReplies);
+      });
+      if(rev===accountGeneration.current){setFeedback(chatDeliveryMessage(status));if(status==="delivered"){void loadHistory(userId,thread,undefined,true);await load(true);}}
+    }catch(e){if(rev===accountGeneration.current)setError(e instanceof Error?e.message:"Delivery unavailable.");}
+    finally{if(mutationGeneration.current===rev)mutationGeneration.current=null;if(rev===accountGeneration.current)setSending(false);}
+  }
   async function send(event:FormEvent<HTMLFormElement>){
     event.preventDefault();
     const body=currentDraft.trim();
@@ -498,8 +520,9 @@ export default function HoopChatCourtside(){
         const blocked=await supabase.from("user_blocks").select("blocked_id")
           .eq("blocker_id",userId).eq("blocked_id",peerId(selected)).setHeader("Authorization",header).abortSignal(signal).maybeSingle();
         if(blocked.error||blocked.data||signal.aborted||rev!==accountGeneration.current)throw new Error("Conversation unavailable.");
-        const message=prepareConversationMessage(pendingMessages.current,thread,userId,submittedDraft,()=>crypto.randomUUID(),replyId);
-        await sendConversationMessage(supabase,message,signal,header);
+        if(durableDelivery){const result=await webChatOutbox.send(supabase,userId,thread,submittedDraft,replyId,header,signal,structuredReplies);if(result==="previous_delivered")throw Error("Previous message delivered. Your current draft is kept; review the conversation before sending.");}
+        else {const message=prepareConversationMessage(pendingMessages.current,thread,userId,submittedDraft,()=>crypto.randomUUID(),replyId);
+        await sendConversationMessage(supabase,message,signal,header);}
       });
       if(rev!==accountGeneration.current)return;
       pendingMessages.current.delete(thread);
@@ -623,6 +646,7 @@ export default function HoopChatCourtside(){
           <div className="hc-courtside-starters"><span>PLAYBOOK</span>
             {STARTERS.map(starter=><button type="button" key={starter.key} onClick={()=>applyStarter(starter.message)}
               title="Insert a suggestion into your draft; nothing sends automatically">{starter.emoji} {starter.label}</button>)}</div>
+          {durableDelivery?<button type="button" disabled={sending} onClick={()=>void checkDelivery()}>Check previous delivery</button>:null}
           <form className="hc-courtside-compose" onSubmit={event=>void send(event)}>
             {structuredReplies&&replyTarget?.scope===historyScope?<div><span>{replyId?"Reply linked to a message":"Reply target unavailable"}</span><button type="button" disabled={sending} onClick={()=>setReplyTarget(null)}>Remove reply link</button></div>:null}
             <label htmlFor="hc-courtside-compose">Message {peerName(selected)}</label>

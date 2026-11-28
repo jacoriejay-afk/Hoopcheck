@@ -18,10 +18,13 @@ import { supabase } from "../src/lib/supabase";
 import { requireOnline, useNetwork } from "../src/native/network";
 import { hoopChatAuthAction, withHoopChatDeadline } from "../src/native/hoopChatLoad";
 import { appendConversationPage, CHAT_HISTORY_PAGE_SIZE, matchesConversationSearch, readConversationPage, refreshConversationPage, type ContactMessage } from "../src/native/hoopChatHistory";
+import {nativeChatOutbox} from "../src/native/hoopChatOutbox";
+import {chatDeliveryMessage} from "../src/native/hoopChatOutboxCore";
 import { prepareConversationMessage, sendConversationMessage } from "../src/native/hoopChatSend";
 import { quoteConversationMessage } from "../src/native/hoopChatQuote";
 import { makeReplyTarget, scopedReplyTarget, type ReplyTarget } from "../src/native/hoopChatReply";
 import { markServerChatRead, readPagedChatCounts } from "../src/native/hoopChatReadSync";
+const durableDelivery=process.env.EXPO_PUBLIC_HOOPCHECK_CHAT_DURABLE_DELIVERY_ENABLED==="true";
 const structuredReplies=process.env.EXPO_PUBLIC_HOOPCHECK_STRUCTURED_REPLIES_ENABLED==="true";
 const serverInboxEnabled=process.env.EXPO_PUBLIC_HOOPCHECK_SERVER_INBOX_ENABLED==="true";
 const syncReadMarkers=serverInboxEnabled||process.env.EXPO_PUBLIC_HOOPCHECK_CHAT_READ_SYNC_ENABLED==="true";
@@ -341,6 +344,19 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
     }catch(failure){if(actionGeneration===generation.current && focused.current)setError(failure instanceof Error?failure.message:"Unable to update request.");}
     finally{mutationLocked.current=false;setSending(false);}
   }
+  async function checkDelivery(){
+    if(!selected||selected.status!=="accepted"||!opened||offline||sending||mutationLocked.current)return;
+    mutationLocked.current=true;setSending(true);setError("");
+    const rev=generation.current;
+    try{
+      const status=await withHoopChatDeadline(async signal=>{
+        const header=await verifyChatPeer(userId,peerId(selected),signal);
+        return nativeChatOutbox.status(supabase,userId,selected.id,header,signal,structuredReplies);
+      });
+      if(rev===generation.current&&focused.current){setError(chatDeliveryMessage(status));if(status==="delivered")await load();}
+    }catch(e){if(rev===generation.current&&focused.current)setError(e instanceof Error?e.message:"Delivery unavailable.");}
+    finally{mutationLocked.current=false;setSending(false);}
+  }
   async function send(){
     if(!selected || selected.status!=="accepted" || !opened || !draft.trim() || sending || offline || mutationLocked.current) return;
     mutationLocked.current=true;
@@ -355,8 +371,9 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
         if(signal.aborted||user?.id!==userId||actionGeneration!==generation.current||!focused.current)throw new Error("Your session changed.");
         const header=await verifyChatPeer(userId,peerId(selected),signal);
         if(signal.aborted||actionGeneration!==generation.current||!focused.current)throw new Error("Your session changed.");
-        const message=prepareConversationMessage(pendingMessages.current,selected.id,userId,submittedDraft,randomUUID,replyId);
-        await sendConversationMessage(supabase,message,signal,header);
+        if(durableDelivery){const result=await nativeChatOutbox.send(supabase,userId,selected.id,submittedDraft,replyId,header,signal,structuredReplies);if(result==="previous_delivered")throw Error("Previous message delivered. Your current draft is kept; review the conversation before sending.");}
+        else {const message=prepareConversationMessage(pendingMessages.current,selected.id,userId,submittedDraft,randomUUID,replyId);
+        await sendConversationMessage(supabase,message,signal,header);}
       });
       if(actionGeneration===generation.current && focused.current){
         pendingMessages.current.delete(selected.id);
@@ -444,6 +461,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
           <ChatTypingBasketball active={motionActive && Boolean(draft.trim()) && !sending} />
           <TextInput accessibilityLabel="Write private HoopChat message" editable={!sending && !offline} multiline maxLength={2000} value={draft} onChangeText={setDraft} placeholder="Write a message…" placeholderTextColor={theme.muted}
             style={{minHeight:48,maxHeight:120,textAlignVertical:"top",padding:12,backgroundColor:theme.input,color:theme.foreground,borderWidth:1,borderColor:theme.border,borderRadius:theme.radius.control}} />
+          {durableDelivery?<Button secondary disabled={sending||offline} onPress={()=>void checkDelivery()}>Check previous delivery</Button>:null}
           <Button disabled={sending||offline||!draft.trim()} onPress={()=>void send()}>{sending?"Sending…":"Send"}</Button>
         </View>:selected.status==="pending"?<Text style={{color:theme.muted}}>Messaging opens once the player accepts.</Text>:<Text style={{color:theme.muted}}>This request is no longer active.</Text>}
       </View>:null}
