@@ -10,6 +10,8 @@ import { useNativeAccount } from "../src/native/useNativeAccount";
 import { GroupModerationPanel } from "./GroupModerationPanel";
 import { HoopCheckLoading } from "./HoopCheckLoading";
 import { readWithDeadline } from "../src/native/readDeadline";
+import { withHoopChatDeadline } from "../src/native/hoopChatLoad";
+import { setGroupMembership } from "../src/native/groupMembership";
 import { findInvitedGroup } from "../src/native/deepLinks";
 
 type Space = { id:string;slug:string;name:string;category:string;description:string;owner_id:string|null;accent_color:string;icon_key:string };
@@ -183,10 +185,9 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
     if(mutationLocked.current)return;
     mutationLocked.current=true;setBusy(true);setError("");
     try{
-      const token=await safetyToken();
-      const {error:joinError}=await supabase.from("hoop_group_members").insert({space_id:selected.id,user_id:userId}).setHeader("Authorization","Bearer "+token);
-      if(joinError)throw Error("Could not join community.");
-      setJoined(current=>[...new Set([...current,selected.id])]);
+      await requireOnline();
+      const result=await withHoopChatDeadline(signal=>setGroupMembership(supabase,userId,selected.id,true,signal));
+      setJoined(current=>[...new Set([...current,result.spaceId])]);
     }catch(failure){setError(failure instanceof Error?failure.message:"Join failed.");}
     finally{mutationLocked.current=false;setBusy(false);}
   }
@@ -249,11 +250,9 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
     if(mutationLocked.current)return;
     mutationLocked.current=true;setBusy(true);setError("");
     try{
-      const token=await safetyToken();
-      const {error:leaveError}=await supabase.from("hoop_group_members")
-        .delete().eq("space_id",selected.id).eq("user_id",userId).setHeader("Authorization","Bearer "+token);
-      if(leaveError)throw Error("Could not leave this group.");
-      setJoined(current=>current.filter(id=>id!==selected.id));setPostSnapshot(null);setDraft("");
+      await requireOnline();
+      const result=await withHoopChatDeadline(signal=>setGroupMembership(supabase,userId,selected.id,false,signal));
+      setJoined(current=>current.filter(id=>id!==result.spaceId));setPostSnapshot(null);setDraft("");
     }catch(failure){setError(failure instanceof Error?failure.message:"Could not leave group.");}
     finally{mutationLocked.current=false;setBusy(false);}
   }

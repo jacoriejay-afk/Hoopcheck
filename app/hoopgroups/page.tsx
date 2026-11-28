@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import { withHoopChatDeadline } from "../../apps/mobile/src/native/hoopChatLoad";
+import { setGroupMembership } from "../../apps/mobile/src/native/groupMembership";
 import { groupChannelScope, scopedGroupValue, visibleGroupPosts } from "../../lib/hoopgroups-channel-scope";
 import HoopGroupsManage, { GROUP_COLORS, GROUP_ICONS, type GroupSpace, type GroupChannel } from "../../components/HoopGroupsManage";
 import HoopGroupsChatSettings, { type ChatPrefs } from "../../components/HoopGroupsChatSettings";
@@ -38,6 +39,7 @@ export default function HoopGroupsPage() {
   const [postLoading,setPostLoading]=useState(false);
   const [postError,setPostError]=useState("");
   const sendingPost=useRef(false);
+  const membershipMutation=useRef(false);
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [ready, setReady] = useState(false);
@@ -186,30 +188,25 @@ export default function HoopGroupsPage() {
     return () => {active=false;running?.abort();window.clearInterval(interval);document.removeEventListener("visibilitychange",visibility);};
   }, [scope,channel?.id,channel?.space_id,userId,postRevision]);
 
-  async function join() {
-    if (!selected || !userId || busy || !backendReady) return;
-    const generation = loadGeneration.current;
-    setBusy(true);setFeedback("");
-    const { error } = await supabase.from("hoop_group_members").insert({ space_id: selected.id, user_id: userId });
-    if (generation !== loadGeneration.current) return;
-    if (error) setFeedback("Unable to join this community.");
-    else setMemberships(items => [...new Set([...items, selected.id])]);
-    setBusy(false);
-  }
-  async function leave() {
-    if (!selected || !userId || busy || !joined) return;
-    const generation = loadGeneration.current;
-    setBusy(true); setFeedback("");
-    const { error } = await supabase.from("hoop_group_members")
-      .delete().eq("space_id",selected.id).eq("user_id",userId);
-    if (generation !== loadGeneration.current) return;
-    if (error) setFeedback("Could not leave this community. Please try again.");
-    else {
-      setMemberships(items=>items.filter(id=>id!==selected.id));
-      setPostSnapshot(null); setDraftSnapshot(null); setFeedback("You left this community.");
+  async function changeMembership(joining:boolean) {
+    if (!selected || !userId || busy || !backendReady || membershipMutation.current || (!joining&&!joined)) return;
+    const generation=loadGeneration.current,groupId=selected.id,owner=userId;
+    membershipMutation.current=true;setBusy(true);setFeedback("");
+    try{
+      const result=await withHoopChatDeadline(signal=>setGroupMembership(supabase,owner,groupId,joining,signal));
+      if (generation !== loadGeneration.current) return;
+      setMemberships(items=>result.joined?[...new Set([...items,result.spaceId])]:items.filter(id=>id!==result.spaceId));
+      if(!result.joined){setPostSnapshot(null);setDraftSnapshot(null);}
+      setFeedback(result.joined?"You joined this community.":"You left this community.");
+    }catch(error){
+      if(generation===loadGeneration.current)setFeedback(error instanceof Error?error.message:"Group membership change could not be confirmed.");
+    }finally{
+      membershipMutation.current=false;
+      if (generation === loadGeneration.current) setBusy(false);
     }
-    setBusy(false);
   }
+  async function join() { await changeMembership(true); }
+  async function leave() { await changeMembership(false); }
   async function refresh() {
     if (!channel || !joined || busy || !backendReady) return;
     setPostRevision(value=>value+1);
