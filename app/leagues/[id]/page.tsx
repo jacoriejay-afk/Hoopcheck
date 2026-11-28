@@ -199,6 +199,21 @@ export default function LeagueDetailPage() {
     useState("");
 
   useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+    setLoading(true);
+    setLeague(null);
+    setTeams([]);
+    setTeamHistory([]);
+    setRosterError(false);
+    setReviews([]);
+    setReviewLoading(false);
+    setPublicSummary({review_count:0,overall_rating:null,communication_rating:null,professionalism_rating:null,development_rating:null,payment_rating:null});
+    setHasAccess(false);
+    setCanReadFullReviews(false);
+    setCanWriteReviews(false);
+    setReviewTier("free");
+    setAccountType("");
     async function loadLeague() {
       if (!id) {
         setLoading(false);
@@ -214,7 +229,9 @@ export default function LeagueDetailPage() {
           "id, name, country, level, logo_url, season"
         )
         .eq("id", id)
+        .abortSignal(controller.signal)
         .maybeSingle();
+      if (!active) return;
 
       if (
         leagueError ||
@@ -236,19 +253,22 @@ export default function LeagueDetailPage() {
         const [directRows, membershipRows] = await Promise.all([
           readRosterPages<Team>((from, to) => supabase.from("teams")
             .select("id,name,country,city,league_id").eq("league_id", id)
-            .eq("active", true).order("id").range(from, to)),
+            .eq("active", true).order("id").range(from, to).abortSignal(controller.signal)),
           readRosterPages<MembershipRow>((from, to) => supabase.from("team_league_memberships")
             .select("id,team_id,season,start_date,end_date,active")
-            .eq("league_id", id).order("id").range(from, to)),
+            .eq("league_id", id).order("id").range(from, to).abortSignal(controller.signal)),
         ]);
+        if (!active) return;
         const teamIds = [...new Set(membershipRows.map(row => row.team_id))];
         const details: (Team & {active: boolean | null})[] = [];
         for (let offset = 0; offset < teamIds.length; offset += ROSTER_PAGE_SIZE) {
+          if (!active) return;
           const batch = teamIds.slice(offset, offset + ROSTER_PAGE_SIZE);
           details.push(...await readRosterPages<Team & {active: boolean | null}>((from, to) =>
             supabase.from("teams").select("id,name,country,city,league_id,active")
-              .in("id", batch).order("id").range(from, to)));
+              .in("id", batch).order("id").range(from, to).abortSignal(controller.signal)));
         }
+        if (!active) return;
         const byId = new Map(details.map(team => [team.id, team]));
         const currentIds = new Set(membershipRows.filter(row =>
           row.active && (!leagueData.season || row.season === leagueData.season)).map(row => row.team_id));
@@ -262,17 +282,21 @@ export default function LeagueDetailPage() {
           return team ? [{ ...row, team }] : [];
         }).sort((a,b) => (b.season || "").localeCompare(a.season || "") || a.team.name.localeCompare(b.team.name) || a.id.localeCompare(b.id)));
       } catch (error) {
+        if (!active) return;
         console.error("League roster lookup failed:", error);
         setRosterError(true);
       }
 
       const { data: { session } } = await supabase.auth.getSession();
+      if (!active) return;
       const user = session?.user;
       if (user) {
         const { data: profile } = await supabase.from("profiles")
           .select("account_type")
           .eq("id", user.id)
+          .abortSignal(controller.signal)
           .maybeSingle();
+        if (!active) return;
         setAccountType(profile?.account_type || "");
       } else {
         setAccountType("");
@@ -281,8 +305,10 @@ export default function LeagueDetailPage() {
       const accessResponse = await fetch(`/api/review-access?entityType=league&entityId=${encodeURIComponent(id)}`, {
         headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
         cache: "no-store",
+        signal: controller.signal,
       });
       const accessPayload = accessResponse.ok ? await accessResponse.json() : null;
+      if (!active) return;
       const tier = (accessPayload?.tier || "free") as typeof reviewTier;
       const fullRead = accessPayload?.canReadFull === true;
       setReviewTier(tier);
@@ -309,6 +335,7 @@ export default function LeagueDetailPage() {
         const { data: verificationData } = reviewIds.length
           ? await supabase.rpc("get_review_verification", { p_review_ids: reviewIds })
           : { data: [] };
+        if (!active) return;
         const verifiedByReview = Object.fromEntries((verificationData as ReviewVerification[] | null || []).map(item => [item.review_id, Boolean(item.player_verified)]));
         setReviews(reviewData.map(review => ({ ...review, player_verified: verifiedByReview[review.id] || false })));
         setReviewLoading(false);
@@ -319,7 +346,18 @@ export default function LeagueDetailPage() {
       setLoading(false);
     }
 
-    loadLeague();
+    void loadLeague().catch(error => {
+      if (!active) return;
+      console.error("League profile lookup failed:", error);
+      setReviews([]);
+      setHasAccess(false);
+      setCanReadFullReviews(false);
+      setCanWriteReviews(false);
+      setReviewTier("free");
+      setReviewLoading(false);
+      setLoading(false);
+    });
+    return () => { active = false; controller.abort(); };
   }, [id]);
 
   async function submitReport() {
@@ -365,7 +403,7 @@ export default function LeagueDetailPage() {
     setReportMessage("");
   }
 
-  if (loading) {
+  if (loading || (league && league.id !== id)) {
     return (
       <main className="hc-entity-profile-page hc-league-entity-profile">
 <section className="hero hc-team-profile-hero hc-league-profile-hero">
