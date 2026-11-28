@@ -20,6 +20,9 @@ const {authenticatePlayPush}=load("../lib/server/play/push-auth.ts",base);
 const {playIntentRequest}=load("../lib/server/play/intent-request.ts",base);
 const {createDisposablePlayAdapters}=load("../lib/server/play/disposable-adapters.ts",base);
 const {createDisposablePlayRuntime}=load("../lib/server/play/disposable-runtime.ts",{...base,"./intent-request":{playIntentRequest},"./test-fulfillment":{reconcileTestPurchase}});
+const coordinator=load("../apps/mobile/src/native/playPurchaseCoordinator.ts",{"../../../../lib/billing/play-products":products});
+const {createPlayRecoveryJournal}=load("../apps/mobile/src/native/playRecoveryJournal.ts");
+const {createPlaySandboxBridge}=load("../apps/mobile/src/native/playSandboxBridge.ts",{"./playPurchaseCoordinator":coordinator});
 // All SQL input is generated fixture data; strict literal escaping and no
 // raw purchase token in SQL, arguments or logs.
 const q=v=>{if(typeof v!=="string"||! /^[A-Za-z0-9._:~+\/-]{1,5600}$/.test(v))throw Error("invalid fixture literal");return "'"+v+"'";};
@@ -59,7 +62,7 @@ const fakeRequest=async(url,init)=>{
 client=createPlayVerificationClient(env,fakeRequest);
 const account=client.accountId(owner);
 const localized={productId:product.productId,basePlanId:product.basePlanId,priceMicros:"101900000",currency:"USD"};
-const req=b=>new Request("https://fixture.invalid/intent",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)});
+const req=(b,t="synthetic-session")=>new Request("https://fixture.invalid/intent",{method:"POST",headers:{"Content-Type":"application/json",authorization:"Bearer "+t},body:JSON.stringify(b)});
 const intentPorts={enabled:()=>true,authorize:async()=>({owner,sessionId:session,role:"player"}),accountId:o=>client.accountId(o),quote:async()=>({...localized,environment:"test",expiresAt:Date.now()+30000}),issue:adapter.issue,consume:adapter.consume,now:Date.now};
 const issued=await playIntentRequest(req(localized),"issue",intentPorts);assert.equal(issued.status,200);
 const intent=await issued.json();
@@ -76,11 +79,38 @@ const runtime=createDisposablePlayRuntime({scope:"disposable_pg17",enabled:()=>t
 const authenticated=new Request("https://fixture.invalid/sync",{headers:{authorization:"Bearer synthetic-session"}});
 const synchronize=async()=> (await runtime.sync(authenticated,product.productId,token))?.outcome??"held";
 assert.equal(await runtime.sync(new Request("https://fixture.invalid/sync"),product.productId,token),null);
-assert.equal(await synchronize(),"test_fulfillment_confirmed");
+let marker=null,launches=0,storeState="empty",launchOutcome="cancelled";
+const storage={read:async()=>marker,write:async v=>{marker=v;},remove:async()=>{marker=null;}};
+const request=async(action,t,body)=>{
+ if(action==="identity")return runtime.identity(req({},t));
+ if(action==="sync")return runtime.sync(req({},t),body.productId,body.purchaseToken);
+ const response=await runtime.intent(req(body,t),action);
+ return response.ok?response.json():null;
+};
+const makeCoordinator=()=>{
+ const bridge=createPlaySandboxBridge({scope:"synthetic",enabled:()=>true,available:()=>true,session:async()=>allowed?{owner,token:"synthetic-session",role:"player"}:null,request,
+ journal:createPlayRecoveryJournal(storage),now:Date.now,native:{
+ launch:async()=>{launches++;if(launchOutcome==="launched")storeState="pending";return launchOutcome;},
+ restore:async id=>({accountId:id,pendingCount:storeState==="pending"?1:0,candidates:storeState==="purchased"?[{productId:product.productId,accountId:id,token}]:[]})
+ }});
+ bridge.setOwner(owner);return bridge;
+};
+let mobile=makeCoordinator();
+assert.equal(await mobile.prepare(localized),true);
+assert.equal(await mobile.launch(),"cancelled");assert.equal(marker,null);
+launchOutcome="launched";
+assert.equal(await mobile.prepare(localized),true);assert.equal(await mobile.launch(),"launched");
+assert.equal(launches,2);assert.ok(marker);
+mobile=makeCoordinator();assert.equal(await mobile.prepare(localized),false);
+assert.deepEqual(await mobile.foreground(),{verified:0,pending:1,failed:0});
+assert.equal(ackCount,0);
+storeState="purchased";
+assert.deepEqual(await mobile.purchaseUpdated({forged:true}),{verified:1,pending:0,failed:0});
+assert.equal(marker,null);
 assert.equal(ackCount,1);
 assert.equal(sql("select provider||':'||plan from play_billing_candidate.shadow_membership_entitlements where user_id="+q(owner)),"google_play_test:premium");
 assert.equal(sql("select count(*) from public.membership_sources where user_id="+q(owner)),"0");
-assert.equal(await synchronize(),"test_fulfillment_confirmed");
+assert.deepEqual(await mobile.recover(account),{verified:1,pending:0,failed:0});
 assert.equal(ackCount,1);
 assert.equal(sql("select play_billing_candidate.claim_test_purchase("+claimArgs(foreign,vault.seal(token,foreign,"test"))+")"),"foreign_owner");
 allowed=false;assert.equal(await synchronize(),"held");assert.equal(ackCount,1);
@@ -120,6 +150,8 @@ assert.equal(sql("select play_billing_candidate.confirm_test_fulfillment("+args(
 // Privacy hold: stop credential lookup and all future fulfillment; do not
 // claim a legal retention policy or destroy immutable ownership evidence.
 assert.equal(await adapter.holdOwner(owner),true);
+assert.equal(await mobile.foreground(),null);
+assert.equal(await mobile.prepare(localized),false);
 assert.equal(sql("select play_billing_candidate.confirm_test_fulfillment("+args(owner,activeGeneration,expiry)+")"),"f");
 assert.equal(await adapter.lookup(fp),null);
 await assert.rejects(()=>adapter.credential({owner,fingerprint:fp,productId:product.productId,basePlanId:product.basePlanId}));
