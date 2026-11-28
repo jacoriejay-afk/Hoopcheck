@@ -36,6 +36,10 @@ export function createDisposablePlayAdapters(options:{scope:"disposable_pg17";en
    const v=await run("select not exists(select 1 from play_billing_candidate.purchase_replacements where successor_fingerprint=$1 and (owner_id<>$2::uuid or previous_fingerprint is distinct from $3)) and ($3::text is null or exists(select 1 from play_billing_candidate.purchase_replacements where successor_fingerprint=$1 and owner_id=$2::uuid and previous_fingerprint=$3))",[c.fingerprint,c.owner,previous]);
    return v===true;
   },
+  async reserveReplacement(owner:string,session:string,intent:string,previous:string,accountId:string){
+   const v=await run("select play_billing_candidate.reserve_test_replacement($1::uuid,$2::uuid,$3::uuid,$4,$5)",[owner,session,intent,previous,accountId]);
+   return v==="charge_full_price"||v==="without_proration"?v:null;
+  },
   async claimReplacement(owner:string,accountId:string,previous:string,product:{productId:string;basePlanId:string},sealed:SealedPurchase,intentId:string|null){
    const v=await run("select play_billing_candidate.claim_replacement_test_purchase($1::uuid,$2,$3,$4,$5,$6,$7,$8::uuid)",[owner,accountId,previous,sealed.fingerprint,sealed.envelope,product.productId,product.basePlanId,intentId]);
    if(v==="claimed"||v==="already_claimed"||v==="foreign_owner"||v==="catalog_conflict"||v==="retry")return v;

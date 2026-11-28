@@ -286,6 +286,40 @@ create policy replacement_read on play_billing_candidate.purchase_replacements f
 create policy replacement_insert on play_billing_candidate.purchase_replacements for insert to service_role with check(not activated);
 create policy replacement_activate on play_billing_candidate.purchase_replacements for update to service_role using(not activated) with check(activated);
 create trigger hold_replacement_write before insert or update on play_billing_candidate.purchase_replacements for each row execute function play_billing_candidate.guard_test_owner_write();
+create table play_billing_candidate.replacement_intents(
+ intent_id uuid primary key references play_billing_candidate.purchase_intents(intent_id),
+ owner_id uuid not null,previous_fingerprint text not null check(previous_fingerprint ~ '^[0-9a-f]{64}$'),
+ mode text not null check(mode in ('charge_full_price','without_proration'))
+);
+alter table play_billing_candidate.replacement_intents enable row level security;
+alter table play_billing_candidate.replacement_intents force row level security;
+revoke all on play_billing_candidate.replacement_intents from public,anon,authenticated,service_role;
+grant select,insert on play_billing_candidate.replacement_intents to service_role;
+create policy replacement_intent_read on play_billing_candidate.replacement_intents for select to service_role using(true);
+create policy replacement_intent_insert on play_billing_candidate.replacement_intents for insert to service_role with check(true);
+create trigger hold_replacement_intent before insert on play_billing_candidate.replacement_intents for each row execute function play_billing_candidate.guard_test_owner_write();
+create function play_billing_candidate.reserve_test_replacement(p_owner uuid,p_session uuid,p_intent uuid,p_old text,p_account text)
+returns text language plpgsql volatile security invoker set search_path='' as $body$
+declare chosen text;
+begin
+ perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('hoopcheck-play-hold:'||p_owner::text,0));
+ if exists(select 1 from play_billing_candidate.owner_holds where owner_id=p_owner) then return null; end if;
+ select case when c.product_id='hoopcheck.pro' and i.product_id='hoopcheck.premium' then 'charge_full_price'
+ when c.product_id='hoopcheck.premium' and i.product_id='hoopcheck.pro' then 'without_proration' end into chosen
+ from play_billing_candidate.purchase_intents i cross join play_billing_candidate.purchase_claims c
+ where i.intent_id=p_intent and i.owner_id=p_owner and i.session_id=p_session and i.account_id=p_account and i.consumed_at is null and i.expires_at>clock_timestamp()
+ and c.fingerprint=p_old and c.owner_id=p_owner
+ and exists(select 1 from play_billing_candidate.intent_purchase_bindings b join play_billing_candidate.purchase_intents t using(intent_id) where b.fingerprint=p_old and b.owner_id=p_owner and t.account_id=p_account)
+ and exists(select 1 from play_billing_candidate.shadow_play_sources s where s.source_id=p_old and s.user_id=p_owner)
+ and not exists(select 1 from play_billing_candidate.purchase_replacements where previous_fingerprint=p_old);
+ if chosen is null then return null; end if;
+ insert into play_billing_candidate.replacement_intents values(p_intent,p_owner,p_old,chosen) on conflict(intent_id) do nothing;
+ if not exists(select 1 from play_billing_candidate.replacement_intents where intent_id=p_intent and owner_id=p_owner and previous_fingerprint=p_old and mode=chosen) then return null; end if;
+ return chosen;
+end
+$body$;
+revoke all on function play_billing_candidate.reserve_test_replacement(uuid,uuid,uuid,text,text) from public,anon,authenticated,service_role;
+grant execute on function play_billing_candidate.reserve_test_replacement(uuid,uuid,uuid,text,text) to service_role;
 create function play_billing_candidate.claim_replacement_test_purchase(p_owner uuid,p_account text,p_old text,p_new text,p_envelope text,p_product text,p_plan text,p_intent uuid)
 returns text language plpgsql volatile security invoker set search_path='' as $body$
 declare result text;
@@ -300,6 +334,8 @@ begin
  -- the exact reserved edge; otherwise the successor must be a new claim.
  if exists(select 1 from play_billing_candidate.purchase_claims where fingerprint=p_new)
  and not exists(select 1 from play_billing_candidate.purchase_replacements where previous_fingerprint=p_old and successor_fingerprint=p_new and owner_id=p_owner) then return 'catalog_conflict'; end if;
+ if not exists(select 1 from play_billing_candidate.purchase_replacements where previous_fingerprint=p_old and successor_fingerprint=p_new and owner_id=p_owner)
+ and not exists(select 1 from play_billing_candidate.replacement_intents where intent_id=p_intent and owner_id=p_owner and previous_fingerprint=p_old) then return 'catalog_conflict'; end if;
  result:=play_billing_candidate.claim_bound_test_purchase(p_owner,p_account,p_new,p_envelope,p_product,p_plan,p_intent);
  if result not in ('claimed','already_claimed') then return result; end if;
  insert into play_billing_candidate.purchase_replacements(previous_fingerprint,successor_fingerprint,owner_id)

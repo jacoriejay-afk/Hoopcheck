@@ -46,6 +46,17 @@ export function createDisposablePlayRuntime(p:{
    if(!p.enabled()||await p.db.ownerHeld(owner)||!await p.db.replacementMatches(current,v.previousFingerprint??null))return {state:"unsupported",lifecycle:null};
    return v;
   },
+  async reviewReplacement(request:Request,intentId:string,oldToken:string){
+   try{
+    const s=await auth(request);if(!s||!uuid.test(intentId)||! /^[A-Za-z0-9._~-]{16,4096}$/.test(oldToken))return null;
+    const fingerprint=(t:string)=>p.vault.fingerprint(t,"test"),fp=fingerprint(oldToken),claim=await p.db.lookup(fp);
+    if(!claim||claim.owner!==s.owner)return null;
+    const evidence=await p.provider.verifyRuntime(s.owner,oldToken,fingerprint);
+    if(evidence.state!=="eligible_for_reconciliation"||evidence.product?.productId!==claim.productId||evidence.product.basePlanId!==claim.basePlanId||!same(s,await auth(request)))return null;
+    const mode=await p.db.reserveReplacement(s.owner,s.sessionId,intentId,fp,accountId(s.owner));
+    return mode&&same(s,await auth(request))?{owner:s.owner,environment:"test",intentId,oldProduct:claim.productId,mode}:null;
+   }catch{return null;}
+  },
   async identity(request:Request){try{const s=await auth(request);return s?{owner:s.owner,accountId:accountId(s.owner),environment:"test"}:null;}catch{return null;}},
   async sync(request:Request,productId:string,token:string,intentId:string|null=null){
    try{

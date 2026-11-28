@@ -30,7 +30,7 @@ export default function MembershipScreen() {
   const [playRows, setPlayRows] = useState<PlayCatalogRow[]>([]), [playNotice, setPlayNotice] = useState("");
   const playGeneration = useRef(0), playBusy = useRef(false);
   const playRuntime=usePlayMembershipRuntime();
-  const [playPrepared,setPlayPrepared]=useState<PlayCatalogRow|null>(null),[playWorking,setPlayWorking]=useState(false),[playNeedsRestore,setPlayNeedsRestore]=useState(false);
+  const [playPrepared,setPlayPrepared]=useState<PlayCatalogRow|null>(null),[playChange,setPlayChange]=useState(false),[playWorking,setPlayWorking]=useState(false),[playNeedsRestore,setPlayNeedsRestore]=useState(false);
   const security = useMfaSession();
   const owner = security.phase === "ready" ? security.owner : null;
   const playEnabled=android&&__DEV__&&playRuntime.available()&&Boolean(owner&&account?.user.id===owner);
@@ -105,12 +105,12 @@ export default function MembershipScreen() {
     void recoverPlay();
     return()=>{listener.remove();foreground.remove();};
   },[playEnabled,playRuntime,recoverPlay]);
-  async function reviewPlay(row:PlayCatalogRow){
+  async function reviewPlay(row:PlayCatalogRow,replace=false){
     await playAction(async live=>{
       setPlayNotice("Verifying price and account…");
-      const ready=await playRuntime.prepare(row);
+      const ready=await playRuntime.prepare(row,replace);
       if(!live())return;
-      if(ready){setPlayPrepared(row);setPlayNotice("");}
+      if(ready){setPlayChange(replace);setPlayPrepared(row);setPlayNotice("");}
       else {setPlayPrepared(null);setPlayNotice("Purchase cannot be prepared. Refresh prices or retry restoration.");}
     });
   }
@@ -141,8 +141,8 @@ export default function MembershipScreen() {
         <Text style={muted}>{playEnabled?"Signed sandbox only. No free trial or live membership grant.":"Development preview only. No purchase or restoration is available."}</Text>
         <Button secondary disabled={busy || loading || playWorking || playNotice === "Checking Google Play catalog…"} onPress={() => void checkPlayCatalog()}>Check Google Play catalog</Button>
         {playNotice ? <Text accessibilityLiveRegion="polite" style={muted}>{playNotice}</Text> : null}
-        {playRows.map(row => <View key={row.productId + ":" + row.basePlanId}><Text style={text}>{playProduct(row.productId,row.basePlanId)?.plan === "premium" ? "Premium" : "Pro"} · {row.displayPrice} / {periods[playProduct(row.productId,row.basePlanId)?.months ?? 1]}</Text>{playEnabled&&!playPrepared?<Button disabled={busy||playWorking||playNeedsRestore} onPress={()=>void reviewPlay(row)}>{`Review Google Play ${playProduct(row.productId,row.basePlanId)?.plan==="premium"?"Premium":"Pro"}`}</Button>:null}</View>)}
-        {playEnabled&&playPrepared?<GlassCard><Text style={text}>Confirm Google Play test purchase: {playPrepared.displayPrice} / {periods[playProduct(playPrepared.productId,playPrepared.basePlanId)?.months??1]}. No free trial.</Text><Button disabled={playWorking} onPress={()=>void confirmPlay()}>Confirm test purchase</Button><Button secondary disabled={playWorking} onPress={()=>{playRuntime.invalidate();setPlayPrepared(null);}}>Cancel test purchase</Button></GlassCard>:null}
+        {playRows.map(row => <View key={row.productId + ":" + row.basePlanId}><Text style={text}>{playProduct(row.productId,row.basePlanId)?.plan === "premium" ? "Premium" : "Pro"} · {row.displayPrice} / {periods[playProduct(row.productId,row.basePlanId)?.months ?? 1]}</Text>{playEnabled&&!playPrepared?<Button disabled={busy||playWorking||playNeedsRestore} onPress={()=>void reviewPlay(row)}>{`Review Google Play ${playProduct(row.productId,row.basePlanId)?.plan==="premium"?"Premium":"Pro"}`}</Button>:null}{playEnabled&&!playPrepared?<Button secondary disabled={busy||playWorking||playNeedsRestore} onPress={()=>void reviewPlay(row,true)}>Change existing Google Play plan</Button>:null}</View>)}
+        {playEnabled&&playPrepared?<GlassCard><Text style={text}>Confirm Google Play test purchase: {playPrepared.displayPrice} / {periods[playProduct(playPrepared.productId,playPrepared.basePlanId)?.months??1]}. No free trial.</Text>{playChange?<Text style={muted}>{playPrepared.productId==="hoopcheck.premium"?"Upgrade immediately with a full-price charge; Google Play applies any remaining value.":"Downgrade immediately without proration; new price applies at renewal."}</Text>:null}<Button disabled={playWorking} onPress={()=>void confirmPlay()}>Confirm test purchase</Button><Button secondary disabled={playWorking} onPress={()=>{playRuntime.invalidate();setPlayPrepared(null);}}>Cancel test purchase</Button></GlassCard>:null}
         {playEnabled?<Button secondary disabled={playWorking} onPress={()=>void recoverPlay()}>Restore Google Play test purchases</Button>:null}
         {playEnabled&&playWorking?<Text accessibilityRole="progressbar" style={muted}>Verifying Google Play test purchase…</Text>:null}
       </GlassCard> : null}

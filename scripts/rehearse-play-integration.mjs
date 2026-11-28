@@ -171,6 +171,7 @@ async function replacePurchase(previous,quote){
  const t="synthetic-replacement-"+crypto.randomBytes(16).toString("hex"),v={previous,quote,state:"SUBSCRIPTION_STATE_ACTIVE",ack:false,acks:0};
  replacements.set(t,v);
  const offer=await request("issue","synthetic-session",quote);assert.ok(offer?.intentId);
+ const approval=await request("replacement","synthetic-session",{intentId:offer.intentId,oldToken:previous});assert.equal(approval?.mode,quote.productId==="hoopcheck.pro"?"without_proration":"charge_full_price");
  const consumed=await request("consume","synthetic-session",{...quote,intentId:offer.intentId,expiresAt:offer.expiresAt});assert.ok(consumed);
  assert.equal((await request("sync","synthetic-session",{productId:quote.productId,purchaseToken:t,intentId:offer.intentId}))?.outcome,"test_fulfillment_confirmed");
  assert.equal((await request("sync","synthetic-session",{productId:quote.productId,purchaseToken:t,intentId:null}))?.outcome,"test_fulfillment_confirmed");

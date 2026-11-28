@@ -31,7 +31,7 @@ class PlayBillingRuntimeModule : Module() {
     Name("HoopcheckPlayRuntime")
     Events("onPlayPurchaseChanged")
     Function("isAccepted") { signedSandboxAccepted }
-    AsyncFunction("launchReviewed") { product: String, plan: String, price: String, currency: String, account: String, expires: Double, promise: Promise ->
+    AsyncFunction("launchReviewed") { product: String, plan: String, price: String, currency: String, account: String, expires: Double, replacement: Map<String, String>?, promise: Promise ->
       handler.post {
         val micros = price.toLongOrNull()
         if (!signedSandboxAccepted || micros == null || micros <= 0L || !fresh(expires)) {
@@ -46,11 +46,28 @@ class PlayBillingRuntimeModule : Module() {
                 if (!current(connection, revision)) return@post
                 val item = details.productDetailsList.singleOrNull()
                 val activity = appContext.currentActivity
-                val outcome = if (result.responseCode != BillingClient.BillingResponseCode.OK ||
-                  details.unfetchedProductList.isNotEmpty() || item == null || activity == null || !fresh(expires)) "held"
-                else PlayPurchaseOperations.launch(connection, activity, item,
-                  PlayPurchaseOperations.ReviewedQuote(product, plan, micros, currency, account, SystemClock.elapsedRealtime()))
-                finish(connection, revision, outcome, outcome == "launched")
+                if (result.responseCode != BillingClient.BillingResponseCode.OK ||
+                  details.unfetchedProductList.isNotEmpty() || item == null || activity == null || !fresh(expires)) {
+                  finish(connection, revision, "held", false); return@post
+                }
+                val quote = PlayPurchaseOperations.ReviewedQuote(product, plan, micros, currency, account, SystemClock.elapsedRealtime())
+                PlayPurchaseOperations.restore(connection, account) { scan ->
+                  handler.post {
+                    if (!current(connection, revision)) return@post
+                    val prior = scan?.candidates?.singleOrNull()
+                    val change = replacement?.let { value ->
+                      if (value.keys == setOf("oldProduct", "oldToken", "mode") && prior != null && prior.acknowledged &&
+                          prior.productId == value["oldProduct"] && prior.token == value["oldToken"])
+                        PlayPurchaseOperations.Replacement(prior.productId, prior.token, value["mode"] ?: "")
+                      else null
+                    }
+                    val safe = scan != null && scan.pendingCount == 0 && scan.unmatchedCount == 0 &&
+                      (if (replacement == null) scan.candidates.isEmpty() else change != null)
+                    val outcome = if (!safe || !fresh(expires)) "restore_required"
+                      else PlayPurchaseOperations.launch(connection, activity, item, quote, change)
+                    finish(connection, revision, outcome, outcome == "launched")
+                  }
+                }
               }
             }
           }

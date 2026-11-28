@@ -32,6 +32,7 @@ internal object PlayPurchaseOperations {
     val fetchedAtElapsedMillis: Long
   )
 
+  internal class Replacement(val oldProduct: String, val oldToken: String, val mode: String)
   // No optimistic entitlement. Token is only for server-side verification.
   internal class VerificationCandidate(
     val productId: String,
@@ -64,7 +65,7 @@ internal object PlayPurchaseOperations {
   /** Must be invoked on the main thread after fresh provider quote and verified
    * server intent. Returns only an immediate launch response, not a purchase. */
   internal fun launch(
-    client: BillingClient, activity: Activity, details: ProductDetails, quote: ReviewedQuote
+    client: BillingClient, activity: Activity, details: ProductDetails, quote: ReviewedQuote, replacement: Replacement? = null
   ): String {
     if (Looper.myLooper() != Looper.getMainLooper() || !client.isReady ||
       activity.isFinishing || activity.isDestroyed || !activity.hasWindowFocus()) return "unavailable"
@@ -73,11 +74,25 @@ internal object PlayPurchaseOperations {
     val offer = fullPriceOffer(details, quote) ?: return "quote_changed"
     return try {
       val item = BillingFlowParams.ProductDetailsParams.newBuilder()
-        .setProductDetails(details).setOfferToken(offer.offerToken).build()
-      val params = BillingFlowParams.newBuilder()
-        .setProductDetailsParamsList(listOf(item))
-        .setObfuscatedAccountId(quote.obfuscatedAccountId)
-        .build()
+        .setProductDetails(details).setOfferToken(offer.offerToken)
+      val flow = BillingFlowParams.newBuilder().setObfuscatedAccountId(quote.obfuscatedAccountId)
+      if (replacement != null) {
+        if (!tokenPattern.matches(replacement.oldToken) || replacement.oldProduct !in products ||
+          replacement.oldProduct == quote.productId) return "held"
+        val mode = when {
+          replacement.oldProduct == "hoopcheck.pro" && quote.productId == "hoopcheck.premium" && replacement.mode == "charge_full_price" ->
+            BillingFlowParams.ProductDetailsParams.SubscriptionProductReplacementParams.ReplacementMode.CHARGE_FULL_PRICE
+          replacement.oldProduct == "hoopcheck.premium" && quote.productId == "hoopcheck.pro" && replacement.mode == "without_proration" ->
+            BillingFlowParams.ProductDetailsParams.SubscriptionProductReplacementParams.ReplacementMode.WITHOUT_PRORATION
+          else -> return "held"
+        }
+        item.setSubscriptionProductReplacementParams(
+          BillingFlowParams.ProductDetailsParams.SubscriptionProductReplacementParams.newBuilder()
+            .setOldProductId(replacement.oldProduct).setReplacementMode(mode).build())
+        flow.setSubscriptionUpdateParams(BillingFlowParams.SubscriptionUpdateParams.newBuilder()
+          .setOldPurchaseToken(replacement.oldToken).build())
+      }
+      val params = flow.setProductDetailsParamsList(listOf(item.build())).build()
       when (client.launchBillingFlow(activity, params).responseCode) {
         BillingClient.BillingResponseCode.OK -> "launched"
         BillingClient.BillingResponseCode.USER_CANCELED -> "cancelled"

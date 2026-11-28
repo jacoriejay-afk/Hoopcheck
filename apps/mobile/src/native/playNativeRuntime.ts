@@ -11,7 +11,7 @@ export function createPlayNativeRuntime(p:Pick<Ports,"enabled"|"available"|"sess
  const coordinator=createPlaySandboxBridge({
   ...p,scope:"signed_sandbox",journal:playRecoveryJournal,enabled:()=>p.enabled()&&accepted(),
   native:{
-   launch:i=>native?native.launchReviewed(i.productId,i.basePlanId,i.priceMicros,i.currency,i.accountId,i.expiresAt):Promise.resolve("held"),
+   launch:(i,replacement)=>native?native.launchReviewed(i.productId,i.basePlanId,i.priceMicros,i.currency,i.accountId,i.expiresAt,replacement??null):Promise.resolve("held"),
    restore:a=>native?native.restoreReviewed(a):Promise.resolve(null)
   }
  });

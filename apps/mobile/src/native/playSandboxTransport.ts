@@ -1,5 +1,5 @@
-type Action="identity"|"issue"|"consume"|"sync";
-const paths:Record<Action,string>={identity:"identity",issue:"issue",consume:"consume",sync:"sync"};
+type Action="identity"|"issue"|"consume"|"sync"|"replacement";
+const paths:Record<Action,string>={identity:"identity",issue:"issue",consume:"consume",sync:"sync",replacement:"replacement"};
 export function createPlaySandboxTransport(origin:string,enabled:()=>boolean,request:typeof fetch=fetch){
  let root:string|null=null;
  try{const u=new URL(origin);if(u.protocol==="https:"&&u.pathname==="/"&&!u.username&&!u.password&&!u.search&&!u.hash&&

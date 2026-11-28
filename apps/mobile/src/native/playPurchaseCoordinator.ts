@@ -2,6 +2,7 @@ import {playProduct,canPurchasePlayProduct} from "../../../../lib/billing/play-p
 import type {createPlayRecoveryJournal} from "./playRecoveryJournal";
 type Session={owner:string;token:string;role:string};
 type Quote={productId:string;basePlanId:string;priceMicros:string;currency:string};
+export type PlayReplacement={oldProduct:string;oldToken:string;mode:"charge_full_price"|"without_proration"};
 type Intent=Quote&{owner:string;accountId:string;intentId:string;expiresAt:number;environment:"test"};
 type Dependencies={
   enabled():boolean;
@@ -10,7 +11,8 @@ type Dependencies={
   prepare(quote:Quote,token:string):Promise<unknown>;
   consume(intent:Intent,token:string):Promise<unknown>;
   accountIdentity(token:string):Promise<unknown>;
-  launch(intent:Intent):Promise<unknown>;
+  launch(intent:Intent,replacement?:PlayReplacement):Promise<unknown>;
+  reviewReplacement?(intent:Intent,oldToken:string,token:string):Promise<unknown>;
   restore(accountId:string):Promise<unknown>;
   sync(intentId:string|null,productId:string,purchaseToken:string,token:string):Promise<unknown>;
   journal:ReturnType<typeof createPlayRecoveryJournal>;
@@ -27,12 +29,12 @@ const invalid=()=>Error("Google Play purchase could not be verified.");
 /** Unwired sandbox coordinator. No actual native or HTTP adapter exists yet.
  * Its results never change the app's membership or acknowledge Google. */
 export function createPlayPurchaseCoordinator(deps:Dependencies){
- let generation=0,owner:string|null=null,busy=false,prepared:Intent|null=null,preparedToken:string|null=null;
+ let generation=0,owner:string|null=null,busy=false,prepared:Intent|null=null,preparedToken:string|null=null,preparedReplacement:PlayReplacement|undefined;
  // Do not open another sheet until the prior launch has been reconciled.
  // A native exception may occur after the provider sheet has opened.
  // The secure journal survives process death; no raw payment data persists.
  const allowed=()=>deps.enabled()&&deps.available();
- function invalidate(){generation++;prepared=null;preparedToken=null;}
+ function invalidate(){generation++;prepared=null;preparedToken=null;preparedReplacement=undefined;}
  function check(scope:Scope){
   if(!allowed()||owner!==scope.owner||generation!==scope.generation)throw invalid();
  }
@@ -97,9 +99,9 @@ export function createPlayPurchaseCoordinator(deps:Dependencies){
  return {
   setOwner(next:string|null){if(next!==owner){invalidate();owner=next;}},
   invalidate,
-  async prepare(quote:Quote):Promise<boolean>{
+  async prepare(quote:Quote,replace=false):Promise<boolean>{
    return single(false,async()=>{
-    prepared=null;preparedToken=null;
+    prepared=null;preparedToken=null;preparedReplacement=undefined;
     if(!validQuote(quote))return false;
     const s=await capture(),product=playProduct(quote.productId,quote.basePlanId);
     if(await deps.journal.read())return false;
@@ -112,12 +114,24 @@ export function createPlayPurchaseCoordinator(deps:Dependencies){
      r.priceMicros!==quote.priceMicros||r.currency!==quote.currency||typeof r.expiresAt!=="number")return false;
     const candidate:Intent={...quote,owner:s.owner,environment:"test",accountId:r.accountId,intentId:r.intentId,expiresAt:r.expiresAt};
     if(!fresh(candidate))return false;
+    if(replace){
+     if(!deps.reviewReplacement)return false;
+     const scan=await deps.restore(candidate.accountId);await current(s);
+     if(!obj(scan)||scan.accountId!==candidate.accountId||scan.pendingCount!==0||(scan.unmatchedCount??0)!==0||!Array.isArray(scan.candidates)||scan.candidates.length!==1)return false;
+     const old=scan.candidates[0];
+     if(!obj(old)||old.accountId!==candidate.accountId||typeof old.token!=="string"||!opaque.test(old.token)||typeof old.productId!=="string"||old.productId===quote.productId)return false;
+     const mode=old.productId==="hoopcheck.pro"&&quote.productId==="hoopcheck.premium"?"charge_full_price":old.productId==="hoopcheck.premium"&&quote.productId==="hoopcheck.pro"?"without_proration":null;
+     if(!mode)return false;
+     const approval=await deps.reviewReplacement(candidate,old.token,s.token);await current(s);
+     if(!obj(approval)||approval.owner!==s.owner||approval.environment!=="test"||approval.intentId!==candidate.intentId||approval.oldProduct!==old.productId||approval.mode!==mode||!fresh(candidate))return false;
+     preparedReplacement={oldProduct:old.productId,oldToken:old.token,mode};
+    }
     prepared=candidate;preparedToken=s.token;return true;
    });
   },
   async launch():Promise<Result>{
    return single<Result>("held",async()=>{
-    const intent=prepared,token=preparedToken;prepared=null;preparedToken=null;
+    const intent=prepared,token=preparedToken,change=preparedReplacement;prepared=null;preparedToken=null;preparedReplacement=undefined;
     if(!intent||!fresh(intent))return "held";
     const s=await capture(),product=playProduct(intent.productId,intent.basePlanId);
     if(intent.owner!==s.owner||token!==s.token||!product||!canPurchasePlayProduct(s.role,product))return "held";
@@ -129,7 +143,7 @@ export function createPlayPurchaseCoordinator(deps:Dependencies){
     if(await deps.journal.read()||!await deps.journal.mark(s.owner,intent.accountId,{intentId:intent.intentId,productId:intent.productId}))return "held";
     await current(s);
     if(!fresh(intent))return "held";
-    const result=await deps.launch({...intent});
+    const result=await deps.launch({...intent},change);
     await current(s);
     if(result==="cancelled"&&!await deps.journal.clear(s.owner,intent.accountId))return "held";
     await current(s);
