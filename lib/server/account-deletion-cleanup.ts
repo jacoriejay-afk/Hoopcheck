@@ -118,6 +118,7 @@ export async function blockAndRevokeApprovedSessions(
  options:Readonly<{allowReviewedCatalogRevocation?:boolean}>={},
 ){
  lease=immutableLease(lease);
+ const catalogAllowed=options.allowReviewedCatalogRevocation===true;
  const args={p_request:lease.requestId,p_owner:lease.ownerId,p_fence:lease.fence};
  async function proof(name:string){
   const result=await admin.rpc(name,args);
@@ -150,8 +151,9 @@ export async function blockAndRevokeApprovedSessions(
   // default server flag AND the database's independent policy switch. It also
   // covers legacy refresh tokens not removed by a supported global sign-out.
   if(!await proof("verify_deletion_session_absence")){
-   if(!options.allowReviewedCatalogRevocation||process.env.ACCOUNT_DELETION_AUTH_CATALOG_REVOCATION_ENABLED!=="true")throw Error("Existing sessions require verified Auth revocation.");
+   if(!catalogAllowed||process.env.ACCOUNT_DELETION_AUTH_CATALOG_REVOCATION_ENABLED!=="true")throw Error(ownerBearer?"Auth sessions or login block not verified.":"Existing sessions require verified Auth revocation.");
    await guard();
+   if(process.env.ACCOUNT_DELETION_AUTH_CATALOG_REVOCATION_ENABLED!=="true")throw Error("Auth revocation disabled.");
    if(!await proof("revoke_approved_deletion_auth_sessions"))throw Error("Auth session revocation not confirmed.");
   }
  }

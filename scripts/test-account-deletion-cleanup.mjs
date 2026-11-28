@@ -102,3 +102,26 @@ test("a lease lost during the final Auth deletion proof prevents dispatch",async
  await assert.rejects(removeApprovedAuthIdentity(f.admin,lease,f.guards),/lease expired/);
  assert.deepEqual(f.calls,[]);
 });
+
+test("scheduled revocation is independently disabled and requires positive readback",async()=>{
+ const prior=process.env.ACCOUNT_DELETION_AUTH_CATALOG_REVOCATION_ENABLED;
+ try{
+  const f=sessionFixture();let calls=0;const original=f.admin.rpc;
+  f.admin.rpc=async(name,args)=>{
+   if(name==="revoke_approved_deletion_auth_sessions"){calls++;assert.equal(args.p_owner,lease.ownerId);f.clearSessions();return {error:null,data:true};}
+   return original(name,args);
+  };
+  delete process.env.ACCOUNT_DELETION_AUTH_CATALOG_REVOCATION_ENABLED;
+  await assert.rejects(blockAndRevokeApprovedSessions(f.admin,lease,f.guards,undefined,{allowReviewedCatalogRevocation:true}),/Existing sessions require/);
+  process.env.ACCOUNT_DELETION_AUTH_CATALOG_REVOCATION_ENABLED="true";
+  await assert.rejects(blockAndRevokeApprovedSessions(f.admin,lease,f.guards),/Existing sessions require/);
+  assert.equal(calls,0);
+  assert.equal((await blockAndRevokeApprovedSessions(f.admin,lease,f.guards,undefined,{allowReviewedCatalogRevocation:true})).confirmed,true);
+  assert.equal(calls,1);
+  assert.equal((await blockAndRevokeApprovedSessions(f.admin,lease,f.guards,undefined,{allowReviewedCatalogRevocation:true})).confirmed,true);
+  assert.equal(calls,1);
+  const g=sessionFixture();const r=g.admin.rpc;
+  g.admin.rpc=async(name,args)=>name==="revoke_approved_deletion_auth_sessions"?{error:null,data:true}:r(name,args);
+  await assert.rejects(blockAndRevokeApprovedSessions(g.admin,lease,g.guards,undefined,{allowReviewedCatalogRevocation:true}),/sessions or login block not verified/);
+ }finally{if(prior===undefined)delete process.env.ACCOUNT_DELETION_AUTH_CATALOG_REVOCATION_ENABLED;else process.env.ACCOUNT_DELETION_AUTH_CATALOG_REVOCATION_ENABLED=prior;}
+});
