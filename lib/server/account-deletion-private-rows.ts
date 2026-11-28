@@ -24,8 +24,9 @@ const uuid=/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/;
 export async function removeApprovedPrivateRows(admin:SupabaseClient,input:Lease,approved:Plan,guards:Guards){
  if(!uuid.test(input.requestId)||!uuid.test(input.ownerId)||!uuid.test(input.fence)||typeof input.policyVersion!=="string"||!input.policyVersion.trim()||input.policyVersion.length>100||approved.requestId!==input.requestId||approved.ownerId!==input.ownerId||approved.policyVersion!==input.policyVersion||!Array.isArray(approved.categories)||!approved.categories.length||approved.categories.length>Object.keys(mappings).length)throw Error("Private deletion scope invalid.");
  const lease=Object.freeze({...input});
- const categories=Object.freeze([...approved.categories]);
- if(new Set(categories).size!==categories.length||categories.some(c=>!Object.hasOwn(mappings,c)))throw Error("Private deletion category invalid.");
+ const raw:unknown[]=Array.from(approved.categories);
+ if(new Set(raw).size!==raw.length||!raw.every((c):c is Category=>typeof c==="string"&&Object.hasOwn(mappings,c)))throw Error("Private deletion category invalid.");
+ const categories:readonly Category[]=Object.freeze(raw);
  async function boundary(category:Category){
   await guards.assertLease(lease);await guards.assertFrozen(lease);
   await guards.assertApprovedCategory(lease,category);
