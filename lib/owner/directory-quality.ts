@@ -85,6 +85,42 @@ export const verifiedRosters: RosterEvidence[] = [{
     ["Esgueira","Esgueira Aveiro ECOVALOR"],["GDESSA Barreiro","GDESSA"],["GDRAR","GDRAR REMAX"],["Sanjoanense","Sanjoanense HELIOTEXTIL"],
     ["SC Coimbrões","SC Coimbrões SANCHO PANZA"],["SL Benfica","Benfica","Benfica Women"],["Sporting CP","Sporting","Sporting CP Women"],["Sportiva","Sportiva AZORISHOTELS","União Sportiva Women"]
   ].map(([name,...aliases])=>({name,country:"Portugal",aliases}))
+},{
+  name:"EuroLeague",country:"Europe",season:"2026-27",side:"mens",
+  source:"https://mediacentre.euroleague.net/en/app/2/communication/communication/preview/24407",
+  verifiedAt:"2026-11-28",confidence:"Official opening-round fixture list; Beşiktaş replaces Monaco",
+  clubs:[
+    {name:"Anadolu Efes Istanbul",country:"Türkiye",aliases:["Anadolu Efes"]},
+    {name:"Armani Olimpia Milano",country:"Italy",aliases:["Armani Olimpia Milan","Olimpia Milano","EA7 Emporio Armani Milan"]},
+    {name:"Beşiktaş Istanbul",country:"Türkiye",aliases:["Beşiktaş"]},
+    {name:"Crvena Zvezda Meridianbet Belgrade",country:"Serbia",aliases:["Crvena Zvezda","Red Star Belgrade"]},
+    {name:"Dubai Basketball",country:"United Arab Emirates"},
+    {name:"FC Barcelona",country:"Spain",aliases:["Barça","FC Barcelona Bàsquet"]},
+    {name:"FC Bayern Munich",country:"Germany",aliases:["Bayern Munich","FC Bayern München"]},
+    {name:"Fenerbahçe Tarfin Istanbul",country:"Türkiye",aliases:["Fenerbahce Istanbul","Fenerbahçe Tarfin","Fenerbahçe Beko Istanbul"]},
+    {name:"Hapoel IBI Tel Aviv",country:"Israel",aliases:["Hapoel Tel Aviv"]},
+    {name:"Kosner Baskonia Vitoria-Gasteiz",country:"Spain",aliases:["Baskonia","Kosner Baskonia"]},
+    {name:"LDLC ASVEL Villeurbanne",country:"France",aliases:["ASVEL Villeurbanne"]},
+    {name:"Maccabi Rapyd Tel Aviv",country:"Israel",aliases:["Maccabi Tel Aviv"]},
+    {name:"Olympiacos Piraeus",country:"Greece",aliases:["Olympiacos"]},
+    {name:"Panathinaikos AKTOR Athens",country:"Greece",aliases:["Panathinaikos Athens","Panathinaikos"]},
+    {name:"Paris Basketball",country:"France"},
+    {name:"Partizan Mozzart Bet Belgrade",country:"Serbia",aliases:["Partizan Belgrade","Partizan"]},
+    {name:"Real Madrid",country:"Spain"},
+    {name:"Valencia Basket",country:"Spain"},
+    {name:"Virtus Bologna",country:"Italy"},
+    {name:"Zalgiris Kaunas",country:"Lithuania",aliases:["Žalgiris Kaunas"]}
+  ]
+},{
+  name:"Liga Endesa",country:"Spain",season:"2026-27",side:"mens",leagueAliases:["Liga ACB"],
+  source:"https://acb.com/es/liga/equipos?_rsc=j8t6m",
+  verifiedAt:"2026-11-28",confidence:"Official ACB 2026-27 teams; Andorra club origin separate from Spanish competition",
+  clubs:[
+    ["Joventut Badalona","ASISA Joventut"],["FC Barcelona","Barça"],["Casademont Zaragoza"],["Bàsquet Girona","FIATC Girona"],
+    ["Hiopos Lleida","ILERNA Lleida","Força Lleida"],["Bàsquet Manresa","BAXI Manresa","KIDS&US Manresa"],["Kosner Baskonia","Baskonia","Kosner Baskonia Vitoria-Gasteiz"],
+    ["La Laguna Tenerife","Lenovo Tenerife"],["Leyma Coruña","Leyma Basquet Coruña"],["Monbus Obradoiro"],["Real Madrid"],["Recoletas Salud Burgos","San Pablo Burgos","Recoletas Salud San Pablo Burgos"],["Río Breogán"],
+    ["Surne Bilbao Basket","Bilbao Basket"],["UCAM Murcia"],["Unicaja Malaga","Unicaja"],["Valencia Basket"]
+  ].map(([name,...aliases])=>({name,country:"Spain",aliases})).concat([{name:"MoraBanc Andorra",country:"Andorra",aliases:["BC Andorra"]}])
 }];
 const normalized=(v:string|null)=> (v||"").normalize("NFKD").replace(/\p{M}/gu,"").toLocaleLowerCase("en").replace(/[^\p{L}\p{N}]+/gu,"");
 const identityKey=(row:DirectoryIdentity)=>[normalized(row.country),row.basketball_type,normalized(row.name)].join(":");
@@ -153,11 +189,12 @@ export function deriveDirectoryQuality(leagues:DirectoryLeague[],teams:Directory
   const unlinkedReview=teams.filter(team=>!team.league_id).map(team=>{
     const candidates=coverage.filter(row=>row.evidence&&(row.evidence.side||"mens")===team.basketball_type&&row.evidence.clubs.some(club=>normalized(team.country)===normalized(club.country)&&[club.name,...(club.aliases||[])].some(name=>normalized(name)===normalized(team.name))));
     const sameNameLinkedIds=linkedIdentityIds.get(identityKey(team))||[];
-    return {id:team.id,name:team.name,country:team.country,side:team.basketball_type,currentMembershipLeagueIds:[...(currentByTeam.get(team.id)||[])],reviewedRosterLeagueIds:candidates.map(row=>row.id),sameNameLinkedIds};
+    const reviewedAliasLinkedIds=[...new Set(candidates.flatMap(row=>row.evidence!.clubs.filter(club=>normalized(team.country)===normalized(club.country)&&[club.name,...(club.aliases||[])].some(name=>normalized(name)===normalized(team.name))).flatMap(club=>[club.name,...(club.aliases||[])].flatMap(name=>linkedIdentityIds.get([normalized(club.country),team.basketball_type,normalized(name)].join(":"))||[]))))].filter(id=>!sameNameLinkedIds.includes(id));
+    return {id:team.id,name:team.name,country:team.country,side:team.basketball_type,currentMembershipLeagueIds:[...(currentByTeam.get(team.id)||[])],reviewedRosterLeagueIds:candidates.map(row=>row.id),sameNameLinkedIds,reviewedAliasLinkedIds};
   });
   return {countries:countryLabels.size,leagues:leagues.length,teams:teams.length,
     wrongSidePrimary,unavailablePrimary,wrongSideMemberships,unlinkedWithCurrentMembership:unlinkedReview.filter(row=>row.currentMembershipLeagueIds.length>0).length,
-    unlinkedWithReviewedRoster:unlinkedReview.filter(row=>row.reviewedRosterLeagueIds.length>0).length,unlinkedWithSameNameLinked:unlinkedReview.filter(row=>row.sameNameLinkedIds.length>0).length,unlinkedReview,
+    unlinkedWithReviewedRoster:unlinkedReview.filter(row=>row.reviewedRosterLeagueIds.length>0).length,unlinkedWithSameNameLinked:unlinkedReview.filter(row=>row.sameNameLinkedIds.length>0).length,unlinkedWithReviewedAlias:unlinkedReview.filter(row=>row.reviewedAliasLinkedIds.length>0).length,unlinkedReview,
     mensTeams:teams.filter(row=>row.basketball_type==="mens").length,womensTeams:teams.filter(row=>row.basketball_type==="womens").length,
     unlinked:teams.filter(row=>!row.league_id).length,
     missingLeagueLogos:leagues.filter(absentLogo).length,missingTeamLogos:teams.filter(absentLogo).length,
