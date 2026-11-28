@@ -37,6 +37,15 @@ export function createDisposablePlayRuntime(p:{
  },issue:p.db.issue,consume:p.db.consume,now:p.now};
  return {
   intent:(request:Request,action:"issue"|"consume")=>playIntentRequest(request,action,intentPorts),
+  async notificationVerify(owner:string,token:string):Promise<Awaited<ReturnType<Provider["verifyRuntime"]>>>{
+   if(!p.enabled()||await p.db.ownerHeld(owner))return {state:"invalid"};
+   const fingerprint=(t:string)=>p.vault.fingerprint(t,"test"),current=await p.db.lookup(fingerprint(token));
+   if(!current||current.owner!==owner)return {state:"invalid"};
+   const v=await p.provider.verifyRuntime(owner,token,fingerprint);
+   if(v.state==="inactive")return v;
+   if(!p.enabled()||await p.db.ownerHeld(owner)||!await p.db.replacementMatches(current,v.previousFingerprint??null))return {state:"unsupported"};
+   return v;
+  },
   async identity(request:Request){try{const s=await auth(request);return s?{owner:s.owner,accountId:accountId(s.owner),environment:"test"}:null;}catch{return null;}},
   async sync(request:Request,productId:string,token:string){
    try{
@@ -49,7 +58,7 @@ export function createDisposablePlayRuntime(p:{
     if(!product)return null;
     const current=async()=>same(s,await auth(request));
     const previous=first.previousFingerprint;
-    const verify=async(o:string,t:string)=>{const v=await p.provider.verifyRuntime(o,t,fingerprint);return v.previousFingerprint===previous?v:{state:"unsupported" as const};};
+    const verify=async(o:string,t:string):Promise<Awaited<ReturnType<Provider["verifyRuntime"]>>>=>{const v=await p.provider.verifyRuntime(o,t,fingerprint);return v.previousFingerprint===previous?v:{state:"unsupported" as const};};
     const fulfill=(c:Receipt|{owner:string;fingerprint:string;productId:string;basePlanId:string},g:number,state:string,expiry:string)=>previous?p.db.fulfillReplacement(c,g,state,expiry,previous):p.db.fulfill(c,g,state,expiry);
     const outcome=await reconcileTestPurchase({owner:s.owner,role:s.role,productId,basePlanId:product.basePlanId,token},{
      now:p.now,authorize:current,verify,seal:p.vault.seal,

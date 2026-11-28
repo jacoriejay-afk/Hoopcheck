@@ -29,7 +29,7 @@ const q=v=>{if(typeof v!=="string"||! /^[A-Za-z0-9._:~+\/-]{1,5600}$/.test(v))th
 const integer=v=>{if(!Number.isSafeInteger(v)||v<=0)throw Error("invalid fixture generation");return String(v);};
 function sql(statement){
  const result=spawnSync("docker",["exec","-i",container,"psql","-XqAt","-U","postgres","-v","ON_ERROR_STOP=1"],{input:"set role service_role;\n"+statement+";\n",encoding:"utf8",timeout:15000,maxBuffer:262144});
- if(result.status!==0||result.error)throw Error("Disposable database operation failed");
+ if(result.status!==0||result.error){const kind=result.stderr?.match(/ERROR:\s*(permission denied|violates|column|function|relation|syntax error|candidate owner unavailable|duplicate key|deadlock detected)/i)?.[1]??"unknown";console.error("Disposable SQL failed:",kind);throw Error("Disposable database operation failed");}
  return result.stdout.trim();
 }
 // CI driver only: fixed statements, strictly escaped generated synthetic parameters.
@@ -83,7 +83,7 @@ let marker=null,launches=0,storeState="empty",launchOutcome="cancelled";
 const storage={read:async()=>marker,write:async v=>{marker=v;},remove:async()=>{marker=null;}};
 const request=async(action,t,body)=>{
  if(action==="identity")return runtime.identity(req({},t));
- if(action==="sync")return runtime.sync(req({},t),body.productId,body.purchaseToken);
+ if(action==="sync"){const result=await runtime.sync(req({},t),body.productId,body.purchaseToken);console.log("Synthetic sync outcome:",result?.outcome??"held");return result;}
  const response=await runtime.intent(req(body,t),action);
  return response.ok?response.json():null;
 };
@@ -126,7 +126,7 @@ const event={subscription:sub,message:{messageId:"987654321",data:Buffer.from(JS
 const ingress={enabled:()=>true,authenticate:a=>authenticatePlayPush(a,config,keyRequest,now),subscription:sub,fingerprint:t=>vault.fingerprint(t,"test"),enqueue:adapter.enqueue,now:()=>now};
 assert.equal(await ingestPlayPush(event,auth,ingress),"accepted");assert.equal(await ingestPlayPush(event,auth,ingress),"accepted");
 assert.equal(sql("select count(*) from play_billing_candidate.notification_jobs where message_id='987654321'"),"1");
-const ports={enabled:()=>true,lease:adapter.lease,lookup:adapter.lookup,open:async c=>vault.open(await adapter.credential(c),c.owner,"test"),fingerprint:t=>vault.fingerprint(t,"test"),begin:adapter.begin,verify:(o,t)=>client.verify(o,t),complete:adapter.complete,finish:adapter.finish,now:Date.now};
+const ports={enabled:()=>true,lease:adapter.lease,lookup:adapter.lookup,open:async c=>vault.open(await adapter.credential(c),c.owner,"test"),fingerprint:t=>vault.fingerprint(t,"test"),begin:adapter.begin,verify:runtime.notificationVerify,complete:adapter.complete,finish:adapter.finish,now:Date.now};
 // A renewal/refresh must preserve a fulfilled shadow membership at the new generation.
 assert.equal(await reconcileOnePlayNotification(ports),"done");
 assert.equal(sql("select provider||':'||plan from play_billing_candidate.shadow_membership_entitlements where user_id="+q(owner)),"google_play_test:premium");

@@ -248,7 +248,8 @@ begin
  select t.intent_id into i from play_billing_candidate.purchase_intents t
  where t.owner_id=p_owner and t.account_id=p_account and t.product_id=p_product and t.base_plan_id=p_plan and t.consumed_at is not null
  and not exists(select 1 from play_billing_candidate.intent_purchase_bindings b where b.intent_id=t.intent_id)
- order by t.consumed_at desc,t.intent_id limit 1 for update of t;
+ -- Consumed intents are immutable by RLS; the owner advisory lock already serializes binding.
+ order by t.consumed_at desc,t.intent_id limit 1;
  if not found then return 'retry'; end if;
  result:=play_billing_candidate.claim_test_purchase(p_fingerprint,p_owner,1::smallint,p_envelope,p_product,p_plan);
  if result not in ('claimed','already_claimed') then return result; end if;
