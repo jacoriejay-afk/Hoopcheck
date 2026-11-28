@@ -81,3 +81,24 @@ test("ban acknowledgement and session absence require independent proof",async()
  const h=sessionFixture();h.guards.assertFrozen=async()=>{throw Error("not frozen");};
  await assert.rejects(blockAndRevokeApprovedSessions(h.admin,lease,h.guards,"owner-bearer"),/not frozen/);assert.deepEqual(h.calls,[]);
 });
+
+test("approved media targets and lease are snapshotted before asynchronous proofs",async()=>{
+ const f=fixture(),mutableLease={...lease},mutableObject={...object},mutablePlan={...plan,objects:[mutableObject]};
+ f.guards.assertFrozen=async()=>{mutableLease.ownerId=lease.requestId;mutableObject.path="foreign/path.png";mutablePlan.objects.push({...object,path:"foreign/path.png"});};
+ assert.equal((await removeApprovedAccountMedia(f.admin,mutableLease,mutablePlan,f.guards)).confirmed,true);
+ assert.deepEqual(f.calls,[["remove",object.bucket,[object.path]]]);
+});
+test("a lease lost while reading the media catalog prevents effect dispatch",async()=>{
+ const f=fixture();let reads=0,lost=false;
+ f.guards.readObject=async()=>{if(++reads===2)lost=true;return object;};
+ f.guards.assertLease=async()=>{if(lost)throw Error("lease expired");};
+ await assert.rejects(removeApprovedAccountMedia(f.admin,lease,plan,f.guards),/lease expired/);
+ assert.deepEqual(f.calls,[]);
+});
+test("a lease lost during the final Auth deletion proof prevents dispatch",async()=>{
+ const f=fixture();let proofs=0,lost=false;
+ f.guards.assertReadyForAuthDeletion=async()=>{if(++proofs===2)lost=true;};
+ f.guards.assertLease=async()=>{if(lost)throw Error("lease expired");};
+ await assert.rejects(removeApprovedAuthIdentity(f.admin,lease,f.guards),/lease expired/);
+ assert.deepEqual(f.calls,[]);
+});

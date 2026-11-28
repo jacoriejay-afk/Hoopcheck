@@ -19,10 +19,15 @@ type Guards = {
 const uuid = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const userBuckets = new Set(["fan-group-images","feed-images","feed-videos","hoopfeed-private-images","hoopfeed-private-videos","player-verification-documents","profile-avatars","profile-claim-proofs"]);
 function validLease(l: Lease) {
-  if(!uuid.test(l.requestId)||!uuid.test(l.ownerId)||!uuid.test(l.fence)||!l.policyVersion)throw Error("Invalid deletion lease.");
+  if(typeof l.requestId!=="string"||!uuid.test(l.requestId)||typeof l.ownerId!=="string"||!uuid.test(l.ownerId)||typeof l.fence!=="string"||!uuid.test(l.fence)||typeof l.policyVersion!=="string"||!l.policyVersion.trim()||l.policyVersion.length>100)throw Error("Invalid deletion lease.");
+}
+function immutableLease(l: Lease): Lease {
+  validLease(l);
+  return Object.freeze({requestId:l.requestId,ownerId:l.ownerId,fence:l.fence,policyVersion:l.policyVersion});
 }
 function validObject(o: ObjectRecord, owner: string) {
-  return uuid.test(o.id)&&o.ownerId===owner&&userBuckets.has(o.bucket)&&
+  return !!o&&typeof o.id==="string"&&uuid.test(o.id)&&o.ownerId===owner&&userBuckets.has(o.bucket)&&
+    (o.version===null||(typeof o.version==="string"&&o.version.length>0&&o.version.length<=1024))&&
     typeof o.path==="string"&&o.path.length>0&&o.path.length<=1024&&
     !o.path.startsWith("/")&&!o.path.includes("\\")&&!/[\x00-\x1f\x7f]/.test(o.path)&&
     o.path.split("/").every(p=>p!==""&&p!=="."&&p!=="..");
@@ -38,27 +43,35 @@ async function boundary(lease: Lease,guards: Guards){
 // Versioned objects, provider copies, legacy ownerless objects and Mux assets
 // require additional approved cleanup; assertNoRemainingMedia must verify those.
 export async function removeApprovedAccountMedia(admin: SupabaseClient,lease: Lease,plan: ApprovedMediaPlan,guards: Guards){
-  validLease(lease);
+  lease=immutableLease(lease);
   if(plan.requestId!==lease.requestId||plan.ownerId!==lease.ownerId||plan.policyVersion!==lease.policyVersion||
      !Array.isArray(plan.objects)||plan.objects.length>10000)throw Error("Deletion plan does not match lease.");
   const seen=new Set<string>();
-  for(const o of plan.objects){
+  // Snapshot and validate before the first await; an async proof must not
+  // be able to replace the approved object set or mutate a target path.
+  const objects: readonly ObjectRecord[]=Object.freeze(Array.from(plan.objects,o=>{
     if(!validObject(o,lease.ownerId))throw Error("Unapproved media object.");
+    return Object.freeze({id:o.id,bucket:o.bucket,path:o.path,ownerId:o.ownerId,version:o.version});
+  }));
+  for(const o of objects){
     const key=JSON.stringify([o.bucket,o.path]);
     if(seen.has(key))throw Error("Duplicate media object.");
     seen.add(key);
   }
   // Verify the whole batch before any deletion; recheck each immediately before effect.
   await boundary(lease,guards);
-  for(const o of plan.objects){
+  for(const o of objects){
     const actual=await guards.readObject(lease,o.bucket,o.path);
     if(actual&&!sameObject(o,actual))throw Error("Media ownership or version changed.");
   }
-  for(const o of plan.objects){
+  for(const o of objects){
     await boundary(lease,guards);
     const actual=await guards.readObject(lease,o.bucket,o.path);
     if(!actual)continue;
     if(!sameObject(o,actual))throw Error("Media ownership or version changed.");
+    // A metadata read can outlast the worker lease; recheck immediately
+    // before dispatch. A freeze remains required for provider races.
+    await boundary(lease,guards);
     const result=await admin.storage.from(o.bucket).remove([o.path]);
     if(result.error)throw Error("Storage deletion not confirmed.");
     await boundary(lease,guards);
@@ -66,6 +79,7 @@ export async function removeApprovedAccountMedia(admin: SupabaseClient,lease: Le
   }
   await boundary(lease,guards);
   await guards.assertNoRemainingMedia(lease);
+  await boundary(lease,guards);
   return {confirmed:true as const,receipt:"media_verified"};
 }
 function isMissingUser(error: unknown){
@@ -74,7 +88,7 @@ function isMissingUser(error: unknown){
 // Actual Auth admin hard-delete call; deliberately unavailable until all
 // previously approved cleanup/retention and write-freeze proofs are established.
 export async function removeApprovedAuthIdentity(admin: SupabaseClient,lease: Lease,guards: Guards){
-  validLease(lease);
+  lease=immutableLease(lease);
   await boundary(lease,guards);
   await guards.assertReadyForAuthDeletion(lease);
   const before=await admin.auth.admin.getUserById(lease.ownerId);
@@ -83,12 +97,14 @@ export async function removeApprovedAuthIdentity(admin: SupabaseClient,lease: Le
     if(before.data.user?.id!==lease.ownerId)throw Error("Auth owner mismatch.");
     await boundary(lease,guards);
     await guards.assertReadyForAuthDeletion(lease);
+    await boundary(lease,guards);
     const removed=await admin.auth.admin.deleteUser(lease.ownerId,false);
     if(removed.error&&!isMissingUser(removed.error))throw Error("Auth removal not confirmed.");
   }
   await guards.assertLease(lease);
   const after=await admin.auth.admin.getUserById(lease.ownerId);
   if(!isMissingUser(after.error))throw Error("Auth identity absence not confirmed.");
+  await guards.assertLease(lease);
   return {confirmed:true as const,receipt:"auth_absence_verified"};
 }
 
@@ -100,7 +116,7 @@ export async function blockAndRevokeApprovedSessions(
  admin:SupabaseClient,lease:Lease,guards:Pick<Guards,"assertLease"|"assertFrozen">,
  ownerBearer?:string,
 ){
- validLease(lease);
+ lease=immutableLease(lease);
  const args={p_request:lease.requestId,p_owner:lease.ownerId,p_fence:lease.fence};
  async function proof(name:string){
   const result=await admin.rpc(name,args);
