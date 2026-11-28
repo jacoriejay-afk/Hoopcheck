@@ -56,6 +56,35 @@ export const verifiedRosters: RosterEvidence[] = [{
   source:"https://www.kki.is/frettir/frett/2026/09/25/Spa-formanna-fyrirlida-og-thjalfara-Bonusdeildar-kvenna/",
   verifiedAt:"2026-11-28",confidence:"Federation preseason participant list, corroborated by all five opening-round pairings",
   clubs:["Njarðvík","Grindavík","KR","Haukar","Tindastóll","Keflavík","Valur","Stjarnan","Ármann","Fjölnir"].map(name=>({name,country:"Iceland"}))
+},{
+  name:"WNBL",country:"Australia",season:"2026-27",side:"womens",
+  source:"https://www.wnbl.com.au/news/wnbl-annouces-expasion-with-tasmania",
+  verifiedAt:"2026-11-28",confidence:"Official nine-team expansion; current WNBL27 fixtures and roster lists corroborate identities",
+  clubs:[
+    {name:"Adelaide Lightning",country:"Australia"},{name:"Bendigo Spirit",country:"Australia"},
+    {name:"UC Capitals",country:"Australia",aliases:["Canberra Capitals","University of Canberra Capitals"]},
+    {name:"Geelong Venom",country:"Australia",aliases:["Geelong United"]},
+    {name:"Perth Lynx",country:"Australia"},{name:"Southside Melbourne Flyers",country:"Australia",aliases:["Southside Flyers"]},
+    {name:"Sydney Flames",country:"Australia"},{name:"Tasmania Jewels",country:"Australia"},{name:"Townsville Fire",country:"Australia"}
+  ]
+},{
+  name:"Liga Betclic",country:"Portugal",season:"2026-27",side:"mens",leagueAliases:["Liga Betclic Masculina"],
+  source:"https://www.fpb.pt/noticia/o-arranque-de-2026-2027-sorteio-das-ligas-betclic-masculina-e-feminina-este-sabado-no-cop/",
+  verifiedAt:"2026-11-28",confidence:"Portuguese federation participant list",
+  clubs:[
+    ["CAB Madeira"],["CD Póvoa", "CD Póvoa ESC Online","Povoa"],["Esgueira", "Esgueira Aveiro OLI","Esgueira BC"],["FC Porto","Porto"],
+    ["Portimonense SC","Portimonense"],["Ovarense","Ovarense GAVEX"],["Queluz","Queluz O Nosso Prego","CA Queluz"],["SC Braga","Braga"],
+    ["SL Benfica","Benfica"],["Sporting CP","Sporting"],["UD Oliveirense","Oliveirense"],["Vitória SC","Vitoria Guimaraes","Vitória Guimarães"]
+  ].map(([name,...aliases])=>({name,country:"Portugal",aliases}))
+},{
+  name:"Liga Betclic Feminina",country:"Portugal",season:"2026-27",side:"womens",
+  source:"https://www.fpb.pt/noticia/o-arranque-de-2026-2027-sorteio-das-ligas-betclic-masculina-e-feminina-este-sabado-no-cop/",
+  verifiedAt:"2026-11-28",confidence:"Portuguese federation participant list",
+  clubs:[
+    ["Basquete Barcelos","Basquete Barcelos HMMOTOR"],["CAB Madeira"],["CDE Francisco Franco","Francisco Franco"],["CRC Quinta dos Lombos","Quinta dos Lombos"],
+    ["Esgueira","Esgueira Aveiro ECOVALOR"],["GDESSA Barreiro","GDESSA"],["GDRAR","GDRAR REMAX"],["Sanjoanense","Sanjoanense HELIOTEXTIL"],
+    ["SC Coimbrões","SC Coimbrões SANCHO PANZA"],["SL Benfica","Benfica"],["Sporting CP","Sporting"],["Sportiva","Sportiva AZORISHOTELS"]
+  ].map(([name,...aliases])=>({name,country:"Portugal",aliases}))
 }];
 const normalized=(v:string|null)=> (v||"").normalize("NFKD").replace(/\p{M}/gu,"").toLocaleLowerCase("en").replace(/[^\p{L}\p{N}]+/gu,"");
 const identityKey=(row:DirectoryIdentity)=>[normalized(row.country),row.basketball_type,normalized(row.name)].join(":");
@@ -114,4 +143,29 @@ export function deriveDirectoryQuality(leagues:DirectoryLeague[],teams:Directory
     countryAliasWarnings:[...countryLabels].filter(label=>["Czech Republic","Bosnia & Herzegovina","Chinese Taipei","Mexico City"].includes(label!)).sort(),
     coverage,verifiedLeagueCount:coverage.filter(row=>!!row.evidence).length,
     missingReviewedCompetitions:verifiedRosters.filter(evidence=>!coverage.some(row=>row.evidence===evidence)).map(evidence=>({name:evidence.name,country:evidence.country,side:evidence.side||"mens",season:evidence.season,expected:evidence.clubs.length,source:evidence.source,confidence:evidence.confidence,existingNameWithoutSeason:leagues.some(league=>league.country===evidence.country&&league.basketball_type===(evidence.side||"mens")&&[evidence.name,...(evidence.leagueAliases||[])].some(name=>normalized(name)===normalized(league.name)))}))};
+}
+
+/** IDs, not fuzzy names, establish the existing legacy team mirror relationship.
+ * Never infer a league equivalence from a team ID; league IDs are distinct namespaces.
+ */
+export function deriveWomensCatalogParity(
+  canonicalLeagues:DirectoryLeague[], canonicalTeams:DirectoryTeam[],
+  legacyLeagues:{id:string;name:string;country:string|null}[],
+  legacyTeams:{id:string;name:string;country:string|null;league_id:string|null}[]
+){
+  const women=canonicalTeams.filter(row=>row.basketball_type==="womens");
+  const womensLeagues=canonicalLeagues.filter(row=>row.basketball_type==="womens");
+  const canonical=unique(women),legacy=unique(legacyTeams);
+  unique(legacyLeagues);
+  const shared=legacyTeams.filter(row=>canonical.has(row.id));
+  const missingLegacy=women.filter(row=>!legacy.has(row.id));
+  const missingCanonical=legacyTeams.filter(row=>!canonical.has(row.id));
+  const missingCanonicalPrimary=shared.filter(row=>row.league_id&&!canonical.get(row.id)?.league_id);
+  const legacyLeagueCandidates=legacyLeagues.map(row=>{
+    const matches=womensLeagues.filter(league=>normalized(league.country)===normalized(row.country)&&normalized(league.name)===normalized(row.name));
+    return {id:row.id,name:row.name,country:row.country,candidateIds:matches.map(league=>league.id),legacyClubs:legacyTeams.filter(team=>team.league_id===row.id).length};
+  });
+  return {canonicalTeams:women.length,canonicalLeagues:womensLeagues.length,legacyTeams:legacyTeams.length,legacyLeagues:legacyLeagues.length,
+    sharedIds:shared.length,missingLegacy:missingLegacy.length,missingCanonical:missingCanonical.length,linkedLegacyWithoutCanonicalPrimary:missingCanonicalPrimary.length,
+    exactLeagueCandidates:legacyLeagueCandidates.filter(row=>row.candidateIds.length===1).length,legacyLeagueCandidates};
 }
