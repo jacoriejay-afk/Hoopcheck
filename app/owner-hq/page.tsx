@@ -39,6 +39,8 @@ export default async function OwnerHQ() {
           <Link href="/owner-hq/basketball-data" prefetch={false}>Basketball Data Center</Link>
           <Link href="/admin/ambassadors" prefetch={false}>Ambassador administration</Link>
           <Link href="/owner-hq/campaigns" prefetch={false}>Campaign attribution</Link>
+          <Link href="/owner-hq/growth" prefetch={false}>Launch growth</Link>
+          <Link href="/owner-hq/launch-readiness" prefetch={false}>Launch readiness</Link>
           {ambassador && <Link href="/ambassador-hq" prefetch={false}>My Ambassador HQ</Link>}
         </nav>
       </header>

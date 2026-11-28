@@ -135,7 +135,7 @@
   color:var(--hc-on-card) !important;font:800 clamp(25px,5vw,38px)/1.2 Inter,system-ui,sans-serif !important;
   letter-spacing:-.035em;overflow-wrap:anywhere;
 }
-.hc-coach-entity-profile > section.hero:first-of-type .eyebrow {color:#a04576 !important;}
+.hc-coach-entity-profile > section.hero:first-of-type .eyebrow {color:var(--hc-accent-text) !important;}
 .hc-coach-entity-profile > section.hero:first-of-type .hc-entity-trust-score {
   border-radius:18px !important;max-width:100%;overflow-wrap:anywhere;
 }

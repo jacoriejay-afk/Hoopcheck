@@ -29,15 +29,22 @@ export async function GET(request: NextRequest, context: { params: Promise<{ cod
   }
 
   // Every explicit valid visit gets a fresh, single-use token, not a stale cookie.
-  const { data, error } = await ambassadorDb().rpc("ambassador_open_referral", { p_code: code });
-  if (error) console.error("Ambassador referral lookup failed", error.code);
-  if (error || typeof data !== "string") return unavailable();
+  try {
+    const { data, error } = await ambassadorDb().rpc("ambassador_open_referral", { p_code: code });
+    if (error) console.error("Ambassador referral lookup failed", error.code);
+    if (error || typeof data !== "string" || !data.trim()) return unavailable();
 
-  const response = NextResponse.redirect(signupUrl);
-  response.headers.set("Cache-Control", "private, no-store");
-  response.cookies.set(referralCookie, data, {
-    maxAge: 30 * 60, httpOnly: true, path: "/", sameSite: "lax",
-    secure: request.nextUrl.protocol === "https:",
-  });
-  return response;
+    const response = NextResponse.redirect(signupUrl);
+    response.headers.set("Cache-Control", "private, no-store");
+    response.cookies.set(referralCookie, data, {
+      maxAge: 30 * 60, httpOnly: true, path: "/", sameSite: "lax",
+      secure: request.nextUrl.protocol === "https:",
+    });
+    return response;
+  } catch {
+    // A thrown client initialization or transport error is also unavailable.
+    // Never leave a previous campaign cookie active after an explicit failed visit.
+    console.error("Ambassador referral lookup unavailable");
+    return unavailable();
+  }
 }
