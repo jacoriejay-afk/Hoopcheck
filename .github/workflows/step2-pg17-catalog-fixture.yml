@@ -1,0 +1,90 @@
+name: Step 2 PostgreSQL 17 permission catalog fixture
+on:
+  pull_request:
+    paths:
+      - 'supabase/tests/step2_permission_catalog_readonly.sql'
+      - 'supabase/tests/step2-acceptance-hardened.sql'
+      - '.github/workflows/step2-pg17-catalog-fixture.yml'
+permissions:
+  contents: read
+jobs:
+  catalog-fixture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: synthetic_fixture_only
+          POSTGRES_DB: hoopcheck_step2_catalog_fixture
+        options: >-
+          --health-cmd 'pg_isready -U postgres -d hoopcheck_step2_catalog_fixture'
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Verify catalog digest detects security drift without reading user rows
+        env:
+          FIXTURE_CONTAINER: ${{ job.services.postgres.id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          sql() { docker exec -i "$FIXTURE_CONTAINER" psql -X -qAt -v ON_ERROR_STOP=1 -U postgres -d hoopcheck_step2_catalog_fixture "$@"; }
+          snapshot() { sql < supabase/tests/step2_permission_catalog_readonly.sql; }
+          test "$(sql -c 'SHOW server_version_num')" -ge 170000
+          test "$(sql -c 'SHOW server_version_num')" -lt 180000
+          sql <<'SQL'
+          CREATE ROLE fixture_reader NOLOGIN;
+          CREATE ROLE fixture_member NOLOGIN;
+          CREATE SCHEMA fixture;
+          CREATE TABLE fixture.rows (id integer PRIMARY KEY, private_note text);
+          ALTER TABLE fixture.rows ENABLE ROW LEVEL SECURITY;
+          CREATE POLICY fixture_policy ON fixture.rows TO fixture_reader USING (id = 1);
+          CREATE FUNCTION fixture.identity(integer) RETURNS integer LANGUAGE sql IMMUTABLE AS 'SELECT $1';
+          INSERT INTO fixture.rows VALUES (1, 'synthetic_payload_not_catalog');
+          SQL
+          snapshot > /tmp/baseline
+          snapshot > /tmp/repeat
+          cmp /tmp/baseline /tmp/repeat
+          test "$(wc -l < /tmp/baseline)" -eq 8
+          test "$(grep -Ec '^[a-z_]+\|[0-9]+\|[a-f0-9]{64}$' /tmp/baseline)" -eq 8
+          ! grep -Fq synthetic_payload_not_catalog /tmp/baseline
+          sql -c "UPDATE fixture.rows SET private_note = 'changed_synthetic_payload'"
+          snapshot > /tmp/rows-changed
+          cmp /tmp/baseline /tmp/rows-changed
+          changed() {
+            local category="$1"
+            snapshot > /tmp/changed
+            test "$(grep "^$category|" /tmp/changed)" != "$(grep "^$category|" /tmp/baseline)"
+          }
+          sql -c 'GRANT USAGE ON SCHEMA fixture TO fixture_reader'
+          changed schemas
+          sql -c 'GRANT SELECT ON fixture.rows TO fixture_reader'
+          changed relations
+          sql -c 'GRANT UPDATE (private_note) ON fixture.rows TO fixture_reader'
+          changed columns
+          sql -c 'ALTER POLICY fixture_policy ON fixture.rows USING (id = 2)'
+          changed policies
+          sql -c 'REVOKE EXECUTE ON FUNCTION fixture.identity(integer) FROM PUBLIC'
+          changed routines
+          sql -c 'ALTER DEFAULT PRIVILEGES IN SCHEMA fixture GRANT SELECT ON TABLES TO fixture_reader'
+          changed default_acls
+          sql -c 'ALTER ROLE fixture_reader NOINHERIT'
+          changed role_flags
+          sql -c 'GRANT fixture_reader TO fixture_member'
+          changed role_memberships
+          echo 'PASS: deterministic catalog snapshot, row independence, eight drift categories.'
+      - name: Verify full acceptance script refuses wrong target and missing opt-in
+        env:
+          FIXTURE_CONTAINER: ${{ job.services.postgres.id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if docker exec -i "$FIXTURE_CONTAINER" psql -X -v ON_ERROR_STOP=1 -U postgres -d hoopcheck_step2_catalog_fixture < supabase/tests/step2-acceptance-hardened.sql > /tmp/guard.log 2>&1; then exit 1; fi
+          grep -Fq 'Explicit local acceptance opt-in required' /tmp/guard.log
+          if docker exec -i "$FIXTURE_CONTAINER" psql -X -v ON_ERROR_STOP=1 -v HOOPCHECK_LOCAL_ACCEPTANCE=on -U postgres -d hoopcheck_step2_catalog_fixture < supabase/tests/step2-acceptance-hardened.sql > /tmp/guard.log 2>&1; then exit 1; fi
+          grep -Fq 'Refusing non-local or incorrectly named database' /tmp/guard.log
+          echo 'PASS: acceptance opt-in and target guards. Full restored schema not exercised.'
