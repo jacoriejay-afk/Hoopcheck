@@ -38,18 +38,19 @@ export async function inspectVideoBytes(bytes,contentType,{probeBinary="ffprobe"
  // Restrict demuxers and protocols: no arbitrary playlist, network or nested
  // external inputs. Run the worker in an isolated non-root process/container.
  const inputFormat=contentType==="video/webm"?"matroska":"mov";
+ const demuxOptions=inputFormat==="mov"?["-enable_drefs","0","-use_absolute_path","0"]:[];
  const directory=await mkdtemp(join(tmpdir(),"hc-story-inspect-"));
  const input=join(directory,"source."+kinds[contentType]);
  try{
   await writeFile(input,bytes,{mode:0o600});
   let result;
-  try{result=await exec(probeBinary,["-v","error","-protocol_whitelist","file,pipe","-f",inputFormat,"-i",input,"-show_streams","-show_format","-of","json"],{timeout:12000,maxBuffer:256*1024,windowsHide:true});}
+  try{result=await exec(probeBinary,["-v","error","-protocol_whitelist","file,pipe","-f",inputFormat,...demuxOptions,"-i",input,"-show_streams","-show_format","-of","json"],{timeout:12000,maxBuffer:256*1024,windowsHide:true});}
   catch(e){if(e?.code==="ENOENT"||e?.killed||e?.signal)throw Error("Video inspector unavailable.");throw invalid();}
   let probe;try{probe=JSON.parse(result.stdout);}catch{throw invalid();}
   const facts=validateVideoProbe(probe,contentType,bytes.length);
   // Decode the complete bounded file, including every audio packet. Probe
   // metadata alone cannot detect all corrupt/truncated content.
-  try{await exec(decodeBinary,["-nostdin","-v","error","-xerror","-protocol_whitelist","file,pipe","-f",inputFormat,"-threads","2","-i",input,"-map","0:v:0","-map","0:a:0?","-t","61","-f","null","-"],{timeout:90000,maxBuffer:128*1024,windowsHide:true});}
+  try{await exec(decodeBinary,["-nostdin","-v","error","-xerror","-protocol_whitelist","file,pipe","-f",inputFormat,...demuxOptions,"-threads","2","-i",input,"-map","0:v:0","-map","0:a:0?","-t","61","-f","null","-"],{timeout:90000,maxBuffer:128*1024,windowsHide:true});}
   catch(e){if(e?.code==="ENOENT"||e?.killed||e?.signal)throw Error("Video decoder unavailable.");throw invalid();}
   return {state:"verified",sha256:createHash("sha256").update(bytes).digest("hex"),...facts};
  }finally{await rm(directory,{recursive:true,force:true});}

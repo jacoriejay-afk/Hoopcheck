@@ -13,7 +13,9 @@ test("private conversation reports and blocking verify the exact participant pai
   assert.match(inbox,/blocked\.has\(row\.requester_id===viewer\?row\.player_id:row\.requester_id\)/);
   assert.match(inbox,/\!\[row\.requester_id,row\.player_id\]\.includes\(viewer\)/);
   assert.match(chat,/await verifyChatPeer\(viewerId/);
-  assert.match(chat,/async function respond[\s\S]*?withHoopChatDeadline\(signal=>verifyChatPeer\(userId,peerId\(selected\),signal\)\)/);
+  const respond=chat.slice(chat.indexOf("async function respond("),chat.indexOf("async function checkDelivery("));
+  assert.match(respond,/withHoopChatDeadline\(async signal=>\{[\s\S]*?const header=await verifyChatPeer\(userId,peerId\(selected\),signal\);[\s\S]*?if\(signal\.aborted\|\|actionGeneration!==generation\.current\|\|!focused\.current\)throw Error/);
+  assert.match(respond,/\.eq\("id",selected\.id\)\.eq\("player_id",userId\)\.eq\("status","pending"\)\.setHeader\("Authorization",header\)\.select\("id"\)\.abortSignal\(signal\)/);
   assert.match(chat,/async function send[\s\S]*?withHoopChatDeadline\(async signal=>\{[\s\S]*?const header=await verifyChatPeer\(userId,peerId\(selected\),signal\);[\s\S]*?await sendConversationMessage\(supabase,message,signal,header\)/);
 });
 test("group and game room reads apply account blocking in addition to existing local controls",()=>{
