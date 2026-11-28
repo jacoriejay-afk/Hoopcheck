@@ -10,7 +10,7 @@ CREATE TABLE hoopcheck_export_private.media_policy(
  singleton boolean PRIMARY KEY CHECK(singleton),
  enabled boolean NOT NULL DEFAULT false,
  max_objects integer CHECK(max_objects BETWEEN 1 AND 10000),
- max_file_bytes bigint CHECK(max_file_bytes BETWEEN 1 AND 20971520),
+ max_file_bytes bigint CHECK(max_file_bytes BETWEEN 1 AND 134217728),
  CHECK(NOT enabled OR (max_objects IS NOT NULL AND max_file_bytes IS NOT NULL))
 );
 INSERT INTO hoopcheck_export_private.media_policy(singleton) VALUES(true);
@@ -29,7 +29,7 @@ CREATE TABLE hoopcheck_export_private.media_items(
  bucket_id text NOT NULL,
  object_path text NOT NULL,
  object_version text NOT NULL,
- byte_count bigint NOT NULL CHECK(byte_count BETWEEN 1 AND 20971520),
+ byte_count bigint NOT NULL CHECK(byte_count BETWEEN 1 AND 134217728),
  decision text NOT NULL DEFAULT 'pending' CHECK(decision IN ('pending','approved','denied')),
  reviewed_at timestamptz,
  CHECK(decision='pending' OR reviewed_at IS NOT NULL),
