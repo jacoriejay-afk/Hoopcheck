@@ -16,12 +16,16 @@ test('bad season and aborted requests make no reads; server failures are not emp
 });
 
 test('recorded season discovery keeps exact labels, deduplicates, and does not filter active links',async()=>{
- const db=client(async input=>{const u=new URL(String(input));assert.equal(u.searchParams.get('league_id'),'eq.'+id(1));assert.equal(u.searchParams.has('active'),false);assert.equal(u.searchParams.get('limit'),'201');return Response.json([{season:'2026–27'},{season:'2025-26'},{season:'2025-26'},{season:null},{season:' bad '}]);});
+ const db=client(async input=>{const u=new URL(String(input));assert.equal(u.searchParams.get('league_id'),'eq.'+id(1));assert.equal(u.searchParams.has('active'),false);assert.equal(u.searchParams.get('limit'),'100');return Response.json([{season:'2026–27'},{season:'2025-26'},{season:'2025-26'},{season:null},{season:' bad '}]);});
  assert.deepEqual(await readRecordedLeagueSeasons(db,id(1)),{seasons:['2026–27','2025-26'],limited:false});
 });
-test('season sample reports truncation and fails closed on read failure',async()=>{
- const db=client(async()=>Response.json(Array.from({length:201},()=>({season:'2025-26'}))));
- assert.deepEqual(await readRecordedLeagueSeasons(db,id(1)),{seasons:['2025-26'],limited:true});
+test('recorded seasons extend beyond the first 200 rows and fail closed on read failure',async()=>{
+ const rows=[...Array.from({length:205},()=>({season:'2025-26'})),{season:'2024-25'}];
+ let pages=0;
+ const db=client(async input=>{const u=new URL(String(input));const offset=Number(u.searchParams.get('offset')||0);pages++;return Response.json(rows.slice(offset,offset+100));});
+ assert.deepEqual(await readRecordedLeagueSeasons(db,id(1)),{seasons:['2025-26','2024-25'],limited:false});assert.equal(pages,3);
+ const capped=client(async()=>Response.json(Array.from({length:100},()=>({season:'2025-26'}))));
+ assert.deepEqual(await readRecordedLeagueSeasons(capped,id(1)),{seasons:['2025-26'],limited:true});
  const broken=client(async()=>Response.json({message:'unavailable'},{status:503}));
  await assert.rejects(readRecordedLeagueSeasons(broken,id(1)),/could not load/);
  const aborted=new AbortController();aborted.abort();await assert.rejects(readRecordedLeagueSeasons(db,id(1),aborted.signal));
