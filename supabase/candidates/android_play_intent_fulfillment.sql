@@ -220,7 +220,7 @@ grant execute on function play_billing_candidate.hold_test_owner(uuid),play_bill
 -- against an already bound intent. Lock the owner before inspecting intents.
 create table play_billing_candidate.intent_purchase_bindings(
  intent_id uuid primary key references play_billing_candidate.purchase_intents(intent_id),
- fingerprint text not null unique check(fingerprint ~ '^[0-9a-f]{64}),
+ fingerprint text not null unique check(fingerprint ~ '^[0-9a-f]{64}$'),
  owner_id uuid not null
 );
 alter table play_billing_candidate.intent_purchase_bindings enable row level security;
