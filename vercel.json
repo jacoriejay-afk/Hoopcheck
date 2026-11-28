@@ -69,7 +69,8 @@
       "qa/step4-deletion-worker-tick-20261128": false,
       "qa/step3-video-story-local-safety-20261128": false,
       "qa/league-data-1-worldwide-correction": false,
-      "qa/step3-hoopgroups-realtime-20261128": false
+      "qa/step3-hoopgroups-realtime-20261128": false,
+      "qa/independent-native-push": false
     }
   }
 }

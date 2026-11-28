@@ -72,6 +72,7 @@ function screen(path, { state = [], params = {}, segments = [], pathname = "/", 
     if (name.endsWith("/native/drafts")) return { NativeDraftProvider: "NativeDraftProvider" };
     if (name.endsWith("/native/useNativeAccount")) return { NativeAccountProvider: "NativeAccountProvider" };
     if (name.endsWith("/native/network")) return { NetworkProvider: "NetworkProvider" };
+      if (name.endsWith("/nativeChatPush")) return { NativeChatPush: () => null };
     if (name.endsWith("/motion/Provider")) return { MotionProvider: "MotionProvider", useMotionSetting: () => true };
     if (name.endsWith("/motion/config")) return { motion: { logo: 300, shortFade: 100, splashDeadline: 2000 } };
     if (name.endsWith("/native/telemetry")) return { traceFlow: (_, fn) => fn(), Sentry: { wrap: component => component } };
