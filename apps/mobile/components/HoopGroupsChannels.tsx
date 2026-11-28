@@ -179,7 +179,8 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
         const current=await safetyToken();
         if(!alive||controller.signal.aborted||current!==token)throw Error("Session changed. Refresh the channel.");
         if(AppState.currentState!=="active"&&AppState.currentState!==null)return;
-        if(alive){setPostSnapshot({channelId:channel!.id,posts:((data||[]) as Post[]).filter(post=>!blocked.has(post.author_id)&&(post.moderation_status==="approved"||post.author_id===userId&&post.moderation_status==="pending")).reverse()});startRealtime();}
+        if(alive)setPostSnapshot({channelId:channel!.id,posts:((data||[]) as Post[]).filter(post=>!blocked.has(post.author_id)).filter(post=>post.moderation_status==="approved"||post.author_id===userId&&post.moderation_status==="pending").reverse()});
+        startRealtime();
         setPostError("");
       }catch{if(alive){stopRealtime();setPostError("Channel messages or block status could not be verified.");setPostSnapshot(null);}}
       finally{
