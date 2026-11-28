@@ -6,6 +6,7 @@ import { Button, GlassCard } from "../src/primitives";
 import { useEntryTheme } from "../src/theme";
 import { supabase } from "../src/lib/supabase";
 import { requireOnline, useNetwork } from "../src/native/network";
+import { useMfaSession } from "../src/native/mfa";
 import { useNativeAccount } from "../src/native/useNativeAccount";
 import { GroupModerationPanel } from "./GroupModerationPanel";
 import { HoopCheckLoading } from "./HoopCheckLoading";
@@ -42,14 +43,32 @@ const colorOptions = { orange:"#FF873C", blue:"#60A5FA", purple:"#A78BFA", green
 const iconOptions = { basketball:"🏀", flame:"🔥", globe:"🌐", star:"⭐", trophy:"🏆", users:"👥" } as const;
 const accent = (name:string) => colorOptions[name as keyof typeof colorOptions] ?? colorOptions.orange;
 const emblem = (name:string) => iconOptions[name as keyof typeof iconOptions] ?? iconOptions.basketball;
-export default function HoopGroupsChannels({inviteSlug = null}:{inviteSlug?:string|null}) {
+export default function HoopGroupsChannels({inviteSlug = null, jumpToPost}:{inviteSlug?:string|null; jumpToPost:(post:View)=>void}) {
   const {account}=useNativeAccount();
   const {offline}=useNetwork();
-  const userId=account?.user.id||"";
+  const security = useMfaSession();
+  const [previous,setPrevious] = useState<{id:string;role:string}|null>(null);
+  const verifiedId = account?.user.id;
+  const verifiedRole = account?.user.accountType || "";
+  useEffect(() => {
+    if (verifiedId) setPrevious({id:verifiedId,role:verifiedRole});
+    else if (previous?.id !== security.owner) setPrevious(null);
+  }, [previous?.id, security.owner, verifiedId, verifiedRole]);
+  const expiresAt = security.state?.expiresAt;
+  useEffect(() => {
+    if (verifiedId || !previous || !expiresAt) return;
+    const expiry = setTimeout(() => setPrevious(null), Math.max(0, expiresAt - Date.now()));
+    return () => clearTimeout(expiry);
+  }, [expiresAt, previous, verifiedId]);
+  const cached = outbox && security.phase === "ready" && security.state && security.state.expiresAt > Date.now()
+    && previous?.id === security.owner ? previous : null;
+  // Cached identity only retains local composer state. Replay always uses the
+  // live caller and the existing membership/RLS boundary.
+  const userId = verifiedId || cached?.id || "";
   // Never carry a previous account's local membership, drafts or requests across identities.
-  return <ScopedHoopGroups key={userId} userId={userId} offline={offline} role={account?.user.accountType||""} inviteSlug={inviteSlug} />;
+  return <ScopedHoopGroups key={userId} userId={userId} offline={offline||!verifiedId} role={verifiedRole||cached?.role||""} inviteSlug={inviteSlug} jumpToPost={jumpToPost} />;
 }
-function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offline:boolean;role:string;inviteSlug:string|null}) {
+function ScopedHoopGroups({userId,offline,role,inviteSlug,jumpToPost}:{userId:string;offline:boolean;role:string;inviteSlug:string|null;jumpToPost:(post:View)=>void}) {
   const theme=useEntryTheme();
   const [spaces,setSpaces]=useState<Space[]>([]);
   const [channels,setChannels]=useState<Channel[]>([]);
@@ -59,6 +78,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
   const [inviteUnavailable,setInviteUnavailable]=useState(false);
   const [channelId,setChannelId]=useState("");
   const [postSnapshot,setPostSnapshot]=useState<{channelId:string;posts:Post[]}|null>(null);
+  const postViews = useRef(new Map<string, View>());
   const [postLoading,setPostLoading]=useState(false);
   const [unreadSnapshot,setUnreadSnapshot]=useState<{channelId:string;counts:GroupUnread}|null>(null);
   const [postError,setPostError]=useState("");
@@ -412,8 +432,8 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
     setBusy(true);
     setError("");
     try {
-      if (repliesEnabled && replyId && !replyParent) throw Error("Reply unavailable. Clear the reply or refresh.");
-      const submittedReply = repliesEnabled && replyParent ? replyParent.id : undefined;
+      if (repliesEnabled && replyId && !replyParent && !offline) throw Error("Reply unavailable. Clear the reply or refresh.");
+      const submittedReply = repliesEnabled ? replyParent?.id ?? (offline && replyId ? replyId : undefined) : undefined;
       const message = prepareGroupSend(outbox ? null : pendingSend.current, userId, channel.id, draft, randomUUID, submittedReply);
       if (outbox) {
         if (!offline) await safetyToken();
@@ -680,10 +700,19 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
         {readStateEnabled?<Button secondary disabled={busy||postLoading||Boolean(postError)||!posts.length} onPress={()=>void markVisibleRead()}>Mark loaded messages read</Button>:null}
         {postLoading?<HoopCheckLoading compact label="Loading channel messages…" />:null}
         {postError?<Text accessibilityRole="alert" style={{color:theme.accent}}>{postError}</Text>:null}
-        {posts.length?posts.map(post=><View key={post.id}
+        {posts.length?posts.map(post=><View key={post.id} collapsable={false} ref={view => {
+          if (view) postViews.current.set(post.id, view); else postViews.current.delete(post.id);
+        }}
           style={{borderBottomWidth:1,borderColor:theme.border,paddingVertical:10,gap:5}}>
           <Text style={{color:theme.foreground,fontWeight:"700"}}>{post.author_id===userId?"You":"Community member"}</Text>
-          {repliesEnabled&&post.was_reply?<Text style={{color:theme.muted}}>{posts.find(p=>p.id===post.reply_to_id&&p.moderation_status==="approved")?.body.slice(0,100)||"Original message unavailable"}</Text>:null}
+          {repliesEnabled && post.was_reply ? (() => {
+            const parent = posts.find(p => p.id === post.reply_to_id && p.moderation_status === "approved");
+            return parent ? <Pressable accessibilityRole="button" accessibilityLabel="Jump to original message"
+              onPress={() => { const view = postViews.current.get(parent.id); if (view) jumpToPost(view); }}
+              style={{minHeight:44,justifyContent:"center"}}>
+              <Text style={{color:theme.accent}} numberOfLines={2}>{parent.body.slice(0,100)}</Text>
+            </Pressable> : <Text style={{color:theme.muted}}>Original message unavailable</Text>;
+          })() : null}
           <Text style={{color:theme.foreground}}>{post.body}</Text>
           {repliesEnabled&&post.moderation_status==="approved"?<Button secondary disabled={busy} onPress={()=>setReplySnapshot({channelId:channel.id,id:post.id})}>Reply</Button>:null}
           <Text style={{color:theme.muted,fontSize:11}}>{post.moderation_status==="approved"?"Approved":"Pending review · visible only to you"} · {new Date(post.created_at).toLocaleString()}</Text>
@@ -694,7 +723,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
         </View>):!postLoading&&!postError&&postSnapshot?.channelId===channel.id?<Text style={{color:theme.muted,marginVertical:12}}>No approved messages yet.</Text>:null}
         {repliesEnabled&&replyId?<View><Text style={{color:theme.muted}}>{replyParent?"Replying to: "+replyParent.body.slice(0,120):"Original message unavailable"}</Text><Button secondary disabled={busy} onPress={()=>setReplySnapshot(null)}>Clear reply</Button></View>:null}
         {saved?<View accessibilityLiveRegion="polite" style={{gap:6}}>
-          <Text style={{color:theme.foreground}}>{saved.body}</Text>
+          <Text style={{color:theme.foreground}}>{posts.some(post=>post.id===saved.id)?"Saved copy for this message":saved.body}</Text>
           <Text style={{color:theme.muted}}>{delivering?"Submitting…":offline?"Queued until you reconnect":"Saved on this device · delivery unconfirmed"}</Text>
           <Button secondary disabled={offline||busy||delivering} onPress={()=>void deliverQueued(saved, channel.space_id, new AbortController())}>Retry submission</Button>
           <Button secondary disabled={busy||delivering} onPress={()=>void removeSaved(saved)}>Remove saved copy</Button>

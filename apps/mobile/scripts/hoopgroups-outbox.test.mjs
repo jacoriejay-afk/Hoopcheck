@@ -48,3 +48,12 @@ test("changed owner and corrupt persisted rows cannot be recovered", async () =>
   data.set(key, "truncated");
   await assert.rejects(outbox.load(owner, channel));
 });
+
+test("offline composer retains only a matching unexpired verified identity and reply jumps use visible parents", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const source = await readFile(new URL("../components/HoopGroupsChannels.tsx", import.meta.url), "utf8");
+  assert.match(source, /security\.phase === "ready"[\s\S]*?security\.state\.expiresAt > Date\.now\(\)[\s\S]*?previous\?\.id === security\.owner/);
+  assert.match(source, /const posts=!offline&&member&&channel/);
+  assert.match(source, /const parent = posts\.find\(p => p\.id === post\.reply_to_id && p\.moderation_status === "approved"\)/);
+  assert.match(source, /jumpToPost\(view\)/);
+});
