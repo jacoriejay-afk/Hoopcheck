@@ -473,3 +473,20 @@ test("Georgia evidence counts participating clubs, accepts verified CIU alias, a
  assert.equal(row.actual,11);assert.equal(row.expected,11);
  assert.deepEqual(row.missing,["BC Orbi"]);assert.deepEqual(row.unexpected,["BC Olimpi"]);
 });
+
+test("missing Iceland women's league is visible even without any stored league or team records",async()=>{
+ const compiled=ts.transpileModule(read("lib/owner/directory-quality.ts"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+ const {deriveDirectoryQuality,verifiedRosters}=await import("data:text/javascript;base64,"+Buffer.from(compiled).toString("base64"));
+ const women=verifiedRosters.find(row=>row.country==="Iceland"&&row.side==="womens");
+ assert.equal(women.clubs.length,10);
+ const men={id:"men",name:"Úrvalsdeild karla",country:"Iceland",basketball_type:"mens",logo_url:null,season:null};
+ const missing=deriveDirectoryQuality([men],[],[]).missingReviewedCompetitions.filter(row=>row.country==="Iceland");
+ assert.equal(missing.find(row=>row.side==="mens").existingNameWithoutSeason,true);
+ assert.equal(missing.find(row=>row.side==="womens").existingNameWithoutSeason,false);
+ assert.equal(missing.find(row=>row.side==="womens").expected,10);
+ const league={...men,id:"women",name:"Úrvalsdeild kvenna",basketball_type:"womens",season:"2026-27"};
+ const teams=women.clubs.map((club,i)=>({id:"women"+i,name:club.name,country:"Iceland",basketball_type:"womens",logo_url:null,league_id:league.id}));
+ const repaired=deriveDirectoryQuality([league],teams,[]);
+ assert.equal(repaired.coverage[0].actual,10);assert.equal(repaired.coverage[0].expected,10);assert.deepEqual(repaired.coverage[0].missing,[]);
+ assert.equal(repaired.missingReviewedCompetitions.some(row=>row.country==="Iceland"&&row.side==="womens"),false);
+});
