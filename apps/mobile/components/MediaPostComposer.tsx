@@ -1,4 +1,5 @@
-import { sendWithPublicationReceipt } from "../src/native/publicationReceipt";
+import { recoveryMessage } from "../src/native/publicationReceiptCore";
+import { publicationReceiptsEnabled,recoverNativePublication,sendWithPublicationReceipt } from "../src/native/publicationReceipt";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Image, Linking, Platform, Pressable, Text, View } from "react-native";
 import { Button } from "../src/primitives";
@@ -70,6 +71,18 @@ export function MediaPostComposer({ userId, enabled, caption, token, onPublished
     } catch (error) { if (current === generation.current) { setMessage(error instanceof Error ? error.message : "Upload failed. Your draft is unchanged."); setUnconfirmed(error instanceof PublicationUnconfirmed); } }
     finally { clearTimeout(deadline); if (current === generation.current) { controller.current = null; working.current = false; setBusy(false); setUploading(false); setTransfer(null); } }
   }
+  async function recover(){
+    if(working.current||!enabled)return;
+    working.current=true;setBusy(true);
+    const current=generation.current;
+    try{
+      const state=await recoverNativePublication(process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim()||"https://hoopcheck.online",userId,await token());
+      if(current!==generation.current)return;
+      setUnconfirmed(false);setMessage(state?recoveryMessage(state):"No pending publication.");
+      if(state==="published")await onRefresh();
+    }catch(error){if(current===generation.current)setMessage(error instanceof Error?error.message:"Publication could not be verified.");}
+    finally{if(current===generation.current){working.current=false;setBusy(false);}}
+  }
   return <View style={{ gap: 12 }}>
     {cameraOpen && enabled && nativeCameraEnabled && Platform.OS !== "web" ? <HoopCheckCamera key={userId} onClose={() => setCameraOpen(false)} onCapture={capture => {
       if (!captureScope.current.enabled || captureScope.current.userId !== userId || working.current) return false;
@@ -103,7 +116,7 @@ export function MediaPostComposer({ userId, enabled, caption, token, onPublished
       <Button secondary onPress={() => controller.current?.abort()}>Cancel upload</Button>
     </View> : null}
     {permissionDenied ? <Button secondary onPress={() => { void Linking.openSettings().catch(() => setMessage("Open your device Settings, allow the required camera or photo access for HoopCheck, and return to try again.")); }}>Open device Settings</Button> : null}
-    {unconfirmed ? <Button secondary onPress={() => { void onRefresh(); }}>Refresh and review feed</Button> : null}
+    {publicationReceiptsEnabled ? <Button secondary disabled={busy||!enabled} onPress={()=>void recover()}>Check previous publication / cancel if unfinished</Button> : unconfirmed ? <Button secondary onPress={() => { void onRefresh(); }}>Refresh and review feed</Button> : null}
     {message ? <Text selectable accessibilityRole="alert" style={{ color: theme.foreground }}>{message}</Text> : null}
   </View>;
 }

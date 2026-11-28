@@ -130,7 +130,7 @@ export default function HoopChatCourtside(){
           throw new Error("Blocked accounts could not be verified.");
         }
         const blockedIds=new Set(blocked.data.map(row=>row.blocked_id));
-        const inbox=serverInboxEnabled?await readServerInbox(supabase,user.id,header,signal,serverQuery.current,"all",cursorStack.current.at(-1)??null,blockedIds):await readChatInbox(supabase,user.id,header,signal,inboxPages.current,blockedIds);
+        const inbox=serverInboxEnabled?await readServerInbox(supabase,user.id,header,signal,serverQuery.current,"all",cursorStack.current.at(-1)??null,blockedIds):{...(await readChatInbox(supabase,user.id,header,signal,inboxPages.current,blockedIds)),next:null};
         if(!valid()||signal.aborted)return;
         const rows=inbox.rows;
         const fromUrl=parseChatThread(new URLSearchParams(window.location.search).get("thread"));
@@ -152,7 +152,7 @@ export default function HoopChatCourtside(){
         if(latestSession.error||latestSession.data.session?.user.id!==user.id||latestSession.data.session.access_token!==session.access_token)throw Error("Account changed.");
         if(!valid()||signal.aborted)return;
         if(historyPages.some(result=>result.error)||profilePages.some(result=>result.error))throw new Error("Conversation previews could not be loaded.");
-        setInboxMore(inbox.hasMore);setInboxLimit(inbox.atLimit);setNextCursor("next" in inbox?inbox.next:null);setServerPage(cursorStack.current.length);setAllUnread(accountUnread);
+        setInboxMore(inbox.hasMore);setInboxLimit(inbox.atLimit);setNextCursor(inbox.next);setServerPage(cursorStack.current.length);setAllUnread(accountUnread);
         setServerUnread(unread?{owner:user.id,counts:unread}:null);
         setRequests(rows);setMessages(historyPages.flatMap(result=>(result.data||[]) as ChatMessage[]));
         setContacts(Object.fromEntries(profilePages.flatMap(result=>(result.data||[]) as ChatContact[]).map(c=>[c.id,c])));

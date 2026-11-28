@@ -14,7 +14,7 @@ export async function resolveGroupChannelLink(client:SupabaseClient,uid:string,h
  client.from("hoop_group_members").select("space_id,user_id").eq("space_id",spaceId).eq("user_id",uid).setHeader("Authorization",bearer).abortSignal(signal).maybeSingle()
  ]);
  if(s.error||m.error||signal.aborted)throw Error("Discussion unavailable.");
- if(!s.data||m.data?.space_id!==spaceId||m.data.user_id!==uid)return null;
+ if(!s.data||m.data?.space_id!==spaceId||m.data?.user_id!==uid)return null;
  const spaceData:Record<string,unknown>=s.data;
  if(s.data.id!==spaceId||["slug","name","category","description","accent_color","icon_key"].some(k=>typeof spaceData[k]!=="string")||!(s.data.owner_id===null||groupAlertId(s.data.owner_id)))throw Error("Invalid discussion.");
  const latest=await client.auth.getSession();

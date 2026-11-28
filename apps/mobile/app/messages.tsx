@@ -101,7 +101,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
         const blocked=await supabase.from("user_blocks").select("blocked_id").eq("blocker_id",user.id).limit(501).setHeader("Authorization",header).abortSignal(signal);
         if(blocked.error||!Array.isArray(blocked.data)||blocked.data.length>500)throw Error("Blocked accounts could not be verified.");
         const blockedIds=new Set(blocked.data.map(row=>row.blocked_id));
-        const inbox=serverInboxEnabled?await readServerInbox(supabase,user.id,header,signal,serverQuery.current,mode,cursorStack.current.at(-1)??null,blockedIds):await readChatInbox(supabase,user.id,header,signal,inboxPages.current,blockedIds);
+        const inbox=serverInboxEnabled?await readServerInbox(supabase,user.id,header,signal,serverQuery.current,mode,cursorStack.current.at(-1)??null,blockedIds):{...(await readChatInbox(supabase,user.id,header,signal,inboxPages.current,blockedIds)),next:null};
         const rows=inbox.rows;
         if(threadHint&&!consumedLink.current&&!rows.some(row=>row.id===threadHint)){
           const linked=await readLinkedChatThread(supabase,user.id,threadHint,blockedIds,header,signal);
@@ -118,7 +118,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
         if(historyPages.some(result=>result.error)||peoplePages.some(result=>result.error)||signal.aborted)throw Error("Conversation previews unavailable.");
         const latest=await supabase.auth.getSession();
         if(signal.aborted||latest.error||latest.data.session?.user.id!==user.id||"Bearer "+latest.data.session.access_token!==header)throw Error("Account changed.");
-        return {userId:user.id,rows,messages:historyPages.flatMap(result=>(result.data||[]) as ContactMessage[]),contacts:peoplePages.flatMap(result=>(result.data||[]) as ContactName[]),unread,hasMore:inbox.hasMore,atLimit:inbox.atLimit,next:"next" in inbox?inbox.next:null,accountUnread};
+        return {userId:user.id,rows,messages:historyPages.flatMap(result=>(result.data||[]) as ContactMessage[]),contacts:peoplePages.flatMap(result=>(result.data||[]) as ContactName[]),unread,hasMore:inbox.hasMore,atLimit:inbox.atLimit,next:inbox.next,accountUnread};
       });
       if (revision !== generation.current) return;
       authIdentity.current = result.userId;setInboxMore(result.hasMore);setInboxLimit(result.atLimit);setNextCursor(result.next);setServerPage(cursorStack.current.length);setAllUnread(result.accountUnread);
