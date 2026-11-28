@@ -23,7 +23,11 @@ test("embedded HoopChat reuses owner-scoped accepted threads and pending request
   assert.match(messages, /visibleThreads\.find\(item => item\.id === selectedId\) \|\| visibleThreads\[0\]/);
   assert.match(messages, /selected\.player_id!==userId \|\| selected\.status!=="pending"/);
   assert.match(messages, /selected\.status!=="accepted"/);
-  assert.match(messages, /\.or\(`requester_id\.eq\.\$\{user\.id\},player_id\.eq\.\$\{user\.id\}`\)/);
+  assert.match(messages, /readChatInbox\(supabase,user\.id,header,signal,inboxPages\.current,blockedIds\)/);
+  const inbox=read("../src/native/hoopChatInbox.ts");
+  assert.match(inbox,/\.or\(`requester_id\.eq\.\$\{viewer\},player_id\.eq\.\$\{viewer\}`\)/);
+  assert.match(inbox,/setHeader\("Authorization",bearer\)\.abortSignal\(signal\)/);
+  assert.match(inbox,/latest\.data\.session\?\.user\.id!==viewer/);
   assert.match(messages, /withHoopChatDeadline\(async signal/);
   assert.match(messages, /HoopCheckLoading compact label="Loading conversations/);
   assert.match(messages, /\{!embedded \? <Button secondary onPress=\{\(\)=>router\.push\("\/notifications"\)\}>/);

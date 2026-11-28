@@ -59,14 +59,14 @@ export default function Notifications() {
   }, [offline]);
   useFocusEffect(useCallback(() => {
     focused.current = true; void load();
-    return () => { focused.current = false; generation.current++; owner.current = null; marking.current=false;paging.current=false;setBusy(false);setLoadingOlder(false);setRows([]); setQuery(""); setFilter("all"); };
+    return () => { focused.current = false; generation.current++; owner.current = null; setRows([]); marking.current=false;paging.current=false;setBusy(false);setLoadingOlder(false); setQuery(""); setFilter("all"); };
   }, [load]));
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       const action = hoopChatAuthAction(event, owner.current, session?.user.id ?? null);
       if (action === "ignore") return;
-      generation.current++; owner.current = null; marking.current=false;paging.current=false;setBusy(false);setLoadingOlder(false);setRows([]); setQuery(""); setFilter("all");
+      generation.current++; owner.current = null; setRows([]); marking.current=false;paging.current=false;setBusy(false);setLoadingOlder(false); setQuery(""); setFilter("all");
       clearTimeout(timer);
       if (action === "clear") {
         setLoading(false); setFailed(true); setError("Sign in to view your alerts.");

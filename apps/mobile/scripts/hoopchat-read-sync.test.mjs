@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createClient } from "@supabase/supabase-js";
-import { markServerChatRead, readServerChatCounts } from "../src/native/hoopChatReadSync.ts";
+import { markServerChatRead, readServerChatCounts, readPagedChatCounts } from "../src/native/hoopChatReadSync.ts";
 
 const thread = "11111111-1111-4111-8111-111111111111";
 const other = "22222222-2222-4222-8222-222222222222";
@@ -54,4 +54,12 @@ test("mark read requires server acknowledgment and accepts only validated IDs", 
   assert.equal(f.calls.length, 1);
   const denied = fixture(false);
   await assert.rejects(markServerChatRead(denied.client, thread, message, denied.session));
+});
+
+test("paged unread sync partitions requests into at most 100 IDs and rejects duplicates",async()=>{
+ const ids=Array.from({length:205},(_,i)=>"aaaaaaaa-aaaa-4aaa-8aaa-"+String(i).padStart(12,"0"));
+ const seen=[];const controller=new AbortController();const client={rpc(name,args){assert.equal(name,"get_hoopchat_unread");const batch=args.p_request_ids;seen.push(batch);return {setHeader(k,v){assert.equal(k,"Authorization");assert.equal(v,"Bearer fixture-token");return this;},async abortSignal(){return {data:batch.map(request_id=>({request_id,unread_count:1})),error:null};}};}};
+ const counts=await readPagedChatCounts(client,ids,{bearer:"Bearer fixture-token",signal:controller.signal});
+ assert.equal(counts.size,205);assert.deepEqual(seen.map(x=>x.length),[100,100,5]);
+ await assert.rejects(readPagedChatCounts(client,[ids[0],ids[0]],{bearer:"Bearer fixture-token",signal:controller.signal}));
 });
