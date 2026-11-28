@@ -9,6 +9,7 @@ import { requireOnline, useNetwork } from "../src/native/network";
 import { useNativeAccount } from "../src/native/useNativeAccount";
 import { GroupModerationPanel } from "./GroupModerationPanel";
 import { HoopCheckLoading } from "./HoopCheckLoading";
+import { createGroupRefreshQueue } from "../src/native/hoopGroupsRefresh";
 import { readWithDeadline } from "../src/native/readDeadline";
 import { findInvitedGroup } from "../src/native/deepLinks";
 
@@ -133,7 +134,24 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
     let running=false;
     let initial=true;
     let resumePending=false;
+    let realtime:ReturnType<typeof supabase.channel>|null=null;
     setPostSnapshot(null);setPostError("");
+    const queue=createGroupRefreshQueue(()=>alive&&(AppState.currentState==="active"||AppState.currentState===null),()=>{
+      if(running)resumePending=true;else void loadPosts();
+    });
+    function stopRealtime(){
+      const previous=realtime;realtime=null;queue.cancel();resumePending=false;
+      if(previous)void supabase.removeChannel(previous);
+    }
+    function startRealtime(){
+      if(realtime||!alive||(AppState.currentState!=="active"&&AppState.currentState!==null)||process.env.EXPO_PUBLIC_HOOPGROUPS_REALTIME_ENABLED!=="true")return;
+      const filter="channel_id=eq."+channel!.id;
+      const subscription=supabase.channel("hoopgroups-native:"+userId+":"+channel!.id)
+        .on("postgres_changes",{event:"INSERT",schema:"public",table:"hoop_group_posts",filter},()=>queue.request())
+        .on("postgres_changes",{event:"UPDATE",schema:"public",table:"hoop_group_posts",filter},()=>queue.request());
+      realtime=subscription;
+      subscription.subscribe(status=>{if(realtime===subscription&&status==="SUBSCRIBED")queue.request();});
+    }
     async function loadPosts(){
       if(!alive||running||!(AppState.currentState==="active"||AppState.currentState===null))return;
       running=true;
@@ -149,7 +167,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
         if(!alive||controller.signal.aborted)return;
         if(membership.error)throw Error("Membership could not be verified.");
         if(membership.data?.space_id!==channel!.space_id){
-          setJoined(current=>current.filter(id=>id!==channel!.space_id));setPostSnapshot(null);return;
+          setJoined(current=>current.filter(id=>id!==channel!.space_id));setPostSnapshot(null);stopRealtime();return;
         }
         const blocked=await readOutgoingBlocks(supabase,userId,controller.signal);
         if(!alive||controller.signal.aborted)return;
@@ -161,9 +179,9 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
         const current=await safetyToken();
         if(!alive||controller.signal.aborted||current!==token)throw Error("Session changed. Refresh the channel.");
         if(AppState.currentState!=="active"&&AppState.currentState!==null)return;
-        if(alive)setPostSnapshot({channelId:channel!.id,posts:((data||[]) as Post[]).filter(post=>!blocked.has(post.author_id)).reverse()});
+        if(alive){setPostSnapshot({channelId:channel!.id,posts:((data||[]) as Post[]).filter(post=>!blocked.has(post.author_id)&&(post.moderation_status==="approved"||post.author_id===userId&&post.moderation_status==="pending")).reverse()});startRealtime();}
         setPostError("");
-      }catch{if(alive){setPostError("Channel messages or block status could not be verified.");setPostSnapshot(null);}}
+      }catch{if(alive){stopRealtime();setPostError("Channel messages or block status could not be verified.");setPostSnapshot(null);}}
       finally{
         clearTimeout(timer);if(activeController===controller)activeController=null;running=false;initial=false;
         if(alive){setPostLoading(false);if(resumePending){resumePending=false;void loadPosts();}}
@@ -173,9 +191,9 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
     const refreshTimer=setInterval(()=>void loadPosts(),25000);
     const appState=AppState.addEventListener("change",state=>{
       if(state==="active"){if(running)resumePending=true;else void loadPosts();}
-      else {resumePending=false;activeController?.abort();setPostSnapshot(null);}
+      else {stopRealtime();resumePending=false;activeController?.abort();setPostSnapshot(null);}
     });
-    return()=>{alive=false;clearInterval(refreshTimer);appState.remove();activeController?.abort();setPostSnapshot(null);};
+    return()=>{alive=false;stopRealtime();queue.dispose();clearInterval(refreshTimer);appState.remove();activeController?.abort();setPostSnapshot(null);};
   },[userId,offline,member,channel?.id,revision,postRefresh,safetyToken]));
 
   async function join() {

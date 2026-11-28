@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
+import { createGroupRefreshQueue } from "../../apps/mobile/src/native/hoopGroupsRefresh";
 import { withHoopChatDeadline } from "../../apps/mobile/src/native/hoopChatLoad";
 import { groupChannelScope, scopedGroupValue, visibleGroupPosts } from "../../lib/hoopgroups-channel-scope";
 import HoopGroupsManage, { GROUP_COLORS, GROUP_ICONS, type GroupSpace, type GroupChannel } from "../../components/HoopGroupsManage";
@@ -148,12 +149,32 @@ export default function HoopGroupsPage() {
     if (!enabled || !scope || !channel?.id) {setPostSnapshot(null);setPostLoading(false);setPostError("");return;}
     let active = true;
     let running:AbortController|null=null;
+    let realtime:ReturnType<typeof supabase.channel>|null=null;
+    let pending=false;
     const currentChannel=channel.id,currentSpace=channel.space_id;
     const generation=loadGeneration.current;
     const current=()=>active&&generation===loadGeneration.current&&channelRef.current===currentChannel;
     setPostSnapshot(null);setPostLoading(true);setPostError("");
     // Visibility can change during awaited Auth or PostgREST calls.
     const isHidden=()=>document.visibilityState==="hidden";
+    const queue=createGroupRefreshQueue(()=>current()&&!isHidden(),()=>{
+      if(running)pending=true;else void readMessages();
+    });
+    function stopRealtime(){
+      const previous=realtime;realtime=null;queue.cancel();pending=false;
+      if(previous)void supabase.removeChannel(previous);
+    }
+    function startRealtime(){
+      if(realtime||!current()||isHidden()||process.env.NEXT_PUBLIC_HOOPGROUPS_REALTIME_ENABLED!=="true")return;
+      // Only after a caller-bound membership and RLS read succeeded. Do not
+      // consume payloads, publish tables, or subscribe across channels.
+      const filter="channel_id=eq."+currentChannel;
+      const subscription=supabase.channel("hoopgroups-web:"+userId+":"+currentChannel)
+        .on("postgres_changes",{event:"INSERT",schema:"public",table:"hoop_group_posts",filter},()=>queue.request())
+        .on("postgres_changes",{event:"UPDATE",schema:"public",table:"hoop_group_posts",filter},()=>queue.request());
+      realtime=subscription;
+      subscription.subscribe(status=>{if(realtime===subscription&&status==="SUBSCRIBED")queue.request();});
+    }
     async function readMessages() {
       if(isHidden()||running||!current())return;
       const request=new AbortController();running=request;
@@ -175,15 +196,15 @@ export default function HoopGroupsPage() {
           if(after!==header||!current()||signal.aborted)throw Error("Session changed. Refresh messages.");
           return visibleGroupPosts((data||[]) as Post[],userId,new Set(blocks.data.map(row=>row.blocked_id))).reverse();
         },undefined,request);
-        if(current()&&running===request&&!isHidden()){setPostSnapshot({scope,value:rows});setPostError("");}
-      }catch{if(current()&&running===request){setPostSnapshot(null);setPostError("Messages or membership could not be verified. Refresh to retry.");}}
-      finally{if(running===request){running=null;if(current())setPostLoading(false);}}
+        if(current()&&running===request&&!isHidden()){setPostSnapshot({scope,value:rows});setPostError("");startRealtime();}
+      }catch{if(current()&&running===request){stopRealtime();setPostSnapshot(null);setPostError("Messages or membership could not be verified. Refresh to retry.");}}
+      finally{if(running===request){running=null;if(current()){setPostLoading(false);if(pending){pending=false;queue.request();}}}}
     }
-    const visibility=()=>{if(document.visibilityState==="hidden"){running?.abort();running=null;setPostSnapshot(null);}else{setPostLoading(true);void readMessages();}};
+    const visibility=()=>{if(document.visibilityState==="hidden"){stopRealtime();running?.abort();running=null;setPostSnapshot(null);}else{setPostLoading(true);void readMessages();}};
     void readMessages();
     const interval=window.setInterval(()=>{void readMessages();},15000);
     document.addEventListener("visibilitychange",visibility);
-    return () => {active=false;running?.abort();window.clearInterval(interval);document.removeEventListener("visibilitychange",visibility);};
+    return () => {active=false;stopRealtime();queue.dispose();running?.abort();window.clearInterval(interval);document.removeEventListener("visibilitychange",visibility);};
   }, [scope,channel?.id,channel?.space_id,userId,postRevision]);
 
   async function join() {
