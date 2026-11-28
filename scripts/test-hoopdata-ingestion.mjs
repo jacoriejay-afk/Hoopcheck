@@ -425,3 +425,26 @@ test("women's legacy directory requires a unique current reviewed canonical alia
  assert.deepEqual(resolve([a]),{canonicalLeagueId,expiresAt:"2026-11-25T13:45:00.000Z"});
  for(const rows of [[],[a,a],[{...a,status:"revoked"}],[{...a,evidence:""}],[{...a,validUntil:now.toISOString()}],[a,{...a,legacyLeagueId:canonicalLeagueId}]])assert.equal(resolve(rows),null);
 });
+
+test("directory quality compares verified identities, not arbitrary counts, and retains foreign origins", async () => {
+  const compiled=ts.transpileModule(read("lib/owner/directory-quality.ts"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+  const {deriveDirectoryQuality,verifiedRosters}=await import("data:text/javascript;base64,"+Buffer.from(compiled).toString("base64"));
+  const league={id:"arm",name:"Armenian Basketball League A",country:"Armenia",basketball_type:"mens",logo_url:null,season:"2026-27"};
+  const other={id:"other",name:"Unverified",country:"Kazakhstan",basketball_type:"mens",logo_url:null,season:"2026"};
+  const expected=verifiedRosters[0].clubs;
+  const teams=expected.filter(x=>x.name!=="BKMA").map((x,i)=>({id:"club"+i,name:x.name,country:x.country,basketball_type:"mens",logo_url:null,league_id:x.country==="Kazakhstan"?"other":"arm"}));
+  teams.push({id:"erebuni",name:"BK Erebuni",country:"Armenia",basketball_type:"mens",logo_url:"http://example.com/logo.png",league_id:"arm"});
+  teams.push({id:"legacy",name:"Historical",country:"Armenia",basketball_type:"mens",logo_url:null,league_id:null});
+  const barsy=teams.find(t=>t.name==="Barsy Atyrau");
+  const memberships=[{team_id:barsy.id,league_id:"arm",season:"2026-27"},{team_id:"legacy",league_id:"arm",season:"2025-26"}];
+  const quality=deriveDirectoryQuality([league,other],teams,memberships);
+  const coverage=quality.coverage.find(row=>row.id==="arm");
+  assert.equal(coverage.actual,10);assert.equal(coverage.expected,10);
+  assert.deepEqual(coverage.missing,["BKMA"]);assert.deepEqual(coverage.unexpected,["BK Erebuni"]);
+  assert.equal(quality.coverage.find(row=>row.id==="other").expected,null);
+  assert.equal(quality.invalidLogoURLs,1);assert.equal(quality.unlinked,1);
+  assert.equal(quality.countries,5);
+  assert.throws(()=>deriveDirectoryQuality([league,league],teams,memberships),/changed during paging/);
+  const duplicated=deriveDirectoryQuality([league,other],[...teams,{...barsy,id:"alias",name:"BC BARSY ATYRAU",league_id:"arm"}],memberships);
+  assert.deepEqual(duplicated.coverage.find(row=>row.id==="arm").ambiguous,["Barsy Atyrau"]);
+});
