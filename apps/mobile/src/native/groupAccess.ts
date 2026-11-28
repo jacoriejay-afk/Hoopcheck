@@ -54,3 +54,17 @@ export async function mutateGroupAccess(client:SupabaseClient,uid:string,space:s
  await check();return r.data.id;
 }
 export function groupAccessDeadline<T>(fn:(signal:AbortSignal)=>Promise<T>,controller:AbortController){return withHoopChatDeadline(fn,20000,controller);}
+
+export async function readGroupMemberPage(client:SupabaseClient,uid:string,space:string,after:string|null,query:string,signal:AbortSignal){
+ if(!id(space)||after!==null&&!id(after)||query.length>80)throw Error("Invalid roster request.");
+ const {header,check}=await verified(client,uid,signal);
+ const r=await client.rpc("hoop_group_member_page",{p_space:space,p_after:after,p_query:query}).setHeader("Authorization",header).abortSignal(signal);
+ const v=r.data;
+ if(signal.aborted||r.error||!record(v)||v.space_id!==space||typeof v.has_more!=="boolean"||!Array.isArray(v.rows)||v.rows.length>50||v.has_more&&v.rows.length!==50)throw Error("Group roster unavailable.");
+ const members:Member[]=[],seen=new Set<string>();let next:string|null=null;
+ for(const x of v.rows){
+  if(!record(x)||!id(x.user_id)||x.user_id===after||seen.has(x.user_id)||!label(x.name)||!(x.role==="owner"||x.role==="moderator"||x.role==="member")||!Array.isArray(x.channels)||x.channels.length>12||!x.channels.every(id))throw Error("Invalid group roster.");
+  seen.add(x.user_id);next=x.user_id;members.push({user_id:x.user_id,name:x.name,role:x.role,channels:x.channels as string[]});
+ }
+ await check();return {members,next:v.has_more?next:null};
+}

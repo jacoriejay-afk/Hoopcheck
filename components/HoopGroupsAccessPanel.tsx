@@ -4,8 +4,9 @@ import {supabase} from "../lib/supabase";
 import {useGroupAccess} from "../apps/mobile/src/native/useGroupAccess";
 import type {GroupAccessAction} from "../apps/mobile/src/native/groupAccess";
 export default function HoopGroupsAccessPanel({uid,space,onChanged}:{uid:string;space:string|null;onChanged:()=>void}){
- const {snapshot,busy,notice,run}=useGroupAccess(supabase,uid,space,onChanged);
+ const {snapshot,busy,notice,run,rosterNext,rosterPage,pageRoster}=useGroupAccess(supabase,uid,space,onChanged);
  const [name,setName]=useState(""),[description,setDescription]=useState(""),[member,setMember]=useState("");
+ const [rosterSearch,setRosterSearch]=useState("");
  const intent=useRef<{key:string;id:string}|null>(null);
  async function create(action:"create_private_group"|"create_private_channel"){
   const value=name.trim(),key=JSON.stringify([uid,space,action,value,description]);
@@ -26,7 +27,7 @@ export default function HoopGroupsAccessPanel({uid,space,onChanged}:{uid:string;
   {snapshot&&<><h4>Your invitations</h4>{snapshot.invitations.length?snapshot.invitations.map(i=><div key={i.id}><strong>{i.group_name}</strong> · expires {new Date(i.expires_at).toLocaleDateString()} {button("Accept",{action:"accept_invite",target:i.id})} {button("Decline",{action:"decline_invite",target:i.id})}</div>):<p>No pending invitations.</p>}
    {snapshot.is_owner&&<><h4>Invite an accepted contact</h4>{snapshot.contacts.map(c=><div key={c.id}>{c.name} {button("Invite",{action:"invite",target:c.id})}</div>)}
    {snapshot.pending_invites.map(i=><div key={i.id}>Pending invitation · {new Date(i.expires_at).toLocaleDateString()} {button("Revoke invite",{action:"revoke_invite",target:i.id})}</div>)}
-   <h4>Manage members</h4><label>Choose member<select value={member} onChange={e=>setMember(e.target.value)}><option value="">Select a member</option>{snapshot.members.filter(m=>m.role!=="owner").map(m=><option value={m.user_id} key={m.user_id}>{m.name} · {m.role} · {m.user_id.slice(0,6)}</option>)}</select></label>
+   <h4>Manage members</h4><label>Search all members<input maxLength={80} value={rosterSearch} onChange={e=>setRosterSearch(e.target.value)}/></label><button type="button" disabled={busy} onClick={()=>{setMember("");void pageRoster("search",rosterSearch);}}>Search roster</button><p>Roster page {rosterPage}</p><button type="button" disabled={busy||rosterPage<=1} onClick={()=>{setMember("");void pageRoster("previous");}}>Previous members</button><button type="button" disabled={busy||!rosterNext} onClick={()=>{setMember("");void pageRoster("next");}}>Next members</button><label>Choose member<select value={member} onChange={e=>setMember(e.target.value)}><option value="">Select a member</option>{snapshot.members.filter(m=>m.role!=="owner").map(m=><option value={m.user_id} key={m.user_id}>{m.name} · {m.role} · {m.user_id.slice(0,6)}</option>)}</select></label>
    {selected&&<div><p>{selected.name} · {selected.role}</p>{button(selected.role==="moderator"?"Remove moderator":"Make moderator",{action:selected.role==="moderator"?"remove_moderator":"promote_moderator",target:selected.user_id})}
    <button type="button" disabled={busy} onClick={()=>{if(window.confirm("Remove this member from the community?"))void run({action:"remove_member",target:selected.user_id});}}>Remove member</button>
    <button type="button" disabled={busy} onClick={()=>{if(window.confirm("Remove and prevent this member from rejoining?"))void run({action:"ban_member",target:selected.user_id});}}>Ban member</button>

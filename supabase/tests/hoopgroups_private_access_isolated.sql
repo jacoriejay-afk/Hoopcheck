@@ -99,3 +99,5 @@ DO $$ BEGIN
  IF (SELECT count(*) FROM public.hoop_group_moderation_events)<>1 OR EXISTS(SELECT FROM hoopcheck_group_access.moderators) OR EXISTS(SELECT FROM hoopcheck_group_access.channel_grants) THEN RAISE EXCEPTION 'audit/cascade failed'; END IF;
 END $$;
 SELECT 'PASS: synthetic private group, invite, channel grant, moderator, ban and MFA isolation' AS result;
+
+\ir hoopgroups_member_page_isolated.sql
