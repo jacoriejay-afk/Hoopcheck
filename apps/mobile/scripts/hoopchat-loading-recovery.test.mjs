@@ -55,7 +55,12 @@ test("The private HoopChat UI is generation guarded and aborts all PostgREST rea
   assert.match(screen, /setTimeout\(\(\) => \{/);
   assert.match(screen, /\.eq\("player_id",userId\)/, "Player approval remains owner-scoped");
   assert.match(screen, /selected\.status!=="accepted"/, "Message send remains accepted-connection-only");
-  assert.equal((screen.match(/\.abortSignal\(signal\)/g) ?? []).length, 6,
+  const inbox=readFileSync(new URL("../src/native/hoopChatInbox.ts",import.meta.url),"utf8");
+  const linked=readFileSync(new URL("../src/native/hoopChatLink.ts",import.meta.url),"utf8");
+  assert.match(screen,/readChatInbox\(supabase,user\.id,header,signal,inboxPages\.current,blockedIds\)/);
+  assert.match(screen,/readLinkedChatThread\(supabase,user\.id,threadHint,blockedIds,header,signal\)/);
+  assert.match(inbox,/\.abortSignal\(signal\)/);assert.match(linked,/\.abortSignal\(signal\)/);
+  assert.equal((screen.match(/\.abortSignal\(signal\)/g) ?? []).length, 5,
     "Inbox, history, profile labels, blocked list, target lookup and peer block check all support abort");
   for (const table of ["user_blocks", "player_contact_requests", "player_contact_messages", "profiles"]) {
     const reads = [...screen.matchAll(new RegExp('from\\("'+table+'"\\)\\s*\\.select[\\s\\S]*?(?:\\.abortSignal\\(signal\\)|;)', 'g'))];

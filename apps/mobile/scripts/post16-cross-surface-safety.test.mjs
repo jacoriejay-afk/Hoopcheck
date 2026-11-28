@@ -8,7 +8,10 @@ test("private conversation reports and blocking verify the exact participant pai
   assert.match(safety,/target\.data\.player_id===uid&&target\.data\.requester_id===peerId/);
   assert.match(safety,/requester_id:uid,subject:"Report a private HoopChat conversation",category:"security"/);
   assert.match(safety,/insert\(\{blocker_id:uid,blocked_id:peerId\}\)\.setHeader/);
-  assert.match(chat,/blockedIds\.has\(row\.requester_id===user\.id\?row\.player_id:row\.requester_id\)/);
+  const inbox=read("../src/native/hoopChatInbox.ts");
+  assert.match(chat,/readChatInbox\(supabase,user\.id,header,signal,inboxPages\.current,blockedIds\)/);
+  assert.match(inbox,/blocked\.has\(row\.requester_id===viewer\?row\.player_id:row\.requester_id\)/);
+  assert.match(inbox,/\!\[row\.requester_id,row\.player_id\]\.includes\(viewer\)/);
   assert.match(chat,/await verifyChatPeer\(viewerId/);
   assert.match(chat,/async function respond[\s\S]*?withHoopChatDeadline\(signal=>verifyChatPeer\(userId,peerId\(selected\),signal\)\)/);
   assert.match(chat,/async function send[\s\S]*?withHoopChatDeadline\(async signal=>\{[\s\S]*?const header=await verifyChatPeer\(userId,peerId\(selected\),signal\);[\s\S]*?await sendConversationMessage\(supabase,message,signal,header\)/);
