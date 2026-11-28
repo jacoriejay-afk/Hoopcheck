@@ -23,7 +23,7 @@ returns table(channel_id uuid, unread_count bigint)
 language plpgsql security invoker set search_path=''
 as $$
 begin
- if auth.uid() is null or not public.confirm_active_account_session() or not exists(
+ if auth.uid() is null or public.confirm_active_account_session() is distinct from true or not exists(
  select 1 from public.hoop_group_members m where m.space_id=p_space and m.user_id=auth.uid()) then
  raise exception 'Group unavailable' using errcode='42501'; end if;
  return query select c.id,count(p.id) from public.hoop_group_channels c
@@ -40,7 +40,7 @@ returns integer language plpgsql security invoker set search_path=''
 as $$
 declare matched integer;
 begin
- if auth.uid() is null or not public.confirm_active_account_session() or p_posts is null or cardinality(p_posts)>100
+ if auth.uid() is null or public.confirm_active_account_session() is distinct from true or p_posts is null or cardinality(p_posts)>100
  or not exists(select 1 from public.hoop_group_channels c join public.hoop_group_members m on m.space_id=c.space_id where c.id=p_channel and m.user_id=auth.uid()) then
  raise exception 'Group unavailable' using errcode='42501'; end if;
  insert into public.hoop_group_post_reads(user_id,post_id)
