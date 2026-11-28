@@ -122,4 +122,42 @@ DO $$DECLARE mid uuid;wid uuid;BEGIN
  DELETE FROM public.profiles WHERE id='11111111-1111-4111-8111-111111111111';
  IF (SELECT count(*) FROM public.womens_team_reviews)<>1 OR (SELECT count(*) FROM public.reviews)<>2 THEN RAISE EXCEPTION 'profile removal lost retained rows'; END IF;
 END$$;
+-- Independently disabled, date- and hold-aware retention expiry.
+SET ROLE service_role;
+DO $$BEGIN
+ IF public.expire_approved_retained_reviews(100)->>'status'<>'disabled' THEN RAISE EXCEPTION 'expiry enabled by default'; END IF;
+ BEGIN DELETE FROM public.womens_team_reviews WHERE author_id IS NULL; RAISE EXCEPTION 'unapproved retained delete'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+END$$;
+RESET ROLE;
+UPDATE hoopcheck_deletion_private.review_retention_config SET expiry_enabled=true;
+UPDATE hoopcheck_deletion_private.retained_review_facts SET retention_until=current_date-1,expiry_erase_authorized=true,legal_hold=true;
+UPDATE hoopcheck_deletion_private.retained_womens_review_facts SET retention_until=current_date-1,expiry_erase_authorized=false;
+SET ROLE service_role;
+DO $$DECLARE v jsonb;BEGIN
+ v:=public.expire_approved_retained_reviews(100);
+ IF v IS DISTINCT FROM '{"status":"checked","erased":0,"blocked":2}'::jsonb THEN RAISE EXCEPTION 'hold or missing approval erased'; END IF;
+END$$;
+RESET ROLE;
+UPDATE hoopcheck_deletion_private.retained_review_facts SET legal_hold=false;
+UPDATE hoopcheck_deletion_private.retained_womens_review_facts SET expiry_erase_authorized=true;
+INSERT INTO public.review_reports(review_id) SELECT id FROM public.reviews WHERE author_id IS NULL;
+SET ROLE service_role;
+DO $$DECLARE v jsonb;BEGIN
+ v:=public.expire_approved_retained_reviews(100);
+ IF v IS DISTINCT FROM '{"status":"checked","erased":1,"blocked":1}'::jsonb THEN RAISE EXCEPTION 'dependent review erased'; END IF;
+END$$;
+RESET ROLE;
+DELETE FROM public.review_reports WHERE review_id IN (SELECT id FROM public.reviews WHERE author_id IS NULL);
+SET ROLE service_role;
+DO $$DECLARE v jsonb;BEGIN
+ v:=public.expire_approved_retained_reviews(100);
+ IF v IS DISTINCT FROM '{"status":"checked","erased":1,"blocked":0}'::jsonb THEN RAISE EXCEPTION 'expiry retry failed'; END IF;
+ IF public.expire_approved_retained_reviews(100) IS DISTINCT FROM '{"status":"checked","erased":0,"blocked":0}'::jsonb THEN RAISE EXCEPTION 'expiry not idempotent'; END IF;
+END$$;
+RESET ROLE;
+DO $$BEGIN
+ IF (SELECT count(*) FROM public.reviews)<>1 OR NOT EXISTS(SELECT 1 FROM public.reviews WHERE author_id IS NOT NULL)
+ OR EXISTS(SELECT FROM public.womens_team_reviews) OR EXISTS(SELECT FROM hoopcheck_deletion_private.retained_review_facts)
+ OR EXISTS(SELECT FROM hoopcheck_deletion_private.retained_womens_review_facts) THEN RAISE EXCEPTION 'expiry scope or metadata cleanup failed'; END IF;
+END$$;
 \echo PASS: both review tables, protected identity detachment, exact approval, legal hold, stable rating counts, trust facts and idempotent retry

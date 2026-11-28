@@ -39,16 +39,18 @@ CREATE UNIQUE INDEX womens_review_active_author_target_unique
  ON public.womens_team_reviews(author_id,womens_team_id) WHERE author_id IS NOT NULL;
 
 CREATE TABLE hoopcheck_deletion_private.review_retention_config(
- singleton boolean PRIMARY KEY CHECK(singleton), enabled boolean NOT NULL DEFAULT false
+ singleton boolean PRIMARY KEY CHECK(singleton), enabled boolean NOT NULL DEFAULT false,
+ expiry_enabled boolean NOT NULL DEFAULT false
 );
-INSERT INTO hoopcheck_deletion_private.review_retention_config VALUES(true,false);
+INSERT INTO hoopcheck_deletion_private.review_retention_config(singleton,enabled) VALUES(true,false);
 CREATE TABLE hoopcheck_deletion_private.review_retention_approvals(
  request_id uuid PRIMARY KEY REFERENCES public.account_deletion_requests(id) ON DELETE RESTRICT,
  policy_version text NOT NULL,
  scope_digest text NOT NULL CHECK(scope_digest ~ '^[a-f0-9]{64}$'),
  retention_until date NOT NULL,
  legal_hold_cleared boolean NOT NULL DEFAULT false,
- historical_linkage_cleared boolean NOT NULL DEFAULT false
+ historical_linkage_cleared boolean NOT NULL DEFAULT false,
+ expiry_erase_authorized boolean NOT NULL DEFAULT false
 );
 -- No former owner UUID, original review UUID, or old/new identifier mapping.
 -- Verification is captured at retention time; timestamps in public records
@@ -56,12 +58,14 @@ CREATE TABLE hoopcheck_deletion_private.review_retention_approvals(
 CREATE TABLE hoopcheck_deletion_private.retained_review_facts(
  review_id uuid PRIMARY KEY REFERENCES public.reviews(id) ON DELETE CASCADE,
  reviewer_verified boolean NOT NULL, retention_until date NOT NULL,
- legal_hold boolean NOT NULL DEFAULT false
+ legal_hold boolean NOT NULL DEFAULT false,
+ expiry_erase_authorized boolean NOT NULL DEFAULT false
 );
 CREATE TABLE hoopcheck_deletion_private.retained_womens_review_facts(
  review_id uuid PRIMARY KEY REFERENCES public.womens_team_reviews(id) ON DELETE CASCADE,
  reviewer_verified boolean NOT NULL, retention_until date NOT NULL,
- legal_hold boolean NOT NULL DEFAULT false
+ legal_hold boolean NOT NULL DEFAULT false,
+ expiry_erase_authorized boolean NOT NULL DEFAULT false
 );
 CREATE TABLE hoopcheck_deletion_private.review_retention_receipts(
  request_id uuid PRIMARY KEY REFERENCES public.account_deletion_requests(id) ON DELETE RESTRICT,
@@ -121,6 +125,8 @@ BEGIN
  OR NOT EXISTS(SELECT 1 FROM hoopcheck_deletion_private.frozen_accounts f WHERE f.request_id=p_request AND f.owner_id=p_owner)
  OR NOT EXISTS(SELECT 1 FROM hoopcheck_deletion_private.review_retention_config WHERE singleton AND enabled)
  THEN RAISE EXCEPTION 'Review retention unavailable' USING ERRCODE='42501'; END IF;
+ PERFORM 1 FROM hoopcheck_deletion_private.review_retention_config WHERE singleton AND enabled FOR SHARE;
+ IF NOT FOUND THEN RAISE EXCEPTION 'Review retention unavailable' USING ERRCODE='42501'; END IF;
  -- Exact schema dependencies, then stable scope locks before digest or write.
  -- Unknown incoming FKs or polymorphic content reports require a new reviewed adapter.
  LOCK TABLE public.reviews,public.womens_team_reviews,public.review_comments,public.review_likes,
@@ -170,16 +176,16 @@ BEGIN
   updated_at=date_trunc('month',created_at AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
   WHERE author_id=p_owner RETURNING id
  LOOP
-  INSERT INTO hoopcheck_deletion_private.retained_review_facts(review_id,reviewer_verified,retention_until)
-  VALUES(rec.id,verified,approval.retention_until);
+  INSERT INTO hoopcheck_deletion_private.retained_review_facts(review_id,reviewer_verified,retention_until,expiry_erase_authorized)
+  VALUES(rec.id,verified,approval.retention_until,approval.expiry_erase_authorized);
  END LOOP;
  FOR rec IN UPDATE public.womens_team_reviews SET id=gen_random_uuid(),author_id=NULL,is_anonymous=true,title=NULL,
   body='Rating retained after account deletion.',
   created_at=date_trunc('month',created_at AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
   WHERE author_id=p_owner RETURNING id
  LOOP
-  INSERT INTO hoopcheck_deletion_private.retained_womens_review_facts(review_id,reviewer_verified,retention_until)
-  VALUES(rec.id,verified,approval.retention_until);
+  INSERT INTO hoopcheck_deletion_private.retained_womens_review_facts(review_id,reviewer_verified,retention_until,expiry_erase_authorized)
+  VALUES(rec.id,verified,approval.retention_until,approval.expiry_erase_authorized);
  END LOOP;
  IF EXISTS(SELECT 1 FROM public.reviews WHERE author_id=p_owner)
  OR EXISTS(SELECT 1 FROM public.womens_team_reviews WHERE author_id=p_owner)
@@ -221,4 +227,93 @@ RETURNS TABLE(review_id uuid,reviewer_verified boolean) LANGUAGE sql STABLE SECU
 $f$;
 REVOKE ALL ON FUNCTION public.get_retained_review_trust_facts(text,uuid[]) FROM PUBLIC,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION public.get_retained_review_trust_facts(text,uuid[]) TO service_role;
+-- Separate expiry authorization; a retained review is never hard-deleted by
+-- a moderator, normal service-role route, or premature parent cascade.
+CREATE FUNCTION hoopcheck_deletion_private.protect_retained_review_delete()
+RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path='' AS $x$
+DECLARE allowed boolean;
+BEGIN
+ IF OLD.author_id IS NOT NULL THEN RETURN OLD; END IF;
+ IF current_user IS DISTINCT FROM (SELECT pg_get_userbyid(relowner) FROM pg_class WHERE oid=TG_RELID)
+ OR NOT EXISTS(SELECT 1 FROM hoopcheck_deletion_private.review_retention_config WHERE singleton AND expiry_enabled)
+ THEN RAISE EXCEPTION 'Retained review deletion not authorized' USING ERRCODE='42501'; END IF;
+ IF TG_TABLE_NAME='reviews' THEN
+  SELECT expiry_erase_authorized AND NOT legal_hold AND retention_until<=(clock_timestamp() AT TIME ZONE 'UTC')::date
+  INTO allowed FROM hoopcheck_deletion_private.retained_review_facts WHERE review_id=OLD.id FOR UPDATE;
+ ELSE
+  SELECT expiry_erase_authorized AND NOT legal_hold AND retention_until<=(clock_timestamp() AT TIME ZONE 'UTC')::date
+  INTO allowed FROM hoopcheck_deletion_private.retained_womens_review_facts WHERE review_id=OLD.id FOR UPDATE;
+ END IF;
+ IF NOT coalesce(allowed,false) THEN RAISE EXCEPTION 'Retained review deletion not authorized' USING ERRCODE='42501'; END IF;
+ RETURN OLD;
+END $x$;
+REVOKE ALL ON FUNCTION hoopcheck_deletion_private.protect_retained_review_delete() FROM PUBLIC,anon,authenticated,service_role;
+CREATE TRIGGER protect_retained_review_delete BEFORE DELETE ON public.reviews
+ FOR EACH ROW EXECUTE FUNCTION hoopcheck_deletion_private.protect_retained_review_delete();
+CREATE TRIGGER protect_retained_review_delete BEFORE DELETE ON public.womens_team_reviews
+ FOR EACH ROW EXECUTE FUNCTION hoopcheck_deletion_private.protect_retained_review_delete();
+
+CREATE TABLE hoopcheck_deletion_private.review_expiry_runs(
+ id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+ processed_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+ erased_count integer NOT NULL CHECK(erased_count>=0),
+ blocked_count integer NOT NULL CHECK(blocked_count>=0)
+);
+ALTER TABLE hoopcheck_deletion_private.review_expiry_runs ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON hoopcheck_deletion_private.review_expiry_runs FROM PUBLIC,anon,authenticated,service_role;
+
+CREATE FUNCTION hoopcheck_deletion_private.expire_retained_reviews(p_limit integer DEFAULT 100)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $x$
+DECLARE item record; n integer:=0; blocked integer:=0; today date:=(clock_timestamp() AT TIME ZONE 'UTC')::date;
+BEGIN
+ IF auth.jwt()->>'role' IS DISTINCT FROM 'service_role' OR p_limit IS NULL OR p_limit<1 OR p_limit>100
+ THEN RAISE EXCEPTION 'Invalid expiry worker' USING ERRCODE='42501'; END IF;
+ PERFORM 1 FROM hoopcheck_deletion_private.review_retention_config WHERE singleton AND expiry_enabled FOR SHARE;
+ IF NOT FOUND THEN RETURN jsonb_build_object('status','disabled','erased',0,'blocked',0); END IF;
+ LOCK TABLE public.reviews,public.womens_team_reviews,public.review_comments,public.review_likes,
+ public.review_reports,public.review_moderation_events,public.moderation_risk_flags IN SHARE ROW EXCLUSIVE MODE;
+ IF (SELECT count(*) FROM pg_constraint WHERE contype='f' AND confrelid='public.reviews'::regclass)<>5
+ OR (SELECT count(*) FROM pg_constraint WHERE contype='f' AND confrelid='public.womens_team_reviews'::regclass)<>1
+ OR to_regclass('public.content_reports') IS NOT NULL
+ THEN RAISE EXCEPTION 'Review expiry dependency drift'; END IF;
+ FOR item IN SELECT f.review_id,'men'::text AS kind,f.retention_until FROM hoopcheck_deletion_private.retained_review_facts f
+ WHERE f.retention_until<=today AND f.expiry_erase_authorized AND NOT f.legal_hold
+ AND NOT EXISTS(SELECT 1 FROM public.review_comments c WHERE c.review_id=f.review_id)
+ AND NOT EXISTS(SELECT 1 FROM public.review_likes c WHERE c.review_id=f.review_id)
+ AND NOT EXISTS(SELECT 1 FROM public.review_reports c WHERE c.review_id=f.review_id)
+ AND NOT EXISTS(SELECT 1 FROM public.review_moderation_events c WHERE c.review_id=f.review_id)
+ AND NOT EXISTS(SELECT 1 FROM public.moderation_risk_flags c WHERE c.content_type='review' AND c.content_id=f.review_id)
+ UNION ALL
+ SELECT f.review_id,'women'::text,f.retention_until FROM hoopcheck_deletion_private.retained_womens_review_facts f
+ WHERE f.retention_until<=today AND f.expiry_erase_authorized AND NOT f.legal_hold
+ AND NOT EXISTS(SELECT 1 FROM public.moderation_risk_flags c WHERE c.content_type='review' AND c.content_id=f.review_id)
+ ORDER BY retention_until,kind,review_id LIMIT p_limit
+ LOOP
+  -- The trigger rechecks the policy and locks the exact fact. A new legal
+  -- hold causes a rollback, never an unauthorized erase.
+  IF item.kind='men' THEN
+   DELETE FROM public.reviews WHERE id=item.review_id AND author_id IS NULL;
+  ELSE
+   DELETE FROM public.womens_team_reviews WHERE id=item.review_id AND author_id IS NULL;
+  END IF;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Retained review expiry not confirmed'; END IF;
+  n:=n+1;
+ END LOOP;
+ -- Counts only. Due records with holds, pending approval or new moderation
+ -- dependencies remain intact for separate review. No per-owner audit link.
+ SELECT (SELECT count(*) FROM hoopcheck_deletion_private.retained_review_facts WHERE retention_until<=today)
+  +(SELECT count(*) FROM hoopcheck_deletion_private.retained_womens_review_facts WHERE retention_until<=today)
+ INTO blocked;
+ IF n>0 OR blocked>0 THEN INSERT INTO hoopcheck_deletion_private.review_expiry_runs(erased_count,blocked_count) VALUES(n,blocked); END IF;
+ RETURN jsonb_build_object('status','checked','erased',n,'blocked',blocked);
+END $x$;
+REVOKE ALL ON FUNCTION hoopcheck_deletion_private.expire_retained_reviews(integer) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION hoopcheck_deletion_private.expire_retained_reviews(integer) TO service_role;
+CREATE FUNCTION public.expire_approved_retained_reviews(p_limit integer DEFAULT 100)
+RETURNS jsonb LANGUAGE sql SECURITY INVOKER SET search_path='' AS $x$
+ SELECT hoopcheck_deletion_private.expire_retained_reviews(p_limit)
+$x$;
+REVOKE ALL ON FUNCTION public.expire_approved_retained_reviews(integer) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.expire_approved_retained_reviews(integer) TO service_role;
+
 COMMIT;
