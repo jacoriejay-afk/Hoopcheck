@@ -9,6 +9,7 @@
       "qa/step1-creator-studio-account-boundary": false,
       "qa/step1-feed-live-reconciliation": false,
       "qa/hoopcheck-master-acceptance": false,
+      "qa/steps-1-4-operations": false,
       "qa/step1-web-midnight": false,
       "qa/step1-verified-reconciliation": false,
       "qa/steps-1-4-web-contrast": false,
