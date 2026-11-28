@@ -26,11 +26,23 @@ function fixture(opts={}) {
   const db={
     auth:{
       async getUser(t){assert.equal(t,token);return {data:{user:opts.invalid?null:user},error:null};},
-      async getClaims(t){assert.equal(t,token);return {data:{claims:{sub:opts.claimOwner??owner,role:opts.role??"authenticated"}},error:null};},
+      async getClaims(t){assert.equal(t,token);return {data:{claims:{sub:opts.claimOwner??owner,role:opts.role??"authenticated",...("clientId" in opts?{client_id:opts.clientId}:{}),...("claimAnonymous" in opts?{is_anonymous:opts.claimAnonymous}:{})}},error:null};},
     },
     rpc(name){
       calls.push(["rpc",name]);
       if(name==="confirm_active_account_session"){checks++;return Promise.resolve({data:opts.active!==false&&!(opts.revoked&&checks>1),error:null});}
+      if(name==="get_own_review_snapshot") return {async abortSignal(signal){
+        assert.ok(signal instanceof AbortSignal);
+        const build=table=>{
+          const row=Object.fromEntries(fields[table].split(",").map(k=>[k,null]));
+          row.id=id;row.author_id=opts.foreignRow&&table==="reviews"?other:owner;
+          row.admin_notes="internal";
+          if(opts.count===101&&table==="reviews")return Array.from({length:101},(_,i)=>({...row,id:"33333333-3333-4333-8333-"+String(i).padStart(12,"0")}));
+          return opts.empty?[]:opts.duplicate&&table==="reviews"?[row,row]:[row];
+        };
+        const men=build("reviews"),women=build("womens_team_reviews");
+        return {data:{owner_id:opts.reviewOwner??owner,reviews:men,reviews_count:opts.count!==undefined?opts.count:men.length,womens_reviews:women,womens_reviews_count:women.length},error:opts.readError?Error("fixture"):null};
+      }};
       assert.equal(name,"get_own_profile");
       return {async abortSignal(signal){
         assert.ok(signal instanceof AbortSignal);
@@ -41,7 +53,7 @@ function fixture(opts={}) {
       }};
     },
     from(table){
-      calls.push(["table",table]);assert.ok(table in fields);
+      calls.push(["table",table]);assert.ok(table in fields);assert.ok(!["reviews","womens_team_reviews"].includes(table),"Direct author-column query forbidden");
       return {
         select(columns,options){assert.equal(columns,fields[table]);assert.deepEqual(options,{count:"exact"});return this;},
         eq(k,v){assert.equal(k,table==="membership_sources"?"user_id":"author_id");assert.equal(v,owner);return this;},
@@ -80,8 +92,8 @@ test("default-off, malformed bearer and query targeting stop before reads",async
   }
 });
 test("invalid identity, MFA, revoked session and wrong claims deny before profile read",async()=>{
-  for(const opts of [{invalid:true},{unconfirmed:true},{anonymous:true},{mfa:true},{active:false},{claimOwner:other},{role:"anon"}]){
-    const f=fixture(opts);assert.equal((await f.run()).status,403);assert.ok(!f.calls.some(c=>c[1]==="get_own_profile"||c[0]==="table"));
+  for(const opts of [{invalid:true},{unconfirmed:true},{anonymous:true},{mfa:true},{active:false},{claimOwner:other},{role:"anon"},{clientId:"synthetic-oauth-client"},{clientId:null},{claimAnonymous:true},{claimAnonymous:"true"}]){
+    const f=fixture(opts);assert.equal((await f.run()).status,403);assert.ok(!f.calls.some(c=>c[1]==="get_own_profile"||c[1]==="get_own_review_snapshot"||c[0]==="table"));
   }
 });
 test("owner receives explicit partial snapshot without internal fields",async()=>{
@@ -93,7 +105,7 @@ test("owner receives explicit partial snapshot without internal fields",async()=
   assert.doesNotMatch(JSON.stringify(body),/moderation_note|stripe_identity_session_id|admin_notes|stripe_subscription_id|requester_id|author_id|user_id/);
 });
 test("foreign records, missing fields, incomplete counts and late revocation never download",async()=>{
-  for(const [opts,status] of [[{profileOwner:other},503],[{foreignRow:true},503],[{missingField:true},503],[{count:null},503],[{count:2},503],[{count:101},409],[{duplicate:true},503],[{readError:true},503],[{revoked:true},403]]){
+  for(const [opts,status] of [[{profileOwner:other},503],[{reviewOwner:other},503],[{foreignRow:true},503],[{missingField:true},503],[{count:null},503],[{count:2},503],[{count:101},409],[{duplicate:true},503],[{readError:true},503],[{revoked:true},403]]){
     const r=await fixture(opts).run();assert.equal(r.status,status);assert.equal(r.headers.get("content-disposition"),null);assert.ok(!("data" in await r.json()));
   }
 });

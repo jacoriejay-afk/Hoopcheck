@@ -7,6 +7,8 @@ on:
       - 'supabase/tests/step2_review_moderation_read_guard_isolated.sql'
       - 'supabase/tests/step2_review_baseline_policy_shape_isolated.sql'
       - 'supabase/tests/step2_review_author_column_isolated.sql'
+      - 'supabase/tests/step2_owner_review_snapshot_isolated.sql'
+      - 'supabase/candidates/step2_owner_review_snapshot_review_only.sql'
       - 'supabase/candidates/step2_review_moderation_read_guard_review_only.sql'
       - '.github/workflows/step2-pg17-catalog-fixture.yml'
 permissions:
@@ -117,3 +119,14 @@ jobs:
         run: |
           set -euo pipefail
           docker exec -i "$FIXTURE_CONTAINER" psql -X -v ON_ERROR_STOP=1 -U postgres -d hoopcheck_review_baseline_fixture < supabase/tests/step2_review_author_column_isolated.sql
+
+      - name: Rehearse caller-bound owner review snapshot without author grants
+        env:
+          FIXTURE_CONTAINER: ${{ job.services.postgres.id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec "$FIXTURE_CONTAINER" createdb -U postgres hoopcheck_owner_review_fixture
+          docker cp supabase/candidates/step2_owner_review_snapshot_review_only.sql "$FIXTURE_CONTAINER:/tmp/review-fixture/candidates/"
+          docker cp supabase/tests/step2_owner_review_snapshot_isolated.sql "$FIXTURE_CONTAINER:/tmp/review-fixture/tests/"
+          docker exec "$FIXTURE_CONTAINER" psql -X -v ON_ERROR_STOP=1 -U postgres -d hoopcheck_owner_review_fixture -f /tmp/review-fixture/tests/step2_owner_review_snapshot_isolated.sql
