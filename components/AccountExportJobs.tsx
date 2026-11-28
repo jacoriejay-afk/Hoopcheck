@@ -1,19 +1,19 @@
 "use client";
 import { useEffect,useRef,useState } from "react";
 import { supabase } from "../lib/supabase";
-import {loadExportMedia,downloadExportMedia,type ExportMediaManifest,type ExportMediaItem} from "../apps/mobile/src/native/accountExportMedia";
+import {loadExportMedia,downloadExportMediaToSink,type ExportMediaManifest,type ExportMediaItem} from "../apps/mobile/src/native/accountExportMedia";
 const mediaEnabled=process.env.NEXT_PUBLIC_ACCOUNT_EXPORT_MEDIA_ENABLED==="true";
 
 type Job={id:string;state:string;row_count:number;expires_at:string|null};
 type Action="request"|"status"|"cancel"|"download";
 export default function AccountExportJobs({uid}:{uid:string}){
  const [job,setJob]=useState<Job|null>(null),[after,setAfter]=useState<number|null>(0),[busy,setBusy]=useState(false),[message,setMessage]=useState("");
- const [media,setMedia]=useState<ExportMediaManifest|null>(null);
+ const [media,setMedia]=useState<ExportMediaManifest|null>(null),[transfer,setTransfer]=useState<number|null>(null);
  const current=useRef<AbortController|null>(null),active=useRef(true),key=useRef<string|null>(null);
  useEffect(()=>{
   active.current=true;
   const sub=supabase.auth.onAuthStateChange((event,session)=>{
-   if(event==="SIGNED_OUT"||session?.user.id!==uid){active.current=false;current.current?.abort();setJob(null);setMedia(null);setAfter(0);setMessage("");}
+   if(event==="SIGNED_OUT"||session?.user.id!==uid){active.current=false;current.current?.abort();setJob(null);setMedia(null);setTransfer(null);setAfter(0);setMessage("");}
   });
   return()=>{active.current=false;current.current?.abort();sub.data.subscription.unsubscribe();};
  },[uid]);
@@ -54,7 +54,7 @@ export default function AccountExportJobs({uid}:{uid:string}){
   if(!mediaEnabled||!active.current||current.current||job?.state!=="ready"||!job.expires_at||Date.parse(job.expires_at)<=Date.now())return;
   const id=job.id,expiry=job.expires_at;
   const c=new AbortController();current.current=c;setBusy(true);setMessage("");
-  const timer=setTimeout(()=>c.abort(),65000);
+  const timer=setTimeout(()=>c.abort(),900000);
   try{
    const session=await supabase.auth.getSession();
    if(session.error||session.data.session?.user.id!==uid)throw Error("account");
@@ -62,9 +62,10 @@ export default function AccountExportJobs({uid}:{uid:string}){
    const verify=async()=>{const user=await supabase.auth.getUser(token),latest=await supabase.auth.getSession();if(user.error||user.data.user?.id!==uid||latest.error||latest.data.session?.user.id!==uid||latest.data.session.access_token!==token||!active.current||c.signal.aborted||Date.parse(expiry)<=Date.now())throw Error("account");};
    await verify();
    if(item){
-    const bytes=await downloadExportMedia(window.location.origin,token,id,item,c.signal);
+    const parts:BlobPart[]=[];setTransfer(0);
+    await downloadExportMediaToSink(window.location.origin,token,id,item,c.signal,bytes=>{parts.push(bytes.buffer as ArrayBuffer);},verify,(done,total)=>setTransfer(Math.floor(done*100/total)));
     await verify();
-    const href=URL.createObjectURL(new Blob([bytes.buffer as ArrayBuffer],{type:"application/octet-stream"}));
+    const href=URL.createObjectURL(new Blob(parts,{type:"application/octet-stream"}));parts.length=0;
     try{const a=document.createElement("a");a.href=href;a.download="hoopcheck-original-"+item.id+".bin";a.click();}finally{setTimeout(()=>URL.revokeObjectURL(href),1000);}
     setMessage("Approved original downloaded.");
    }else{
@@ -72,7 +73,7 @@ export default function AccountExportJobs({uid}:{uid:string}){
     await verify();setMedia(value);
    }
   }catch{if(active.current){setMedia(null);setMessage("Media could not be verified. Refresh to retry.");}}
-  finally{clearTimeout(timer);if(current.current===c){current.current=null;if(active.current)setBusy(false);}}
+  finally{clearTimeout(timer);if(current.current===c){current.current=null;if(active.current){setBusy(false);setTransfer(null);}}}
  }
  return <section aria-label="Personal data export">
   <h2>Personal data export</h2>
@@ -85,6 +86,7 @@ export default function AccountExportJobs({uid}:{uid:string}){
    {mediaEnabled&&job.state==="ready"&&<section aria-label="Approved original media">
     <h3>Original media</h3><p>Only individually approved files are available. Other files may require review.</p>
     <button className="btn" disabled={busy} onClick={()=>void mediaAction()}>Refresh approved originals</button>
+    {transfer!==null&&<><p role="status">Downloading approved original · {transfer}%</p><button className="btn" onClick={()=>current.current?.abort()}>Cancel download</button></>}
     {media&&<><p role="status">{media.state==="pending_inventory"?"Inventory not prepared":media.pending_count+" pending · "+media.denied_count+" not approved"}</p>
      {media.items.map(item=><button key={item.id} className="btn" disabled={busy} onClick={()=>void mediaAction(item)}>Download original {item.id.slice(0,8)} ({Math.ceil(item.bytes/1024)} KB)</button>)}
      {media.next_after&&<button className="btn" disabled={busy} onClick={()=>void mediaAction(undefined,true)}>Next media page</button>}
