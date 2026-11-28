@@ -20,7 +20,7 @@ export function playAccountId(owner:string,keyHex:string):string {
  if(!uuid.test(owner)||! /^[a-f0-9]{64}$/i.test(keyHex))throw unavailable();
  return createHmac("sha256",Buffer.from(keyHex,"hex")).update("hoopcheck:play:account:v1:"+owner.toLowerCase()).digest("hex");
 }
-function validSandbox(env:Env){
+export function validPlaySandbox(env:Env){
  if(env.HOOPCHECK_PLAY_VERIFICATION_ENABLED!=="true"||env.HOOPCHECK_PLAY_ENVIRONMENT!=="test"||
  env.VERCEL_ENV==="production"||!env.NEXT_PUBLIC_SUPABASE_URL||!env.HOOPCHECK_PLAY_ISOLATED_SUPABASE_URL)return false;
  try{
@@ -47,7 +47,7 @@ const b64=(v:object)=>Buffer.from(JSON.stringify(v)).toString("base64url");
 /** Test-only, read-only server client. No public handler or production mode.
  * No provider response, URL, credentials or raw token is returned or logged. */
 export function createPlayVerificationClient(env:Env=process.env,request:Requester=fetch,clock=Date.now){
- if(!validSandbox(env))throw unavailable();
+ if(!validPlaySandbox(env))throw unavailable();
  const email=env.HOOPCHECK_PLAY_SERVICE_ACCOUNT_EMAIL;
  const pem=env.HOOPCHECK_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY;
  const keyHex=env.HOOPCHECK_PLAY_ACCOUNT_HMAC_KEY;
