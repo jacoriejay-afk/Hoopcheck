@@ -17,7 +17,7 @@ const fields={
   fan_feed_posts:"author_id,id,body,created_at",
   membership_sources:"user_id,id,plan,status,access_status,current_period_end,cancel_at_period_end,billing_interval,provider",
 };
-const profileFields="id,display_name,username,first_name,last_name,bio,account_type,country,current_country,current_country_public,current_team,position,years_pro,basketball_type,profile_visibility,free_agent,created_at,updated_at,preferred_language,theme_preference,agreed_to_terms,terms_accepted_at,terms_version";
+const profileFields="id,display_name,username,first_name,last_name,bio,account_type,current_country,current_country_public,current_team,position,years_pro,profile_visibility,free_agent,created_at,updated_at,agreed_to_terms";
 function fixture(opts={}) {
   const calls=[];
   let checks=0;
@@ -99,4 +99,17 @@ test("foreign records, missing fields, incomplete counts and late revocation nev
 });
 test("empty visible records do not claim the complete account is empty",async()=>{
   const r=await fixture({empty:true}).run();assert.equal(r.status,200);const body=await r.json();assert.equal(body.complete,false);assert.deepEqual(body.data.reviews,[]);
+});
+
+test("snapshot profile allowlist is a subset of the reviewed owner RPC contract",()=>{
+ const sql=readFileSync(new URL("../supabase/candidates/build8_scoped_owner_profile_rpc.sql",import.meta.url),"utf8");
+ const projection=sql.match(/SELECT jsonb_build_object\(([\s\S]*?)\) INTO result/);
+ assert.ok(projection);
+ const keys=new Set([...projection[1].matchAll(/'([a-z_]+)',p\.[a-z_]+/g)].map(m=>m[1]));
+ assert.ok(keys.size>0);
+ for(const field of profileFields.split(",")) assert.ok(keys.has(field),field+" absent from owner RPC");
+ const route=readFileSync(new URL("../app/api/account/account-snapshot-export/route.ts",import.meta.url),"utf8");
+ const fields=route.match(/const profileFields = \[([^\]]+)\] as const;/);
+ assert.ok(fields);
+ assert.deepEqual(JSON.parse("["+fields[1]+"]"),profileFields.split(","));
 });
