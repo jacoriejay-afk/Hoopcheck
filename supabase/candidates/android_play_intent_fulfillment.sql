@@ -321,4 +321,39 @@ end
 $body$;
 revoke all on function play_billing_candidate.claim_replacement_test_purchase(uuid,text,text,text,text,text,text,uuid),play_billing_candidate.finish_replacement_test_purchase(text,uuid,bigint,text,timestamptz,text) from public,anon,authenticated,service_role;
 grant execute on function play_billing_candidate.claim_replacement_test_purchase(uuid,text,text,text,text,text,text,uuid),play_billing_candidate.finish_replacement_test_purchase(text,uuid,bigint,text,timestamptz,text) to service_role;
+-- Disposable credential purge, separate from ownership erasure. Only a
+-- privileged fixture administrator may approve an exact deletion lease.
+alter table play_billing_candidate.purchase_claims alter column credential_envelope drop not null;
+alter table play_billing_candidate.purchase_claims add column credential_purged_at timestamptz;
+alter table play_billing_candidate.purchase_claims add constraint credential_purge_pair check ((credential_envelope is null)=(credential_purged_at is not null));
+create function play_billing_candidate.guard_new_test_credential() returns trigger language plpgsql security invoker set search_path='' as $body$
+begin
+ if new.credential_envelope is null or new.credential_purged_at is not null then raise exception 'candidate credential unavailable'; end if;
+ return new;
+end
+$body$;
+revoke all on function play_billing_candidate.guard_new_test_credential() from public,anon,authenticated,service_role;
+grant execute on function play_billing_candidate.guard_new_test_credential() to service_role;
+create trigger new_test_credential before insert on play_billing_candidate.purchase_claims for each row execute function play_billing_candidate.guard_new_test_credential();
+create table play_billing_candidate.credential_cleanup_approvals(
+ request_id uuid primary key,owner_id uuid not null,lease_fence uuid not null,policy_version text not null check(length(policy_version) between 1 and 128)
+);
+alter table play_billing_candidate.credential_cleanup_approvals enable row level security;
+alter table play_billing_candidate.credential_cleanup_approvals force row level security;
+revoke all on play_billing_candidate.credential_cleanup_approvals from public,anon,authenticated,service_role;
+-- SECURITY DEFINER is deliberately limited to the two credential fields.
+-- The disposable postgres owner supplies approval; service_role cannot alter it.
+create function play_billing_candidate.purge_test_owner_credentials(p_request uuid,p_owner uuid,p_fence uuid,p_policy text)
+returns boolean language plpgsql volatile security definer set search_path='' as $body$
+begin
+ perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('hoopcheck-play-hold:'||p_owner::text,0));
+ if not exists(select 1 from play_billing_candidate.owner_holds where owner_id=p_owner) or
+ not exists(select 1 from play_billing_candidate.credential_cleanup_approvals where request_id=p_request and owner_id=p_owner and lease_fence=p_fence and policy_version=p_policy) then return false; end if;
+ update play_billing_candidate.purchase_claims set credential_envelope=null,credential_purged_at=clock_timestamp()
+ where owner_id=p_owner and credential_envelope is not null;
+ return not exists(select 1 from play_billing_candidate.purchase_claims where owner_id=p_owner and credential_envelope is not null);
+end
+$body$;
+revoke all on function play_billing_candidate.purge_test_owner_credentials(uuid,uuid,uuid,text) from public,anon,authenticated,service_role;
+grant execute on function play_billing_candidate.purge_test_owner_credentials(uuid,uuid,uuid,text) to service_role;
 commit;
