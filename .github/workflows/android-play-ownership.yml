@@ -82,9 +82,13 @@ jobs:
           docker exec -i "$PG_CONTAINER" psql -U postgres -v ON_ERROR_STOP=1 < supabase/candidates/android_play_verification_budget.sql
           docker exec -i "$PG_CONTAINER" psql -U postgres -v ON_ERROR_STOP=1 < supabase/tests/android_play_verification_budget_fixture.sql
           budget() { docker exec -i "$PG_CONTAINER" psql -U postgres -qAt -v ON_ERROR_STOP=1 -c "set role service_role; select public.play_take_test_verification_budget('cccccccc-cccc-4ccc-8ccc-cccccccccccc');"; }
-          for i in 1 2 3 4 5 6; do budget > "/tmp/play-budget-$i" & done
-          wait
-          test "$(cat /tmp/play-budget-{1,2,3,4,5,6} | sort)" = "$(printf 'f\\nt\\nt\\nt\\nt\\nt')"
+          budget_pids=()
+          for i in 1 2 3 4 5 6; do
+            budget > "/tmp/play-budget-$i" & budget_pids+=("$!")
+          done
+          for pid in "${budget_pids[@]}"; do wait "$pid"; done
+          test "$(cat /tmp/play-budget-{1,2,3,4,5,6} | sort)" = "$(printf 'f\nt\nt\nt\nt\nt')"
+          echo "Concurrent verification budget: exactly five allowed, one denied"
       - uses: actions/setup-node@v4
         with:
           node-version: 22
