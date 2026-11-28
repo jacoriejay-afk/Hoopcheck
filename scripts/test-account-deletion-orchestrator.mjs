@@ -60,7 +60,11 @@ test("bridge binds every transition to exact request owner and fence",async()=>{
  const a=createDeletionWorkerAdapter(rpc,effects,true);
  const claimed=await a.claim();
  assert.deepEqual(claimed,lease);
- await a.assertLease(claimed);await a.execute(claimed,"approve_scope",lease.requestId+":approve_scope");await a.checkpoint(claimed,"approve_scope","fixture");await a.complete(claimed);await a.fail(claimed,"step_not_confirmed");
+ const prior=process.env.ACCOUNT_DELETION_WORKER_ENABLED;
+ try {
+  process.env.ACCOUNT_DELETION_WORKER_ENABLED="true";
+  await a.assertLease(claimed);await a.execute(claimed,"approve_scope",lease.requestId+":approve_scope");await a.checkpoint(claimed,"approve_scope","fixture");await a.complete(claimed);await a.fail(claimed,"step_not_confirmed");
+ } finally {if(prior===undefined)delete process.env.ACCOUNT_DELETION_WORKER_ENABLED;else process.env.ACCOUNT_DELETION_WORKER_ENABLED=prior;}
  for(const [name,args] of calls.slice(1)){assert.equal(args.p_request,lease.requestId,name);assert.equal(args.p_owner,lease.ownerId,name);assert.equal(args.p_fence,lease.fence,name);}
 });
 test("bridge rejects false acknowledgements, RPC errors and malformed claims",async()=>{
@@ -166,4 +170,28 @@ test("immutable claimed scope prevents mutation and rejects malformed checkpoint
   await assert.rejects(runDeletionCandidate(invalid.adapter),/Invalid deletion lease/);
   assert.deepEqual(invalid.events,[]);
  }
+});
+
+test("real RPC bridge refuses effect dispatch when disabled during its inner lease assertion",async()=>{
+ const prior=process.env.ACCOUNT_DELETION_WORKER_ENABLED;
+ try{
+  let assertions=0,dispatches=0;
+  const calls=[];
+  process.env.ACCOUNT_DELETION_WORKER_ENABLED="true";
+  const rpc={rpc:async(name)=>{
+   calls.push(name);
+   if(name==="claim_account_deletion_worker")return {data:[{request_id:lease.requestId,owner_id:lease.ownerId,fence:lease.fence,policy_version:lease.policyVersion,completed:[]}],error:null};
+   assert.equal(name,"assert_account_deletion_worker");
+   if(++assertions===2)process.env.ACCOUNT_DELETION_WORKER_ENABLED="false";
+   return {data:true,error:null};
+  }};
+  const effects=Object.fromEntries(deletionSteps.map(s=>[s,async()=>{dispatches++;return {confirmed:true,receipt:"fixture"};}]));
+  const a=createDeletionWorkerAdapter(rpc,effects,true);
+  assert.equal(await runDeletionCandidate(a),"retry");
+  assert.equal(dispatches,0);
+  assert.deepEqual(calls,["claim_account_deletion_worker","assert_account_deletion_worker","assert_account_deletion_worker"]);
+  await assert.rejects(a.execute(lease,"approve_scope",lease.requestId+":approve_scope"),/unavailable/);
+  assert.equal(dispatches,0);
+  assert.equal(calls.length,3);
+ }finally{if(prior===undefined)delete process.env.ACCOUNT_DELETION_WORKER_ENABLED;else process.env.ACCOUNT_DELETION_WORKER_ENABLED=prior;}
 });
