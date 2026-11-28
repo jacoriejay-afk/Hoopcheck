@@ -23,9 +23,9 @@ test("new owner appearance controls do not bypass the independent HoopGroups rol
   const route=read("../app/hoopgroups.tsx");
   const groups=read("../components/HoopGroupsChannels.tsx");
   assert.match(route,/EXPO_PUBLIC_HOOPGROUPS_CHANNELS_ENABLED === "true"/);
-  assert.match(route, /enabled \? <HoopGroupsChannels inviteSlug=\{inviteSlug\} \/>/);
+  assert.match(route, /enabled \? <HoopGroupsChannels inviteSlug=\{inviteSlug\} jumpToPost=\{jumpToPost\} \/>/);
   const send=read("../src/native/hoopGroupsSend.ts");
-  assert.match(groups,/submitGroupSend\(supabase,message,"Bearer "\+token,abort.signal\)/);
+  assert.match(groups,/submitGroupSend\(supabase, message, "Bearer " \+ token, abort.signal\)/);
   assert.match(send,/moderation_status:"pending"/);
   assert.match(groups,/hoop_group_reports/);
   assert.match(groups,/hoop_group_blocks/);
@@ -48,7 +48,19 @@ test("group read and mutation requests pin the verified caller token and seriali
  assert.match(catalog,/current!==token/);assert.match(catalog,/controller.signal.aborted/);
  for(const name of ["join","createGroup","saveGroup","leaveGroup","createChannel","send","report","block"]){
   const start=groups.indexOf("async function "+name+"(");const end=groups.indexOf("\n  }",start);const body=groups.slice(start,end);
-  assert.match(body,/if\(mutationLocked.current\)return/);assert.match(body,/const token=await safetyToken\(\)/);if(name==="send"){assert.match(body,/submitGroupSend\(supabase,message,"Bearer "\+token,abort.signal\)/);const helper=read("../src/native/hoopGroupsSend.ts");assert.equal((helper.match(/setHeader\("Authorization",bearer\)\.abortSignal\(signal\)/g)||[]).length,2);}else assert.match(body,/setHeader\("Authorization",\s*"Bearer "\+token\)/);assert.match(body,/finally\{mutationLocked.current=false/);
+  if (name === "send") {
+   assert.match(body, /mutationLocked.current\) return;[\s\S]*?mutationLocked.current = true/);
+   assert.match(body, /await outbox.save\(message\);[\s\S]*?deliverQueued\(message/);
+   assert.match(body, /submitGroupSend\(supabase, message, "Bearer " \+ token, abort.signal\)/);
+   assert.match(body, /finally \{[\s\S]*?mutationLocked.current = false/);
+   const delivery = groups.slice(groups.indexOf("const deliverQueued"), groups.indexOf("  useFocusEffect", groups.indexOf("const deliverQueued")));
+   assert.match(delivery, /const token = await safetyToken\(\);[\s\S]*?\.setHeader\("Authorization", bearer\)\.abortSignal\(signal\)/);
+   assert.match(delivery, /membership.data\?\.space_id !== spaceId[\s\S]*?submitGroupSend\(supabase, message, bearer, signal\)/);
+   const helper = read("../src/native/hoopGroupsSend.ts");
+   assert.equal((helper.match(/setHeader\("Authorization",bearer\)\.abortSignal\(signal\)/g) || []).length, 2);
+   continue;
+  }
+  assert.match(body,/if\(mutationLocked.current\)return/);assert.match(body,/const token=await safetyToken\(\)/);assert.match(body,/setHeader\("Authorization",\s*"Bearer "\+token\)/);assert.match(body,/finally\{mutationLocked.current=false/);
  }
  assert.doesNotMatch(groups,/service_role/);
 });

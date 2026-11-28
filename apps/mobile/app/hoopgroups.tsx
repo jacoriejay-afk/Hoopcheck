@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { parseGroupInvite } from "../src/native/deepLinks";
@@ -15,17 +16,26 @@ const planned = [
 
 export default function HoopGroups() {
   const theme = useEntryTheme();
+  const scroll = useRef<ScrollView>(null);
+  const content = useRef<View>(null);
+  function jumpToPost(post: View) {
+    if (!content.current) return;
+    post.measureLayout(content.current, (_x, y) => {
+      scroll.current?.scrollTo({ y: Math.max(0,y), animated: true });
+    });
+  }
   const {group} = useLocalSearchParams<{group?:string}>();
   const inviteSlug = parseGroupInvite(group);
   const enabled = process.env.EXPO_PUBLIC_HOOPGROUPS_CHANNELS_ENABLED === "true";
   return <SafeAreaView edges={["bottom","left","right"]} style={{flex:1,backgroundColor:theme.background}}>
-    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{
+    <ScrollView ref={scroll} keyboardShouldPersistTaps="handled" contentContainerStyle={{
       paddingHorizontal:12,paddingTop:6,gap:9,paddingBottom:40,maxWidth:700,width:"100%",alignSelf:"center"}}>
+      <View ref={content} collapsable={false} style={{gap:9}}>
       <Text accessibilityRole="header" style={{fontSize:22,fontFamily:"HoopCheckDisplay",color:theme.foreground}}>COMMUNITIES</Text>
       <Text style={{color:theme.muted,fontSize:13,lineHeight:20}}>
         Find your basketball people. Discover independent communities, create your own group, and join discussion channels.
       </Text>
-      {enabled ? <HoopGroupsChannels inviteSlug={inviteSlug} /> : <>
+      {enabled ? <HoopGroupsChannels inviteSlug={inviteSlug} jumpToPost={jumpToPost} /> : <>
         <View style={{paddingVertical:9,gap:7,borderTopWidth:1,borderColor:theme.glassBorder}}>
           <Text accessibilityRole="header" style={{color:theme.foreground,fontFamily:"HoopCheckDisplay",fontSize:18}}>
             Community spaces are preparing for launch
@@ -44,6 +54,7 @@ export default function HoopGroups() {
           <Text style={{color:theme.muted,fontSize:12}}>{space.detail}</Text>
         </View>)}
       </>}
+      </View>
     </ScrollView>
   </SafeAreaView>;
 }

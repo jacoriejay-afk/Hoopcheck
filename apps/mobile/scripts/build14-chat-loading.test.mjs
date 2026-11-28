@@ -59,8 +59,8 @@ test("HoopGroups uses a compact community directory while preserving owner setti
 
 test("HoopGroups resets local state across account changes and scopes private channel content", () => {
   const groups = read("../components/HoopGroupsChannels.tsx");
-  assert.match(groups, /<ScopedHoopGroups key=\{JSON\.stringify\(\[userId,offline\]\)\}/);
-  assert.match(groups, /const posts=member&&channel&&postSnapshot\?\.channelId===channel\.id\?postSnapshot\.posts:\[\]/);
+  assert.match(groups, /<ScopedHoopGroups key=\{userId\}/);
+  assert.match(groups, /const posts=!offline&&member&&channel&&postSnapshot\?\.channelId===channel\.id\?postSnapshot\.posts:\[\]/);
   assert.match(groups, /const draft=member&&channel&&draftState\?\.channelId===channel\.id\?draftState\.value:""/);
   assert.match(groups, /if\(!alive\|\|controller\.signal\.aborted\)return;/);assert.match(groups, /if\(readError\|\|controller\.signal\.aborted\)throw Error/);
   assert.match(groups, /if\(alive\)setPostSnapshot\(\{channelId:channel!\.id,posts:/);assert.match(groups, /filter\(post=>!blocked\.has\(post\.author_id\)\)/);
