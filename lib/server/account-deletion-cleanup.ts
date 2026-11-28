@@ -115,6 +115,7 @@ export async function removeApprovedAuthIdentity(admin: SupabaseClient,lease: Le
 export async function blockAndRevokeApprovedSessions(
  admin:SupabaseClient,lease:Lease,guards:Pick<Guards,"assertLease"|"assertFrozen">,
  ownerBearer?:string,
+ options:Readonly<{allowReviewedCatalogRevocation?:boolean}>={},
 ){
  lease=immutableLease(lease);
  const args={p_request:lease.requestId,p_owner:lease.ownerId,p_fence:lease.fence};
@@ -140,10 +141,19 @@ export async function blockAndRevokeApprovedSessions(
  await guard();
  if(!await proof("verify_deletion_auth_login_block"))throw Error("Auth login block not confirmed.");
  if(!await proof("verify_deletion_session_absence")){
-  if(!ownerBearer)throw Error("Existing sessions require verified Auth revocation.");
-  await guard();
-  const revoked=await admin.auth.admin.signOut(ownerBearer,"global");
-  if(revoked.error)throw Error("Auth global sign-out not confirmed.");
+  if(ownerBearer){
+   await guard();
+   const revoked=await admin.auth.admin.signOut(ownerBearer,"global");
+   if(revoked.error)throw Error("Auth global sign-out not confirmed.");
+  }
+  // The optional version-pinned catalog RPC requires a separate disabled-by-
+  // default server flag AND the database's independent policy switch. It also
+  // covers legacy refresh tokens not removed by a supported global sign-out.
+  if(!await proof("verify_deletion_session_absence")){
+   if(!options.allowReviewedCatalogRevocation||process.env.ACCOUNT_DELETION_AUTH_CATALOG_REVOCATION_ENABLED!=="true")throw Error("Existing sessions require verified Auth revocation.");
+   await guard();
+   if(!await proof("revoke_approved_deletion_auth_sessions"))throw Error("Auth session revocation not confirmed.");
+  }
  }
  await guard();
  if(!await proof("verify_deletion_auth_login_block")||!await proof("verify_deletion_session_absence"))throw Error("Auth sessions or login block not verified.");
