@@ -196,6 +196,45 @@ const trialing = getHoopCheckEntitlements({
 });
 assert.equal(trialing.canWriteReviews, true, "trialing Premium inherits Pro access");
 
+// All sign-up roles across supported tiers. Workspace and moderation grants
+// are independent of these base membership permissions.
+const memberRoles = ["player", "fan", "coach", "agent", "scout", "manager", "club_admin"];
+const tiers = ["free", "pro", "premium"];
+for (const accountType of memberRoles) {
+  for (const tier of tiers) {
+    const paid = tier !== "free";
+    const actual = getHoopCheckEntitlements({ accountType, subscription: paid ? active(tier) : null, playerVerified: true });
+    const label = accountType + " " + tier;
+    assert.equal(actual.tier, tier, label);
+    assert.equal(actual.canWriteHoopFeed, paid, label);
+    assert.equal(actual.canWriteFanFeed, paid && accountType === "fan", label);
+    assert.equal(actual.canReadFullReviews, paid && (accountType !== "fan" || tier === "premium"), label);
+    assert.equal(actual.canWriteReviews, paid && accountType === "player", label);
+    assert.equal(actual.canUseLiveGameChat, paid && ["player", "fan"].includes(accountType), label);
+    assert.equal(actual.canUseProPassport, (paid && accountType === "agent") || (tier === "premium" && accountType === "player"), label);
+    assert.equal(actual.canUseFanGroups, accountType === "fan", label);
+    assert.equal(actual.canModerateFanGroups, false, label);
+  }
+}
+
+for (const accountType of ["owner", "ambassador", "moderator", "admin"]) {
+  for (const tier of tiers) {
+    const subscription = tier === "free" ? null : active(tier);
+    const label = accountType + " " + tier;
+    const unprivileged = getHoopCheckEntitlements({ accountType, subscription });
+    assert.equal(unprivileged.tier, tier, label);
+    assert.equal(unprivileged.canModerateFanGroups, false, label);
+    assert.equal(unprivileged.canUseLiveGameChat, false, label);
+    assert.equal(unprivileged.canWriteReviews, false, label);
+  }
+}
+for (const tier of tiers) {
+  const verified = getHoopCheckEntitlements({ accountType: "coach", isAdmin: true, subscription: tier === "free" ? null : active(tier) });
+  assert.equal(verified.tier, "premium");
+  assert.equal(verified.canModerateFanGroups, true);
+  assert.equal(verified.canWriteReviews, false);
+}
+
 const unverified = getHoopCheckEntitlements({
   accountType: "player", subscription: active("premium"), playerVerified: false,
 });
@@ -336,4 +375,4 @@ assert.match(playerContactPolicy, /s\.status IN \('active', 'trialing'\)/, "cont
 assert.match(playerContactPolicy, /target\.profile_visibility = 'public'/, "target player must be public");
 assert.match(playerContactPolicy, /target\.moderation_status <> 'suspended'/, "suspended target must be denied");
 
-console.log("VERIFY-1 entitlement matrix: " + cases.length + " role/tier cells and edge cases passed (" + keys.length + " entitlements).");
+console.log("VERIFY-1 entitlement matrix: " + cases.length + " detailed cells, 36 additional role/tier cases, and edge cases passed (" + keys.length + " entitlements).");

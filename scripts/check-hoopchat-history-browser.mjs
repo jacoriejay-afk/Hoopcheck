@@ -2,6 +2,10 @@ import assert from "node:assert/strict";
 import { chromium } from "playwright";
 
 const baseURL = process.env.THEME_TEST_BASE_URL || "http://127.0.0.1:3000";
+const testReadSync = process.env.HOOPCHECK_TEST_CHAT_READ_SYNC === "true";
+if (testReadSync && !["127.0.0.1", "localhost"].includes(new URL(baseURL).hostname)) {
+  throw Error("Use a loopback server for the read-sync fixture.");
+}
 const uid = "11111111-1111-4111-8111-111111111111";
 const peer = "22222222-2222-4222-8222-222222222222";
 const other = "33333333-3333-4333-8333-333333333333";
@@ -25,6 +29,7 @@ const scopedReads = [];
 let failNext = true;
 let blocks = [];
 const reports = [], blockWrites = [], messageWrites = [];
+const markerWrites = [];
 const browser = await chromium.launch({
   ...(process.env.CHROMIUM_EXECUTABLE_PATH ? { executablePath: process.env.CHROMIUM_EXECUTABLE_PATH } : { channel: "chrome" }),
   headless: true, args: ["--no-sandbox"],
@@ -47,6 +52,19 @@ try {
     let data = [];
     let status = 200;
     if (url.pathname === "/auth/v1/user") data = user;
+    if (url.pathname.endsWith("/rpc/get_hoopchat_unread")) {
+      assert.equal(testReadSync, true);
+      assert.equal(request.headers().authorization, `Bearer ${token}`);
+      const { p_request_ids } = request.postDataJSON();
+      assert.ok(p_request_ids.every(id => [thread, deniedThread].includes(id)));
+      data = p_request_ids.includes(thread) ? [{ request_id: thread, unread_count: markerWrites.length ? 0 : 7 }] : [];
+    }
+    if (url.pathname.endsWith("/rpc/mark_hoopchat_read")) {
+      assert.equal(testReadSync, true);
+      assert.equal(request.headers().authorization, `Bearer ${token}`);
+      markerWrites.push(request.postDataJSON());
+      data = true;
+    }
     if (url.pathname.endsWith("/player_contact_requests")) {
       // Simulate a thread revoked after loading the inbox.
       data = query.has("id") ? (query.get("id") === `eq.${thread}` ? [requests[0]] : []) : requests;
@@ -95,6 +113,13 @@ try {
   assert.equal(pages.length, 3);
   assert.ok(pages.every(read => read.id === `eq.${thread}` && read.order === "created_at.desc,id.desc" && read.bearer === `Bearer ${token}`));
   assert.ok(pages[2].cursor.includes(`id.lt.${messages[49].id}`));
+  if (testReadSync) {
+    const badge = page.locator(".hc-courtside-unread");
+    await page.getByText("7 new in loaded inbox", { exact: true }).waitFor();
+    await page.getByRole("button", { name: "Mark read", exact: true }).click();
+    await badge.waitFor({ state: "hidden" });
+    assert.deepEqual(markerWrites, [{ p_request_id: thread, p_message_id: messages[0].id }]);
+  }
   const composer = page.locator("#hc-courtside-compose");
   await composer.fill("My unsent reply");
   await history.locator("article").filter({ has: page.getByText("Fixture message 51", { exact: true }) }).getByRole("button", { name: /Quote message from/ }).click();

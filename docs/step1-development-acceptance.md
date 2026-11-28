@@ -17,6 +17,14 @@ Use [#1006](https://github.com/jacoriejay-afk/Hoopcheck/issues/1006) for the ori
 | Performance and reliability | #1141 adds bounded loopback smoke; #1142 covers media cancellation. #1149 owns overlapping public Home request reduction. The HoopChat follow-up aborts superseded reads and shares the existing deadline. | Measure cold start, screen retention, cache/image behavior and memory on physical devices; test poor network and account concealment across routes. |
 | Final development and release | #1145 adds compliance checks to QA, #1143 exercises disposable PostgreSQL subset recovery, and #1151 is Step 4’s forward-only migration guard. | Review the final combined diff and CI on its exact post-reconciliation revision. Obtain independently reviewed schema-only baseline and managed extensions/roles, isolated provider accounts and coverage approval, signed iOS/Android and physical smoke, and owner release acceptance. The offline schema workflow reports drift; the subset restore is narrower than full-schema recovery. |
 
+## Server-synchronized HoopChat acceptance
+
+The review-only PostgreSQL candidate and the two default-off clients share the same read-marker contract. The inbox counts incoming messages for the viewer's loaded conversations and caps each count at 100 for the 99+ badge. Current web local appearance, mute, pin and read preferences are available with synchronization off. With synchronization on, use **Mark read** in a loaded conversation to commit its latest confirmed incoming message and refresh the visible inbox.
+
+For isolated acceptance, install the review-only schema in a single transaction only after verifying effective session, MFA and both-direction block policies. Keep the marker schema out of the Data API exposed schemas. The disposable fixture covers monotonic markers, equal timestamps, expired sessions, MFA, blocked threads and cross-account isolation. Web uses `NEXT_PUBLIC_HOOPCHECK_CHAT_READ_SYNC_ENABLED=true` and native uses `EXPO_PUBLIC_HOOPCHECK_CHAT_READ_SYNC_ENABLED=true` only for explicit isolated acceptance. Use `HOOPCHECK_TEST_CHAT_READ_SYNC=true` for the web browser fixture against the corresponding loopback bundle.
+
+Use two synthetic signed-in devices to verify mark-read and refresh, account switching, poor network and legacy clients before activation. Delivery of messaging notifications and platform push remains separate from this read-state contract.
+
 ## Audited master QA runs
 
 All nine Actions workflows associated with `c2e27c3f6e76c87fd10c17203c16d36b2fec1e4a` concluded successfully. This is baseline evidence for the audited candidate.
