@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getHoopCheckEntitlements } from "../../../../lib/membership-tier";
@@ -488,6 +489,16 @@ export async function POST(request: Request) {
       const { data: entity } = await db.from(tag.table).select("id").eq("active", true).eq("id", tag.id).maybeSingle();
       if (!entity) return NextResponse.json({ allowed: false, message: "This directory tag is unavailable." }, { status: 400 });
     }
+    const receiptValues = form.getAll("publication_id");
+    const receiptKey = receiptValues[0];
+    const receiptEnabled = process.env.HOOPCHECK_FEED_PUBLICATION_RECEIPTS_ENABLED === "true";
+    if(receiptValues.length && (!receiptEnabled || isStory || receiptValues.length!==1 || typeof receiptKey!=="string" || !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(receiptKey))) return NextResponse.json({allowed:false,message:"Publication recovery unavailable or invalid."},{status:400});
+    let digest:string|undefined;
+    if(typeof receiptKey==="string"){
+      if(!viewerDb || !user.email_confirmed_at || assuranceForVerifiedUser(token,user).required || (await viewerDb.rpc("confirm_active_account_session")).data!==true) return NextResponse.json({allowed:false,message:"Verify your account before publishing."},{status:403});
+      const entries=await Promise.all(Array.from(form.entries()).filter(([key])=>key!=="publication_id").map(async ([key,value])=>[key,typeof value==="string"?value:{type:value.type,sha256:createHash("sha256").update(Buffer.from(await value.arrayBuffer())).digest("hex")}]));
+      digest=createHash("sha256").update(JSON.stringify(entries)).digest("hex");
+    }
     const moderationText = [text, ...(postKind === "poll" ? pollOptions ?? [] : []), location].filter(Boolean).join("\n");
     const result = await moderate(moderationText, allImages[0] ?? null);
     if (!result.allowed) return NextResponse.json({ allowed: false, message: result.message }, { status: result.status });
@@ -498,7 +509,7 @@ export async function POST(request: Request) {
     if (photoRejection) return NextResponse.json({ allowed: false, message: photoRejection.message }, { status: photoRejection.status });
 
     // Recheck the pinned caller after potentially slow moderation, before privileged storage or publication.
-    if (isStory) {
+    if (isStory || digest) {
       const active = await viewerDb!.rpc("confirm_active_account_session");
       if (active.error || active.data !== true) return NextResponse.json({allowed:false,message:"Account session unavailable."},{status:403});
     }
@@ -532,7 +543,7 @@ export async function POST(request: Request) {
     const submittedCountry = String(form.get("post_country") || "").trim().slice(0, 100);
     const storyCreatedAt = isStory ? new Date() : null;
     const storyExpiresAt = storyCreatedAt ? new Date(storyCreatedAt.getTime() + 24 * 60 * 60 * 1000).toISOString() : null;
-    const { error } = await db.from("feed_posts").insert({
+    const payload = {
       author_id:user.id, body:text || " ", image_url, image_urls, video_url, post_kind:postKind, poll_options:pollOptions,
       topic_tag: submittedTopicTag ? submittedTopicTag : null,
       game_day_team: submittedTopicTag === "Game Day" ? gameDayTeam : null,
@@ -544,7 +555,20 @@ export async function POST(request: Request) {
       ...(location ? { post_location: location } : {}),
       ...(tag ? { [tag.column]: tag.id } : {}),
       status:"approved", expires_at:storyExpiresAt
-    });
+    };
+    let publishedReceipt: {publication_id:string;post_id:string}|undefined;
+    if(digest && typeof receiptKey==="string"){
+      const receipt=await db.rpc("hoopfeed_publish_once",{p_owner:user.id,p_key:receiptKey,p_digest:digest,p_post:payload});
+      if(receipt.error || !receipt.data || !["created","replayed","conflict","cancelled","removed"].includes(receipt.data.state)){
+        // An ambiguous commit may already reference the uploaded photos.
+        return NextResponse.json({allowed:false,message:"Publication unconfirmed. Recover the existing request before retrying."},{status:503});
+      }
+      if(receipt.data.state!=="created") await cleanupUploadedImages();
+      if(!["created","replayed"].includes(receipt.data.state)) return NextResponse.json({allowed:false,message:"This publication request has already been resolved. Check its receipt."},{status:409});
+      if(typeof receipt.data.post_id!=="string")return NextResponse.json({allowed:false,message:"Publication unconfirmed."},{status:503});
+      publishedReceipt={publication_id:receiptKey,post_id:receipt.data.post_id};
+    }
+    const {error}=publishedReceipt?{error:null}:await db.from("feed_posts").insert(payload);
     if (error) {
       await cleanupUploadedImages();
       return NextResponse.json({ allowed:false,message:"We couldn't publish your post. Please try again." },{status:400});
@@ -552,7 +576,7 @@ export async function POST(request: Request) {
     const activityDate = new Date().toISOString().slice(0, 10);
     const { error: activityError } = await db.from("feed_posting_activity").upsert({ user_id: user.id, activity_date: activityDate }, { onConflict: "user_id,activity_date", ignoreDuplicates: true });
     if (activityError) console.error("HoopFeed posting streak activity could not be recorded:", activityError.message);
-    return NextResponse.json(isStory ? { allowed:true, story_expires_at:storyExpiresAt } : { allowed:true });
+    return NextResponse.json(isStory ? { allowed:true, story_expires_at:storyExpiresAt } : { allowed:true,...publishedReceipt });
   } catch (error: any) {
     console.error("HoopFeed moderation request failed:", error);
     return NextResponse.json({ allowed:false,message:"Safety moderation failed. Your content was not published." },{status:500});
