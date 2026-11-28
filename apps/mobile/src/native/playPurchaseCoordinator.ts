@@ -1,4 +1,5 @@
 import {playProduct,canPurchasePlayProduct} from "../../../../lib/billing/play-products";
+import type {createPlayRecoveryJournal} from "./playRecoveryJournal";
 type Session={owner:string;token:string;role:string};
 type Quote={productId:string;basePlanId:string;priceMicros:string;currency:string};
 type Intent=Quote&{owner:string;accountId:string;intentId:string;expiresAt:number;environment:"test"};
@@ -12,6 +13,7 @@ type Dependencies={
   launch(intent:Intent):Promise<unknown>;
   restore(accountId:string):Promise<unknown>;
   sync(intentId:string|null,productId:string,purchaseToken:string,token:string):Promise<unknown>;
+  journal:ReturnType<typeof createPlayRecoveryJournal>;
   now():number;
 };
 type Scope=Session&{generation:number};
@@ -28,7 +30,7 @@ export function createPlayPurchaseCoordinator(deps:Dependencies){
  let generation=0,owner:string|null=null,busy=false,prepared:Intent|null=null,preparedToken:string|null=null;
  // Do not open another sheet until the prior launch has been reconciled.
  // A native exception may occur after the provider sheet has opened.
- let recoveryOwner:string|null=null;
+ // The secure journal survives process death; no raw payment data persists.
  const allowed=()=>deps.enabled()&&deps.available();
  function invalidate(){generation++;prepared=null;preparedToken=null;}
  function check(scope:Scope){
@@ -59,8 +61,10 @@ export function createPlayPurchaseCoordinator(deps:Dependencies){
   async prepare(quote:Quote):Promise<boolean>{
    return single(false,async()=>{
     prepared=null;preparedToken=null;
-    if(recoveryOwner!==null||!validQuote(quote))return false;
+    if(!validQuote(quote))return false;
     const s=await capture(),product=playProduct(quote.productId,quote.basePlanId);
+    if(await deps.journal.read())return false;
+    await current(s);
     if(!product||!canPurchasePlayProduct(s.role,product))return false;
     const r=await deps.prepare({...quote},s.token);
     await current(s);
@@ -83,10 +87,13 @@ export function createPlayPurchaseCoordinator(deps:Dependencies){
     const permit=await deps.consume({...intent},s.token);
     await current(s);
     if(!fresh(intent)||!obj(permit)||permit.owner!==s.owner||permit.intentId!==intent.intentId||permit.environment!=="test"||permit.outcome!=="sandbox_launch_authorized"||permit.membershipGranted!==false)return "held";
-    recoveryOwner=s.owner;
+    if(await deps.journal.read()||!await deps.journal.mark(s.owner,intent.accountId))return "held";
+    await current(s);
+    if(!fresh(intent))return "held";
     const result=await deps.launch({...intent});
     await current(s);
-    if(result==="cancelled")recoveryOwner=null;
+    if(result==="cancelled"&&!await deps.journal.clear(s.owner,intent.accountId))return "held";
+    await current(s);
     return result==="launched"||result==="cancelled"||result==="restore_required"?result:"unavailable";
    });
   },
@@ -116,8 +123,9 @@ export function createPlayPurchaseCoordinator(deps:Dependencies){
      if(obj(reply)&&reply.owner===s.owner&&reply.environment==="test"&&reply.outcome==="test_fulfillment_confirmed")verified++;
      else failed++;
     }
-    if(scan.pendingCount===0&&failed===0&&recoveryOwner===s.owner)recoveryOwner=null;
-    else if(scan.pendingCount>0&&recoveryOwner===null)recoveryOwner=s.owner;
+    if(scan.pendingCount===0&&failed===0){await deps.journal.clear(s.owner,accountId);}
+    else {await deps.journal.mark(s.owner,accountId);}
+    await current(s);
     return {verified,pending:scan.pendingCount,failed};
    });
   }
