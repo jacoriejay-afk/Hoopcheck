@@ -122,9 +122,17 @@ assert.equal(sql("select count(*) from public.membership_sources where user_id="
 assert.equal(sql("select status from play_billing_candidate.notification_jobs where message_id='987654322'"),"done");
 console.log("End-to-end synthetic Google Play integration passed: intent, encrypted ownership, provider verification, durable fulfillment, simulated acknowledgment, shadow membership, authenticated notification, dedupe and revocation.");
 
+// Restore active test evidence before holding the owner, to prove immediate removal.
+revoked=false;
+allowed=true;
+assert.equal(await reconcileTestPurchase(input,deps),"test_fulfillment_confirmed");
+assert.equal(sql("select provider||':'||plan from play_billing_candidate.shadow_membership_entitlements where user_id="+q(owner)),"google_play_test:premium");
+const activeGeneration=Number(sql("select generation from play_billing_candidate.purchase_observations where fingerprint="+q(fp)));
+assert.equal(sql("select play_billing_candidate.confirm_test_fulfillment("+args(owner,activeGeneration,expiry)+")"),"t");
 // Privacy hold: stop credential lookup and all future fulfillment; do not
 // claim a legal retention policy or destroy immutable ownership evidence.
 assert.equal(sql("select play_billing_candidate.hold_test_owner("+q(owner)+")"),"t");
+assert.equal(sql("select play_billing_candidate.confirm_test_fulfillment("+args(owner,activeGeneration,expiry)+")"),"f");
 assert.equal(await adapter.lookup(fp),null);
 await assert.rejects(()=>adapter.credential({owner,fingerprint:fp,productId:product.productId,basePlanId:product.basePlanId}));
 await assert.rejects(()=>adapter.begin({owner,fingerprint:fp,productId:product.productId,basePlanId:product.basePlanId}));

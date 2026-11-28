@@ -29,11 +29,13 @@ export async function ingestPlayPush(input:unknown,authorization:unknown,ports:{
  if(!ports.enabled())return "held";
  try{
   await ports.authenticate(authorization);
+  if(!ports.enabled())return "held";
   const event=parseAuthenticatedPlayNotification(input,ports.subscription,ports.now());
   if(event.kind!=="refresh")return "accepted";
   if(!event.token)return "retry";
   const fingerprint=ports.fingerprint(event.token);
   if(!hex.test(fingerprint))return "retry";
+  if(!ports.enabled())return "held";
   const result=await ports.enqueue(ports.subscription,event.messageId,fingerprint);
   return result==="queued"||result==="duplicate"?"accepted":"retry";
  }catch{return "retry";}
@@ -49,11 +51,14 @@ export async function reconcileOnePlayNotification(ports:Ports):Promise<"held"|"
   if(!hex.test(job.fingerprint))throw Error("invalid");
   const claim=await ports.lookup(job.fingerprint);
   if(!claim||claim.fingerprint!==job.fingerprint||!playProduct(claim.productId,claim.basePlanId))throw Error("unavailable");
+  if(!ports.enabled())throw Error("held");
+  const generation=await ports.begin(claim);
+  if(!Number.isSafeInteger(generation)||generation===null||generation<=0||!ports.enabled())throw Error("unavailable");
   const token=await ports.open(claim);
   if(ports.fingerprint(token)!==job.fingerprint)throw Error("unavailable");
-  const generation=await ports.begin(claim);
-  if(!Number.isSafeInteger(generation)||generation===null||generation<=0)throw Error("unavailable");
+  if(!ports.enabled())throw Error("held");
   const result=await ports.verify(claim.owner,token);
+  if(!ports.enabled())throw Error("held");
   let state="unavailable",expiry:string|null=null;
   if(result.state==="inactive")state="inactive";
   else if((result.state==="pending_ack"||result.state==="eligible_for_reconciliation")&&result.product?.productId===claim.productId&&result.product.basePlanId===claim.basePlanId&&typeof result.expiresAt==="string"&&Date.parse(result.expiresAt)>ports.now()){

@@ -81,6 +81,16 @@ grant select,insert on play_billing_candidate.test_fulfillments to service_role;
 create policy server_fulfillment_read on play_billing_candidate.test_fulfillments for select to service_role using(true);
 create policy server_fulfillment_insert on play_billing_candidate.test_fulfillments for insert to service_role with check(environment='test');
 
+create table play_billing_candidate.owner_holds(
+ owner_id uuid primary key, held_at timestamptz not null default clock_timestamp()
+);
+alter table play_billing_candidate.owner_holds enable row level security;
+alter table play_billing_candidate.owner_holds force row level security;
+revoke all on play_billing_candidate.owner_holds from public,anon,authenticated,service_role;
+grant select,insert on play_billing_candidate.owner_holds to service_role;
+create policy held_owner_read on play_billing_candidate.owner_holds for select to service_role using(true);
+create policy held_owner_insert on play_billing_candidate.owner_holds for insert to service_role with check(true);
+
 create function play_billing_candidate.confirm_test_fulfillment(
  p_fingerprint text,p_owner uuid,p_generation bigint,p_expiry timestamptz
 ) returns boolean language sql volatile security invoker set search_path='' as $body$
@@ -89,6 +99,7 @@ create function play_billing_candidate.confirm_test_fulfillment(
  join play_billing_candidate.purchase_claims c using(environment,package_name,fingerprint)
  join play_billing_candidate.purchase_observations o using(environment,package_name,fingerprint)
  where f.environment='test' and f.package_name='online.hoopcheck.app' and f.fingerprint=p_fingerprint
+ and not exists(select 1 from play_billing_candidate.owner_holds h where h.owner_id=p_owner)
  and f.owner_id=p_owner and c.owner_id=p_owner and f.product_id=c.product_id and f.base_plan_id=c.base_plan_id
  and f.generation=p_generation and o.generation=p_generation and o.completed_generation=p_generation
  and f.expires_at=p_expiry and o.expires_at=p_expiry and f.expires_at>clock_timestamp()
@@ -171,15 +182,6 @@ grant execute on function play_billing_candidate.issue_test_intent_bound(uuid,uu
 -- Test-only deletion freeze. No policy duration, legal retention determination,
 -- or automatic erasure is implied. Only the reviewed deletion workflow may
 -- invoke this transition; production integration is a separate acceptance gate.
-create table play_billing_candidate.owner_holds(
- owner_id uuid primary key, held_at timestamptz not null default clock_timestamp()
-);
-alter table play_billing_candidate.owner_holds enable row level security;
-alter table play_billing_candidate.owner_holds force row level security;
-revoke all on play_billing_candidate.owner_holds from public,anon,authenticated,service_role;
-grant select,insert on play_billing_candidate.owner_holds to service_role;
-create policy held_owner_read on play_billing_candidate.owner_holds for select to service_role using(true);
-create policy held_owner_insert on play_billing_candidate.owner_holds for insert to service_role with check(true);
 create function play_billing_candidate.hold_test_owner(p_owner uuid)
 returns boolean language plpgsql volatile security invoker set search_path='' as $body$
 begin
