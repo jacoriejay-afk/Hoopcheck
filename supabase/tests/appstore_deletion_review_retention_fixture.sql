@@ -42,6 +42,11 @@ INSERT INTO public.reviews(id,author_id,team_id,overall_rating,title,body,status
  VALUES('66666666-6666-4666-8666-666666666666','11111111-1111-4111-8111-111111111111','33333333-3333-4333-8333-333333333333',4,'Private title','Former owner private free text','approved','2026-11-21T13:14:15Z','2026-11-24T01:02:03Z',false,'2026'),
  ('88888888-8888-4888-8888-888888888888','22222222-2222-4222-8222-222222222222','33333333-3333-4333-8333-333333333333',2,'Unrelated','Unrelated review body','approved','2026-11-20T00:00:00Z','2026-11-20T00:00:00Z',false,'2026');
 INSERT INTO public.womens_team_reviews VALUES('77777777-7777-4777-8777-777777777777','11111111-1111-4111-8111-111111111111','33333333-3333-4333-8333-333333333333',5,'Private title','Former owner private free text','approved','2026-11-21T13:14:15Z',false);
+-- The reviewed restore preserves the table owner independently of the
+-- runner's security-definer creator. This must not deny valid retention.
+CREATE ROLE fixture_review_table_owner NOLOGIN;
+ALTER TABLE public.reviews OWNER TO fixture_review_table_owner;
+ALTER TABLE public.womens_team_reviews OWNER TO fixture_review_table_owner;
 \ir ../candidates/appstore_deletion_review_retention_review_only.sql
 DO $$BEGIN
  BEGIN DELETE FROM public.profiles WHERE id='11111111-1111-4111-8111-111111111111'; RAISE EXCEPTION 'cascade remained possible'; EXCEPTION WHEN foreign_key_violation THEN NULL; END;

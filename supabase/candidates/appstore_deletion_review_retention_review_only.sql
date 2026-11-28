@@ -94,9 +94,9 @@ BEGIN
   IF (to_jsonb(NEW)-ARRAY['status','updated_at']) IS DISTINCT FROM (to_jsonb(OLD)-ARRAY['status','updated_at'])
   THEN RAISE EXCEPTION 'Retained review is immutable' USING ERRCODE='42501'; END IF;
  ELSIF NEW.author_id IS NULL THEN
-  -- The reviewed definer function executes as the table owner. A service
+  -- The reviewed definer executes as its own owner, which may differ from the restored table owner. A service
   -- role or moderator cannot manufacture this transition by a direct UPDATE.
-  IF current_user IS DISTINCT FROM (SELECT pg_get_userbyid(relowner) FROM pg_class WHERE oid=TG_RELID)
+  IF current_user IS DISTINCT FROM (SELECT pg_get_userbyid(proowner) FROM pg_proc WHERE oid=to_regprocedure('hoopcheck_deletion_private.retain_approved_reviews(uuid,uuid,uuid,boolean)'))
     OR NEW.id=OLD.id OR NEW.status IS DISTINCT FROM OLD.status OR NEW.status<>'approved'
   THEN RAISE EXCEPTION 'Unauthorized review retention transition' USING ERRCODE='42501'; END IF;
  ELSIF NEW.id IS DISTINCT FROM OLD.id THEN
@@ -234,7 +234,7 @@ RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path='' AS $x$
 DECLARE allowed boolean;
 BEGIN
  IF OLD.author_id IS NOT NULL THEN RETURN OLD; END IF;
- IF current_user IS DISTINCT FROM (SELECT pg_get_userbyid(relowner) FROM pg_class WHERE oid=TG_RELID)
+ IF current_user IS DISTINCT FROM (SELECT pg_get_userbyid(proowner) FROM pg_proc WHERE oid=to_regprocedure('hoopcheck_deletion_private.expire_retained_reviews(integer)'))
  OR NOT EXISTS(SELECT 1 FROM hoopcheck_deletion_private.review_retention_config WHERE singleton AND expiry_enabled)
  THEN RAISE EXCEPTION 'Retained review deletion not authorized' USING ERRCODE='42501'; END IF;
  IF TG_TABLE_NAME='reviews' THEN
