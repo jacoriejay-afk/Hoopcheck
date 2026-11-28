@@ -57,3 +57,24 @@ SET ROLE authenticated;
 DO $$BEGIN IF EXISTS(SELECT FROM storage.objects) THEN RAISE EXCEPTION 'Processed bytes visible';END IF;END$$;
 RESET ROLE;
 SELECT 'PASS private transcode lifecycle and thumbnail receipt, no moderation bypass';
+
+CREATE TABLE public.admin_roles(user_id uuid,role text);
+INSERT INTO auth.users VALUES('33333333-3333-4333-8333-333333333333'),('44444444-4444-4444-8444-444444444444');
+INSERT INTO public.admin_roles VALUES('33333333-3333-4333-8333-333333333333','moderator');
+\ir ../candidates/hoop_story_video_review_lifecycle_review_only.sql
+DO $f$ DECLARE owner uuid:='11111111-1111-4111-8111-111111111111';job uuid:='22222222-2222-4222-8222-222222222222';actor uuid:='33333333-3333-4333-8333-333333333333';other uuid:='44444444-4444-4444-8444-444444444444';a jsonb;f uuid; BEGIN
+ IF public.story_video_owner_status(owner,job)->>'phase' IS DISTINCT FROM 'awaiting_review' OR public.story_video_owner_status(other,job) IS NOT NULL THEN RAISE EXCEPTION 'Status scope';END IF;
+ IF public.story_video_review_asset(actor,job) IS NOT NULL THEN RAISE EXCEPTION 'Default-off review bypass';END IF;
+ UPDATE hoopcheck_story_inspection.review_config SET enabled=true;
+ a:=public.story_video_review_asset(actor,job);f:=(a->>'fence')::uuid;
+ IF f IS NULL OR public.story_video_review_asset(other,job) IS NOT NULL THEN RAISE EXCEPTION 'Reviewer scope';END IF;
+ IF public.record_story_video_review(actor,job,f,repeat('b',64),repeat('c',64),'approved','no_audio') THEN RAISE EXCEPTION 'Audio bypass';END IF;
+ IF public.record_story_video_review(actor,job,f,repeat('a',64),repeat('c',64),'approved','approved') THEN RAISE EXCEPTION 'Wrong digest accepted';END IF;
+ IF NOT public.record_story_video_review(actor,job,f,repeat('b',64),repeat('c',64),'approved','approved') THEN RAISE EXCEPTION 'Explicit review failed';END IF;
+ IF NOT public.record_story_video_review(actor,job,f,repeat('b',64),repeat('c',64),'approved','approved') THEN RAISE EXCEPTION 'Review replay not idempotent';END IF;
+ IF public.record_story_video_review(actor,job,f,repeat('b',64),repeat('c',64),'rejected','approved') THEN RAISE EXCEPTION 'Review mutable';END IF;
+ IF public.story_video_owner_status(owner,job)->>'phase' IS DISTINCT FROM 'review_approved' OR (public.story_video_owner_status(owner,job)->>'published')::boolean THEN RAISE EXCEPTION 'Review erroneously publishes';END IF;
+ UPDATE storage.objects SET version='changed' WHERE name LIKE '%/video.mp4' AND name LIKE 'story-processed/%';
+ IF public.story_video_review_asset(actor,job) IS NOT NULL OR public.story_video_owner_status(owner,job)->>'phase' IS DISTINCT FROM 'retry_required' THEN RAISE EXCEPTION 'Changed output still approved';END IF;
+END $f$;
+SELECT 'PASS explicit asset-bound human visual/audio review, owner-only status and fail-closed publication';
