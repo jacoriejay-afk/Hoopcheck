@@ -5,6 +5,8 @@ on:
     paths:
       - "supabase/candidates/android_play_purchase_ledger.sql"
       - "supabase/tests/android_play_purchase_ledger_fixture.sql"
+      - "supabase/candidates/android_play_lifecycle.sql"
+      - "supabase/tests/android_play_lifecycle_fixture.sql"
       - ".github/workflows/android-play-ownership.yml"
 permissions:
   contents: read
@@ -45,3 +47,5 @@ jobs:
           result="$(cat /tmp/play-owner-a /tmp/play-owner-b | sort)"
           test "$result" = "$(printf 'claimed\nforeign_owner')"
           echo "Concurrent synthetic claim isolation passed"
+          docker exec -i "$PG_CONTAINER" psql -U postgres -v ON_ERROR_STOP=1 < supabase/candidates/android_play_lifecycle.sql
+          docker exec -i "$PG_CONTAINER" psql -U postgres -v ON_ERROR_STOP=1 < supabase/tests/android_play_lifecycle_fixture.sql
