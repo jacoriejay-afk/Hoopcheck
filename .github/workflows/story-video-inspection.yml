@@ -8,6 +8,7 @@ on:
       - 'scripts/test-story-video-transcode.mjs'
       - 'supabase/candidates/hoop_story_video_transcode_review_only.sql'
       - 'supabase/candidates/hoop_story_video_review_lifecycle_review_only.sql'
+      - 'supabase/candidates/hoop_story_video_publication_review_only.sql'
       - 'supabase/candidates/hoop_story_video_jobs_review_only.sql'
       - 'supabase/candidates/hoop_story_video_inspection_review_only.sql'
       - 'supabase/tests/hoop_story_video_inspection_isolated.sql'
