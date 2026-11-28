@@ -122,6 +122,39 @@ export const verifiedRosters: RosterEvidence[] = [{
     ["Surne Bilbao Basket","Bilbao Basket"],["UCAM Murcia"],["Unicaja Malaga","Unicaja"],["Valencia Basket"]
   ].map(([name,...aliases])=>({name,country:"Spain",aliases})).concat([{name:"MoraBanc Andorra",country:"Andorra",aliases:["BC Andorra"]}])
 },{
+  name:"Primera FEB",country:"Spain",season:"2026-27",side:"mens",
+  source:"https://www.feb.es/primerafeb/2026/7/21/baloncesto/comision-delegada-confirma-composicion-las-ligas-masculinas-202627-feb/105668.aspx",
+  verifiedAt:"2026-11-28",confidence:"Federation final admission list for 18 clubs, corroborated by the federation calendar",
+  clubs:[
+    ["Alimerka Oviedo Baloncesto"],["Grupo Alega Cantabria"],["Bueno Arenas Albacete"],["Grupo Ureta Tizona Burgos"],
+    ["Caja Rural CB Zamora"],["Hestia Menorca","Bàsquet Menorca"],["Cajasol Coto Córdoba"],["Insolac Caja 87"],
+    ["Club Ourense Baloncesto"],["Inveready Gipuzkoa"],["Covirán Granada"],["Lucentum Alicante"],
+    ["Fibwi Mallorca Básquet Palma"],["Movistar Estudiantes"],["Flexicar Fuenlabrada"],
+    ["Palmer Basket Mallorca Palma"],["Gran Canaria CB"],["Súper Agropal Palencia","Iberolea Palencia"]
+  ].map(([name,...aliases])=>({name,country:"Spain",aliases}))
+},{
+  name:"Segunda FEB",country:"Spain",season:"2026-27",side:"mens",
+  source:"https://www.feb.es/primerafeb/2026/7/21/baloncesto/comision-delegada-confirma-composicion-las-ligas-masculinas-202627-feb/105668.aspx",
+  verifiedAt:"2026-11-28",confidence:"Federation final admission list for two 14-team divisions",
+  clubs:[
+    "BCBadajoz","CB Getafe","CB Starlabs Morón","CB Tres Cantos","Cultural y Deportiva Leonesa","Jaén Paraiso Interior FS",
+    "Cáceres Patrimonio de la Humanidad","CB Algeciras","Clínica Ponferrada SDP","CB Toledo Basket","Melilla Ciudad del Deporte",
+    "Movistar Estudiantes B","UEMC Baloncesto Valladolid","Spanish Basketball Academy","Amics Castelló","Biele ISB",
+    "Basket Cartagena","Intermaquinas Benicarló","Lobe Tu Provincia Huesca La Magia","LogroBasket Logi7","CB Zaragoza",
+    "Ciudad Molina Basket","Class Bàsquet Sant Antoni","Club Esportiu Bàsquet Llíria","Proinbeni UPB Gandía",
+    "Sol Gironès Bisbal Bàsquet","TQ-CB Prat","Reina Proteínas Clavijo"
+  ].map(name=>({name,country:"Spain"}))
+},{
+  name:"Liga Femenina Endesa",country:"Spain",season:"2026-27",side:"womens",leagueAliases:["LF Endesa"],
+  source:"https://www.feb.es/2026/7/7/baloncesto/las-ligas-femeninas-feb-confirman-composicion-para-temporada-202627/105438.aspx",
+  verifiedAt:"2026-11-28",confidence:"Federation final admission list for 16 clubs, corroborated by the federation opening rosters",
+  clubs:[
+    ["Azulmarino Mallorca Palma"],["BAXI Ferrol"],["Cadí La Seu"],["Casademont Zaragoza","Casademont Zaragoza Women"],
+    ["Celta Femxa Zorka"],["Durán Maquinaria Ensino"],["Gernika Bizkaia"],["Hozono Global Jairis"],["Impulso 360 Estepona"],
+    ["Innova-tsn Leganés"],["Kutxabank Araski"],["Meins Avenida","Perfumerías Avenida"],["Mirai Euskotren"],
+    ["Movistar Estudiantes"],["Spar Girona"],["Valencia Basket","Valencia Basket Women"]
+  ].map(([name,...aliases])=>({name,country:"Spain",aliases}))
+},{
  name:"Korisliiga",country:"Finland",season:"2026-27",side:"mens",
  source:"https://basket.fi/uutiset/paasarjojen-sarjalisenssit-kaudelle-2026-2027-myonnetty-keski-suomi-palaa-liigakartalle-ennatysmaara-joukkueita-paasarjoissa/",
  verifiedAt:"2026-11-28",confidence:"Federation confirmed 12 competition licenses",
