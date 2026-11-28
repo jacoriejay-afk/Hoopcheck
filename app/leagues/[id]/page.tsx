@@ -40,6 +40,29 @@ type Team = {
   league_id: string | null;
 };
 
+type MembershipRow = {
+  id: string;
+  team_id: string;
+  season: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  active: boolean | null;
+};
+
+type PageResult<T> = { data: T[] | null; error: unknown };
+const ROSTER_PAGE_SIZE = 100;
+async function readRosterPages<T>(query: (from: number, to: number) => PromiseLike<PageResult<T>>) {
+  const rows: T[] = [];
+  // Bound safety, not a silent roster truncation.
+  for (let page = 0; page < 100; page++) {
+    const { data, error } = await query(page * ROSTER_PAGE_SIZE, (page + 1) * ROSTER_PAGE_SIZE - 1);
+    if (error || !data) throw new Error("League roster lookup failed");
+    rows.push(...data);
+    if (data.length < ROSTER_PAGE_SIZE) return rows;
+  }
+  throw new Error("League roster exceeds the safe retrieval limit");
+}
+
 type ReviewVerification = {
   review_id: string;
   player_verified: boolean | null;
@@ -147,7 +170,8 @@ export default function LeagueDetailPage() {
   const [teams, setTeams] =
     useState<Team[]>([]);
 
-  const [teamHistory, setTeamHistory] = useState<any[]>([]);
+  const [teamHistory, setTeamHistory] = useState<(MembershipRow & { team: Team })[]>([]);
+  const [rosterError, setRosterError] = useState(false);
 
   const [hasAccess, setHasAccess] =
     useState(false);
@@ -203,43 +227,44 @@ export default function LeagueDetailPage() {
 
       setLeague(leagueData);
 
-      // Some imported leagues are linked through team_league_memberships rather
-      // than teams.league_id. Load both sources and union them so league pages
-      // never silently omit clubs that are already in the active roster.
-      const [directResult, membershipResult] = await Promise.all([
-        supabase.from("teams")
-          .select("id, name, country, city, league_id")
-          .eq("league_id", id)
-          .eq("active", true)
-          .order("name"),
-        supabase.from("team_league_memberships")
-          .select("id,team_id,season,start_date,end_date,active")
-          .eq("league_id", id)
-          .eq("active", true)
-          .order("season", { ascending: false }),
-      ]);
-
-      if (directResult.error) console.error("League direct team lookup failed:", directResult.error);
-      if (membershipResult.error) console.error("League membership lookup failed:", membershipResult.error);
-      const membershipRows = membershipResult.data || [];
-      const teamIds = Array.from(new Set([
-        ...(directResult.data || []).map((team) => team.id),
-        ...membershipRows.map((membership) => membership.team_id),
-      ]));
-      const { data: linkedTeams, error: linkedTeamsError } = teamIds.length
-        ? await supabase.from("teams")
-            .select("id, name, country, city, league_id, active")
-            .in("id", teamIds)
-            .order("name")
-        : { data: [], error: null };
-
-      if (linkedTeamsError) console.error("League team detail lookup failed:", linkedTeamsError);
-      const allTeams = linkedTeams || [];
-      setTeams(allTeams.filter((team) => team.active).map(({ active: _active, ...team }) => team));
-      setTeamHistory(membershipRows.map((membership) => ({
-        ...membership,
-        team: allTeams.find((team) => team.id === membership.team_id),
-      })).filter((membership) => membership.team));
+      // Current clubs retain legacy direct links plus active memberships in the
+      // recorded season. History is independent and keeps inactive memberships.
+      setRosterError(false);
+      setTeams([]);
+      setTeamHistory([]);
+      try {
+        const [directRows, membershipRows] = await Promise.all([
+          readRosterPages<Team>((from, to) => supabase.from("teams")
+            .select("id,name,country,city,league_id").eq("league_id", id)
+            .eq("active", true).order("id").range(from, to)),
+          readRosterPages<MembershipRow>((from, to) => supabase.from("team_league_memberships")
+            .select("id,team_id,season,start_date,end_date,active")
+            .eq("league_id", id).order("id").range(from, to)),
+        ]);
+        const teamIds = [...new Set(membershipRows.map(row => row.team_id))];
+        const details: (Team & {active: boolean | null})[] = [];
+        for (let offset = 0; offset < teamIds.length; offset += ROSTER_PAGE_SIZE) {
+          const batch = teamIds.slice(offset, offset + ROSTER_PAGE_SIZE);
+          details.push(...await readRosterPages<Team & {active: boolean | null}>((from, to) =>
+            supabase.from("teams").select("id,name,country,city,league_id,active")
+              .in("id", batch).order("id").range(from, to)));
+        }
+        const byId = new Map(details.map(team => [team.id, team]));
+        const currentIds = new Set(membershipRows.filter(row =>
+          row.active && (!leagueData.season || row.season === leagueData.season)).map(row => row.team_id));
+        const current = new Map<string, Team>(directRows.map(team => [team.id, team]));
+        for (const team of details) {
+          if (team.active && currentIds.has(team.id)) current.set(team.id, team);
+        }
+        setTeams([...current.values()].sort((a,b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id)));
+        setTeamHistory(membershipRows.flatMap(row => {
+          const team = byId.get(row.team_id);
+          return team ? [{ ...row, team }] : [];
+        }).sort((a,b) => (b.season || "").localeCompare(a.season || "") || a.team.name.localeCompare(b.team.name) || a.id.localeCompare(b.id)));
+      } catch (error) {
+        console.error("League roster lookup failed:", error);
+        setRosterError(true);
+      }
 
       const { data: { session } } = await supabase.auth.getSession();
       const user = session?.user;
@@ -531,14 +556,14 @@ export default function LeagueDetailPage() {
       <section id="league-history" className="hero">
         <div className="eyebrow">Team Membership History</div>
         <h2>Teams by season</h2>
-        {teamHistory.length ? <div className="grid" style={{ marginTop: "25px" }}>{teamHistory.map((item) => <div className="card" key={item.id}><div className="eyebrow">{item.season || t("seasonNotListed")}</div><h3>{item.team?.name || t("teamNotListed")}</h3><p>{item.start_date || t("startNotListed")} → {item.end_date || t("present")}</p></div>)}</div> : <div className="card"><p>{t("noHistoricalMemberships")}</p></div>}
+        {rosterError ? <p role="alert">League membership history is temporarily unavailable.</p> : teamHistory.length ? <div className="grid" style={{ marginTop: "25px" }}>{teamHistory.map((item) => <div className="card" key={item.id}><div className="eyebrow">{item.season || t("seasonNotListed")}</div><h3>{item.team?.name || t("teamNotListed")}</h3><p>{item.start_date || t("startNotListed")} → {item.end_date || (item.active ? t("present") : "End date not listed")}</p></div>)}</div> : <div className="card"><p>{t("noHistoricalMemberships")}</p></div>}
       </section>
 
       <section id="league-clubs" className="hero">
         <div className="eyebrow">Teams In This League</div>
         <h2>Professional organizations</h2>
         <p>
-          {teams.length > 0
+          {rosterError ? "League clubs are temporarily unavailable. Refresh to retry." : teams.length > 0
             ? teams.length + " active team" + (teams.length === 1 ? "" : "s") + " currently linked to this league."
             : "No active teams are linked to this league yet."}
         </p>
