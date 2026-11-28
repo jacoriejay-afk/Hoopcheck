@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createClient } from '@supabase/supabase-js';
-import { readNotifications, markNotificationsRead, notificationPath, noticeMatches, noticeSearchMatches } from '../src/native/notifications.ts';
+import { readNotifications, markNotificationsRead, notificationPath, noticeMatches, noticeSearchMatches, verifiedAlertSession } from '../src/native/notifications.ts';
 const uid='11111111-1111-4111-8111-111111111111';
 test('alerts read and mark actual read_at fields only for authenticated viewer',async()=>{
   const calls=[];
@@ -18,7 +18,9 @@ test('alerts read and mark actual read_at fields only for authenticated viewer',
 test('alert targets cannot inject routes and filters match mobile website',()=>{
   for(const [type,path]of[['team','/teams/abc'],['coach','/coaches/abc'],['league','/leagues/abc'],['game','/fan-live?gameId=abc']])assert.equal(notificationPath({target_type:type,target_id:'abc'}),path);
   for(const target of ['../account','abc?token=x','https://other.test'])assert.equal(notificationPath({target_type:'team',target_id:target}),null);
-  assert.equal(notificationPath({target_type:'unknown',target_id:'abc'}),null);
+  for (const type of ['unknown', 'constructor', '__proto__', 'toString']) {
+    assert.equal(notificationPath({target_type:type,target_id:'abc'}),null);
+  }
   const notice={target_type:'team',notification_type:'review',read_at:null};
   assert.equal(noticeMatches(notice,'reviews'),true);assert.equal(noticeMatches(notice,'unread'),true);assert.equal(noticeMatches(notice,'clubs'),false);assert.equal(noticeMatches(notice,'games'),false);
 });
@@ -55,4 +57,16 @@ test('alert search matches loaded text and type, combines terms, and treats inpu
   const notice={title:'Team update',body:'New review from a verified player',notification_type:'trust_score'};
   for(const query of ['', '   ', ' TEAM ', 'verified player', 'team TRUST score']) assert.equal(noticeSearchMatches(notice,query),true);
   for(const query of ['unknown', 'team unknown', '.*', 'review,or']) assert.equal(noticeSearchMatches(notice,query),false);
+});
+
+test("verified alert session pins caller for read and write, rejects wrong identity and revoked scope",async()=>{
+ const calls=[];const id="22222222-2222-4222-8222-222222222222";
+ const db=createClient("https://fixture.supabase.co","key",{auth:{persistSession:false,autoRefreshToken:false},global:{fetch:async(input,options)=>{calls.push({url:new URL(String(input)),auth:new Headers(options.headers).get("authorization")});return Response.json([{id}]);}}});
+ db.auth.getSession=async()=>({error:null,data:{session:{user:{id:uid},access_token:"fixture-token"}}});
+ db.auth.getUser=async(token)=>{assert.equal(token,"fixture-token");return {error:null,data:{user:{id:uid}}};};
+ const ctrl=new AbortController();const scope=await verifiedAlertSession(db,ctrl.signal,uid);
+ await readNotifications(db,uid,undefined,scope);await markNotificationsRead(db,uid,new Date(),id,scope);
+ assert.ok(calls.every(c=>c.auth==="Bearer fixture-token"&&c.url.searchParams.get("user_id")==="eq."+uid));
+ await assert.rejects(readNotifications(db,id,undefined,scope));ctrl.abort();await assert.rejects(markNotificationsRead(db,uid,new Date(),id,scope));
+ db.auth.getUser=async()=>({error:null,data:{user:{id}}});await assert.rejects(verifiedAlertSession(db,new AbortController().signal,uid));assert.equal(calls.length,2);
 });

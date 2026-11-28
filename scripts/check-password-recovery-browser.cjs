@@ -107,7 +107,8 @@ async function run(browser) {
 
     // Seed a recovery verifier before an invalid alias code. The shared client
     // must not exchange it or create a normal login session.
-    await context.addCookies([{ name: "sb-ci-auth-token-code-verifier", value: `base64-${part("fixture-verifier/PASSWORD_RECOVERY")}`, url: base.origin }]);
+    const verifierCookie = { name: "sb-ci-auth-token-code-verifier", value: `base64-${part("fixture-verifier/PASSWORD_RECOVERY")}`, url: base.origin };
+    await context.addCookies([verifierCookie]);
     for (const query of ["token_hash=expired-fixture&type=recovery", "token_hash=valid-fixture&type=recovery", "token_hash=one&token_hash=two&type=recovery", "code=wrong-route"]) {
       await go(`/recover-password?${query}`);
       if (!query.includes("&token_hash=") && !query.startsWith("code=")) await confirm.click();
@@ -116,13 +117,13 @@ async function run(browser) {
     }
     assert.deepEqual(calls.slice(4), ["verify", "verify"]);
     assert.equal((await context.cookies()).some(cookie => /^sb-ci-auth-token(?:\.\d+)?$/.test(cookie.name)), false);
+    assert.equal((await context.cookies()).find(cookie => cookie.name === verifierCookie.name)?.value, verifierCookie.value,
+      "The wrong recovery route must preserve the pending legacy verifier");
 
-    // Complete the previous route transition before seeding the legacy PKCE cookie.
+    // Use the same verifier for the valid legacy route.
     await page.getByRole("link", { name: "Back to sign in" }).click();
     await page.waitForURL("**/login");
     await page.getByLabel("Email", { exact: true }).waitFor();
-    await context.addCookies([{ name: "sb-ci-auth-token-code-verifier", value: `base64-${part("fixture-verifier/PASSWORD_RECOVERY")}`, url: base.origin }]);
-    assert.ok((await context.cookies()).some(cookie => cookie.name === "sb-ci-auth-token-code-verifier"), "Legacy verifier cookie must exist before navigation");
     await go("/reset-password?code=legacy-fixture");
     try {
       await newPassword.waitFor({ timeout: 25_000 });

@@ -117,7 +117,10 @@ test("Alert search and category counts stay within the loaded caller-owned list"
  assert.equal(filter({...warning,read_at:"2026-11-25"},"unread"),false);
  assert.equal(filter({...warning,target_type:"game",notification_type:"game_reminder"},"games"),true);
  const page=read("app/notifications/page.tsx");
- assert.ok(page.includes('.eq("user_id",user.id).order("created_at",{ascending:false}).limit(ALERT_LIST_LIMIT)'));
+ const helper=read("apps/mobile/src/native/notifications.ts");
+ assert.match(page,/readNotifications\(supabase,scope\.uid,undefined,scope\)/);
+ assert.match(helper,/\.eq\("user_id", userId\)[\s\S]*?\.limit\(NOTIFICATION_PAGE_SIZE\)/);
+ assert.match(helper,/setHeader\("Authorization",scope\.bearer\)\.abortSignal\(scope\.signal\)/);
  assert.ok(page.includes("searched.filter(n=>matchesAlertFilter(n,key))"));
  assert.ok(page.includes("Latest 100 loaded; older alerts are not included."));
  assert.ok(page.includes('Unread alerts in loaded list'));
