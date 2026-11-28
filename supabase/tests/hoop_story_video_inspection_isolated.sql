@@ -78,3 +78,8 @@ DO $f$ DECLARE owner uuid:='11111111-1111-4111-8111-111111111111';job uuid:='222
  IF public.story_video_review_asset(actor,job) IS NOT NULL OR public.story_video_owner_status(owner,job)->>'phase' IS DISTINCT FROM 'retry_required' THEN RAISE EXCEPTION 'Changed output still approved';END IF;
 END $f$;
 SELECT 'PASS explicit asset-bound human visual/audio review, owner-only status and fail-closed publication';
+
+-- Supplemental owner recovery, queue and revocation contract.
+DO $$BEGIN
+ IF has_function_privilege('authenticated','public.story_video_owner_jobs(uuid)','EXECUTE') OR has_function_privilege('authenticated','public.story_video_review_queue(uuid)','EXECUTE') OR has_function_privilege('authenticated','public.revoke_story_video_review(uuid,uuid,uuid)','EXECUTE') THEN RAISE EXCEPTION 'Private review service function exposed';END IF;
+END$$;

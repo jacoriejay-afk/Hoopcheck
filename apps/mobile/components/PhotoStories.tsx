@@ -9,7 +9,7 @@ import { deleteOwnedFeedPost } from "../src/native/feedClient";
 import { PublicationUnconfirmed } from "../src/native/mediaClient";
 import { readPhotoStories,publishPhotoStory,storyVisible,adjacentStoryId,communityPhotoStoriesEnabled,type StoryAudience,type Story,type StoryCursor } from "../src/native/photoStories";
 import { randomUUID } from "expo-crypto";
-import {readVideoStoryStatus,videoStoryPhaseLabel,type VideoStoryPhase} from "../src/native/storyVideoReview";
+import {readVideoStoryStatus,readMyVideoStoryJobs,videoStoryPhaseLabel,type VideoStoryJob,type VideoStoryPhase} from "../src/native/storyVideoReview";
 import { uploadStoryDraft } from "../src/native/storyVideoStaging";
 import { FeedVideo } from "./FeedVideo";
 import { FeedMedia } from "./FeedMedia";
@@ -24,7 +24,7 @@ export function PhotoStories({uid,canWrite,blockedIds,onClose,onBlock}:Props){
  const [photo,setPhoto]=useState<Photo|null>(null),[caption,setCaption]=useState(""),[busy,setBusy]=useState(false),[message,setMessage]=useState(""),[uncertain,setUncertain]=useState(false),[now,setNow]=useState(()=>Date.now());
  const [audience,setAudience]=useState<StoryAudience>("followers");
  const [videoPhase,setVideoPhase]=useState<VideoStoryPhase|null>(null);
- const [videoDraft,setVideoDraft]=useState<Video|null>(null);
+ const [videoDraft,setVideoDraft]=useState<Video|null>(null),[videoJobs,setVideoJobs]=useState<VideoStoryJob[]>([]);
  const [videoId,setVideoId]=useState<string|null>(null),[staged,setStaged]=useState(false),[transfer,setTransfer]=useState<number|null>(null);
  const previewFailure=useCallback(()=>setMessage("This clip could not be previewed. Choose another video."),[]);
  const alive=useRef(false),locked=useRef(false),controller=useRef<AbortController|null>(null),closeRef=useRef(onClose);
@@ -95,6 +95,20 @@ export function PhotoStories({uid,canWrite,blockedIds,onClose,onBlock}:Props){
   }catch{if(alive.current){setVideoPhase(null);setMessage("Processing status could not be verified.");}}
   finally{clearTimeout(timer);locked.current=false;if(alive.current)setBusy(false);}
  }
+ async function refreshVideoJobs(){
+  if(!reviewStatusEnabled||!alive.current||locked.current)return;
+  locked.current=true;setBusy(true);setMessage("");
+  const abort=new AbortController();controller.current=abort;const timeout=setTimeout(()=>abort.abort(),12000);
+  try{
+   const session=await supabase.auth.getSession(),token=session.data.session?.access_token;
+   if(session.error||!token||session.data.session?.user.id!==uid||!alive.current||abort.signal.aborted)throw Error("Verify account.");
+   const result=await readMyVideoStoryJobs(origin,token,abort.signal);
+   const after=await supabase.auth.getSession();
+   if(!alive.current||abort.signal.aborted||after.error||after.data.session?.user.id!==uid||after.data.session.access_token!==token)throw Error("Account changed.");
+   setVideoJobs(result);
+  }catch{if(alive.current){setVideoJobs([]);setMessage("Private video status unavailable.");}}
+  finally{clearTimeout(timeout);locked.current=false;if(alive.current)setBusy(false);}
+ }
  async function publish(){
   if(!alive.current||locked.current||!canWrite||!photo||videoDraft||uncertain)return;
   locked.current=true;setBusy(true);setMessage("");
@@ -147,6 +161,7 @@ export function PhotoStories({uid,canWrite,blockedIds,onClose,onBlock}:Props){
     <Button disabled={!photo||Boolean(videoDraft)||busy||uncertain} onPress={()=>void publish()}>{audience==="community"?"Post to eligible community":"Post to followers"} · 24h</Button>
     {uncertain?<Text style={{color:t.muted}}>Publication was uncertain. Refresh and review before closing this draft. Do not repost automatically.</Text>:null}
    </View>:null}
+   {reviewStatusEnabled?<View style={{gap:6}}><Button secondary disabled={busy} onPress={()=>void refreshVideoJobs()}>Check my previous video jobs</Button>{videoJobs.map(j=><Text key={j.id} style={{color:t.muted}}>{new Date(j.created_at).toLocaleString()} · {videoStoryPhaseLabel[j.phase]}</Text>)}</View>:null}
    <Button secondary disabled={busy} onPress={()=>void refresh()}>{busy?"Working…":"Refresh Stories"}</Button>
    {message?<Text accessibilityLiveRegion="polite" style={{color:t.foreground}}>{message}</Text>:null}
    {current?<View style={{gap:8}}><Text style={{color:t.foreground,fontWeight:"700"}}>{current.profiles?.display_name||"HoopCheck member"}</Text><Text style={{color:t.muted}}>{current.audience==="community"?"Community":"Followers"} · Expires {new Date(current.expires_at).toLocaleString()}</Text>

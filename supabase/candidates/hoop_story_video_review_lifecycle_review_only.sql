@@ -43,7 +43,7 @@ BEGIN
  WHEN t.state='rejected' THEN 'rejected'
  WHEN NOT hoopcheck_story_inspection.output_current(j,t) THEN 'retry_required'
  WHEN r.revoked_at IS NOT NULL OR r.visual_decision='rejected' OR r.audio_decision='rejected' THEN 'rejected'
- WHEN r.job_id IS NOT NULL AND r.fence=t.fence AND r.video_sha256=t.video_sha256 AND r.thumbnail_sha256=t.thumbnail_sha256 AND r.visual_decision='approved' AND (r.audio_decision='approved' AND j.inspected_audio OR r.audio_decision='no_audio' AND NOT j.inspected_audio) THEN 'review_approved'
+ WHEN r.job_id IS NOT NULL AND r.reviewer_id IS NOT NULL AND EXISTS(SELECT FROM hoopcheck_story_inspection.review_config WHERE singleton AND enabled) AND r.fence=t.fence AND r.video_sha256=t.video_sha256 AND r.thumbnail_sha256=t.thumbnail_sha256 AND r.visual_decision='approved' AND (r.audio_decision='approved' AND j.inspected_audio OR r.audio_decision='no_audio' AND NOT j.inspected_audio) THEN 'review_approved'
  ELSE 'awaiting_review' END;
  RETURN jsonb_build_object('id',j.id,'phase',phase,'published',false);
 END $f$;
@@ -81,4 +81,35 @@ BEGIN
 END $f$;
 REVOKE ALL ON FUNCTION public.story_video_owner_status(uuid,uuid),public.story_video_review_asset(uuid,uuid),public.record_story_video_review(uuid,uuid,uuid,text,text,text,text) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.story_video_owner_status(uuid,uuid),public.story_video_review_asset(uuid,uuid),public.record_story_video_review(uuid,uuid,uuid,text,text,text,text) TO service_role;
+-- Bounded owner recovery and moderator queue; no raw object paths or digests
+-- in lists. Asset selection uses the existing fenced review endpoint.
+CREATE FUNCTION public.story_video_owner_jobs(p_owner uuid) RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path='' AS $f$
+BEGIN
+ IF current_setting('request.jwt.claims',true)::jsonb->>'role' IS DISTINCT FROM 'service_role' THEN RAISE EXCEPTION 'Service role required' USING ERRCODE='42501';END IF;
+ RETURN (SELECT jsonb_build_object('jobs',coalesce(jsonb_agg(public.story_video_owner_status(p_owner,q.id)||jsonb_build_object('created_at',q.created_at,'duration_ms',q.declared_duration_ms) ORDER BY q.created_at DESC,q.id DESC),'[]'::jsonb))
+ FROM (SELECT id,created_at,declared_duration_ms FROM public.hoop_story_video_jobs WHERE owner_id=p_owner ORDER BY created_at DESC,id DESC LIMIT 20) q);
+END $f$;
+CREATE FUNCTION public.story_video_review_queue(p_actor uuid) RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path='' AS $f$
+BEGIN
+ IF current_setting('request.jwt.claims',true)::jsonb->>'role' IS DISTINCT FROM 'service_role' THEN RAISE EXCEPTION 'Service role required' USING ERRCODE='42501';END IF;
+ IF NOT EXISTS(SELECT FROM hoopcheck_story_inspection.review_config WHERE singleton AND enabled) OR NOT EXISTS(SELECT FROM public.admin_roles WHERE user_id=p_actor AND lower(btrim(role)) IN ('admin','moderator')) THEN RETURN NULL;END IF;
+ RETURN (SELECT jsonb_build_object('jobs',coalesce(jsonb_agg(to_jsonb(q) ORDER BY q.created_at,q.id),'[]'::jsonb)) FROM (
+ SELECT j.id,j.created_at,j.inspected_duration_ms AS duration_ms,j.inspected_audio AS audio
+ FROM public.hoop_story_video_jobs j JOIN hoopcheck_story_inspection.transcodes t ON t.job_id=j.id
+ WHERE j.owner_id<>p_actor AND j.inspection_state='verified' AND j.state='awaiting_moderation'
+ AND hoopcheck_story_inspection.output_current(j,t)
+ AND NOT EXISTS(SELECT FROM hoopcheck_story_inspection.reviews r WHERE r.job_id=j.id)
+ ORDER BY j.created_at,j.id LIMIT 25) q);
+END $f$;
+CREATE FUNCTION public.revoke_story_video_review(p_actor uuid,p_job uuid,p_fence uuid) RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $f$
+BEGIN
+ IF current_setting('request.jwt.claims',true)::jsonb->>'role' IS DISTINCT FROM 'service_role' THEN RAISE EXCEPTION 'Service role required' USING ERRCODE='42501';END IF;
+ IF NOT EXISTS(SELECT FROM public.admin_roles WHERE user_id=p_actor AND lower(btrim(role)) IN ('admin','moderator')) THEN RETURN false;END IF;
+ PERFORM FROM public.hoop_story_video_jobs WHERE id=p_job AND owner_id<>p_actor FOR UPDATE;
+ IF NOT FOUND THEN RETURN false;END IF;
+ UPDATE hoopcheck_story_inspection.reviews SET revoked_at=coalesce(revoked_at,clock_timestamp()) WHERE job_id=p_job AND fence=p_fence;
+ RETURN FOUND;
+END $f$;
+REVOKE ALL ON FUNCTION public.story_video_owner_jobs(uuid),public.story_video_review_queue(uuid),public.revoke_story_video_review(uuid,uuid,uuid) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.story_video_owner_jobs(uuid),public.story_video_review_queue(uuid),public.revoke_story_video_review(uuid,uuid,uuid) TO service_role;
 COMMIT;

@@ -11,3 +11,19 @@ export async function readVideoStoryStatus(origin:string,token:string,id:string,
  if(signal.aborted||!r.ok||result?.id!==id||result.published!==false||!videoStoryPhases.includes(result.phase))throw Error("Video status unavailable.");
  return result.phase as VideoStoryPhase;
 }
+
+export type VideoStoryJob={id:string;created_at:string;duration_ms:number;phase:VideoStoryPhase};
+export async function readMyVideoStoryJobs(origin:string,token:string,signal:AbortSignal,request:typeof fetch=fetch){
+ const url=new URL(origin);
+ if(url.protocol!=="https:"||url.username||url.password||url.pathname!=="/"||url.search||url.hash||!token||/\s/.test(token)||signal.aborted)throw Error("Invalid status request.");
+ url.pathname="/api/hoopfeed/story-video-review";
+ const r=await request(url,{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({action:"my_jobs"}),signal,cache:"no-store",redirect:"error"});
+ const result=await r.json().catch(()=>null);
+ if(signal.aborted||!r.ok||!Array.isArray(result?.jobs)||result.jobs.length>20)throw Error("Video status unavailable.");
+ const jobs:VideoStoryJob[]=[],seen=new Set<string>();
+ for(const j of result.jobs){
+  if(!j||typeof j.id!=="string"||!uuid.test(j.id)||seen.has(j.id)||j.published!==false||!videoStoryPhases.includes(j.phase)||typeof j.created_at!=="string"||!Number.isFinite(Date.parse(j.created_at))||!Number.isSafeInteger(j.duration_ms)||j.duration_ms<1||j.duration_ms>60000)throw Error("Invalid video status.");
+  seen.add(j.id);jobs.push({id:j.id,created_at:j.created_at,duration_ms:j.duration_ms,phase:j.phase});
+ }
+ return jobs;
+}

@@ -23,7 +23,12 @@ export async function POST(request:Request){
   const raw=await readJsonBody(request,2048);
   if(!raw||typeof raw!=="object"||Array.isArray(raw))return reply({error:"Invalid request"},400);
   const b=raw as Record<string,unknown>;
-  if(typeof b.id!=="string"||!uuid.test(b.id))return reply({error:"Invalid job"},400);
+  if(b.action==="my_jobs"){
+   const r=await admin.rpc("story_video_owner_jobs",{p_owner:user.id});
+   if(r.error||!Array.isArray(r.data?.jobs)||r.data.jobs.length>20||!await verify())return reply({error:"Status unavailable"},503);
+   return reply(r.data);
+  }
+  if(b.action!=="queue"&&(typeof b.id!=="string"||!uuid.test(b.id)))return reply({error:"Invalid job"},400);
   if(b.action==="status"){
    const r=await admin.rpc("story_video_owner_status",{p_owner:user.id,p_job:b.id});
    if(r.error)return reply({error:"Status unavailable"},503);
@@ -33,6 +38,17 @@ export async function POST(request:Request){
   if(process.env.HOOPCHECK_VIDEO_STORY_HUMAN_REVIEW_ENABLED!=="true")return reply({error:"Review unavailable"},503);
   const roles=await admin.from("admin_roles").select("role").eq("user_id",user.id);
   if(roles.error||!roles.data?.some(row=>["admin","moderator"].includes(String(row.role).trim().toLowerCase())))return reply({error:"Review unavailable"},403);
+  if(b.action==="queue"){
+   const r=await admin.rpc("story_video_review_queue",{p_actor:user.id});
+   if(r.error||!Array.isArray(r.data?.jobs)||r.data.jobs.length>25||!await verify())return reply({error:"Review unavailable"},403);
+   return reply(r.data);
+  }
+  if(b.action==="revoke"){
+   if(typeof b.fence!=="string"||!uuid.test(b.fence)||b.attested!==true||!await verify())return reply({error:"Invalid revocation"},400);
+   const r=await admin.rpc("revoke_story_video_review",{p_actor:user.id,p_job:b.id,p_fence:b.fence});
+   if(r.error||r.data!==true)return reply({error:"Revocation unavailable"},409);
+   return reply({id:b.id,revoked:true,published:false});
+  }
   if(b.action==="asset"){
    const asset=await admin.rpc("story_video_review_asset",{p_actor:user.id,p_job:b.id});
    const a=asset.data;
