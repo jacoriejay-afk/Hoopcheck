@@ -7,6 +7,8 @@ on:
       - "scripts/test-apple-sign-in-authorization.mjs"
       - "lib/server/account-deletion-orchestrator.ts"
       - "scripts/test-account-deletion-orchestrator.mjs"
+      - "lib/server/personal-export-staging.ts"
+      - "scripts/test-personal-export-staging.mjs"
       - "lib/server/account-deletion-cleanup.ts"
       - "scripts/test-account-deletion-cleanup.mjs"
       - "scripts/test-account-deletion-apple-integration.mjs"
@@ -25,4 +27,4 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: node --experimental-strip-types --test scripts/test-account-deletion-orchestrator.mjs scripts/test-account-deletion-cleanup.mjs scripts/test-account-deletion-apple-integration.mjs scripts/test-apple-sign-in-authorization.mjs
+      - run: node --experimental-strip-types --test scripts/test-account-deletion-orchestrator.mjs scripts/test-account-deletion-cleanup.mjs scripts/test-account-deletion-apple-integration.mjs scripts/test-apple-sign-in-authorization.mjs scripts/test-personal-export-staging.mjs
