@@ -4,6 +4,9 @@ on:
     paths:
       - 'supabase/tests/step2_permission_catalog_readonly.sql'
       - 'supabase/tests/step2-acceptance-hardened.sql'
+      - 'supabase/tests/step2_review_moderation_read_guard_isolated.sql'
+      - 'supabase/tests/step2_review_baseline_policy_shape_isolated.sql'
+      - 'supabase/candidates/step2_review_moderation_read_guard_review_only.sql'
       - '.github/workflows/step2-pg17-catalog-fixture.yml'
 permissions:
   contents: read
@@ -88,3 +91,20 @@ jobs:
           if docker exec -i "$FIXTURE_CONTAINER" psql -X -v ON_ERROR_STOP=1 -v HOOPCHECK_LOCAL_ACCEPTANCE=on -U postgres -d hoopcheck_step2_catalog_fixture < supabase/tests/step2-acceptance-hardened.sql > /tmp/guard.log 2>&1; then exit 1; fi
           grep -Fq 'Refusing non-local or incorrectly named database' /tmp/guard.log
           echo 'PASS: acceptance opt-in and target guards. Full restored schema not exercised.'
+
+      - name: Rehearse baseline review policy composition and adversarial guard in isolated databases
+        env:
+          FIXTURE_CONTAINER: ${{ job.services.postgres.id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec "$FIXTURE_CONTAINER" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres -c 'CREATE ROLE anon NOLOGIN; CREATE ROLE authenticated NOLOGIN;'
+          docker exec "$FIXTURE_CONTAINER" createdb -U postgres hoopcheck_review_baseline_fixture
+          docker exec "$FIXTURE_CONTAINER" createdb -U postgres hoopcheck_review_adversarial_fixture
+          docker exec "$FIXTURE_CONTAINER" mkdir -p /tmp/review-fixture/tests /tmp/review-fixture/candidates
+          docker cp supabase/candidates/step2_review_moderation_read_guard_review_only.sql "$FIXTURE_CONTAINER:/tmp/review-fixture/candidates/"
+          for f in step2_review_baseline_policy_shape_isolated.sql step2_review_moderation_read_guard_isolated.sql; do
+            docker cp "supabase/tests/$f" "$FIXTURE_CONTAINER:/tmp/review-fixture/tests/"
+          done
+          docker exec "$FIXTURE_CONTAINER" psql -X -v ON_ERROR_STOP=1 -U postgres -d hoopcheck_review_baseline_fixture -f /tmp/review-fixture/tests/step2_review_baseline_policy_shape_isolated.sql
+          docker exec "$FIXTURE_CONTAINER" psql -X -v ON_ERROR_STOP=1 -U postgres -d hoopcheck_review_adversarial_fixture -f /tmp/review-fixture/tests/step2_review_moderation_read_guard_isolated.sql

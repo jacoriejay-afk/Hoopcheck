@@ -1,5 +1,5 @@
 \set ON_ERROR_STOP on
--- Synthetic model of the observed permissive policies, not a production clone.
+-- Deliberately adversarial permissive-policy model, NOT the exported PG17 baseline.
 BEGIN;
 CREATE SCHEMA auth;
 CREATE SCHEMA private;
