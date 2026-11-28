@@ -9,7 +9,7 @@ async function readPages<T>(query: (from: number, to: number) => PromiseLike<Pag
   for (let page = 0; page < MAX_PAGES; page++) {
     if (signal.aborted) throw Error("League clubs could not load. Try again.");
     const { data, error } = await query(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
-    if (error || !data || signal.aborted) throw Error("League clubs could not load. Try again.");
+    if (error || !data || data.length > PAGE_SIZE || signal.aborted) throw Error("League clubs could not load. Try again.");
     rows.push(...data);
     if (data.length < PAGE_SIZE) return { rows, limited: false };
   }
@@ -60,8 +60,8 @@ export async function readLeagueClubs(client: SupabaseClient, leagueId: string, 
   } finally { clearTimeout(timer); options.signal?.removeEventListener("abort", cancel); }
 }
 
-/** Bounded sample of visible membership records. Exact stored labels, not inferred seasons.
- * A full sample or hidden membership means the list must not claim complete coverage.
+/** Page through visible recorded seasons in stable order. Exact stored labels,
+ * not inferred seasons; a safety-capped result is explicitly incomplete.
  */
 export async function readRecordedLeagueSeasons(client: SupabaseClient, leagueId: string, signal?: AbortSignal) {
   if (!uuid.test(leagueId) || signal?.aborted) throw Error("Check the league or retry.");
@@ -70,12 +70,13 @@ export async function readRecordedLeagueSeasons(client: SupabaseClient, leagueId
   signal?.addEventListener("abort", cancel, { once: true });
   const timer = setTimeout(cancel, 15000);
   try {
-    const { data, error } = await client.from("team_league_memberships")
-      .select("season").eq("league_id", leagueId).not("season", "is", null)
-      .order("season", { ascending: false }).order("id").limit(201).abortSignal(controller.signal);
-    if (error || controller.signal.aborted || !data) throw Error("Season records could not load.");
-    const seasons = [...new Set(data.slice(0, 200).map(row => row.season)
-      .filter((value): value is string => typeof value === "string" && value.trim() === value && value.length > 0 && value.length <= 80))];
-    return { seasons, limited: data.length >= 200 };
+    try {
+      const result = await readPages<{season: string | null}>((from, to) => client.from("team_league_memberships")
+        .select("season").eq("league_id", leagueId).not("season", "is", null)
+        .order("season", { ascending: false }).order("id").range(from, to).abortSignal(controller.signal), controller.signal);
+      const seasons = [...new Set(result.rows.map(row => row.season)
+        .filter((value): value is string => typeof value === "string" && value.trim() === value && value.length > 0 && value.length <= 80))];
+      return { seasons, limited: result.limited };
+    } catch { throw Error("Season records could not load."); }
   } finally { clearTimeout(timer); signal?.removeEventListener("abort", cancel); }
 }
