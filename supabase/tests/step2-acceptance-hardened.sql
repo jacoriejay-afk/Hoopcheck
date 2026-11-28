@@ -16,6 +16,9 @@
 BEGIN;
 DO $guard$
 BEGIN
+  IF current_setting('server_version_num')::integer NOT BETWEEN 170000 AND 179999 THEN
+    RAISE EXCEPTION 'PostgreSQL 17 required for the reviewed baseline';
+  END IF;
   IF current_database() <> 'hoopcheck_step2_acceptance' OR
      (inet_server_addr() IS NOT NULL AND inet_server_addr() NOT IN ('127.0.0.1'::inet, '::1'::inet)) THEN
     RAISE EXCEPTION 'Refusing non-local or incorrectly named database';
@@ -182,7 +185,7 @@ $check$;
 -- Moderate A's review to approved (superuser bypasses RLS)
 UPDATE public.reviews SET status='approved' WHERE title='Acceptance test review A';
 -- B's reviews: superuser insert with B's JWT claims set so the insert trigger sees uid()=B
-SET request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated","aud":"authenticated"}';
+SET LOCAL request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated","aud":"authenticated"}';
 INSERT INTO public.reviews (author_id, league_id, overall_rating, title, body, status)
 VALUES ('22222222-2222-2222-2222-222222222222', '55555555-5555-5555-5555-555555555555', 5, 'Acceptance test review B approved', 'ACCEPTANCE-TEST-REVIEW-B-APPROVED body.', 'approved');
 INSERT INTO public.reviews (author_id, league_id, overall_rating, title, body, status)
@@ -778,4 +781,17 @@ END
 $check$;
 
 ROLLBACK;
-\echo PASS: all assertions completed; fixture transaction rolled back.
+BEGIN READ ONLY;
+DO $rollback_check$
+BEGIN
+  IF EXISTS (SELECT 1 FROM auth.users) OR EXISTS (SELECT 1 FROM public.profiles)
+     OR EXISTS (SELECT 1 FROM public.reviews) OR EXISTS (SELECT 1 FROM public.review_comments)
+     OR EXISTS (SELECT 1 FROM public.review_likes) OR EXISTS (SELECT 1 FROM public.notifications)
+     OR EXISTS (SELECT 1 FROM public.subscriptions) OR EXISTS (SELECT 1 FROM public.admin_roles)
+     OR EXISTS (SELECT 1 FROM public.leagues WHERE id IN ('55555555-5555-5555-5555-555555555555','66666666-6666-6666-6666-666666666666','77777777-7777-7777-7777-777777777777')) THEN
+    RAISE EXCEPTION 'Rollback read-back did not match the empty fixture preconditions';
+  END IF;
+END
+$rollback_check$;
+ROLLBACK;
+\echo PASS: all assertions completed; fixture transaction rolled back and empty fixture tables verified.

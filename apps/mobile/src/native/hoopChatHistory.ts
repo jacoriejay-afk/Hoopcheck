@@ -18,6 +18,7 @@ export async function readConversationPage(client: SupabaseClient, requestId: st
   }
   if (signal.aborted) throw Error("Conversation history check expired.");
   const {data,error} = await query.abortSignal(signal);
+  if (signal.aborted) throw Error("Conversation history check expired.");
   if (error) throw Error("Conversation history could not be loaded. Try again.");
   const rows: unknown = data ?? [];
   if (!Array.isArray(rows) || rows.length > CHAT_HISTORY_PAGE_SIZE) throw Error("Invalid conversation history.");
