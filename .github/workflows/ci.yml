@@ -52,6 +52,15 @@ jobs:
         if: github.event_name == 'pull_request' && github.event.pull_request.number == 1198
         run: node scripts/verify-migration-history-evidence.mjs
 
+      - name: Verify PostgreSQL 17 parser synthetic fixtures (QA PR 1198 only)
+        if: github.event_name == 'pull_request' && github.event.pull_request.number == 1198
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3.11 -m venv "$RUNNER_TEMP/hoopcheck-pg17-parser"
+          "$RUNNER_TEMP/hoopcheck-pg17-parser/bin/python" -m pip --isolated install --disable-pip-version-check --no-deps --only-binary=:all: --require-hashes --index-url https://pypi.org/simple -r scripts/requirements-migration-parser-ci.txt
+          "$RUNNER_TEMP/hoopcheck-pg17-parser/bin/python" -I scripts/compare-migration-history-pg17.py --self-test
+
       - name: Verify Step 4 offline release evidence and local probe fixtures
         run: |
           node scripts/step4-release-evidence.mjs --self-test
