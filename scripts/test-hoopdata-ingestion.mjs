@@ -538,3 +538,23 @@ test("EuroLeague source aliases distinguish domestic duplicate candidates from e
  assert.deepEqual(q.unlinkedReview[0].sameNameLinkedIds,[]);
  assert.equal(q.coverage.find(row=>row.id==="el").actual,1);
 });
+
+test("directory regression compares exact club IDs even when counts are unchanged",async()=>{
+ const compiled=ts.transpileModule(read("lib/owner/directory-quality.ts"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+ const {deriveDirectoryQuality,compareDirectoryCoverage}=await import("data:text/javascript;base64,"+Buffer.from(compiled).toString("base64"));
+ const league={id:"same",name:"Unverified",country:"Spain",basketball_type:"mens",logo_url:null,season:"2026-27"};
+ const other={...league,id:"deleted",name:"Other"};
+ const club={id:"old",name:"Club",country:"Spain",basketball_type:"mens",logo_url:null,league_id:"same"};
+ const before=deriveDirectoryQuality([league,other],[club],[]);
+ const after=deriveDirectoryQuality([league,{...other,id:"added"}],[{...club,id:"new"}],[]);
+ const delta=compareDirectoryCoverage(before,after);
+ assert.deepEqual(delta.rosterChanges,[{id:"same",name:"Unverified",season:"2026-27",before:1,after:1,added:["new"],removed:["old"]}]);
+ assert.deepEqual(delta.removedLeagues.map(x=>x.id),["deleted"]);
+ assert.deepEqual(delta.addedLeagues.map(x=>x.id),["added"]);
+ const rolled=deriveDirectoryQuality([{...league,season:"2027-28"}],[club],[]);
+ const rollover=compareDirectoryCoverage(before,rolled);
+ assert.equal(rollover.rosterChanges.length,0);assert.equal(rollover.seasonChanges.length,1);
+ const ge={...league,id:"ge",country:"Georgia",name:"Superleague"};
+ const provisional=deriveDirectoryQuality([ge],[],[]);
+ assert.equal(provisional.verifiedLeagueCount,0);assert.equal(provisional.provisionalLeagueCount,1);
+});
