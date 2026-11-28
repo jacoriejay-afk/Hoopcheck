@@ -507,3 +507,18 @@ test("women's parity is identity-based and flags ambiguous league labels without
  assert.equal(verifiedRosters.find(row=>row.name==="WNBL").clubs.length,9);
  assert.equal(verifiedRosters.filter(row=>row.country==="Portugal").length,2);
 });
+
+test("unlinked review distinguishes actual season memberships, reviewed identities and wrong-side rows",async()=>{
+ const compiled=ts.transpileModule(read("lib/owner/directory-quality.ts"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+ const {deriveDirectoryQuality}=await import("data:text/javascript;base64,"+Buffer.from(compiled).toString("base64"));
+ const league={id:"pt",name:"Liga Betclic",country:"Portugal",basketball_type:"mens",logo_url:null,season:"2026-27"};
+ const make=(id,name,league_id,basketball_type="mens")=>({id,name,league_id,basketball_type,country:"Portugal",logo_url:null});
+ const quality=deriveDirectoryQuality([league],[
+   make("linked","FC Porto","pt"),make("duplicate","FC Porto",null),make("current","CD Póvoa",null),make("old","SL Benfica",null),make("wrong","FC Porto","pt","womens"),make("orphan","Another club","missing")
+ ],[{team_id:"current",league_id:"pt",season:"2026-27"},{team_id:"old",league_id:"pt",season:"2025-26"},{team_id:"wrong",league_id:"pt",season:"2026-27"}]);
+ assert.equal(quality.wrongSidePrimary,1);assert.equal(quality.unavailablePrimary,1);assert.equal(quality.wrongSideMemberships,1);
+ assert.equal(quality.unlinkedWithCurrentMembership,1);assert.equal(quality.unlinkedWithReviewedRoster,3);assert.equal(quality.unlinkedWithSameNameLinked,1);
+ assert.deepEqual(quality.unlinkedReview.find(row=>row.id==="duplicate").sameNameLinkedIds,["linked"]);
+ assert.deepEqual(quality.unlinkedReview.find(row=>row.id==="old").currentMembershipLeagueIds,[]);
+ assert.equal(quality.coverage[0].actual,2);
+});
