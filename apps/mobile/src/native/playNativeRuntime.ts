@@ -7,6 +7,7 @@ type Ports=Parameters<typeof createPlaySandboxBridge>[0];
 export function createPlayNativeRuntime(p:Pick<Ports,"enabled"|"available"|"session"|"request"|"now">){
  const native=playRuntimeNative;
  const accepted=()=>native?.isAccepted()===true;
+ let boundOwner:string|null=null;
  const coordinator=createPlaySandboxBridge({
   ...p,scope:"signed_sandbox",journal:playRecoveryJournal,enabled:()=>p.enabled()&&accepted(),
   native:{
@@ -17,7 +18,7 @@ export function createPlayNativeRuntime(p:Pick<Ports,"enabled"|"available"|"sess
  return {
   ...coordinator,available:()=>accepted()&&p.enabled()&&p.available(),
   invalidate(){coordinator.invalidate();native?.invalidateScope();},
-  setOwner(owner:string|null){coordinator.setOwner(owner);native?.invalidateScope();},
+  setOwner(owner:string|null){if(owner!==boundOwner){boundOwner=owner;coordinator.setOwner(owner);native?.invalidateScope();}},
   subscribe(onChange:()=>void){return native?.addListener("onPlayPurchaseChanged",onChange)??{remove(){}};}
  };
 }
