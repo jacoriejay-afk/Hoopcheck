@@ -40,6 +40,7 @@
       "qa/step1-hoopchat-quote-replies": false,
       "qa/step1-community-messaging-reconciliation": false,
       "qa/step2-security-boundaries": false,
+      "qa/steps-1-4-security-acceptance": false,
       "ops/step4-migration-forward-guard": false
     }
   }
