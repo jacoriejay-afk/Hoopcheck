@@ -1,5 +1,10 @@
 \set ON_ERROR_STOP on
 -- Synthetic direct-table ACL rehearsal only; not full-schema or API acceptance.
+DO $fixture_guard$ BEGIN
+ IF current_database() <> 'hoopcheck_review_author_acl_fixture' OR inet_server_addr() IS NOT NULL OR current_setting('server_version_num')::integer NOT BETWEEN 170000 AND 179999 THEN
+  RAISE EXCEPTION 'Refusing non-local or non-PG17 review ACL fixture';
+ END IF;
+END $fixture_guard$;
 BEGIN;
 CREATE TABLE public.reviews (author_id uuid NOT NULL,id uuid PRIMARY KEY,coach_id text,team_id text,league_id text,overall_rating text,communication_rating text,professionalism_rating text,development_rating text,payment_rating text,title text,body text,status text,created_at text,updated_at text,is_anonymous boolean,player_season text,legal_review_required text,pay_on_time_rating text,housing_rating text,medical_support_rating text,coaching_quality_rating text,facilities_rating text,playing_time_honesty_rating text);
 ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
@@ -32,7 +37,7 @@ BEGIN
  FOREACH t IN ARRAY ARRAY['reviews','womens_team_reviews'] LOOP
   EXECUTE format('SELECT count(id) FROM public.%I WHERE status=''approved''',t) INTO n;
   IF n<>1 THEN RAISE EXCEPTION 'safe-column read regressed'; END IF;
-  FOREACH bad IN ARRAY ARRAY['SELECT author_id FROM public.%I','SELECT * FROM public.%I','SELECT id FROM public.%I WHERE author_id IS NOT NULL','SELECT id FROM public.%I ORDER BY author_id'] LOOP
+  FOREACH bad IN ARRAY ARRAY['SELECT author_id FROM public.%I','SELECT * FROM public.%I','SELECT id FROM public.%I WHERE author_id IS NOT NULL','SELECT id FROM public.%I ORDER BY author_id','SELECT count(author_id) FROM public.%I','SELECT count(DISTINCT author_id) FROM public.%I','SELECT count(id) FROM public.%I GROUP BY author_id','SELECT DISTINCT author_id FROM public.%I','SELECT to_jsonb(r) FROM public.%I AS r'] LOOP
    BEGIN
     EXECUTE format(bad,t);
     RAISE EXCEPTION 'raw author access was not denied';
@@ -46,10 +51,22 @@ BEGIN
 END $test$;
 RESET ROLE;
 SET ROLE anon;
-DO $$ BEGIN
+DO $anon$
+DECLARE t text; bad text;
+BEGIN
+ FOREACH t IN ARRAY ARRAY['reviews','womens_team_reviews'] LOOP
+  EXECUTE format('SELECT id FROM public.%I',t);
+  IF has_column_privilege(current_user,format('public.%I',t),'author_id','SELECT') THEN RAISE EXCEPTION 'anon author ACL survived'; END IF;
+  FOREACH bad IN ARRAY ARRAY['SELECT author_id FROM public.%I','SELECT * FROM public.%I','SELECT count(author_id) FROM public.%I','SELECT id FROM public.%I WHERE author_id IS NOT NULL','SELECT to_jsonb(r) FROM public.%I AS r'] LOOP
+   BEGIN
+    EXECUTE format(bad,t);
+    RAISE EXCEPTION 'anon raw author access was not denied';
+   EXCEPTION WHEN insufficient_privilege THEN NULL;
+   END;
+  END LOOP;
+ END LOOP;
  IF EXISTS(SELECT id FROM public.reviews) OR EXISTS(SELECT id FROM public.womens_team_reviews) THEN RAISE EXCEPTION 'anon visibility widened'; END IF;
- IF has_column_privilege(current_user,'public.reviews','author_id','SELECT') OR has_column_privilege(current_user,'public.womens_team_reviews','author_id','SELECT') THEN RAISE EXCEPTION 'anon author ACL survived'; END IF;
-END $$;
+END $anon$;
 RESET ROLE;
 SET ROLE service_role;
 DO $$ BEGIN
