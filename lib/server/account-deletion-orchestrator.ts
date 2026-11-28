@@ -121,6 +121,46 @@ export async function runOneApprovedDeletion(client:Rpc,effects:DeletionEffects,
  return runDeletionCandidate(createDeletionWorkerAdapter(client,effects,enabled));
 }
 
+// Scheduler-callable entry point. No public endpoint, cron registration or
+// credentials are supplied by this module. The durable RPC lease is the
+// cross-process fence; the in-process lock also prevents overlapping ticks.
+export type DeletionTickResult = {
+ status:"disabled"|"idle"|"retry"|"busy"|"aborted"|"error"|"limit";
+ completed:number;
+};
+export function createDeletionWorkerTick(client:Rpc,effects:DeletionEffects,options:{enabled?:boolean;maxJobs?:number}={}){
+ const maxJobs=options.maxJobs??1;
+ if(!Number.isSafeInteger(maxJobs)||maxJobs<1||maxJobs>5)throw Error("Invalid deletion batch limit.");
+ // Registration is an immutable server-side snapshot, not a request payload.
+ const registered=Object.freeze({...effects});
+ const adapter=createDeletionWorkerAdapter(client,registered,options.enabled===true);
+ let running=false;
+ return async function tick(signal?:AbortSignal):Promise<DeletionTickResult>{
+  if(running)return {status:"busy",completed:0};
+  if(signal?.aborted)return {status:"aborted",completed:0};
+  running=true;
+  let completed=0;
+  try{
+   if(!await adapter.enabled())return {status:"disabled",completed};
+   while(completed<maxJobs){
+    if(signal?.aborted)return {status:"aborted",completed};
+    // Do not interrupt an irreversible in-flight effect. A durable checkpoint
+    // or retry decision must precede stopping; cancellation blocks new claims.
+    const outcome=await runDeletionCandidate(adapter);
+    if(outcome!=="completed")return {status:outcome,completed};
+    completed++;
+    if(signal?.aborted)return {status:"aborted",completed};
+   }
+   return {status:"limit",completed};
+  }catch{
+   // Report only a controlled aggregate outcome; never expose lease IDs,
+   // provider errors or account details to the scheduler/monitoring layer.
+   return {status:"error",completed};
+  }finally{running=false;}
+ };
+}
+
+
 /** Provider-specific worker step. Supply the reviewed Apple cryptographic
  * revoke helper from #1080 after dependency integration. Never log envelopes.
  * The worker may retry after an Apple success and before database ACK:

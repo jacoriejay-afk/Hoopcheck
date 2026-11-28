@@ -65,7 +65,8 @@
       "qa/step2-owner-review-export-20261128": false,
       "qa/steps-1-2-history-cancellation-pg17-guard": false,
       "qa/step4c-explicit-release-gates-20261128": false,
-      "qa/step3-alert-history-parity-20261128": false
+      "qa/step3-alert-history-parity-20261128": false,
+      "qa/step4-deletion-worker-tick-20261128": false
     }
   }
 }
