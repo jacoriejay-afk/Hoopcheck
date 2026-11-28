@@ -83,7 +83,7 @@ export const verifiedRosters: RosterEvidence[] = [{
   clubs:[
     ["Basquete Barcelos","Basquete Barcelos HMMOTOR"],["CAB Madeira"],["CDE Francisco Franco","Francisco Franco"],["CRC Quinta dos Lombos","Quinta dos Lombos"],
     ["Esgueira","Esgueira Aveiro ECOVALOR"],["GDESSA Barreiro","GDESSA"],["GDRAR","GDRAR REMAX"],["Sanjoanense","Sanjoanense HELIOTEXTIL"],
-    ["SC Coimbrões","SC Coimbrões SANCHO PANZA"],["SL Benfica","Benfica"],["Sporting CP","Sporting"],["Sportiva","Sportiva AZORISHOTELS"]
+    ["SC Coimbrões","SC Coimbrões SANCHO PANZA"],["SL Benfica","Benfica","Benfica Women"],["Sporting CP","Sporting","Sporting CP Women"],["Sportiva","Sportiva AZORISHOTELS","União Sportiva Women"]
   ].map(([name,...aliases])=>({name,country:"Portugal",aliases}))
 }];
 const normalized=(v:string|null)=> (v||"").normalize("NFKD").replace(/\p{M}/gu,"").toLocaleLowerCase("en").replace(/[^\p{L}\p{N}]+/gu,"");
@@ -112,15 +112,30 @@ export function deriveDirectoryQuality(leagues:DirectoryLeague[],teams:Directory
   const leagueById=unique(leagues),teamById=unique(teams);
   const countryLabels=new Set(teams.map(row=>row.country?.trim()).filter(Boolean));
   const currentByLeague=new Map<string,Set<string>>();
+  const currentByTeam=new Map<string,Set<string>>();
+  let wrongSidePrimary=0,unavailablePrimary=0,wrongSideMemberships=0;
   function link(leagueId:string,teamId:string){
-    if(!leagueById.has(leagueId)||!teamById.has(teamId))return;
+    const league=leagueById.get(leagueId),team=teamById.get(teamId);
+    if(!league||!team||!league.basketball_type||league.basketball_type!==team.basketball_type)return;
     if(!currentByLeague.has(leagueId))currentByLeague.set(leagueId,new Set());
     currentByLeague.get(leagueId)!.add(teamId);
   }
-  for(const team of teams)if(team.league_id)link(team.league_id,team.id);
+  for(const team of teams)if(team.league_id){
+    const league=leagueById.get(team.league_id);
+    if(!league)unavailablePrimary++;
+    else if(league.basketball_type!==team.basketball_type)wrongSidePrimary++;
+    else link(team.league_id,team.id);
+  }
   for(const row of memberships){
     const league=leagueById.get(row.league_id);
-    if(league&&(!league.season||row.season===league.season))link(row.league_id,row.team_id);
+    const team=teamById.get(row.team_id);
+    if(!league||!team)continue;
+    if(league.basketball_type!==team.basketball_type){wrongSideMemberships++;continue;}
+    if(!league.season||row.season===league.season)link(row.league_id,row.team_id);
+    if(league.season&&row.season===league.season){
+      if(!currentByTeam.has(team.id))currentByTeam.set(team.id,new Set());
+      currentByTeam.get(team.id)!.add(league.id);
+    }
   }
   const coverage=leagues.map(league=>{
     const ids=currentByLeague.get(league.id)||new Set<string>();
@@ -133,7 +148,14 @@ export function deriveDirectoryQuality(leagues:DirectoryLeague[],teams:Directory
     const unexpected=evidence?clubs.filter(club=>!expected.some(e=>matches(club,e))).map(club=>club.name):[];
     return {id:league.id,name:league.name,country:league.country,side:league.basketball_type,season:league.season,actual:clubs.length,evidence,expected:evidence?expected.length:null,missing,unexpected,ambiguous};
   }).sort((a,b)=>Number(!!b.evidence)-Number(!!a.evidence)||(a.country||"").localeCompare(b.country||"")||a.name.localeCompare(b.name)||a.id.localeCompare(b.id));
+  const unlinkedReview=teams.filter(team=>!team.league_id).map(team=>{
+    const candidates=coverage.filter(row=>row.evidence&&(row.evidence.side||"mens")===team.basketball_type&&row.evidence.clubs.some(club=>normalized(team.country)===normalized(club.country)&&[club.name,...(club.aliases||[])].some(name=>normalized(name)===normalized(team.name))));
+    const sameNameLinkedIds=teams.filter(other=>other.id!==team.id&&other.league_id&&identityKey(other)===identityKey(team)).map(other=>other.id);
+    return {id:team.id,name:team.name,country:team.country,side:team.basketball_type,currentMembershipLeagueIds:[...(currentByTeam.get(team.id)||[])],reviewedRosterLeagueIds:candidates.map(row=>row.id),sameNameLinkedIds};
+  });
   return {countries:countryLabels.size,leagues:leagues.length,teams:teams.length,
+    wrongSidePrimary,unavailablePrimary,wrongSideMemberships,unlinkedWithCurrentMembership:unlinkedReview.filter(row=>row.currentMembershipLeagueIds.length>0).length,
+    unlinkedWithReviewedRoster:unlinkedReview.filter(row=>row.reviewedRosterLeagueIds.length>0).length,unlinkedWithSameNameLinked:unlinkedReview.filter(row=>row.sameNameLinkedIds.length>0).length,unlinkedReview,
     mensTeams:teams.filter(row=>row.basketball_type==="mens").length,womensTeams:teams.filter(row=>row.basketball_type==="womens").length,
     unlinked:teams.filter(row=>!row.league_id).length,
     missingLeagueLogos:leagues.filter(absentLogo).length,missingTeamLogos:teams.filter(absentLogo).length,
