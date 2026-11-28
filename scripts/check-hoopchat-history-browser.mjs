@@ -144,11 +144,12 @@ try {
   await safety.getByRole("button", { name: "Submit confidential report" }).click();
   await safety.getByRole("status").filter({ hasText: "Action could not be confirmed" }).waitFor();
   assert.equal(reports.length, 1);
+  const beforeBlockedRead = scopedReads.filter(read => read.id === `eq.${thread}`).length;
   blocks = [{ blocked_id: peer }];
   await page.getByRole("button", { name: /Fixture Teammate/ }).click();
   await history.getByText(/Check your blocked accounts/).waitFor();
   assert.equal(await history.locator("article").count(), 0);
-  assert.equal(scopedReads.filter(read => read.id === `eq.${thread}`).length, 3);
+  assert.equal(scopedReads.filter(read => read.id === `eq.${thread}`).length, beforeBlockedRead, "Blocked selection cannot read new history, including after background refresh");
   blocks = [];
   await safety.getByRole("button", { name: "Block account" }).click();
   await safety.getByRole("button", { name: "Confirm block" }).click();
