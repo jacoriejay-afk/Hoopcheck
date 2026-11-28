@@ -74,12 +74,14 @@ export function notificationPath(notice: Pick<Notice, "target_type" | "target_id
     case "womens-team": return `/womens/${notice.target_id}`;
     case "game": return `/fan-live?gameId=${notice.target_id}`;
     case "conversation": {const id=parseChatThread(notice.target_id);return id?`/messages?thread=${id}`:null;}
+    case "group_invite": {const id=parseChatThread(notice.target_id);return id?`/hoopgroups?invitation=${id}`:null;}
+    case "group_discussion": {const id=parseChatThread(notice.target_id);return id?`/hoopgroups?channel=${id}`:null;}
     default: return null;
   }
 }
 export function noticeMatches(notice: Notice, filter: string) {
   const review = ["review", "rating", "trust_score", "pay_warning"].includes(notice.notification_type);
-  return filter === "all" || (filter === "unread" && !notice.read_at) || (filter === "games" && notice.target_type === "game") || (filter === "reviews" && review) || (filter === "messages" && notice.target_type === "conversation") || (filter === "clubs" && notice.target_type !== "game" && notice.target_type !== "conversation" && !review);
+  return filter === "all" || (filter === "unread" && !notice.read_at) || (filter === "games" && notice.target_type === "game") || (filter === "reviews" && review) || (filter === "messages" && notice.target_type === "conversation") || (filter === "groups" && ["group_invite","group_discussion"].includes(notice.target_type)) || (filter === "clubs" && !["game","conversation","group_invite","group_discussion"].includes(notice.target_type) && !review);
 }
 
 // Search only the already authorized, loaded activity rows. No query is sent to the server.
@@ -88,4 +90,12 @@ export function noticeSearchMatches(notice: Pick<Notice, "title" | "body" | "not
   if (!terms.length) return true;
   const text = [notice.title, notice.body, notice.notification_type.replaceAll("_", " ")].join(" ").toLowerCase();
   return terms.every(term => text.includes(term));
+}
+
+export async function refreshGroupAlerts(client:SupabaseClient,scope:AlertSession){
+ requireAlertScope(scope.uid,scope);
+ const r=await client.rpc("refresh_my_hoop_group_alerts").setHeader("Authorization",scope.bearer).abortSignal(scope.signal);
+ requireAlertScope(scope.uid,scope);
+ if(r.error||!Number.isInteger(r.data)||r.data<0||r.data>100)throw Error("Group alerts could not be refreshed.");
+ return r.data as number;
 }

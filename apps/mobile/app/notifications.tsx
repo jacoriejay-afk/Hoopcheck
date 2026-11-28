@@ -12,7 +12,7 @@ import { useEntryTheme } from "../src/theme";
 import { supabase } from "../src/lib/supabase";
 import { requireOnline, useNetwork } from "../src/native/network";
 import { nativeDestination } from "../src/native/deepLinks";
-import { appendNotificationPage, markNotificationsRead, verifiedAlertSession, withAlertDeadline, noticeMatches, noticeSearchMatches, notificationPath, readNotifications, NOTIFICATION_PAGE_SIZE, type Notice } from "../src/native/notifications";
+import { refreshGroupAlerts,appendNotificationPage, markNotificationsRead, verifiedAlertSession, withAlertDeadline, noticeMatches, noticeSearchMatches, notificationPath, readNotifications, NOTIFICATION_PAGE_SIZE, type Notice } from "../src/native/notifications";
 
 export default function Notifications() {
   const theme = useEntryTheme();
@@ -48,6 +48,8 @@ export default function Notifications() {
       await requireOnline();
       const {uid,items}=await withAlertDeadline(async signal=>{
         const scope=await verifiedAlertSession(supabase,signal);
+        if(current!==generation.current||!focused.current)throw Error("Account session changed.");
+        if(process.env.EXPO_PUBLIC_HOOPGROUPS_ALERTS_ENABLED==="true")await refreshGroupAlerts(supabase,scope);
         if(current!==generation.current||!focused.current)throw Error("Account session changed.");
         return {uid:scope.uid,items:await readNotifications(supabase,scope.uid,undefined,scope)};
       });
@@ -167,7 +169,7 @@ export default function Notifications() {
       ? <MessagesScreen embedded mode={section === "chat" ? "conversations" : "requests"} />
       : <FlatList ListHeaderComponent={<View style={{ gap: 8, paddingBottom: 9 }}>
       <View style={{flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:8}}><Text style={{ color: theme.muted, fontSize: 12,flex:1 }}>{loading ? "Checking activity…" : `${items.filter(item => !item.read_at).length} unread · ${items.length} loaded${hasMore ? " · more available" : ""}`}</Text><Pressable accessibilityRole="button" disabled={!canMarkAll} accessibilityState={{disabled:!canMarkAll}} onPress={()=>void markAll()} style={{minHeight:44,justifyContent:"center",paddingHorizontal:5}}><Text style={{color:canMarkAll?theme.accent:theme.muted,fontSize:12,fontWeight:"700"}}>{busy?"Updating…":"Mark all as read"}</Text></Pressable></View>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{["all", "unread", "messages", "games", "clubs", "reviews"].map(value => <Pressable key={value} accessibilityRole="button" aria-pressed={filter === value} accessibilityState={{ selected: filter === value }} onPress={() => setFilter(value)} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 9, borderRadius: 14, backgroundColor: filter === value ? theme.accentSurface : theme.chip }}><Text style={{ color: filter === value ? theme.accent : theme.foreground, fontSize: 12, textTransform: "capitalize" }}>{value}</Text></Pressable>)}</View>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{["all", "unread", "messages", "groups", "games", "clubs", "reviews"].map(value => <Pressable key={value} accessibilityRole="button" aria-pressed={filter === value} accessibilityState={{ selected: filter === value }} onPress={() => setFilter(value)} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 9, borderRadius: 14, backgroundColor: filter === value ? theme.accentSurface : theme.chip }}><Text style={{ color: filter === value ? theme.accent : theme.foreground, fontSize: 12, textTransform: "capitalize" }}>{value}</Text></Pressable>)}</View>
       <View style={{flexDirection:"row",alignItems:"center",gap:8,borderWidth:1,borderColor:theme.glassBorder,borderRadius:12,paddingHorizontal:10}}>
         <Ionicons name="search-outline" size={18} color={theme.muted}/>
         <TextInput accessibilityLabel="Search loaded alerts" placeholder="Search loaded alerts" placeholderTextColor={theme.muted} value={query} onChangeText={setQuery} autoCorrect={false} autoCapitalize="none" maxLength={160} returnKeyType="search" style={{flex:1,minHeight:44,color:theme.foreground,fontSize:14}}/>

@@ -34,7 +34,7 @@ test("channel refresh is bounded, foreground scoped, session verified and preser
 
 test("refresh verifies membership and does not restore a stale blocked member snapshot",()=>{
   assert.match(source,/const membership=await supabase\.from\("hoop_group_members"\)\.select\("space_id"\)\s*\.eq\("space_id",channel!\.space_id\)\.eq\("user_id",userId\)/);
-  assert.match(source,/if\(membership\.data\?\.space_id!==channel!\.space_id\)\{\s*stopRealtime\(\);setJoined\(current=>current\.filter\(id=>id!==channel!\.space_id\)\);setPostSnapshot\(null\);return;/);
+  assert.match(source,/if\(membership\.data\?\.space_id!==channel!\.space_id\)\{\s*stopRealtime\(\);setJoined\(current=>current\.filter\(id=>id!==channel!\.space_id\)\);setPostSnapshot\(null\);setUnreadSnapshot\(null\);setDraftState\(null\);setReplySnapshot\(null\);pendingSend\.current=null;[\s\S]*?return;/);
   assert.match(source,/if\(state==="active"\)\{if\(running\)resumePending=true;else void loadPosts\(\);\}/);
   assert.match(source,/if\(resumePending\)\{resumePending=false;void loadPosts\(\);\}/);
   assert.match(source,/async function block\(item:Post\)[\s\S]*?setPostRefresh\(value=>value\+1\)/);

@@ -13,6 +13,7 @@ import { randomUUID } from "expo-crypto";
 import { readGroupUnread,markGroupVisibleRead,type GroupUnread } from "../src/native/hoopGroupsRead";
 import { prepareGroupSend, submitGroupSend, type GroupSend } from "../src/native/hoopGroupsSend";
 import {GroupAccessPanel} from "./GroupAccessPanel";
+import {resolveGroupChannelLink} from "../src/native/groupAlertLinks";
 import {readGroupChannelAccess} from "../src/native/hoopGroupsChannelAccess";
 import { createGroupRefreshQueue } from "../src/native/hoopGroupsRefresh";
 import { readWithDeadline } from "../src/native/readDeadline";
@@ -33,6 +34,7 @@ function validateGroupPostRows(value:unknown,replies:boolean):Post[]{
  });
 }
 
+const groupAlertsEnabled=process.env.EXPO_PUBLIC_HOOPGROUPS_ALERTS_ENABLED==="true";
 const privateAccessEnabled=process.env.EXPO_PUBLIC_HOOPGROUPS_PRIVATE_ACCESS_ENABLED==="true";
 const repliesEnabled=process.env.EXPO_PUBLIC_HOOPGROUPS_REPLIES_ENABLED==="true";
 const readStateEnabled=process.env.EXPO_PUBLIC_HOOPGROUPS_READ_STATE_ENABLED==="true";
@@ -40,14 +42,14 @@ const colorOptions = { orange:"#FF873C", blue:"#60A5FA", purple:"#A78BFA", green
 const iconOptions = { basketball:"🏀", flame:"🔥", globe:"🌐", star:"⭐", trophy:"🏆", users:"👥" } as const;
 const accent = (name:string) => colorOptions[name as keyof typeof colorOptions] ?? colorOptions.orange;
 const emblem = (name:string) => iconOptions[name as keyof typeof iconOptions] ?? iconOptions.basketball;
-export default function HoopGroupsChannels({inviteSlug = null}:{inviteSlug?:string|null}) {
+export default function HoopGroupsChannels({inviteSlug = null,invitationHint=null,discussionHint=null}:{inviteSlug?:string|null;invitationHint?:string|null;discussionHint?:string|null}) {
   const {account}=useNativeAccount();
   const {offline}=useNetwork();
   const userId=account?.user.id||"";
   // Never carry a previous account's local membership, drafts or requests across identities.
-  return <ScopedHoopGroups key={JSON.stringify([userId,offline])} userId={userId} offline={offline} role={account?.user.accountType||""} inviteSlug={inviteSlug} />;
+  return <ScopedHoopGroups key={JSON.stringify([userId,offline])} userId={userId} offline={offline} role={account?.user.accountType||""} inviteSlug={inviteSlug} invitationHint={invitationHint} discussionHint={discussionHint} />;
 }
-function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offline:boolean;role:string;inviteSlug:string|null}) {
+function ScopedHoopGroups({userId,offline,role,inviteSlug,invitationHint,discussionHint}:{userId:string;offline:boolean;role:string;inviteSlug:string|null;invitationHint:string|null;discussionHint:string|null}) {
   const theme=useEntryTheme();
   const [spaces,setSpaces]=useState<Space[]>([]);
   const [channels,setChannels]=useState<Channel[]>([]);
@@ -112,15 +114,18 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
         if(!alive)return;
         const current=await safetyToken();
         if(!alive||controller.signal.aborted||current!==token)throw Error("Account changed. Refresh HoopGroups.");
-        setSpaces((a.data||[]) as Space[]);setChannels((b.data||[]) as Channel[]);
-        setJoined((c.data||[]).map(row=>row.space_id));
-        setSpaceId(current=>(a.data||[]).some(row=>row.id===current)?current:"");
+        const spaces=(a.data||[]) as Space[],channels=(b.data||[]) as Channel[],memberIds=(c.data||[]).map(row=>row.space_id);
+        const linked=groupAlertsEnabled&&discussionHint?await resolveGroupChannelLink(supabase,userId,discussionHint,header,controller.signal):null;
+        if(!alive||controller.signal.aborted)return;
+        if(linked){if(!spaces.some(s=>s.id===linked.space.id))spaces.unshift(linked.space);if(!channels.some(c=>c.id===linked.channel.id))channels.unshift(linked.channel);if(!memberIds.includes(linked.space.id))memberIds.push(linked.space.id);setSpaceId(linked.space.id);setChannelId(linked.channel.id);setQuery("");setFilter("discover");}
+        else {if(groupAlertsEnabled&&discussionHint)setError("This discussion is no longer available.");setSpaceId(current=>spaces.some(row=>row.id===current)?current:"");}
+        setSpaces(spaces);setChannels(channels);setJoined(memberIds);
       }catch(failure){if(alive){setSpaces([]);setChannels([]);setJoined([]);setPostSnapshot(null);setError(failure instanceof Error?failure.message:"Could not open HoopGroups.");}}
       finally{clearTimeout(deadline);if(alive)setLoading(false);}
     }
     void load();
     return ()=>{alive=false;clearTimeout(deadline);controller.abort();setPostSnapshot(null);setJoined([]);};
-  },[userId,offline,revision,safetyToken]));
+  },[userId,offline,revision,safetyToken,discussionHint]));
 
   useEffect(()=>{
     if(!inviteSlug){setHandledInvite(null);setInviteUnavailable(false);return;}
@@ -438,7 +443,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
       Independent basketball communities, member-created groups and moderated discussion channels.
     </Text>
     {loading?<HoopCheckLoading label="Finding HoopGroups…" />:null}
-    {privateAccessEnabled&&!offline&&userId?<GroupAccessPanel key={userId+":"+(selected?.id||"")} uid={userId} space={selected?.id||null} onChanged={()=>setRevision(v=>v+1)}/>:null}
+    {privateAccessEnabled&&!offline&&userId?<GroupAccessPanel key={userId+":"+(selected?.id||"")} uid={userId} space={selected?.id||null} channel={channel?.id||null} invitationHint={invitationHint} alertsEnabled={groupAlertsEnabled} onChanged={()=>setRevision(v=>v+1)}/>:null}
     {inviteUnavailable?<Text accessibilityRole="alert" style={{color:theme.muted}}>This invited community is unavailable or you do not have access. You can browse other groups below.</Text>:null}
     {error?<Text accessibilityRole="alert" style={{color:theme.accent}}>{error}</Text>:null}
     {offline?<Text style={{color:theme.muted}}>Reconnect to see your groups.</Text>:null}

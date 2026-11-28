@@ -92,6 +92,7 @@ export function nativeDestination(path: string): string {
     if (url.pathname === "/connections") return "/connections";
     if (url.pathname === "/reels") return "/reels";
     if (url.pathname === "/hoopgroups") {
+      for(const field of ["invitation","channel"]){const values=url.searchParams.getAll(field);if(values.length===1&&/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(values[0]))return "/hoopgroups?"+field+"="+values[0].toLowerCase();}
       const slug = parseGroupInvite(url.searchParams.get("group"));
       return "/hoopgroups" + (slug ? `?group=${encodeURIComponent(slug)}` : "");
     }

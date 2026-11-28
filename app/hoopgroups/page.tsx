@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import { readGroupUnread,markGroupVisibleRead,type GroupUnread } from "../../apps/mobile/src/native/hoopGroupsRead";
 import { prepareGroupSend, submitGroupSend, type GroupSend } from "../../apps/mobile/src/native/hoopGroupsSend";
+import {groupAlertId,resolveGroupChannelLink} from "../../apps/mobile/src/native/groupAlertLinks";
 import {readGroupChannelAccess} from "../../apps/mobile/src/native/hoopGroupsChannelAccess";
 import { createGroupRefreshQueue } from "../../apps/mobile/src/native/hoopGroupsRefresh";
 import { withHoopChatDeadline } from "../../apps/mobile/src/native/hoopChatLoad";
@@ -31,6 +32,7 @@ function validateGroupPostRows(value:unknown,replies:boolean):Post[]{
 }
 
 const enabled = process.env.NEXT_PUBLIC_HOOPGROUPS_CHANNELS_ENABLED === "true";
+const groupAlertsEnabled=process.env.NEXT_PUBLIC_HOOPGROUPS_ALERTS_ENABLED==="true";
 const privateAccessEnabled=process.env.NEXT_PUBLIC_HOOPGROUPS_PRIVATE_ACCESS_ENABLED==="true";
 const repliesEnabled=process.env.NEXT_PUBLIC_HOOPGROUPS_REPLIES_ENABLED==="true";
 const readStateEnabled=process.env.NEXT_PUBLIC_HOOPGROUPS_READ_STATE_ENABLED==="true";
@@ -67,6 +69,7 @@ export default function HoopGroupsPage() {
   const [backendReady, setBackendReady] = useState(false);
   const [sessionRevision, setSessionRevision] = useState(0);
   const [returnTo,setReturnTo] = useState("/hoopgroups");
+  const [invitationHint,setInvitationHint]=useState<string|null>(null);
   const [discoverQuery,setDiscoverQuery] = useState("");
   const [discoverFilter,setDiscoverFilter] = useState<"all"|"joined"|"mine"|"recommended">("all");
   const [chatPrefs,setChatPrefs] = useState<ChatPrefs>({density:"cozy",style:"cards",scale:"normal"});
@@ -101,17 +104,31 @@ export default function HoopGroupsPage() {
     }
     setBackendReady(true);
     const discovered=(spaceResult.data || []) as Space[];
+    const channelRows=(channelResult.data||[]) as Channel[];
+    const memberIds=(memberResult.data||[]).map(item=>item.space_id);
+    const target=groupAlertsEnabled?groupAlertId(new URLSearchParams(window.location.search).get("channel")):null;
+    let linked:Awaited<ReturnType<typeof resolveGroupChannelLink>>=null;
+    if(target){
+      try{linked=await withHoopChatDeadline(async signal=>{const header=await verifiedHeader(user.id,signal);return resolveGroupChannelLink(supabase,user.id,target,header,signal);});}catch{/* Show generic unavailable state. */}
+      if(generation!==loadGeneration.current)return;
+      if(linked){if(!discovered.some(s=>s.id===linked!.space.id))discovered.unshift(linked.space);if(!channelRows.some(c=>c.id===linked!.channel.id))channelRows.unshift(linked.channel);if(!memberIds.includes(linked.space.id))memberIds.push(linked.space.id);}
+      else setFeedback("This discussion is no longer available.");
+    }
     setSpaces(discovered);
     // Shared links select a server while retaining the sign-in requirement.
     const shared=new URLSearchParams(window.location.search).get("group");
-    if(shared) setSpaceId(discovered.find(space=>space.slug===shared)?.id||"");
-    setChannels((channelResult.data || []) as Channel[]);
-    setMemberships((memberResult.data || []).map(item => item.space_id));
+    if(linked){setSpaceId(linked.space.id);setChannelId(linked.channel.id);setDiscoverQuery("");setDiscoverFilter("all");}
+    else if(shared) setSpaceId(discovered.find(space=>space.slug===shared)?.id||"");
+    setChannels(channelRows);
+    setMemberships(memberIds);
     setReady(true);
   }, [sessionRevision]);
 
   useEffect(() => {
-    const query=new URLSearchParams(window.location.search).get("group");
+    const params=new URLSearchParams(window.location.search),invite=groupAlertId(params.get("invitation")),discussion=groupAlertId(params.get("channel"));
+    if(groupAlertsEnabled&&invite){setInvitationHint(invite);setReturnTo("/hoopgroups?invitation="+invite);return;}
+    if(groupAlertsEnabled&&discussion){setReturnTo("/hoopgroups?channel="+discussion);return;}
+    const query=params.get("group");
     if(query && /^[a-z0-9-]{3,60}$/.test(query))
       setReturnTo("/hoopgroups?group="+encodeURIComponent(query));
   },[]);
@@ -364,7 +381,7 @@ export default function HoopGroupsPage() {
         onUpdated={updated=>setSpaces(items=>items.map(item=>item.id===updated.id?updated:item))}
         onChannelCreated={created=>{setChannels(items=>[...items,created]);setChannelId(created.id);}}
         onChannelUpdated={(id,name)=>setChannels(items=>items.map(item=>item.id===id?{...item,name}:item))}/>
-      {privateAccessEnabled&&<HoopGroupsAccessPanel key={userId+":"+(selected?.id||"")} uid={userId} space={selected?.id||null} onChanged={()=>{void load();}}/>}
+      {privateAccessEnabled&&<HoopGroupsAccessPanel key={userId+":"+(selected?.id||"")} uid={userId} space={selected?.id||null} channel={channel?.id||null} invitationHint={invitationHint} alertsEnabled={groupAlertsEnabled} onChanged={()=>{void load();}}/>}
       <HoopGroupsOwnerModeration userId={userId} spaceId={selected?.id||""} isOwner={Boolean(selected?.owner_id===userId)}/>
       {!visibleSpaces.length&&<p role="status" className="hc-hoopgroups-empty">{discoverFilter==="recommended" ? "No role-matched groups found in this directory. Try Discover groups to explore other communities." : "No groups match. Try another search or create a group."}</p>}
       {visibleSpaces.length>0&&<div className="hc-hoopgroups-shell" style={{"--hc-group-accent":GROUP_COLORS[selected?.accent_color||"orange"]||GROUP_COLORS.orange} as CSSProperties}>
