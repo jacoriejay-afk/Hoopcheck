@@ -14,6 +14,11 @@ if(process.env.ACCOUNT_EXPORT_WORKER_ENABLED!=="true"){
   if(r.error||!allowed.has(r.data))throw Error("worker failed");
   console.log("account_export_worker: "+r.data);
   if(r.data==="failed"||r.data==="retry")process.exitCode=1;
+  if(process.env.ACCOUNT_EXPORT_MEDIA_WORKER_ENABLED==="true"&&["idle","ready"].includes(r.data)){
+   const media=await client.rpc("prepare_next_account_export_media").abortSignal(AbortSignal.timeout(90000));
+   if(media.error||!media.data||!["disabled","idle","prepared"].includes(media.data.status))throw Error("media inventory unavailable");
+   console.log("account_export_media_worker: "+media.data.status);
+  }
  }catch{
   console.error("account_export_worker: unavailable");
   process.exitCode=1;

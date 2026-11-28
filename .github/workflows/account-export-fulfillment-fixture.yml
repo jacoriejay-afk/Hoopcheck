@@ -5,6 +5,12 @@ on:
       - 'supabase/candidates/account_export_fulfillment_review_only.sql'
       - 'supabase/tests/account_export_fulfillment_isolated.sql'
       - '.github/workflows/account-export-fulfillment-fixture.yml'
+      - 'supabase/candidates/account_export_media_review_only.sql'
+      - 'supabase/tests/account_export_media_isolated.sql'
+      - 'lib/server/account-export-media.ts'
+      - 'app/api/account/export-media/route.ts'
+      - 'scripts/test-account-export-media.mjs'
+      - 'scripts/run-account-export-worker.mjs'
 permissions:
   contents: read
 jobs:
@@ -35,3 +41,10 @@ jobs:
           docker cp supabase/candidates/account_export_fulfillment_review_only.sql "$FIXTURE_CONTAINER:/tmp/export-fixture/candidates/"
           docker cp supabase/tests/account_export_fulfillment_isolated.sql "$FIXTURE_CONTAINER:/tmp/export-fixture/tests/"
           docker exec "$FIXTURE_CONTAINER" psql -X -v ON_ERROR_STOP=1 -U postgres -d hoopcheck_export_fixture -f /tmp/export-fixture/tests/account_export_fulfillment_isolated.sql
+          docker cp supabase/candidates/account_export_media_review_only.sql "$FIXTURE_CONTAINER:/tmp/export-fixture/candidates/"
+          docker cp supabase/tests/account_export_media_isolated.sql "$FIXTURE_CONTAINER:/tmp/export-fixture/tests/"
+          docker exec "$FIXTURE_CONTAINER" psql -X -v ON_ERROR_STOP=1 -U postgres -d hoopcheck_export_fixture -f /tmp/export-fixture/tests/account_export_media_isolated.sql
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --experimental-strip-types --test scripts/test-account-export-media.mjs

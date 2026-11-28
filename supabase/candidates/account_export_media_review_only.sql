@@ -170,4 +170,27 @@ END $m$;
 REVOKE ALL ON FUNCTION hoopcheck_export_private.scrub_media_inventory() FROM PUBLIC,anon,authenticated,service_role;
 CREATE TRIGGER scrub_export_media AFTER UPDATE OF state ON hoopcheck_export_private.jobs
  FOR EACH ROW EXECUTE FUNCTION hoopcheck_export_private.scrub_media_inventory();
+-- Bounded scheduler tick uses the same durable job; no duplicate inventory.
+CREATE FUNCTION hoopcheck_export_private.prepare_next_media_inventory()
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $m$
+DECLARE jid uuid;
+BEGIN
+ IF auth.jwt()->>'role' IS DISTINCT FROM 'service_role' THEN RAISE EXCEPTION 'Worker required' USING ERRCODE='42501'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM hoopcheck_export_private.media_policy WHERE singleton AND enabled)
+ OR NOT EXISTS(SELECT 1 FROM hoopcheck_export_private.policy WHERE singleton AND enabled)
+ THEN RETURN jsonb_build_object('status','disabled','discovered_count',0); END IF;
+ SELECT j.id INTO jid FROM hoopcheck_export_private.jobs j WHERE j.state='ready' AND j.expires_at>clock_timestamp()
+ AND NOT EXISTS(SELECT 1 FROM hoopcheck_export_private.media_inventory i WHERE i.job_id=j.id)
+ ORDER BY j.created_at,j.id LIMIT 1 FOR UPDATE OF j SKIP LOCKED;
+ IF NOT FOUND THEN RETURN jsonb_build_object('status','idle','discovered_count',0); END IF;
+ RETURN hoopcheck_export_private.prepare_media_inventory(jid);
+END $m$;
+REVOKE ALL ON FUNCTION hoopcheck_export_private.prepare_next_media_inventory() FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION hoopcheck_export_private.prepare_next_media_inventory() TO service_role;
+CREATE FUNCTION public.prepare_next_account_export_media() RETURNS jsonb LANGUAGE sql SECURITY INVOKER SET search_path='' AS $m$
+ SELECT hoopcheck_export_private.prepare_next_media_inventory()
+$m$;
+REVOKE ALL ON FUNCTION public.prepare_next_account_export_media() FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.prepare_next_account_export_media() TO service_role;
+
 COMMIT;
