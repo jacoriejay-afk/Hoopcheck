@@ -79,7 +79,8 @@ BEGIN
  AND (o.owner IS NULL OR o.owner=j.owner_id) AND o.archived_at IS NULL AND NOT o.is_delete_marker AND NOT o.is_versioned
  AND b.type::text='STANDARD' AND b.versioning_status='DISABLED'
  AND o.version IS NOT NULL AND length(o.version) BETWEEN 1 AND 1024
- AND length(o.name) BETWEEN 1 AND 1024 AND o.name !~ '(^/|(^|/)\\.\\.?(/|$)|//|[[:cntrl:]]|\\\\)'
+ AND length(o.name) BETWEEN 1 AND 1024 AND position(chr(92) in o.name)=0 AND o.name !~ '[[:cntrl:]]'
+ AND NOT EXISTS(SELECT 1 FROM unnest(string_to_array(o.name,'/')) AS segment WHERE segment IN ('','.','..'))
  AND CASE WHEN o.metadata->>'size' ~ '^[0-9]{1,10}$' THEN (o.metadata->>'size')::bigint BETWEEN 1 AND p.max_file_bytes ELSE false END
  ORDER BY o.id LIMIT p.max_objects+1;
  GET DIAGNOSTICS n=ROW_COUNT;

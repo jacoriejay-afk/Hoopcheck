@@ -24,8 +24,9 @@ RESET ROLE;
 UPDATE hoopcheck_export_private.media_policy SET enabled=true,max_objects=10,max_file_bytes=100;
 INSERT INTO hoopcheck_export_private.media_bucket_policy VALUES('feed-images',true),('profile-avatars',true);
 SET ROLE service_role;
-DO $$BEGIN
- IF public.prepare_next_account_export_media() IS DISTINCT FROM '{"status":"prepared","discovered_count":2}'::jsonb THEN RAISE EXCEPTION 'inventory scope incorrect'; END IF;
+DO $DECLARE result jsonb;BEGIN
+ result:=public.prepare_next_account_export_media();
+ IF result IS DISTINCT FROM '{"status":"prepared","discovered_count":2}'::jsonb THEN RAISE EXCEPTION 'inventory scope incorrect: %',result; END IF;
  IF public.prepare_next_account_export_media()->>'status'<>'idle' THEN RAISE EXCEPTION 'duplicate inventory'; END IF;
 END$$;
 RESET ROLE;
