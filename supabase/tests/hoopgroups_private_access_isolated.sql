@@ -101,3 +101,5 @@ END $$;
 SELECT 'PASS: synthetic private group, invite, channel grant, moderator, ban and MFA isolation' AS result;
 
 \ir hoopgroups_member_page_isolated.sql
+
+\ir hoopgroups_alerts_isolated.sql
