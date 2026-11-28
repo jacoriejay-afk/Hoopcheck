@@ -79,8 +79,9 @@ export async function POST(req:Request){
  const prohibited=/\b(?:porn|xxx|sexcam)\b/i;
  if(prohibited.test(body)||prohibited.test(title)) return NextResponse.json({error:"Review contains prohibited language or explicit content."},{status:400});
  if(!body)return NextResponse.json({error:"Review text is required."},{status:400});
- if(body.length<10)return NextResponse.json({error:"Review text must be at least 10 characters."},{status:400});
+ if(Array.from(body).length<20)return NextResponse.json({error:"Review text must be at least 20 characters."},{status:400});
  if(body.length>5000)return NextResponse.json({error:"Review text must be 5,000 characters or fewer."},{status:400});
+ if(title && Array.from(title).length<3)return NextResponse.json({error:"Review title must be at least 3 characters."},{status:400});
  if(title.length>120)return NextResponse.json({error:"Review title must be 120 characters or fewer."},{status:400});
  const playerSeason=verifiedSeason ?? (typeof b.player_season==="string"?b.player_season.trim():"");
  if(!/^\d{4}(-\d{2,4})?$/.test(playerSeason))return NextResponse.json({error:"Select the season you played for this team."},{status:400});

@@ -121,3 +121,49 @@ test("completion delivery rejects relay contact, stale ambiguous attempt and wro
  await assert.rejects(effects.notify_completion(lease),/reconciliation/);
  await assert.rejects(effects.notify_completion({...lease,ownerId:lease.fence}));
 });
+
+
+test("disabling during a claimed effect stops all later effects and writes",async()=>{
+ const f=fixture();let enabled=true;
+ f.adapter.enabled=async()=>enabled;
+ const original=f.adapter.execute;
+ f.adapter.execute=async(...args)=>{const result=await original(...args);enabled=false;return result;};
+ assert.equal(await runDeletionCandidate(f.adapter),"retry");
+ assert.deepEqual(f.events,["execute:approve_scope"]);
+});
+test("disabling after last checkpoint prevents completion or failure writes",async()=>{
+ const f=fixture(deletionSteps.slice(0,-1));let enabled=true;
+ f.adapter.enabled=async()=>enabled;
+ const checkpoint=f.adapter.checkpoint;
+ f.adapter.checkpoint=async(...args)=>{await checkpoint(...args);enabled=false;};
+ assert.equal(await runDeletionCandidate(f.adapter),"retry");
+ assert.deepEqual(f.events,["execute:remove_completion_contact","checkpoint:remove_completion_contact"]);
+});
+test("disable during lease verification prevents effect dispatch",async()=>{
+ const f=fixture();let enabled=true;
+ f.adapter.enabled=async()=>enabled;
+ f.adapter.assertLease=async()=>{enabled=false;};
+ assert.equal(await runDeletionCandidate(f.adapter),"retry");
+ assert.deepEqual(f.events,[]);
+});
+test("immutable claimed scope prevents mutation and rejects malformed checkpoint prefixes",async()=>{
+ const f=fixture();
+ const original=f.adapter.execute;
+ f.adapter.execute=async(l,s,key)=>{
+  assert.ok(Object.isFrozen(l));assert.ok(Object.isFrozen(l.completed));
+  assert.throws(()=>{l.ownerId=lease.fence;},TypeError);
+  assert.throws(()=>{l.completed.push("delete_auth_identity");},TypeError);
+  return original(l,s,key);
+ };
+ assert.equal(await runDeletionCandidate(f.adapter),"completed");
+ for(const completed of [Array(1),null,["approve_scope",undefined]]){
+  const invalid=fixture();invalid.adapter.claim=async()=>({...lease,completed});
+  await assert.rejects(runDeletionCandidate(invalid.adapter),/Invalid deletion lease/);
+  assert.deepEqual(invalid.events,[]);
+ }
+ for(const policyVersion of [" ","x".repeat(101),42]){
+  const invalid=fixture();invalid.adapter.claim=async()=>({...lease,policyVersion});
+  await assert.rejects(runDeletionCandidate(invalid.adapter),/Invalid deletion lease/);
+  assert.deepEqual(invalid.events,[]);
+ }
+});
