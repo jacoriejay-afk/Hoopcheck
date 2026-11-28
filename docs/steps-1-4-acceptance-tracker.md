@@ -54,3 +54,16 @@ Master `e653e4369162affcf6b67a3a19912da2f6024205`: 18/19 workflows passed, unsig
 | #1183 `9344a20a5c867ccb3219ca2e20e1e227d3bc12e0` | 4/4 exact historical candidate workflows passed | Current-base conflict and worldwide actual-schema/scope acceptance; separate LEAGUE-DATA-1 work preserved |
 
 Existing 57-assertion Codespace runner remains pinned to f7910ee; no execution log retrieved. New group test runner `scripts/run-hoopgroups-actual-schema-acceptance.sh` is unexecuted and supplementary, requires exact source SHA, independently verified local PG17 schema restoration, and rollback readback. Final combined runner cannot be pinned until final source is integrated. No production changes, deployment, paid resources, Expo build, store submission, external provider activation or retention assumptions. Production HOLD.
+
+
+## 2026-11-28 — functional development closure checkpoint
+
+Master QA `1e8f16a78f49b2d1f976103858391f8ae11467cd`: all 19 exact-head workflows passed; combined #1198 remains separate. Concurrent #1198 head `52eb959b28957653f8c8a44809f4f3b4462d04a6` repaired the mutation-count regression with per-action checks; mobile and web passed at that head. Do not reuse its result for newer commits.
+
+| Implementation | Revision and evidence | Outstanding software / independent acceptance |
+| --- | --- | --- |
+| Chat reconnect, foreground inbox and unread refresh, event coalescing, bounded accepted-request update | `79d5e0f10999abb152d383acc0fd80a04cc8a327`; regression alignment `202be1711a323fd272fc8a55bd03ee442c8ddd2e`; stable realtime scope regression `f6c881a07f3a9b94aa2727dcc52e77e9fdceed3b` | Push registration/delivery remains incomplete; actual-schema RLS/realtime and signed device testing separate |
+| Video Story technical inspection worker | `6640d09f27e635b3ba8ba9d8a8544e82a1cf3003` + `202be1711a323fd272fc8a55bd03ee442c8ddd2e`; [local decode and synthetic PostgreSQL fixture passed](https://github.com/jacoriejay-afk/Hoopcheck/actions/runs/46146613302) | Actual private storage and signed-ticket compatibility; immutable asset review, complete visual/audio moderation, transcoding/publication/playback, cleanup and Reel functionality remain open. No provider calls or rollout. |
+| Group directory server-side search, topic search and bounded pages | `d1b950a26714132c6984c25a77920ca9c662a8db`, `82226ec8f968fda300b7d92c1d157f91e63cfd19`, `bbc627ce16fee7a1d7ec002cc9c3c46b300eb4a5`; [synthetic private access and directory fixture passed](https://github.com/jacoriejay-afk/Hoopcheck/actions/runs/46146851704) | Actual schema permissions, signed clients, exact-head CI; flags default off and require private access gate |
+
+Original acceptance runner SHA-256 `fc218403c02f7573f0287b4bba5252a6200737d82ad058e6b184f2127dcf8d60` and extension preserved. No actual PostgreSQL execution in this session. Existing #1201/#1203/#1183 ancestry and #1202/#1197 merges retained; final #1198 merge only after exact head checks and independent database compatibility review. No production changes, provider activation, paid builds, or Step 5 authorization. Remaining software must not be mislabeled as external gates: native push, full Story/Reel lifecycle, billing/HQ role parity, deletion effect/scheduler and provider/billing/redaction completion. HOLD.
