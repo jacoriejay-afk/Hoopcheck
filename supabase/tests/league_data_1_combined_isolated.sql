@@ -562,6 +562,7 @@ create temporary table before_ld1_legacy_teams on commit drop as select * from p
 \ir ../../reports/league-data-1/bosnia-a1-shadow-correction.sql
 \ir ../../reports/league-data-1/serbia-womens-second-shadow-correction.sql
 \ir ../../reports/league-data-1/poland-lower-divisions-shadow-correction.sql
+\ir ../../reports/league-data-1/poland-third-tier-expansion-shadow.sql
 create temporary table after_ld1_leagues on commit drop as select * from pg_temp.ld1_leagues;
 create temporary table after_ld1_teams on commit drop as select * from pg_temp.ld1_teams;
 create temporary table after_ld1_memberships on commit drop as select * from pg_temp.ld1_memberships;
@@ -586,14 +587,15 @@ create temporary table after_ld1_legacy_teams on commit drop as select * from pg
 \ir ../../reports/league-data-1/bosnia-a1-shadow-correction.sql
 \ir ../../reports/league-data-1/serbia-womens-second-shadow-correction.sql
 \ir ../../reports/league-data-1/poland-lower-divisions-shadow-correction.sql
+\ir ../../reports/league-data-1/poland-third-tier-expansion-shadow.sql
 do $combined$ begin
 if (select count(*) from pg_temp.ld1_leagues)<>(select count(*)+20 from pg_temp.before_ld1_leagues) then raise exception 'ld1_leagues: unexpected delta';end if;
 if exists(select * from pg_temp.after_ld1_leagues except select * from pg_temp.ld1_leagues) or exists(select * from pg_temp.ld1_leagues except select * from pg_temp.after_ld1_leagues) then raise exception 'ld1_leagues: second run changed state';end if;
 if exists(select id from pg_temp.before_ld1_leagues except select id from pg_temp.ld1_leagues) then raise exception 'ld1_leagues: lost existing ID';end if;
-if (select count(*) from pg_temp.ld1_teams)<>(select count(*)+28 from pg_temp.before_ld1_teams) then raise exception 'ld1_teams: unexpected delta';end if;
+if (select count(*) from pg_temp.ld1_teams)<>(select count(*)+75 from pg_temp.before_ld1_teams) then raise exception 'ld1_teams: unexpected delta';end if;
 if exists(select * from pg_temp.after_ld1_teams except select * from pg_temp.ld1_teams) or exists(select * from pg_temp.ld1_teams except select * from pg_temp.after_ld1_teams) then raise exception 'ld1_teams: second run changed state';end if;
 if exists(select id from pg_temp.before_ld1_teams except select id from pg_temp.ld1_teams) then raise exception 'ld1_teams: lost existing ID';end if;
-if (select count(*) from pg_temp.ld1_memberships)<>(select count(*)+346 from pg_temp.before_ld1_memberships) then raise exception 'ld1_memberships: unexpected delta';end if;
+if (select count(*) from pg_temp.ld1_memberships)<>(select count(*)+393 from pg_temp.before_ld1_memberships) then raise exception 'ld1_memberships: unexpected delta';end if;
 if exists(select * from pg_temp.after_ld1_memberships except select * from pg_temp.ld1_memberships) or exists(select * from pg_temp.ld1_memberships except select * from pg_temp.after_ld1_memberships) then raise exception 'ld1_memberships: second run changed state';end if;
 if exists(select id from pg_temp.before_ld1_memberships except select id from pg_temp.ld1_memberships) then raise exception 'ld1_memberships: lost existing ID';end if;
 if (select count(*) from pg_temp.ld1_legacy_leagues)<>(select count(*)+3 from pg_temp.before_ld1_legacy_leagues) then raise exception 'ld1_legacy_leagues: unexpected delta';end if;
