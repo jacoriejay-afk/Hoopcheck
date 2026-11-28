@@ -558,3 +558,30 @@ test("directory regression compares exact club IDs even when counts are unchange
  const provisional=deriveDirectoryQuality([ge],[],[]);
  assert.equal(provisional.verifiedLeagueCount,0);assert.equal(provisional.provisionalLeagueCount,1);
 });
+
+test("Spanish FEB evidence requires exact season and side and preserves ambiguous identity review", async () => {
+ const compiled=ts.transpileModule(read("lib/owner/directory-quality.ts"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+ const {deriveDirectoryQuality}=await import("data:text/javascript;base64,"+Buffer.from(compiled).toString("base64"));
+ const common={country:"Spain",season:"2026-27",logo_url:null};
+ const leagues=[
+  {...common,id:"first",name:"Primera FEB",basketball_type:"mens"},
+  {...common,id:"second",name:"Segunda FEB",basketball_type:"mens",season:null},
+  {...common,id:"women",name:"Liga Femenina Endesa",basketball_type:"womens"},
+ ];
+ const team=(id,name,basketball_type,league_id=null)=>({id,name,basketball_type,league_id,country:"Spain",logo_url:null});
+ const teams=[
+  team("a","Iberolea Palencia","mens","first"),team("b","Súper Agropal Palencia","mens"),
+  team("c","Valencia Basket","mens"),team("d","Valencia Basket Women","womens"),
+  team("e","CB Toledo Basket","mens"),team("f","Perfumerías Avenida","womens","women"),
+ ];
+ const quality=deriveDirectoryQuality(leagues,teams,[]);
+ assert.equal(quality.coverage.find(row=>row.id==="first").expected,18);
+ assert.equal(quality.coverage.find(row=>row.id==="women").expected,16);
+ assert.equal(quality.coverage.find(row=>row.id==="second").expected,null);
+ assert.equal(quality.missingReviewedCompetitions.find(row=>row.name==="Segunda FEB").expected,28);
+ const review=id=>quality.unlinkedReview.find(row=>row.id===id);
+ assert.deepEqual(review("b").reviewedAliasLinkedIds,["a"]);
+ assert.equal(review("c").reviewedRosterLeagueIds.includes("women"),false);
+ assert.deepEqual(review("d").reviewedRosterLeagueIds,["women"]);
+ assert.deepEqual(review("e").reviewedRosterLeagueIds,[]);
+});
