@@ -10,7 +10,7 @@ const owner="a".repeat(64),now=Date.parse("2026-11-28T00:00:00Z");
 const fixture=()=>({externalAccountIdentifiers:{obfuscatedExternalAccountId:owner},testPurchase:{},subscriptionState:"SUBSCRIPTION_STATE_ACTIVE",acknowledgementState:"ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED",lineItems:[{productId:"hoopcheck.pro",offerDetails:{basePlanId:"monthly"},autoRenewingPlan:{autoRenewEnabled:true},expiryTime:"2026-12-28T00:00:00Z"}]});
 test("six proposed plans match approved reference amounts, with role boundaries",()=>{
  assert.deepEqual(products.PLAY_PRODUCTS.map(p=>p.usdMinor),[499,2695,5090,999,5395,10190]);
- for(const p of products.PLAY_PRODUCTS){assert.equal(products.playProduct(p.productId,p.basePlanId),p);assert.equal(products.canPurchasePlayProduct("player",p),true);assert.equal(products.canPurchasePlayProduct("fan",p),false);assert.equal(products.canPurchasePlayProduct("manager",p),p.plan==="premium");}
+ for(const p of products.PLAY_PRODUCTS){assert.equal(products.playProduct(p.productId,p.basePlanId),p);assert.equal(products.canPurchasePlayProduct("player",p),true);assert.equal(products.canPurchasePlayProduct("fan",p),false);assert.equal(products.canPurchasePlayProduct("manager",p),p.plan==="premium");assert.equal(products.canPurchasePlayProduct("coach",p),p.plan==="premium");for(const role of ["scout","agent","club_admin"])assert.equal(products.canPurchasePlayProduct(role,p),true);}
  assert.equal(products.playProduct("unknown","monthly"),null);
 });
 test("trusted current state can be considered for reconciliation, not granted directly",()=>{

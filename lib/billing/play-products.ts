@@ -14,5 +14,5 @@ export function playProduct(product:unknown,basePlan:unknown):PlayProduct|null{
  return PLAY_PRODUCTS.find(p=>p.productId===product&&p.basePlanId===basePlan)??null;
 }
 export function canPurchasePlayProduct(role:unknown,product:PlayProduct):boolean{
- return role==="player"||(["coach","scout","agent","club_admin","manager"].includes(String(role))&&product.plan==="premium");
+ return ["player","scout","agent","club_admin"].includes(String(role))||(["coach","manager"].includes(String(role))&&product.plan==="premium");
 }
