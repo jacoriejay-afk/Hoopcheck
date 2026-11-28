@@ -55,6 +55,40 @@ export function createPlayPurchaseCoordinator(deps:Dependencies){
   busy=true;
   try{return await work();}catch{return fallback;}finally{busy=false;}
  }
+  async function recover(accountId?:string):Promise<{verified:number;pending:number;failed:number}|null>{
+   return single(null,async()=>{
+    if(accountId!==undefined&&!hex.test(accountId))return null;
+    const s=await capture();
+    const identity=await deps.accountIdentity(s.token);await current(s);
+    if(!obj(identity)||identity.owner!==s.owner||identity.environment!=="test"||typeof identity.accountId!=="string"||!hex.test(identity.accountId)||(accountId!==undefined&&identity.accountId!==accountId))return null;
+    accountId=identity.accountId;
+    const scan=await deps.restore(accountId);await current(s);
+    if(!obj(scan)||scan.accountId!==accountId||!Array.isArray(scan.candidates)||scan.candidates.length>100||
+     typeof scan.pendingCount!=="number"||!Number.isInteger(scan.pendingCount)||scan.pendingCount<0||scan.pendingCount>100)return null;
+    let verified=0,failed=0;const seen=new Map<string,string>();
+    const candidates:{productId:string;token:string}[]=[];
+    for(const item of scan.candidates){
+     await current(s);
+     if(!obj(item)||typeof item.productId!=="string"||!["hoopcheck.pro","hoopcheck.premium"].includes(item.productId)||
+      item.accountId!==accountId||typeof item.token!=="string"||!opaque.test(item.token)){failed++;continue;}
+     const previous=seen.get(item.token);
+     if(previous!==undefined){if(previous!==item.productId)return null;continue;}
+     seen.set(item.token,item.productId);candidates.push({productId:item.productId,token:item.token});
+    }
+    for(const item of candidates){
+     await current(s);
+     const reply=await deps.sync(null,item.productId,item.token,s.token);
+     await current(s);
+     if(obj(reply)&&reply.owner===s.owner&&reply.environment==="test"&&reply.outcome==="test_fulfillment_confirmed")verified++;
+     else failed++;
+    }
+    if(scan.pendingCount===0&&failed===0){await deps.journal.clear(s.owner,accountId);}
+    else {await deps.journal.mark(s.owner,accountId);}
+    await current(s);
+    return {verified,pending:scan.pendingCount,failed};
+   });
+  }
+
  return {
   setOwner(next:string|null){if(next!==owner){invalidate();owner=next;}},
   invalidate,
@@ -97,37 +131,11 @@ export function createPlayPurchaseCoordinator(deps:Dependencies){
     return result==="launched"||result==="cancelled"||result==="restore_required"?result:"unavailable";
    });
   },
-  async recover(accountId:string):Promise<{verified:number;pending:number;failed:number}|null>{
-   return single(null,async()=>{
-    if(!hex.test(accountId))return null;
-    const s=await capture();
-    const identity=await deps.accountIdentity(s.token);await current(s);
-    if(!obj(identity)||identity.owner!==s.owner||identity.environment!=="test"||identity.accountId!==accountId)return null;
-    const scan=await deps.restore(accountId);await current(s);
-    if(!obj(scan)||scan.accountId!==accountId||!Array.isArray(scan.candidates)||scan.candidates.length>100||
-     typeof scan.pendingCount!=="number"||!Number.isInteger(scan.pendingCount)||scan.pendingCount<0||scan.pendingCount>100)return null;
-    let verified=0,failed=0;const seen=new Map<string,string>();
-    const candidates:{productId:string;token:string}[]=[];
-    for(const item of scan.candidates){
-     await current(s);
-     if(!obj(item)||typeof item.productId!=="string"||!["hoopcheck.pro","hoopcheck.premium"].includes(item.productId)||
-      item.accountId!==accountId||typeof item.token!=="string"||!opaque.test(item.token)){failed++;continue;}
-     const previous=seen.get(item.token);
-     if(previous!==undefined){if(previous!==item.productId)return null;continue;}
-     seen.set(item.token,item.productId);candidates.push({productId:item.productId,token:item.token});
-    }
-    for(const item of candidates){
-     await current(s);
-     const reply=await deps.sync(null,item.productId,item.token,s.token);
-     await current(s);
-     if(obj(reply)&&reply.owner===s.owner&&reply.environment==="test"&&reply.outcome==="test_fulfillment_confirmed")verified++;
-     else failed++;
-    }
-    if(scan.pendingCount===0&&failed===0){await deps.journal.clear(s.owner,accountId);}
-    else {await deps.journal.mark(s.owner,accountId);}
-    await current(s);
-    return {verified,pending:scan.pendingCount,failed};
-   });
-  }
+  recover,
+  // A callback is only a signal to perform a fresh account-bound query. Never
+  // accept its token, success flag, account ID or entitlement as authority.
+  async purchaseUpdated(){return recover();},
+  async foreground(){return recover();}
+
  };
 }

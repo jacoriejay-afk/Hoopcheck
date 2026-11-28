@@ -87,3 +87,16 @@ test("corrupt or unavailable secure storage blocks launch, never silently erases
  const f=fixture();await f.storage.write('{"foreign":"record"}');assert.equal(await f.client.prepare(quote),false);assert.equal(await f.storage.read(),'{"foreign":"record"}');
  const g=fixture();assert.equal(await g.client.prepare(quote),true);g.storage.write=async()=>{throw Error("keystore unavailable");};assert.equal(await g.client.launch(),"held");assert.deepEqual(g.calls,[]);
 });
+
+test("foreground and purchase callbacks always query authenticated account and never trust callback data",async()=>{
+ const f=fixture();assert.equal(await f.client.prepare(quote),true);assert.equal(await f.client.launch(),"launched");
+ f.deps.restore=async()=>({accountId,candidates:[],pendingCount:0});
+ assert.deepEqual(await f.client.purchaseUpdated({owner:"forged",outcome:"success",token:"forged-purchase-token"}),{verified:0,pending:0,failed:0});
+ assert.deepEqual(f.calls,["launch"]);
+ f.deps.accountIdentity=async()=>({owner,accountId,environment:"production"});
+ assert.equal(await f.client.foreground(),null);
+});
+test("foreground rejects expired or MFA-invalid session without restoring",async()=>{
+ const f=fixture();f.state.session=null;let calls=0;f.deps.restore=async()=>{calls++;return {};};
+ assert.equal(await f.client.foreground(),null);assert.equal(calls,0);
+});
