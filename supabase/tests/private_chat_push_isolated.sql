@@ -70,7 +70,10 @@ DO $f$ DECLARE l jsonb; n uuid; d uuid; f uuid; BEGIN
  l:=public.claim_private_chat_push();
  IF l->>'state'<>'leased' THEN RAISE EXCEPTION 'Retry not claimed';END IF;
  UPDATE hoopcheck_push_private.deliveries SET lease_until=now()-interval '1 second';
- IF public.claim_private_chat_push()->>'state'<>'idle' OR NOT EXISTS(SELECT FROM hoopcheck_push_private.deliveries WHERE state='uncertain') THEN RAISE EXCEPTION 'Ambiguous delivery replayed';END IF;
+ l:=public.claim_private_chat_push();
+ IF l->>'state' IS DISTINCT FROM 'idle' THEN RAISE EXCEPTION 'Ambiguous delivery replayed: claim was %',l->>'state';END IF;
+ IF (SELECT count(*) FROM hoopcheck_push_private.deliveries WHERE state='uncertain' AND notice_id=n AND device_id=d AND fence IS NULL AND lease_until IS NULL AND attempts=2)<>1 THEN RAISE EXCEPTION 'Expired delivery not durably uncertain';END IF;
+ IF public.resolve_private_chat_push(n,d,(l->>'fence')::uuid) IS NOT NULL THEN RAISE EXCEPTION 'Expired delivery still resolvable';END IF;
 END $f$;
 DELETE FROM auth.sessions WHERE id='a1111111-1111-4111-8111-111111111111';
 DO $$BEGIN IF EXISTS(SELECT FROM hoopcheck_push_private.devices) OR EXISTS(SELECT FROM hoopcheck_push_private.deliveries) THEN RAISE EXCEPTION 'Revoked session left registration';END IF;END$$;
