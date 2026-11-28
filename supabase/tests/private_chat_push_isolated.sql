@@ -1,7 +1,8 @@
 \set ON_ERROR_STOP on
 -- Standalone synthetic fixture ONLY. Never sourced by actual-schema runner.
 CREATE ROLE anon NOLOGIN;CREATE ROLE authenticated NOLOGIN;CREATE ROLE service_role NOLOGIN;
-CREATE SCHEMA auth;CREATE SCHEMA hoopcheck_security;
+CREATE SCHEMA auth;CREATE SCHEMA hoopcheck_security;CREATE SCHEMA hoopcheck_deletion_private;
+CREATE TABLE hoopcheck_deletion_private.frozen_accounts(owner_id uuid PRIMARY KEY);
 CREATE TABLE auth.users(id uuid PRIMARY KEY,email_confirmed_at timestamptz,deleted_at timestamptz,banned_until timestamptz);
 CREATE TABLE auth.sessions(id uuid PRIMARY KEY,user_id uuid REFERENCES auth.users ON DELETE CASCADE,not_after timestamptz);
 CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$SELECT (current_setting('request.jwt.claims',true)::jsonb->>'sub')::uuid$$;
@@ -64,6 +65,12 @@ DO $f$ DECLARE l jsonb; n uuid; d uuid; f uuid; BEGIN
  INSERT INTO public.user_blocks VALUES('22222222-2222-4222-8222-222222222222','11111111-1111-4111-8111-111111111111');
  IF public.resolve_private_chat_push(n,d,f) IS NOT NULL THEN RAISE EXCEPTION 'Blocked recipient resolved';END IF;
  DELETE FROM public.user_blocks;
+ INSERT INTO hoopcheck_deletion_private.frozen_accounts VALUES('11111111-1111-4111-8111-111111111111');
+ IF public.resolve_private_chat_push(n,d,f) IS NOT NULL THEN RAISE EXCEPTION 'Frozen recipient resolved';END IF;
+ DELETE FROM hoopcheck_deletion_private.frozen_accounts;
+ INSERT INTO hoopcheck_deletion_private.frozen_accounts VALUES('22222222-2222-4222-8222-222222222222');
+ IF public.resolve_private_chat_push(n,d,f) IS NOT NULL THEN RAISE EXCEPTION 'Frozen sender resolved';END IF;
+ DELETE FROM hoopcheck_deletion_private.frozen_accounts;
  IF public.finish_private_chat_push(n,d,gen_random_uuid(),'sent') THEN RAISE EXCEPTION 'Stale fence accepted';END IF;
  IF NOT public.finish_private_chat_push(n,d,f,'retry') THEN RAISE EXCEPTION 'Retry not recorded';END IF;
  UPDATE hoopcheck_push_private.deliveries SET next_attempt=now()-interval '1 second';

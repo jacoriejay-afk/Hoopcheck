@@ -5,6 +5,7 @@ SET LOCAL lock_timeout='4s';
 SET LOCAL statement_timeout='20s';
 DO $guard$ BEGIN
  IF to_regprocedure('public.confirm_active_account_session()') IS NULL OR to_regprocedure('hoopcheck_security.mfa_satisfied()') IS NULL
+ OR to_regclass('hoopcheck_deletion_private.frozen_accounts') IS NULL
  OR NOT EXISTS(SELECT FROM pg_policy WHERE polrelid='public.notifications'::regclass AND polname='hoopchat_notification_visibility' AND NOT polpermissive)
  THEN RAISE EXCEPTION 'Review chat notification and session prerequisites'; END IF;
 END $guard$;
@@ -89,6 +90,7 @@ CREATE FUNCTION hoopcheck_push_private.eligible(p_notice uuid,p_device uuid,p_re
  WHERE d.id=p_device AND d.revision=p_revision AND n.id=p_notice AND n.target_type='conversation' AND n.notification_type='chat_message' AND n.read_at IS NULL
  AND n.created_at>now()-interval '10 minutes' AND n.user_id IN (r.requester_id,r.player_id) AND m.sender_id IN (r.requester_id,r.player_id) AND m.sender_id<>n.user_id
  AND hoopcheck_push_private.session_valid(d.owner_id,d.session_id)
+ AND NOT EXISTS(SELECT FROM hoopcheck_deletion_private.frozen_accounts f WHERE f.owner_id IN (d.owner_id,m.sender_id))
  AND NOT EXISTS(SELECT FROM public.user_blocks b WHERE (b.blocker_id=m.sender_id AND b.blocked_id=n.user_id) OR (b.blocker_id=n.user_id AND b.blocked_id=m.sender_id)))
 $f$;
 CREATE FUNCTION hoopcheck_push_private.queue_notice() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $f$
