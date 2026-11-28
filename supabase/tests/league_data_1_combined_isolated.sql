@@ -392,6 +392,72 @@ insert into pg_temp.ld1_legacy_teams(id,name,country,league_id,league_name,activ
 ('f61d016d-45d4-44e8-b650-aca5f8cd9974','Peñarol Mar del Plata Women','Argentina','5c2e00b7-391d-4630-bba1-fd8887fb9c39','Argentina Women’s Basketball League',true),
 ('fafe3d53-ea35-45ac-85d9-8437d0f66e6d','San José Mendoza Women','Argentina','5c2e00b7-391d-4630-bba1-fd8887fb9c39','Argentina Women’s Basketball League',true),
 ('fca0b404-b098-419c-afa2-5852adc96814','El Talar Women','Argentina','5c2e00b7-391d-4630-bba1-fd8887fb9c39','Argentina Women’s Basketball League',true);
+insert into pg_temp.ld1_teams(id,name,country,league_id,league_name,basketball_type,active) values
+('0e125cbb-52df-4ff2-b00d-3e06010899c9','Gimnástico Women','Chile',null,'Liga Nacional Femenina (Chile)','womens',true),
+('242ee735-a5b4-427b-9c3d-9a653b47ed4b','Sportiva Italiana Women','Chile',null,'Liga Nacional Femenina (Chile)','womens',true),
+('24be5f5c-52c9-4735-9a6b-c994132adca5','UdeC Women','Chile',null,'Liga Nacional Femenina (Chile)','womens',true),
+('8a3a576a-524b-4267-8ca0-4ef3e02881cc','Colegio Los Leones Women','Chile',null,'Liga Nacional Femenina (Chile)','womens',true),
+('8d26dd71-7abf-4e67-b364-86c8786c7648','Sergio Ceppi Women','Chile',null,'Liga Nacional Femenina (Chile)','womens',true),
+('a9a93cdc-badc-4c0a-8af5-d9442f915b76','Boston College Women','Chile',null,'Liga Nacional Femenina (Chile)','womens',true),
+('b3d3967f-98ae-41c9-a3fa-8f3deb452ec8','Luis Matte Larraín Women','Chile',null,'Liga Nacional Femenina (Chile)','womens',true),
+('be4f57b9-382a-4608-b53e-ecaa6ba2441a','Azul y Rojo Women','Chile',null,'Liga Nacional Femenina (Chile)','womens',true),
+('02a0163a-5311-4b1b-98f5-b49c383d9e1e','Adelitas de Chihuahua','Mexico',null,'LNBP Femenil','womens',true),
+('564c7a9b-3659-4b86-a1ad-9d28a93467a6','El Calor de Cancún Femenil','Mexico',null,'LNBP Femenil','womens',true),
+('7877c834-ae49-43e2-8ab9-ffa1b8704e79','Abejas de León Femenil','Mexico',null,'LNBP Femenil','womens',true),
+('876f1352-33dd-4be4-8a4e-3726b09597bd','Fuerza Regia Femenil','Mexico',null,'LNBP Femenil','womens',true),
+('88dd1028-abae-4daa-a348-b3bcff67426c','Freseras de Irapuato','Mexico',null,'LNBP Femenil','womens',true),
+('8c1c2e2d-3ed9-4896-9a88-4083409d7b8f','Correcaminos UAT Femenil','Mexico',null,'LNBP Femenil','womens',true),
+('a98b6893-d29d-4972-961a-5848645c9653','Panteras de Aguascalientes Femenil','Mexico',null,'LNBP Femenil','womens',true),
+('e316dfee-28fd-4e90-9e80-3cc18d7c2204','Santas del Potosí','Mexico',null,'LNBP Femenil','womens',true),
+('18c01b60-c607-4f80-a2c5-3f3d0dd605b7','CS Oxigen București','Romania',null,'Liga Națională de Baschet Feminin','womens',true),
+('2190b4db-3b15-4707-afb4-d1441a9f0253','CSM CSU Târgoviște Women','Romania',null,'Liga Națională de Baschet Feminin','womens',true),
+('4c29a7ad-924f-4182-a6b0-75bcbfd8597b','ACS Sepsi SIC Sfântu Gheorghe','Romania',null,'Liga Națională de Baschet Feminin','womens',true),
+('72e524c1-2d10-4885-ab33-57e94b7075d5','CS Agronomia București','Romania',null,'Liga Națională de Baschet Feminin','womens',true),
+('768823af-d21d-41ad-ac6b-43e22e8176dd','CSJ Teleorman Alexandria','Romania',null,'Liga Națională de Baschet Feminin','womens',true),
+('809dedc8-b895-4cd8-b52c-dc87c46c8aad','CS Universitatea Cluj-Napoca Women','Romania',null,'Liga Națională de Baschet Feminin','womens',true),
+('81c37b3f-ebea-40a6-8e5f-15ac64d7fa86','Sportul Studențesc București Women','Romania',null,'Liga Națională de Baschet Feminin','womens',true),
+('907c47c0-9569-4a1d-8812-ece61d87daf5','CSU Politehnica Timișoara Women','Romania',null,'Liga Națională de Baschet Feminin','womens',true),
+('e13f73ca-c7ac-4938-8762-0236edb2358d','FCC Baschet UAV Arad','Romania',null,'Liga Națională de Baschet Feminin','womens',true),
+('f91a25cc-854d-47d8-b552-ab41e778ec19','CS Rapid București Women','Romania',null,'Liga Națională de Baschet Feminin','womens',true),
+('075dc80f-9e7b-4d1d-8c12-be26eee40af9','ŽKK Kraljevo','Serbia',null,'Prva ženska liga Srbije','womens',true),
+('2308695d-8b9d-4964-a423-2c8d2b81c5cd','Vojvodina 021','Serbia',null,'Prva ženska liga Srbije','womens',true),
+('353a6a41-46ac-4d7f-aa4b-b6f132596d3f','Ras Beograd','Serbia',null,'Prva ženska liga Srbije','womens',true),
+('3d1b5bce-4825-42f6-8b12-702ca6dc5e30','Mega Basket Women','Serbia',null,'Prva ženska liga Srbije','womens',true),
+('45e18a98-3cba-44d7-af9a-dfd1d396cdbf','Student Niš Women','Serbia',null,'Prva ženska liga Srbije','womens',true),
+('55579fb4-7ed9-40af-a8db-fd8b74a48682','Nibak Niš','Serbia',null,'Prva ženska liga Srbije','womens',true),
+('8603eef0-5c1c-44db-943a-62fca5c49431','Korać Akademija 011','Serbia',null,'Prva ženska liga Srbije','womens',true),
+('9b92b113-296a-4990-8283-20b75e50f557','Duga Šabac','Serbia',null,'Prva ženska liga Srbije','womens',true),
+('a18685b4-8003-4676-805d-958e2499b5b5','Novosadska ženska košarkaška akademija','Serbia',null,'Prva ženska liga Srbije','womens',true),
+('d2b9cecd-a157-43cf-be1a-cbf0f6bdad2d','Partizan 1953','Serbia',null,'Prva ženska liga Srbije','womens',true),
+('e4d63468-650c-4f5c-bf11-c5a703adc8c5','Spartak Subotica Women','Serbia',null,'Prva ženska liga Srbije','womens',true),
+('f7d74e1d-9975-481c-b97b-3b2c7365d0f3','Crvena zvezda Women','Serbia',null,'Prva ženska liga Srbije','womens',true);
+insert into pg_temp.ld1_legacy_leagues(id,name,country,active) values
+('682f5612-be1e-420e-8eb0-877e92d88c91','Liga Nacional Femenina (Chile)','Chile',true),
+('6e594f35-8a5e-4cb7-9b0c-8fc8385d142a','LNBP Femenil','Mexico',true),
+('bf301d70-8bf3-4650-8236-5d34bc6766e1','Serbian Women’s Basketball League','Serbia',true),
+('c8b0fe1b-15ed-4a64-af62-f1d33b6436cc','Romanian Women’s Basketball League','Romania',true);
+insert into pg_temp.ld1_legacy_teams(id,name,country,league_id,league_name,active) values
+('02a0163a-5311-4b1b-98f5-b49c383d9e1e','Adelitas de Chihuahua','Mexico','6e594f35-8a5e-4cb7-9b0c-8fc8385d142a','LNBP Femenil',true),
+('0e125cbb-52df-4ff2-b00d-3e06010899c9','Gimnástico Women','Chile','682f5612-be1e-420e-8eb0-877e92d88c91','Liga Nacional Femenina (Chile)',true),
+('242ee735-a5b4-427b-9c3d-9a653b47ed4b','Sportiva Italiana Women','Chile','682f5612-be1e-420e-8eb0-877e92d88c91','Liga Nacional Femenina (Chile)',true),
+('24be5f5c-52c9-4735-9a6b-c994132adca5','UdeC Women','Chile','682f5612-be1e-420e-8eb0-877e92d88c91','Liga Nacional Femenina (Chile)',true),
+('2796c3c0-8cd2-430b-8a7e-947a15791ed4','CSM Târgoviște Women','Romania','c8b0fe1b-15ed-4a64-af62-f1d33b6436cc','Romanian Women’s Basketball League',true),
+('4f7fbca5-7983-4fa1-b1dd-0a74eb210503','Sepsi-SIC Women','Romania','c8b0fe1b-15ed-4a64-af62-f1d33b6436cc','Romanian Women’s Basketball League',true),
+('564c7a9b-3659-4b86-a1ad-9d28a93467a6','El Calor de Cancún Femenil','Mexico','6e594f35-8a5e-4cb7-9b0c-8fc8385d142a','LNBP Femenil',true),
+('68cb99b5-dd4b-486a-a36e-317154dda00c','Partizan Women','Serbia','bf301d70-8bf3-4650-8236-5d34bc6766e1','Serbian Women’s Basketball League',true),
+('7877c834-ae49-43e2-8ab9-ffa1b8704e79','Abejas de León Femenil','Mexico','6e594f35-8a5e-4cb7-9b0c-8fc8385d142a','LNBP Femenil',true),
+('876f1352-33dd-4be4-8a4e-3726b09597bd','Fuerza Regia Femenil','Mexico','6e594f35-8a5e-4cb7-9b0c-8fc8385d142a','LNBP Femenil',true),
+('88dd1028-abae-4daa-a348-b3bcff67426c','Freseras de Irapuato','Mexico','6e594f35-8a5e-4cb7-9b0c-8fc8385d142a','LNBP Femenil',true),
+('8a3a576a-524b-4267-8ca0-4ef3e02881cc','Colegio Los Leones Women','Chile','682f5612-be1e-420e-8eb0-877e92d88c91','Liga Nacional Femenina (Chile)',true),
+('8c1c2e2d-3ed9-4896-9a88-4083409d7b8f','Correcaminos UAT Femenil','Mexico','6e594f35-8a5e-4cb7-9b0c-8fc8385d142a','LNBP Femenil',true),
+('8d26dd71-7abf-4e67-b364-86c8786c7648','Sergio Ceppi Women','Chile','682f5612-be1e-420e-8eb0-877e92d88c91','Liga Nacional Femenina (Chile)',true),
+('a98b6893-d29d-4972-961a-5848645c9653','Panteras de Aguascalientes Femenil','Mexico','6e594f35-8a5e-4cb7-9b0c-8fc8385d142a','LNBP Femenil',true),
+('a9a93cdc-badc-4c0a-8af5-d9442f915b76','Boston College Women','Chile','682f5612-be1e-420e-8eb0-877e92d88c91','Liga Nacional Femenina (Chile)',true),
+('b3d3967f-98ae-41c9-a3fa-8f3deb452ec8','Luis Matte Larraín Women','Chile','682f5612-be1e-420e-8eb0-877e92d88c91','Liga Nacional Femenina (Chile)',true),
+('be4f57b9-382a-4608-b53e-ecaa6ba2441a','Azul y Rojo Women','Chile','682f5612-be1e-420e-8eb0-877e92d88c91','Liga Nacional Femenina (Chile)',true),
+('d70d9399-058b-4601-900e-6f70d4dcfc19','Budućnost Bemax Women','Montenegro','bf301d70-8bf3-4650-8236-5d34bc6766e1','Serbian Women’s Basketball League',true),
+('e316dfee-28fd-4e90-9e80-3cc18d7c2204','Santas del Potosí','Mexico','6e594f35-8a5e-4cb7-9b0c-8fc8385d142a','LNBP Femenil',true),
+('ffdd8c62-e3de-47d1-a3cd-66661fabfc8f','Crvena zvezda Women','Serbia','bf301d70-8bf3-4650-8236-5d34bc6766e1','Serbian Women’s Basketball League',true);
 create temporary table before_ld1_leagues on commit drop as select * from pg_temp.ld1_leagues;
 create temporary table before_ld1_teams on commit drop as select * from pg_temp.ld1_teams;
 create temporary table before_ld1_memberships on commit drop as select * from pg_temp.ld1_memberships;
@@ -410,6 +476,7 @@ create temporary table before_ld1_legacy_teams on commit drop as select * from p
 \ir ../../reports/league-data-1/wnba-shadow-correction.sql
 \ir ../../reports/league-data-1/brazil-poland-womens-shadow-correction.sql
 \ir ../../reports/league-data-1/argentina-womens-shadow-correction.sql
+\ir ../../reports/league-data-1/chile-mexico-romania-serbia-womens-shadow-correction.sql
 create temporary table after_ld1_leagues on commit drop as select * from pg_temp.ld1_leagues;
 create temporary table after_ld1_teams on commit drop as select * from pg_temp.ld1_teams;
 create temporary table after_ld1_memberships on commit drop as select * from pg_temp.ld1_memberships;
@@ -428,14 +495,15 @@ create temporary table after_ld1_legacy_teams on commit drop as select * from pg
 \ir ../../reports/league-data-1/wnba-shadow-correction.sql
 \ir ../../reports/league-data-1/brazil-poland-womens-shadow-correction.sql
 \ir ../../reports/league-data-1/argentina-womens-shadow-correction.sql
+\ir ../../reports/league-data-1/chile-mexico-romania-serbia-womens-shadow-correction.sql
 do $combined$ begin
-if (select count(*) from pg_temp.ld1_leagues)<>(select count(*)+10 from pg_temp.before_ld1_leagues) then raise exception 'ld1_leagues: unexpected delta';end if;
+if (select count(*) from pg_temp.ld1_leagues)<>(select count(*)+14 from pg_temp.before_ld1_leagues) then raise exception 'ld1_leagues: unexpected delta';end if;
 if exists(select * from pg_temp.after_ld1_leagues except select * from pg_temp.ld1_leagues) or exists(select * from pg_temp.ld1_leagues except select * from pg_temp.after_ld1_leagues) then raise exception 'ld1_leagues: second run changed state';end if;
 if exists(select id from pg_temp.before_ld1_leagues except select id from pg_temp.ld1_leagues) then raise exception 'ld1_leagues: lost existing ID';end if;
 if (select count(*) from pg_temp.ld1_teams)<>(select count(*)+22 from pg_temp.before_ld1_teams) then raise exception 'ld1_teams: unexpected delta';end if;
 if exists(select * from pg_temp.after_ld1_teams except select * from pg_temp.ld1_teams) or exists(select * from pg_temp.ld1_teams except select * from pg_temp.after_ld1_teams) then raise exception 'ld1_teams: second run changed state';end if;
 if exists(select id from pg_temp.before_ld1_teams except select id from pg_temp.ld1_teams) then raise exception 'ld1_teams: lost existing ID';end if;
-if (select count(*) from pg_temp.ld1_memberships)<>(select count(*)+242 from pg_temp.before_ld1_memberships) then raise exception 'ld1_memberships: unexpected delta';end if;
+if (select count(*) from pg_temp.ld1_memberships)<>(select count(*)+280 from pg_temp.before_ld1_memberships) then raise exception 'ld1_memberships: unexpected delta';end if;
 if exists(select * from pg_temp.after_ld1_memberships except select * from pg_temp.ld1_memberships) or exists(select * from pg_temp.ld1_memberships except select * from pg_temp.after_ld1_memberships) then raise exception 'ld1_memberships: second run changed state';end if;
 if exists(select id from pg_temp.before_ld1_memberships except select id from pg_temp.ld1_memberships) then raise exception 'ld1_memberships: lost existing ID';end if;
 if (select count(*) from pg_temp.ld1_legacy_leagues)<>(select count(*)+1 from pg_temp.before_ld1_legacy_leagues) then raise exception 'ld1_legacy_leagues: unexpected delta';end if;
@@ -448,7 +516,7 @@ if exists(select 1 from pg_temp.before_ld1_leagues b join pg_temp.ld1_leagues a 
 if exists(select * from pg_temp.before_ld1_memberships except select * from pg_temp.ld1_memberships) then raise exception 'ld1_memberships: existing record changed';end if;
 if exists(select * from pg_temp.before_ld1_legacy_leagues except select * from pg_temp.ld1_legacy_leagues) then raise exception 'ld1_legacy_leagues: existing record changed';end if;
 if exists(select * from pg_temp.before_ld1_legacy_teams except select * from pg_temp.ld1_legacy_teams) then raise exception 'ld1_legacy_teams: existing record changed';end if;
-if (select count(*) from (select * from pg_temp.before_ld1_teams except select * from pg_temp.ld1_teams) q)<>100 then raise exception 'unexpected existing team changes';end if;
+if (select count(*) from (select * from pg_temp.before_ld1_teams except select * from pg_temp.ld1_teams) q)<>138 then raise exception 'unexpected existing team changes';end if;
 if exists(select 1 from pg_temp.before_ld1_teams b join pg_temp.ld1_teams a using(id) where (b.name,b.country,b.basketball_type,b.active) is distinct from (a.name,a.country,a.basketball_type,a.active)) then raise exception 'team identity altered';end if;
 end $combined$;
 select 'PASS: combined league data correction, twice applied, original identities and historical records preserved' result;
