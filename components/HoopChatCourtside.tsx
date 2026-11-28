@@ -44,6 +44,7 @@ export default function HoopChatCourtside(){
   const [sessionRevision,setSessionRevision]=useState(0);
   const [requests,setRequests]=useState<ChatRequest[]>([]);
   const inboxPages=useRef(1);
+  const [appliedServerQuery,setAppliedServerQuery]=useState("");
   const serverQuery=useRef(""),cursorStack=useRef<(InboxCursor|null)[]>([null]);
   const [nextCursor,setNextCursor]=useState<InboxCursor|null>(null),[serverPage,setServerPage]=useState(1),[allUnread,setAllUnread]=useState<number|null>(null);
   const [inboxMore,setInboxMore]=useState(false),[inboxLimit,setInboxLimit]=useState(false);
@@ -175,7 +176,7 @@ export default function HoopChatCourtside(){
 
   useEffect(()=>{
     accountGeneration.current+=1;loadSequence.current+=1;
-    userIdRef.current="";inboxPages.current=1;setInboxMore(false);setInboxLimit(false);serverQuery.current="";cursorStack.current=[null];setNextCursor(null);setServerPage(1);setAllUnread(null);setSearch("");
+    userIdRef.current="";inboxPages.current=1;setInboxMore(false);setInboxLimit(false);serverQuery.current="";setAppliedServerQuery("");cursorStack.current=[null];setNextCursor(null);setServerPage(1);setAllUnread(null);setSearch("");
     pendingMessages.current.clear();
     setUserId("");setRequests([]);setMessages([]);setContacts({});
     setServerUnread(null);
@@ -407,7 +408,7 @@ export default function HoopChatCourtside(){
     if(!serverInboxEnabled||sending||syncing||loading||inboxRequest.current)return;
     if(direction==="next"){if(!nextCursor)return;cursorStack.current.push(nextCursor);}
     else if(direction==="previous"){if(cursorStack.current.length<=1)return;cursorStack.current.pop();}
-    else {cursorStack.current=[null];serverQuery.current=direction==="search"?search.trim().slice(0,80):"";if(direction==="first")setSearch("");}
+    else {cursorStack.current=[null];serverQuery.current=direction==="search"?search.trim().slice(0,80):"";setAppliedServerQuery(serverQuery.current);if(direction==="first")setSearch("");}
     const url=new URL(window.location.href);url.searchParams.delete("thread");window.history.replaceState(null,"",url.pathname+url.search+url.hash);
     activeHistoryScope.current="";historyRequest.current?.abort();setSelectedId(null);setReplyTarget(null);setForwardSelection(null);setNextCursor(null);void load();
   }
@@ -572,7 +573,7 @@ export default function HoopChatCourtside(){
             <p>{requests.length?"Change your search or filters.":"Connect with another player to start a private thread."}</p>
             <Link href="/players">Discover players</Link></div>}
         </nav>
-        {serverInboxEnabled?<><small role="status">Page {serverPage} · {requests.length} conversations · {allUnread===null?"Account unread unavailable":`${allUnread} unread across account`}{serverQuery.current?` · Search: ${serverQuery.current}`:""}</small><button type="button" disabled={syncing||sending||loading||serverPage<=1} onClick={()=>navigateInbox("previous")}>Previous page</button><button type="button" disabled={syncing||sending||loading||!nextCursor} onClick={()=>navigateInbox("next")}>Next page</button></>:<><small role="status">{requests.length} conversations loaded{inboxLimit?" · loading limit reached":inboxMore?" · older conversations available":""}. Search covers loaded conversations.</small>
+        {serverInboxEnabled?<><small role="status">Page {serverPage} · {requests.length} conversations · {allUnread===null?"Account unread unavailable":`${allUnread} unread across account`}{appliedServerQuery?` · Search: ${appliedServerQuery}`:""}</small><button type="button" disabled={syncing||sending||loading||serverPage<=1} onClick={()=>navigateInbox("previous")}>Previous page</button><button type="button" disabled={syncing||sending||loading||!nextCursor} onClick={()=>navigateInbox("next")}>Next page</button></>:<><small role="status">{requests.length} conversations loaded{inboxLimit?" · loading limit reached":inboxMore?" · older conversations available":""}. Search covers loaded conversations.</small>
         {inboxMore&&!inboxLimit&&<button type="button" disabled={syncing||sending||loading} onClick={()=>{if(inboxRequest.current||inboxPages.current>=CHAT_INBOX_MAX_PAGES)return;inboxPages.current++;void load();}}>Load older conversations</button>}</>}
       </aside>
       <div className="hc-courtside-stage">

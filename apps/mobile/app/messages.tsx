@@ -57,6 +57,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
   const [userId, setUserId] = useState("");
   const [requests, setRequests] = useState<ContactRequest[]>([]);
   const inboxPages=useRef(1);
+  const [appliedServerQuery,setAppliedServerQuery]=useState("");
   const serverQuery=useRef(""),cursorStack=useRef<(InboxCursor|null)[]>([null]);
   const [nextCursor,setNextCursor]=useState<InboxCursor|null>(null),[serverPage,setServerPage]=useState(1),[allUnread,setAllUnread]=useState<number|null>(null);
   const [inboxMore,setInboxMore]=useState(false),[inboxLimit,setInboxLimit]=useState(false);
@@ -146,7 +147,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       if (reloadTimer.current !== null) clearTimeout(reloadTimer.current);
       reloadTimer.current = null;
       generation.current++;
-      setServerUnread(null);inboxPages.current=1;setInboxMore(false);setInboxLimit(false);serverQuery.current="";cursorStack.current=[null];setNextCursor(null);setServerPage(1);setAllUnread(null);
+      setServerUnread(null);inboxPages.current=1;setInboxMore(false);setInboxLimit(false);serverQuery.current="";setAppliedServerQuery("");cursorStack.current=[null];setNextCursor(null);setServerPage(1);setAllUnread(null);
       setRequests([]); setMessages([]); setContacts({}); setUserId(""); setSelectedId(""); setOpenedId(""); setSearch(""); setReplyTarget(null); setForwardSelection(null); setThreadPage(null); setThreadError(null); historyRequest.current++; historyPaging.current=false; setHistoryBusy(false);
     };
   }, [load]));
@@ -160,7 +161,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       reloadTimer.current = null;
       generation.current++;
       setServerUnread(null);
-      authIdentity.current = nextUserId;consumedLink.current=null;inboxPages.current=1;setInboxMore(false);setInboxLimit(false);serverQuery.current="";cursorStack.current=[null];setNextCursor(null);setServerPage(1);setAllUnread(null);
+      authIdentity.current = nextUserId;consumedLink.current=null;inboxPages.current=1;setInboxMore(false);setInboxLimit(false);serverQuery.current="";setAppliedServerQuery("");cursorStack.current=[null];setNextCursor(null);setServerPage(1);setAllUnread(null);
       pendingMessages.current.clear();
       setRequests([]); setMessages([]); setContacts({}); setUserId(""); setSelectedId(""); setOpenedId(""); setSearch(""); setReplyTarget(null); setForwardSelection(null); setThreadPage(null); setThreadError(null); historyRequest.current++; historyPaging.current=false; setHistoryBusy(false);
       if (action === "clear") {
@@ -222,7 +223,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
     if(!serverInboxEnabled||loading||offline||sending||mutationLocked.current)return;
     if(direction==="next"){if(!nextCursor)return;cursorStack.current.push(nextCursor);}
     else if(direction==="previous"){if(cursorStack.current.length<=1)return;cursorStack.current.pop();}
-    else {cursorStack.current=[null];serverQuery.current=direction==="search"?search.trim().slice(0,80):"";if(direction==="first")setSearch("");}
+    else {cursorStack.current=[null];serverQuery.current=direction==="search"?search.trim().slice(0,80):"";setAppliedServerQuery(serverQuery.current);if(direction==="first")setSearch("");}
     setOpenedId("");setReplyTarget(null);setForwardSelection(null);setNextCursor(null);void load();
   }
   const loadThread=useCallback(async (scope:string,requestId:string,viewerId:string,older?:ContactMessage,refresh=false) => {
@@ -406,7 +407,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
           })}
         </View>
       </View>:null}
-      {!opened&&serverInboxEnabled?<><Text style={{color:theme.muted}}>Page {serverPage} · {requests.length} conversations · {allUnread===null?"Account unread unavailable":`${allUnread} unread across account`}{serverQuery.current?` · Search: ${serverQuery.current}`:""}</Text><Button secondary disabled={loading||offline||sending||serverPage<=1} onPress={()=>navigateInbox("previous")}>Previous page</Button><Button secondary disabled={loading||offline||sending||!nextCursor} onPress={()=>navigateInbox("next")}>Next page</Button></>:null}
+      {!opened&&serverInboxEnabled?<><Text style={{color:theme.muted}}>Page {serverPage} · {requests.length} conversations · {allUnread===null?"Account unread unavailable":`${allUnread} unread across account`}{appliedServerQuery?` · Search: ${appliedServerQuery}`:""}</Text><Button secondary disabled={loading||offline||sending||serverPage<=1} onPress={()=>navigateInbox("previous")}>Previous page</Button><Button secondary disabled={loading||offline||sending||!nextCursor} onPress={()=>navigateInbox("next")}>Next page</Button></>:null}
       {!opened&&!serverInboxEnabled?<><Text style={{color:theme.muted}}>{requests.length} conversations loaded{inboxLimit?" · loading limit reached":inboxMore?" · older conversations available":""}. Search covers loaded conversations.</Text>{inboxMore&&!inboxLimit?<Button secondary disabled={loading||offline||sending} onPress={()=>{if(mutationLocked.current||inboxPages.current>=CHAT_INBOX_MAX_PAGES)return;inboxPages.current++;void load();}}>Load older conversations</Button>:null}{syncReadMarkers&&!syncedCounts?<Text style={{color:theme.muted}}>Synced unread counts unavailable.</Text>:null}</>:null}
       {opened&&selected?<View style={{gap:8}}>
         <Pressable accessibilityRole="button" accessibilityLabel="Back to conversations" disabled={sending} onPress={()=>{setForwardSelection(null);setOpenedId("");}} style={{minHeight:44,flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="chevron-back" size={20} color={theme.accent}/><Text style={{color:theme.accent,fontWeight:"700"}}>Conversations</Text></Pressable>

@@ -23,7 +23,7 @@ test("new owner appearance controls do not bypass the independent HoopGroups rol
   const route=read("../app/hoopgroups.tsx");
   const groups=read("../components/HoopGroupsChannels.tsx");
   assert.match(route,/EXPO_PUBLIC_HOOPGROUPS_CHANNELS_ENABLED === "true"/);
-  assert.match(route, /enabled \? <HoopGroupsChannels inviteSlug=\{inviteSlug\} \/>/);
+  assert.match(route, /enabled \? <HoopGroupsChannels inviteSlug=\{inviteSlug\} invitationHint=\{groupAlertId\(invitation\)\} discussionHint=\{groupAlertId\(channel\)\} \/>/);
   const send=read("../src/native/hoopGroupsSend.ts");
   assert.match(groups,/submitGroupSend\(supabase,message,"Bearer "\+token,abort.signal\)/);
   assert.match(send,/moderation_status:"pending"/);
