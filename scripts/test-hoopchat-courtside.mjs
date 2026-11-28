@@ -81,7 +81,17 @@ test("Messages tab does not wait on unrelated notification requests",()=>{
 test("Realtime channel does not reconnect on every inbox refresh",()=>{
  const ui=read("components/HoopChatCourtside.tsx");
  assert.match(ui,/const selectedStatus=requests\.find\(r=>r\.id===selectedId\)\?\.status/);
- assert.match(ui,/\},\[load,loadHistory,selectedId,selectedStatus,userId\]\)/);
+ assert.match(ui,/const historyScope=userId&&selectedId&&selectedStatus==="accepted"\?userId\+":"\+selectedId:""/);
+ assert.match(ui,/\},\[load,loadHistory,historyScope,selectedId,selectedStatus,userId\]\)/);
+ const start=ui.indexOf('const queue=createChatRefreshCoordinator(active,');
+ const end=ui.indexOf('\n  const latest=useMemo',start);
+ assert.ok(start>=0&&end>start);
+ const subscription=ui.slice(start,end);
+ assert.match(subscription,/mutationGeneration\.current===rev\|\|inboxRequest\.current!==null/);
+ assert.match(subscription,/subscribe\(status=>\{if\(status==="SUBSCRIBED"/);
+ assert.match(subscription,/window\.addEventListener\("online",queue\.request\)/);
+ assert.match(subscription,/queue\.dispose\(\)/);
+ assert.doesNotMatch(subscription,/\},\[[^\]]*(requests|messages|serverUnread|syncing)[^\]]*\]\)/);
  assert.doesNotMatch(ui,/\},\[load,requests,selectedId,userId\]\)/);
  assert.match(ui,/loadSequence\.current/);
 });
