@@ -122,7 +122,10 @@ test("Alert search and category counts stay within the loaded caller-owned list"
  assert.match(helper,/\.eq\("user_id", userId\)[\s\S]*?\.limit\(NOTIFICATION_PAGE_SIZE\)/);
  assert.match(helper,/setHeader\("Authorization",scope\.bearer\)\.abortSignal\(scope\.signal\)/);
  assert.ok(page.includes("searched.filter(n=>matchesAlertFilter(n,key))"));
- assert.ok(page.includes("Latest 100 loaded; older alerts are not included."));
+ assert.ok(page.includes("load older alerts to search more"));
+ assert.ok(page.includes("Load older alerts"));
+ assert.ok(page.includes("readNotifications(supabase,uid,cursor,scope)"));
+ assert.ok(page.includes("appendNotificationPage(items,older)"));
  assert.ok(page.includes('Unread alerts in loaded list'));
 });
 
