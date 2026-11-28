@@ -23,8 +23,9 @@ export default function LeagueDetailScreen() {
   const { revision, offline } = useNetwork();
   const [refreshing, setRefreshing] = useState(false);
   const [refreshId, setRefreshId] = useState(0);
-  const params = useLocalSearchParams<{ id?: string | string[] }>();
+  const params = useLocalSearchParams<{ id?: string | string[]; side?: string }>();
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
+  const womens = params.side === "womens";
   const [league, setLeague] = useState<League | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -36,7 +37,7 @@ export default function LeagueDetailScreen() {
     let alive = true;
     async function loadReviews() {
       setReviewsLoading(true);
-      if (!id || offline) { setReviews([]); setReviewsLoading(false); return; }
+      if (!id || offline || womens) { setReviews([]); setReviewsLoading(false); return; }
       // RLS is the source of truth for who may read approved reviews.
       const { data, error: queryError } = await supabase
         .from("reviews")
@@ -51,22 +52,22 @@ export default function LeagueDetailScreen() {
     }
     void loadReviews();
     return () => { alive = false; };
-  }, [id, revision, refreshId, offline, read]);
+  }, [id, womens, revision, refreshId, offline, read]);
 
   useEffect(() => {
     let alive = true;
     async function load() {
       setLoading(true);
       if (!id) { setError(true); setLoading(false); return; }
-      const { data, error: queryError } = await read(`leagues:profile:${id}`, () => supabase.from("leagues").select("id,name,country,level,season,website").eq("id", id).eq("active", true).eq("basketball_type", "mens").maybeSingle());
+      const { data, error: queryError } = await read(`leagues:profile:${womens ? "womens" : "mens"}:${id}`, () => (womens ? supabase.from("womens_leagues").select("id,name,country,level").eq("id", id).eq("active", true).maybeSingle() : supabase.from("leagues").select("id,name,country,level,season,website").eq("id", id).eq("active", true).eq("basketball_type", "mens").maybeSingle()));
       if (!alive) return;
-      if (queryError || !data) { setError(true); setLeague(null); } else { setError(false); setLeague(data as League); }
+      if (queryError || !data) { setError(true); setLeague(null); } else { setError(false); setLeague({ ...(data as unknown as League), season: womens ? null : (data as unknown as League).season, website: womens ? null : (data as unknown as League).website }); }
       setLoading(false);
       setRefreshing(false);
     }
     void load();
     return () => { alive = false; };
-  }, [id, revision, refreshId, offline, read]);
+  }, [id, womens, revision, refreshId, offline, read]);
 
   async function openWebsite() {
     const url = safeWebsite(league?.website ?? null);
@@ -88,18 +89,18 @@ export default function LeagueDetailScreen() {
             <CountryChip country={league.country} />
             <Text style={[styles.kicker, { color: theme.entityHero.muted }]}>LEAGUE PROFILE</Text>
             <Text style={[styles.title, { color: theme.entityHero.ink }]}>{league.name}</Text>
-            <ShareSheet onHero title={league.name} path={`/leagues/${league.id}`} />
+            {!womens ? <ShareSheet onHero title={league.name} path={`/leagues/${league.id}`} /> : null}
             <Text style={[styles.location, { color: theme.entityHero.muted }]}>{league.country || "Country not listed"}</Text>
             </View>
             <GlassCard style={styles.card}>
               <Text style={styles.label}>COMPETITION LEVEL</Text><Text style={styles.value}>{league.level || "Not listed"}</Text>
-              <View style={styles.divider} />
-              <Text style={styles.label}>SEASON</Text><Text style={styles.value}>{league.season || "Not listed"}</Text>
+              {!womens ? <><View style={styles.divider} />
+              <Text style={styles.label}>SEASON</Text><Text style={styles.value}>{league.season || "Not listed"}</Text></> : null}
               <View style={styles.divider} />
               <Text style={styles.label}>COUNTRY</Text><Text style={styles.value}>{league.country || "Not listed"}</Text>
             </GlassCard>
             {safeWebsite(league.website) ? <Button onPress={openWebsite} style={styles.button}><Text style={styles.buttonText}>Open league website ↗</Text></Button> : null}
-            <View style={styles.reviewsSection}>
+            {!womens ? <View style={styles.reviewsSection}>
               <Text style={styles.reviewsTitle}>Latest reviews</Text>
               <Text style={styles.reviewsSubtitle}>{offline ? "Reconnect to revalidate review access. Reviews are not saved offline." : "Approved reviews only · access follows your HoopCheck account permissions"}</Text>
               {reviewsLoading ? <Skeleton review /> : reviews.length ? reviews.map(review => (
@@ -113,7 +114,7 @@ export default function LeagueDetailScreen() {
                   <Text style={styles.reviewDate}>{new Date(review.created_at).toLocaleDateString()}</Text>
                 </GlassCard>
               )) : <Text style={styles.reviewsEmpty}>No reviews are available to display for this account. Reviews are filtered by HoopCheck’s existing subscription and moderation permissions.</Text>}
-            </View>
+            </View> : null}
             <View style={styles.notice}><Text style={styles.noticeTitle}>Before you sign</Text><Text style={styles.body}>Competition details and seasons can change. Confirm league registration, team participation, contract terms and payment obligations through independently verified contacts.</Text></View>
           </>
         )}

@@ -23,8 +23,9 @@ export default function TeamDetailScreen() {
   const { revision, offline } = useNetwork();
   const [refreshing, setRefreshing] = useState(false);
   const [refreshId, setRefreshId] = useState(0);
-  const params = useLocalSearchParams<{ id?: string | string[] }>();
+  const params = useLocalSearchParams<{ id?: string | string[]; side?: string }>();
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
+  const womens = params.side === "womens";
   const [team, setTeam] = useState<Team | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -36,7 +37,7 @@ export default function TeamDetailScreen() {
     let alive = true;
     async function loadReviews() {
       setReviewsLoading(true);
-      if (!id || offline) { setReviews([]); setReviewsLoading(false); return; }
+      if (!id || offline || womens) { setReviews([]); setReviewsLoading(false); return; }
       // RLS is the source of truth for who may read approved reviews.
       const { data, error: queryError } = await supabase
         .from("reviews")
@@ -51,22 +52,22 @@ export default function TeamDetailScreen() {
     }
     void loadReviews();
     return () => { alive = false; };
-  }, [id, revision, refreshId, offline, read]);
+  }, [id, womens, revision, refreshId, offline, read]);
 
   useEffect(() => {
     let alive = true;
     async function load() {
       setLoading(true);
       if (!id) { setError(true); setLoading(false); return; }
-      const { data, error: queryError } = await read(`teams:profile:${id}`, () => supabase.from("teams").select("id,name,country,city,league_name,website").eq("id", id).eq("active", true).eq("basketball_type", "mens").maybeSingle());
+      const { data, error: queryError } = await read(`teams:profile:${womens ? "womens" : "mens"}:${id}`, () => (womens ? supabase.from("womens_teams").select("id,name,country,city,league_name").eq("id", id).eq("active", true).maybeSingle() : supabase.from("teams").select("id,name,country,city,league_name,website").eq("id", id).eq("active", true).eq("basketball_type", "mens").maybeSingle()));
       if (!alive) return;
-      if (queryError || !data) { setError(true); setTeam(null); } else { setError(false); setTeam(data as Team); }
+      if (queryError || !data) { setError(true); setTeam(null); } else { setError(false); setTeam({ ...(data as unknown as Team), website: womens ? null : (data as unknown as Team).website }); }
       setLoading(false);
       setRefreshing(false);
     }
     void load();
     return () => { alive = false; };
-  }, [id, revision, refreshId, offline, read]);
+  }, [id, womens, revision, refreshId, offline, read]);
 
   async function openWebsite() {
     const url = safeWebsite(team?.website ?? null);
@@ -88,7 +89,7 @@ export default function TeamDetailScreen() {
             <CountryChip country={team.country} />
             <Text style={[styles.kicker, { color: theme.entityHero.muted }]}>TEAM PROFILE</Text>
             <Text style={[styles.title, { color: theme.entityHero.ink }]}>{team.name}</Text>
-            <ShareSheet onHero title={team.name} path={`/teams/${team.id}`} />
+            <ShareSheet onHero title={team.name} path={womens ? `/womens/${team.id}` : `/teams/${team.id}`} />
             <Text style={[styles.location, { color: theme.entityHero.muted }]}>{[team.city, team.country].filter(Boolean).join(", ") || "Location not listed"}</Text>
             </View>
             <GlassCard style={styles.card}>
@@ -97,8 +98,8 @@ export default function TeamDetailScreen() {
               <Text style={styles.label}>LOCATION</Text><Text style={styles.value}>{[team.city, team.country].filter(Boolean).join(", ") || "Not listed"}</Text>
             </GlassCard>
             {safeWebsite(team.website) ? <Button onPress={openWebsite} style={styles.button}><Text style={styles.buttonText}>Open team website ↗</Text></Button> : null}
-            <Pressable onPress={() => router.push({ pathname: "/teams/[id]/review", params: { id: team.id, teamName: team.name } })} style={[styles.button, styles.reviewButton]}><Text style={styles.buttonText}>Write a team review</Text></Pressable>
-            <View style={styles.reviewsSection}>
+            {!womens ? <Pressable onPress={() => router.push({ pathname: "/teams/[id]/review", params: { id: team.id, teamName: team.name } })} style={[styles.button, styles.reviewButton]}><Text style={styles.buttonText}>Write a team review</Text></Pressable> : null}
+            {!womens ? <View style={styles.reviewsSection}>
               <Text style={styles.reviewsTitle}>Latest reviews</Text>
               <Text style={styles.reviewsSubtitle}>{offline ? "Reconnect to revalidate review access. Reviews are not saved offline." : "Approved reviews only · access follows your HoopCheck account permissions"}</Text>
               {reviewsLoading ? <Skeleton review /> : reviews.length ? reviews.map(review => (
@@ -112,7 +113,7 @@ export default function TeamDetailScreen() {
                   <Text style={styles.reviewDate}>{new Date(review.created_at).toLocaleDateString()}</Text>
                 </GlassCard>
               )) : <Text style={styles.reviewsEmpty}>No reviews are available to display for this account. Reviews are filtered by HoopCheck’s existing subscription and moderation permissions.</Text>}
-            </View>
+            </View> : null}
             <View style={styles.notice}><Text style={styles.noticeTitle}>Before you sign</Text><Text style={styles.body}>Directory details are informational and may change. Confirm the team's identity, contract terms, salary, housing, insurance and payment schedule directly using independently verified contacts.</Text></View>
           </>
         )}
