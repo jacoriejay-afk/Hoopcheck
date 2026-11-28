@@ -170,6 +170,39 @@ insert into pg_temp.ld1_legacy_teams(id,name,country,league_id,league_name,activ
 ('91fd819b-4e27-4115-8a5d-cae220b29364','União Sportiva Women','Portugal','b94bec3a-0da9-4e1e-aabf-82c9b6db4415','Portugal Women’s Basketball League',true),
 ('c40fc36c-6327-4d51-bf32-cada5e4f5dca','Sporting CP Women','Portugal','b94bec3a-0da9-4e1e-aabf-82c9b6db4415','Portugal Women’s Basketball League',true),
 ('daef522e-5e16-400e-ace4-97725aecefb8','SL Benfica','Portugal','5539d546-455e-4932-be87-a65ef4a58904','EuroCup Women 2026-27',true);
+insert into pg_temp.ld1_leagues(id,name,country,season,basketball_type,active) values
+('1c883516-158f-4099-8b48-02876e43f07d','Korisliiga','Finland','2026-27','mens',true),
+('b408d347-2758-4458-9531-4783ba66f10a','ORLEN Basket Liga','Poland','2026-27','mens',true);
+insert into pg_temp.ld1_teams(id,name,country,league_id,league_name,basketball_type,active) values
+('10ac2e60-0793-4bf1-af95-a72c7f6911ef','Arriva Lotto Twarde Pierniki Toruń','Poland','b408d347-2758-4458-9531-4783ba66f10a','ORLEN Basket Liga','mens',true),
+('14cc437c-a9e5-4d15-9832-1d6a41e9970a','Kataja Basket','Finland','1c883516-158f-4099-8b48-02876e43f07d','Korisliiga','mens',true),
+('1acb2b53-7449-40eb-9ade-fd6fe1727b44','Tasomix Rosiek Stal Ostrów Wielkopolski','Poland','b408d347-2758-4458-9531-4783ba66f10a','ORLEN Basket Liga','mens',true),
+('27ba7fdb-b124-4551-b603-7c02575dc53d','King Szczecin','Poland','b408d347-2758-4458-9531-4783ba66f10a','ORLEN Basket Liga','mens',true),
+('38efb051-df37-4eec-b11f-624eb3c82618','BC Nokia','Finland','1c883516-158f-4099-8b48-02876e43f07d','Korisliiga','mens',false),
+('45712789-9737-42ca-89d8-49977a4ab897','Anwil Włocławek','Poland','b408d347-2758-4458-9531-4783ba66f10a','ORLEN Basket Liga','mens',true),
+('5f7b3d17-f4e4-4d42-9395-b6abdffa58b3','MKS Dąbrowa Górnicza','Poland','b408d347-2758-4458-9531-4783ba66f10a','ORLEN Basket Liga','mens',true),
+('61415a19-4aaf-41a3-b1dc-50b7b04fe657','Energa Trefl Sopot','Poland','b408d347-2758-4458-9531-4783ba66f10a','ORLEN Basket Liga','mens',true),
+('64914ef8-3ef7-407a-901f-a5d3b8606323','PGE Start Lublin','Poland','b408d347-2758-4458-9531-4783ba66f10a','ORLEN Basket Liga','mens',true),
+('656dc979-7603-4e9b-b3b5-09791b95d418','Kauhajoki','Finland','1c883516-158f-4099-8b48-02876e43f07d','Korisliiga','mens',true),
+('68ac74b9-4832-4784-96ac-b12dc69a1ac6','KTP-Basket','Finland','1c883516-158f-4099-8b48-02876e43f07d','Korisliiga','mens',true),
+('6a701bc1-d684-4315-a79e-01c929fffc86','Kouvot','Finland','1c883516-158f-4099-8b48-02876e43f07d','Korisliiga','mens',true),
+('6e44d786-76c3-4a2c-a6ac-2e0d22c5dad7','GTK Gliwice','Poland','b408d347-2758-4458-9531-4783ba66f10a','ORLEN Basket Liga','mens',true),
+('78214a36-b0e0-4d44-afc5-a3bdf96d2287','Salon Vilpas','Finland','1c883516-158f-4099-8b48-02876e43f07d','Korisliiga','mens',true),
+('7d22be25-1060-4c02-a6cd-5d8fb9dd3f7d','Górnik Zamek Książ Wałbrzych','Poland','b408d347-2758-4458-9531-4783ba66f10a','ORLEN Basket Liga','mens',true),
+('7e6e1ae9-29a4-438d-aaf5-2ddfb5164cd2','AMW Arka Gdynia','Poland','b408d347-2758-4458-9531-4783ba66f10a','ORLEN Basket Liga','mens',true),
+('84bf9a9f-38d8-400a-9bac-afc5b9826668','Enea Łaciate Astoria Bydgoszcz','Poland','b408d347-2758-4458-9531-4783ba66f10a','ORLEN Basket Liga','mens',true),
+('8d41d286-3968-4ae8-a23f-6f9229c4c9c9','Zastal Zielona Góra','Poland','b408d347-2758-4458-9531-4783ba66f10a','ORLEN Basket Liga','mens',true),
+('8fc34e00-12a7-4791-9160-718b37ddad40','Lahti Basketball','Finland','1c883516-158f-4099-8b48-02876e43f07d','Korisliiga','mens',true),
+('ab37371f-fcd7-42dd-b72e-4771bb5d2638','Tapiolan Honka','Finland','1c883516-158f-4099-8b48-02876e43f07d','Korisliiga','mens',true),
+('b8fbcd0d-d6a0-4898-a6b5-c88d2ee08ce9','Czarni Słupsk','Poland','b408d347-2758-4458-9531-4783ba66f10a','ORLEN Basket Liga','mens',true),
+('bfa4c172-5b7f-49b2-af93-a83b31e65f52','Tampereen Pyrintö','Finland','1c883516-158f-4099-8b48-02876e43f07d','Korisliiga','mens',true),
+('cb2904a2-2778-4289-91be-17514200cef2','Bisons Loimaa','Finland','1c883516-158f-4099-8b48-02876e43f07d','Korisliiga','mens',true),
+('d04f169b-0fd5-4e85-b28f-5776c2356d8e','WKS Śląsk Wrocław','Poland','b408d347-2758-4458-9531-4783ba66f10a','ORLEN Basket Liga','mens',true),
+('d1074e47-7248-4e53-a04b-a46ab993e31d','Helsinki Seagulls','Finland','1c883516-158f-4099-8b48-02876e43f07d','Korisliiga','mens',true),
+('d9845f51-d838-45f5-ad71-ff1bdbb0374d','Legia Warszawa','Poland','b408d347-2758-4458-9531-4783ba66f10a','ORLEN Basket Liga','mens',true),
+('dc77b516-b343-4e4b-a4a3-acd098ca9462','Korihait','Finland','1c883516-158f-4099-8b48-02876e43f07d','Korisliiga','mens',true),
+('dcd4874a-121e-4683-80de-80e01d9418e4','Dziki Warszawa','Poland','b408d347-2758-4458-9531-4783ba66f10a','ORLEN Basket Liga','mens',true),
+('edd50f0f-ced8-4bcb-a92a-822b1c242b2a','Kipinä Basket','Finland','1c883516-158f-4099-8b48-02876e43f07d','Korisliiga','mens',true);
 create temporary table before_ld1_leagues on commit drop as select * from pg_temp.ld1_leagues;
 create temporary table before_ld1_teams on commit drop as select * from pg_temp.ld1_teams;
 create temporary table before_ld1_memberships on commit drop as select * from pg_temp.ld1_memberships;
@@ -182,6 +215,7 @@ create temporary table before_ld1_legacy_teams on commit drop as select * from p
 \ir ../../reports/league-data-1/iceland-mens-shadow-correction.sql
 \ir ../../reports/league-data-1/portugal-shadow-correction.sql
 \ir ../../reports/league-data-1/euroleague-shadow-memberships.sql
+\ir ../../reports/league-data-1/finland-poland-shadow-memberships.sql
 create temporary table after_ld1_leagues on commit drop as select * from pg_temp.ld1_leagues;
 create temporary table after_ld1_teams on commit drop as select * from pg_temp.ld1_teams;
 create temporary table after_ld1_memberships on commit drop as select * from pg_temp.ld1_memberships;
@@ -194,6 +228,7 @@ create temporary table after_ld1_legacy_teams on commit drop as select * from pg
 \ir ../../reports/league-data-1/iceland-mens-shadow-correction.sql
 \ir ../../reports/league-data-1/portugal-shadow-correction.sql
 \ir ../../reports/league-data-1/euroleague-shadow-memberships.sql
+\ir ../../reports/league-data-1/finland-poland-shadow-memberships.sql
 do $combined$ begin
 if (select count(*) from pg_temp.ld1_leagues)<>(select count(*)+5 from pg_temp.before_ld1_leagues) then raise exception 'ld1_leagues: unexpected delta';end if;
 if exists(select * from pg_temp.after_ld1_leagues except select * from pg_temp.ld1_leagues) or exists(select * from pg_temp.ld1_leagues except select * from pg_temp.after_ld1_leagues) then raise exception 'ld1_leagues: second run changed state';end if;
@@ -201,7 +236,7 @@ if exists(select id from pg_temp.before_ld1_leagues except select id from pg_tem
 if (select count(*) from pg_temp.ld1_teams)<>(select count(*)+22 from pg_temp.before_ld1_teams) then raise exception 'ld1_teams: unexpected delta';end if;
 if exists(select * from pg_temp.after_ld1_teams except select * from pg_temp.ld1_teams) or exists(select * from pg_temp.ld1_teams except select * from pg_temp.after_ld1_teams) then raise exception 'ld1_teams: second run changed state';end if;
 if exists(select id from pg_temp.before_ld1_teams except select id from pg_temp.ld1_teams) then raise exception 'ld1_teams: lost existing ID';end if;
-if (select count(*) from pg_temp.ld1_memberships)<>(select count(*)+94 from pg_temp.before_ld1_memberships) then raise exception 'ld1_memberships: unexpected delta';end if;
+if (select count(*) from pg_temp.ld1_memberships)<>(select count(*)+122 from pg_temp.before_ld1_memberships) then raise exception 'ld1_memberships: unexpected delta';end if;
 if exists(select * from pg_temp.after_ld1_memberships except select * from pg_temp.ld1_memberships) or exists(select * from pg_temp.ld1_memberships except select * from pg_temp.after_ld1_memberships) then raise exception 'ld1_memberships: second run changed state';end if;
 if exists(select id from pg_temp.before_ld1_memberships except select id from pg_temp.ld1_memberships) then raise exception 'ld1_memberships: lost existing ID';end if;
 if (select count(*) from pg_temp.ld1_legacy_leagues)<>(select count(*)+1 from pg_temp.before_ld1_legacy_leagues) then raise exception 'ld1_legacy_leagues: unexpected delta';end if;
