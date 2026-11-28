@@ -19,7 +19,7 @@ export function PhotoStories({uid,canWrite,blockedIds,onClose,onBlock}:Props){
  const [photo,setPhoto]=useState<Photo|null>(null),[caption,setCaption]=useState(""),[busy,setBusy]=useState(false),[message,setMessage]=useState(""),[uncertain,setUncertain]=useState(false),[now,setNow]=useState(()=>Date.now());
  const [audience,setAudience]=useState<StoryAudience>("followers");
  const [videoDraft,setVideoDraft]=useState<Video|null>(null);
- const previewFailure=useCallback(()=>{if(alive.current)setMessage("This clip could not be previewed. Choose another video.");},[]);
+ const previewFailure=useCallback(()=>setMessage("This clip could not be previewed. Choose another video."),[]);
  const alive=useRef(false),locked=useRef(false),controller=useRef<AbortController|null>(null),closeRef=useRef(onClose);
  useEffect(()=>{closeRef.current=onClose;},[onClose]);
  const close=useCallback(()=>{alive.current=false;controller.current?.abort();closeRef.current();},[]);
