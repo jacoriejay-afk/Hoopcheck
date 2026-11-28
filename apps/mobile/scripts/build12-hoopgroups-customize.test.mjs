@@ -46,7 +46,18 @@ test("group read and mutation requests pin the verified caller token and seriali
  assert.match(catalog,/current!==token/);assert.match(catalog,/controller.signal.aborted/);
  for(const name of ["join","createGroup","saveGroup","leaveGroup","createChannel","send","report","block"]){
   const start=groups.indexOf("async function "+name+"(");const end=groups.indexOf("\n  }",start);const body=groups.slice(start,end);
-  assert.match(body,/if\(mutationLocked.current\)return/);assert.match(body,/const token=await safetyToken\(\)/);assert.match(body,/setHeader\("Authorization",\s*"Bearer "\+token\)/);assert.match(body,/finally\{mutationLocked.current=false/);
+  assert.match(body,/if\(mutationLocked.current\)return/);
+  if(name==="join"||name==="leaveGroup"){
+    assert.match(body,/setGroupMembership\(supabase,userId,/);
+    const helper=read("../src/native/groupMembership.ts");
+    assert.match(helper,/client\.auth\.getUser\(token\)/);
+    assert.match(helper,/latest\.data\.session\.access_token!==token/);
+    assert.match(helper,/setHeader\("Authorization",header\)\.abortSignal\(signal\)/);
+    assert.match(helper,/await verify\(\);[\s\S]*?return \{spaceId,joined:join\}/);
+  }else{
+    assert.match(body,/const token=await safetyToken\(\)/);assert.match(body,/setHeader\("Authorization",\s*"Bearer "\+token\)/);
+  }
+  assert.match(body,/finally\{mutationLocked.current=false/);
  }
  assert.doesNotMatch(groups,/service_role/);
 });

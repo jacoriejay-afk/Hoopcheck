@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Photo } from "./mediaSelection";
+import type { Photo } from "./mediaTypes.ts";
 import { isFeedId } from "./feedClient.ts";
 import { PublicationUnconfirmed } from "./mediaClient.ts";
 import { resolveStoryPhoto } from "./storyPhotoReference.ts";

@@ -1,5 +1,5 @@
 import { appendPostLocation } from "./feedClient.ts";
-import type { Photo, Video } from "./mediaSelection";
+import type { Photo, Video } from "./mediaTypes.ts";
 import { classifyFeedPublication } from "./publicationResult.ts";
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function originUrl(origin: string, path: string) {

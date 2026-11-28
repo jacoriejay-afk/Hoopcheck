@@ -67,8 +67,11 @@ test("HoopGroups resets local state across account changes and scopes private ch
   assert.match(groups, /const managing=editing&&editingGroupId===selected\?\.id/);
   assert.match(groups, /if\(!selected \|\| !managing \|\| !userId/);
   const join = groups.slice(groups.indexOf("async function join()"), groups.indexOf("async function createGroup()"));
-  assert.match(join, /const token=await safetyToken\(\)/);
-  assert.match(join, /setHeader\("Authorization","Bearer "\+token\)/);
+  assert.match(join, /setGroupMembership\(supabase,userId,/);
+  const membership = read("../src/native/groupMembership.ts");
+  assert.match(membership, /client\.auth\.getUser\(token\)/);
+  assert.match(membership, /latest\.data\.session\?\.user\.id!==uid/);
+  assert.match(membership, /setHeader\("Authorization",header\)\.abortSignal\(signal\)/);
   assert.match(groups, /supabase\.auth\.getUser\(token\)/);
   assert.match(groups, /verified\.data\.user\?\.id!==userId/);
 });
