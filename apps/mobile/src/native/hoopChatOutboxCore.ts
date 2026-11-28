@@ -13,8 +13,9 @@ export function createChatOutbox(storage:Storage,lock:Lock,createId:()=>string){
   const {data,error}=await client.from("player_contact_messages").select(structured?"id,request_id,sender_id,body,reply_to_id":"id,request_id,sender_id,body").eq("id",id).eq("request_id",thread).eq("sender_id",owner).setHeader("Authorization",bearer).abortSignal(signal).maybeSingle();
   if(error||signal.aborted)throw Error("Delivery verification unavailable.");
   if(data===null)return null;
-  if(data.id!==id||data.request_id!==thread||data.sender_id!==owner||typeof data.body!=="string")throw Error("Invalid delivery receipt.");
-  const row=data as unknown as {body:string;reply_to_id?:string|null};
+  const record=data as unknown as Record<string,unknown>;
+  if(!record||record.id!==id||record.request_id!==thread||record.sender_id!==owner||typeof record.body!=="string")throw Error("Invalid delivery receipt.");
+  const row=record as {body:string;reply_to_id?:string|null};
   if(structured&&row.reply_to_id!==null&&(typeof row.reply_to_id!=="string"||!uuid.test(row.reply_to_id)))throw Error("Invalid reply receipt.");
   return row;
  }
@@ -43,9 +44,11 @@ export function createChatOutbox(storage:Storage,lock:Lock,createId:()=>string){
    // missing receipt deliberately reuses the id, even after an app restart.
    await check(client,owner,bearer,signal);
    await sendConversationMessage(client,{id,request_id:thread,sender_id:owner,body:text,...(reply?{reply_to_id:reply}:{})},signal,bearer);
+   const confirmed=await recover(client,owner,thread,id,bearer,signal,structured);
+   if(!confirmed)throw Error("Delivery receipt unavailable. Retry the same message.");
    await check(client,owner,bearer,signal);
    if(await storage.get(key)===id)await storage.remove(key);
-   return "sent" as const;
+   return confirmed.body===text&&(!structured||(confirmed.reply_to_id??undefined)===reply)?"sent" as const:"previous_delivered" as const;
   });
  }
  async function status(client:SupabaseClient,owner:string,thread:string,bearer:string,signal:AbortSignal,structured:boolean){
