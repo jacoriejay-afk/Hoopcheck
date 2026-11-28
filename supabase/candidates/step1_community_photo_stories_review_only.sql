@@ -8,9 +8,16 @@ BEGIN
  OR NOT EXISTS(SELECT 1 FROM pg_policy WHERE polrelid='public.feed_posts'::regclass AND polname='unified hoopfeed approved posts read' AND polcmd='r')
  OR to_regprocedure('private.hoopfeed_can_read_author(uuid)') IS NULL
  OR to_regprocedure('public.can_use_unified_hoopfeed()') IS NULL
- OR has_table_privilege('anon','public.feed_posts','SELECT')
+ OR EXISTS(SELECT FROM pg_policy WHERE polrelid='public.feed_posts'::regclass AND polpermissive AND (0=ANY(polroles) OR 'anon'::regrole::oid=ANY(polroles)) AND polcmd IN ('r','*'))
  THEN RAISE EXCEPTION 'Community Story baseline drift'; END IF;
 END $guard$;
+-- The same reviewed export grants anonymous SELECT despite authenticated-
+-- only feed read policies. Remove that unused ACL before adding new media.
+REVOKE SELECT ON TABLE public.feed_posts FROM anon;
+DO $acl$ BEGIN
+ IF has_any_column_privilege('anon','public.feed_posts','SELECT') OR NOT has_table_privilege('authenticated','public.feed_posts','SELECT')
+ THEN RAISE EXCEPTION 'Community Story least-privilege postcheck failed';END IF;
+END $acl$;
 -- Only checks reverse blocks; does not expose block records. No writes or elevated role grants.
 CREATE FUNCTION private.hoopfeed_community_story_author(p_author uuid)
  RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $$

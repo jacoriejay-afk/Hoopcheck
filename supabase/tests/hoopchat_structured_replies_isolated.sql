@@ -30,7 +30,9 @@ CREATE POLICY "accepted participants can view messages" ON public.player_contact
 CREATE POLICY "accepted participants can send messages" ON public.player_contact_messages FOR INSERT TO authenticated
  WITH CHECK (sender_id=auth.uid() AND EXISTS(SELECT 1 FROM public.player_contact_requests r WHERE r.id=player_contact_messages.request_id AND r.status='accepted' AND (r.requester_id=auth.uid() OR r.player_id=auth.uid())));
 GRANT SELECT ON public.player_contact_requests TO authenticated;
-GRANT SELECT,INSERT ON public.player_contact_messages TO authenticated;
+-- Reproduce the reviewed PG17 export's unused table grants.
+GRANT SELECT,MAINTAIN ON public.player_contact_messages TO anon;
+GRANT SELECT,INSERT,UPDATE,DELETE,MAINTAIN ON public.player_contact_messages TO authenticated;
 INSERT INTO public.profiles VALUES
  ('11111111-1111-4111-8111-111111111111'),('22222222-2222-4222-8222-222222222222'),('33333333-3333-4333-8333-333333333333');
 INSERT INTO public.player_contact_requests VALUES
@@ -55,7 +57,7 @@ DECLARE
  legacy constant uuid:='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb4';
  denied boolean;
 BEGIN
- IF has_table_privilege('anon','public.player_contact_messages','SELECT') OR has_table_privilege('authenticated','public.player_contact_messages','UPDATE') THEN
+ IF has_any_column_privilege('anon','public.player_contact_messages','SELECT') OR has_any_column_privilege('anon','public.player_contact_messages','INSERT') OR has_any_column_privilege('authenticated','public.player_contact_messages','UPDATE') OR has_table_privilege('authenticated','public.player_contact_messages','DELETE') OR NOT has_table_privilege('authenticated','public.player_contact_messages','SELECT') OR NOT has_table_privilege('authenticated','public.player_contact_messages','INSERT') THEN
   RAISE EXCEPTION 'unexpected privilege expansion'; END IF;
  SET LOCAL ROLE authenticated;
  PERFORM set_config('request.jwt.claim.sub',a::text,true);

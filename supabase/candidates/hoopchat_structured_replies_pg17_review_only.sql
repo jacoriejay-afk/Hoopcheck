@@ -8,9 +8,23 @@ BEGIN
  IF t IS NULL OR NOT (SELECT relrowsecurity FROM pg_class WHERE oid=t)
  OR NOT EXISTS(SELECT 1 FROM pg_policy WHERE polrelid=t AND polname='accepted participants can view messages' AND polcmd='r')
  OR NOT EXISTS(SELECT 1 FROM pg_policy WHERE polrelid=t AND polname='accepted participants can send messages' AND polcmd='a')
- OR has_table_privilege('anon',t,'SELECT') OR has_table_privilege('anon',t,'INSERT')
- THEN RAISE EXCEPTION 'HoopChat reply baseline drift'; END IF;
+ OR EXISTS(SELECT FROM pg_policy WHERE polrelid=t AND polpermissive AND (0=ANY(polroles) OR 'anon'::regrole::oid=ANY(polroles)))
+ OR NOT has_table_privilege('authenticated',t,'SELECT') OR NOT has_table_privilege('authenticated',t,'INSERT')
+ THEN RAISE EXCEPTION 'HoopChat reply policy baseline drift'; END IF;
 END $guard$;
+-- Reviewed schema-only export grants anon SELECT/MAINTAIN despite having
+-- no anonymous message policy. Tighten the ACL instead of relaxing the
+-- original no-anonymous-access requirement. Existing participant read/send
+-- policies and service-role privileges are not replaced.
+REVOKE SELECT,INSERT,UPDATE,DELETE ON TABLE public.player_contact_messages FROM anon;
+REVOKE UPDATE,DELETE ON TABLE public.player_contact_messages FROM authenticated;
+DO $acl$ DECLARE t oid:='public.player_contact_messages'::regclass; BEGIN
+ IF has_any_column_privilege('anon',t,'SELECT') OR has_any_column_privilege('anon',t,'INSERT')
+ OR has_any_column_privilege('anon',t,'UPDATE') OR has_table_privilege('anon',t,'DELETE')
+ OR has_any_column_privilege('authenticated',t,'UPDATE') OR has_table_privilege('authenticated',t,'DELETE')
+ OR NOT has_table_privilege('authenticated',t,'SELECT') OR NOT has_table_privilege('authenticated',t,'INSERT')
+ THEN RAISE EXCEPTION 'HoopChat reply least-privilege postcheck failed'; END IF;
+END $acl$;
 ALTER TABLE public.player_contact_messages ADD COLUMN reply_to_id uuid;
 ALTER TABLE public.player_contact_messages ADD CONSTRAINT player_contact_messages_thread_id_unique UNIQUE(request_id,id);
 ALTER TABLE public.player_contact_messages ADD CONSTRAINT player_contact_messages_reply_same_thread
@@ -32,5 +46,5 @@ BEGIN
 END $$;
 CREATE TRIGGER validate_hoopchat_reply BEFORE INSERT OR UPDATE ON public.player_contact_messages
  FOR EACH ROW EXECUTE FUNCTION public.validate_hoopchat_reply();
--- No grants, no new RLS policy, no cross-thread forwarding and no copied private payload.
+-- No new grants or RLS policies, no cross-thread forwarding and no copied private payload.
 -- Older clients omit the nullable column. Deleting an original clears its link.
