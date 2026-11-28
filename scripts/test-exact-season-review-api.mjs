@@ -161,3 +161,36 @@ test("staff review queue requires moderator authorization and preserves scoped I
   if(response.ok){const body=await response.json();assert.deepEqual(body.reviews.map(r=>r.author_id),sample.empty?[]:["verified"]);assert.equal(body.reviews.some(r=>"secret" in r),false);}
  }
 });
+
+test("men's review text matches restored database constraints before consuming quota", async () => {
+ const { NextResponse } = await import("next/server.js");
+ const source = ts.transpileModule(read("app/api/reviews/route.ts"),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+ const cases = [
+  {body:"a".repeat(19),title:"Valid",status:400},
+  {body:"🏀".repeat(10),title:"Valid",status:400},
+  {body:"a".repeat(20),title:"ab",status:400},
+  {body:"a".repeat(20),title:"🏀🏀",status:400},
+  {body:"a".repeat(20),title:"",status:429},
+  {body:"a".repeat(20),title:"abc",status:429},
+  {body:"🏀".repeat(20),title:"Valid",status:429},
+ ];
+ for (const sample of cases) {
+  let slots=0;
+  const client={
+   auth:{getUser:async()=>({data:{user:{id:"player",email_confirmed_at:"2026-01-01"}}})},
+   from:table=>{assert.ok(["profiles","membership_entitlements"].includes(table));const q={select:()=>q,eq:()=>q,maybeSingle:async()=>({data:{account_type:"player",player_verified:true,plan:"premium",status:"active"}})};return q;},
+   rpc:async name=>{assert.equal(name,"claim_review_submission_slot");slots++;return {data:null,error:null};}
+  };
+  const imports={"next/server":{NextResponse},"@supabase/supabase-js":{createClient:()=>client},"../../../lib/membership-tier":{getHoopCheckEntitlements:()=>({canWriteReviews:true})},"../../../lib/career/verified-review-season":{exactSeasonReviewsEnabled:()=>false}};
+  const route={};
+  new Function("require","exports","process",source)(name=>imports[name],route,{env:{NEXT_PUBLIC_SUPABASE_URL:"https://fixture.invalid",NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:"fixture"}});
+  const response=await route.POST(new Request("https://fixture.invalid/api/reviews",{method:"POST",headers:{Authorization:"Bearer fixture"},body:JSON.stringify({coach_id:"coach",player_season:"2025-26",overall_rating:4,communication_rating:4,professionalism_rating:4,development_rating:4,payment_rating:4,body:sample.body,title:sample.title})}));
+  assert.equal(response.status,sample.status);
+  assert.equal(slots,sample.status===429?1:0);
+ }
+ for(const path of ["app/coaches/[id]/review/page.tsx","app/leagues/[id]/review/page.tsx","app/teams/[id]/review/page.tsx"]) {
+  assert.match(read(path),/Array\.from\(trimmedBody\)\.length < 20/);
+  assert.match(read(path),/minLength=\{20\}/);
+ }
+ assert.match(read("apps/mobile/app/teams/[id]/review.tsx"),/Array\.from\(body\.trim\(\)\)\.length < 20/);
+});
