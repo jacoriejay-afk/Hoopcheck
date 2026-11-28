@@ -3,7 +3,7 @@ import { AppState, Pressable, ScrollView, Text, TextInput, View } from "react-na
 import { Ionicons } from "@expo/vector-icons";
 import { randomUUID } from "expo-crypto";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Button } from "../src/primitives";
 import {PlayerReferencePanel} from "../components/PlayerReferencePanel";
 import { ConversationSafety } from "../components/ConversationSafety";
@@ -13,6 +13,7 @@ import { HoopCheckLoading } from "../components/HoopCheckLoading";
 import { useEntryTheme } from "../src/theme";
 import { supabase } from "../src/lib/supabase";
 import { requireOnline, useNetwork } from "../src/native/network";
+import { conversationLinkId, readLinkedConversation } from "../src/native/hoopChatLink";
 import { hoopChatAuthAction, withHoopChatDeadline } from "../src/native/hoopChatLoad";
 import { appendConversationPage, CHAT_HISTORY_PAGE_SIZE, matchesConversationSearch, readConversationPage, refreshConversationPage, type ContactMessage } from "../src/native/hoopChatHistory";
 import { prepareConversationMessage, sendConversationMessage } from "../src/native/hoopChatSend";
@@ -46,6 +47,10 @@ async function verifyChatPeer(uid:string,peer:string,signal:AbortSignal){
 export default function MessagesScreen({ embedded = false, mode = "all" }: { embedded?: boolean; mode?: "all" | "conversations" | "requests" } = {}) {
   const theme = useEntryTheme();
   const router = useRouter();
+  const params = useLocalSearchParams<{conversation?: string | string[]}>();
+  const destination = embedded ? null : conversationLinkId(params.conversation);
+  const handledDestination = useRef<string | null>(null);
+  const linkedDestination = useRef<{id:string;owner:string}|null>(null);
   const { offline } = useNetwork();
   const [userId, setUserId] = useState("");
   const [requests, setRequests] = useState<ContactRequest[]>([]);
@@ -75,7 +80,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
   const focused = useRef(false);
   const reloadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (linkId?: string) => {
     const revision = ++generation.current;
     setLoading(true); setError("");
     try {
@@ -95,6 +100,12 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
           .order("created_at", { ascending: false }).limit(100).setHeader("Authorization",header).abortSignal(signal);
         if (requestError) throw new Error("Messages could not be loaded.");
         const rows = ((data || []) as ContactRequest[]).filter(row=>!blockedIds.has(row.requester_id===user.id?row.player_id:row.requester_id));
+        const linked = linkId ? await readLinkedConversation(supabase, linkId, user.id, header, signal) : null;
+        if (linkId) {
+          const index = rows.findIndex(row => row.id === linkId);
+          if (!linked && index >= 0) rows.splice(index, 1);
+          if (linked && index === -1) rows.unshift(linked);
+        }
         const accepted = rows.filter(item => item.status === "accepted").map(item => item.id);
         const peerIds = [...new Set(rows.map(item => item.requester_id === user.id ? item.player_id : item.requester_id))];
         const [history, people, unread] = await Promise.all([
@@ -108,7 +119,8 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
           syncReadMarkers ? readServerChatCounts(supabase, rows.map(row=>row.id), { bearer:header, signal }).catch(()=>null) : null,
         ]);
         if (history.error) throw new Error("Conversation history could not be loaded.");
-        return { userId: user.id, rows, messages: (history.data || []) as ContactMessage[],
+        if (signal.aborted || await verifiedChatBearer(user.id) !== header) throw Error("Your session changed.");
+        return { linked, userId: user.id, rows, messages: (history.data || []) as ContactMessage[],
           contacts: (people.data || []) as ContactName[], unread };
       });
       if (revision !== generation.current) return;
@@ -116,7 +128,13 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       setUserId(result.userId); setRequests(result.rows); setMessages(result.messages);
       setServerUnread(result.unread ? { owner:result.userId, counts:result.unread } : null);
       setContacts(Object.fromEntries(result.contacts.map(person => [person.id, person])));
-      setSelectedId(current => result.rows.some(item => item.id === current) ? current : (result.rows[0]?.id || ""));
+      setSelectedId(current => result.linked?.id ?? (result.rows.some(item => item.id === current) ? current : (result.rows[0]?.id || "")));
+      if (linkId) {
+        linkedDestination.current = result.linked ? {id:result.linked.id,owner:result.userId} : null;
+        setOpenedMode("all");
+        setOpenedId(result.linked?.id ?? "");
+        if (!result.linked) setError("Conversation unavailable.");
+      }
     } catch (failure) {
       if (revision === generation.current) { setRequests([]);setMessages([]);setContacts({});setOpenedId("");setThreadPage(null);setServerUnread(null);setError(failure instanceof Error ? failure.message : "Unable to load messages."); }
     } finally {
@@ -126,7 +144,9 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
 
   useFocusEffect(useCallback(() => {
     focused.current = true;
-    void load();
+    const link = destination && handledDestination.current !== destination ? destination : undefined;
+    handledDestination.current = destination;
+    void load(link);
     return () => {
       focused.current = false;
       if (reloadTimer.current !== null) clearTimeout(reloadTimer.current);
@@ -135,7 +155,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       setServerUnread(null);
       setRequests([]); setMessages([]); setContacts({}); setUserId(""); setSelectedId(""); setOpenedId(""); setSearch(""); setReplyTarget(null); setForwardSelection(null); setThreadPage(null); setThreadError(null); historyRequest.current++; historyPaging.current=false; setHistoryBusy(false);
     };
-  }, [load]));
+  }, [load, destination]));
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
@@ -148,6 +168,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       setServerUnread(null);
       authIdentity.current = nextUserId;
       pendingMessages.current.clear();
+      linkedDestination.current = null;
       setRequests([]); setMessages([]); setContacts({}); setUserId(""); setSelectedId(""); setOpenedId(""); setSearch(""); setReplyTarget(null); setForwardSelection(null); setThreadPage(null); setThreadError(null); historyRequest.current++; historyPaging.current=false; setHistoryBusy(false);
       if (action === "clear") {
         setLoading(false);
@@ -218,6 +239,10 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
         const {data:{user},error:authError}=await supabase.auth.getUser();
         if (authError || user?.id!==viewerId || !active()) throw Error("Your session changed.");
         const header=await verifiedChatBearer(viewerId);
+        const linked = linkedDestination.current;
+        if (linked?.id === requestId && (linked.owner !== viewerId || !await readLinkedConversation(supabase, requestId, viewerId, header, signal))) {
+          throw Error("Conversation unavailable.");
+        }
         const target=await supabase.from("player_contact_requests").select("requester_id,player_id,status").eq("id",requestId).setHeader("Authorization",header).abortSignal(signal).maybeSingle();
         if(target.error||target.data?.status!=="accepted"||![target.data.requester_id,target.data.player_id].includes(viewerId))throw Error("Conversation unavailable.");
         const verifiedHeader=await verifyChatPeer(viewerId,target.data.requester_id===viewerId?target.data.player_id:target.data.requester_id,signal);
