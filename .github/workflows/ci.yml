@@ -84,6 +84,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify isolated video Story cleanup fencing and absence
+        run: node --test scripts/test-story-video-cleanup.mjs
+
       - name: Verify Build 9 signed HTTP guard offline (no network or tokens)
         run: node scripts/build9-signed-http-acceptance.mjs --self-test
 

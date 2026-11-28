@@ -45,6 +45,11 @@ assert.doesNotMatch(viewer, /supabase\.from\("user_blocks"\)\.upsert\(/, "Do not
 assert.ok(viewer.includes('error.code !== "23505"') &&
   viewer.includes('.eq("blocker_id", viewerId).eq("blocked_id", authorId).maybeSingle()'),
   "Duplicate Reel blocks must be verified through owner-scoped SELECT before success");
+assert.match(viewer, /<ScopedReelsViewer key=\{userId \?\? "signed-out"\} owner=\{userId\}/);
+assert.match(viewer, /\.is\("expires_at", null\)\s*\.or\("post_kind.is.null,post_kind.neq.story"\)/);
+assert.match(viewer, /\.setHeader\("Authorization", bearer\)/);
+assert.match(viewer, /if \(await verifiedBearer\(id\) !== bearer \|\| !mounted.current\) return;/);
+assert.match(viewer, /blockResult\.data\.length > 500/);
 const gate = read("app/reels/page.tsx");
 assert.ok(gate.includes('NEXT_PUBLIC_HOOPCHECK_REELS_ENABLED !== "true"'), "Do not bypass public Reels release gate");
 

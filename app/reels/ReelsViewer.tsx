@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { PageShell } from "../../components/LayoutSystem";
+import { useAuthState } from "../../components/AuthProvider";
 import HoopFeedPrivateMedia from "../../components/HoopFeedPrivateMedia";
 import { supabase } from "../../lib/supabase";
 import { getHoopCheckEntitlements } from "../../lib/membership-tier";
@@ -21,6 +22,19 @@ type Status = "loading" | "signin" | "locked" | "ready" | "error";
 const LIMIT = 10;
 
 export default function ReelsViewer() {
+  const { userId } = useAuthState();
+  return <ScopedReelsViewer key={userId ?? "signed-out"} owner={userId} />;
+}
+
+async function verifiedBearer(owner: string) {
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (error || !session?.access_token || session.user.id !== owner) throw Error("Reels account unavailable.");
+  const verified = await supabase.auth.getUser(session.access_token);
+  if (verified.error || verified.data.user?.id !== owner) throw Error("Reels account unavailable.");
+  return "Bearer " + session.access_token;
+}
+
+function ScopedReelsViewer({ owner }: { owner: string | null }) {
   const [status, setStatus] = useState<Status>("loading");
   const [viewerId, setViewerId] = useState("");
   const [reels, setReels] = useState<Reel[]>([]);
@@ -39,10 +53,14 @@ export default function ReelsViewer() {
     busy.current = true;
     setLoadingMore(Boolean(after));
     try {
+      const bearer = await verifiedBearer(id);
+      if (!mounted.current) return;
       let query = supabase.from("feed_posts")
         .select("id,author_id,body,video_url,created_at,profiles:profiles!feed_posts_author_id_fkey(display_name,account_type)")
         .eq("status", "approved").not("video_url", "is", null)
-        .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
+        .is("expires_at", null)
+        .or("post_kind.is.null,post_kind.neq.story")
+        .setHeader("Authorization", bearer)
         .order("created_at", { ascending: false }).order("id", { ascending: false })
         .limit(LIMIT + 1);
       if (after) query = query.or(`created_at.lt.${after.created_at},and(created_at.eq.${after.created_at},id.lt.${after.id})`);
@@ -50,13 +68,13 @@ export default function ReelsViewer() {
       if (result.error) throw result.error;
       const page = (result.data ?? []).slice(0, LIMIT);
       const hiddenResult = page.length
-        ? await supabase.from("feed_post_archives").select("post_id").eq("user_id", id).in("post_id", page.map(post => post.id))
+        ? await supabase.from("feed_post_archives").select("post_id").eq("user_id", id).in("post_id", page.map(post => post.id)).setHeader("Authorization", bearer)
         : { data: [], error: null };
       if (hiddenResult.error) throw hiddenResult.error;
       // Reuse the account-wide block list; never render blocked creators on Reels.
-      const blockResult = await supabase.from("user_blocks").select("blocked_id").eq("blocker_id", id).limit(500);
-      if (blockResult.error) throw blockResult.error;
-      if (!mounted.current) return;
+      const blockResult = await supabase.from("user_blocks").select("blocked_id").eq("blocker_id", id).limit(501).setHeader("Authorization", bearer);
+      if (blockResult.error || !blockResult.data || blockResult.data.length > 500) throw Error("Reels block list unavailable.");
+      if (await verifiedBearer(id) !== bearer || !mounted.current) return;
       // Existing archives can only be written by the post author. Keep viewer
       // hides local; never attempt to bypass the existing RLS policy.
       let locallyHidden: string[] = [];
@@ -96,15 +114,15 @@ export default function ReelsViewer() {
     let cancelled = false;
     async function start() {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error || !session?.user) { if (!cancelled) setStatus("signin"); return; }
-        const id = session.user.id;
+        if (!owner) { if (!cancelled) setStatus("signin"); return; }
+        const id = owner;
+        const bearer = await verifiedBearer(id);
         const [profile, subscription, role] = await Promise.all([
-          supabase.from("profiles").select("account_type").eq("id", id).maybeSingle(),
-          supabase.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id", id).maybeSingle(),
-          supabase.rpc("get_current_user_admin_role"),
+          supabase.from("profiles").select("account_type").eq("id", id).setHeader("Authorization", bearer).maybeSingle(),
+          supabase.from("subscriptions").select("plan,status,access_status,current_period_end").eq("user_id", id).setHeader("Authorization", bearer).maybeSingle(),
+          supabase.rpc("get_current_user_admin_role").setHeader("Authorization", bearer),
         ]);
-        if (cancelled) return;
+        if (cancelled || await verifiedBearer(id) !== bearer || cancelled) return;
         if (profile.error || subscription.error || role.error) throw Error("Membership unavailable");
         const canRead = getHoopCheckEntitlements({
           accountType: profile.data?.account_type,
@@ -120,7 +138,7 @@ export default function ReelsViewer() {
     }
     void start();
     return () => { cancelled = true; mounted.current = false; };
-  }, [load]);
+  }, [load, owner]);
 
   useEffect(() => {
     const update = () => setHidden(document.hidden);
