@@ -26,3 +26,18 @@ export function classifyPlaySubscription(payload:unknown,expectedAccount:unknown
  if(payload.acknowledgementState!=="ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED")return {state:"invalid"};
  return {state:"eligible_for_reconciliation",product,expiresAt};
 }
+
+// Dedicated sandbox runtime path. The existing public read-only classifier
+// continues to reject linked tokens. A linked fingerprint is only a candidate
+// for the durable same-owner replacement transaction, not an access grant.
+export function classifyPlayRuntimeSubscription(payload:unknown,expectedAccount:string,token:string,fingerprint:(token:string)=>string,now=Date.now()):Decision&{previousFingerprint?:string}{
+ if(!obj(payload)||!Object.hasOwn(payload,"linkedPurchaseToken"))return classifyPlaySubscription(payload,expectedAccount,"test",now);
+ const previous=payload.linkedPurchaseToken;
+ if(typeof previous!=="string"||! /^[A-Za-z0-9._~-]{16,4096}$/.test(previous)||previous===token)return {state:"unsupported"};
+ const copy={...payload};delete copy.linkedPurchaseToken;
+ const result=classifyPlaySubscription(copy,expectedAccount,"test",now);
+ if(result.state!=="pending_ack"&&result.state!=="eligible_for_reconciliation")return result;
+ const digest=fingerprint(previous);
+ if(!validAccount(digest)||digest===fingerprint(token))return {state:"unsupported"};
+ return {...result,previousFingerprint:digest};
+}

@@ -1,7 +1,7 @@
 import "server-only";
 import {createHmac,createPrivateKey,sign} from "node:crypto";
 import {PLAY_PACKAGE} from "../../billing/play-products";
-import {classifyPlaySubscription} from "../../billing/play-subscription";
+import {classifyPlaySubscription,classifyPlayRuntimeSubscription} from "../../billing/play-subscription";
 
 const TOKEN_URL="https://oauth2.googleapis.com/token";
 const API_ORIGIN="https://androidpublisher.googleapis.com";
@@ -66,15 +66,16 @@ export function createPlayVerificationClient(env:Env=process.env,request:Request
    return result.access_token;
   }catch{throw unavailable();}
  }
+ async function readSubscription(token:unknown){
+  if(typeof token!=="string"||! /^[A-Za-z0-9._~-]{16,4096}$/.test(token)||token==="."||token==="..")throw unavailable();
+  const auth=await accessToken();
+  return readJson(request,API_ORIGIN+"/androidpublisher/v3/applications/"+PLAY_PACKAGE+"/purchases/subscriptionsv2/tokens/"+encodeURIComponent(token),{method:"GET",headers:{Authorization:"Bearer "+auth,Accept:"application/json"}});
+ }
  return {
   accountId(owner:string){return playAccountId(owner,accountKey);},
-  async verify(owner:string,token:unknown){
-   const expected=playAccountId(owner,accountKey);
-   // Opaque provider tokens: reject path delimiters and excessive input.
-   if(typeof token!=="string"||! /^[A-Za-z0-9._~-]{16,4096}$/.test(token)||token==="."||token==="..")throw unavailable();
-   const auth=await accessToken();
-   const payload=await readJson(request,API_ORIGIN+"/androidpublisher/v3/applications/"+PLAY_PACKAGE+"/purchases/subscriptionsv2/tokens/"+encodeURIComponent(token),{method:"GET",headers:{Authorization:"Bearer "+auth,Accept:"application/json"}});
-   return classifyPlaySubscription(payload,expected,"test",clock());
+  async verify(owner:string,token:unknown){return classifyPlaySubscription(await readSubscription(token),playAccountId(owner,accountKey),"test",clock());},
+  async verifyRuntime(owner:string,token:string,fingerprint:(token:string)=>string){
+   return classifyPlayRuntimeSubscription(await readSubscription(token),playAccountId(owner,accountKey),token,fingerprint,clock());
   }
  };
 }

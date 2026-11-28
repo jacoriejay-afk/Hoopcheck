@@ -32,6 +32,12 @@ export function createDisposablePlayAdapters(options:{scope:"disposable_pg17";en
    if(v==="claimed"||v==="already_claimed"||v==="foreign_owner"||v==="catalog_conflict"||v==="retry")return v;
    throw Error("Invalid claim result");
   },
+  async claimReplacement(owner:string,accountId:string,previous:string,product:{productId:string;basePlanId:string},sealed:SealedPurchase){
+   const v=await run("select play_billing_candidate.claim_replacement_test_purchase($1::uuid,$2,$3,$4,$5,$6,$7)",[owner,accountId,previous,sealed.fingerprint,sealed.envelope,product.productId,product.basePlanId]);
+   if(v==="claimed"||v==="already_claimed"||v==="foreign_owner"||v==="catalog_conflict"||v==="retry")return v;
+   throw Error("Invalid replacement result");
+  },
+  async fulfillReplacement(c:Claim,g:number,state:string,expiry:string,previous:string){return await run("select play_billing_candidate.finish_replacement_test_purchase($1,$2::uuid,$3::bigint,$4,$5::timestamptz,$6)",[c.fingerprint,c.owner,g,state,expiry,previous])===true;},
   async fulfill(c:Claim,g:number,state:string,expiry:string){return await run("select play_billing_candidate.finish_and_fulfill_test_purchase($1,$2::uuid,$3::bigint,$4,$5::timestamptz)",[c.fingerprint,c.owner,g,state,expiry])===true;},
   async confirm(c:Claim,g:number,expiry:string){return await run("select play_billing_candidate.confirm_test_fulfillment($1,$2::uuid,$3::bigint,$4::timestamptz)",[c.fingerprint,c.owner,g,expiry])===true;},
   async ownerHeld(owner:string){return await run("select exists(select 1 from play_billing_candidate.owner_holds where owner_id=$1::uuid)",[owner])!==false;},

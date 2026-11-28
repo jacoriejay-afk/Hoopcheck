@@ -42,24 +42,28 @@ export function createDisposablePlayRuntime(p:{
    try{
     const s=await auth(request);
     if(!s||typeof token!=="string"||! /^[A-Za-z0-9._~-]{16,4096}$/.test(token))return null;
-    const first=await p.provider.verify(s.owner,token);
+    const fingerprint=(t:string)=>p.vault.fingerprint(t,"test");
+    const first=await p.provider.verifyRuntime(s.owner,token,fingerprint);
     if(!first.product||first.product.productId!==productId||!canPurchasePlayProduct(s.role,first.product)||!same(s,await auth(request)))return null;
     const product=playProduct(productId,first.product.basePlanId);
     if(!product)return null;
     const current=async()=>same(s,await auth(request));
+    const previous=first.previousFingerprint;
+    const verify=async(o:string,t:string)=>{const v=await p.provider.verifyRuntime(o,t,fingerprint);return v.previousFingerprint===previous?v:{state:"unsupported" as const};};
+    const fulfill=(c:Receipt|{owner:string;fingerprint:string;productId:string;basePlanId:string},g:number,state:string,expiry:string)=>previous?p.db.fulfillReplacement(c,g,state,expiry,previous):p.db.fulfill(c,g,state,expiry);
     const outcome=await reconcileTestPurchase({owner:s.owner,role:s.role,productId,basePlanId:product.basePlanId,token},{
-     now:p.now,authorize:current,verify:p.provider.verify,seal:p.vault.seal,
-     claim:(o,v,sealed)=>p.db.claimBound(o,accountId(o),v,sealed),
+     now:p.now,authorize:current,verify,seal:p.vault.seal,
+     claim:(o,v,sealed)=>previous?p.db.claimReplacement(o,accountId(o),previous,v,sealed):p.db.claimBound(o,accountId(o),v,sealed),
      async fulfillTest(o,v,sealed,expiresAt){
       const c={owner:o,fingerprint:sealed.fingerprint,productId:v.productId,basePlanId:v.basePlanId};
       const g=await p.db.begin(c);if(g===null)return null;
-      const verified=await p.provider.verify(o,token);
-      if(!await current()||verified.product?.productId!==v.productId||verified.product.basePlanId!==v.basePlanId||verified.expiresAt!==expiresAt||!await p.db.fulfill(c,g,verified.state,expiresAt))return null;
+      const verified=await verify(o,token);
+      if(!await current()||verified.product?.productId!==v.productId||verified.product.basePlanId!==v.basePlanId||verified.expiresAt!==expiresAt||!await fulfill(c,g,verified.state,expiresAt))return null;
       return {...c,scope:"test",generation:g,expiresAt,committed:true};
      },
      confirmFulfillment:confirm,
      async acknowledgeTest(receipt,t){return await current()&&await confirm(receipt)&&await p.simulateAcknowledgment(receipt,t);},
-     async reconcileTest(receipt,v){const g=await p.db.begin(receipt);return g!==null&&await current()&&v.expiresAt===receipt.expiresAt&&await p.db.fulfill(receipt,g,v.state,receipt.expiresAt);}
+     async reconcileTest(receipt,v){const g=await p.db.begin(receipt);return g!==null&&await current()&&v.expiresAt===receipt.expiresAt&&await fulfill(receipt,g,v.state,receipt.expiresAt);}
     });
     return await current()?{owner:s.owner,environment:"test",outcome,membershipGranted:false}:null;
    }catch{return null;}

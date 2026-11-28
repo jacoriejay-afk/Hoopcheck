@@ -267,4 +267,57 @@ end
 $body$;
 revoke all on function play_billing_candidate.claim_bound_test_purchase(uuid,text,text,text,text,text),play_billing_candidate.finish_and_fulfill_test_purchase(text,uuid,bigint,text,timestamptz) from public,anon,authenticated,service_role;
 grant execute on function play_billing_candidate.claim_bound_test_purchase(uuid,text,text,text,text,text),play_billing_candidate.finish_and_fulfill_test_purchase(text,uuid,bigint,text,timestamptz) to service_role;
+-- Immutable same-owner replacement chain. A reservation does not suppress
+-- the predecessor until the successor has acknowledged, fulfilled evidence.
+create table play_billing_candidate.purchase_replacements(
+ previous_fingerprint text primary key check(previous_fingerprint ~ '^[0-9a-f]{64}$'),
+ successor_fingerprint text not null unique check(successor_fingerprint ~ '^[0-9a-f]{64}$'),
+ owner_id uuid not null,
+ activated boolean not null default false,
+ check(previous_fingerprint<>successor_fingerprint)
+);
+alter table play_billing_candidate.purchase_replacements enable row level security;
+alter table play_billing_candidate.purchase_replacements force row level security;
+revoke all on play_billing_candidate.purchase_replacements from public,anon,authenticated,service_role;
+grant select,insert on play_billing_candidate.purchase_replacements to service_role;
+grant update(activated) on play_billing_candidate.purchase_replacements to service_role;
+create policy replacement_read on play_billing_candidate.purchase_replacements for select to service_role using(true);
+create policy replacement_insert on play_billing_candidate.purchase_replacements for insert to service_role with check(not activated);
+create policy replacement_activate on play_billing_candidate.purchase_replacements for update to service_role using(not activated) with check(activated);
+create trigger hold_replacement_write before insert or update on play_billing_candidate.purchase_replacements for each row execute function play_billing_candidate.guard_test_owner_write();
+create function play_billing_candidate.claim_replacement_test_purchase(p_owner uuid,p_account text,p_old text,p_new text,p_envelope text,p_product text,p_plan text)
+returns text language plpgsql volatile security invoker set search_path='' as $body$
+declare result text;
+begin
+ perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('hoopcheck-play-hold:'||p_owner::text,0));
+ if p_old=p_new or exists(select 1 from play_billing_candidate.owner_holds where owner_id=p_owner) then return 'catalog_conflict'; end if;
+ if not exists(select 1 from play_billing_candidate.intent_purchase_bindings b join play_billing_candidate.purchase_intents t using(intent_id)
+ where b.fingerprint=p_old and b.owner_id=p_owner and t.owner_id=p_owner and t.account_id=p_account) then return 'foreign_owner'; end if;
+ if exists(select 1 from play_billing_candidate.purchase_replacements where previous_fingerprint=p_old and (successor_fingerprint<>p_new or owner_id<>p_owner)) then return 'catalog_conflict'; end if;
+ if exists(select 1 from play_billing_candidate.purchase_replacements where successor_fingerprint=p_new and (previous_fingerprint<>p_old or owner_id<>p_owner)) then return 'catalog_conflict'; end if;
+ -- A pre-existing independent successor could create a cycle. Only retry
+ -- the exact reserved edge; otherwise the successor must be a new claim.
+ if exists(select 1 from play_billing_candidate.purchase_claims where fingerprint=p_new)
+ and not exists(select 1 from play_billing_candidate.purchase_replacements where previous_fingerprint=p_old and successor_fingerprint=p_new and owner_id=p_owner) then return 'catalog_conflict'; end if;
+ result:=play_billing_candidate.claim_bound_test_purchase(p_owner,p_account,p_new,p_envelope,p_product,p_plan);
+ if result not in ('claimed','already_claimed') then return result; end if;
+ insert into play_billing_candidate.purchase_replacements(previous_fingerprint,successor_fingerprint,owner_id)
+ values(p_old,p_new,p_owner) on conflict(previous_fingerprint) do nothing;
+ return result;
+end
+$body$;
+create function play_billing_candidate.finish_replacement_test_purchase(p_fingerprint text,p_owner uuid,p_generation bigint,p_state text,p_expiry timestamptz,p_previous text)
+returns boolean language plpgsql volatile security invoker set search_path='' as $body$
+begin
+ perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('hoopcheck-play-hold:'||p_owner::text,0));
+ if not exists(select 1 from play_billing_candidate.purchase_replacements where previous_fingerprint=p_previous and successor_fingerprint=p_fingerprint and owner_id=p_owner) then return false; end if;
+ if not play_billing_candidate.finish_and_fulfill_test_purchase(p_fingerprint,p_owner,p_generation,p_state,p_expiry) then return false; end if;
+ if p_state='eligible_for_reconciliation' then
+  update play_billing_candidate.purchase_replacements set activated=true where previous_fingerprint=p_previous and successor_fingerprint=p_fingerprint and owner_id=p_owner and not activated;
+ end if;
+ return true;
+end
+$body$;
+revoke all on function play_billing_candidate.claim_replacement_test_purchase(uuid,text,text,text,text,text,text),play_billing_candidate.finish_replacement_test_purchase(text,uuid,bigint,text,timestamptz,text) from public,anon,authenticated,service_role;
+grant execute on function play_billing_candidate.claim_replacement_test_purchase(uuid,text,text,text,text,text,text),play_billing_candidate.finish_replacement_test_purchase(text,uuid,bigint,text,timestamptz,text) to service_role;
 commit;
