@@ -64,7 +64,8 @@ export async function reconcileOnePlayNotification(ports:Ports):Promise<"held"|"
   else if((result.state==="pending_ack"||result.state==="eligible_for_reconciliation")&&result.product?.productId===claim.productId&&result.product.basePlanId===claim.basePlanId&&typeof result.expiresAt==="string"&&Date.parse(result.expiresAt)>ports.now()){
    state=result.state;expiry=result.expiresAt;
   }
-  if(!await ports.complete(claim,generation,state,expiry,state==="unavailable"?null:result.lifecycle))throw Error("unavailable");
+  const metadata=state==="unavailable"?undefined:result.lifecycle;
+  if(!await (metadata?ports.complete(claim,generation,state,expiry,metadata):ports.complete(claim,generation,state,expiry)))throw Error("unavailable");
   if(state==="unavailable")throw Error("unavailable");
   return await ports.finish(job,true)?"done":"retry";
  }catch{if(job)try{await ports.finish(job,false);}catch{}return "retry";}

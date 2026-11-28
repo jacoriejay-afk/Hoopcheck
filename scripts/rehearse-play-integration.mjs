@@ -17,10 +17,12 @@ const {acknowledgeTestPurchase}=load("../lib/server/play/acknowledgment.ts",base
 const rtdn=load("../lib/server/play/rtdn.ts",base);
 const {ingestPlayPush,reconcileOnePlayNotification}=load("../lib/server/play/notification-worker.ts",{...base,"./rtdn":rtdn});
 const {authenticatePlayPush}=load("../lib/server/play/push-auth.ts",base);
+const {createPlayNotificationRuntime}=load("../lib/server/play/notification-runtime.ts",{...base,"./push-auth":{authenticatePlayPush},"./notification-worker":{ingestPlayPush,reconcileOnePlayNotification}});
 const {playIntentRequest}=load("../lib/server/play/intent-request.ts",base);
 const {createDisposablePlayAdapters}=load("../lib/server/play/disposable-adapters.ts",base);
 const {createDisposablePlayRuntime}=load("../lib/server/play/disposable-runtime.ts",{...base,"./intent-request":{playIntentRequest},"./test-fulfillment":{reconcileTestPurchase}});
 const {createDisposablePlayHandler}=load("../lib/server/play/disposable-handler.ts",base);
+const {createPlayCatalogAdapter}=load("../lib/server/play/catalog-adapter.ts",base);
 const {createPlaySandboxTransport}=load("../apps/mobile/src/native/playSandboxTransport.ts");
 const coordinator=load("../apps/mobile/src/native/playPurchaseCoordinator.ts",{"../../../../lib/billing/play-products":products});
 const {createPlayRecoveryJournal}=load("../apps/mobile/src/native/playRecoveryJournal.ts");
@@ -51,6 +53,12 @@ const replacements=new Map();
 const json=value=>new Response(JSON.stringify(value));
 const fakeRequest=async(url,init)=>{
  if(url==="https://oauth2.googleapis.com/token"&&init.method==="POST")return json({access_token:"fixture-oauth",token_type:"Bearer",expires_in:3600});
+ for(const id of ["hoopcheck.pro","hoopcheck.premium"]){
+  if(url==="https://androidpublisher.googleapis.com/androidpublisher/v3/applications/online.hoopcheck.app/subscriptions/"+id&&init.method==="GET"){
+   assert.equal(init.headers.Authorization,"Bearer fixture-oauth");
+   return json({packageName:"online.hoopcheck.app",productId:id,basePlans:products.PLAY_PRODUCTS.filter(p=>p.productId===id).map(p=>({basePlanId:p.basePlanId,state:"ACTIVE",autoRenewingBasePlanType:{billingPeriodDuration:({1:"P1M",6:"P6M",12:"P1Y"})[p.months]},regionalConfigs:[{regionCode:"US",newSubscriberAvailability:true,price:{currencyCode:"USD",units:String(Math.floor(p.usdMinor/100)),nanos:(p.usdMinor%100)*10000000}}]}))});
+  }
+ }
  if(url==="https://androidpublisher.googleapis.com/androidpublisher/v3/applications/online.hoopcheck.app/purchases/subscriptionsv2/tokens/"+token&&init.method==="GET"){
   assert.equal(init.headers.Authorization,"Bearer fixture-oauth");
   return json({externalAccountIdentifiers:{obfuscatedExternalAccountId:client.accountId(owner)},testPurchase:{},subscriptionState:revoked?"SUBSCRIPTION_STATE_EXPIRED":"SUBSCRIPTION_STATE_ACTIVE",acknowledgementState:acknowledged?"ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED":"ACKNOWLEDGEMENT_STATE_PENDING",lineItems:[{productId:product.productId,offerDetails:{basePlanId:product.basePlanId},autoRenewingPlan:{autoRenewEnabled:true},expiryTime:expiry}]});
@@ -93,7 +101,7 @@ const claimArgs=(owner,sealed)=>[q(sealed.fingerprint),q(owner),"1::smallint",q(
 const args=(owner,g,expires)=>[q(fp),q(owner),integer(g),q(expires)].join(",");
 let allowed=true;
 const runtime=createDisposablePlayRuntime({scope:"disposable_pg17",enabled:()=>true,authorize:async request=>allowed&&request.headers.get("authorization")==="Bearer synthetic-session"?{owner,sessionId:session,role:"player"}:null,
- catalog:async()=>[localized,downQuote,upQuote].map(v=>({...v,environment:"test",expiresAt:Date.now()+30000})),db:adapter,vault,provider:client,
+ catalog:createPlayCatalogAdapter({enabled:()=>true,provider:client,approvedRegion:async()=> "US",canStartPlayBilling:async()=>true}),db:adapter,vault,provider:client,
  simulateAcknowledgment:async(receipt,t)=>(await acknowledgeTestPurchase(receipt,t,{verify:(o,x)=>client.verifyRuntime(o,x,t=>vault.fingerprint(t,"test")),fingerprint:x=>vault.fingerprint(x,"test"),confirmDurableFulfillment:r=>adapter.confirm(r,r.generation,r.expiresAt),accessToken:async()=>"fixture-oauth",request:fakeRequest,now:Date.now}))==="reverify_required",now:Date.now});
 const authenticated=new Request("https://fixture.invalid/sync",{headers:{authorization:"Bearer synthetic-session"}});
 const synchronize=async()=> (await runtime.sync(authenticated,product.productId,token))?.outcome??"held";
@@ -143,16 +151,23 @@ const auth="Bearer "+unsigned+"."+crypto.sign("RSA-SHA256",Buffer.from(unsigned)
 const keyRequest=async(url,init)=>{assert.equal(url,"https://www.googleapis.com/oauth2/v3/certs");assert.equal(init.method,"GET");return json({keys:[{...publicKey.export({format:"jwk"}),kid:"fixture",alg:"RS256",use:"sig"}]});};
 const event={subscription:sub,message:{messageId:"987654321",data:Buffer.from(JSON.stringify({version:"1.0",packageName:"online.hoopcheck.app",eventTimeMillis:String(now),subscriptionNotification:{version:"1.0",notificationType:13,purchaseToken:token}})).toString("base64")}};
 const ingress={enabled:()=>true,authenticate:a=>authenticatePlayPush(a,config,keyRequest,now),subscription:sub,fingerprint:t=>vault.fingerprint(t,"test"),enqueue:adapter.enqueue,now:()=>now};
-assert.equal(await ingestPlayPush(event,auth,ingress),"accepted");assert.equal(await ingestPlayPush(event,auth,ingress),"accepted");
+const pushOptions={scope:"disposable_pg17",config:{...config,subscription:sub},db:adapter,runtime,vault,keyRequest,now:()=>now};
+const push=createPlayNotificationRuntime({...pushOptions,enabled:()=>true});
+const heldPush=createPlayNotificationRuntime(pushOptions);
+const send=async(e,authorization=auth)=>push.POST(new Request(config.audience,{method:"POST",headers:{"Content-Type":"application/json",authorization},body:JSON.stringify(e)}));
+assert.equal((await heldPush.POST(new Request(config.audience,{method:"POST"}))).status,503);
+assert.equal(await heldPush.tick(),"held");
+assert.equal((await send(event,"Bearer invalid")).status,503);
+assert.equal((await send(event)).status,204);assert.equal((await send(event)).status,204);
 assert.equal(sql("select count(*) from play_billing_candidate.notification_jobs where message_id='987654321'"),"1");
 const ports={enabled:()=>true,lease:adapter.lease,lookup:adapter.lookup,open:async c=>vault.open(await adapter.credential(c),c.owner,"test"),fingerprint:t=>vault.fingerprint(t,"test"),begin:adapter.begin,verify:runtime.notificationVerify,complete:adapter.complete,finish:adapter.finish,now:Date.now};
 // A renewal/refresh must preserve a fulfilled shadow membership at the new generation.
-assert.equal(await reconcileOnePlayNotification(ports),"done");
+assert.equal(await push.tick(),"done");
 assert.equal(sql("select provider||':'||plan from play_billing_candidate.shadow_membership_entitlements where user_id="+q(owner)),"google_play_test:premium");
 const expiredEvent={...event,message:{...event.message,messageId:"987654322"}};
-assert.equal(await ingestPlayPush(expiredEvent,auth,ingress),"accepted");
+assert.equal((await send(expiredEvent)).status,204);
 revoked=true;
-assert.equal(await reconcileOnePlayNotification(ports),"done");
+assert.equal(await push.tick(),"done");
 assert.equal(sql("select play_billing_candidate.read_test_observation("+q(fp)+","+q(owner)+")"),"inactive");
 assert.equal(sql("select count(*) from play_billing_candidate.shadow_membership_entitlements where user_id="+q(owner)),"0");
 assert.equal(sql("select count(*) from public.membership_sources where user_id="+q(owner)),"0");
@@ -187,7 +202,7 @@ assert.equal(await adapter.claimReplacement(owner,account,vault.fingerprint(up,"
 assert.equal(await adapter.claimReplacement(foreign,client.accountId(foreign),fp,product,vault.seal(up,foreign,"test"),null),"foreign_owner");
 const wake=async(messageId,body)=>{
  const e={subscription:sub,message:{messageId,data:Buffer.from(JSON.stringify({version:"1.0",packageName:"online.hoopcheck.app",eventTimeMillis:String(now),...body})).toString("base64")}};
- assert.equal(await ingestPlayPush(e,auth,ingress),"accepted");assert.equal(await reconcileOnePlayNotification(ports),"done");
+ assert.equal((await send(e)).status,204);assert.equal(await push.tick(),"done");
 };
 replacements.get(up).state="SUBSCRIPTION_STATE_CANCELED";
 await wake("987654323",{subscriptionNotification:{version:"1.0",notificationType:3,purchaseToken:up}});

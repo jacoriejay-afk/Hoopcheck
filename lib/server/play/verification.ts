@@ -1,6 +1,6 @@
 import "server-only";
 import {createHmac,createPrivateKey,sign} from "node:crypto";
-import {PLAY_PACKAGE} from "../../billing/play-products";
+import {PLAY_PACKAGE,PLAY_PRODUCTS} from "../../billing/play-products";
 import {classifyPlaySubscription,classifyPlayRuntimeSubscription,playLifecycle} from "../../billing/play-subscription";
 
 const TOKEN_URL="https://oauth2.googleapis.com/token";
@@ -72,6 +72,17 @@ export function createPlayVerificationClient(env:Env=process.env,request:Request
   return readJson(request,API_ORIGIN+"/androidpublisher/v3/applications/"+PLAY_PACKAGE+"/purchases/subscriptionsv2/tokens/"+encodeURIComponent(token),{method:"GET",headers:{Authorization:"Bearer "+auth,Accept:"application/json"}});
  }
  return {
+  async readRegionalCatalog(region:string){
+   if(!validPlaySandbox(env)||! /^[A-Z]{2}$/.test(region))throw unavailable();
+   const auth=await accessToken(),rows=[];
+   const deadline=clock()+30000;
+   for(const productId of ["hoopcheck.pro","hoopcheck.premium"]){
+    const payload=await readJson(request,API_ORIGIN+"/androidpublisher/v3/applications/"+PLAY_PACKAGE+"/subscriptions/"+productId,{method:"GET",headers:{Authorization:"Bearer "+auth,Accept:"application/json"}});
+    rows.push(...parsePlayRegionalCatalog(payload,productId,region,deadline));
+   }
+   if(!validPlaySandbox(env)||clock()>=deadline)throw unavailable();
+   return rows;
+  },
   accountId(owner:string){return playAccountId(owner,accountKey);},
   async verify(owner:string,token:unknown){return classifyPlaySubscription(await readSubscription(token),playAccountId(owner,accountKey),"test",clock());},
   async verifyRuntime(owner:string,token:string,fingerprint:(token:string)=>string){
@@ -80,4 +91,27 @@ export function createPlayVerificationClient(env:Env=process.env,request:Request
    return {...decision,lifecycle:playLifecycle(payload,decision)};
   }
  };
+}
+
+// The Publisher API provides regional full-price Money values. Device
+// ProductDetails remains authoritative for the displayed price and offer;
+// intent issuance requires an exact match with this independent evidence.
+export function parsePlayRegionalCatalog(payload:unknown,productId:string,region:string,expiresAt:number){
+ if(!object(payload)||payload.packageName!==PLAY_PACKAGE||payload.productId!==productId||!Array.isArray(payload.basePlans)||payload.basePlans.length>50||! /^[A-Z]{2}$/.test(region)||!Number.isSafeInteger(expiresAt))throw unavailable();
+ const expected=PLAY_PRODUCTS.filter(p=>p.productId===productId);
+ if(expected.length!==3)throw unavailable();
+ return expected.map(p=>{
+  const found=payload.basePlans as unknown[];
+  const plans=found.filter(v=>object(v)&&v.basePlanId===p.basePlanId);
+  const plan=plans[0];
+  if(plans.length!==1||!object(plan)||plan.state!=="ACTIVE"||!object(plan.autoRenewingBasePlanType)||Object.hasOwn(plan,"prepaidBasePlanType")||Object.hasOwn(plan,"installmentsBasePlanType")||
+   plan.autoRenewingBasePlanType.billingPeriodDuration!==({monthly:"P1M","six-month":"P6M",annual:"P1Y"}[p.basePlanId])||!Array.isArray(plan.regionalConfigs)||plan.regionalConfigs.length>300)throw unavailable();
+  const configs=plan.regionalConfigs.filter(v=>object(v)&&v.regionCode===region),config=configs[0];
+  if(configs.length!==1||!object(config)||config.newSubscriberAvailability!==true||!object(config.price))throw unavailable();
+  const money=config.price,units=money.units??"0",nanos=money.nanos??0;
+  if(typeof units!=="string"||! /^(0|[1-9][0-9]{0,9})$/.test(units)||typeof nanos!=="number"||!Number.isInteger(nanos)||nanos<0||nanos>=1000000000||nanos%1000!==0||typeof money.currencyCode!=="string"||! /^[A-Z]{3}$/.test(money.currencyCode))throw unavailable();
+  const micros=BigInt(units)*BigInt(1000000)+BigInt(nanos/1000);
+  if(micros<=BigInt(0)||micros>BigInt("9999999999999999")||(region==="US"&&(money.currencyCode!=="USD"||micros!==BigInt(p.usdMinor)*BigInt(10000))))throw unavailable();
+  return {productId:p.productId,basePlanId:p.basePlanId,priceMicros:micros.toString(),currency:money.currencyCode,environment:"test" as const,expiresAt};
+ });
 }

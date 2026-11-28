@@ -26,3 +26,10 @@ test("unknown claim and unavailable verification retry; stale generation cannot 
  const g=fixture();g.ports.verify=async()=>({state:"invalid"});assert.equal(await reconcileOnePlayNotification(g.ports),"retry");assert.deepEqual(g.calls,[[1,"unavailable",null],false]);
  const h=fixture();h.ports.complete=async()=>false;assert.equal(await reconcileOnePlayNotification(h.ports),"retry");assert.deepEqual(h.calls,[false]);
 });
+
+test("verified cancellation metadata travels with generation fenced completion",async()=>{
+ const f=fixture(),meta={providerState:"SUBSCRIPTION_STATE_CANCELED",autoRenewEnabled:false,periodEnd:"2026-12-28T00:00:00Z"};
+ f.ports.verify=async()=>({state:"eligible_for_reconciliation",product:{productId:"hoopcheck.pro",basePlanId:"monthly"},expiresAt:meta.periodEnd,lifecycle:meta});
+ assert.equal(await reconcileOnePlayNotification(f.ports),"done");
+ assert.deepEqual(f.calls,[[1,"eligible_for_reconciliation",meta.periodEnd,meta],true]);
+});
