@@ -182,7 +182,7 @@ export function deriveDirectoryQuality(leagues:DirectoryLeague[],teams:Directory
     const missing=expected.filter(e=>!clubs.some(club=>matches(club,e))).map(e=>e.name);
     const ambiguous=expected.filter(e=>clubs.filter(club=>matches(club,e)).length>1).map(e=>e.name);
     const unexpected=evidence?clubs.filter(club=>!expected.some(e=>matches(club,e))).map(club=>club.name):[];
-    return {id:league.id,name:league.name,country:league.country,side:league.basketball_type,season:league.season,actual:clubs.length,evidence,expected:evidence?expected.length:null,missing,unexpected,ambiguous};
+    return {id:league.id,name:league.name,country:league.country,side:league.basketball_type,season:league.season,actual:clubs.length,clubIds:[...ids].sort(),evidence,expected:evidence?expected.length:null,missing,unexpected,ambiguous};
   }).sort((a,b)=>Number(!!b.evidence)-Number(!!a.evidence)||(a.country||"").localeCompare(b.country||"")||a.name.localeCompare(b.name)||a.id.localeCompare(b.id));
   const linkedIdentityIds=new Map<string,string[]>();
   for(const team of teams)if(team.league_id){const key=identityKey(team);const ids=linkedIdentityIds.get(key)||[];ids.push(team.id);linkedIdentityIds.set(key,ids);}
@@ -202,7 +202,8 @@ export function deriveDirectoryQuality(leagues:DirectoryLeague[],teams:Directory
     duplicateTeamGroups:duplicateGroups(teams),duplicateLeagueGroups:duplicateGroups(leagues),
     missingSeason:leagues.filter(row=>!row.season?.trim()).length,
     countryAliasWarnings:[...countryLabels].filter(label=>["Czech Republic","Bosnia & Herzegovina","Chinese Taipei","Mexico City"].includes(label!)).sort(),
-    coverage,verifiedLeagueCount:coverage.filter(row=>!!row.evidence).length,
+    coverage,verifiedLeagueCount:coverage.filter(row=>!!row.evidence&&!row.evidence.confidence.startsWith("Provisional:")).length,
+    provisionalLeagueCount:coverage.filter(row=>row.evidence?.confidence.startsWith("Provisional:")).length,
     missingReviewedCompetitions:verifiedRosters.filter(evidence=>!coverage.some(row=>row.evidence===evidence)).map(evidence=>({name:evidence.name,country:evidence.country,side:evidence.side||"mens",season:evidence.season,expected:evidence.clubs.length,source:evidence.source,confidence:evidence.confidence,existingNameWithoutSeason:leagues.some(league=>league.country===evidence.country&&league.basketball_type===(evidence.side||"mens")&&[evidence.name,...(evidence.leagueAliases||[])].some(name=>normalized(name)===normalized(league.name)))}))};
 }
 
@@ -229,4 +230,24 @@ export function deriveWomensCatalogParity(
   return {canonicalTeams:women.length,canonicalLeagues:womensLeagues.length,legacyTeams:legacyTeams.length,legacyLeagues:legacyLeagues.length,
     sharedIds:shared.length,missingLegacy:missingLegacy.length,missingCanonical:missingCanonical.length,linkedLegacyWithoutCanonicalPrimary:missingCanonicalPrimary.length,
     exactLeagueCandidates:legacyLeagueCandidates.filter(row=>row.candidateIds.length===1).length,legacyLeagueCandidates};
+}
+
+/** Compare roster identity sets, not only totals. Season transitions are
+ * reported separately and never treated as same-season roster comparisons. */
+export function compareDirectoryCoverage(
+ before:ReturnType<typeof deriveDirectoryQuality>,after:ReturnType<typeof deriveDirectoryQuality>
+){
+ const oldById=new Map(before.coverage.map(row=>[row.id,row]));
+ const newById=new Map(after.coverage.map(row=>[row.id,row]));
+ const removedLeagues=before.coverage.filter(row=>!newById.has(row.id)).map(row=>({id:row.id,name:row.name,season:row.season}));
+ const addedLeagues=after.coverage.filter(row=>!oldById.has(row.id)).map(row=>({id:row.id,name:row.name,season:row.season}));
+ const seasonChanges=after.coverage.flatMap(row=>{const old=oldById.get(row.id);return old&&old.season!==row.season?[{id:row.id,name:row.name,before:old.season,after:row.season}]:[]});
+ const rosterChanges=after.coverage.flatMap(row=>{
+   const old=oldById.get(row.id);
+   if(!old||old.season!==row.season)return [];
+   const oldIds=new Set(old.clubIds),newIds=new Set(row.clubIds);
+   const added=row.clubIds.filter(id=>!oldIds.has(id)),removed=old.clubIds.filter(id=>!newIds.has(id));
+   return added.length||removed.length?[{id:row.id,name:row.name,season:row.season,before:old.actual,after:row.actual,added,removed}]:[];
+ });
+ return {removedLeagues,addedLeagues,seasonChanges,rosterChanges};
 }
