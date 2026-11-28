@@ -1548,7 +1548,7 @@ html.theme-dark .hc-team-entity-profile .hc-team-profile-hero :where(p,.hc-team-
   letter-spacing: .12em !important;
   max-width: 100%;
 }
-.hc-entity-profile-page:is(.hc-team-entity-profile,.hc-coach-entity-profile) .hc-team-profile-hero > .eyebrow {
+.hc-entity-profile-page.hc-team-entity-profile .hc-team-profile-hero > .eyebrow {
   color: var(--hc-accent-text) !important;
 }
 .hc-team-entity-profile .hc-team-profile-hero .hc-team-profile-stats {
