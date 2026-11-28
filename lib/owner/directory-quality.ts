@@ -4,7 +4,7 @@ export type DirectoryLeague = DirectoryIdentity & {season:string|null};
 export type DirectoryTeam = DirectoryIdentity & {league_id:string|null};
 export type DirectoryMembership = {team_id:string;league_id:string;season:string|null};
 type ClubEvidence = {name:string;country:string;aliases?:string[]};
-type RosterEvidence = {name:string;country:string;season:string;source:string;verifiedAt:string;confidence:string;clubs:ClubEvidence[]};
+type RosterEvidence = {name:string;country:string;season:string;side?:'mens'|'womens';leagueAliases?:string[];source:string;verifiedAt:string;confidence:string;clubs:ClubEvidence[]};
 const arm = (name:string,aliases?:string[]):ClubEvidence=>({name,country:"Armenia",aliases});
 const az = (name:string,aliases?:string[]):ClubEvidence=>({name,country:"Azerbaijan",aliases});
 export const verifiedRosters: RosterEvidence[] = [{
@@ -36,16 +36,26 @@ export const verifiedRosters: RosterEvidence[] = [{
 },{
   name:"Superleague",country:"Georgia",season:"2026-27",
   source:"https://www.blackfortress.ge/",
-  verifiedAt:"2026-11-28",confidence:"Official participating club schedule corroborated by independent full-season competition lists; federation-wide confirmation pending",
+  verifiedAt:"2026-11-28",confidence:"Provisional: current club schedules and secondary standings list 11; one secondary roster labels Mega instead of Margveti. Federation-wide identity confirmation pending",
   clubs:[
     {name:"BC Kavkasia",country:"Georgia",aliases:["CIU","BC CIU","CIU Basketball Club","Kavkasia"]},
     {name:"BC Rustavi",country:"Georgia",aliases:["Rustavi"]},
-    {name:"BC Orbi",country:"Georgia",aliases:["Orbi"]},
+    {name:"BC Orbi",country:"Georgia",aliases:["Orbi","Tkibuli Orbi"]},
     {name:"Telavi",country:"Georgia"},{name:"TSU Tbilisi",country:"Georgia",aliases:["TSU","BC TSU"]},
     {name:"Akhaltsikhe",country:"Georgia"},{name:"BC Batumi 2010",country:"Georgia",aliases:["Batumi","Batumi 2010"]},
     {name:"Kutaisi 2010",country:"Georgia",aliases:["Kutaisi"]},{name:"Iverioni",country:"Georgia"},
     {name:"Margveti",country:"Georgia",aliases:["BC Margveti"]},{name:"Black Fortress",country:"Georgia"}
   ]
+},{
+  name:"Bónus deild karla",country:"Iceland",season:"2026-27",side:"mens",leagueAliases:["Úrvalsdeild karla"],
+  source:"https://www.kki.is/frettir/frett/2026/10/02/Spa-formanna-fyrirlida-og-thjalfara-Bonusdeildar-karla-/",
+  verifiedAt:"2026-11-28",confidence:"Federation preseason participant list",
+  clubs:["Álftanes","Tindastóll","KR","Grindavík","Stjarnan","Keflavík","Valur","Njarðvík","ÍR","Höttur","Sindri","Ármann"].map(name=>({name,country:"Iceland",aliases:name==="KR"?["KR Reykjavík"]:name==="ÍR"?["ÍR Reykjavík"]:[]}))
+},{
+  name:"Bónus deild kvenna",country:"Iceland",season:"2026-27",side:"womens",leagueAliases:["Úrvalsdeild kvenna"],
+  source:"https://www.kki.is/frettir/frett/2026/09/25/Spa-formanna-fyrirlida-og-thjalfara-Bonusdeildar-kvenna/",
+  verifiedAt:"2026-11-28",confidence:"Federation preseason participant list, corroborated by all five opening-round pairings",
+  clubs:["Njarðvík","Grindavík","KR","Haukar","Tindastóll","Keflavík","Valur","Stjarnan","Ármann","Fjölnir"].map(name=>({name,country:"Iceland"}))
 }];
 const normalized=(v:string|null)=> (v||"").normalize("NFKD").replace(/\p{M}/gu,"").toLocaleLowerCase("en").replace(/[^\p{L}\p{N}]+/gu,"");
 const identityKey=(row:DirectoryIdentity)=>[normalized(row.country),row.basketball_type,normalized(row.name)].join(":");
@@ -86,7 +96,7 @@ export function deriveDirectoryQuality(leagues:DirectoryLeague[],teams:Directory
   const coverage=leagues.map(league=>{
     const ids=currentByLeague.get(league.id)||new Set<string>();
     const clubs=[...ids].flatMap(id=>{const team=teamById.get(id);return team?[team]:[]});
-    const evidence=verifiedRosters.find(row=>league.basketball_type==="mens"&&row.name===league.name&&row.country===league.country&&row.season===league.season);
+    const evidence=verifiedRosters.find(row=>(row.side||"mens")===league.basketball_type&&[row.name,...(row.leagueAliases||[])].some(name=>normalized(name)===normalized(league.name))&&row.country===league.country&&row.season===league.season);
     const expected=evidence?.clubs||[];
     const matches=(club:DirectoryTeam,e:ClubEvidence)=>normalized(club.country)===normalized(e.country)&&[e.name,...(e.aliases||[])].some(name=>normalized(name)===normalized(club.name));
     const missing=expected.filter(e=>!clubs.some(club=>matches(club,e))).map(e=>e.name);
@@ -102,5 +112,6 @@ export function deriveDirectoryQuality(leagues:DirectoryLeague[],teams:Directory
     duplicateTeamGroups:duplicateGroups(teams),duplicateLeagueGroups:duplicateGroups(leagues),
     missingSeason:leagues.filter(row=>!row.season?.trim()).length,
     countryAliasWarnings:[...countryLabels].filter(label=>["Czech Republic","Bosnia & Herzegovina","Chinese Taipei","Mexico City"].includes(label!)).sort(),
-    coverage,verifiedLeagueCount:coverage.filter(row=>!!row.evidence).length};
+    coverage,verifiedLeagueCount:coverage.filter(row=>!!row.evidence).length,
+    missingReviewedCompetitions:verifiedRosters.filter(evidence=>!coverage.some(row=>row.evidence===evidence)).map(evidence=>({name:evidence.name,country:evidence.country,side:evidence.side||"mens",season:evidence.season,expected:evidence.clubs.length,source:evidence.source,confidence:evidence.confidence,existingNameWithoutSeason:leagues.some(league=>league.country===evidence.country&&league.basketball_type===(evidence.side||"mens")&&[evidence.name,...(evidence.leagueAliases||[])].some(name=>normalized(name)===normalized(league.name)))}))};
 }
