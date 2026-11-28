@@ -1,4 +1,6 @@
 import { Reveal } from "../../components/Motion";
+import {AccountExportJobs} from "../../components/AccountExportJobs";
+import {durableExportEnabled} from "../../src/native/accountExport";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { useRouter } from "expo-router";
@@ -92,6 +94,7 @@ function Requests({owner}:{owner:string}) {
       {feedback?<Reveal><Text accessibilityRole="alert" style={{color:t.foreground}}>{feedback}</Text></Reveal>:null}
       <Button disabled={offline||saving||uncertain} onPress={()=>void submit()}>{saving?"Submitting…":"Submit privacy request"}</Button>
     </GlassCard>
+    {durableExportEnabled?<AccountExportJobs key={owner} owner={owner} offline={offline}/>:null}
     <Text accessibilityRole="header" style={{color:t.foreground,fontWeight:"800",fontSize:19}}>My requests</Text>
     <Button secondary disabled={saving||offline} onPress={()=>setRefresh(v=>v+1)}>Refresh requests</Button>
     {offline?<Text style={{color:t.muted}}>Reconnect to access your private requests.</Text>:loadError?<Text accessibilityRole="alert" style={{color:t.foreground}}>{loadError}</Text>:rows===null?<Text accessibilityRole="progressbar" style={{color:t.muted}}>Loading requests…</Text>:rows.length?rows.map(row=><GlassCard key={row.id} style={{gap:6}}><Text style={{color:t.foreground,fontWeight:"800"}}>{privacyRequestLabels[row.request_type]}</Text><Text style={{color:t.muted}}>{row.status.replaceAll("_"," ")} · {new Date(row.created_at).toLocaleString()}</Text><Text style={{color:t.foreground}}>{row.details}</Text></GlassCard>):<Text style={{color:t.muted}}>No privacy requests submitted.</Text>}
