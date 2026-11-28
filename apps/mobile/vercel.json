@@ -9,6 +9,7 @@
       "qa/step1-creator-studio-account-boundary": false,
       "qa/step1-feed-live-reconciliation": false,
       "qa/hoopcheck-master-acceptance": false,
+      "qa/steps-1-4-live-feed": false,
       "qa/step1-verified-reconciliation": false,
       "qa/step1-hoopchat-web-history": false,
       "reconcile/build8-mobile-705-700-710-711": false,
