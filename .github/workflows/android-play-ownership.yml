@@ -9,6 +9,8 @@ on:
       - "supabase/tests/android_play_lifecycle_fixture.sql"
       - "supabase/candidates/android_play_intent_fulfillment.sql"
       - "supabase/tests/android_play_intent_fulfillment_fixture.sql"
+      - "supabase/candidates/android_play_notification_queue.sql"
+      - "supabase/tests/android_play_notification_queue_fixture.sql"
       - ".github/workflows/android-play-ownership.yml"
 permissions:
   contents: read
@@ -64,3 +66,5 @@ jobs:
           wait "$a"; wait "$b"
           test "$(cat /tmp/play-consume-a /tmp/play-consume-b | sort)" = "$(printf 'f\nt')"
           echo "Concurrent single-use intent consumption passed"
+          docker exec -i "$PG_CONTAINER" psql -U postgres -v ON_ERROR_STOP=1 < supabase/candidates/android_play_notification_queue.sql
+          docker exec -i "$PG_CONTAINER" psql -U postgres -v ON_ERROR_STOP=1 < supabase/tests/android_play_notification_queue_fixture.sql
