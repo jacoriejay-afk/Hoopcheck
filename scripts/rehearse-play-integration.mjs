@@ -17,6 +17,8 @@ const {acknowledgeTestPurchase}=load("../lib/server/play/acknowledgment.ts",base
 const rtdn=load("../lib/server/play/rtdn.ts",base);
 const {ingestPlayPush,reconcileOnePlayNotification}=load("../lib/server/play/notification-worker.ts",{...base,"./rtdn":rtdn});
 const {authenticatePlayPush}=load("../lib/server/play/push-auth.ts",base);
+const {playIntentRequest}=load("../lib/server/play/intent-request.ts",base);
+const {createDisposablePlayAdapters}=load("../lib/server/play/disposable-adapters.ts",base);
 // All SQL input is generated fixture data; strict literal escaping and no
 // raw purchase token in SQL, arguments or logs.
 const q=v=>{if(typeof v!=="string"||! /^[A-Za-z0-9._:~+\/-]{1,5600}$/.test(v))throw Error("invalid fixture literal");return "'"+v+"'";};
@@ -26,6 +28,11 @@ function sql(statement){
  if(result.status!==0||result.error)throw Error("Disposable database operation failed");
  return result.stdout.trim();
 }
+// CI driver only: fixed statements, strictly escaped generated synthetic parameters.
+const adapter=createDisposablePlayAdapters({scope:"disposable_pg17",enabled:()=>true,query:async(statement,parameters)=>{
+ const rendered=statement.replace(/\$(\d+)/g,(_,n)=>{const v=parameters[Number(n)-1];if(v===null)return "null";if(typeof v==="number")return integer(v);if(typeof v==="boolean")return String(v);return q(v);});
+ const v=sql(rendered);if(!v)return null;if(v==="t"||v==="f")return v==="t";if(/^\d+$/.test(v))return Number(v);if(v.startsWith("{"))return JSON.parse(v);return v;
+}});
 const owner="66666666-6666-4666-8666-666666666666",foreign="77777777-7777-4777-8777-777777777777",session="88888888-8888-4888-8888-888888888888";
 const token="synthetic-e2e-"+crypto.randomBytes(16).toString("hex");
 const product=products.playProduct("hoopcheck.premium","annual");
@@ -50,10 +57,15 @@ const fakeRequest=async(url,init)=>{
 };
 client=createPlayVerificationClient(env,fakeRequest);
 const account=client.accountId(owner);
-const quote=[q(owner),q(session),q(account),q(product.productId),q(product.basePlanId),q("101900000"),q("USD")].join(",");
-const intent=sql("select play_billing_candidate.issue_test_intent("+quote+")");
-assert.equal(sql("select play_billing_candidate.consume_test_intent("+q(intent)+","+quote+")"),"t");
-assert.equal(sql("select play_billing_candidate.consume_test_intent("+q(intent)+","+quote+")"),"f");
+const localized={productId:product.productId,basePlanId:product.basePlanId,priceMicros:"101900000",currency:"USD"};
+const req=b=>new Request("https://fixture.invalid/intent",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)});
+const intentPorts={enabled:()=>true,authorize:async()=>({owner,sessionId:session,role:"player"}),accountId:o=>client.accountId(o),quote:async()=>({...localized,environment:"test",expiresAt:Date.now()+30000}),issue:adapter.issue,consume:adapter.consume,now:Date.now};
+const issued=await playIntentRequest(req(localized),"issue",intentPorts);assert.equal(issued.status,200);
+const intent=await issued.json();
+const consume={...localized,intentId:intent.intentId,expiresAt:intent.expiresAt};
+assert.equal((await playIntentRequest(req({...consume,expiresAt:consume.expiresAt-1}),"consume",intentPorts)).status,409);
+assert.equal((await playIntentRequest(req(consume),"consume",intentPorts)).status,200);
+assert.equal((await playIntentRequest(req(consume),"consume",intentPorts)).status,409);
 const claimArgs=(owner,sealed)=>[q(sealed.fingerprint),q(owner),"1::smallint",q(sealed.envelope),q(product.productId),q(product.basePlanId)].join(",");
 const args=(owner,g,expires)=>[q(fp),q(owner),integer(g),q(expires)].join(",");
 const begin=owner=>Number(sql("select play_billing_candidate.begin_test_refresh("+q(fp)+","+q(owner)+")"));
@@ -93,20 +105,19 @@ const unsigned=b64({alg:"RS256",kid:"fixture"})+"."+b64({iss:"https://accounts.g
 const auth="Bearer "+unsigned+"."+crypto.sign("RSA-SHA256",Buffer.from(unsigned),privateKey).toString("base64url");
 const keyRequest=async(url,init)=>{assert.equal(url,"https://www.googleapis.com/oauth2/v3/certs");assert.equal(init.method,"GET");return json({keys:[{...publicKey.export({format:"jwk"}),kid:"fixture",alg:"RS256",use:"sig"}]});};
 const event={subscription:sub,message:{messageId:"987654321",data:Buffer.from(JSON.stringify({version:"1.0",packageName:"online.hoopcheck.app",eventTimeMillis:String(now),subscriptionNotification:{version:"1.0",notificationType:13,purchaseToken:token}})).toString("base64")}};
-const ingress={enabled:()=>true,authenticate:a=>authenticatePlayPush(a,config,keyRequest,now),subscription:sub,fingerprint:t=>vault.fingerprint(t,"test"),enqueue:async(s,m,f)=>sql("select play_billing_candidate.enqueue_test_notification("+[q(s),q(m),q(f)].join(",")+")"),now:()=>now};
+const ingress={enabled:()=>true,authenticate:a=>authenticatePlayPush(a,config,keyRequest,now),subscription:sub,fingerprint:t=>vault.fingerprint(t,"test"),enqueue:adapter.enqueue,now:()=>now};
 assert.equal(await ingestPlayPush(event,auth,ingress),"accepted");assert.equal(await ingestPlayPush(event,auth,ingress),"accepted");
 assert.equal(sql("select count(*) from play_billing_candidate.notification_jobs where message_id='987654321'"),"1");
+const ports={enabled:()=>true,lease:adapter.lease,lookup:adapter.lookup,open:async c=>vault.open(await adapter.credential(c),c.owner,"test"),fingerprint:t=>vault.fingerprint(t,"test"),begin:adapter.begin,verify:(o,t)=>client.verify(o,t),complete:adapter.complete,finish:adapter.finish,now:Date.now};
+// A renewal/refresh must preserve a fulfilled shadow membership at the new generation.
+assert.equal(await reconcileOnePlayNotification(ports),"done");
+assert.equal(sql("select provider||':'||plan from play_billing_candidate.shadow_membership_entitlements where user_id="+q(owner)),"google_play_test:premium");
+const expiredEvent={...event,message:{...event.message,messageId:"987654322"}};
+assert.equal(await ingestPlayPush(expiredEvent,auth,ingress),"accepted");
 revoked=true;
-const row=sql("select row_to_json(x) from play_billing_candidate.lease_test_notification() x");
-const job=JSON.parse(row);
-const ports={enabled:()=>true,lease:async()=>({subscription:job.subscription,messageId:job.message_id,fingerprint:job.fingerprint,leaseId:job.lease_id}),
- lookup:async f=>{const v=JSON.parse(sql("select row_to_json(x) from (select owner_id,product_id,base_plan_id,fingerprint from play_billing_candidate.purchase_claims where fingerprint="+q(f)+") x"));return {owner:v.owner_id,productId:v.product_id,basePlanId:v.base_plan_id,fingerprint:v.fingerprint};},
- open:async c=>{const v=JSON.parse(sql("select row_to_json(x) from (select credential_version,credential_envelope,fingerprint from play_billing_candidate.purchase_claims where fingerprint="+q(c.fingerprint)+") x"));return vault.open({version:v.credential_version,envelope:v.credential_envelope,fingerprint:v.fingerprint},c.owner,"test");},
- fingerprint:t=>vault.fingerprint(t,"test"),begin:async c=>begin(c.owner),verify:(o,t)=>client.verify(o,t),complete:async(c,g,state,expires)=>finish(c.owner,g,state,expires),
- finish:async(j,success)=>sql("select play_billing_candidate.finish_test_notification("+[q(j.subscription),q(j.messageId),q(j.leaseId),success?"true":"false"].join(",")+")")==="t",now:Date.now};
 assert.equal(await reconcileOnePlayNotification(ports),"done");
 assert.equal(sql("select play_billing_candidate.read_test_observation("+q(fp)+","+q(owner)+")"),"inactive");
 assert.equal(sql("select count(*) from play_billing_candidate.shadow_membership_entitlements where user_id="+q(owner)),"0");
 assert.equal(sql("select count(*) from public.membership_sources where user_id="+q(owner)),"0");
-assert.equal(sql("select status from play_billing_candidate.notification_jobs where message_id='987654321'"),"done");
+assert.equal(sql("select status from play_billing_candidate.notification_jobs where message_id='987654322'"),"done");
 console.log("End-to-end synthetic Google Play integration passed: intent, encrypted ownership, provider verification, durable fulfillment, simulated acknowledgment, shadow membership, authenticated notification, dedupe and revocation.");

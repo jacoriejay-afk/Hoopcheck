@@ -120,4 +120,51 @@ end
 $body$;
 revoke all on function play_billing_candidate.confirm_test_fulfillment(text,uuid,bigint,timestamptz),play_billing_candidate.commit_test_fulfillment(text,uuid,bigint,timestamptz) from public,anon,authenticated,service_role;
 grant execute on function play_billing_candidate.confirm_test_fulfillment(text,uuid,bigint,timestamptz),play_billing_candidate.commit_test_fulfillment(text,uuid,bigint,timestamptz) to service_role;
+
+-- Exact timestamp returned from durable issuance, not an application clock guess.
+create function play_billing_candidate.issue_test_intent_bound(
+ p_owner uuid,p_session uuid,p_account text,p_product text,p_plan text,p_price text,p_currency text
+) returns jsonb language plpgsql volatile security invoker set search_path='' as $body$
+declare id uuid; result jsonb;
+begin
+ id:=play_billing_candidate.issue_test_intent(p_owner,p_session,p_account,p_product,p_plan,p_price,p_currency);
+ if id is null then return null; end if;
+ select jsonb_build_object('intentId',intent_id,'expiresAt',floor(extract(epoch from expires_at)*1000)::bigint)
+ into result from play_billing_candidate.purchase_intents where intent_id=id and owner_id=p_owner and session_id=p_session;
+ return result;
+end
+$body$;
+create function play_billing_candidate.consume_test_intent_bound(
+ p_id uuid,p_owner uuid,p_session uuid,p_account text,p_product text,p_plan text,p_price text,p_currency text,p_expiry_ms bigint
+) returns boolean language plpgsql volatile security invoker set search_path='' as $body$
+declare affected integer;
+begin
+ update play_billing_candidate.purchase_intents set consumed_at=clock_timestamp()
+ where intent_id=p_id and owner_id=p_owner and session_id=p_session and account_id=p_account
+ and product_id=p_product and base_plan_id=p_plan and price_micros=p_price and currency=p_currency
+ and floor(extract(epoch from expires_at)*1000)::bigint=p_expiry_ms
+ and consumed_at is null and expires_at>clock_timestamp();
+ get diagnostics affected=row_count; return affected=1;
+exception when check_violation then return false;
+end
+$body$;
+-- Notification refresh must carry forward durable fulfilled evidence to the
+-- new generation. Never create the first fulfillment from a notification.
+create function play_billing_candidate.finish_test_reconciliation(
+ p_fingerprint text,p_owner uuid,p_generation bigint,p_state text,p_expiry timestamptz
+) returns boolean language plpgsql volatile security invoker set search_path='' as $body$
+begin
+ if not play_billing_candidate.finish_test_refresh(p_fingerprint,p_owner,p_generation,p_state,p_expiry) then return false; end if;
+ if p_state='eligible_for_reconciliation' then
+  if not exists(select 1 from play_billing_candidate.test_fulfillments
+   where environment='test' and package_name='online.hoopcheck.app' and fingerprint=p_fingerprint
+   and owner_id=p_owner and generation<p_generation) then return false; end if;
+  return play_billing_candidate.commit_test_fulfillment(p_fingerprint,p_owner,p_generation,p_expiry);
+ end if;
+ return p_state='inactive';
+end
+$body$;
+revoke all on function play_billing_candidate.issue_test_intent_bound(uuid,uuid,text,text,text,text,text),play_billing_candidate.consume_test_intent_bound(uuid,uuid,uuid,text,text,text,text,text,bigint),play_billing_candidate.finish_test_reconciliation(text,uuid,bigint,text,timestamptz) from public,anon,authenticated,service_role;
+grant execute on function play_billing_candidate.issue_test_intent_bound(uuid,uuid,text,text,text,text,text),play_billing_candidate.consume_test_intent_bound(uuid,uuid,uuid,text,text,text,text,text,bigint),play_billing_candidate.finish_test_reconciliation(text,uuid,bigint,text,timestamptz) to service_role;
+
 commit;
