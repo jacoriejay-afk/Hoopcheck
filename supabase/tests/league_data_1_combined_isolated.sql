@@ -538,6 +538,19 @@ insert into pg_temp.ld1_teams(id,name,country,league_id,league_name,basketball_t
 ('e1141e62-e773-4923-896f-29a378516b5a','KS BNG Kutno','Poland',null,'Polish Second League Men','mens',true),
 ('f3c07d68-2fd2-426e-99ee-ab62b26e5147','Pantery Łańcut','Poland',null,'Polish First League Women','womens',true),
 ('f7c4fca3-cf97-438e-abaa-2093d0dc2ed2','AZS UW Warszawa Women','Poland',null,'Polish First League Women','womens',true);
+insert into pg_temp.ld1_leagues(id,name,country,season,basketball_type,active) values
+('51b5eb75-e46d-4029-8803-a3eea5088637','Premier League','Belarus','2026-27','mens',true);
+insert into pg_temp.ld1_teams(id,name,country,league_id,league_name,basketball_type,active) values
+('091758fa-d86b-4f79-a072-afeadc621af0','GOCOR-Soj Gomel','Belarus',null,'Belarusian Premier League','mens',true),
+('1691922a-6ae5-4986-aa9f-3a1879060e45','BC Tsmoki-Minsk','Belarus','51b5eb75-e46d-4029-8803-a3eea5088637','Premier League','mens',true),
+('30f6f6fe-5549-43ed-9886-c731b2530113','RCOP-SDUSHOR','Belarus',null,'Belarusian Premier League','mens',true),
+('4a8edaa9-d51f-4d71-babe-3e57fcc4ef2a','Borisfen Mogilev','Belarus',null,'Belarusian Premier League','mens',true),
+('557cdfdb-45eb-4a3a-bd6c-fd2714adc4a6','BK Grodno-93','Belarus','51b5eb75-e46d-4029-8803-a3eea5088637','Premier League','mens',true),
+('6cb9c7ea-b614-4328-bf04-b2bed4738f0c','Prinemanye Grodno','Belarus',null,'Belarusian Premier League','mens',true),
+('9d65cb6a-623c-4ed9-aca1-c9be62d7bfc7','BC Minsk','Belarus',null,'Belarusian Premier League','mens',true),
+('c6cc1fc0-40b0-43cb-a450-28d92a8e3472','Brest Region','Belarus',null,'Belarusian Premier League','mens',true),
+('d095ee76-a2a6-4319-aae4-feab8b1cc360','Rubon Vitebsk','Belarus',null,'Belarusian Premier League','mens',true),
+('e7c7303e-a5c4-4471-b8e9-407fbfded6d8','BC Barsy','Belarus','51b5eb75-e46d-4029-8803-a3eea5088637','Premier League','mens',true);
 create temporary table before_ld1_leagues on commit drop as select * from pg_temp.ld1_leagues;
 create temporary table before_ld1_teams on commit drop as select * from pg_temp.ld1_teams;
 create temporary table before_ld1_memberships on commit drop as select * from pg_temp.ld1_memberships;
@@ -563,6 +576,7 @@ create temporary table before_ld1_legacy_teams on commit drop as select * from p
 \ir ../../reports/league-data-1/serbia-womens-second-shadow-correction.sql
 \ir ../../reports/league-data-1/poland-lower-divisions-shadow-correction.sql
 \ir ../../reports/league-data-1/poland-third-tier-expansion-shadow.sql
+\ir ../../reports/league-data-1/belarus-shadow-correction.sql
 create temporary table after_ld1_leagues on commit drop as select * from pg_temp.ld1_leagues;
 create temporary table after_ld1_teams on commit drop as select * from pg_temp.ld1_teams;
 create temporary table after_ld1_memberships on commit drop as select * from pg_temp.ld1_memberships;
@@ -588,14 +602,15 @@ create temporary table after_ld1_legacy_teams on commit drop as select * from pg
 \ir ../../reports/league-data-1/serbia-womens-second-shadow-correction.sql
 \ir ../../reports/league-data-1/poland-lower-divisions-shadow-correction.sql
 \ir ../../reports/league-data-1/poland-third-tier-expansion-shadow.sql
+\ir ../../reports/league-data-1/belarus-shadow-correction.sql
 do $combined$ begin
 if (select count(*) from pg_temp.ld1_leagues)<>(select count(*)+20 from pg_temp.before_ld1_leagues) then raise exception 'ld1_leagues: unexpected delta';end if;
 if exists(select * from pg_temp.after_ld1_leagues except select * from pg_temp.ld1_leagues) or exists(select * from pg_temp.ld1_leagues except select * from pg_temp.after_ld1_leagues) then raise exception 'ld1_leagues: second run changed state';end if;
 if exists(select id from pg_temp.before_ld1_leagues except select id from pg_temp.ld1_leagues) then raise exception 'ld1_leagues: lost existing ID';end if;
-if (select count(*) from pg_temp.ld1_teams)<>(select count(*)+75 from pg_temp.before_ld1_teams) then raise exception 'ld1_teams: unexpected delta';end if;
+if (select count(*) from pg_temp.ld1_teams)<>(select count(*)+81 from pg_temp.before_ld1_teams) then raise exception 'ld1_teams: unexpected delta';end if;
 if exists(select * from pg_temp.after_ld1_teams except select * from pg_temp.ld1_teams) or exists(select * from pg_temp.ld1_teams except select * from pg_temp.after_ld1_teams) then raise exception 'ld1_teams: second run changed state';end if;
 if exists(select id from pg_temp.before_ld1_teams except select id from pg_temp.ld1_teams) then raise exception 'ld1_teams: lost existing ID';end if;
-if (select count(*) from pg_temp.ld1_memberships)<>(select count(*)+393 from pg_temp.before_ld1_memberships) then raise exception 'ld1_memberships: unexpected delta';end if;
+if (select count(*) from pg_temp.ld1_memberships)<>(select count(*)+406 from pg_temp.before_ld1_memberships) then raise exception 'ld1_memberships: unexpected delta';end if;
 if exists(select * from pg_temp.after_ld1_memberships except select * from pg_temp.ld1_memberships) or exists(select * from pg_temp.ld1_memberships except select * from pg_temp.after_ld1_memberships) then raise exception 'ld1_memberships: second run changed state';end if;
 if exists(select id from pg_temp.before_ld1_memberships except select id from pg_temp.ld1_memberships) then raise exception 'ld1_memberships: lost existing ID';end if;
 if (select count(*) from pg_temp.ld1_legacy_leagues)<>(select count(*)+3 from pg_temp.before_ld1_legacy_leagues) then raise exception 'ld1_legacy_leagues: unexpected delta';end if;
@@ -608,7 +623,7 @@ if exists(select 1 from pg_temp.before_ld1_leagues b join pg_temp.ld1_leagues a 
 if exists(select * from pg_temp.before_ld1_memberships except select * from pg_temp.ld1_memberships) then raise exception 'ld1_memberships: existing record changed';end if;
 if exists(select * from pg_temp.before_ld1_legacy_leagues except select * from pg_temp.ld1_legacy_leagues) then raise exception 'ld1_legacy_leagues: existing record changed';end if;
 if exists(select * from pg_temp.before_ld1_legacy_teams except select * from pg_temp.ld1_legacy_teams) then raise exception 'ld1_legacy_teams: existing record changed';end if;
-if (select count(*) from (select * from pg_temp.before_ld1_teams except select * from pg_temp.ld1_teams) q)<>198 then raise exception 'unexpected existing team changes';end if;
+if (select count(*) from (select * from pg_temp.before_ld1_teams except select * from pg_temp.ld1_teams) q)<>203 then raise exception 'unexpected existing team changes';end if;
 if exists(select 1 from pg_temp.before_ld1_teams b join pg_temp.ld1_teams a using(id) where (b.name,b.country,b.basketball_type,b.active) is distinct from (a.name,a.country,a.basketball_type,a.active)) then raise exception 'team identity altered';end if;
 end $combined$;
 select 'PASS: combined league data correction, twice applied, original identities and historical records preserved' result;
