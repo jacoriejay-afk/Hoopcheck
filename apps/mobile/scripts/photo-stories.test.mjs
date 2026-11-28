@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
-import { readPhotoStories,publishPhotoStory,storyVisible,appendStoryPhoto } from "../src/native/photoStories.ts";
+import { readPhotoStories,publishPhotoStory,storyVisible,appendStoryPhoto,adjacentStoryId } from "../src/native/photoStories.ts";
 import { resolveStoryPhoto } from "../src/native/storyPhotoReference.ts";
 const uid="11111111-1111-4111-8111-111111111111",other="22222222-2222-4222-8222-222222222222";
 const now=new Date("2026-11-27T12:00:00Z"),id=n=>"33333333-3333-4333-8333-"+String(n).padStart(12,"0");
@@ -107,3 +107,27 @@ test("web Stories are separately default off, scoped to the live account, and us
  assert.match(feed,/r.post_kind !== "story"/);assert.match(feed,/<HoopFeedPhotoStories key=\{user.id\} uid=\{user.id\}/);
  assert.doesNotMatch(web,/localStorage|sessionStorage|createSignedUrl/);
 });
+
+ test("sequential navigation skips expired Stories and never wraps or revives a missing selection",()=>{
+ const live={...row(0),expires_at:"2026-11-28T10:00:00Z"};
+ const expired={...row(1),expires_at:now.toISOString()};
+ const next={...row(2),expires_at:"2026-11-28T10:00:00Z"};
+ const rows=[live,expired,next];
+ assert.equal(adjacentStoryId(rows,live.id,1,now.getTime()),next.id);
+ assert.equal(adjacentStoryId(rows,next.id,-1,now.getTime()),live.id);
+ assert.equal(adjacentStoryId(rows,live.id,-1,now.getTime()),null);
+ assert.equal(adjacentStoryId(rows,next.id,1,now.getTime()),null);
+ assert.equal(adjacentStoryId(rows,expired.id,1,now.getTime()),null);
+ assert.equal(adjacentStoryId(rows,id(42),1,now.getTime()),null);
+ assert.equal(adjacentStoryId(rows,live.id,1,Date.parse(live.expires_at)),null);
+ });
+ test("web and native expose guarded Story navigation and recheck session before dispatch",()=>{
+ const web=readFileSync(new URL("../../../components/HoopFeedPhotoStories.tsx",import.meta.url),"utf8");
+ const native=readFileSync(new URL("../components/PhotoStories.tsx",import.meta.url),"utf8");
+ for(const ui of [web,native]){
+  assert.match(ui,/Previous Story/);assert.match(ui,/Next Story/);
+  assert.match(ui,/setSelected\(adjacentStoryId\(visible,current\.id,1\)\)/);
+ }
+ assert.match(web,/if\(live\.current&&request\.current===controller\)\{setRows\(\[\]\);setSelected\(null\);setCursor\(null\);\}/);
+ assert.match(native,/currentSession\.data\.session\.access_token!==data\.session\.access_token/);
+ });

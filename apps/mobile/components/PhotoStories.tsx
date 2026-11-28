@@ -7,7 +7,7 @@ import { supabase } from "../src/lib/supabase";
 import { choosePhoto,capturePhoto,photoBody,type Photo } from "../src/native/mediaSelection";
 import { deleteOwnedFeedPost } from "../src/native/feedClient";
 import { PublicationUnconfirmed } from "../src/native/mediaClient";
-import { readPhotoStories,publishPhotoStory,storyVisible,communityPhotoStoriesEnabled,type StoryAudience,type Story,type StoryCursor } from "../src/native/photoStories";
+import { readPhotoStories,publishPhotoStory,storyVisible,adjacentStoryId,communityPhotoStoriesEnabled,type StoryAudience,type Story,type StoryCursor } from "../src/native/photoStories";
 import { FeedMedia } from "./FeedMedia";
 import { FeedReport } from "./FeedReport";
 const origin=process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim()||"https://hoopcheck.online";
@@ -53,6 +53,8 @@ export function PhotoStories({uid,canWrite,blockedIds,onClose,onBlock}:Props){
    if(error||data.session?.user.id!==uid||!alive.current||abort.signal.aborted)throw Error("Verify your account.");
    const verified=await supabase.auth.getUser(data.session.access_token);
    if(verified.error||verified.data.user?.id!==uid||!alive.current||abort.signal.aborted)throw Error("Verify your account.");
+   const currentSession=await supabase.auth.getSession();
+   if(currentSession.error||currentSession.data.session?.user.id!==uid||currentSession.data.session.access_token!==data.session.access_token||!alive.current||abort.signal.aborted)throw Error("Account changed.");
    await publishPhotoStory(origin,uid,data.session.access_token,caption,photo,abort.signal,photoBody,fetch,audience);
    if(alive.current&&!abort.signal.aborted){setPhoto(null);setCaption("");setUncertain(false);success=true;}
   }catch(error){if(alive.current){setMessage(error instanceof Error?error.message:"Story unavailable.");setUncertain(error instanceof PublicationUnconfirmed);}}
@@ -87,6 +89,10 @@ export function PhotoStories({uid,canWrite,blockedIds,onClose,onBlock}:Props){
     <FeedMedia key={current.id} userId={uid} postId={current.id} reference={current.image_url} enabled={true}/>
     {current.body?<Text style={{color:t.foreground}}>{current.body}</Text>:null}
     {current.author_id===uid?<Button secondary disabled={busy} onPress={()=>Alert.alert("Remove your Story?","This removes the Story from HoopCheck.",[{text:"Cancel",style:"cancel"},{text:"Remove",style:"destructive",onPress:()=>void remove(current)}])}>Remove Story</Button>:<><FeedReport uid={uid} postId={current.id} authorId={current.author_id} active={()=>alive.current&&storyVisible(current)}/><Button secondary disabled={busy} onPress={()=>{setSelected(null);void onBlock(current.author_id);}}>Block account</Button></>}
+    <View style={{flexDirection:"row",flexWrap:"wrap",gap:6}}>
+     <Button secondary disabled={busy||!adjacentStoryId(visible,current.id,-1,now)} onPress={()=>setSelected(adjacentStoryId(visible,current.id,-1))}>Previous Story</Button>
+     <Button secondary disabled={busy||!adjacentStoryId(visible,current.id,1,now)} onPress={()=>setSelected(adjacentStoryId(visible,current.id,1))}>Next Story</Button>
+    </View>
     <Button secondary onPress={()=>setSelected(null)}>Back to Stories</Button>
    </View>:visible.length?visible.map(row=><Button key={row.id} secondary onPress={()=>setSelected(row.id)}>{row.profiles?.display_name||"HoopCheck member"} · View Story</Button>):<Text style={{color:t.muted}}>No accessible photo Stories on this page.</Text>}
    {next?<Button secondary disabled={busy} onPress={()=>void refresh(next)}>Load more Stories</Button>:null}

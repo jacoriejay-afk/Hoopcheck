@@ -5,7 +5,7 @@ import { supabase } from "../lib/supabase";
 import { useAuthState } from "./AuthProvider";
 import HoopFeedPrivateMedia from "./HoopFeedPrivateMedia";
 import HoopFeedReportAction from "./HoopFeedReportAction";
-import { readPhotoStories, publishPhotoStory, storyVisible, type Story, type StoryCursor, type StoryAudience } from "../apps/mobile/src/native/photoStories";
+import { readPhotoStories, publishPhotoStory, storyVisible, adjacentStoryId, type Story, type StoryCursor, type StoryAudience } from "../apps/mobile/src/native/photoStories";
 import { PublicationUnconfirmed } from "../apps/mobile/src/native/mediaClient";
 import { blockNativeAccount } from "../apps/mobile/src/native/accountBlocking";
 
@@ -43,10 +43,16 @@ function StoriesPanel({uid,close}:{uid:string;close:()=>void}){
   const refresh=useCallback(async(before?:StoryCursor)=>{
     await run(async controller=>{
       if(!before){setRows([]);setSelected(null);setCursor(null);}
-      const page=await readPhotoStories(supabase,uid,controller.signal,before,new Date(),community);
-      if(!active(controller))return;
-      setRows(previous=>before?[...new Map([...previous,...page.stories].map(row=>[row.id,row])).values()]:page.stories);
-      setCursor(page.next);setNow(Date.now());
+      try{
+        const page=await readPhotoStories(supabase,uid,controller.signal,before,new Date(),community);
+        if(!active(controller))throw Error("Story access could not be verified.");
+        setRows(previous=>before?[...new Map([...previous,...page.stories].map(row=>[row.id,row])).values()]:page.stories);
+        setCursor(page.next);setNow(Date.now());
+      }catch(error){
+        // A failed account/access check must not leave a previously loaded page visible.
+        if(live.current&&request.current===controller){setRows([]);setSelected(null);setCursor(null);}
+        throw error;
+      }
     });
   },[uid,run,active]);
   useEffect(()=>{
@@ -115,6 +121,10 @@ function StoriesPanel({uid,close}:{uid:string;close:()=>void}){
       <HoopFeedPrivateMedia key={current.id} postId={current.id} reference={current.image_url} kind="image" alt="Story photo"/>
       {current.body&&<p>{current.body}</p>}
       {current.author_id===uid?<button type="button" disabled={busy} onClick={()=>void remove(current)}>Remove Story</button>:<><HoopFeedReportAction uid={uid} postId={current.id} authorId={current.author_id}/><button type="button" disabled={busy} onClick={()=>void block(current)}>Block account</button></>}
+      <div className="actions">
+        <button type="button" disabled={busy||!adjacentStoryId(visible,current.id,-1,now)} onClick={()=>setSelected(adjacentStoryId(visible,current.id,-1))}>Previous Story</button>
+        <button type="button" disabled={busy||!adjacentStoryId(visible,current.id,1,now)} onClick={()=>setSelected(adjacentStoryId(visible,current.id,1))}>Next Story</button>
+      </div>
       <button type="button" onClick={()=>setSelected(null)}>Back to Stories</button>
     </div>:visible.length?visible.map(row=><button key={row.id} type="button" onClick={()=>setSelected(row.id)}>{row.profiles?.display_name||"HoopCheck member"} · View Story</button>):<p role="status">{busy?"Checking Stories…":"No accessible photo Stories on this page."}</p>}
     {cursor&&<button type="button" disabled={busy} onClick={()=>void refresh(cursor)}>Load more Stories</button>}

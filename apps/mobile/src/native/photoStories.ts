@@ -12,6 +12,13 @@ export type StoryCursor={id:string;created_at:string};
 export function storyVisible(row:Story,now=Date.now()):boolean{
  return Number.isFinite(Date.parse(row.expires_at))&&Date.parse(row.expires_at)>now;
 }
+/** Sequential navigation must not select an expired or no-longer-visible story. */
+export function adjacentStoryId(rows:readonly Story[],selected:string,direction:-1|1,now=Date.now()):string|null{
+ const visible=rows.filter(row=>storyVisible(row,now));
+ const index=visible.findIndex(row=>row.id===selected);
+ if(index<0)return null;
+ return visible[index+direction]?.id??null;
+}
 function cursorValid(cursor:StoryCursor){return isFeedId(cursor.id)&&/^\d{4}-\d{2}-\d{2}T[\d:.]+(?:Z|[+-]\d\d:\d\d)$/.test(cursor.created_at)&&Number.isFinite(Date.parse(cursor.created_at));}
 export async function readPhotoStories(client:SupabaseClient,uid:string,signal:AbortSignal,cursor?:StoryCursor,now=new Date(),allowCommunity=communityPhotoStoriesEnabled){
  if(!isFeedId(uid)||(cursor&&!cursorValid(cursor))||signal.aborted)throw Error("Invalid Story request.");
