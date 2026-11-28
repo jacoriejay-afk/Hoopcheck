@@ -1,5 +1,6 @@
 "use client";
 
+import {readChatPushPreference} from "../../apps/mobile/src/native/chatPush";
 import { useEffect, useRef, useState } from "react";
 import {refreshGroupAlerts,readNotifications,markNotificationsRead,verifiedAlertSession,withAlertDeadline,notificationPath,appendNotificationPage,NOTIFICATION_PAGE_SIZE} from "../../apps/mobile/src/native/notifications";
 import Link from "next/link";
@@ -13,8 +14,12 @@ import "./notifications-threads.css";
 
 type Notice={id:string;target_type:"team"|"coach"|"league"|"game"|"conversation"|"group_invite"|"group_discussion";target_id:string;notification_type:"review"|"rating"|"update"|"trust_score"|"roster_spot"|"pay_warning"|"game_reminder"|"chat_message"|"group_invitation"|"group_channel_message";title:string;body:string;read_at:string|null;created_at:string};
 
+const pushEnabled=process.env.NEXT_PUBLIC_HOOPCHECK_CHAT_PUSH_PREFERENCES_ENABLED==="true";
 export default function NotificationsPage(){
   const [items,setItems]=useState<Notice[]>([]);
+  const [pushPreference,setPushPreference]=useState<boolean|null>(null),[pushBusy,setPushBusy]=useState(false),[pushMessage,setPushMessage]=useState("");
+  const pushLock=useRef(false);
+
   const generation=useRef(0),owner=useRef<string|null>(null),locked=useRef(false);
   const [loading,setLoading]=useState(true);
   const [errorMessage,setErrorMessage]=useState("");
@@ -29,10 +34,10 @@ export default function NotificationsPage(){
   useEffect(()=>{if(new URLSearchParams(window.location.search).get("tab")==="messages")setSection("messages");},[]);
   useEffect(()=>{
     let timer:ReturnType<typeof setTimeout>|undefined;
-    const clear=()=>{generation.current++;owner.current=null;locked.current=false;setItems([]);setQuery("");setFilter("all");setHasMore(false);setLoadingOlder(false);setMarking(false);};
+    const clear=()=>{generation.current++;owner.current=null;setPushPreference(null);setPushMessage("");locked.current=false;setItems([]);setQuery("");setFilter("all");setHasMore(false);setLoadingOlder(false);setMarking(false);};
     async function loadAlerts(){
       const rev=++generation.current;
-      owner.current=null;locked.current=false;setMarking(false);setLoading(true);setErrorMessage("");setLoadFailed(false);setItems([]);setHasMore(false);setLoadingOlder(false);
+      owner.current=null;setPushPreference(null);setPushMessage("");locked.current=false;setMarking(false);setLoading(true);setErrorMessage("");setLoadFailed(false);setItems([]);setHasMore(false);setLoadingOlder(false);
       try{
         const result=await withAlertDeadline(async signal=>{
           const scope=await verifiedAlertSession(supabase,signal);
@@ -86,6 +91,17 @@ export default function NotificationsPage(){
     }catch{if(rev===generation.current)setErrorMessage("Could not mark alerts as read. Please retry.");}
     finally{if(rev===generation.current){locked.current=false;setMarking(false);}}
   }
+  async function updatePush(enabled:boolean|null){
+    const uid=owner.current,rev=generation.current;
+    if(!pushEnabled||!uid||pushLock.current)return;
+    pushLock.current=true;setPushBusy(true);setPushMessage("");
+    try{
+      const value=await withAlertDeadline(signal=>readChatPushPreference(supabase,uid,enabled,signal));
+      if(rev!==generation.current||owner.current!==uid)return;
+      setPushPreference(value);setPushMessage(enabled===null?"Preference checked.":value?"Preference saved. Device registration and provider acceptance are required for delivery.":"Push disabled and registered devices revoked.");
+    }catch{if(rev===generation.current&&owner.current===uid){setPushPreference(null);setPushMessage("Push preference could not be verified.");}}
+    finally{pushLock.current=false;setPushBusy(false);}
+  }
   const unreadCount=items.filter(n=>!n.read_at).length;
   const searched=items.filter(n=>matchesAlertSearch(n,query));
   const filtered=searched.filter(n=>matchesAlertFilter(n,filter));
@@ -103,6 +119,7 @@ export default function NotificationsPage(){
     </nav>
     {section==="messages"&&<><div className="hc-notifications-messages-link"><span>PRIVATE HOOPCHAT</span><Link href="/messages">Open full Courtside inbox</Link></div><HoopChatInbox /></>}
     {section==="alerts"&&errorMessage&&<div role="alert" className="hc-smooth-inbox-error"><span>{errorMessage}</span> {loadFailed&&<button type="button" onClick={()=>setRetryKey(v=>v+1)}>Retry loading alerts</button>}</div>}
+    {pushEnabled&&section==="alerts"&&!loadFailed&&<section className="dashboard-card" aria-label="Private HoopChat push preference"><strong>Private HoopChat push preference</strong><p>Generic alerts only. Message content stays in HoopChat. Device registration and provider acceptance are required.</p><button type="button" disabled={pushBusy} onClick={()=>void updatePush(pushPreference===null?null:!pushPreference)}>{pushPreference===null?"Check push preference":pushPreference?"Disable chat push":"Allow chat push"}</button>{pushMessage&&<p role="status">{pushMessage}</p>}</section>}
     {section==="alerts"&&!loadFailed&&<><div className="hc-alert-search"><label htmlFor="alert-search">Search loaded alerts</label><div><input id="alert-search" type="search" value={query} maxLength={120} placeholder="Search titles and messages" onChange={event=>setQuery(event.target.value)} />{query&&<button type="button" onClick={()=>setQuery("")}>Clear</button>}</div><small role="status">{filtered.length} matching {filtered.length===1?"alert":"alerts"} · {items.length+" loaded"+(hasMore?" · load older alerts to search more":"")}</small></div>
     <nav className="hc-smooth-inbox-tabs hc-alerts-filters" aria-label="Filter alerts">{ALERT_FILTERS.map(([key,label])=><button key={key} type="button" aria-pressed={filter===key} className={filter===key?"is-active":""} onClick={()=>setFilter(key)}>{label}<span>{searched.filter(n=>matchesAlertFilter(n,key)).length}</span></button>)}</nav></>}
     {section==="alerts"&&!loadFailed&&<section className="hc-alert-list" aria-label="Basketball notifications">
