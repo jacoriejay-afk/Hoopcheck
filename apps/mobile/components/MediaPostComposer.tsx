@@ -1,3 +1,4 @@
+import { sendWithPublicationReceipt } from "../src/native/publicationReceipt";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Image, Linking, Platform, Pressable, Text, View } from "react-native";
 import { Button } from "../src/primitives";
@@ -62,9 +63,9 @@ export function MediaPostComposer({ userId, enabled, caption, token, onPublished
     try {
       const authorization = await token();
       if (current !== generation.current) return;
-      await publishMediaPost(process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online", process.env.EXPO_PUBLIC_SUPABASE_URL || "", userId, authorization, caption, photos, video, abort.signal, { photoBody, uploadVideo: (url, headers, clip, signal) => uploadVideoFile(url, headers, clip, signal, fraction => {
+      await sendWithPublicationReceipt(userId,publicationId=>publishMediaPost(process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online", process.env.EXPO_PUBLIC_SUPABASE_URL || "", userId, authorization, caption, photos, video, abort.signal, { photoBody, uploadVideo: (url, headers, clip, signal) => uploadVideoFile(url, headers, clip, signal, fraction => {
         if (current === generation.current && captureScope.current.enabled && !signal.aborted) setTransfer(fraction);
-      }) }, location);
+      }) }, location,publicationId));
       if (current === generation.current) { setPhotos([]); setVideo(null); setMessage("Published after safety checks."); await onPublished(); }
     } catch (error) { if (current === generation.current) { setMessage(error instanceof Error ? error.message : "Upload failed. Your draft is unchanged."); setUnconfirmed(error instanceof PublicationUnconfirmed); } }
     finally { clearTimeout(deadline); if (current === generation.current) { controller.current = null; working.current = false; setBusy(false); setUploading(false); setTransfer(null); } }

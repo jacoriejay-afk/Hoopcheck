@@ -17,6 +17,7 @@ import HoopFeedToday from "../../components/HoopFeedToday";
 import HoopFeedReportAction from "../../components/HoopFeedReportAction";
 import HoopFeedPhotoStories from "../../components/HoopFeedPhotoStories";
 import { compareFeedPosts, entityHref, loadFeedWorld, SEGMENTS, type EntityTag, type FeedSort, type FeedWorld, type Segment, type TaggedPost } from "../../lib/hoopfeed-organization";
+import { publicationStorageKey,resolvePublication,requirePublicationAck,recoveryMessage } from "../../apps/mobile/src/native/publicationReceiptCore";
 import { classifyFeedPublication } from "../../apps/mobile/src/native/publicationResult";
 import "./feed-organization.css";
 import "../hoopfeed-shared.css";
@@ -58,6 +59,7 @@ type Profile = { account_type: string; display_name: string | null; avatar_url: 
   selected_team_id: string | null; selected_womens_team_id: string | null; basketball_type: string | null };
 type Subscription = { plan:string|null; status:string|null; access_status:string|null; current_period_end:string|null };
 
+const publicationReceiptsEnabled=process.env.NEXT_PUBLIC_HOOPCHECK_FEED_PUBLICATION_RECEIPTS_ENABLED==="true";
 const SHARED_POST_HASH = /^#post-([a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})$/i;
 
 const ago = (v:string, now:number) => {
@@ -364,6 +366,22 @@ export default function Feed(){
     setComposerMode("post");
   }
 
+  async function recoverPublication(){
+    if(!user||posting||publication.current==="sending")return;
+    publication.current="sending";setPosting(true);
+    try{
+      const {data:{session}}=await supabase.auth.getSession();
+      if(!session?.access_token||session.user.id!==user.id)throw Error("Sign in again.");
+      const key=publicationStorageKey(user.id),id=localStorage.getItem(key);
+      if(!id){setMsg("No pending publication.");setPublicationUnconfirmed(false);return;}
+      const state=await resolvePublication(window.location.origin,session.access_token,id,true);
+      if((await supabase.auth.getSession()).data.session?.user.id!==user.id)throw Error("Your session changed.");
+      if(localStorage.getItem(key)===id)localStorage.removeItem(key);
+      setPublicationUnconfirmed(false);setMsg(recoveryMessage(state));
+      if(state==="published")await load(user);
+    }catch{setMsg("Publication could not be verified. The pending request was kept.");}
+    finally{publication.current="idle";setPosting(false);}
+  }
   async function post(){
     const pollOptionsClean=pollDraft.map(o=>o.trim()).filter(Boolean);
     if(!user||!access||publication.current!=="idle")return;
@@ -375,6 +393,7 @@ export default function Feed(){
     setPosting(true);setMsg("Checking your post for safety...");
     let videoPath:string|null=null;
     let uploadAccessToken="";
+    let publicationId:string|undefined;
     let moderationStarted=false;
     let definitiveRejection=false;
     try{
@@ -382,6 +401,13 @@ export default function Feed(){
       if(!session?.access_token||session.user.id!==user.id){setMsg("Your session changed. Please sign in again.");return;}
       uploadAccessToken=session.access_token;
       const form=new FormData();
+      if(publicationReceiptsEnabled){
+        const key=publicationStorageKey(user.id);
+        if(localStorage.getItem(key)){publication.current="unconfirmed";setPublicationUnconfirmed(true);setMsg("Check the previous publication before starting another post.");return;}
+        publicationId=crypto.randomUUID();
+        localStorage.setItem(key,publicationId);
+        form.append("publication_id",publicationId);
+      }
       form.append("kind","post");
       form.append("audience","community");
       form.append("text",body.trim());
@@ -421,7 +447,9 @@ export default function Feed(){
         setMsg(typeof result?.message==="string"?result.message.slice(0,300):"This post could not be published. Your draft is kept.");
         return;
       }
+      requirePublicationAck(publicationId,result);
       videoPath=null;
+      if(publicationId && localStorage.getItem(publicationStorageKey(user.id))===publicationId)localStorage.removeItem(publicationStorageKey(user.id));
       clearComposer();
       setComposerExpanded(false);
       setMsg(composerMode==="poll"?"Poll posted to HoopFeed.":"Posted to HoopFeed.");
@@ -584,7 +612,8 @@ export default function Feed(){
         </div>
       </details>
       {video&&!body.trim()&&<p className="hc-feed-video-caption-hint" role="status">Add a caption to your video before posting so HoopCheck can complete its safety checks.</p>}
-      {publicationUnconfirmed&&<div className="actions">
+      {publicationReceiptsEnabled&&<button type="button" className="btn dark" disabled={posting} onClick={()=>void recoverPublication()}>Check previous publication / cancel if unfinished</button>}
+      {publicationUnconfirmed&&!publicationReceiptsEnabled&&<div className="actions">
         <button type="button" className="btn dark" onClick={()=>{
           void load(user).catch(()=>setMsg("HoopFeed could not refresh. Please try again."));
           document.getElementById("hoopfeed-posts")?.scrollIntoView({block:"start"});
