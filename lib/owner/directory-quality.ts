@@ -19,6 +19,33 @@ export const verifiedRosters: RosterEvidence[] = [{
   source:"https://aze.basketball/News/News/abl-klublar-2026-2027-yekun-klublar-abl",
   verifiedAt:"2026-11-28",confidence:"Federation final participant list",
   clubs:[az("Sabah BK",["Sabah"]),az("Landau Lions",["Landau Lions BK"]),az("Gence BC",["Gəncə BK","Ganja BK","Ganja"]),az("Neftchi IK",["Neftçi İK","Neftchi SC"]),az("Ordu IK",["Ordu"]),az("Nakhchivan BK",["Naxçıvan BK","Nakhchivan"]),az("NTD BK",["NTD"]),az("Sumqayit BK",["Sumqayıt BK","Sumgait","Sumgayit"])]
+},{
+  name:"Kosovo Superleague",country:"Kosovo",season:"2026-27",
+  source:"https://kosovo.basketball/Shooter/Competition/25?name=GRUPI+01",
+  verifiedAt:"2026-11-28",confidence:"Federation round-ten fixtures enumerate all eight clubs; federation membership directory distinguishes Bora and Borea",
+  clubs:[
+    {name:"KB Bora",country:"Kosovo",aliases:["Bora","Bora Basketball"]},
+    {name:"KB Rahoveci 029",country:"Kosovo",aliases:["Rahoveci 029"]},
+    {name:"KB Bashkimi",country:"Kosovo",aliases:["BC Bashkimi","Bashkimi Prizren","Bashkimi"]},
+    {name:"KB Peja",country:"Kosovo",aliases:["Peja"]},
+    {name:"KB Sigal Prishtina",country:"Kosovo",aliases:["Sigal Prishtina"]},
+    {name:"KB Trepça",country:"Kosovo",aliases:["BC Trepça","Trepça"]},
+    {name:"Golden Eagle Ylli",country:"Kosovo",aliases:["KB Ylli","Ylli","KB Golden Eagle Ylli"]},
+    {name:"KB Vëllaznimi",country:"Kosovo",aliases:["Vëllaznimi Gjakovë","Vëllaznimi"]}
+  ]
+},{
+  name:"Superleague",country:"Georgia",season:"2026-27",
+  source:"https://www.blackfortress.ge/",
+  verifiedAt:"2026-11-28",confidence:"Official participating club schedule corroborated by independent full-season competition lists; federation-wide confirmation pending",
+  clubs:[
+    {name:"BC Kavkasia",country:"Georgia",aliases:["CIU","BC CIU","CIU Basketball Club","Kavkasia"]},
+    {name:"BC Rustavi",country:"Georgia",aliases:["Rustavi"]},
+    {name:"BC Orbi",country:"Georgia",aliases:["Orbi"]},
+    {name:"Telavi",country:"Georgia"},{name:"TSU Tbilisi",country:"Georgia",aliases:["TSU","BC TSU"]},
+    {name:"Akhaltsikhe",country:"Georgia"},{name:"BC Batumi 2010",country:"Georgia",aliases:["Batumi","Batumi 2010"]},
+    {name:"Kutaisi 2010",country:"Georgia",aliases:["Kutaisi"]},{name:"Iverioni",country:"Georgia"},
+    {name:"Margveti",country:"Georgia",aliases:["BC Margveti"]},{name:"Black Fortress",country:"Georgia"}
+  ]
 }];
 const normalized=(v:string|null)=> (v||"").normalize("NFKD").replace(/\p{M}/gu,"").toLocaleLowerCase("en").replace(/[^\p{L}\p{N}]+/gu,"");
 const identityKey=(row:DirectoryIdentity)=>[normalized(row.country),row.basketball_type,normalized(row.name)].join(":");
