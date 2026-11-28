@@ -9,6 +9,8 @@ on:
       - "supabase/tests/hoopchat_structured_replies_isolated.sql"
       - "supabase/candidates/step1_hoopchat_notifications_review_only.sql"
       - "supabase/tests/step1_hoopchat_notifications_isolated.sql"
+      - "supabase/candidates/step1_hoopchat_server_inbox_review_only.sql"
+      - "supabase/tests/step1_hoopchat_server_inbox_isolated.sql"
 permissions:
   contents: read
 jobs:

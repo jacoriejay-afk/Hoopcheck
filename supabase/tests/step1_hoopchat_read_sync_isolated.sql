@@ -94,5 +94,6 @@ END
 $fixture$;
 RESET ROLE;
 \ir step1_hoopchat_notifications_isolated.sql
+\ir step1_hoopchat_server_inbox_isolated.sql
 ROLLBACK;
 SELECT 'PASS scoped cross-device marker, same-timestamp ordering, block, MFA and revoked-session boundaries' AS result;
