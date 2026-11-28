@@ -20,6 +20,7 @@ function recoveryModule() {
 function nativeLinks() {
   return compile("src/native/deepLinks.ts", name => {
     if (name === "./supportTopic.ts") return compile("src/native/supportTopic.ts", () => { throw new Error("Unexpected support dependency"); });
+    if (name === "./hoopChatLink.ts") return compile("src/native/hoopChatLink.ts", () => { throw new Error("Unexpected HoopChat link dependency"); });
     if (name.endsWith("/password-recovery.ts")) return recoveryModule();
     throw new Error(`Unexpected link dependency ${name}`);
   });

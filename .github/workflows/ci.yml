@@ -91,6 +91,8 @@ jobs:
             -f supabase/tests/hoopchat_destination_fixture.sql \
             -f supabase/candidates/hoopchat_destination_review_only.sql \
             -f supabase/tests/hoopchat_destination_assertions.sql
+          dropdb -h 127.0.0.1 -U postgres hoopcheck_chat_destination_test
+          psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d postgres -c "DROP ROLE anon, authenticated"
 
       - name: Verify staged HoopChat contact-request UPDATE privileges
         run: node scripts/check-hoopchat-contact-privileges.mjs
