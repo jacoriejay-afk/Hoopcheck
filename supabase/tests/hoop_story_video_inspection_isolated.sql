@@ -37,3 +37,23 @@ DO $f$ DECLARE lease jsonb; result jsonb; job uuid; fence uuid; BEGIN
  IF NOT EXISTS(SELECT FROM public.hoop_story_video_jobs WHERE id=job AND inspection_state='verified' AND state='awaiting_moderation' AND inspected_sha256=repeat('a',64)) THEN RAISE EXCEPTION 'Inspection not recorded'; END IF;
 END $f$;
 SELECT 'PASS synthetic private quarantine access and inspection fencing';
+
+\ir ../candidates/hoop_story_video_transcode_review_only.sql
+DO $$BEGIN IF public.claim_story_video_transcode()->>'state'<>'disabled' THEN RAISE EXCEPTION 'Default-off bypass';END IF;END$$;
+UPDATE hoopcheck_story_inspection.transcode_config SET enabled=true;
+DO $f$ DECLARE l jsonb; x jsonb; j uuid; f uuid; BEGIN
+ l:=public.claim_story_video_transcode();j:=(l->>'id')::uuid;f:=(l->>'fence')::uuid;
+ IF l->>'state'<>'leased' OR public.claim_story_video_transcode()->>'state'<>'idle' THEN RAISE EXCEPTION 'Duplicate transcode lease';END IF;
+ x:=jsonb_build_object('state','ready','source_digest',repeat('a',64),'video_size',3,'video_sha256',repeat('b',64),'thumbnail_size',4,'thumbnail_sha256',repeat('c',64));
+ IF public.finish_story_video_transcode(j,f,x) THEN RAISE EXCEPTION 'Missing outputs accepted';END IF;
+ INSERT INTO storage.objects(bucket_id,name,metadata,version) VALUES
+ ('hoopfeed-private-videos',l->>'video_path','{"size":3,"mimetype":"video/mp4"}','video-v1'),
+ ('hoopfeed-private-videos',l->>'thumbnail_path','{"size":4,"mimetype":"image/jpeg"}','thumb-v1');
+ IF public.finish_story_video_transcode(j,gen_random_uuid(),x) THEN RAISE EXCEPTION 'Stale fence accepted';END IF;
+ IF NOT public.finish_story_video_transcode(j,f,x) THEN RAISE EXCEPTION 'Technical output not recorded';END IF;
+ IF NOT EXISTS(SELECT FROM hoopcheck_story_inspection.transcodes WHERE job_id=j AND state='ready') OR NOT EXISTS(SELECT FROM public.hoop_story_video_jobs WHERE id=j AND state='awaiting_moderation') THEN RAISE EXCEPTION 'Transcode approved content';END IF;
+END $f$;
+SET ROLE authenticated;
+DO $$BEGIN IF EXISTS(SELECT FROM storage.objects) THEN RAISE EXCEPTION 'Processed bytes visible';END IF;END$$;
+RESET ROLE;
+SELECT 'PASS private transcode lifecycle and thumbnail receipt, no moderation bypass';
