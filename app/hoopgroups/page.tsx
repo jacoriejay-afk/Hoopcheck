@@ -61,7 +61,7 @@ export default function HoopGroupsPage() {
   const load = useCallback(async () => {
     // A session transition invalidates every outstanding account-specific read.
     const generation = ++loadGeneration.current;
-    pendingSend.current=null;setUnreadSnapshot(null);setReplySnapshot(null);
+    pendingSend.current=null;sendingPost.current=false;setUnreadSnapshot(null);setReplySnapshot(null);
     setReady(false); setBackendReady(false); setBusy(false);
     setUserId(""); setAccountRole(""); setSpaces([]); setChannels([]);
     setMemberships([]); setSpaceId(""); setChannelId(""); setPostSnapshot(null);
@@ -112,7 +112,7 @@ export default function HoopGroupsPage() {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       // Never await a Supabase request inside the auth callback.
       loadGeneration.current += 1;
-      pendingSend.current=null;setUnreadSnapshot(null);setReplySnapshot(null);(false); setBackendReady(false); setUserId(""); setPostSnapshot(null);
+      pendingSend.current=null;sendingPost.current=false;setUnreadSnapshot(null);setReplySnapshot(null);(false); setBackendReady(false); setUserId(""); setPostSnapshot(null);
       setMemberships([]); setDraftSnapshot(null); setAccountRole(""); setSpaces([]); setChannels([]);
       setSpaceId(""); setChannelId(""); setFeedback(""); setBusy(false);
       setDiscoverQuery(""); setDiscoverFilter("all");
@@ -195,7 +195,8 @@ export default function HoopGroupsPage() {
           if(!current()||signal.aborted)throw Error("Channel changed.");
           const membership=await supabase.from("hoop_group_members").select("space_id")
             .eq("space_id",currentSpace).eq("user_id",userId).setHeader("Authorization",header).abortSignal(signal).maybeSingle();
-          if(membership.error||membership.data?.space_id!==currentSpace)throw Error("Group membership could not be verified.");
+          if(membership.error)throw Error("Group membership could not be verified.");
+          if(membership.data?.space_id!==currentSpace){if(current()&&!signal.aborted){stopRealtime();setMemberships(previous=>previous.filter(id=>id!==currentSpace));setUnreadSnapshot(null);setReplySnapshot(null);setPostSnapshot(null);}throw Error("Group membership could not be verified.");}
           const blocks=await supabase.from("user_blocks").select("blocked_id").eq("blocker_id",userId).limit(501).setHeader("Authorization",header).abortSignal(signal);
           if(blocks.error||!Array.isArray(blocks.data)||blocks.data.length>500)throw Error("Blocked accounts could not be verified.");
           if(!current()||signal.aborted)throw Error("Channel changed.");
@@ -289,7 +290,7 @@ export default function HoopGroupsPage() {
         setPostRevision(value=>value+1);
       }
     }catch{if(current())setFeedback("Post could not be confirmed. Retry the unchanged draft to reconcile the same message.");}
-    finally{sendingPost.current=false;if(generation===loadGeneration.current)setBusy(false);}
+    finally{if(generation===loadGeneration.current){sendingPost.current=false;setBusy(false);}}
   }
   async function report(post: Post) {
     const reason = window.prompt("Why are you reporting this message? (3–350 characters)")?.trim();
