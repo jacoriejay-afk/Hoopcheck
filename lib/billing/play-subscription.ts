@@ -26,3 +26,34 @@ export function classifyPlaySubscription(payload:unknown,expectedAccount:unknown
  if(payload.acknowledgementState!=="ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED")return {state:"invalid"};
  return {state:"eligible_for_reconciliation",product,expiresAt};
 }
+
+// Dedicated sandbox runtime path. The existing public read-only classifier
+// continues to reject linked tokens. A linked fingerprint is only a candidate
+// for the durable same-owner replacement transaction, not an access grant.
+export function classifyPlayRuntimeSubscription(payload:unknown,expectedAccount:string,token:string,fingerprint:(token:string)=>string,now=Date.now()):Decision&{previousFingerprint?:string}{
+ if(!obj(payload)||!Object.hasOwn(payload,"linkedPurchaseToken"))return classifyPlaySubscription(payload,expectedAccount,"test",now);
+ const previous=payload.linkedPurchaseToken;
+ if(typeof previous!=="string"||! /^[A-Za-z0-9._~-]{16,4096}$/.test(previous)||previous===token)return {state:"unsupported"};
+ const copy={...payload};delete copy.linkedPurchaseToken;
+ const result=classifyPlaySubscription(copy,expectedAccount,"test",now);
+ if(result.state!=="pending_ack"&&result.state!=="eligible_for_reconciliation")return result;
+ const digest=fingerprint(previous);
+ if(!validAccount(digest)||digest===fingerprint(token))return {state:"unsupported"};
+ return {...result,previousFingerprint:digest};
+}
+
+// Metadata is separate from eligibility: unknown renewal intent never implies
+// cancellation or an additional access period. Provider timestamps are trusted
+// only after the account and test-purchase classifier passes.
+export type PlayLifecycle={providerState:string;autoRenewEnabled:boolean|null;periodEnd:string|null};
+export function playLifecycle(payload:unknown,decision:Decision):PlayLifecycle|null{
+ if(!obj(payload)||!["inactive","pending_ack","eligible_for_reconciliation"].includes(decision.state))return null;
+ const state=payload.subscriptionState;
+ if(typeof state!=="string"||!["SUBSCRIPTION_STATE_ACTIVE","SUBSCRIPTION_STATE_IN_GRACE_PERIOD","SUBSCRIPTION_STATE_CANCELED","SUBSCRIPTION_STATE_EXPIRED","SUBSCRIPTION_STATE_PENDING","SUBSCRIPTION_STATE_PAUSED","SUBSCRIPTION_STATE_ON_HOLD","SUBSCRIPTION_STATE_PENDING_PURCHASE_CANCELED"].includes(state))return null;
+ const item=Array.isArray(payload.lineItems)&&payload.lineItems.length===1?payload.lineItems[0]:null;
+ if(!obj(item)||!obj(item.autoRenewingPlan)||!expiry(item.expiryTime))return null;
+ const renew=item.autoRenewingPlan.autoRenewEnabled;
+ if(typeof renew!=="boolean"&&renew!==undefined)return null;
+ if(state==="SUBSCRIPTION_STATE_CANCELED"&&renew===true)return null;
+ return {providerState:state,autoRenewEnabled:typeof renew==="boolean"?renew:null,periodEnd:item.expiryTime};
+}

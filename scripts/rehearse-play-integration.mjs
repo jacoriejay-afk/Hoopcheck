@@ -17,26 +17,51 @@ const {acknowledgeTestPurchase}=load("../lib/server/play/acknowledgment.ts",base
 const rtdn=load("../lib/server/play/rtdn.ts",base);
 const {ingestPlayPush,reconcileOnePlayNotification}=load("../lib/server/play/notification-worker.ts",{...base,"./rtdn":rtdn});
 const {authenticatePlayPush}=load("../lib/server/play/push-auth.ts",base);
+const {createPlayNotificationRuntime}=load("../lib/server/play/notification-runtime.ts",{...base,"./push-auth":{authenticatePlayPush},"./notification-worker":{ingestPlayPush,reconcileOnePlayNotification}});
+const {playIntentRequest}=load("../lib/server/play/intent-request.ts",base);
+const {createDisposablePlayAdapters}=load("../lib/server/play/disposable-adapters.ts",base);
+const {createDisposablePlayRuntime}=load("../lib/server/play/disposable-runtime.ts",{...base,"./intent-request":{playIntentRequest},"./test-fulfillment":{reconcileTestPurchase}});
+const {createDisposablePlayHandler}=load("../lib/server/play/disposable-handler.ts",base);
+const {createPlayCatalogAdapter}=load("../lib/server/play/catalog-adapter.ts",base);
+const {createPlayRuntimeApplication}=load("../lib/server/play/runtime-application.ts",{...base,"./disposable-adapters":{createDisposablePlayAdapters},"./disposable-runtime":{createDisposablePlayRuntime},"./disposable-handler":{createDisposablePlayHandler},"./catalog-adapter":{createPlayCatalogAdapter},"./notification-runtime":{createPlayNotificationRuntime}});
+const {createPlaySandboxTransport}=load("../apps/mobile/src/native/playSandboxTransport.ts");
+const coordinator=load("../apps/mobile/src/native/playPurchaseCoordinator.ts",{"../../../../lib/billing/play-products":products});
+const {createPlayRecoveryJournal}=load("../apps/mobile/src/native/playRecoveryJournal.ts");
+const {createPlaySandboxBridge}=load("../apps/mobile/src/native/playSandboxBridge.ts",{"./playPurchaseCoordinator":coordinator});
 // All SQL input is generated fixture data; strict literal escaping and no
 // raw purchase token in SQL, arguments or logs.
 const q=v=>{if(typeof v!=="string"||! /^[A-Za-z0-9._:~+\/-]{1,5600}$/.test(v))throw Error("invalid fixture literal");return "'"+v+"'";};
 const integer=v=>{if(!Number.isSafeInteger(v)||v<=0)throw Error("invalid fixture generation");return String(v);};
-function sql(statement){
- const result=spawnSync("docker",["exec","-i",container,"psql","-XqAt","-U","postgres","-v","ON_ERROR_STOP=1"],{input:"set role service_role;\n"+statement+";\n",encoding:"utf8",timeout:15000,maxBuffer:262144});
- if(result.status!==0||result.error)throw Error("Disposable database operation failed");
+function sql(statement,admin=false){
+ const result=spawnSync("docker",["exec","-i",container,"psql","-XqAt","-U","postgres","-v","ON_ERROR_STOP=1"],{input:(admin?"":"set role service_role;\n")+statement+";\n",encoding:"utf8",timeout:15000,maxBuffer:262144});
+ if(result.status!==0||result.error){const kind=result.stderr?.match(/ERROR:\s*(permission denied|violates|column|function|relation|syntax error|candidate owner unavailable|duplicate key|deadlock detected)/i)?.[1]??"unknown";console.error("Disposable SQL failed:",kind);throw Error("Disposable database operation failed");}
  return result.stdout.trim();
 }
+// CI driver only: fixed statements, strictly escaped generated synthetic parameters.
+const repository={scope:"disposable_pg17",enabled:()=>true,query:async(statement,parameters)=>{
+ const rendered=statement.replace(/\$(\d+)/g,(_,n)=>{const v=parameters[Number(n)-1];if(v===null)return "null";if(typeof v==="number")return integer(v);if(typeof v==="boolean")return String(v);return q(v);});
+ const v=sql(rendered);if(!v)return null;if(v==="t"||v==="f")return v==="t";if(/^\d+$/.test(v))return Number(v);if(v.startsWith("{"))return JSON.parse(v);return v;
+}};
+const adapter=createDisposablePlayAdapters(repository);
 const owner="66666666-6666-4666-8666-666666666666",foreign="77777777-7777-4777-8777-777777777777",session="88888888-8888-4888-8888-888888888888";
 const token="synthetic-e2e-"+crypto.randomBytes(16).toString("hex");
 const product=products.playProduct("hoopcheck.premium","annual");
 const vault=createPlayTokenVault("ab".repeat(32),"cd".repeat(32));
-const fp=vault.fingerprint(token,"test"),expiry=new Date(Date.now()+86400000).toISOString();
+const fp=vault.fingerprint(token,"test");
+let expiry=new Date(Date.now()+86400000).toISOString();
 const {privateKey,publicKey}=crypto.generateKeyPairSync("rsa",{modulusLength:2048});
 const env={HOOPCHECK_PLAY_VERIFICATION_ENABLED:"true",HOOPCHECK_PLAY_ENVIRONMENT:"test",NEXT_PUBLIC_SUPABASE_URL:"https://fixture.supabase.co",HOOPCHECK_PLAY_ISOLATED_SUPABASE_URL:"https://fixture.supabase.co",HOOPCHECK_PLAY_SERVICE_ACCOUNT_EMAIL:"fixture@fixture.iam.gserviceaccount.com",HOOPCHECK_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY:privateKey.export({format:"pem",type:"pkcs8"}).toString(),HOOPCHECK_PLAY_ACCOUNT_HMAC_KEY:"ef".repeat(32)};
 let acknowledged=false,revoked=false,ackCount=0,client;
+const replacements=new Map();
 const json=value=>new Response(JSON.stringify(value));
 const fakeRequest=async(url,init)=>{
  if(url==="https://oauth2.googleapis.com/token"&&init.method==="POST")return json({access_token:"fixture-oauth",token_type:"Bearer",expires_in:3600});
+ for(const id of ["hoopcheck.pro","hoopcheck.premium"]){
+  if(url==="https://androidpublisher.googleapis.com/androidpublisher/v3/applications/online.hoopcheck.app/subscriptions/"+id&&init.method==="GET"){
+   assert.equal(init.headers.Authorization,"Bearer fixture-oauth");
+   return json({packageName:"online.hoopcheck.app",productId:id,basePlans:products.PLAY_PRODUCTS.filter(p=>p.productId===id).map(p=>({basePlanId:p.basePlanId,state:"ACTIVE",autoRenewingBasePlanType:{billingPeriodDuration:({1:"P1M",6:"P6M",12:"P1Y"})[p.months]},regionalConfigs:[{regionCode:"US",newSubscriberAvailability:true,price:{currencyCode:"USD",units:String(Math.floor(p.usdMinor/100)),nanos:(p.usdMinor%100)*10000000}}]}))});
+  }
+ }
  if(url==="https://androidpublisher.googleapis.com/androidpublisher/v3/applications/online.hoopcheck.app/purchases/subscriptionsv2/tokens/"+token&&init.method==="GET"){
   assert.equal(init.headers.Authorization,"Bearer fixture-oauth");
   return json({externalAccountIdentifiers:{obfuscatedExternalAccountId:client.accountId(owner)},testPurchase:{},subscriptionState:revoked?"SUBSCRIPTION_STATE_EXPIRED":"SUBSCRIPTION_STATE_ACTIVE",acknowledgementState:acknowledged?"ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED":"ACKNOWLEDGEMENT_STATE_PENDING",lineItems:[{productId:product.productId,offerDetails:{basePlanId:product.basePlanId},autoRenewingPlan:{autoRenewEnabled:true},expiryTime:expiry}]});
@@ -46,44 +71,87 @@ const fakeRequest=async(url,init)=>{
   assert.equal(sql("select count(*) from play_billing_candidate.shadow_play_sources where source_id="+q(fp)),"0");
   acknowledged=true;ackCount++;return new Response(null,{status:204});
  }
+ for(const [t,v] of replacements){
+  const root="https://androidpublisher.googleapis.com/androidpublisher/v3/applications/online.hoopcheck.app/purchases/";
+  if(url===root+"subscriptionsv2/tokens/"+t&&init.method==="GET"){
+   assert.equal(init.headers.Authorization,"Bearer fixture-oauth");
+   return json({externalAccountIdentifiers:{obfuscatedExternalAccountId:client.accountId(owner)},testPurchase:{},linkedPurchaseToken:v.previous,subscriptionState:v.state,acknowledgementState:v.ack?"ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED":"ACKNOWLEDGEMENT_STATE_PENDING",lineItems:[{productId:v.quote.productId,offerDetails:{basePlanId:v.quote.basePlanId},autoRenewingPlan:{autoRenewEnabled:v.state!=="SUBSCRIPTION_STATE_CANCELED"},expiryTime:expiry}]});
+  }
+  if(url===root+"subscriptions/"+v.quote.productId+"/tokens/"+t+":acknowledge"&&init.method==="POST"){
+   assert.equal(init.headers.Authorization,"Bearer fixture-oauth");
+   assert.equal(sql("select count(*) from play_billing_candidate.test_fulfillments where fingerprint="+q(vault.fingerprint(t,"test"))),"1");
+   assert.equal(sql("select count(*) from play_billing_candidate.shadow_play_sources where source_id="+q(vault.fingerprint(v.previous,"test"))),"1");
+   assert.equal(sql("select count(*) from play_billing_candidate.shadow_play_sources where source_id="+q(vault.fingerprint(t,"test"))),"0");
+   v.ack=true;v.acks++;return new Response(null,{status:204});
+  }
+ }
  throw Error("Unexpected synthetic provider request");
 };
 client=createPlayVerificationClient(env,fakeRequest);
 const account=client.accountId(owner);
-const quote=[q(owner),q(session),q(account),q(product.productId),q(product.basePlanId),q("101900000"),q("USD")].join(",");
-const intent=sql("select play_billing_candidate.issue_test_intent("+quote+")");
-assert.equal(sql("select play_billing_candidate.consume_test_intent("+q(intent)+","+quote+")"),"t");
-assert.equal(sql("select play_billing_candidate.consume_test_intent("+q(intent)+","+quote+")"),"f");
+const localized={productId:product.productId,basePlanId:product.basePlanId,priceMicros:"101900000",currency:"USD"};
+const downQuote={productId:"hoopcheck.pro",basePlanId:"monthly",priceMicros:"4990000",currency:"USD"};
+const upQuote={productId:"hoopcheck.premium",basePlanId:"six-month",priceMicros:"53950000",currency:"USD"};
+const req=(b,t="synthetic-session")=>new Request("https://fixture.invalid/intent",{method:"POST",headers:{"Content-Type":"application/json",authorization:"Bearer "+t},body:JSON.stringify(b)});
+const intentPorts={enabled:()=>true,authorize:async()=>({owner,sessionId:session,role:"player"}),accountId:o=>client.accountId(o),quote:async()=>({...localized,environment:"test",expiresAt:Date.now()+30000}),issue:adapter.issue,consume:adapter.consume,now:Date.now};
+const issued=await playIntentRequest(req(localized),"issue",intentPorts);assert.equal(issued.status,200);
+const intent=await issued.json();
+const consume={...localized,intentId:intent.intentId,expiresAt:intent.expiresAt};
+assert.equal((await playIntentRequest(req({...consume,expiresAt:consume.expiresAt-1}),"consume",intentPorts)).status,409);
+assert.equal((await playIntentRequest(req(consume),"consume",intentPorts)).status,200);
+assert.equal((await playIntentRequest(req(consume),"consume",intentPorts)).status,409);
 const claimArgs=(owner,sealed)=>[q(sealed.fingerprint),q(owner),"1::smallint",q(sealed.envelope),q(product.productId),q(product.basePlanId)].join(",");
 const args=(owner,g,expires)=>[q(fp),q(owner),integer(g),q(expires)].join(",");
-const begin=owner=>Number(sql("select play_billing_candidate.begin_test_refresh("+q(fp)+","+q(owner)+")"));
-const finish=(owner,g,state,expires)=>sql("select play_billing_candidate.finish_test_refresh("+[q(fp),q(owner),integer(g),q(state),expires===null?"null":q(expires)].join(",")+")")==="t";
-const commit=(owner,g,expires)=>sql("select play_billing_candidate.commit_test_fulfillment("+args(owner,g,expires)+")")==="t";
-const confirm=receipt=>sql("select play_billing_candidate.confirm_test_fulfillment("+args(receipt.owner,receipt.generation,receipt.expiresAt)+")")==="t";
 let allowed=true;
-const deps={
- now:Date.now,authorize:async input=>allowed&&input.owner===owner&&input.role==="player",
- verify:(o,t)=>client.verify(o,t),
- seal:(t,o)=>vault.seal(t,o,"test"),
- claim:async(o,p,s)=>sql("select play_billing_candidate.claim_test_purchase("+claimArgs(o,s)+")"),
- fulfillTest:async(o,p,s,expires)=>{
-  const g=begin(o),v=await client.verify(o,token);
-  if(!finish(o,g,v.state,expires)||!commit(o,g,expires))return null;
-  return {scope:"test",owner:o,fingerprint:s.fingerprint,productId:p.productId,basePlanId:p.basePlanId,generation:g,expiresAt:expires,committed:true};
- },
- confirmFulfillment:async receipt=>confirm(receipt),
- acknowledgeTest:async(receipt,t)=>(await acknowledgeTestPurchase(receipt,t,{verify:(o,x)=>client.verify(o,x),fingerprint:x=>vault.fingerprint(x,"test"),confirmDurableFulfillment:async r=>confirm(r),accessToken:async()=>"fixture-oauth",request:fakeRequest,now:Date.now}))==="reverify_required",
- reconcileTest:async(receipt,v)=>{const g=begin(receipt.owner);return finish(receipt.owner,g,v.state,v.expiresAt)&&commit(receipt.owner,g,v.expiresAt);},
+const runtime=createDisposablePlayRuntime({scope:"disposable_pg17",enabled:()=>true,authorize:async request=>allowed&&request.headers.get("authorization")==="Bearer synthetic-session"?{owner,sessionId:session,role:"player"}:null,
+ catalog:createPlayCatalogAdapter({enabled:()=>true,provider:client,approvedRegion:async()=> "US",canStartPlayBilling:async()=>true}),db:adapter,vault,provider:client,
+ simulateAcknowledgment:async(receipt,t)=>(await acknowledgeTestPurchase(receipt,t,{verify:(o,x)=>client.verifyRuntime(o,x,t=>vault.fingerprint(t,"test")),fingerprint:x=>vault.fingerprint(x,"test"),confirmDurableFulfillment:r=>adapter.confirm(r,r.generation,r.expiresAt),accessToken:async()=>"fixture-oauth",request:fakeRequest,now:Date.now}))==="reverify_required",now:Date.now});
+const authenticated=new Request("https://fixture.invalid/sync",{headers:{authorization:"Bearer synthetic-session"}});
+const synchronize=async()=> (await runtime.sync(authenticated,product.productId,token))?.outcome??"held";
+assert.equal(await runtime.sync(new Request("https://fixture.invalid/sync"),product.productId,token),null);
+assert.equal((await runtime.sync(authenticated,product.productId,token))?.outcome,"pending_fulfillment");
+let marker=null,launches=0,storeState="empty",launchOutcome="cancelled";
+const storage={read:async()=>marker,write:async v=>{marker=v;},remove:async()=>{marker=null;}};
+const appOptions={scope:"disposable_pg17",origin:"https://fixture.invalid",repository,
+ authorize:async request=>allowed&&request.headers.get("authorization")==="Bearer synthetic-session"?{owner,sessionId:session,role:"player"}:null,
+ approvedRegion:async()=> "US",canStartPlayBilling:async()=>true,provider:client,vault,now:Date.now,
+ simulateAcknowledgment:async(receipt,t)=>(await acknowledgeTestPurchase(receipt,t,{verify:(o,x)=>client.verifyRuntime(o,x,t=>vault.fingerprint(t,"test")),fingerprint:x=>vault.fingerprint(x,"test"),confirmDurableFulfillment:r=>adapter.confirm(r,r.generation,r.expiresAt),accessToken:async()=>"fixture-oauth",request:fakeRequest,now:Date.now}))==="reverify_required",
+ notification:{config:{audience:"https://fixture.invalid/play/push",email:env.HOOPCHECK_PLAY_SERVICE_ACCOUNT_EMAIL,subject:"123456789",subscription:"projects/fixture-project/subscriptions/fixture-play"},keyRequest:(...args)=>keyRequest(...args)}};
+const app=createPlayRuntimeApplication({...appOptions,enabled:()=>true});
+const heldApp=createPlayRuntimeApplication(appOptions);
+assert.equal((await heldApp.POST(new Request("https://fixture.invalid/api/mobile/play/runtime/identity",{method:"POST"}))).status,503);
+assert.equal(await heldApp.tick(),"held");
+const request=createPlaySandboxTransport("https://fixture.invalid",()=>true,async(url,init)=>app.POST(new Request(url,init)));
+assert.equal(await request("identity","invalid"),null);
+assert.equal(await request("identity","synthetic-session",{owner:foreign}),null);
+assert.equal((await request("identity","synthetic-session")).accountId,account);
+const makeCoordinator=()=>{
+ const bridge=createPlaySandboxBridge({scope:"synthetic",enabled:()=>true,available:()=>true,session:async()=>allowed?{owner,token:"synthetic-session",role:"player"}:null,request,
+ journal:createPlayRecoveryJournal(storage),now:Date.now,native:{
+ launch:async()=>{launches++;if(launchOutcome==="launched")storeState="pending";return launchOutcome;},
+ restore:async id=>({accountId:id,pendingCount:storeState==="pending"?1:0,candidates:storeState==="purchased"?[{productId:product.productId,accountId:id,token}]:[]})
+ }});
+ bridge.setOwner(owner);return bridge;
 };
-const input={owner,role:"player",productId:product.productId,basePlanId:product.basePlanId,token};
-assert.equal(await reconcileTestPurchase(input,deps),"test_fulfillment_confirmed");
+let mobile=makeCoordinator();
+assert.equal(await mobile.prepare(localized),true);
+assert.equal(await mobile.launch(),"cancelled");assert.equal(marker,null);
+launchOutcome="launched";
+assert.equal(await mobile.prepare(localized),true);assert.equal(await mobile.launch(),"launched");
+assert.equal(launches,2);assert.ok(marker);
+mobile=makeCoordinator();assert.equal(await mobile.prepare(localized),false);
+assert.deepEqual(await mobile.foreground(),{verified:0,pending:1,failed:0});
+assert.equal(ackCount,0);
+storeState="purchased";
+assert.deepEqual(await mobile.purchaseUpdated({forged:true}),{verified:1,pending:0,failed:0});
+assert.equal(marker,null);
 assert.equal(ackCount,1);
 assert.equal(sql("select provider||':'||plan from play_billing_candidate.shadow_membership_entitlements where user_id="+q(owner)),"google_play_test:premium");
 assert.equal(sql("select count(*) from public.membership_sources where user_id="+q(owner)),"0");
-assert.equal(await reconcileTestPurchase(input,deps),"test_fulfillment_confirmed");
+assert.deepEqual(await mobile.recover(account),{verified:1,pending:0,failed:0});
 assert.equal(ackCount,1);
 assert.equal(sql("select play_billing_candidate.claim_test_purchase("+claimArgs(foreign,vault.seal(token,foreign,"test"))+")"),"foreign_owner");
-allowed=false;assert.equal(await reconcileTestPurchase(input,deps),"held");assert.equal(ackCount,1);
+allowed=false;assert.equal(await synchronize(),"held");assert.equal(ackCount,1);
 // Signed synthetic push -> actual durable queue -> actual generation-fenced
 // observation -> revoked shadow access; Google provider is still mocked.
 const sub="projects/fixture-project/subscriptions/fixture-play";
@@ -92,21 +160,121 @@ const now=Date.now(),sec=Math.floor(now/1000),b64=v=>Buffer.from(JSON.stringify(
 const unsigned=b64({alg:"RS256",kid:"fixture"})+"."+b64({iss:"https://accounts.google.com",aud:config.audience,email:config.email,email_verified:true,sub:config.subject,iat:sec-1,exp:sec+3590});
 const auth="Bearer "+unsigned+"."+crypto.sign("RSA-SHA256",Buffer.from(unsigned),privateKey).toString("base64url");
 const keyRequest=async(url,init)=>{assert.equal(url,"https://www.googleapis.com/oauth2/v3/certs");assert.equal(init.method,"GET");return json({keys:[{...publicKey.export({format:"jwk"}),kid:"fixture",alg:"RS256",use:"sig"}]});};
-const event={subscription:sub,message:{messageId:"987654321",data:Buffer.from(JSON.stringify({version:"1.0",packageName:"online.hoopcheck.app",eventTimeMillis:String(now),subscriptionNotification:{version:"1.0",notificationType:13,purchaseToken:token}})).toString("base64")}};
-const ingress={enabled:()=>true,authenticate:a=>authenticatePlayPush(a,config,keyRequest,now),subscription:sub,fingerprint:t=>vault.fingerprint(t,"test"),enqueue:async(s,m,f)=>sql("select play_billing_candidate.enqueue_test_notification("+[q(s),q(m),q(f)].join(",")+")"),now:()=>now};
-assert.equal(await ingestPlayPush(event,auth,ingress),"accepted");assert.equal(await ingestPlayPush(event,auth,ingress),"accepted");
+const event={subscription:sub,message:{messageId:"987654321",data:Buffer.from(JSON.stringify({version:"1.0",packageName:"online.hoopcheck.app",eventTimeMillis:String(now),subscriptionNotification:{version:"1.0",notificationType:2,purchaseToken:token}})).toString("base64")}};
+const ingress={enabled:()=>true,authenticate:a=>authenticatePlayPush(a,config,keyRequest,now),subscription:sub,fingerprint:t=>vault.fingerprint(t,"test"),enqueue:adapter.enqueue,now:()=>now};
+const pushOptions={scope:"disposable_pg17",config:{...config,subscription:sub},db:adapter,runtime,vault,keyRequest,now:()=>now};
+const push={POST:app.notificationPOST,tick:app.tick};
+const heldPush=createPlayNotificationRuntime(pushOptions);
+const send=async(e,authorization=auth)=>push.POST(new Request(config.audience,{method:"POST",headers:{"Content-Type":"application/json",authorization},body:JSON.stringify(e)}));
+assert.equal((await heldPush.POST(new Request(config.audience,{method:"POST"}))).status,503);
+assert.equal(await heldPush.tick(),"held");
+assert.equal((await send(event,"Bearer invalid")).status,503);
+assert.equal((await send(event)).status,204);assert.equal((await send(event)).status,204);
 assert.equal(sql("select count(*) from play_billing_candidate.notification_jobs where message_id='987654321'"),"1");
+const ports={enabled:()=>true,lease:adapter.lease,lookup:adapter.lookup,open:async c=>vault.open(await adapter.credential(c),c.owner,"test"),fingerprint:t=>vault.fingerprint(t,"test"),begin:adapter.begin,verify:runtime.notificationVerify,complete:adapter.complete,finish:adapter.finish,now:Date.now};
+// A renewal must advance the provider period end and carry a durable receipt into the new generation.
+const previousExpiry=expiry;
+expiry=new Date(Date.parse(expiry)+30*86400000).toISOString();
+assert.equal(await push.tick(),"done");
+assert.equal(sql("select current_period_end="+q(expiry)+"::timestamptz and current_period_end>"+q(previousExpiry)+"::timestamptz and cancel_at_period_end=false from play_billing_candidate.shadow_play_sources where source_id="+q(fp)),"t");
+assert.equal(sql("select auto_renew_enabled and period_end="+q(expiry)+"::timestamptz from play_billing_candidate.lifecycle_metadata where fingerprint="+q(fp)+" order by generation desc limit 1"),"t");
+assert.equal(ackCount,1);
+console.log("Renewal period extension and auto-renew metadata verified.");
+assert.equal(sql("select provider||':'||plan from play_billing_candidate.shadow_membership_entitlements where user_id="+q(owner)),"google_play_test:premium");
+const expiredEvent={...event,message:{...event.message,messageId:"987654322"}};
+assert.equal((await send(expiredEvent)).status,204);
 revoked=true;
-const row=sql("select row_to_json(x) from play_billing_candidate.lease_test_notification() x");
-const job=JSON.parse(row);
-const ports={enabled:()=>true,lease:async()=>({subscription:job.subscription,messageId:job.message_id,fingerprint:job.fingerprint,leaseId:job.lease_id}),
- lookup:async f=>{const v=JSON.parse(sql("select row_to_json(x) from (select owner_id,product_id,base_plan_id,fingerprint from play_billing_candidate.purchase_claims where fingerprint="+q(f)+") x"));return {owner:v.owner_id,productId:v.product_id,basePlanId:v.base_plan_id,fingerprint:v.fingerprint};},
- open:async c=>{const v=JSON.parse(sql("select row_to_json(x) from (select credential_version,credential_envelope,fingerprint from play_billing_candidate.purchase_claims where fingerprint="+q(c.fingerprint)+") x"));return vault.open({version:v.credential_version,envelope:v.credential_envelope,fingerprint:v.fingerprint},c.owner,"test");},
- fingerprint:t=>vault.fingerprint(t,"test"),begin:async c=>begin(c.owner),verify:(o,t)=>client.verify(o,t),complete:async(c,g,state,expires)=>finish(c.owner,g,state,expires),
- finish:async(j,success)=>sql("select play_billing_candidate.finish_test_notification("+[q(j.subscription),q(j.messageId),q(j.leaseId),success?"true":"false"].join(",")+")")==="t",now:Date.now};
-assert.equal(await reconcileOnePlayNotification(ports),"done");
+assert.equal(await push.tick(),"done");
 assert.equal(sql("select play_billing_candidate.read_test_observation("+q(fp)+","+q(owner)+")"),"inactive");
 assert.equal(sql("select count(*) from play_billing_candidate.shadow_membership_entitlements where user_id="+q(owner)),"0");
 assert.equal(sql("select count(*) from public.membership_sources where user_id="+q(owner)),"0");
-assert.equal(sql("select status from play_billing_candidate.notification_jobs where message_id='987654321'"),"done");
+assert.equal(sql("select status from play_billing_candidate.notification_jobs where message_id='987654322'"),"done");
 console.log("End-to-end synthetic Google Play integration passed: intent, encrypted ownership, provider verification, durable fulfillment, simulated acknowledgment, shadow membership, authenticated notification, dedupe and revocation.");
+
+// Restore active test evidence before holding the owner, to prove immediate removal.
+revoked=false;
+allowed=true;
+assert.equal(await synchronize(),"test_fulfillment_confirmed");
+assert.equal(sql("select provider||':'||plan from play_billing_candidate.shadow_membership_entitlements where user_id="+q(owner)),"google_play_test:premium");
+const activeGeneration=Number(sql("select generation from play_billing_candidate.purchase_observations where fingerprint="+q(fp)));
+assert.equal(sql("select play_billing_candidate.confirm_test_fulfillment("+args(owner,activeGeneration,expiry)+")"),"t");
+// Same-owner downgrade and upgrade are durable chains, not extra grants.
+async function replacePurchase(previous,quote){
+ const t="synthetic-replacement-"+crypto.randomBytes(16).toString("hex"),v={previous,quote,state:"SUBSCRIPTION_STATE_ACTIVE",ack:false,acks:0};
+ replacements.set(t,v);
+ const oldProduct=previous===token?product.productId:replacements.get(previous).quote.productId;
+ let candidate={productId:oldProduct,accountId:account,token:previous},nativeLaunches=0;
+ const makeReplacement=()=>{
+  const bridge=createPlaySandboxBridge({scope:"synthetic",enabled:()=>true,available:()=>true,session:async()=>({owner,token:"synthetic-session",role:"player"}),request,journal:createPlayRecoveryJournal(storage),now:Date.now,native:{
+   launch:async(i,change)=>{
+    assert.equal(change?.oldToken,previous);assert.equal(change?.oldProduct,oldProduct);assert.equal(change?.mode,quote.productId==="hoopcheck.pro"?"without_proration":"charge_full_price");
+    assert.equal(i.productId,quote.productId);nativeLaunches++;candidate={productId:quote.productId,accountId:account,token:t};return "launched";
+   },restore:async id=>({accountId:id,pendingCount:0,unmatchedCount:0,candidates:[candidate]})
+  }});bridge.setOwner(owner);return bridge;
+ };
+ let bridge=makeReplacement();
+ assert.equal(await bridge.prepare(quote,true),true);
+ assert.equal(await bridge.launch(),"launched");
+ assert.equal(nativeLaunches,1);assert.ok(marker);
+ const intentId=JSON.parse(marker).intentId;
+ assert.equal(sql("select count(*) from play_billing_candidate.replacement_intents where intent_id="+q(intentId)),"1");
+ // A non-linked claim cannot steal the replacement reservation.
+ assert.equal(await adapter.claimBound(owner,account,products.playProduct(quote.productId,quote.basePlanId),vault.seal("synthetic-unlinked-"+crypto.randomBytes(12).toString("hex"),owner,"test"),intentId),"catalog_conflict");
+ bridge=makeReplacement();
+ assert.deepEqual(await bridge.foreground(),{verified:1,pending:0,failed:0});assert.equal(marker,null);
+ assert.equal((await request("sync","synthetic-session",{productId:quote.productId,purchaseToken:t,intentId:null}))?.outcome,"test_fulfillment_confirmed");
+ assert.equal(v.acks,1);
+ assert.equal(sql("select count(*) from play_billing_candidate.shadow_play_sources where user_id="+q(owner)),"1");
+ return t;
+}
+const down=await replacePurchase(token,downQuote);
+assert.equal(sql("select plan from play_billing_candidate.shadow_membership_entitlements where user_id="+q(owner)),"pro");
+const up=await replacePurchase(down,upQuote);
+assert.equal(sql("select plan from play_billing_candidate.shadow_membership_entitlements where user_id="+q(owner)),"premium");
+assert.equal(await adapter.claimReplacement(owner,account,vault.fingerprint(up,"test"),product,vault.seal(token,owner,"test"),null),"catalog_conflict");
+assert.equal(await adapter.claimReplacement(foreign,client.accountId(foreign),fp,product,vault.seal(up,foreign,"test"),null),"foreign_owner");
+const wake=async(messageId,body)=>{
+ const e={subscription:sub,message:{messageId,data:Buffer.from(JSON.stringify({version:"1.0",packageName:"online.hoopcheck.app",eventTimeMillis:String(now),...body})).toString("base64")}};
+ assert.equal((await send(e)).status,204);assert.equal(await push.tick(),"done");
+};
+replacements.get(up).state="SUBSCRIPTION_STATE_CANCELED";
+await wake("987654323",{subscriptionNotification:{version:"1.0",notificationType:3,purchaseToken:up}});
+assert.equal(sql("select plan from play_billing_candidate.shadow_membership_entitlements where user_id="+q(owner)),"premium");
+assert.equal(sql("select cancel_at_period_end from play_billing_candidate.shadow_play_sources where user_id="+q(owner)),"t");
+replacements.get(up).state="SUBSCRIPTION_STATE_EXPIRED";
+await wake("987654324",{voidedPurchaseNotification:{productType:1,purchaseToken:up}});
+assert.equal(sql("select count(*) from play_billing_candidate.shadow_membership_entitlements where user_id="+q(owner)),"0");
+assert.equal(await synchronize(),"test_fulfillment_confirmed");
+assert.equal(sql("select count(*) from play_billing_candidate.shadow_membership_entitlements where user_id="+q(owner)),"0");
+assert.equal(sql("select provider_state from play_billing_candidate.lifecycle_metadata where fingerprint="+q(vault.fingerprint(up,"test"))+" order by generation desc limit 1"),"SUBSCRIPTION_STATE_EXPIRED");
+console.log("Replacement upgrade/downgrade, same-owner fencing, cancellation and refund/expiry without predecessor resurrection passed.");
+// Privacy hold: stop credential lookup and all future fulfillment; do not
+// claim a legal retention policy or destroy immutable ownership evidence.
+const {createPlayCredentialDeletionEffect,composePlayDeletionEffects}=load("../lib/server/play/deletion-effect.ts",base);
+const lease={requestId:"99999999-9999-4999-8999-999999999999",ownerId:owner,fence:session,policyVersion:"fixture-approved-v1"};
+const guards={assertLease:async()=>{},assertFrozen:async()=>{},assertApprovedCredentialPurge:async()=>{}};
+const effects=composePlayDeletionEffects(adapter,guards,{freeze_account_writes:async()=>({confirmed:true,receipt:"fixture_frozen"}),preserve_lawful_billing_records:async()=>({confirmed:true,receipt:"fixture_preserved"})});
+assert.equal((await effects.freeze_account_writes(lease,lease.requestId+":freeze_account_writes")).confirmed,true);
+assert.equal(await adapter.ownerHeld(owner),true);
+assert.equal(await mobile.foreground(),null);
+assert.equal(await mobile.prepare(localized),false);
+assert.equal(sql("select play_billing_candidate.confirm_test_fulfillment("+args(owner,activeGeneration,expiry)+")"),"f");
+assert.equal(await adapter.lookup(fp),null);
+await assert.rejects(()=>adapter.credential({owner,fingerprint:fp,productId:product.productId,basePlanId:product.basePlanId}));
+await assert.rejects(()=>adapter.begin({owner,fingerprint:fp,productId:product.productId,basePlanId:product.basePlanId}));
+assert.equal(sql("select count(*) from play_billing_candidate.shadow_membership_entitlements where user_id="+q(owner)),"0");
+assert.equal(sql("select count(*) from play_billing_candidate.purchase_claims where fingerprint="+q(fp)),"1");
+assert.equal(sql("select has_table_privilege('authenticated','play_billing_candidate.owner_holds','SELECT')"),"f");
+assert.equal(sql("select has_table_privilege('service_role','play_billing_candidate.owner_holds','DELETE')"),"f");
+console.log("Test owner deletion freeze passed: credential lookup blocked, no future writes, shadow access absent, no client privileges.");
+
+const effect=createPlayCredentialDeletionEffect(adapter,{assertLease:async()=>{},assertFrozen:async()=>assert.equal(await adapter.ownerHeld(owner),true),assertApprovedCredentialPurge:async()=>{}});
+await assert.rejects(()=>effect(lease));
+sql("insert into play_billing_candidate.credential_cleanup_approvals values("+[q(lease.requestId),q(owner),q(session),q(lease.policyVersion)].join(",")+") returning 1",true);
+await assert.rejects(()=>effect({...lease,fence:foreign}));
+assert.equal((await effects.preserve_lawful_billing_records(lease,lease.requestId+":preserve_lawful_billing_records")).confirmed,true);
+assert.equal((await effect(lease)).confirmed,true);
+assert.equal(sql("select count(*) from play_billing_candidate.purchase_claims where owner_id="+q(owner)+" and credential_envelope is not null"),"0");
+assert.equal(sql("select count(*) from play_billing_candidate.purchase_claims where owner_id="+q(owner)),"3");
+assert.equal(sql("select has_table_privilege('service_role','play_billing_candidate.purchase_claims','UPDATE')"),"f");
+console.log("Approved disposable deletion credential purge and immutable ownership evidence passed.");

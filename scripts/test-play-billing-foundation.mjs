@@ -30,3 +30,13 @@ test("account mismatch, test/production separation and invalid responses fail cl
 test("offers and replacement chains are blocked until lifecycle persistence is implemented",()=>{
  for(const mutate of [v=>v.linkedPurchaseToken="fixture",v=>v.lineItems.push(v.lineItems[0]),v=>v.lineItems[0].offerDetails.offerId="trial",v=>{delete v.lineItems[0].autoRenewingPlan;v.lineItems[0].prepaidPlan={};}]){const v=fixture();mutate(v);assert.equal(classify(v,owner,"test",now).state,"unsupported");}
 });
+
+test("linked runtime evidence is separately scoped and cannot bypass account or catalog validation",()=>{
+ const {classifyPlayRuntimeSubscription:runtime}=load("../lib/billing/play-subscription.ts",{"./play-products":products});
+ const token="synthetic-successor-token",old="synthetic-predecessor-token",hash=t=>t===old?"b".repeat(64):"c".repeat(64);
+ const v=fixture();v.linkedPurchaseToken=old;
+ assert.equal(runtime(v,owner,token,hash,now).previousFingerprint,"b".repeat(64));
+ assert.equal(runtime(v,"d".repeat(64),token,hash,now).state,"invalid");
+ v.linkedPurchaseToken=token;assert.equal(runtime(v,owner,token,hash,now).state,"unsupported");
+ v.linkedPurchaseToken=old;delete v.testPurchase;assert.equal(runtime(v,owner,token,hash,now).state,"invalid");
+});

@@ -10,6 +10,7 @@ import { useEntryTheme } from "../src/theme";
 import { useNativeAccount } from "../src/native/useNativeAccount";
 import { useMfaSession } from "../src/native/mfa";
 import { useStoreKit } from "../src/native/storekit";
+import {usePlayMembershipRuntime} from "../src/native/usePlayMembershipRuntime";
 import { appleProduct } from "../../../lib/billing/apple-products";
 import { playReadOnlyNative } from "../modules/hoopcheck-play-billing";
 import { parsePlayCatalog, type PlayCatalogRow } from "../../../lib/billing/play-catalog";
@@ -28,15 +29,18 @@ export default function MembershipScreen() {
   const [prepared, setPrepared] = useState<PreparedPurchase | null>(null);
   const [playRows, setPlayRows] = useState<PlayCatalogRow[]>([]), [playNotice, setPlayNotice] = useState("");
   const playGeneration = useRef(0), playBusy = useRef(false);
+  const playRuntime=usePlayMembershipRuntime();
+  const [playPrepared,setPlayPrepared]=useState<PlayCatalogRow|null>(null),[playChange,setPlayChange]=useState(false),[playWorking,setPlayWorking]=useState(false),[playNeedsRestore,setPlayNeedsRestore]=useState(false);
   const security = useMfaSession();
   const owner = security.phase === "ready" ? security.owner : null;
+  const playEnabled=android&&__DEV__&&playRuntime.available()&&Boolean(owner&&account?.user.id===owner);
   const identity = useRef(0);
   const generation = useRef(0), mounted = useRef(true), acting = useRef(false);
   useEffect(() => {
     mounted.current = true;
-    const listener = AppState.addEventListener("change", state => { if (state !== "active") { setPrepared(null); playGeneration.current++; setPlayRows([]); setPlayNotice(""); } });
+    const listener = AppState.addEventListener("change", state => { if (state !== "active") { setPrepared(null); playGeneration.current++; setPlayRows([]); setPlayNotice(""); setPlayPrepared(null); playRuntime.invalidate(); } });
     return () => { mounted.current = false; listener.remove(); };
-  }, []);
+  }, [playRuntime]);
   const load = useCallback(async () => {
     const current = ++generation.current;
     if (!owner) { setLoading(false); return; }
@@ -49,8 +53,8 @@ export default function MembershipScreen() {
     if (status.status === "rejected" && catalog.status === "fulfilled") setError("Your current membership could not be verified. Refresh before purchasing.");
     setLoading(false);
   }, [store, owner, android]);
-  useFocusEffect(useCallback(() => { void load(); return () => { generation.current++; playGeneration.current++; setPrepared(null); setPlayRows([]); setPlayNotice(""); }; }, [load]));
-  useLayoutEffect(() => { identity.current++; playGeneration.current++; setPlayRows([]); setPlayNotice(""); setPrepared(null); setProducts([]); setMembership(null); setMessage(""); setError(""); }, [owner]);
+  useFocusEffect(useCallback(() => { void load(); return () => { generation.current++; playGeneration.current++; setPrepared(null); setPlayRows([]); setPlayNotice(""); setPlayPrepared(null); playRuntime.invalidate(); }; }, [load,playRuntime]));
+  useLayoutEffect(() => { identity.current++; playGeneration.current++; setPlayRows([]); setPlayNotice(""); setPlayPrepared(null); setPlayNeedsRestore(false); setPrepared(null); setProducts([]); setMembership(null); setMessage(""); setError(""); }, [owner]);
   async function act(work: (live: () => boolean) => Promise<void>) {
     if (acting.current) return;
     const capturedIdentity = identity.current;
@@ -61,7 +65,7 @@ export default function MembershipScreen() {
     finally { acting.current = false; if (mounted.current) setBusy(false); }
   }
   async function checkPlayCatalog() {
-    if (!playDiagnostic || !owner || account?.user.id !== owner || playBusy.current) return;
+    if (!(playDiagnostic||playEnabled) || !owner || account?.user.id !== owner || playBusy.current) return;
     const role = account.user.accountType;
     if (!["player","scout","agent","club_admin","coach","manager"].includes(role)) return;
     const captured = ++playGeneration.current;
@@ -73,9 +77,51 @@ export default function MembershipScreen() {
         const product = playProduct(row.productId, row.basePlanId);
         return product !== null && canPurchasePlayProduct(role, product);
       });
-      if (live()) { setPlayRows(rows); setPlayNotice("Catalog verified on this device. Test preview only; purchasing is disabled."); }
+      if (live()) { setPlayRows(rows); setPlayNotice(playEnabled?"Localized prices verified. Signed sandbox only; no live access is granted.":"Catalog verified on this device. Test preview only; purchasing is disabled."); }
     } catch { if (live()) setPlayNotice("Google Play catalog could not be verified on this device."); }
     finally { playBusy.current = false; }
+  }
+  const playAction=useCallback(async(work:(live:()=>boolean)=>Promise<void>)=>{
+    if(!playEnabled||playBusy.current)return;
+    const captured=playGeneration.current;
+    const live=()=>mounted.current&&captured===playGeneration.current&&playRuntime.available();
+    playBusy.current=true;setPlayWorking(true);
+    try{await work(live);}catch{if(live())setPlayNotice("Google Play test verification is unavailable. Retry restoration.");}
+    finally{playBusy.current=false;if(mounted.current)setPlayWorking(false);}
+  },[playEnabled,playRuntime]);
+  const recoverPlay=useCallback(async()=>{
+    await playAction(async live=>{
+      setPlayPrepared(null);setPlayNotice("Checking Google Play test purchases…");
+      const result=await playRuntime.foreground();
+      if(!live())return;
+      setPlayNeedsRestore(!result||result.pending>0||result.failed>0);
+      setPlayNotice(!result?"Purchase verification unavailable. Retry restoration.":result.pending?"Payment pending. No membership change confirmed.":result.failed?"Some purchases still need verification. Retry restoration.":result.verified?"Test purchase verified. Live membership unchanged.":"No restorable test purchases for this account.");
+    });
+  },[playAction,playRuntime]);
+  useEffect(()=>{
+    if(!playEnabled)return;
+    const listener=playRuntime.subscribe(()=>{void recoverPlay();});
+    const foreground=AppState.addEventListener("change",state=>{if(state==="active")void recoverPlay();});
+    void recoverPlay();
+    return()=>{listener.remove();foreground.remove();};
+  },[playEnabled,playRuntime,recoverPlay]);
+  async function reviewPlay(row:PlayCatalogRow,replace=false){
+    await playAction(async live=>{
+      setPlayNotice("Verifying price and account…");
+      const ready=await playRuntime.prepare(row,replace);
+      if(!live())return;
+      if(ready){setPlayChange(replace);setPlayPrepared(row);setPlayNotice("");}
+      else {setPlayPrepared(null);setPlayNotice("Purchase cannot be prepared. Refresh prices or retry restoration.");}
+    });
+  }
+  async function confirmPlay(){
+    await playAction(async live=>{
+      setPlayPrepared(null);setPlayNotice("Waiting for Google Play…");
+      const result=await playRuntime.launch();
+      if(!live())return;
+      setPlayNeedsRestore(result!=="cancelled");
+      setPlayNotice(result==="cancelled"?"Test purchase cancelled. No membership change confirmed.":result==="launched"?"Waiting for payment verification. Restore if interrupted.":result==="restore_required"?"An existing purchase needs restoration.":"Purchase unavailable. Retry restoration before purchasing.");
+    });
   }
   const text = { color: theme.foreground }, muted = { color: theme.muted };
   return <SafeAreaView edges={["left", "right", "bottom"]} style={{ flex: 1, backgroundColor: theme.background }}>
@@ -89,13 +135,16 @@ export default function MembershipScreen() {
       {loading ? <Text accessibilityRole="progressbar" style={muted}>{android ? "Checking membership…" : "Checking membership and Apple prices…"}</Text> : null}
       {error ? <Text accessibilityRole="alert" style={text}>{error}</Text> : null}
       {message ? <Text accessibilityLiveRegion="polite" style={text}>{message}</Text> : null}
-      {android ? <Text style={muted}>New Google Play purchases are not available in this release. Existing verified HoopCheck membership access is unchanged.</Text> : !store.supported ? <Text style={muted}>Apple purchasing is not available on this device. Your existing membership stays unchanged.</Text> : null}
-      {playDiagnostic && owner && account?.user.id === owner && ["player","scout","agent","club_admin","coach","manager"].includes(account.user.accountType) ? <GlassCard style={{ gap: 8 }}>
-        <Text accessibilityRole="header" style={{ ...text, fontWeight: "800" }}>Google Play catalog diagnostic</Text>
-        <Text style={muted}>Development preview only. No purchase or restoration is available.</Text>
-        <Button secondary disabled={busy || loading || playNotice === "Checking Google Play catalog…"} onPress={() => void checkPlayCatalog()}>Check Google Play catalog</Button>
+      {android ? <Text style={muted}>{playEnabled?"Google Play signed sandbox. No live membership changes.":"New Google Play purchases are not available in this release. Existing verified HoopCheck membership access is unchanged."}</Text> : !store.supported ? <Text style={muted}>Apple purchasing is not available on this device. Your existing membership stays unchanged.</Text> : null}
+      {(playDiagnostic||playEnabled) && owner && account?.user.id === owner && ["player","scout","agent","club_admin","coach","manager"].includes(account.user.accountType) ? <GlassCard style={{ gap: 8 }}>
+        <Text accessibilityRole="header" style={{ ...text, fontWeight: "800" }}>{playEnabled?"Google Play test membership":"Google Play catalog diagnostic"}</Text>
+        <Text style={muted}>{playEnabled?"Signed sandbox only. No free trial or live membership grant.":"Development preview only. No purchase or restoration is available."}</Text>
+        <Button secondary disabled={busy || loading || playWorking || playNotice === "Checking Google Play catalog…"} onPress={() => void checkPlayCatalog()}>Check Google Play catalog</Button>
         {playNotice ? <Text accessibilityLiveRegion="polite" style={muted}>{playNotice}</Text> : null}
-        {playRows.map(row => <Text key={row.productId + ":" + row.basePlanId} style={text}>{playProduct(row.productId,row.basePlanId)?.plan === "premium" ? "Premium" : "Pro"} · {row.displayPrice} / {periods[playProduct(row.productId,row.basePlanId)?.months ?? 1]}</Text>)}
+        {playRows.map(row => <View key={row.productId + ":" + row.basePlanId}><Text style={text}>{playProduct(row.productId,row.basePlanId)?.plan === "premium" ? "Premium" : "Pro"} · {row.displayPrice} / {periods[playProduct(row.productId,row.basePlanId)?.months ?? 1]}</Text>{playEnabled&&!playPrepared?<Button disabled={busy||playWorking||playNeedsRestore} onPress={()=>void reviewPlay(row)}>{`Review Google Play ${playProduct(row.productId,row.basePlanId)?.plan==="premium"?"Premium":"Pro"}`}</Button>:null}{playEnabled&&!playPrepared?<Button secondary disabled={busy||playWorking||playNeedsRestore} onPress={()=>void reviewPlay(row,true)}>Change existing Google Play plan</Button>:null}</View>)}
+        {playEnabled&&playPrepared?<GlassCard><Text style={text}>Confirm Google Play test purchase: {playPrepared.displayPrice} / {periods[playProduct(playPrepared.productId,playPrepared.basePlanId)?.months??1]}. No free trial.</Text>{playChange?<Text style={muted}>{playPrepared.productId==="hoopcheck.premium"?"Upgrade immediately with a full-price charge; Google Play applies any remaining value.":"Downgrade immediately without proration; new price applies at renewal."}</Text>:null}<Button disabled={playWorking} onPress={()=>void confirmPlay()}>Confirm test purchase</Button><Button secondary disabled={playWorking} onPress={()=>{playRuntime.invalidate();setPlayPrepared(null);}}>Cancel test purchase</Button></GlassCard>:null}
+        {playEnabled?<Button secondary disabled={playWorking} onPress={()=>void recoverPlay()}>Restore Google Play test purchases</Button>:null}
+        {playEnabled&&playWorking?<Text accessibilityRole="progressbar" style={muted}>Verifying Google Play test purchase…</Text>:null}
       </GlassCard> : null}
       {account?.user.accountType === "fan" ? <Text style={muted}>No paid fan products are offered. Existing membership access and purchase restoration are preserved.</Text> : null}
       {!android && !prepared && account?.user.accountType !== "fan" ? products.map(product => <GlassCard key={product.id} style={{ gap: 10 }}>
