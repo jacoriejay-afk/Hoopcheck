@@ -12,6 +12,7 @@ import { groupChannelScope, scopedGroupValue, visibleGroupPosts } from "../../li
 import HoopGroupsManage, { GROUP_COLORS, GROUP_ICONS, type GroupSpace, type GroupChannel } from "../../components/HoopGroupsManage";
 import HoopGroupsChatSettings, { type ChatPrefs } from "../../components/HoopGroupsChatSettings";
 import HoopGroupsOwnerModeration from "../../components/HoopGroupsOwnerModeration";
+import HoopGroupsAccessPanel from "../../components/HoopGroupsAccessPanel";
 import { orderGroupsForRole, recommendedGroupIds } from "../../lib/hoopgroups-discovery";
 import "./hoopgroups.css";
 
@@ -29,6 +30,7 @@ function validateGroupPostRows(value:unknown,replies:boolean):Post[]{
 }
 
 const enabled = process.env.NEXT_PUBLIC_HOOPGROUPS_CHANNELS_ENABLED === "true";
+const privateAccessEnabled=process.env.NEXT_PUBLIC_HOOPGROUPS_PRIVATE_ACCESS_ENABLED==="true";
 const repliesEnabled=process.env.NEXT_PUBLIC_HOOPGROUPS_REPLIES_ENABLED==="true";
 const readStateEnabled=process.env.NEXT_PUBLIC_HOOPGROUPS_READ_STATE_ENABLED==="true";
 const planned = [
@@ -124,7 +126,7 @@ export default function HoopGroupsPage() {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       // Never await a Supabase request inside the auth callback.
       loadGeneration.current += 1;
-      pendingSend.current=null;sendingPost.current=false;setUnreadSnapshot(null);setReplySnapshot(null);(false); setBackendReady(false); setUserId(""); setPostSnapshot(null);
+      pendingSend.current=null;sendingPost.current=false;setUnreadSnapshot(null);setReplySnapshot(null);setReady(false); setBackendReady(false); setUserId(""); setPostSnapshot(null);
       setMemberships([]); setDraftSnapshot(null); setAccountRole(""); setSpaces([]); setChannels([]);
       setSpaceId(""); setChannelId(""); setFeedback(""); setBusy(false);
       setDiscoverQuery(""); setDiscoverFilter("all");
@@ -336,6 +338,7 @@ export default function HoopGroupsPage() {
         onUpdated={updated=>setSpaces(items=>items.map(item=>item.id===updated.id?updated:item))}
         onChannelCreated={created=>{setChannels(items=>[...items,created]);setChannelId(created.id);}}
         onChannelUpdated={(id,name)=>setChannels(items=>items.map(item=>item.id===id?{...item,name}:item))}/>
+      {privateAccessEnabled&&<HoopGroupsAccessPanel key={userId+":"+(selected?.id||"")} uid={userId} space={selected?.id||null} onChanged={()=>{void load();}}/>}
       <HoopGroupsOwnerModeration userId={userId} spaceId={selected?.id||""} isOwner={Boolean(selected?.owner_id===userId)}/>
       {!visibleSpaces.length&&<p role="status" className="hc-hoopgroups-empty">{discoverFilter==="recommended" ? "No role-matched groups found in this directory. Try Discover groups to explore other communities." : "No groups match. Try another search or create a group."}</p>}
       {visibleSpaces.length>0&&<div className="hc-hoopgroups-shell" style={{"--hc-group-accent":GROUP_COLORS[selected?.accent_color||"orange"]||GROUP_COLORS.orange} as CSSProperties}>

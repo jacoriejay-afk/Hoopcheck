@@ -12,6 +12,7 @@ import { HoopCheckLoading } from "./HoopCheckLoading";
 import { randomUUID } from "expo-crypto";
 import { readGroupUnread,markGroupVisibleRead,type GroupUnread } from "../src/native/hoopGroupsRead";
 import { prepareGroupSend, submitGroupSend, type GroupSend } from "../src/native/hoopGroupsSend";
+import {GroupAccessPanel} from "./GroupAccessPanel";
 import { createGroupRefreshQueue } from "../src/native/hoopGroupsRefresh";
 import { readWithDeadline } from "../src/native/readDeadline";
 import { withHoopChatDeadline } from "../src/native/hoopChatLoad";
@@ -31,6 +32,7 @@ function validateGroupPostRows(value:unknown,replies:boolean):Post[]{
  });
 }
 
+const privateAccessEnabled=process.env.EXPO_PUBLIC_HOOPGROUPS_PRIVATE_ACCESS_ENABLED==="true";
 const repliesEnabled=process.env.EXPO_PUBLIC_HOOPGROUPS_REPLIES_ENABLED==="true";
 const readStateEnabled=process.env.EXPO_PUBLIC_HOOPGROUPS_READ_STATE_ENABLED==="true";
 const colorOptions = { orange:"#FF873C", blue:"#60A5FA", purple:"#A78BFA", green:"#4ADE80", pink:"#F472B6", gold:"#FBBF24" } as const;
@@ -410,6 +412,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
       Independent basketball communities, member-created groups and moderated discussion channels.
     </Text>
     {loading?<HoopCheckLoading label="Finding HoopGroups…" />:null}
+    {privateAccessEnabled&&!offline&&userId?<GroupAccessPanel key={userId+":"+(selected?.id||"")} uid={userId} space={selected?.id||null} onChanged={()=>setRevision(v=>v+1)}/>:null}
     {inviteUnavailable?<Text accessibilityRole="alert" style={{color:theme.muted}}>This invited community is unavailable or you do not have access. You can browse other groups below.</Text>:null}
     {error?<Text accessibilityRole="alert" style={{color:theme.accent}}>{error}</Text>:null}
     {offline?<Text style={{color:theme.muted}}>Reconnect to see your groups.</Text>:null}
