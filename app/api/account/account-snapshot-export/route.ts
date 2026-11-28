@@ -58,7 +58,11 @@ export async function POST(request: Request) {
       global:{headers:{Authorization:"Bearer "+token}},
       auth:{autoRefreshToken:false,persistSession:false},
     });
+    const deadline = AbortSignal.any([request.signal, AbortSignal.timeout(15000)]);
+    const expired = () => fail("Account snapshot could not be verified.",503);
+    if (deadline.aborted) return expired();
     async function verifyOwner() {
+      if (deadline.aborted) return null;
       const {data,error} = await scoped.auth.getUser(token!);
       const user = data.user;
       if (error || !user?.email_confirmed_at || user.is_anonymous || !uuid.test(user.id)) return null;
@@ -68,20 +72,27 @@ export async function POST(request: Request) {
           "client_id" in verifiedClaims || (verifiedClaims.is_anonymous !== undefined && verifiedClaims.is_anonymous !== false)) return null;
       if (assuranceForVerifiedUser(token!,user).required) return null;
       const active = await scoped.rpc("confirm_active_account_session");
-      return !active.error && active.data === true ? user.id : null;
+      return !deadline.aborted && !active.error && active.data === true ? user.id : null;
     }
     const owner = await verifyOwner();
+    if (deadline.aborted) return expired();
     if (!owner) return fail("Verify your account and sign in again.",403);
-    const deadline = AbortSignal.timeout(15000);
     const own = await scoped.rpc("get_own_profile").abortSignal(deadline);
     if (own.error) return fail("Account snapshot could not be verified.",503);
     const profile = record(own.data);
-    if (profile.id !== owner) return fail("Account snapshot could not be verified.",503);
+    if (profile.id !== owner) return expired();
+    // The reviewed owner profile RPC includes moderation_status. Keep it out of
+    // the downloadable projection and fail closed on missing/unknown status.
+    const permittedProfile = (value: Record<string, unknown>) =>
+      value.id === owner && typeof value.moderation_status === "string" &&
+      ["normal","warned","flagged"].includes(value.moderation_status);
+    if (deadline.aborted) return expired();
+    if (!permittedProfile(profile)) return fail("Account access could not be verified.",403);
     const data: Record<string,unknown> = { profile:project(profile,profileFields) };
     // Caller-bound RPC stays compatible when direct author_id SELECT is removed.
     // No service-role fallback and no client-supplied owner ID.
     const ownReviews = await scoped.rpc("get_own_review_snapshot").abortSignal(deadline);
-    if (ownReviews.error) return fail("Account snapshot could not be verified.",503);
+    if (deadline.aborted || ownReviews.error) return expired();
     const envelope = record(ownReviews.data);
     if (envelope.owner_id !== owner) return fail("Account snapshot could not be verified.",503);
     for (const section of reviewSections) {
@@ -100,10 +111,11 @@ export async function POST(request: Request) {
       });
     }
     for (const section of sections) {
+      if (deadline.aborted) return expired();
       const query = await scoped.from(section.table)
         .select([section.owner,...section.fields].join(","),{count:"exact"})
         .eq(section.owner,owner).order("id",{ascending:true}).limit(limit).abortSignal(deadline);
-      if (query.error || !Array.isArray(query.data) || query.count === null || !Number.isSafeInteger(query.count))
+      if (deadline.aborted || query.error || !Array.isArray(query.data) || query.count === null || !Number.isSafeInteger(query.count))
         return fail("Account snapshot could not be verified.",503);
       if (query.count > limit) return fail("Account snapshot exceeds the download limit. Request a complete copy through Privacy Center.",409);
       if (query.count !== query.data.length) return fail("Account snapshot could not be verified.",503);
@@ -121,9 +133,14 @@ export async function POST(request: Request) {
       data };
     const json = JSON.stringify(payload);
     if (Buffer.byteLength(json,"utf8") > maxBytes) return fail("Account snapshot exceeds the download limit. Request a complete copy through Privacy Center.",409);
-    if (deadline.aborted) return fail("Account snapshot could not be verified.",503);
-    if (await verifyOwner() !== owner) return fail("Verify your account and sign in again.",403);
-    if (deadline.aborted) return fail("Account snapshot could not be verified.",503);
+    if (deadline.aborted) return expired();
+    // A moderation change while export reads are in flight must prevent delivery.
+    const finalProfile = await scoped.rpc("get_own_profile").abortSignal(deadline);
+    if (deadline.aborted || finalProfile.error) return expired();
+    if (!permittedProfile(record(finalProfile.data))) return fail("Account access could not be verified.",403);
+    const finalOwner = await verifyOwner();
+    if (deadline.aborted) return expired();
+    if (finalOwner !== owner) return fail("Verify your account and sign in again.",403);
     return new Response(json,{headers:{...headers,"Content-Type":"application/json; charset=utf-8",
       "Content-Disposition":'attachment; filename="hoopcheck-account-snapshot.json"'}});
   } catch {
