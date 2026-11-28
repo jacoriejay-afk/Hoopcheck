@@ -1,0 +1,26 @@
+name: Android billing 2 isolated contracts
+on:
+  pull_request:
+    branches: ["qa/hoopcheck-master-acceptance", "integration/build17-development"]
+    paths:
+      - "lib/server/play/**"
+      - "apps/mobile/src/native/playPurchaseCoordinator.ts"
+      - "scripts/test-play-*.mjs"
+      - ".github/workflows/android-billing-2.yml"
+permissions:
+  contents: read
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit
+      - run: node --test scripts/test-play-*.mjs

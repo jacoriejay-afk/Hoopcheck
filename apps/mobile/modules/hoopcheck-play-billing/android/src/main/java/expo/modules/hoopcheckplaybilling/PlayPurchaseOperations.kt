@@ -93,7 +93,7 @@ internal object PlayPurchaseOperations {
     if (!accountPattern.matches(accountId) || result.responseCode != BillingClient.BillingResponseCode.OK ||
       purchases == null || purchases.size > 100) return null
     val accepted = mutableListOf<VerificationCandidate>()
-    val seen = mutableSetOf<String>()
+    val seen = mutableMapOf<String, Pair<String, Int>>()
     var pending = 0
     var unmatched = 0
     for (purchase in purchases) {
@@ -102,16 +102,23 @@ internal object PlayPurchaseOperations {
         unmatched++
         continue
       }
+      val token = purchase.purchaseToken
+      if (!tokenPattern.matches(token)) { unmatched++; continue }
+      val identity = product to purchase.purchaseState
+      val previous = seen.putIfAbsent(token, identity)
+      if (previous != null) {
+        if (previous != identity) return null
+        continue
+      }
       if (purchase.purchaseState == Purchase.PurchaseState.PENDING) {
         pending++
         continue
       }
-      val token = purchase.purchaseToken
-      if (purchase.purchaseState != Purchase.PurchaseState.PURCHASED || !tokenPattern.matches(token)) {
+      if (purchase.purchaseState != Purchase.PurchaseState.PURCHASED) {
         unmatched++
         continue
       }
-      if (seen.add(token)) accepted.add(VerificationCandidate(product, token, purchase.isAcknowledged))
+      accepted.add(VerificationCandidate(product, token, purchase.isAcknowledged))
     }
     return PurchaseScan(accepted, pending, unmatched)
   }

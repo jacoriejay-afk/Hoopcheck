@@ -34,3 +34,18 @@ test("restore deduplicates candidates, distinguishes pending, requires confirmed
 test("late restore responses after logout or background cannot synchronize",async()=>{
  const f=fixture();let release;f.deps.restore=()=>new Promise(r=>release=r);const pending=f.client.recover(accountId);await new Promise(r=>setImmediate(r));f.client.setOwner(null);release({accountId,candidates:[{accountId,productId:quote.productId,token:"synthetic-purchase-token"}],pendingCount:0});assert.equal(await pending,null);assert.deepEqual(f.calls,[]);
 });
+
+test("launched, ambiguous and pending flows block a second sheet until clean recovery",async()=>{
+ for(const launch of [async()=>"launched",async()=>{throw Error("disconnected");},async()=>"restore_required"]){
+  const f=fixture();f.deps.launch=launch;assert.equal(await f.client.prepare(quote),true);await f.client.launch();
+  assert.equal(await f.client.prepare(quote),false);
+  assert.equal((await f.client.recover(accountId)).pending,1);assert.equal(await f.client.prepare(quote),false);
+  f.deps.restore=async()=>({accountId,candidates:[],pendingCount:0});
+  assert.deepEqual(await f.client.recover(accountId),{verified:0,pending:0,failed:0});
+  assert.equal(await f.client.prepare(quote),true);
+ }
+});
+test("explicit cancellation permits a new intent",async()=>{
+ const f=fixture();f.deps.launch=async()=>"cancelled";assert.equal(await f.client.prepare(quote),true);
+ assert.equal(await f.client.launch(),"cancelled");assert.equal(await f.client.prepare(quote),true);
+});

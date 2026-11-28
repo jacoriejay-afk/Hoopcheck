@@ -24,6 +24,9 @@ const invalid=()=>Error("Google Play purchase could not be verified.");
  * Its results never change the app's membership or acknowledge Google. */
 export function createPlayPurchaseCoordinator(deps:Dependencies){
  let generation=0,owner:string|null=null,busy=false,prepared:Intent|null=null,preparedToken:string|null=null;
+ // Do not open another sheet until the prior launch has been reconciled.
+ // A native exception may occur after the provider sheet has opened.
+ let needsRecovery=false;
  const allowed=()=>deps.enabled()&&deps.available();
  function invalidate(){generation++;prepared=null;preparedToken=null;}
  function check(scope:Scope){
@@ -54,7 +57,7 @@ export function createPlayPurchaseCoordinator(deps:Dependencies){
   async prepare(quote:Quote):Promise<boolean>{
    return single(false,async()=>{
     prepared=null;preparedToken=null;
-    if(!validQuote(quote))return false;
+    if(needsRecovery||!validQuote(quote))return false;
     const s=await capture(),product=playProduct(quote.productId,quote.basePlanId);
     if(!product||!canPurchasePlayProduct(s.role,product))return false;
     const r=await deps.prepare({...quote},s.token);
@@ -75,8 +78,10 @@ export function createPlayPurchaseCoordinator(deps:Dependencies){
     if(intent.owner!==s.owner||token!==s.token||!product||!canPurchasePlayProduct(s.role,product))return "held";
     await current(s);
     if(!fresh(intent))return "held";
+    needsRecovery=true;
     const result=await deps.launch({...intent});
     await current(s);
+    if(result==="cancelled")needsRecovery=false;
     return result==="launched"||result==="cancelled"||result==="restore_required"?result:"unavailable";
    });
   },
@@ -100,6 +105,7 @@ export function createPlayPurchaseCoordinator(deps:Dependencies){
      if(obj(reply)&&reply.owner===s.owner&&reply.environment==="test"&&reply.outcome==="test_fulfillment_confirmed")verified++;
      else failed++;
     }
+    if(scan.pendingCount===0&&failed===0)needsRecovery=false;
     return {verified,pending:scan.pendingCount,failed};
    });
   }
