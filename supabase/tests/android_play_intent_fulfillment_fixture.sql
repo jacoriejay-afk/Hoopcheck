@@ -12,6 +12,7 @@ declare
  s uuid:='33333333-3333-4333-8333-333333333333';
  id uuid; i integer; g bigint; fp text:=repeat('a',64);
  future timestamptz:=clock_timestamp()+interval '1 day';
+ expired_issued_at timestamptz:=clock_timestamp()-interval '2 minutes';
 begin
  id:=play_billing_candidate.issue_test_intent(a,s,repeat('a',64),'hoopcheck.pro','monthly','4990000','USD');
  if id is null then raise exception 'issue failed'; end if;
@@ -27,7 +28,7 @@ begin
  if play_billing_candidate.issue_test_intent(a,s,repeat('a',64),'hoopcheck.pro','monthly','4990000','USD') is not null then raise exception 'missing rate limit'; end if;
  id:=gen_random_uuid();
  insert into play_billing_candidate.purchase_intents(intent_id,owner_id,session_id,account_id,product_id,base_plan_id,price_micros,currency,issued_at,expires_at)
- values(id,b,s,repeat('b',64),'hoopcheck.pro','monthly','4990000','USD',clock_timestamp()-interval '2 minutes',clock_timestamp()-interval '1 minute');
+ values(id,b,s,repeat('b',64),'hoopcheck.pro','monthly','4990000','USD',expired_issued_at,expired_issued_at+interval '60 seconds');
  if play_billing_candidate.consume_test_intent(id,b,s,repeat('b',64),'hoopcheck.pro','monthly','4990000','USD') then raise exception 'expired intent accepted'; end if;
  g:=play_billing_candidate.begin_test_refresh(fp,a);
  if play_billing_candidate.commit_test_fulfillment(fp,a,g,future) then raise exception 'unverified fulfillment'; end if;
