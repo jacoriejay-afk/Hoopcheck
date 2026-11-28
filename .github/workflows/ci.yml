@@ -48,6 +48,10 @@ jobs:
           node-version: 20
           cache: npm
 
+      - name: Verify migration evidence against checked-out SQL bytes (QA PR 1198 only)
+        if: github.event_name == 'pull_request' && github.event.pull_request.number == 1198
+        run: node scripts/verify-migration-history-evidence.mjs
+
       - name: Verify Step 4 offline release evidence and local probe fixtures
         run: |
           node scripts/step4-release-evidence.mjs --self-test
