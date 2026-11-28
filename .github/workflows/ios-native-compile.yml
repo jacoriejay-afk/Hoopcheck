@@ -56,21 +56,31 @@ jobs:
         run: npx --no-install expo prebuild --platform ios --no-install
       - name: Verify generated permissions
         run: python3 scripts/verify-ios-permissions.py
+      # Cache downloaded pod sources only; regenerate and compile the native app at HEAD.
+      - name: Cache CocoaPods downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/CocoaPods
+          key: ${{ runner.os }}-${{ runner.arch }}-pod-downloads-v1-${{ hashFiles('apps/mobile/package-lock.json') }}
       - name: Install native pods
         run: pod install --project-directory=ios
       - name: Compile the simulator app without signing or EAS
         run: |
-          if ! xcodebuild -workspace ios/HoopCheck.xcworkspace -scheme HoopCheck -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/hoopcheck-ios-derived CODE_SIGNING_ALLOWED=NO > /tmp/hoopcheck-ios-compile.log 2>&1; then
+          # CI needs compiled objects, not the IDE symbol index. Avoid unnecessary index writes.
+          df -h /tmp
+          if ! xcodebuild -workspace ios/HoopCheck.xcworkspace -scheme HoopCheck -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/hoopcheck-ios-derived CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO > /tmp/hoopcheck-ios-compile.log 2>&1; then
+            df -h /tmp || true
             tail -n 160 /tmp/hoopcheck-ios-compile.log
             exit 1
           fi
-      # Compliance PRs retain compilation and security tests. Real Passport UI
-      # acceptance is tracked separately by passport-ios-runtime.yml.
+      # Compliance and intermediate master-QA PRs retain native compilation.
+      # Passport-specific changes run passport-ios-runtime.yml. The full master
+      # acceptance PR into Build 17 still runs both themes at its exact head.
       - name: Run real Passport PDF and share-sheet simulator tests (no EAS)
-        if: github.event_name != 'pull_request' || github.base_ref != 'integration/appstore-compliance-candidate'
+        if: github.event_name != 'pull_request' || (github.base_ref != 'integration/appstore-compliance-candidate' && github.base_ref != 'qa/hoopcheck-master-acceptance')
         run: bash scripts/ios-passport-smoke/run.sh
       - name: Upload simulator runtime evidence
-        if: always() && (github.event_name != 'pull_request' || github.base_ref != 'integration/appstore-compliance-candidate')
+        if: always() && (github.event_name != 'pull_request' || (github.base_ref != 'integration/appstore-compliance-candidate' && github.base_ref != 'qa/hoopcheck-master-acceptance'))
         uses: actions/upload-artifact@v4
         with:
           name: passport-ios-simulator-evidence

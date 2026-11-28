@@ -12,8 +12,18 @@ const require=createRequire(import.meta.url);
 function compile(path,imports=require){const compiled={exports:{}};const js=ts.transpileModule(readFileSync(new URL(path,import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;new Function('require','exports','module',js)(imports,compiled.exports,compiled);return compiled.exports;}
 const core=compile('../lib/auth/mfa-core.ts');
 const enforcement=compile('../lib/server/mfa-enforcement.ts',name=>name==='../auth/mfa-core'?core:require(name));
+const workspaceAccess=compile('../lib/ambassador/session-access.ts');
+test("web privacy requests pin the verified bearer and recheck the account before publishing", () => {
+ const page = readFileSync(new URL("../app/privacy-center/page.tsx",import.meta.url),"utf8");
+ assert.match(page,/getUser\(token\)/);
+ assert.match(page,/\.eq\("requester_id", owner\)[\s\S]*?\.setHeader\("Authorization", "Bearer " \+ token\)/);
+ assert.match(page,/requester_id: userId,[\s\S]*?\.setHeader\("Authorization", "Bearer " \+ token\)/);
+ assert.match(page,/current\.current = \{ owner, generation: current\.current\.generation \+ 1 \}/);
+ assert.match(page,/await verifiedPrivacyToken\(userId\);\s*if \(current\.current !== scope\) return;\s*setMessage/);
+});
 const {NextRequest}=require('next/server');
 const owner='11111111-1111-4111-8111-111111111111',factor='22222222-2222-4222-8222-222222222222';
+const pendingSignup=compile('../lib/google-auth.ts');
 const token=(aal='aal1',role='authenticated')=>Buffer.from('{"alg":"HS256"}').toString('base64url')+'.'+Buffer.from(JSON.stringify({sub:owner,aal,role,exp:Math.floor(Date.now()/1000)+3600})).toString('base64url')+'.fixture';
 function fixture({aal='aal1',enrolled=true,invalid=false}={}){
  const credential=token(aal);let verified=0,tableReads=0;
@@ -22,7 +32,7 @@ function fixture({aal='aal1',enrolled=true,invalid=false}={}){
   if(name==='@supabase/ssr')return{createServerClient:()=>client};
   if(name==='@supabase/supabase-js')return{createClient:()=>client};
   if(name==='./lib/server/mfa-enforcement')return enforcement;
-  if(name==='./lib/google-auth')return{GOOGLE_SIGNUP_COOKIE:'hoopcheck-google-setup',GOOGLE_SIGNUP_PATH:'/signup/google',GOOGLE_SIGNUP_ROLE:'pending_google_signup'};
+  if(name==='./lib/google-auth')return pendingSignup;
   return require(name);
  }).proxy;
  return{handler,client,credential,counts:()=>({verified,tableReads})};
@@ -48,13 +58,55 @@ test('SSR cookie API sessions require the same challenge',async()=>{
 test('protected SSR pages redirect to challenge before private profile reads',async()=>{
  const f=fixture();const response=await f.handler(new NextRequest('https://fixture.test/account/security?tab=devices',{headers:{cookie:'sb-fixture-auth-token=fixture'}}));const target=new URL(response.headers.get('location'));assert.equal(target.pathname,'/auth/verify');assert.equal(target.searchParams.get('returnTo'),'/account/security?tab=devices');assert.equal(f.counts().tableReads,0);
 });
+test('the full HoopChat inbox requires sign-in and the existing MFA assurance', async () => {
+ const path = '/messages?thread=fixture';
+ const guest = fixture();
+ guest.client.auth.getClaims = async () => ({ data: null });
+ const guestResponse = await guest.handler(new NextRequest(`https://fixture.test${path}`));
+ const login = new URL(guestResponse.headers.get('location'));
+ assert.equal(login.pathname, '/login');
+ assert.equal(login.searchParams.get('returnTo'), path);
+ const enrolled = fixture();
+ const enrolledResponse = await enrolled.handler(new NextRequest(`https://fixture.test${path}`));
+ const challenge = new URL(enrolledResponse.headers.get('location'));
+ assert.equal(challenge.pathname, '/auth/verify');
+ assert.equal(challenge.searchParams.get('returnTo'), path);
+ assert.equal(enrolled.counts().tableReads, 0);
+ const verified = fixture({aal:'aal2'});
+ const verifiedResponse = await verified.handler(new NextRequest(`https://fixture.test${path}`));
+ assert.equal(verifiedResponse.headers.get('x-middleware-next'), '1');
+});
 test('second-factor verification never bypasses existing pending-signup restrictions',async()=>{
- const f=fixture({aal:'aal2'});const response=await f.handler(new NextRequest('https://fixture.test/api/account/delete',{headers:{authorization:`Bearer ${token('aal2','pending_google_signup')}`}}));assert.equal(response.status,403);assert.equal(f.counts().verified,0);
+ const f=fixture({aal:'aal2'});const response=await f.handler(new NextRequest('https://fixture.test/api/account/delete',{headers:{authorization:`Bearer ${token('aal2',pendingSignup.GOOGLE_SIGNUP_ROLE)}`}}));assert.equal(response.status,403);assert.equal(f.counts().verified,0);
+});
+
+test('first-time Apple onboarding gets an exact, MFA-checked vault exception', async () => {
+ const path = 'https://fixture.test/api/auth/apple-authorization';
+ const bearer = token('aal1',pendingSignup.GOOGLE_SIGNUP_ROLE);
+ const headers = {authorization:'Bearer '+bearer};
+ for (const [method, url, enrolled, invalid, expected] of [
+  ['POST',path,false,false,200],
+  ['POST',path,true,false,403],
+  ['POST',path,false,true,401],
+  ['GET',path,false,false,403],
+  ['POST',path+'/nested',false,false,403],
+ ]) {
+  const f = fixture({enrolled});
+  f.client.auth.getUser = async credential => {
+   assert.equal(credential,bearer);
+   if (invalid) return {data:{user:null},error:Error('invalid signature')};
+   return {data:{user:{id:owner,factors:enrolled?[{id:factor,factor_type:'totp',status:'verified'}]:[]}}};
+  };
+  const response = await f.handler(new NextRequest(url,{method,headers}));
+  assert.equal(response.status,expected);
+  if (expected===200) assert.equal(response.headers.get('x-middleware-next'),'1');
+ }
 });
 
 function workspaceSession(client){return compile('../lib/ambassador/server.ts',name=>{
  if(name==='../auth/mfa-core')return core;
  if(name==='../server/supabase-auth')return{createAuthClient:async()=>client};
+ if(name==='./session-access')return workspaceAccess;
  if(name==='./identifiers')return{uuidPattern:/^[0-9a-f-]{36}$/};
  if(name==='next/navigation')return{redirect:path=>{throw Error('redirect:'+path);},notFound:()=>{throw Error('not-found');}};
  return require(name);
@@ -63,6 +115,94 @@ test('Owner HQ enforces MFA again before any privileged workspace/owner query',a
  const f=fixture();let checkedOwner=false;f.client.rpc=async()=>{checkedOwner=true;return{data:true,error:null};};
  await assert.rejects(workspaceSession(f.client)('/owner-hq',true),/redirect:\/auth\/verify/);assert.equal(checkedOwner,false);
 });
+test('Owner and Ambassador HQ deny revoked, suspended and unverifiable accounts',async()=>{
+ for (const {active,moderation,error} of [
+  {active:false,moderation:'normal'},
+  {active:true,moderation:'suspended'},
+  {active:true,moderation:'normal',error:Error('unverified')},
+ ]) {
+  const f=fixture({aal:'aal2'});
+  f.client.rpc=async name=>{assert.equal(name,'confirm_active_account_session');return {data:active,error};};
+  f.client.from=table=>{
+   assert.equal(table,'profiles');
+   return {select:()=>({eq:(key,id)=>{
+    assert.equal(key,'id');assert.equal(id,owner);
+    return {maybeSingle:async()=>({data:{moderation_status:moderation}})};
+   }})};
+  };
+  for (const [path,ownerOnly] of [['/ambassador-hq',false],['/owner-hq',true]]) {
+   await assert.rejects(workspaceSession(f.client)(path,ownerOnly),/not-found/);
+  }
+ }
+});
+
 test('AAL2 does not grant the owner role',async()=>{
  const f=fixture({aal:'aal2'});f.client.rpc=async()=>({data:false,error:null});await assert.rejects(workspaceSession(f.client)('/owner-hq',true),/not-found/);
+});
+
+test('moderation requires confirmed identity, MFA, a live account and the scoped staff grant', async () => {
+ const env = {
+  NEXT_PUBLIC_SUPABASE_URL: 'https://fixture.invalid',
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'fixture-public',
+  SUPABASE_SERVICE_ROLE_KEY: 'fixture-service',
+ };
+ const previous = Object.fromEntries(Object.keys(env).map(key => [key, process.env[key]]));
+ Object.assign(process.env, env);
+ try {
+  for (const options of [
+   {confirmed:false,status:401},
+   {aal:'aal1',status:403},
+   {active:false,status:403},
+   {active:null,status:403},
+   {moderation:'suspended',status:403},
+   {staff:false,status:403},
+   {staff:true,status:200},
+  ]) {
+   const credential = token(options.aal ?? 'aal2');
+   const checks = [];
+   const scoped = {
+    auth:{getUser:async supplied => {
+     assert.equal(supplied, credential);
+     return {data:{user:{id:owner,email_confirmed_at:options.confirmed===false?null:'2026-01-01',
+      factors:[{id:factor,status:'verified',factor_type:'totp'}],user_metadata:{role:'admin'}}}};
+    }},
+    rpc:async name => {
+     checks.push(name);
+     if (name==='confirm_active_account_session') {
+      return {data:options.active===undefined?true:options.active,error:options.active===null?Error('unavailable'):null};
+     }
+     assert.equal(name, 'is_current_user_admin_or_moderator');
+     return {data:options.staff===true,error:null};
+    },
+    from: name => {
+     assert.equal(name, 'profiles');
+     return {select: () => ({eq: (key, id) => {
+      assert.equal(key, 'id');
+      assert.equal(id, owner);
+      return {maybeSingle:async()=>({data:{moderation_status:options.moderation??'normal'}})};
+     }})};
+    },
+   };
+   const moderation = compile('../lib/server/review-moderation.ts',name=>{
+    if (name==='server-only') return {};
+    if (name==='../auth/mfa-core') return core;
+    if (name==='@supabase/supabase-js') return {createClient:(_url,key,config)=>{
+     if (key===env.SUPABASE_SERVICE_ROLE_KEY) return {};
+     assert.equal(config.global.headers.Authorization, 'Bearer '+credential);
+     return scoped;
+    }};
+    return require(name);
+   });
+   const result = await moderation.authorizeModeratorRequest(new Request('https://fixture.invalid', {
+    headers:{authorization:'Bearer '+credential},
+   }));
+   assert.equal(result.ok?200:result.response.status, options.status);
+   assert.equal(checks.includes('is_current_user_admin_or_moderator'), options.staff!==undefined);
+  }
+ } finally {
+  for (const [key,value] of Object.entries(previous)) {
+   if (value===undefined) delete process.env[key];
+   else process.env[key]=value;
+  }
+ }
 });

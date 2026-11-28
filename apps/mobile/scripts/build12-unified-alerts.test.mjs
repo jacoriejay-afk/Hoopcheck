@@ -31,8 +31,9 @@ test("embedded HoopChat reuses owner-scoped accepted threads and pending request
 
 test("Alerts keeps caller-only notification queries and clears private data at sign-out", () => {
   const alerts = read("../app/notifications.tsx");
-  assert.match(alerts, /readNotifications\(supabase, data\.session\.user\.id\)/);
-  assert.match(alerts, /markNotificationsRead\(supabase, userId/);
+  assert.match(alerts, /readNotifications\(supabase,scope\.uid,undefined,scope\)/);
+  assert.match(alerts,/verifiedAlertSession\(supabase,signal/);
+  assert.match(alerts, /markNotificationsRead\(supabase,userId/);
   assert.match(alerts, /hoopChatAuthAction\(event, owner\.current, session\?\.user\.id \?\? null\)/);
   assert.match(alerts, /if \(action === "ignore"\) return/);
   assert.match(alerts, /if \(action === "clear"\)/);

@@ -2,14 +2,27 @@
 
 import Link from "next/link";
 import "./hoopcheck-brand-home.css";
-import { useEffect } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { getCachedSession } from "../lib/supabase";
 import CategoryTile, { type CategoryTileKind } from "../components/CategoryTile";
 import SearchBar from "../components/SearchBar";
 import { HoopIcon } from "../components/HoopCheckUI";
-import HomeDirectoryStats from "../components/HomeDirectoryStats";
+import HomeDirectoryStats, { useHomeDirectoryStats } from "../components/HomeDirectoryStats";
 import HomeDesktopIdentity from "../components/HomeDesktopIdentity";
+
+const desktopViewport = "(min-width: 1024px)";
+function subscribeToDesktopViewport(onChange: () => void) {
+ const viewport = window.matchMedia(desktopViewport);
+ viewport.addEventListener("change", onChange);
+ return () => viewport.removeEventListener("change", onChange);
+}
+function getDesktopViewport() {
+ return window.matchMedia(desktopViewport).matches;
+}
+function getServerDesktopViewport() {
+ return false;
+}
 
 const categories:{label:string;subtitle:string;href:string;category:CategoryTileKind}[]=[
  {label:"Men’s Teams",subtitle:"Research teams before you sign",href:"/teams",category:"teams"},
@@ -23,10 +36,12 @@ const categories:{label:string;subtitle:string;href:string;category:CategoryTile
 
 export default function Home(){
  const router=useRouter();
+ const isDesktop = useSyncExternalStore(subscribeToDesktopViewport, getDesktopViewport, getServerDesktopViewport);
+ const stats = useHomeDirectoryStats();
  useEffect(()=>{getCachedSession().then(({data})=>{if(data.session)router.replace("/dashboard");});},[router]);
  useEffect(()=>{if(window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;const nodes=Array.from(document.querySelectorAll<HTMLElement>(".hc-ia-door,.hc-d3-membership-band"));nodes.forEach((node,index)=>{node.classList.add("hc-d3-reveal");node.style.transitionDelay=`${Math.min(index,4)*.06}s`;});const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add("is-visible");observer.unobserve(entry.target);}}),{threshold:.12});nodes.forEach(node=>observer.observe(node));return()=>observer.disconnect();},[]);
  return <main className="hc-template-home hc-home-redesign hc-ia-home hc-ia-public-home">
-   <div className="hc-d3-desktop-only"><HomeDesktopIdentity/></div>
+   <div className="hc-d3-desktop-only">{isDesktop && <HomeDesktopIdentity enabled={true} stats={stats}/>}</div>
    <div className="page-container">
    <div className="hc-d3-mobile-only">
    <SearchBar className="hc-ia-search" name="q" placeholder="Search basketball…" ariaLabel="Search basketball directory: teams, leagues, coaches or players"/>
@@ -35,7 +50,7 @@ export default function Home(){
      <Link href="/live-games" className="hc-public-quick-link"><span><strong>Live Games</strong><small>Live and upcoming games</small></span><HoopIcon name="arrow-right" size={18}/></Link>
      <Link href="/pre-sign" className="hc-public-quick-link"><span><strong>Pre-sign check</strong><small>Six checks before signing</small></span><HoopIcon name="arrow-right" size={18}/></Link>
    </nav>
-   <HomeDirectoryStats />
+   <HomeDirectoryStats stats={isDesktop ? [] : stats} />
    </div>
    <div className="hc-d3-desktop-search"><SearchBar className="hc-ia-search" name="q" placeholder="Search basketball…" ariaLabel="Search basketball directory: teams, leagues, coaches or players"/></div>
    <div className="hc-d3-desktop-only"><Link href="/pre-sign" className="hc-smooth-presign-link"><strong>PRE-SIGN CHECK</strong><span>Research the club before you commit</span><HoopIcon name="arrow-right" size={18}/></Link></div>

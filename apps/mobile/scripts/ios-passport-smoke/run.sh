@@ -3,8 +3,11 @@ set -euo pipefail
 artifact_root=/tmp/hoopcheck-passport-simulator
 mkdir -p "$artifact_root"
 cp package.json "$artifact_root/package.original.json"
+app_delegate=ios/HoopCheck/AppDelegate.swift
+cp "$app_delegate" "$artifact_root/AppDelegate.original.swift"
 cleanup() {
   cp "$artifact_root/package.original.json" package.json
+  cp "$artifact_root/AppDelegate.original.swift" "$app_delegate"
   if [[ -n "${metro_pid:-}" ]]; then kill "$metro_pid" 2>/dev/null || true; fi
 }
 trap cleanup EXIT
@@ -12,6 +15,9 @@ node - <<'JS'
 const fs=require('fs'); const p=JSON.parse(fs.readFileSync('package.json','utf8'));
 p.main='./scripts/ios-passport-smoke/entry.tsx'; fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n');
 JS
+# Patch only the disposable generated native fixture after the ordinary compile.
+# The real XCTest rebuilds this Debug simulator app and retains all assertions.
+python3 scripts/ios-passport-smoke/pin-fixture-bundle.py "$app_delegate"
 ruby scripts/ios-passport-smoke/add-ui-test.rb
 npx --no-install expo start --localhost --port 8081 > "$artifact_root/metro.log" 2>&1 &
 metro_pid=$!
@@ -112,14 +118,20 @@ for theme in light dark; do
   # XCTest before its prior 900s budget expired. Keep finite, per-theme budgets
   # and always require passing assertions in both themes.
   xctest_timeout_seconds=900
-  if [[ "$theme" == "light" ]]; then xctest_timeout_seconds=1500; fi
+  xcode_action=test-without-building
+  if [[ "$theme" == "light" ]]; then
+    xctest_timeout_seconds=1500
+    xcode_action=test
+  fi
+  # The light run builds the fixture and UI runner at this exact HEAD. Dark
+  # uses the same freshly built products after the required simulator reboot.
   echo "PASSPORT_SMOKE_THEME=$theme: executing real unsigned Passport PDF/share XCTest (budget=${xctest_timeout_seconds}s)"
   # Cold simulator runs can hang indefinitely inside UIKit/Expo Print.
   # Fail closed with a useful log and xcresult instead of hitting the outer
   # workflow timeout without diagnostic evidence. Never skip either theme.
   if ! python3 scripts/ios-passport-smoke/run-bounded-xctest.py \
     --log "$artifact_root/$theme-test.log" --timeout-seconds "$xctest_timeout_seconds" -- \
-    xcodebuild test -workspace ios/HoopCheck.xcworkspace -scheme HoopCheck \
+    xcodebuild "$xcode_action" -workspace ios/HoopCheck.xcworkspace -scheme HoopCheck \
     -configuration Debug -sdk iphonesimulator -destination "id=$simulator_id" \
     -derivedDataPath /tmp/hoopcheck-ios-derived \
     -parallel-testing-enabled NO \

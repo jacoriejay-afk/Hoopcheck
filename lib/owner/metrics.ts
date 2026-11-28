@@ -5,9 +5,10 @@ async function getReferralClickTotal(db: ReturnType<typeof ambassadorDb> | null)
   if (!db) return { label, value: "Unavailable" };
 
   const pageSize = 100;
+  const maxPages = 100;
   let afterId: string | undefined;
   let total = BigInt(0);
-  for (;;) {
+  for (let pageIndex = 0; pageIndex < maxPages; pageIndex++) {
     const page = db.from("ambassador_clicks").select("ambassador_id, clicks")
       .order("ambassador_id").limit(pageSize);
     const { data, error } = await (afterId ? page.gt("ambassador_id", afterId) : page);
@@ -17,8 +18,11 @@ async function getReferralClickTotal(db: ReturnType<typeof ambassadorDb> | null)
       total += BigInt(clicks);
     }
     if (data.length < pageSize) return { label, value: String(total) };
-    afterId = data[data.length - 1].ambassador_id;
+    const nextId = data[data.length - 1].ambassador_id;
+    if (typeof nextId !== "string" || !nextId || nextId === afterId) return { label, value: "Unavailable" };
+    afterId = nextId;
   }
+  return { label, value: "Unavailable" }; // bounded report, never a partial total
 }
 
 export async function getOwnerMetrics() {
@@ -30,9 +34,11 @@ export async function getOwnerMetrics() {
     label: string,
     query?: PromiseLike<{ count: number | null; error: unknown }>,
   ) {
-    const result = await query;
-    const value = !result || result.error || result.count == null ? "Unavailable" : String(result.count);
-    return { label, value };
+    try {
+      const result = await query;
+      const value = !result || result.error || result.count == null || !Number.isSafeInteger(result.count) || result.count < 0 ? "Unavailable" : String(result.count);
+      return { label, value };
+    } catch { return { label, value: "Unavailable" }; }
   }
 
   return Promise.all([
@@ -45,7 +51,7 @@ export async function getOwnerMetrics() {
       .eq("provider", "apple").in("status", ["active", "trialing"])),
     metric("Accounts with active paid access", db?.from("membership_entitlements").select("*", options)
       .in("plan", ["pro", "premium"]).in("status", ["active", "trialing"]).or(`current_period_end.is.null,current_period_end.gt.${new Date().toISOString()}`)),
-    getReferralClickTotal(db),
+    getReferralClickTotal(db).catch(() => ({label:"Ambassador referral clicks",value:"Unavailable"})),
     metric("Attributed signups", db?.from("ambassador_attributions").select("*", options)),
     metric("Qualified paying referrals", db?.from("ambassador_attributions").select("*", options)
       .not("first_paid_at", "is", null).is("disqualified_at", null)),

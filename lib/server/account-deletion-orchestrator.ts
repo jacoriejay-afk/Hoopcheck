@@ -26,31 +26,50 @@ export type DeletionAdapters = {
   fail: (lease: DeletionLease, code: "invalid_checkpoint" | "step_not_confirmed") => Promise<void>;
 };
 const uuid = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
+function validCheckpointPrefix(value: unknown): value is readonly DeletionStep[] {
+  return Array.isArray(value) && value.length <= deletionSteps.length &&
+    Array.from(value).every((step,index)=>step===deletionSteps[index]);
+}
 export async function runDeletionCandidate(adapter: DeletionAdapters): Promise<"disabled"|"idle"|"completed"|"retry"> {
   if (!await adapter.enabled()) return "disabled";
-  const lease = await adapter.claim();
-  if (!lease) return "idle";
-  if (!uuid.test(lease.requestId) || !uuid.test(lease.ownerId) || !uuid.test(lease.fence) ||
-      !lease.policyVersion || lease.completed.length > deletionSteps.length ||
-      lease.completed.some((step,index)=>step!==deletionSteps[index])) {
+  const claimed = await adapter.claim();
+  if (!claimed) return "idle";
+  if (typeof claimed.requestId!=="string" || !uuid.test(claimed.requestId) ||
+      typeof claimed.ownerId!=="string" || !uuid.test(claimed.ownerId) ||
+      typeof claimed.fence!=="string" || !uuid.test(claimed.fence) ||
+      typeof claimed.policyVersion!=="string" || !claimed.policyVersion.trim() ||
+      claimed.policyVersion.length>100 || !validCheckpointPrefix(claimed.completed)) {
     // Do not attempt to mutate a malformed lease supplied by the scheduler.
     throw new Error("Invalid deletion lease or checkpoint sequence.");
   }
+  // Keep the authenticated request identity and checkpoint prefix immutable,
+  // including when a supplied effect attempts to mutate its input.
+  const lease: DeletionLease = Object.freeze({
+    requestId:claimed.requestId, ownerId:claimed.ownerId, fence:claimed.fence,
+    policyVersion:claimed.policyVersion, completed:Object.freeze([...claimed.completed]),
+  });
+  async function boundary() {
+    if (!await adapter.enabled()) throw new Error("Deletion worker disabled.");
+    await adapter.assertLease(lease);
+    if (!await adapter.enabled()) throw new Error("Deletion worker disabled.");
+  }
   try {
     for (const step of deletionSteps.slice(lease.completed.length)) {
-      await adapter.assertLease(lease);
+      await boundary();
       const result = await adapter.execute(lease,step,lease.requestId+":"+step);
       if(result?.confirmed!==true||typeof result.receipt!=="string"||!/^[A-Za-z0-9_-]{1,128}$/.test(result.receipt))
         throw new Error("Deletion step not acknowledged.");
-      await adapter.assertLease(lease);
+      await boundary();
       await adapter.checkpoint(lease,step,result.receipt);
     }
-    await adapter.assertLease(lease);
+    await boundary();
     await adapter.complete(lease);
     return "completed";
   } catch {
-    // A fenced-out worker must not update the current worker's state.
-    try { await adapter.assertLease(lease); await adapter.fail(lease,"step_not_confirmed"); } catch { /* lease lost; durable scheduler owns retry */ }
+    // Disabled or fenced-out workers must leave the lease to expire, without
+    // further writes. An in-flight effect cannot be canceled by this switch;
+    // retries still depend on durable per-step idempotency.
+    try { await boundary(); await adapter.fail(lease,"step_not_confirmed"); } catch { /* durable scheduler owns retry */ }
     return "retry";
   }
 }
@@ -68,8 +87,7 @@ function decodeClaim(value:unknown):DeletionLease|null {
  const row=value[0];
  if(!row||typeof row!=="object"||!uuid.test(row.request_id)||!uuid.test(row.owner_id)||!uuid.test(row.fence)||
   typeof row.policy_version!=="string"||!row.policy_version||row.policy_version.length>100||
-  !Array.isArray(row.completed)||row.completed.length>deletionSteps.length||
-  row.completed.some((step:unknown,index:number)=>step!==deletionSteps[index]))throw Error("Invalid deletion claim.");
+  !validCheckpointPrefix(row.completed))throw Error("Invalid deletion claim.");
  return {requestId:row.request_id,ownerId:row.owner_id,fence:row.fence,policyVersion:row.policy_version,completed:row.completed};
 }
 export function createDeletionWorkerAdapter(client:Rpc,effects:DeletionEffects,enabled:boolean):DeletionAdapters {
@@ -81,13 +99,17 @@ export function createDeletionWorkerAdapter(client:Rpc,effects:DeletionEffects,e
  async function acknowledged(name:string,args:Record<string,unknown>){
   if(await rpc(name,args)!==true)throw Error("Deletion worker transition not confirmed.");
  }
+ const isEnabled=()=>enabled&&process.env.ACCOUNT_DELETION_WORKER_ENABLED==="true"&&deletionSteps.every(step=>typeof effects[step]==="function");
  return {
-  enabled:async()=>enabled&&process.env.ACCOUNT_DELETION_WORKER_ENABLED==="true"&&deletionSteps.every(step=>typeof effects[step]==="function"),
+  enabled:async()=>isEnabled(),
   claim:async()=>decodeClaim(await rpc("claim_account_deletion_worker")),
   assertLease:async lease=>acknowledged("assert_account_deletion_worker",bindings(lease)),
   execute:async(lease,step,key)=>{
-   if(key!==lease.requestId+":"+step||typeof effects[step]!=="function")throw Error("Deletion effect unavailable.");
+   if(!isEnabled()||key!==lease.requestId+":"+step||typeof effects[step]!=="function")throw Error("Deletion effect unavailable.");
    await acknowledged("assert_account_deletion_worker",bindings(lease));
+   // The inner RPC is asynchronous: the outer orchestration boundary alone
+   // cannot prevent a dispatch if the kill switch changes during this RPC.
+   if(!isEnabled())throw Error("Deletion effect unavailable.");
    return effects[step](lease,key);
   },
   checkpoint:async(lease,step,receipt)=>acknowledged("checkpoint_account_deletion_worker",{...bindings(lease),p_step:step,p_receipt:receipt}),

@@ -13,9 +13,12 @@ test("Courtside routes share one private messenger",()=>{
  assert.match(notifications,/Open full Courtside inbox/);
  assert.match(read("app/dashboard/HomeCourtSpace.tsx"),/href:"\/messages"/);
  assert.match(read("components/RoleQuickLinks.tsx"),/href:"\/messages"/);
+ assert.match(read("app/connections/page.tsx"),/href="\/messages"/);
+ assert.doesNotMatch(read("next.config.ts"), /source:\s*"\/messages"/);
 });
 test("Messages retain consent and role restrictions from existing HoopChat",()=>{
  const ui=read("components/HoopChatCourtside.tsx");
+ const delivery=read("apps/mobile/src/native/hoopChatSend.ts");
  const requestSql=read("supabase/migrations/20261008105244_enable_player_hoopchat_realtime.sql");
  assert.match(ui,/selected\.status!=="accepted"/);
  assert.match(ui,/selected\.player_id!==userId/);
@@ -23,7 +26,9 @@ test("Messages retain consent and role restrictions from existing HoopChat",()=>
  assert.match(ui,/\.eq\("player_id",userId\)/);
  assert.match(ui,/supabase\.auth\.getUser\(\)/);
  assert.match(ui,/\.from\("player_contact_messages"\)/);
- assert.match(ui,/sender_id:userId/);
+ assert.match(ui,/prepareConversationMessage\(pendingMessages\.current,thread,userId,submittedDraft/);
+ assert.match(delivery,/sender_id: viewer/);
+ assert.match(delivery,/\.insert\(message\)\s*\.setHeader\("Authorization", bearer\)/);
  assert.match(requestSql,/accepted participants can view messages/);
  assert.match(requestSql,/accepted participants can send messages/);
  assert.doesNotMatch(ui,/SUPABASE_SERVICE_ROLE_KEY|service_role|dangerouslySetInnerHTML/);
@@ -76,7 +81,7 @@ test("Messages tab does not wait on unrelated notification requests",()=>{
 test("Realtime channel does not reconnect on every inbox refresh",()=>{
  const ui=read("components/HoopChatCourtside.tsx");
  assert.match(ui,/const selectedStatus=requests\.find\(r=>r\.id===selectedId\)\?\.status/);
- assert.match(ui,/\},\[load,selectedId,selectedStatus,userId\]\)/);
+ assert.match(ui,/\},\[load,loadHistory,selectedId,selectedStatus,userId\]\)/);
  assert.doesNotMatch(ui,/\},\[load,requests,selectedId,userId\]\)/);
  assert.match(ui,/loadSequence\.current/);
 });
@@ -112,8 +117,41 @@ test("Alert search and category counts stay within the loaded caller-owned list"
  assert.equal(filter({...warning,read_at:"2026-11-25"},"unread"),false);
  assert.equal(filter({...warning,target_type:"game",notification_type:"game_reminder"},"games"),true);
  const page=read("app/notifications/page.tsx");
- assert.ok(page.includes('.eq("user_id",user.id).order("created_at",{ascending:false}).limit(ALERT_LIST_LIMIT)'));
+ const helper=read("apps/mobile/src/native/notifications.ts");
+ assert.match(page,/readNotifications\(supabase,scope\.uid,undefined,scope\)/);
+ assert.match(helper,/\.eq\("user_id", userId\)[\s\S]*?\.limit\(NOTIFICATION_PAGE_SIZE\)/);
+ assert.match(helper,/setHeader\("Authorization",scope\.bearer\)\.abortSignal\(scope\.signal\)/);
  assert.ok(page.includes("searched.filter(n=>matchesAlertFilter(n,key))"));
  assert.ok(page.includes("Latest 100 loaded; older alerts are not included."));
  assert.ok(page.includes('Unread alerts in loaded list'));
+});
+
+test("Courtside guards duplicate mutations and preserves edits made during send",()=>{
+ const ui=read("components/HoopChatCourtside.tsx");
+ assert.match(ui,/const mutationGeneration=useRef<number\|null>\(null\)/);
+ assert.match(ui,/async function respond[\s\S]*?if\(mutationGeneration\.current===rev\)return;\s*mutationGeneration\.current=rev;\s*setSending\(true\)/);
+ assert.match(ui,/async function send[\s\S]*?submittedDraft=currentDraft;\s*if\(structuredReplies&&replyTarget\?\.scope===historyScope&&!replyId\)\{[^}]*return;\}\s*if\(mutationGeneration\.current===rev\)return;\s*mutationGeneration\.current=rev/);
+ assert.match(ui,/setDrafts\(prev=>prev\[thread\]===submittedDraft\?\{\.\.\.prev,\[thread\]:""\}:prev\)/);
+ assert.equal((ui.match(/if\(user\?\.id!==userId\|\|rev!==accountGeneration\.current\)throw new Error/g)||[]).length,2);
+ assert.equal((ui.match(/finally\{if\(mutationGeneration\.current===rev\)mutationGeneration\.current=null;if\(rev===accountGeneration\.current\)setSending\(false\);\}/g)||[]).length,3);
+ assert.match(ui,/async function forwardTo[\s\S]*?if\(mutationGeneration\.current===rev\)return;\s*mutationGeneration\.current=rev;setSending\(true\)/);
+ const forward=ui.slice(ui.indexOf("async function forwardTo"),ui.indexOf("async function respond"));
+ assert.match(forward,/readForwardDraft\(supabase,userId,source,forwardSelection\.messageId,destination,signal\)/);
+ assert.doesNotMatch(forward,/sendConversationMessage|\.insert\(/);
+});
+
+test("Seen markers advance only from confirmed peer history with chronological timestamps",async()=>{
+ const code=ts.transpileModule(read("lib/hoopchat-courtside.ts"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+ const {advanceSeenMarker,unreadCount}=await import("data:text/javascript;base64,"+Buffer.from(code).toString("base64"));
+ const row=(request_id,sender_id,created_at)=>({id:"id",request_id,sender_id,created_at,body:"message"});
+ const prior="2026-11-27T12:00:00Z",later="2026-11-27T08:01:00-04:00";
+ assert.equal(advanceSeenMarker([],"a","me",prior),prior);
+ assert.equal(advanceSeenMarker([row("b","peer",later),row("a","me",later)],"a","me",prior),prior);
+ assert.equal(advanceSeenMarker([row("a","peer",later)],"a","me",prior),later);
+ assert.equal(unreadCount({id:"a",status:"accepted"},[row("a","peer",later)],"me",prior),1);
+ const ui=read("components/HoopChatCourtside.tsx");
+ assert.match(ui,/advanceSeenMarker\(selectedHistory.rows/);
+ assert.match(ui,/!followingLatest.current/);
+ assert.match(ui,/prefsOwner!==userId/);
+ assert.match(ui,/unread items in loaded inbox/);
 });

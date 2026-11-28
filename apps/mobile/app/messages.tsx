@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { AppState, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { randomUUID } from "expo-crypto";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Button } from "../src/primitives";
@@ -13,7 +14,15 @@ import { useEntryTheme } from "../src/theme";
 import { supabase } from "../src/lib/supabase";
 import { requireOnline, useNetwork } from "../src/native/network";
 import { hoopChatAuthAction, withHoopChatDeadline } from "../src/native/hoopChatLoad";
-import { appendConversationPage, CHAT_HISTORY_PAGE_SIZE, matchesConversationSearch, readConversationPage, type ContactMessage } from "../src/native/hoopChatHistory";
+import { appendConversationPage, CHAT_HISTORY_PAGE_SIZE, matchesConversationSearch, readConversationPage, refreshConversationPage, type ContactMessage } from "../src/native/hoopChatHistory";
+import { prepareConversationMessage, sendConversationMessage } from "../src/native/hoopChatSend";
+import { quoteConversationMessage } from "../src/native/hoopChatQuote";
+import { makeReplyTarget, scopedReplyTarget, type ReplyTarget } from "../src/native/hoopChatReply";
+import { markServerChatRead, readServerChatCounts } from "../src/native/hoopChatReadSync";
+const structuredReplies=process.env.EXPO_PUBLIC_HOOPCHECK_STRUCTURED_REPLIES_ENABLED==="true";
+const syncReadMarkers=process.env.EXPO_PUBLIC_HOOPCHECK_CHAT_READ_SYNC_ENABLED==="true";
+import { useNativeDraft,useNativeForwardDraft } from "../src/native/drafts";
+import {forwardDestinations,readForwardDraft,type ForwardSelection} from "../src/native/hoopChatForward";
 
 type ContactRequest = {
   id: string; requester_id: string; player_id: string; message: string | null;
@@ -41,15 +50,21 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
   const [userId, setUserId] = useState("");
   const [requests, setRequests] = useState<ContactRequest[]>([]);
   const [messages, setMessages] = useState<ContactMessage[]>([]);
+  const [serverUnread, setServerUnread] = useState<{owner:string;counts:Map<string,number>} | null>(null);
   const [contacts, setContacts] = useState<Record<string,ContactName>>({});
   const [selectedId, setSelectedId] = useState("");
-  const [draft, setDraft] = useState("");
   const [openedId, setOpenedId] = useState("");
   const [openedMode, setOpenedMode] = useState(mode);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  // React state updates are not synchronous; prevent duplicate mutations before the next render.
+  const mutationLocked = useRef(false);
+  const pendingMessages = useRef(new Map<string, Omit<ContactMessage, "created_at">>());
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+  const [replyTarget,setReplyTarget]=useState<ReplyTarget|null>(null);
+  const [forwardSelection,setForwardSelection]=useState<ForwardSelection|null>(null);
+  const writeForwardDraft=useNativeForwardDraft();
   const [threadPage, setThreadPage] = useState<{scope:string;rows:ContactMessage[];hasMore:boolean}|null>(null);
   const [threadError,setThreadError] = useState<{scope:string;message:string}|null>(null);
   const [historyBusy,setHistoryBusy] = useState(false);
@@ -82,7 +97,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
         const rows = ((data || []) as ContactRequest[]).filter(row=>!blockedIds.has(row.requester_id===user.id?row.player_id:row.requester_id));
         const accepted = rows.filter(item => item.status === "accepted").map(item => item.id);
         const peerIds = [...new Set(rows.map(item => item.requester_id === user.id ? item.player_id : item.requester_id))];
-        const [history, people] = await Promise.all([
+        const [history, people, unread] = await Promise.all([
           accepted.length ? supabase.from("player_contact_messages")
             .select("id,request_id,sender_id,body,created_at").in("request_id", accepted)
             .order("created_at", { ascending: false }).limit(500).setHeader("Authorization",header).abortSignal(signal)
@@ -90,18 +105,20 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
           peerIds.length ? supabase.from("profiles")
             .select("id,display_name,username").in("id", peerIds).setHeader("Authorization",header).abortSignal(signal)
             : Promise.resolve({ data: [] as ContactName[], error: null }),
+          syncReadMarkers ? readServerChatCounts(supabase, rows.map(row=>row.id), { bearer:header, signal }).catch(()=>null) : null,
         ]);
         if (history.error) throw new Error("Conversation history could not be loaded.");
         return { userId: user.id, rows, messages: (history.data || []) as ContactMessage[],
-          contacts: (people.data || []) as ContactName[] };
+          contacts: (people.data || []) as ContactName[], unread };
       });
       if (revision !== generation.current) return;
       authIdentity.current = result.userId;
       setUserId(result.userId); setRequests(result.rows); setMessages(result.messages);
+      setServerUnread(result.unread ? { owner:result.userId, counts:result.unread } : null);
       setContacts(Object.fromEntries(result.contacts.map(person => [person.id, person])));
       setSelectedId(current => result.rows.some(item => item.id === current) ? current : (result.rows[0]?.id || ""));
     } catch (failure) {
-      if (revision === generation.current) { setRequests([]);setMessages([]);setContacts({});setOpenedId("");setThreadPage(null);setError(failure instanceof Error ? failure.message : "Unable to load messages."); }
+      if (revision === generation.current) { setRequests([]);setMessages([]);setContacts({});setOpenedId("");setThreadPage(null);setServerUnread(null);setError(failure instanceof Error ? failure.message : "Unable to load messages."); }
     } finally {
       if (revision === generation.current) setLoading(false);
     }
@@ -115,7 +132,8 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       if (reloadTimer.current !== null) clearTimeout(reloadTimer.current);
       reloadTimer.current = null;
       generation.current++;
-      setRequests([]); setMessages([]); setContacts({}); setUserId(""); setSelectedId(""); setOpenedId(""); setDraft(""); setSearch(""); setThreadPage(null); setThreadError(null); historyRequest.current++; historyPaging.current=false; setHistoryBusy(false);
+      setServerUnread(null);
+      setRequests([]); setMessages([]); setContacts({}); setUserId(""); setSelectedId(""); setOpenedId(""); setSearch(""); setReplyTarget(null); setForwardSelection(null); setThreadPage(null); setThreadError(null); historyRequest.current++; historyPaging.current=false; setHistoryBusy(false);
     };
   }, [load]));
 
@@ -127,8 +145,10 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       if (reloadTimer.current !== null) clearTimeout(reloadTimer.current);
       reloadTimer.current = null;
       generation.current++;
+      setServerUnread(null);
       authIdentity.current = nextUserId;
-      setRequests([]); setMessages([]); setContacts({}); setUserId(""); setSelectedId(""); setOpenedId(""); setDraft(""); setSearch(""); setThreadPage(null); setThreadError(null); historyRequest.current++; historyPaging.current=false; setHistoryBusy(false);
+      pendingMessages.current.clear();
+      setRequests([]); setMessages([]); setContacts({}); setUserId(""); setSelectedId(""); setOpenedId(""); setSearch(""); setReplyTarget(null); setForwardSelection(null); setThreadPage(null); setThreadError(null); historyRequest.current++; historyPaging.current=false; setHistoryBusy(false);
       if (action === "clear") {
         setLoading(false);
         setError("Sign in to view your messages.");
@@ -167,21 +187,30 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
     || (mode === "requests" && row.status === "pending"));
   const selected = visibleThreads.find(item => item.id === selectedId) || visibleThreads[0];
   const opened = Boolean(selected && selected.id === openedId && openedMode === mode);
-  useEffect(() => { setOpenedId(""); setDraft(""); setSearch(""); }, [mode]);
+  useEffect(() => { setOpenedId(""); setSearch(""); setForwardSelection(null); }, [mode]);
+  // Drafts stay in the existing bounded, in-memory, account-partitioned provider.
+  // A closed or nonaccepted thread cannot read or write its draft.
+  const draftThread = opened && selected?.status === "accepted" ? selected.id : "";
+  const [draft, setDraft] = useNativeDraft(`contact:chat:${draftThread}`, draftThread ? userId : undefined);
   const selectedRequestId = selected?.id;
   const threadScope = userId && opened && selected?.status==="accepted" && !offline ? JSON.stringify([userId,selected.id,mode]) : "";
   const currentPage=!loading && threadScope && threadPage?.scope===threadScope ? threadPage : null;
   const currentThreadError=threadScope && threadError?.scope===threadScope ? threadError.message : "";
   const verifiedThreadRows = currentPage?.rows ?? EMPTY_THREAD_MESSAGES;
+  const latestIncoming = verifiedThreadRows.find(row=>row.request_id===selectedRequestId&&row.sender_id!==userId);
+  const syncedCounts = serverUnread?.owner===userId ? serverUnread.counts : null;
   const history=verifiedThreadRows.slice().reverse();
+  const replyId=structuredReplies?scopedReplyTarget(threadScope,replyTarget,verifiedThreadRows):undefined;
   const motionActive=Boolean(threadScope && currentPage);
   const freshIds=useConfirmedMessageMotion(`${userId}:${openedId}:${mode}`,verifiedThreadRows,motionActive,selectedRequestId);
   const matchingThreads=visibleThreads.filter(row=>matchesConversationSearch(search,name(row),contacts[peerId(row)]?.username));
-  const loadThread=useCallback(async (scope:string,requestId:string,viewerId:string,older?:ContactMessage) => {
+  const loadThread=useCallback(async (scope:string,requestId:string,viewerId:string,older?:ContactMessage,refresh=false) => {
     if (historyPaging.current || !scope || !focused.current) return;
     const revision=++historyRequest.current;
     const accountRevision=generation.current;
-    historyPaging.current=true;setHistoryBusy(true);setThreadError(null);
+    historyPaging.current=true;
+    if (!refresh) setHistoryBusy(true);
+    setThreadError(null);
     const active=()=>revision===historyRequest.current && accountRevision===generation.current && focused.current && authIdentity.current===viewerId;
     try {
       const rows=await withHoopChatDeadline(async signal=>{
@@ -189,14 +218,21 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
         const {data:{user},error:authError}=await supabase.auth.getUser();
         if (authError || user?.id!==viewerId || !active()) throw Error("Your session changed.");
         const header=await verifiedChatBearer(viewerId);
-        const target=await supabase.from("player_contact_requests").select("requester_id,player_id").eq("id",requestId).setHeader("Authorization",header).abortSignal(signal).maybeSingle();
-        if(target.error||!target.data||![target.data.requester_id,target.data.player_id].includes(viewerId))throw Error("Conversation unavailable.");
+        const target=await supabase.from("player_contact_requests").select("requester_id,player_id,status").eq("id",requestId).setHeader("Authorization",header).abortSignal(signal).maybeSingle();
+        if(target.error||target.data?.status!=="accepted"||![target.data.requester_id,target.data.player_id].includes(viewerId))throw Error("Conversation unavailable.");
         const verifiedHeader=await verifyChatPeer(viewerId,target.data.requester_id===viewerId?target.data.player_id:target.data.requester_id,signal);
         if(!active())throw Error("Your session changed.");
-        return readConversationPage(supabase,requestId,signal,older,verifiedHeader);
+        return readConversationPage(supabase,requestId,signal,older,verifiedHeader,structuredReplies);
       });
       if (!active()) return;
-      setThreadPage(previous=>({scope,rows:older && previous?.scope===scope ? appendConversationPage(previous.rows,rows) : rows,hasMore:rows.length===CHAT_HISTORY_PAGE_SIZE}));
+      setThreadPage(previous => {
+        const hasMore = rows.length === CHAT_HISTORY_PAGE_SIZE;
+        if (previous?.scope !== scope) return { scope, rows, hasMore };
+        if (older) return { scope, rows: appendConversationPage(previous.rows, rows), hasMore };
+        if (!refresh) return { scope, rows, hasMore };
+        const latest = refreshConversationPage(previous.rows, rows);
+        return { scope, rows: latest, hasMore: latest.length > rows.length ? previous.hasMore : hasMore };
+      });
     } catch (failure) {
       if(active()){setThreadPage(null);setThreadError({scope,message:failure instanceof Error?failure.message:"Conversation history could not load."});}
     } finally {
@@ -210,8 +246,63 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
     return ()=>{historyRequest.current++;historyPaging.current=false;};
   },[threadScope,selectedRequestId,userId,loading,loadThread]);
 
+  useEffect(() => {
+    if (!threadScope || !selectedRequestId) return;
+    const refresh = () => {
+      if (focused.current && authIdentity.current === userId && (AppState.currentState === "active" || AppState.currentState === null)) {
+        void loadThread(threadScope, selectedRequestId, userId, undefined, true);
+      }
+    };
+    const channel = supabase.channel(`native-hoopchat:${selectedRequestId}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "player_contact_messages", filter: `request_id=eq.${selectedRequestId}` }, refresh)
+      .subscribe();
+    const timer = setInterval(refresh, 25_000);
+    const appState = AppState.addEventListener("change", state => { if (state === "active") refresh(); });
+    return () => {
+      clearInterval(timer);
+      appState.remove();
+      void supabase.removeChannel(channel);
+    };
+  }, [threadScope, selectedRequestId, userId, loadThread]);
+
+  async function markRead() {
+    if (!syncReadMarkers || !latestIncoming || !threadScope || offline || mutationLocked.current) return;
+    const revision = generation.current, historyRevision = historyRequest.current;
+    const current = () => revision===generation.current && historyRevision===historyRequest.current
+      && authIdentity.current===userId && focused.current;
+    mutationLocked.current = true; setSending(true); setError("");
+    try {
+      await withHoopChatDeadline(async signal=>{
+        await requireOnline();
+        const bearer=await verifiedChatBearer(userId);
+        if (!current() || signal.aborted) throw Error("Your conversation changed.");
+        await markServerChatRead(supabase, latestIncoming.request_id, latestIncoming.id, { bearer, signal });
+      });
+      if (current()) await load();
+    } catch (failure) {
+      if (current()) setError(failure instanceof Error ? failure.message : "Read marker could not be synchronized.");
+    } finally {
+      mutationLocked.current = false;
+      setSending(false);
+    }
+  }
+
+  async function forwardTo(destination:string){
+    if(!selected||!currentPage||!forwardSelection||forwardSelection.scope!==threadScope||forwardSelection.sourceId!==selected.id||sending||offline||mutationLocked.current||!userId)return;
+    if(!forwardDestinations(visibleThreads,userId,selected.id).some(row=>row.id===destination))return;
+    const revision=generation.current;
+    mutationLocked.current=true;setSending(true);setError("");
+    try{
+      const body=await withHoopChatDeadline(signal=>readForwardDraft(supabase,userId,selected.id,forwardSelection.messageId,destination,signal));
+      if(revision!==generation.current||authIdentity.current!==userId||!focused.current)return;
+      if(!writeForwardDraft(userId,destination,body))throw Error("Finish or clear the recipient’s existing draft first.");
+      setReplyTarget(null);setForwardSelection(null);setSelectedId(destination);setOpenedMode(mode);setOpenedId(destination);
+    }catch(e){if(revision===generation.current&&focused.current)setError(e instanceof Error?e.message:"Forward unavailable.");}
+    finally{mutationLocked.current=false;if(revision===generation.current&&focused.current)setSending(false);}
+  }
   async function respond(status:"accepted"|"rejected") {
-    if(!selected || selected.player_id!==userId || selected.status!=="pending" || !opened || sending) return;
+    if(!selected || selected.player_id!==userId || selected.status!=="pending" || !opened || sending || offline || mutationLocked.current) return;
+    mutationLocked.current=true;
     const actionGeneration = generation.current;
     setSending(true);setError("");
     try {
@@ -220,30 +311,39 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       if(user?.id!==userId || actionGeneration!==generation.current || !focused.current)throw new Error("Your session changed.");
       const header=await withHoopChatDeadline(signal=>verifyChatPeer(userId,peerId(selected),signal));
       if(actionGeneration!==generation.current||!focused.current)throw Error("Your session changed.");
-      const {error:updateError}=await supabase.from("player_contact_requests")
+      const {data:updated,error:updateError}=await supabase.from("player_contact_requests")
         .update({status,responded_at:new Date().toISOString()})
-        .eq("id",selected.id).eq("player_id",userId).eq("status","pending").setHeader("Authorization",header);
-      if(updateError)throw new Error("Could not update the request.");
+        .eq("id",selected.id).eq("player_id",userId).eq("status","pending").setHeader("Authorization",header).select("id");
+      if(updateError||!updated?.length)throw new Error("Could not update the request.");
       if(actionGeneration===generation.current && focused.current) await load();
     }catch(failure){if(actionGeneration===generation.current && focused.current)setError(failure instanceof Error?failure.message:"Unable to update request.");}
-    finally{setSending(false);}
+    finally{mutationLocked.current=false;setSending(false);}
   }
   async function send(){
-    if(!selected || selected.status!=="accepted" || !opened || !draft.trim() || sending) return;
+    if(!selected || selected.status!=="accepted" || !opened || !draft.trim() || sending || offline || mutationLocked.current) return;
+    mutationLocked.current=true;
+    const submittedDraft=draft;
+    if(structuredReplies&&replyTarget?.scope===threadScope&&!replyId){mutationLocked.current=false;setError("Reply target unavailable. Cancel the reply or reload history.");return;}
     const actionGeneration = generation.current;
     setSending(true);setError("");
     try{
-      await requireOnline();
-      const {data:{user}}=await supabase.auth.getUser();
-      if(user?.id!==userId || actionGeneration!==generation.current || !focused.current)throw new Error("Your session changed.");
-      const header=await withHoopChatDeadline(signal=>verifyChatPeer(userId,peerId(selected),signal));
-      if(actionGeneration!==generation.current||!focused.current)throw Error("Your session changed.");
-      const {error:sendError}=await supabase.from("player_contact_messages")
-        .insert({request_id:selected.id,sender_id:userId,body:draft.trim().slice(0,2000)}).setHeader("Authorization",header);
-      if(sendError)throw new Error("The message was not sent.");
-      if(actionGeneration===generation.current && focused.current){setDraft("");await load();}
+      await withHoopChatDeadline(async signal=>{
+        await requireOnline();
+        const {data:{user}}=await supabase.auth.getUser();
+        if(signal.aborted||user?.id!==userId||actionGeneration!==generation.current||!focused.current)throw new Error("Your session changed.");
+        const header=await verifyChatPeer(userId,peerId(selected),signal);
+        if(signal.aborted||actionGeneration!==generation.current||!focused.current)throw new Error("Your session changed.");
+        const message=prepareConversationMessage(pendingMessages.current,selected.id,userId,submittedDraft,randomUUID,replyId);
+        await sendConversationMessage(supabase,message,signal,header);
+      });
+      if(actionGeneration===generation.current && focused.current){
+        pendingMessages.current.delete(selected.id);
+        setDraft(current=>current===submittedDraft?"":current);
+        setReplyTarget(current=>current?.scope===threadScope&&current.id===replyId?null:current);
+        await load();
+      }
     }catch(failure){if(actionGeneration===generation.current && focused.current)setError(failure instanceof Error?failure.message:"Message failed.");}
-    finally{setSending(false);}
+    finally{mutationLocked.current=false;setSending(false);}
   }
   return <SafeAreaView edges={embedded ? ["left","right"] : ["bottom","left","right"]} style={{flex:1,backgroundColor:theme.background}}>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:embedded?12:16,gap:embedded?8:12,paddingBottom:embedded?120:35}}>
@@ -251,7 +351,7 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
       {!embedded ? <Text style={{color:theme.muted}}>Private player connections and message requests. Players must accept before messaging opens.</Text> : null}
       <View style={{flexDirection:"row",flexWrap:"wrap",gap:8}}>
         {!embedded ? <Button secondary onPress={()=>router.push("/notifications")}>Basketball alerts</Button> : null}
-        <Button secondary disabled={loading || offline} onPress={()=>void load()}>Refresh</Button>
+        <Button secondary disabled={loading || offline || sending} onPress={()=>{if(!mutationLocked.current)void load();}}>Refresh</Button>
       </View>
       {error?<Text accessibilityRole="alert" style={{color:theme.accent}}>{error}</Text>:null}
       {loading&&!visibleThreads.length?<HoopCheckLoading compact label="Loading conversations…" />:null}
@@ -270,24 +370,26 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
         <View style={{gap:0}}>
           {matchingThreads.map(row=>{
             const latest=messages.find(message=>message.request_id===row.id);
+            const unread=syncedCounts?.get(row.id) ?? 0;
             return <Pressable key={row.id} accessibilityRole="button" accessibilityState={{selected:row.id===selectedId}}
-              accessibilityLabel={`Open ${name(row)} conversation`} disabled={sending} onPress={()=>{setSelectedId(row.id);setOpenedMode(mode);setOpenedId(row.id);setDraft("");}}
+              accessibilityLabel={`Open ${name(row)} conversation${unread ? `, ${unread>99?"99+":unread} unread` : ""}`} disabled={sending} onPress={()=>{setSelectedId(row.id);setOpenedMode(mode);setOpenedId(row.id);}}
               style={{paddingVertical:10,paddingHorizontal:4,minHeight:64,flexDirection:"row",alignItems:"center",borderColor:theme.border,borderBottomWidth:1,gap:10}}>
               <View style={{width:42,height:42,borderRadius:21,backgroundColor:theme.chip,alignItems:"center",justifyContent:"center"}}><Text style={{color:theme.foreground,fontSize:17,fontWeight:"700"}}>{name(row).slice(0,1).toUpperCase()}</Text></View>
               <View style={{flex:1,minWidth:0,gap:3}}>
               <Text numberOfLines={1} style={{color:theme.foreground,fontWeight:"800"}}>{name(row)}</Text>
               <Text style={{color:theme.muted,fontSize:12}}>{row.status==="accepted"?"Connected":row.player_id===userId&&row.status==="pending"?"Incoming request":row.status==="pending"?"Awaiting acceptance":row.status}</Text>
               <Text numberOfLines={1} style={{color:theme.muted,fontSize:12}}>{latest?.body||row.message||"No messages yet"}</Text>
-              </View><Ionicons name="chevron-forward" size={17} color={theme.muted}/>
+              </View>{unread>0?<Text style={{color:theme.accent,fontWeight:"800"}}>{unread>99?"99+":unread}</Text>:null}<Ionicons name="chevron-forward" size={17} color={theme.muted}/>
             </Pressable>;
           })}
         </View>
       </View>:null}
       {opened&&selected?<View style={{gap:8}}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Back to conversations" disabled={sending} onPress={()=>{setOpenedId("");setDraft("");}} style={{minHeight:44,flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="chevron-back" size={20} color={theme.accent}/><Text style={{color:theme.accent,fontWeight:"700"}}>Conversations</Text></Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel="Back to conversations" disabled={sending} onPress={()=>{setForwardSelection(null);setOpenedId("");}} style={{minHeight:44,flexDirection:"row",alignItems:"center",gap:6}}><Ionicons name="chevron-back" size={20} color={theme.accent}/><Text style={{color:theme.accent,fontWeight:"700"}}>Conversations</Text></Pressable>
         <Text style={{color:theme.foreground,fontWeight:"900",fontSize:19}}>{name(selected)}</Text>
         <Text style={{color:theme.muted,fontSize:12}}>{selected.status==="accepted"?"Private HoopChat":"Player contact request"}</Text>
-        <ConversationSafety key={`${userId}:${selected.id}`} uid={userId} requestId={selected.id} peerId={peerId(selected)} onBlocked={()=>{historyRequest.current++;setOpenedId("");setDraft("");setThreadPage(null);setRequests(rows=>rows.filter(row=>peerId(row)!==peerId(selected)));void load();}}/>
+        {syncReadMarkers&&latestIncoming?<Button secondary disabled={sending||offline} onPress={()=>void markRead()}>Mark read</Button>:null}
+        <ConversationSafety key={`${userId}:${selected.id}`} uid={userId} requestId={selected.id} peerId={peerId(selected)} onBlocked={()=>{historyRequest.current++;setOpenedId("");setDraft("");setReplyTarget(null);setForwardSelection(null);setThreadPage(null);setRequests(rows=>rows.filter(row=>peerId(row)!==peerId(selected)));void load();}}/>
         {selected.message?<View style={{padding:12,borderRadius:12,backgroundColor:theme.chip}}><Text style={{color:theme.foreground}}>Introduction: {selected.message}</Text></View>:null}
         <View accessibilityLabel="Conversation history" style={{gap:10,marginVertical:10}}>
           {threadScope && !currentPage && !currentThreadError ? <HoopCheckLoading compact label="Loading conversation history…" /> : null}
@@ -296,15 +398,26 @@ export default function MessagesScreen({ embedded = false, mode = "all" }: { emb
           {currentPage && !history.length && !historyBusy && !currentThreadError ? <Text style={{color:theme.muted}}>No messages yet.</Text> : null}
           {history.map(item=><ChatMessageEnter key={item.id} fresh={freshIds.has(item.id)} incoming={item.sender_id!==userId} active={motionActive}><View style={{padding:10,borderRadius:18,backgroundColor:item.sender_id===userId?theme.accentSurface:theme.surface,alignSelf:item.sender_id===userId?"flex-end":"flex-start",maxWidth:"95%",gap:4}}>
             <Text style={{fontSize:12,fontWeight:"800",color:theme.foreground}}>{item.sender_id===userId?"You":name(selected)}</Text>
+            {structuredReplies&&item.reply_to_id?<Text style={{color:theme.muted,fontSize:11}}>Reply to {history.some(row=>row.id===item.reply_to_id)?"a message in this conversation":"an earlier message"}</Text>:null}
             <Text style={{color:theme.foreground}}>{item.body}</Text>
             <Text style={{color:theme.muted,fontSize:11}}>{new Date(item.created_at).toLocaleString()}</Text>
+            <Pressable accessibilityRole="button" accessibilityLabel={`Quote message from ${item.sender_id===userId?"you":name(selected)}`} disabled={sending||offline} onPress={()=>{
+              if(!currentPage||selected.status!=="accepted"||item.request_id!==selected.id||!currentPage.rows.some(row=>row.id===item.id))return;
+              const next=quoteConversationMessage(selected.id,item,draft);
+              if(next===null){setError("Not enough room to quote this message. Shorten your draft first.");return;}
+              setDraft(next);setError("");
+              if(structuredReplies)setReplyTarget(makeReplyTarget(threadScope,selected.id,item,currentPage.rows));
+            }} style={{minHeight:44,justifyContent:"center"}}><Text style={{color:theme.foreground,fontSize:12,fontWeight:"700"}}>Quote reply</Text></Pressable>
+            {item.sender_id===userId&&!item.reply_to_id&&!item.body.trimStart().startsWith(">")?<Button secondary disabled={sending||offline} onPress={()=>{if(currentPage&&selected.status==="accepted"&&currentPage.rows.some(row=>row.id===item.id))setForwardSelection({scope:threadScope,sourceId:selected.id,messageId:item.id});}}>Forward my text</Button>:null}
           </View></ChatMessageEnter>)}
         </View>
+        {forwardSelection?.scope===threadScope&&currentPage?<View style={{gap:6}}><Text style={{color:theme.foreground,fontWeight:"700"}}>Choose forward recipient</Text><Text style={{color:theme.muted}}>Only your own plain text is copied into a draft. Review it before sending.</Text><Button secondary disabled={sending} onPress={()=>setForwardSelection(null)}>Cancel</Button>{forwardDestinations(visibleThreads,userId,selected.id).map(row=><Button secondary key={row.id} disabled={sending||offline} onPress={()=>void forwardTo(row.id)}>{name(row)}</Button>)}</View>:null}
         {selected.status==="pending"&&selected.player_id===userId?<View style={{gap:8}}><Text style={{color:theme.muted}}>Approve this request to unlock messaging.</Text><Button disabled={sending||offline} onPress={()=>void respond("accepted")}>Accept request</Button><Button secondary disabled={sending||offline} onPress={()=>void respond("rejected")}>Decline</Button></View>:null}
         {selected.status==="accepted"?<View style={{gap:8}}>
           {process.env.EXPO_PUBLIC_HOOPCHECK_PLAYER_REFERENCES_ENABLED==="true"&&userId?<PlayerReferencePanel key={userId+":"+selected.id} userId={userId} connectionId={selected.id} offline={offline}/>:null}
+          {structuredReplies&&replyTarget?.scope===threadScope?<View style={{gap:4}}><Text style={{color:theme.muted}}>{replyId?"Reply linked to a message":"Reply target unavailable"}</Text><Button secondary disabled={sending} onPress={()=>setReplyTarget(null)}>Remove reply link</Button></View>:null}
           <ChatTypingBasketball active={motionActive && Boolean(draft.trim()) && !sending} />
-          <TextInput accessibilityLabel="Write private HoopChat message" multiline maxLength={2000} value={draft} onChangeText={setDraft} placeholder="Write a message…" placeholderTextColor={theme.muted}
+          <TextInput accessibilityLabel="Write private HoopChat message" editable={!sending && !offline} multiline maxLength={2000} value={draft} onChangeText={setDraft} placeholder="Write a message…" placeholderTextColor={theme.muted}
             style={{minHeight:48,maxHeight:120,textAlignVertical:"top",padding:12,backgroundColor:theme.input,color:theme.foreground,borderWidth:1,borderColor:theme.border,borderRadius:theme.radius.control}} />
           <Button disabled={sending||offline||!draft.trim()} onPress={()=>void send()}>{sending?"Sending…":"Send"}</Button>
         </View>:selected.status==="pending"?<Text style={{color:theme.muted}}>Messaging opens once the player accepts.</Text>:<Text style={{color:theme.muted}}>This request is no longer active.</Text>}

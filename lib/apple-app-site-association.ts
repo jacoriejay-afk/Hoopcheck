@@ -1,7 +1,7 @@
 // Supplied by the app owner on 2026-11-18. This is a public application ID,
 // not a signing credential. Matching the signed archive remains a release gate.
 export const hoopcheckIosIdentifierPrefix = "Y778LM35G5";
-export function appleAppSiteAssociation(prefix?: string) {
+export function appleAppSiteAssociation(prefix?: string, recoveryAppLinks = false) {
   const value = prefix === undefined ? hoopcheckIosIdentifierPrefix : prefix.trim();
   // An environment override may confirm the known prefix, never silently enable
   // a different or invented Apple application identity.
@@ -15,6 +15,7 @@ export function appleAppSiteAssociation(prefix?: string) {
           // pages keep their browser session/cookie flow.
           { "/": "/auth/*", exclude: true },
           { "/": "/reset-password", exclude: true },
+          { "/": "/recover-password", exclude: !recoveryAppLinks },
           { "/": "/referral/*", exclude: true },
           { "/": "/r/*", exclude: true },
           { "/": "/team-hub/groups/*/*", exclude: true },

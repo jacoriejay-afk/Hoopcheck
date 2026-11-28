@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getHoopCheckEntitlements } from "../../../../lib/membership-tier";
+import { assuranceForVerifiedUser } from "../../../../lib/auth/mfa-core";
 
 export const runtime = "nodejs";
 
@@ -227,7 +228,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ allowed: false, message: "Photos and videos can only be added to posts." }, { status: 400 });
     }
 
-    const { data: profile } = await db.from("profiles").select("account_type,current_country,current_country_public").eq("id", user.id).maybeSingle();
+    const { data: profile } = await db.from("profiles").select("account_type,current_country,current_country_public,moderation_status").eq("id", user.id).maybeSingle();
     if (!profile) return NextResponse.json({ allowed: false, message: "Your account profile could not be found." }, { status: 403 });
     const submittedTopicTag = String(form.get("topic_tag") || "").trim();
     const gameDayTeam = String(form.get("game_day_team") || "").trim().slice(0, 80);
@@ -311,7 +312,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ allowed: true });
     }
 
-    // Re-share any approved community post.
+    // Re-share permanent approved community posts only.
     // The source has already passed moderation; new user-authored content still uses moderate().
     if (kind === "share") {
       if (!viewerDb) return NextResponse.json({ allowed: false, message: "Post unavailable." }, { status: 404 });
@@ -324,7 +325,7 @@ export async function POST(request: Request) {
         console.error("HoopFeed share source lookup failed", { sourceId, code: sourceError.code });
         return NextResponse.json({ allowed: false, message: "Couldn't share — try again." }, { status: 500 });
       }
-      if (!source || source.status !== "approved" || (source.expires_at && Date.parse(source.expires_at) <= Date.now())) {
+      if (!source || source.status !== "approved" || source.expires_at !== null) {
         return NextResponse.json({ allowed: false, message: "This post is no longer available and can't be shared." }, { status: 404 });
       }
       if (source.post_kind === "poll") {
@@ -354,13 +355,44 @@ export async function POST(request: Request) {
       return NextResponse.json({ allowed: false, message: "Invalid post type." }, { status: 400 });
     }
     const submittedKind = kind === "post" && typeof postKindValues[0] === "string" ? postKindValues[0].trim() : "discussion";
-    if (kind === "post" && !["discussion", "poll", "news"].includes(submittedKind)) {
+    if (kind === "post" && !["discussion", "poll", "news", "story"].includes(submittedKind)) {
       return NextResponse.json({ allowed: false, message: "Choose a valid post type." }, { status: 400 });
     }
     if (kind === "post" && submittedKind === "news" && !isAdmin) {
       return NextResponse.json({ allowed: false, message: "Only HoopCheck administrators can publish official news." }, { status: 403 });
     }
-    const postKind = kind !== "post" ? "discussion" : submittedKind === "news" ? "news" : submittedKind === "poll" ? "poll" : "discussion";
+    const isStory = kind === "post" && submittedKind === "story";
+    let storyCommunity = false;
+    if (isStory) {
+      // Caption moderation cannot establish visual or audio moderation.
+      if (videoPath) return NextResponse.json({ allowed:false, message:"Video Stories are unavailable until visual and audio moderation is verified." }, {status:503});
+      if (process.env.HOOPCHECK_PHOTO_STORIES_ENABLED !== "true") {
+        return NextResponse.json({ allowed: false, message: "Photo Stories are not available yet." }, { status: 403 });
+      }
+      // Community is a distinct default-off rollout, requiring the reviewed Story policy.
+      // No anonymous audience, video, tags, location or client-specified expiry.
+      const audience = form.getAll("audience");
+      storyCommunity=audience.length===1&&audience[0]==="community"&&process.env.HOOPCHECK_COMMUNITY_PHOTO_STORIES_ENABLED==="true";
+      if (!viewerDb || audience.length !== 1 || (audience[0] !== "followers"&&!storyCommunity) || allImages.length !== 1 || videoPath ||
+          ["expires_at", "poll_options", "post_location", "post_country", "share_country", "topic_tag", "club_id", "womens_club_id", "league_id", "womens_league_id"].some(field => form.has(field))) {
+        return NextResponse.json({ allowed: false, message: "Choose one photo and an available Story audience, without location or tags." }, { status: 400 });
+      }
+      if (storyCommunity) {
+        const ready=await viewerDb.rpc("confirm_community_photo_story_policy");
+        if(ready.error||ready.data!==true)return NextResponse.json({allowed:false,message:"Community Stories are not available yet."},{status:403});
+      }
+      if (!user.email_confirmed_at || ["suspended","banned","removed"].includes(profile.moderation_status)) {
+        return NextResponse.json({ allowed:false, message:"Verify your account before publishing a Story." }, {status:403});
+      }
+      try {
+        if (assuranceForVerifiedUser(token,user).required) return NextResponse.json({allowed:false,message:"Verify your authenticator."},{status:403});
+      } catch {
+        return NextResponse.json({allowed:false,message:"Invalid account session."},{status:401});
+      }
+      const active = await viewerDb.rpc("confirm_active_account_session");
+      if (active.error || active.data !== true) return NextResponse.json({allowed:false,message:"Account session unavailable."},{status:403});
+    }
+    const postKind = kind !== "post" ? "discussion" : isStory ? "story" : submittedKind === "news" ? "news" : submittedKind === "poll" ? "poll" : "discussion";
     let pollOptions: string[] | null = null;
     if (kind === "post" && postKind === "poll") {
       const pollOptionValues = form.getAll("poll_options");
@@ -465,6 +497,11 @@ export async function POST(request: Request) {
     const photoRejection = otherPhotoResults.find(decision => !decision.allowed);
     if (photoRejection) return NextResponse.json({ allowed: false, message: photoRejection.message }, { status: photoRejection.status });
 
+    // Recheck the pinned caller after potentially slow moderation, before privileged storage or publication.
+    if (isStory) {
+      const active = await viewerDb!.rpc("confirm_active_account_session");
+      if (active.error || active.data !== true) return NextResponse.json({allowed:false,message:"Account session unavailable."},{status:403});
+    }
     let image_url: string | null = null;
     let video_url: string | null = null;
     const image_urls: string[] = [];
@@ -493,6 +530,8 @@ export async function POST(request: Request) {
     if (videoPath) video_url = videoPath;
     const shareCountry = String(form.get("share_country") || "false") === "true";
     const submittedCountry = String(form.get("post_country") || "").trim().slice(0, 100);
+    const storyCreatedAt = isStory ? new Date() : null;
+    const storyExpiresAt = storyCreatedAt ? new Date(storyCreatedAt.getTime() + 24 * 60 * 60 * 1000).toISOString() : null;
     const { error } = await db.from("feed_posts").insert({
       author_id:user.id, body:text || " ", image_url, image_urls, video_url, post_kind:postKind, poll_options:pollOptions,
       topic_tag: submittedTopicTag ? submittedTopicTag : null,
@@ -501,10 +540,10 @@ export async function POST(request: Request) {
       game_day_score_for: submittedTopicTag === "Game Day" ? scoreFor : null,
       game_day_score_against: submittedTopicTag === "Game Day" ? scoreAgainst : null,
       location_country:shareCountry && profile?.current_country_public !== false ? (submittedCountry || profile?.current_country || null) : null,
-      ...(form.get("audience") === "community" ? { community_visible: true } : {}),
+      ...(isStory ? { community_visible: storyCommunity, created_at: storyCreatedAt!.toISOString() } : form.get("audience") === "community" ? { community_visible: true } : {}),
       ...(location ? { post_location: location } : {}),
       ...(tag ? { [tag.column]: tag.id } : {}),
-      status:"approved", expires_at:null
+      status:"approved", expires_at:storyExpiresAt
     });
     if (error) {
       await cleanupUploadedImages();
@@ -513,7 +552,7 @@ export async function POST(request: Request) {
     const activityDate = new Date().toISOString().slice(0, 10);
     const { error: activityError } = await db.from("feed_posting_activity").upsert({ user_id: user.id, activity_date: activityDate }, { onConflict: "user_id,activity_date", ignoreDuplicates: true });
     if (activityError) console.error("HoopFeed posting streak activity could not be recorded:", activityError.message);
-    return NextResponse.json({ allowed:true });
+    return NextResponse.json(isStory ? { allowed:true, story_expires_at:storyExpiresAt } : { allowed:true });
   } catch (error: any) {
     console.error("HoopFeed moderation request failed:", error);
     return NextResponse.json({ allowed:false,message:"Safety moderation failed. Your content was not published." },{status:500});

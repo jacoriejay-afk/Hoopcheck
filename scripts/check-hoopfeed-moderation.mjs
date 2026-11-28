@@ -10,15 +10,18 @@ const loadRoute = compileFunction(ts.transpileModule(route, {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText, ['require', 'exports', 'fetch', 'process']);
 
-function fixture(secondResult, failure = null) {
+function fixture(secondResult, failure = null, options = {}) {
   const events = [];
+  const rows = [];
+  let sessionChecks=0;
   const db = {
-    auth: { getUser: async () => ({ data: { user: { id: 'fixture-player' } } }) },
+    auth: { getUser: async () => ({ data: { user: { id: 'fixture-player', email_confirmed_at:options.unverified?null:'2026-11-27T00:00:00Z' } } }) },
+    rpc:async(name)=>{if(name==='confirm_community_photo_story_policy')return {data:!!options.policyReady,error:null};assert.equal(name,'confirm_active_account_session');sessionChecks++;return {data:!options.inactive&&!(options.revokeAfterModeration&&sessionChecks>1),error:options.sessionError?{message:'fixture'}:null};},
     from(table) {
-      const records = { profiles: { account_type: 'player' }, membership_entitlements: { plan: 'premium', status: 'active' } };
+      const records = { profiles: { account_type: 'player',moderation_status:options.suspended?'suspended':'active' }, membership_entitlements: { plan: 'premium', status: 'active' } };
       return {
         select: () => ({ eq: () => table === 'admin_roles' ? { data: [] } : { maybeSingle: async () => ({ data: records[table] }) } }),
-        insert: async (row) => { events.push(['insert', table, row.image_urls.length]); return { error: failure === 'insert' ? { message: 'fixture insert failed' } : null }; },
+        insert: async (row) => { rows.push(row); events.push(['insert', table, row.image_urls.length]); return { error: failure === 'insert' ? { message: 'fixture insert failed' } : null }; },
         upsert: async () => ({ error: null }),
       };
     },
@@ -33,6 +36,7 @@ function fixture(secondResult, failure = null) {
     if (id === 'next/server') return { NextResponse };
     if (id === '@supabase/supabase-js') return { createClient: () => db };
     if (id.endsWith('/membership-tier')) return { getHoopCheckEntitlements: () => ({ canWriteHoopFeed: true }) };
+    if (id.endsWith('/auth/mfa-core')) return {assuranceForVerifiedUser:()=>({required:!!options.mfa})};
     throw new Error(`Unexpected route dependency ${id}`);
   }, routeExports, async (url, options) => {
     assert.equal(url, 'https://api.openai.com/v1/moderations');
@@ -41,16 +45,17 @@ function fixture(secondResult, failure = null) {
     const content = Buffer.from(photo.split(',')[1], 'base64').toString();
     events.push(['moderate', content]);
     return Response.json({ results: [content === 'second photo' ? secondResult : { flagged: false }] });
-  }, { env: { NEXT_PUBLIC_SUPABASE_URL: 'https://fixture.invalid', SUPABASE_SERVICE_ROLE_KEY: 'fixture', OPENAI_API_KEY: 'fixture' } });
+  }, { env: { NEXT_PUBLIC_SUPABASE_URL: 'https://fixture.invalid', SUPABASE_SERVICE_ROLE_KEY: 'fixture', OPENAI_API_KEY: 'fixture', ...(options.story ? { NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:'fixture-public', HOOPCHECK_PHOTO_STORIES_ENABLED:options.enabled?'true':'false',HOOPCHECK_COMMUNITY_PHOTO_STORIES_ENABLED:options.communityEnabled?'true':'false' } : {}) } });
 
   const form = new FormData();
   form.set('text', 'Training recap');
   form.set('image', new Blob(['first photo'], { type: 'image/png' }), 'first.png');
-  form.append('images', new Blob(['second photo'], { type: 'image/png' }), 'second.png');
+  if (!options.story || options.extraPhoto) form.append('images', new Blob(['second photo'], { type: 'image/png' }), 'second.png');
+  if (options.story) { form.set('post_kind','story');form.set('audience',options.audience??'followers');for(const [field,value] of Object.entries(options.fields??{}))form.set(field,value); }
   const request = new Request('http://localhost/api/hoopfeed/moderate', {
     method: 'POST', headers: { Authorization: 'Bearer fixture-session' }, body: form,
   });
-  return { submit: () => routeExports.POST(request), events };
+  return { submit: () => routeExports.POST(request), events, rows };
 }
 
 test('a rejected second photo prevents all uploads and publication', async () => {
@@ -104,4 +109,42 @@ test('fan-group moderation resolves the authenticated platform role, not a servi
   assert.match(groupRoute, /const isModerator = Boolean\(explicitMod \|\| isPlatformAdmin \|\| \(platformMod && isPlatformModerator\)\)/);
   assert.doesNotMatch(groupRoute, /rpc\("is_current_user_admin_or_moderator"\)/);
   assert.doesNotMatch(groupRoute, /entitlements\.canModerateFanGroups\s*\|\|/);
+});
+
+test("photo Stories are disabled by default and invalid audience or client expiry fails before moderation",async()=>{
+ for(const options of [{story:true},{story:true,enabled:true,audience:"community"},{story:true,enabled:true,extraPhoto:true},{story:true,enabled:true,fields:{expires_at:"2099-01-01"}},{story:true,enabled:true,fields:{post_location:"private"}}]){
+  const {submit,events,rows}=fixture({flagged:false},null,options);
+  const result=await submit();assert.equal(result.status,options.enabled?400:403);assert.equal((await result.json()).allowed,false);
+  assert.deepEqual(events,[]);assert.deepEqual(rows,[]);
+ }
+});
+test("approved photo Story is follower-only and expires exactly 24 hours after server creation",async()=>{
+ const {submit,events,rows}=fixture({flagged:false},null,{story:true,enabled:true});
+ const start=Date.now();const result=await submit();assert.equal(result.status,200);
+ assert.deepEqual(events,[["moderate","first photo"],["upload","first photo"],["insert","feed_posts",1]]);
+ const body=await result.json(),row=rows[0];
+ assert.equal(row.post_kind,"story");assert.equal(row.community_visible,false);
+ assert.equal(row.video_url,null);assert.equal(row.location_country,null);
+ assert.equal(Date.parse(row.expires_at)-Date.parse(row.created_at),86400000);
+ assert.ok(Date.parse(row.created_at)>=start);assert.equal(body.story_expires_at,row.expires_at);
+});
+test("permanent posts remain permanent",async()=>{
+ const {submit,rows}=fixture({flagged:false});assert.equal((await submit()).status,200);
+ assert.equal(rows[0].post_kind,"discussion");assert.equal(rows[0].expires_at,null);
+});
+
+test("Story publication fails closed before moderation for unverified, suspended, MFA or revoked accounts",async()=>{
+ for(const extra of [{unverified:true},{suspended:true},{mfa:true},{inactive:true},{sessionError:true}]){
+  const {submit,events,rows}=fixture({flagged:false},null,{story:true,enabled:true,...extra});
+  assert.equal((await submit()).status,403);assert.deepEqual(events,[]);assert.deepEqual(rows,[]);
+ }
+});
+test("Story session revoked during moderation never uploads or publishes",async()=>{
+ const {submit,events,rows}=fixture({flagged:false},null,{story:true,enabled:true,revokeAfterModeration:true});
+ assert.equal((await submit()).status,403);assert.deepEqual(events,[["moderate","first photo"]]);assert.deepEqual(rows,[]);
+});
+
+test("community photo Stories require explicit rollout and policy confirmation",async()=>{
+ const disabled=fixture({flagged:false},null,{story:true,enabled:true,audience:"community",communityEnabled:true});assert.equal((await disabled.submit()).status,403);assert.deepEqual(disabled.events,[]);
+ const ready=fixture({flagged:false},null,{story:true,enabled:true,audience:"community",communityEnabled:true,policyReady:true});assert.equal((await ready.submit()).status,200);assert.equal(ready.rows[0].community_visible,true);assert.equal(Date.parse(ready.rows[0].expires_at)-Date.parse(ready.rows[0].created_at),86400000);
 });

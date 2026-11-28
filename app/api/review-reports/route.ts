@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { authenticateModerationRequest } from "../../../lib/server/review-moderation";
+import { readJsonBody, RequestBodyError } from "../../../lib/server/read-json-body";
 
 const reportReasons = [
   "Spam or advertising",
@@ -17,24 +18,12 @@ export async function POST(request: Request) {
   const auth = await authenticateModerationRequest(request);
   if (!auth.ok) return auth.response;
 
-  const contentLength = Number(request.headers.get("content-length") ?? "0");
-  if (Number.isFinite(contentLength) && contentLength > 16 * 1024) {
-    return NextResponse.json({ error: "Report request is too large." }, { status: 413 });
-  }
-
-  const rawBody = await request.text();
-  if (new TextEncoder().encode(rawBody).byteLength > 16 * 1024) {
-    return NextResponse.json({ error: "Report request is too large." }, { status: 413 });
-  }
-
   let body: { reviewId?: unknown; reason?: unknown };
   try {
-    body = JSON.parse(rawBody);
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid request body." },
-      { status: 400 }
-    );
+    body = await readJsonBody(request, 16 * 1024) as typeof body;
+  } catch (error) {
+    if (error instanceof RequestBodyError) return NextResponse.json({ error: error.message }, { status: error.status });
+    throw error;
   }
 
   if (
@@ -59,7 +48,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data: review, error: reviewError } = await auth.supabase
+  const { data: review, error: reviewError } = await auth.scoped
     .from("reviews")
     .select("id")
     .eq("id", body.reviewId)
@@ -81,7 +70,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { error } = await auth.supabase
+  const { error } = await auth.scoped
     .from("review_reports")
     .insert({
       review_id: body.reviewId,

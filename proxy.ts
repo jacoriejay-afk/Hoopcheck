@@ -4,7 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { GOOGLE_SIGNUP_COOKIE, GOOGLE_SIGNUP_PATH, GOOGLE_SIGNUP_ROLE } from "./lib/google-auth";
 
-const protectedPage = /^\/(?:dashboard|account|settings|profile|feed|admin|owner-hq|ambassador-hq)(?:\/|$)|^\/(?:teams|coaches|leagues)\/[^/]+\/review\/?$/;
+const protectedPage = /^\/(?:dashboard|account|settings|profile|feed|messages|admin|owner-hq|ambassador-hq)(?:\/|$)|^\/(?:teams|coaches|leagues)\/[^/]+\/review\/?$/;
 const pendingAllowed = new Set([GOOGLE_SIGNUP_PATH, "/auth/callback", "/login", "/terms", "/privacy", "/community-guidelines"]);
 
 function isPendingBearer(header: string | null) {
@@ -21,8 +21,13 @@ function isPendingBearer(header: string | null) {
 
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
+  if (path === "/recover-password" || path === "/reset-password") return NextResponse.next({ request });
   if (path.startsWith("/api/")) {
-    if (isPendingBearer(request.headers.get("authorization"))) {
+    // First-time Apple signup must store the verified authorization before
+    // the database can finalize onboarding. The endpoint verifies the same
+    // bearer, live session, Apple identity and nonce before any vault write.
+    const appleAuthorization = path === "/api/auth/apple-authorization" && request.method === "POST";
+    if (isPendingBearer(request.headers.get("authorization")) && !appleAuthorization) {
       return NextResponse.json({ error: "Finish setting up your HoopCheck account first." }, { status: 403 });
     }
     // Verify bearer credentials or existing SSR cookies before any authenticated
@@ -160,6 +165,7 @@ export const config = {
     "/settings/:path*",
     "/profile/:path*",
     "/feed/:path*",
+    "/messages/:path*",
     "/admin/:path*",
     "/ambassador-hq",
     "/owner-hq",

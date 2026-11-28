@@ -1,42 +1,54 @@
 import { createAuthIntents, browserAuthIntentStore, browserAuthActionLock, guardAuthResponses, bindAuthIntents } from "./auth/auth-intents";
 import { createBrowserClient, stringFromBase64URL } from "@supabase/ssr";
+import { isRecoveryPage, recoveryLink, takeInitialRecoveryUrl, guardSharedRecoveryExchange } from "./auth/password-recovery";
 
 export const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
 export const supabaseKey =
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "placeholder-key";
 
-export function hasRecoveryCodeVerifier() {
+export function takeRecoveryCodeVerifier() {
   const projectRef = new URL(supabaseUrl).hostname.split(".")[0];
   const cookieName = `sb-${projectRef}-auth-token-code-verifier`;
   const cookie = document.cookie.split("; ").find(value => value.startsWith(`${cookieName}=`));
-  if (!cookie) return false;
+  if (!cookie) return null;
   try {
     const encoded = decodeURIComponent(cookie.slice(cookieName.length + 1));
     const value = encoded.startsWith("base64-") ? stringFromBase64URL(encoded.slice(7)) : encoded;
     // Supabase Auth 2.76.1 stores this suffix on PKCE password recovery requests.
     const verifier: unknown = JSON.parse(value);
-    return typeof verifier === "string" && verifier.endsWith("/PASSWORD_RECOVERY");
+    if (typeof verifier !== "string" || !verifier.endsWith("/PASSWORD_RECOVERY")) return null;
+    document.cookie = `${cookieName}=; Path=/; Max-Age=0; SameSite=Lax`;
+    return verifier;
   } catch {
-    return false;
+    return null;
   }
 }
 
-// Supabase may exchange the code before the reset page mounts.
-let initialRecoveryCode = typeof window !== "undefined" &&
-  window.location.pathname === "/reset-password" &&
-  new URLSearchParams(window.location.search).has("code") &&
-  hasRecoveryCodeVerifier();
+function captureRecoveryEntry() {
+  if (typeof window === "undefined") return null;
+  const url = new URL(takeInitialRecoveryUrl() ?? window.location.href);
+  if (url.origin !== window.location.origin || !isRecoveryPage(url.pathname) || (!url.search && !url.hash)) return null;
+  const link = recoveryLink(url.searchParams, new URLSearchParams(url.hash.slice(1)));
+  // The SSR client always detects Auth credentials in the browser URL. Own the
+  // recovery exchange explicitly and keep its credentials out of browser history.
+  window.history.replaceState(window.history.state, "", url.pathname);
+  // Claim the legacy recovery verifier before the shared Auth client initializes.
+  // Do not consume OAuth/signup verifiers or credentials from the native fallback path.
+  const verifier = url.pathname === "/reset-password" && link && "code" in link && link.code ? takeRecoveryCodeVerifier() : null;
+  return { path: url.pathname, link, verifier };
+}
 
-export function consumeInitialRecoveryCode() {
-  const recovery = initialRecoveryCode;
-  initialRecoveryCode = false;
-  return recovery;
+let recoveryEntry = captureRecoveryEntry();
+export function takeRecoveryEntry(path: string) {
+  const entry = recoveryEntry;
+  recoveryEntry = null;
+  return entry?.path === path ? entry : null;
 }
 
 const authIntents = createAuthIntents(browserAuthIntentStore(supabaseUrl));
 export const supabase = createBrowserClient(supabaseUrl, supabaseKey, {
-  global: { fetch: guardAuthResponses(supabaseUrl, authIntents) },
+  global: { fetch: guardSharedRecoveryExchange(supabaseUrl, guardAuthResponses(supabaseUrl, authIntents)) },
   auth: {
     autoRefreshToken: true,
     detectSessionInUrl: true,

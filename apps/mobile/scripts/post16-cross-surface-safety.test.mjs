@@ -10,7 +10,8 @@ test("private conversation reports and blocking verify the exact participant pai
   assert.match(safety,/insert\(\{blocker_id:uid,blocked_id:peerId\}\)\.setHeader/);
   assert.match(chat,/blockedIds\.has\(row\.requester_id===user\.id\?row\.player_id:row\.requester_id\)/);
   assert.match(chat,/await verifyChatPeer\(viewerId/);
-  assert.equal([...chat.matchAll(/withHoopChatDeadline\(signal=>verifyChatPeer\(userId/g)].length,2);
+  assert.match(chat,/async function respond[\s\S]*?withHoopChatDeadline\(signal=>verifyChatPeer\(userId,peerId\(selected\),signal\)\)/);
+  assert.match(chat,/async function send[\s\S]*?withHoopChatDeadline\(async signal=>\{[\s\S]*?const header=await verifyChatPeer\(userId,peerId\(selected\),signal\);[\s\S]*?await sendConversationMessage\(supabase,message,signal,header\)/);
 });
 test("group and game room reads apply account blocking in addition to existing local controls",()=>{
   const groups=read("../components/HoopGroupsChannels.tsx"),game=read("../src/native/liveGames.ts"),helper=read("../src/native/accountBlocking.ts"),ui=read("../components/GameChat.tsx");

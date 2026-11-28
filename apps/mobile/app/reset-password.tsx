@@ -14,7 +14,9 @@ export default function ResetPasswordScreen() {
   const params = useLocalSearchParams<{ code?: string | string[]; token_hash?: string | string[]; type?: string | string[]; error_description?: string | string[]; error?: string | string[]; error_code?: string | string[] }>();
   const code = typeof params.code === "string" ? params.code : "";
   const token = typeof params.token_hash === "string" && params.type === "recovery" ? params.token_hash : "";
-  const invalid = Boolean(params.error_description || params.error || params.error_code || (code && token));
+  const invalid = params.error_description !== undefined || params.error !== undefined || params.error_code !== undefined ||
+    (params.code !== undefined && (!/^[A-Za-z0-9_-]{1,2048}$/.test(code) || params.token_hash !== undefined || (params.type !== undefined && params.type !== "recovery"))) ||
+    (params.token_hash !== undefined && !/^[A-Za-z0-9_-]{1,2048}$/.test(token));
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [visible, setVisible] = useState(false);
@@ -22,6 +24,7 @@ export default function ResetPasswordScreen() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const busyRef = useRef(false);
+  const linkAttempt = useRef<object | null>(null);
   type Recovery = { owner: string; sessionId: string };
   const verified = useRef<Recovery | null>(null);
   const verification = useRef<{ key: string; work: Promise<Recovery> } | null>(null);
@@ -32,52 +35,64 @@ export default function ResetPasswordScreen() {
     return { owner: session.user.id, sessionId: id };
   }
   useEffect(() => {
-    let alive = true;
+    const attempt = {};
+    linkAttempt.current = attempt;
     verified.current = null;
     setPassword(""); setConfirmation(""); setMessage("");
     if (invalid || (!code && !token) || supabaseConfigurationError) {
       setPhase("failed"); setMessage(invalidMessage);
-      return;
+    } else if (token) {
+      setPhase("confirm");
+    } else {
+      setPhase("checking");
+      if (verification.current?.key !== code) {
+        verification.current = { key: code, work: (async () => {
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+          // The pinned SDK returns redirectType but omits it from the public type.
+          if (error || !("redirectType" in data) || data.redirectType !== "PASSWORD_RECOVERY") throw new Error(invalidMessage);
+          return identity(data.session);
+        })() };
+      }
+      void verification.current.work.then(value => {
+        if (linkAttempt.current === attempt) { verified.current = value; setPhase("ready"); }
+      }).catch(() => { if (linkAttempt.current === attempt) { setPhase("failed"); setMessage(invalidMessage); } });
     }
-    if (token) { setPhase("confirm"); return; }
-    setPhase("checking");
-    if (verification.current?.key !== code) {
-      verification.current = { key: code, work: (async () => {
-        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-        // auth-js 2.76.1 returns redirectType from the internal PKCE exchange,
-        // although its public AuthTokenResponse type omits that field. Fail closed.
-        if (error || !("redirectType" in data) || data.redirectType !== "PASSWORD_RECOVERY") throw new Error(invalidMessage);
-        return identity(data.session);
-      })() };
-    }
-    void verification.current.work.then(value => {
-      if (alive) { verified.current = value; setPhase("ready"); }
-    }).catch(() => { if (alive) { setPhase("failed"); setMessage(invalidMessage); } });
-    return () => { alive = false; };
+    return () => { linkAttempt.current = null; };
   }, [code, token, invalid]);
   async function confirmLink() {
     if (busyRef.current || phase !== "confirm" || !token) return;
+    const attempt = linkAttempt.current;
     busyRef.current = true; setBusy(true); setPhase("checking");
     try {
       const { data, error } = await supabase.auth.verifyOtp({ token_hash: token, type: "recovery" });
+      if (linkAttempt.current !== attempt) return;
       if (error) throw error;
       verified.current = identity(data.session);
       setPhase("ready");
-    } catch { setPhase("failed"); setMessage(invalidMessage); }
+    } catch { if (linkAttempt.current === attempt) { setPhase("failed"); setMessage(invalidMessage); } }
     finally { busyRef.current = false; setBusy(false); }
   }
   async function savePassword() {
     if (phase !== "ready" || !verified.current || busyRef.current) return;
     if (password.length < 8) { setMessage("Use at least 8 characters for your new password."); return; }
     if (password !== confirmation) { setMessage("Enter the same password in both fields."); return; }
+    const attempt = linkAttempt.current;
     busyRef.current = true; setBusy(true); setMessage("");
     try {
       const change = (supabase.auth as unknown as Record<symbol, (owner: string, id: string, password: string) => Promise<{ error: unknown; signOutError?: unknown }>>)[Symbol.for("hoopcheck.recovery-password")];
       const result = await change(verified.current.owner, verified.current.sessionId, password);
-      if (result.error) throw result.error;
+      if (linkAttempt.current !== attempt) return;
+      if (result.error) {
+        const code = typeof result.error === "object" && "code" in result.error ? result.error.code : null;
+        if (code === "weak_password" || code === "same_password") {
+          setMessage("Choose a stronger password that differs from your current password.");
+          return;
+        }
+        throw result.error;
+      }
       verified.current = null; setPassword(""); setConfirmation(""); setPhase("done");
       setMessage(result.signOutError ? "Password changed. Sign out before signing in again." : "Password updated. Sign in with your new password.");
-    } catch { verified.current = null; setPhase("failed"); setMessage("Could not complete recovery. Request a new link and try again."); }
+    } catch { if (linkAttempt.current === attempt) { verified.current = null; setPhase("failed"); setMessage("Could not complete recovery. Request a new link and try again."); } }
     finally { busyRef.current = false; setBusy(false); }
   }
 

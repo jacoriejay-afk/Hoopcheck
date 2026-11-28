@@ -1,0 +1,36 @@
+name: Step 4B PostgreSQL 17 recovery subsets
+on:
+  pull_request:
+    branches: ["qa/hoopcheck-master-acceptance", "integration/build17-development"]
+    paths:
+      - "scripts/step4b-pg17-recovery.sh"
+      - ".github/workflows/step4b-pg17-recovery.yml"
+      - "supabase/tests/storekit_membership_isolated.sql"
+      - "supabase/tests/opted_in_mfa.sql"
+      - "supabase/migrations/20261118162456_opted_in_mfa_enforcement.sql"
+      - "supabase/migrations/20261119043244_storekit_membership_sources.sql"
+permissions:
+  contents: read
+jobs:
+  recovery-subsets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Rehearse actual migration subsets with synthetic data on isolated PG17
+        env:
+          STEP4_POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: bash scripts/step4b-pg17-recovery.sh

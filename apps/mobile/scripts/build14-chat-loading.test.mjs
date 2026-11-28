@@ -13,7 +13,16 @@ test("HoopChat starts with inbox and requires explicit, mode-scoped thread selec
   assert.match(chat, /selected\.status!=="accepted" \|\| !opened/);
   assert.match(chat, /selected\.status!=="pending" \|\| !opened/);
   assert.match(chat, /actionGeneration!==generation\.current \|\| !focused\.current/);
-  assert.match(chat, /setUserId\(""\); setSelectedId\(""\); setOpenedId\(""\); setDraft\(""\)/);
+  assert.match(chat, /setUserId\(""\); setSelectedId\(""\); setOpenedId\(""\)/);
+  assert.match(chat, /const draftThread = opened && selected\?\.status === "accepted" \? selected\.id : ""/);
+  assert.match(chat, /useNativeDraft\(\x60contact:chat:\$\{draftThread\}\x60, draftThread \? userId : undefined\)/);
+  assert.match(chat, /onBlocked=\{\(\)=>\{historyRequest\.current\+\+;setOpenedId\(""\);setDraft\(""\)/);
+  const drafts = read("../src/native/drafts.tsx");
+  assert.match(drafts, /onAuthStateChange\(\(_event, session\) => store\.switchUser\(session\?\.user\.id \?\? null\)\)/);
+  assert.match(drafts, /store\.switchUser\(null\)/);
+  const store = read("../src/native/draftStore.ts");
+  assert.match(store, /owner = next; values = new Map\(\); notify\(\)/);
+  assert.match(store, /userId && userId === owner \? values\.get\(key\) \|\| "" : ""/);
 });
 test("Home sections have bounded waits and preserve caller identity checks", () => {
   const home = read("../components/HomeCourtside.tsx");
@@ -58,6 +67,21 @@ test("HoopGroups resets local state across account changes and scopes private ch
   assert.match(groups, /const managing=editing&&editingGroupId===selected\?\.id/);
   assert.match(groups, /if\(!selected \|\| !managing \|\| !userId/);
   const join = groups.slice(groups.indexOf("async function join()"), groups.indexOf("async function createGroup()"));
-  assert.match(join, /supabase\.auth\.getUser\(\)/);
-  assert.match(join, /user\?\.id!==userId/);
+  assert.match(join, /const token=await safetyToken\(\)/);
+  assert.match(join, /setHeader\("Authorization","Bearer "\+token\)/);
+  assert.match(groups, /supabase\.auth\.getUser\(token\)/);
+  assert.match(groups, /verified\.data\.user\?\.id!==userId/);
+});
+
+test("HoopChat locks mutations before awaits and preserves unsent draft text", () => {
+  const chat = read("../app/messages.tsx");
+  assert.match(chat, /const mutationLocked = useRef\(false\)/);
+  assert.match(chat, /async function respond[\s\S]*?mutationLocked\.current\) return;\s*mutationLocked\.current=true;\s*const actionGeneration/);
+  assert.match(chat, /async function send\(\)[\s\S]*?mutationLocked\.current\) return;\s*mutationLocked\.current=true;\s*const submittedDraft=draft/);
+  assert.match(chat, /prepareConversationMessage\(pendingMessages\.current,selected\.id,userId,submittedDraft,randomUUID,replyId\)/);
+  assert.match(chat, /await sendConversationMessage\(supabase,message,signal,header\)/);
+  assert.match(chat, /setDraft\(current=>current===submittedDraft\?"":current\)/);
+  assert.match(chat, /if\(!mutationLocked\.current\)void load\(\)/);
+  assert.match(chat, /editable=\{!sending && !offline\}/);
+  assert.equal((chat.match(/finally\{mutationLocked\.current=false;setSending\(false\);\}/g) || []).length, 2);
 });

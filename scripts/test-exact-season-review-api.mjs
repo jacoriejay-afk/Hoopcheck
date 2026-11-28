@@ -42,3 +42,155 @@ test("review access exposes only the caller's verified season labels",async()=>{
  assert.match(route,/exactSeasonRequired:true, verifiedSeasons/);
  assert.match(route,/canWrite=verifiedSeasons\.length>0/);
 });
+
+test("published review attribution is server-only, scoped, and fail closed", async () => {
+ const { NextResponse } = await import("next/server.js");
+ const page=read("app/reviews/page.tsx");
+ assert.match(page,/fetch\("\/api\/reviews\/published"/);
+ assert.doesNotMatch(page,/\.from\("reviews"\)/);
+ assert.match(page,/item\.is_anonymous \? "Anonymous reviewer"/);
+ const source=ts.transpileModule(read("app/api/reviews/published/route.ts"),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+ for(const sample of [{denied:true},{scopeError:true},{authorError:true},{}]){
+  const calls=[];
+  const data=[{id:"anonymous",status:"approved",is_anonymous:true,author_id:"never-return"},{id:"named",status:"approved",is_anonymous:false},{id:"changed",status:"approved",is_anonymous:false},{id:"unknown",status:"approved",is_anonymous:null}];
+  const scoped={from:table=>{assert.equal(table,"reviews");const q={select:cols=>{assert.doesNotMatch(cols,/author_id/);return q;},eq:(...args)=>{assert.deepEqual(args,["status","approved"]);return q;},order:()=>q,limit:async n=>{assert.equal(n,100);return {data,error:sample.scopeError?Error():null};}};return q;}};
+  const service={from:table=>{assert.equal(table,"reviews");const q={select:cols=>{assert.equal(cols,"id,author_id,is_anonymous");return q;},in:(key,ids)=>{assert.equal(key,"id");assert.deepEqual(ids,["named","changed"]);return q;},eq:(...args)=>{calls.push(args);if(args[0]==="status")return q;return Promise.resolve({data:[{id:"named",is_anonymous:false,author_id:"named-author"},{id:"changed",is_anonymous:true,author_id:"hidden"},{id:"outside",is_anonymous:false,author_id:"outside"}],error:sample.authorError?Error():null});}};return q;}};
+  const route={};
+  new Function("require","exports",source)(name=>name==="next/server"?{NextResponse}:{authenticateModerationRequest:async()=>sample.denied?{ok:false,response:NextResponse.json({}, {status:403})}:{ok:true,scoped,supabase:service}},route);
+  const response=await route.GET(new Request("https://fixture.invalid/api/reviews/published?ids=outside"));
+  assert.match(response.headers.get("Cache-Control"),/no-store/);
+  assert.equal(response.status,sample.denied?403:sample.scopeError||sample.authorError?503:200);
+  if(sample.denied||sample.scopeError)assert.deepEqual(calls,[]);
+  else assert.deepEqual(calls,[["status","approved"],["is_anonymous",false]]);
+  if(response.ok){const body=await response.json();assert.deepEqual(body.reviews.map(r=>r.author_id),[null,"named-author",null,null]);assert.equal(body.reviews[3].is_anonymous,true);}
+ }
+});
+
+test("review access performs live authorization before using service credentials", async () => {
+ const { NextResponse } = await import("next/server.js");
+ const owner = "11111111-1111-4111-8111-111111111111";
+ const target = "22222222-2222-4222-8222-222222222222";
+ const project = "https://fixture.invalid";
+ const appEnv = { NEXT_PUBLIC_SUPABASE_URL: project, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "public", SUPABASE_SERVICE_ROLE_KEY: "service" };
+ const { getHoopCheckEntitlements } = await import(url(read("lib/membership-tier.ts")));
+ const { assuranceForVerifiedUser } = await import(url(read("lib/auth/mfa-core.ts")));
+ for (const sample of [
+  {guest:true, status:200},
+  {invalid:true, status:401},
+  {mfa:true, status:403},
+  {active:false, status:403},
+  {suspended:true, status:403},
+  {dbError:true, status:503},
+  {plan:"pro", status:200, projection:"overall_rating"},
+  {plan:"premium", status:200, projection:"full"},
+ ]) {
+  const projections = [];
+  const token = "fixture." + Buffer.from(JSON.stringify({sub:owner,exp:Math.floor(Date.now()/1000)+600,aal:"aal1"})).toString("base64url") + ".fixture";
+  const createClient = (origin,key,options) => {
+   assert.equal(origin, project);
+   if (key === "service") {
+    assert.ok(sample.projection, "Denied callers cannot obtain a service query");
+    return {from:table => {
+     assert.equal(table,"reviews");
+     const query = {select:columns => {projections.push(columns);return query;},eq:()=>query,order:async()=>({data:[]})};
+     return query;
+    }};
+   }
+   assert.equal(options.global.headers.Authorization,"Bearer "+token);
+   return {
+    auth:{getUser:async supplied => {
+     assert.equal(supplied,token);
+     const verified = {id:owner,email_confirmed_at:"2026-01-01",factors:sample.mfa?[{id:target,factor_type:"totp",status:"verified"}]:[]};
+     return {data:{user:sample.invalid?null:verified}};
+    }},
+    from:table=>{
+     const result = table==="profiles" ? {data:{account_type:"fan",moderation_status:sample.suspended?"suspended":"normal"}}
+      : {data:{plan:sample.plan,status:"active"},error:sample.dbError?Error("lookup failed"):null};
+     const query = {select:()=>query,eq:(key,id)=>{
+      assert.equal(key,table==="profiles"?"id":"user_id");
+      assert.equal(id,owner);
+      return query;
+     },maybeSingle:async()=>result};
+     return query;
+    },
+    rpc:async name=>({data:name==="confirm_active_account_session"?sample.active!==false:false}),
+   };
+  };
+  const source = ts.transpileModule(read("app/api/review-access/route.ts"),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+  const imports = {
+   "next/server":{NextResponse},
+   "@supabase/supabase-js":{createClient},
+   "../../../lib/review-summary":{calculateReviewSummary:()=>({})},
+   "../../../lib/membership-tier":{getHoopCheckEntitlements},
+   "../../../lib/career/verified-review-season":{exactSeasonReviewsEnabled:()=>false},
+   "../../../lib/auth/mfa-core":{assuranceForVerifiedUser},
+  };
+  const route = {};
+  new Function("require","exports","process",source)(name=>imports[name],route,{env:appEnv});
+  const response = await route.GET(new Request(project + "/api/review-access?entityType=coach&entityId=" + target,
+   {headers:sample.guest?{}:{Authorization:"Bearer "+token}}));
+  assert.equal(response.status,sample.status);
+  assert.match(response.headers.get("Cache-Control"),/no-store/);
+  if (sample.projection==="overall_rating") assert.deepEqual(projections,["overall_rating"]);
+  if (sample.projection==="full") {
+   assert.equal(projections.length,1);
+   assert.match(projections[0],/is_anonymous/);
+   assert.doesNotMatch(projections[0],/author_id/);
+  }
+ }
+});
+
+test("staff review queue requires moderator authorization and preserves scoped IDs", async () => {
+ const { NextResponse } = await import("next/server.js");
+ const page=read("app/admin/reviews/page.tsx");
+ assert.match(page,/fetch\("\/api\/admin\/reviews"/);
+ assert.doesNotMatch(page,/\.from\("reviews"\)/);
+ assert.match(page,/current !== accountGeneration.current/);
+ const source=ts.transpileModule(read("app/api/admin/reviews/route.ts"),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+ for(const sample of [{denied:true},{scopeError:true},{authorError:true},{empty:true},{}]){
+  const seen=[];
+  const data=sample.empty?[]:[{id:"visible",status:"pending",author_id:"do-not-trust",secret:"not-in-projection"}];
+  const scoped={from:table=>{seen.push("scope");assert.equal(table,"reviews");const q={select:cols=>{assert.doesNotMatch(cols,/author_id/);return q;},order:()=>q,limit:async n=>{assert.equal(n,1000);return {data,error:sample.scopeError?Error():null};}};return q;}};
+  const service={from:table=>{seen.push("service");assert.equal(table,"reviews");return {select:cols=>{assert.equal(cols,"id,author_id");return {in:async (key,ids)=>{assert.equal(key,"id");assert.deepEqual(ids,["visible"]);return {data:[{id:"visible",author_id:"verified"},{id:"outside",author_id:"private"}],error:sample.authorError?Error():null};}};}};}};
+  const route={};
+  new Function("require","exports",source)(name=>name==="next/server"?{NextResponse}:{authorizeModeratorRequest:async()=>sample.denied?{ok:false,response:NextResponse.json({}, {status:403})}:{ok:true,scoped,supabase:service}},route);
+  const response=await route.GET(new Request("https://fixture.invalid/api/admin/reviews?ids=outside"));
+  assert.match(response.headers.get("Cache-Control"),/no-store/);
+  assert.equal(response.status,sample.denied?403:sample.scopeError||sample.authorError?503:200);
+  assert.deepEqual(seen,sample.denied?[]:sample.scopeError||sample.empty?["scope"]:["scope","service"]);
+  if(response.ok){const body=await response.json();assert.deepEqual(body.reviews.map(r=>r.author_id),sample.empty?[]:["verified"]);assert.equal(body.reviews.some(r=>"secret" in r),false);}
+ }
+});
+
+test("men's review text matches restored database constraints before consuming quota", async () => {
+ const { NextResponse } = await import("next/server.js");
+ const source = ts.transpileModule(read("app/api/reviews/route.ts"),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+ const cases = [
+  {body:"a".repeat(19),title:"Valid",status:400},
+  {body:"🏀".repeat(10),title:"Valid",status:400},
+  {body:"a".repeat(20),title:"ab",status:400},
+  {body:"a".repeat(20),title:"🏀🏀",status:400},
+  {body:"a".repeat(20),title:"",status:429},
+  {body:"a".repeat(20),title:"abc",status:429},
+  {body:"🏀".repeat(20),title:"Valid",status:429},
+ ];
+ for (const sample of cases) {
+  let slots=0;
+  const client={
+   auth:{getUser:async()=>({data:{user:{id:"player",email_confirmed_at:"2026-01-01"}}})},
+   from:table=>{assert.ok(["profiles","membership_entitlements"].includes(table));const q={select:()=>q,eq:()=>q,maybeSingle:async()=>({data:{account_type:"player",player_verified:true,plan:"premium",status:"active"}})};return q;},
+   rpc:async name=>{assert.equal(name,"claim_review_submission_slot");slots++;return {data:null,error:null};}
+  };
+  const imports={"next/server":{NextResponse},"@supabase/supabase-js":{createClient:()=>client},"../../../lib/membership-tier":{getHoopCheckEntitlements:()=>({canWriteReviews:true})},"../../../lib/career/verified-review-season":{exactSeasonReviewsEnabled:()=>false}};
+  const route={};
+  new Function("require","exports","process",source)(name=>imports[name],route,{env:{NEXT_PUBLIC_SUPABASE_URL:"https://fixture.invalid",NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:"fixture"}});
+  const response=await route.POST(new Request("https://fixture.invalid/api/reviews",{method:"POST",headers:{Authorization:"Bearer fixture"},body:JSON.stringify({coach_id:"coach",player_season:"2025-26",overall_rating:4,communication_rating:4,professionalism_rating:4,development_rating:4,payment_rating:4,body:sample.body,title:sample.title})}));
+  assert.equal(response.status,sample.status);
+  assert.equal(slots,sample.status===429?1:0);
+ }
+ for(const path of ["app/coaches/[id]/review/page.tsx","app/leagues/[id]/review/page.tsx","app/teams/[id]/review/page.tsx"]) {
+  assert.match(read(path),/Array\.from\(trimmedBody\)\.length < 20/);
+  assert.match(read(path),/minLength=\{20\}/);
+ }
+ assert.match(read("apps/mobile/app/teams/[id]/review.tsx"),/Array\.from\(body\.trim\(\)\)\.length < 20/);
+});

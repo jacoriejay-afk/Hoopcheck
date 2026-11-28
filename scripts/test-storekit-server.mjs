@@ -161,18 +161,67 @@ test('privileged Apple request checks the exact bearer against an active unfroze
   }
  }finally{for(const [k,v] of Object.entries(before)){if(v===undefined)delete process.env[k];else process.env[k]=v;}}
 });
-test('HoopFeed privileged video upload denies a frozen or unverifiable caller before signing',async()=>{
- const env={NEXT_PUBLIC_SUPABASE_URL:'https://fixture.supabase.co',NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:'fixture-public',SUPABASE_SERVICE_ROLE_KEY:'fixture-service'};
- const before=Object.fromEntries(Object.keys(env).map(k=>[k,process.env[k]]));Object.assign(process.env,env);
- try{
-  for(const active of [false,null,true]){
-   let signed=0;
-   const tables={profiles:{account_type:'player'},membership_entitlements:{plan:'premium',status:'active'},admin_roles:[]};
-   const admin={auth:{getUser:async token=>{assert.equal(token,'fixture-token');return{data:{user:{id:owner}},error:null};}},from:table=>{const q={select:()=>q,eq:()=>q,maybeSingle:async()=>({data:tables[table]}),then:(yes,no)=>Promise.resolve({data:tables[table]}).then(yes,no)};return q;},storage:{from:bucket=>({createSignedUploadUrl:async path=>{assert.equal(bucket,'hoopfeed-private-videos');assert.ok(path.startsWith(owner+'/'));signed++;return{data:{token:'fixture-upload'},error:null};}})}};
-   const fake={createClient:(url,key,options)=>{if(key===env.SUPABASE_SERVICE_ROLE_KEY)return admin;assert.equal(options.global.headers.Authorization,'Bearer fixture-token');return{rpc:async name=>{assert.equal(name,'confirm_active_account_session');return{data:active,error:active===null?Error('unavailable'):null};}};}};
-   const route=compile('../app/api/hoopfeed/video-upload/route.ts',name=>name==='@supabase/supabase-js'?fake:name==='next/server'?{NextResponse:{json:(body,opts)=>Response.json(body,opts)}}:name==='../../../../lib/membership-tier'?{getHoopCheckEntitlements:()=>({canWriteHoopFeed:true})}:require(name));
-   const response=await route.POST(new Request('https://fixture.invalid',{method:'POST',headers:{authorization:'Bearer fixture-token','content-type':'application/json'},body:JSON.stringify({content_type:'video/mp4',size:1024})}));
-   assert.equal(response.status,active===true?200:403);assert.equal(signed,active===true?1:0);
+test('HoopFeed video signing requires an active allowed account and a bounded valid declaration', async () => {
+ const env = {NEXT_PUBLIC_SUPABASE_URL:'https://fixture.supabase.co',NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:'fixture-public',SUPABASE_SERVICE_ROLE_KEY:'fixture-service'};
+ const before = Object.fromEntries(Object.keys(env).map(key => [key, process.env[key]]));
+ Object.assign(process.env, env);
+ const token = 'fixture.' + Buffer.from(JSON.stringify({sub:owner,exp:Math.floor(Date.now()/1000)+600,aal:'aal1'})).toString('base64url') + '.fixture';
+ const bodyReader = compile('../lib/server/read-json-body.ts');
+ const valid = {content_type:'video/mp4',size:1024};
+ try {
+  for (const [active, status, body, expected] of [
+   [false, 'normal', valid, 403],
+   [null, 'normal', valid, 403],
+   [true, 'suspended', valid, 403],
+   [true, 'normal', {...valid, size:-1}, 400],
+   [true, 'normal', {...valid, content_type:'__proto__'}, 400],
+   [true, 'normal', {...valid, content_type:'x'.repeat(1100)}, 413],
+   [true, 'normal', valid, 200],
+  ]) {
+   let signed = 0;
+   const tables = {profiles:{account_type:'player',moderation_status:status},membership_entitlements:{plan:'premium',status:'active'},admin_roles:[]};
+   const admin = {
+    auth: {getUser:async supplied => {
+     assert.equal(supplied, token);
+     return {data:{user:{id:owner,email_confirmed_at:'2026-01-01T00:00:00Z'}},error:null};
+    }},
+    from: table => {
+     const result = {data:tables[table]};
+     const query = {select:()=>query,eq:()=>query,maybeSingle:async()=>result,then:resolve=>Promise.resolve(result).then(resolve)};
+     return query;
+    },
+    storage: {from:bucket => ({createSignedUploadUrl:async path => {
+     assert.equal(bucket, 'hoopfeed-private-videos');
+     assert.ok(path.startsWith(owner+'/'));
+     signed++;
+     return {data:{token:'fixture-upload'},error:null};
+    }})},
+   };
+   const fake = {createClient:(_url,key,options) => {
+    if (key === env.SUPABASE_SERVICE_ROLE_KEY) return admin;
+    assert.equal(options.global.headers.Authorization,'Bearer '+token);
+    return {rpc:async name => {
+     assert.equal(name,'confirm_active_account_session');
+     return {data:active,error:active===null?Error('unavailable'):null};
+    }};
+   }};
+   const modules = {
+    '@supabase/supabase-js':fake,
+    '../../../../lib/membership-tier':compile('../lib/membership-tier.ts'),
+    '../../../../lib/auth/mfa-core':core,
+    '../../../../lib/server/read-json-body':bodyReader,
+   };
+   const route = compile('../app/api/hoopfeed/video-upload/route.ts',name=>modules[name]??require(name));
+   const response = await route.POST(new Request('https://fixture.invalid',{
+    method:'POST', headers:{authorization:'Bearer '+token,'content-type':'application/json'},body:JSON.stringify(body),
+   }));
+   assert.equal(response.status, expected);
+   assert.equal(signed, expected===200?1:0);
   }
- }finally{for(const [k,v] of Object.entries(before)){if(v===undefined)delete process.env[k];else process.env[k]=v;}}
+ } finally {
+  for (const [key,value] of Object.entries(before)) {
+   if (value===undefined) delete process.env[key];
+   else process.env[key]=value;
+  }
+ }
 });

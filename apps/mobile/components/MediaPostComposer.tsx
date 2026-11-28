@@ -6,6 +6,8 @@ import { capturePhoto, captureVideo, choosePhoto, chooseVideo, MediaPermissionEr
 import { PublicationUnconfirmed, publishMediaPost } from "../src/native/mediaClient";
 import { FeedVideo } from "./FeedVideo";
 import { CommunityWordmark } from "./BrandLockup";
+import { HoopCheckCamera } from "./HoopCheckCamera";
+import { nativeCameraEnabled } from "../src/native/cameraCapture";
 
 type Props = { preferredSource?: "camera" | "library"; location?: string; userId: string; enabled: boolean; caption: string; token: () => Promise<string>; onPublished: () => void | Promise<void>; onRefresh: () => void | Promise<void> };
 export function MediaPostComposer({ userId, enabled, caption, token, onPublished, onRefresh, preferredSource = "library", location = "" }: Props) {
@@ -13,6 +15,8 @@ export function MediaPostComposer({ userId, enabled, caption, token, onPublished
   const [busy, setBusy] = useState(false); const [uploading, setUploading] = useState(false); const [message, setMessage] = useState(""); const [permissionDenied, setPermissionDenied] = useState(false); const [unconfirmed, setUnconfirmed] = useState(false);
   const [transfer, setTransfer] = useState<number | null>(null);
   const [facing, setFacing] = useState<CameraFacing>("back");
+  const [cameraOpen, setCameraOpen] = useState(() => enabled && preferredSource === "camera" && nativeCameraEnabled && Platform.OS !== "web");
+  useEffect(() => { if (!enabled) setCameraOpen(false); }, [enabled]);
   const previewFailure = useCallback(() => setMessage("This video could not be previewed. Choose another clip if it does not play."), []);
   const captureScope = useRef({ enabled, userId, revision: 0 });
   useLayoutEffect(() => {
@@ -66,11 +70,18 @@ export function MediaPostComposer({ userId, enabled, caption, token, onPublished
     finally { clearTimeout(deadline); if (current === generation.current) { controller.current = null; working.current = false; setBusy(false); setUploading(false); setTransfer(null); } }
   }
   return <View style={{ gap: 12 }}>
+    {cameraOpen && enabled && nativeCameraEnabled && Platform.OS !== "web" ? <HoopCheckCamera key={userId} onClose={() => setCameraOpen(false)} onCapture={capture => {
+      if (!captureScope.current.enabled || captureScope.current.userId !== userId || working.current) return false;
+      if (capture.kind === "photo") { setPhotos([capture.photo]); setVideo(null); }
+      else { setVideo(capture.video); setPhotos([]); }
+      setUnconfirmed(false); setMessage("Review your capture and add a caption before posting."); setCameraOpen(false); return true;
+    }} /> : null}
     <Text style={{ color: theme.muted }}>Add up to four photos or one video up to 50 MB. Photos preserve their framing unless you crop them. Video quality depends on your device and file size.</Text>
     {Platform.OS !== "web" ? <View style={{ gap: 10, padding: 12, borderWidth: 1, borderColor: preferredSource === "camera" ? theme.accent : theme.border, borderRadius: 16 }}>
       <CommunityWordmark size={20} />
       <Text accessibilityRole="header" style={{ color: theme.foreground, fontSize: 17, fontWeight: "800" }}>HoopCheck™ Camera</Text>
-      <Text style={{ color: theme.muted }}>Capture a photo or a video up to 60 seconds using your device camera. Review it before posting to HoopFeed.</Text>
+      <Text style={{ color: theme.muted }}>Capture a photo or a video up to 60 seconds. Review it before posting to HoopFeed. Existing system capture remains available.</Text>
+      {nativeCameraEnabled ? <Button secondary disabled={busy || !enabled || unconfirmed || Boolean(photos.length || video)} onPress={() => setCameraOpen(true)}>Open HoopCheck Camera</Button> : null}
       <View accessibilityRole="radiogroup" style={{ flexDirection: "row", gap: 8 }}>
         {(["back", "front"] as const).map(value => <Pressable key={value} accessibilityRole="radio" accessibilityState={{ checked: facing === value, disabled: busy || !enabled }} disabled={busy || !enabled} onPress={() => setFacing(value)} style={{ flex: 1, minHeight: 44, justifyContent: "center", alignItems: "center", borderRadius: 12, borderWidth: 1, borderColor: facing === value ? theme.accent : theme.border }}>
           <Text style={{ color: facing === value ? theme.accent : theme.foreground, fontWeight: "700" }}>{value === "back" ? "Rear camera" : "Front camera"}</Text>

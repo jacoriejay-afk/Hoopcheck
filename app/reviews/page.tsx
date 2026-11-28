@@ -12,7 +12,8 @@ type ReviewRow = {
   body: string | null;
   overall_rating: number | null;
   created_at: string;
-  author_id: string;
+  author_id: string | null;
+  is_anonymous: boolean;
   coach_id: string | null;
   team_id: string | null;
   league_id: string | null;
@@ -70,28 +71,43 @@ export default function ReviewsAnalyticsPage() {
 
   useEffect(() => {
     let active = true;
+    let generation = 0;
+    let owner: string | null | undefined;
+    let pending: ReturnType<typeof setTimeout>;
+    let controller: AbortController | undefined;
 
-    async function loadReviews() {
+    async function loadReviews(current: number) {
+      const read = new AbortController();
+      controller = read;
       setLoading(true);
       setErrorMessage("");
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (!active || current !== generation || (session?.user.id ?? null) !== owner) return;
+      if (sessionError) {
+        setErrorMessage("Published reviews could not be loaded right now. Please try again later.");
+        setLoading(false);
+        return;
+      }
+      if (!session) { setLoading(false); return; }
+      const authorization = "Bearer " + session.access_token;
 
-      const { data, error } = await supabase
-        .from("reviews")
-        .select("id,status,title,body,overall_rating,created_at,author_id,coach_id,team_id,league_id")
-        .eq("status", "approved")
-        .order("created_at", { ascending: false })
-        .limit(100);
-
-      if (!active) return;
-      if (error) {
+      const response = await fetch("/api/reviews/published", {
+        headers: { Authorization: authorization }, cache: "no-store", signal: read.signal,
+      });
+      if (!active || current !== generation) return;
+      if (!response.ok) {
         setErrorMessage("Published reviews could not be loaded right now. Please try again later.");
         setItems([]);
         setLoading(false);
         return;
       }
-
-      const rows = (data || []) as ReviewRow[];
-      const authorIds = Array.from(new Set(rows.map((row) => row.author_id).filter(Boolean)));
+      const payload = await response.json() as { reviews: ReviewRow[] };
+      if (!active || current !== generation) return;
+      if (!Array.isArray(payload.reviews)) throw Error("Invalid review response.");
+      const rows = payload.reviews.map(row => ({
+        ...row, author_id: row.is_anonymous === false ? row.author_id : null,
+      }));
+      const authorIds = [...new Set(rows.flatMap(row => row.author_id ? [row.author_id] : []))];
       const coachIds = Array.from(new Set(rows.map((row) => row.coach_id).filter(Boolean))) as string[];
       const teamIds = Array.from(new Set(rows.map((row) => row.team_id).filter(Boolean))) as string[];
       const leagueIds = Array.from(new Set(rows.map((row) => row.league_id).filter(Boolean))) as string[];
@@ -99,19 +115,20 @@ export default function ReviewsAnalyticsPage() {
       const [profilesResult, coachesResult, teamsResult, leaguesResult] = await Promise.all([
         authorIds.length
           ? supabase.from("profiles").select("id,display_name,avatar_url,player_verified").in("id", authorIds)
+            .setHeader("Authorization", authorization).abortSignal(read.signal)
           : Promise.resolve({ data: [], error: null }),
         coachIds.length
-          ? supabase.from("coaches").select("id,name").in("id", coachIds)
+          ? supabase.from("coaches").select("id,name").in("id", coachIds).setHeader("Authorization", authorization).abortSignal(read.signal)
           : Promise.resolve({ data: [], error: null }),
         teamIds.length
-          ? supabase.from("teams").select("id,name").in("id", teamIds)
+          ? supabase.from("teams").select("id,name").in("id", teamIds).setHeader("Authorization", authorization).abortSignal(read.signal)
           : Promise.resolve({ data: [], error: null }),
         leagueIds.length
-          ? supabase.from("leagues").select("id,name").in("id", leagueIds)
+          ? supabase.from("leagues").select("id,name").in("id", leagueIds).setHeader("Authorization", authorization).abortSignal(read.signal)
           : Promise.resolve({ data: [], error: null }),
       ]);
 
-      if (!active) return;
+      if (!active || current !== generation) return;
 
       const profileMap = new Map<string, ProfileRow>(
         ((profilesResult.data || []) as ProfileRow[]).map((profile) => [profile.id, profile])
@@ -143,7 +160,7 @@ export default function ReviewsAnalyticsPage() {
               : null;
         return {
           ...row,
-          author: profileMap.get(row.author_id) || null,
+          author: row.author_id ? profileMap.get(row.author_id) ?? null : null,
           targetType,
           targetName: targetId ? targetMap.get(targetId) || "Basketball listing" : "Overall experience",
           targetHref,
@@ -154,9 +171,28 @@ export default function ReviewsAnalyticsPage() {
       setLoading(false);
     }
 
-    void loadReviews();
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      const nextOwner = session?.user.id ?? null;
+      if (owner === nextOwner) return;
+      owner = nextOwner;
+      const current = ++generation;
+      controller?.abort();
+      clearTimeout(pending);
+      setItems([]);
+      // Supabase callbacks run during auth updates. Read the session afterwards.
+      pending = setTimeout(() => {
+        void loadReviews(current).catch(() => {
+          if (!active || current !== generation) return;
+          setErrorMessage("Published reviews could not be loaded right now. Please try again later.");
+          setLoading(false);
+        });
+      }, 0);
+    });
     return () => {
       active = false;
+      clearTimeout(pending);
+      controller?.abort();
+      data.subscription.unsubscribe();
     };
   }, []);
 
@@ -248,7 +284,7 @@ export default function ReviewsAnalyticsPage() {
         ) : (
           <div className="hc-review-feed">
             {visibleItems.map((item) => {
-              const authorName = item.author?.display_name?.trim() || "HoopCheck member";
+              const authorName = item.is_anonymous ? "Anonymous reviewer" : item.author?.display_name?.trim() || "HoopCheck member";
               const rating = item.overall_rating && item.overall_rating >= 1 && item.overall_rating <= 5
                 ? item.overall_rating
                 : 0;

@@ -6,6 +6,8 @@ import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } f
 import { Link } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase, supabaseConfigurationError } from "../src/lib/supabase";
+import { nativeRecoveryRedirect, recoveryRequestMessage, requestRecoveryEmail } from "../../../lib/auth/password-recovery";
+import { canonicalWebOrigin } from "../src/native/deepLinks";
 
 export default function ForgotPasswordScreen() {
   const theme = useEntryTheme();
@@ -13,22 +15,22 @@ export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const inFlight = useRef(false);
-  const lastSent = useRef(0);
+  const [requested, setRequested] = useState(false);
 
   async function sendReset() {
     if (inFlight.current) return;
-    if (Date.now() - lastSent.current < 60000) { Alert.alert("Please wait", "Wait one minute before requesting another recovery email."); return; }
     if (supabaseConfigurationError) { Alert.alert("Setup required", supabaseConfigurationError); return; }
     if (!email.trim()) { Alert.alert("Email required", "Enter the email address associated with your account."); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { Alert.alert("Invalid email", "Enter a valid email address."); return; }
     inFlight.current = true; setBusy(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), { redirectTo: "hoopcheck://reset-password" });
-      if (error) throw error;
-      lastSent.current = Date.now();
-      Alert.alert("Check your email", "If an account exists for that address, password recovery instructions will be sent. Open the recovery link on this device to choose a new password.");
+      const redirectTo = nativeRecoveryRedirect(process.env.EXPO_PUBLIC_HOOPCHECK_RECOVERY_ORIGIN?.trim() || canonicalWebOrigin);
+      const started = await requestRecoveryEmail(() => supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), { redirectTo }));
+      if (!started) { Alert.alert("Please wait", "Wait one minute before requesting another recovery email."); return; }
+      setRequested(true);
+      Alert.alert("Check your email", recoveryRequestMessage);
     } catch {
-      Alert.alert("Could not request reset", "Please check your details and try again.");
+      Alert.alert("Recovery unavailable", "Try requesting a password reset from the HoopCheck website.");
     } finally { inFlight.current = false; setBusy(false); }
   }
 
@@ -42,7 +44,7 @@ export default function ForgotPasswordScreen() {
           <Text style={styles.subtitle}>Enter your account email to request a recovery message.</Text>
           <Text style={styles.label}>Email</Text>
           <Input accessibilityLabel="Email" placeholderTextColor={theme.muted} value={email} onChangeText={setEmail} autoCapitalize="none" autoComplete="email" keyboardType="email-address" style={styles.input} placeholder="you@example.com" />
-          <Button onPress={sendReset} disabled={busy} style={[styles.button, busy && styles.dim]}><Text style={styles.buttonText}>{busy ? "Sending…" : "Send recovery email"}</Text></Button>
+          <Button onPress={sendReset} disabled={busy} style={[styles.button, busy && styles.dim]}><Text style={styles.buttonText}>{busy ? "Sending…" : requested ? "Resend recovery email" : "Send recovery email"}</Text></Button>
           <Link href="/sign-in" style={styles.link}>Back to sign in</Link>
         </GlassCard>
         </ScrollView>

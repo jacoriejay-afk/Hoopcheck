@@ -97,6 +97,6 @@ export function Scoreboard({ game, teams, checkedAtMs, nowMs, featured = false, 
     {game.status === "live" ? <Text style={{ color: t.muted, ...t.type.caption }}>{providerReceiptLabel(game.score_updated_at, nowMs)}</Text> : null}
     {display.sourceLabel ? <Text style={{ color: t.muted, ...t.type.caption }}>{display.sourceLabel}</Text> : null}
     {display.warning ? <Text accessibilityRole="alert" style={{ color: t.muted, ...t.type.caption }}>{display.warning}</Text> : null}
-    {state.needsVerification ? <Text style={{ color: t.muted, ...t.type.caption }}>Provider status not verified. Results may be delayed.</Text> : null}
+    {state.needsVerification ? <Text style={{ color: t.muted, ...t.type.caption }}>{display.homeScore != null && display.awayScore != null ? "Last reported score · " : ""}Provider status not verified. Results may be delayed.</Text> : null}
   </View>;
 }

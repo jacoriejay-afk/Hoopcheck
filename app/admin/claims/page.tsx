@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../../lib/supabase";
+import EvidenceDownload from "../../../components/EvidenceDownload";
 import HoopLoading from "../../../components/HoopLoading";
 import Logo from "../../../components/Logo";
 
@@ -16,7 +17,6 @@ type Entity = {id:string;name:string};
 export default function AdminClaimsPage() {
   const [claims,setClaims] = useState<Claim[]>([]);
   const [names,setNames] = useState<Record<string,string>>({});
-  const [proofLinks,setProofLinks] = useState<Record<string,string>>({});
   const [notes,setNotes] = useState<Record<string,string>>({});
   const [loading,setLoading] = useState(true);
   const [busyId,setBusyId] = useState<string|null>(null);
@@ -43,12 +43,6 @@ export default function AdminClaimsPage() {
     for(const row of teamResult.data||[]) entityNames["team:"+row.id]=row.name;
     for(const row of coachResult.data||[]) entityNames["coach:"+row.id]=row.name;
     setNames(entityNames);
-    const links:Record<string,string>={};
-    await Promise.all(rows.filter(row=>row.proof_document_path).map(async row=>{
-      const {data:signed}=await supabase.storage.from("profile-claim-proofs").createSignedUrl(row.proof_document_path!,300);
-      if(signed?.signedUrl) links[row.id]=signed.signedUrl;
-    }));
-    setProofLinks(links);
     setLoading(false);
   }
 
@@ -79,7 +73,7 @@ export default function AdminClaimsPage() {
         <div className="hc-claim-admin-card__top"><div><span className={"hc-claim-admin-status is-"+claim.status}>{claim.status}</span><h2>{names[claim.entity_type+":"+claim.entity_id]||"Unknown organization profile"}</h2><p className="muted">{claim.entity_type.toUpperCase()} · Submitted {new Date(claim.created_at).toLocaleString()}</p></div><Link href={claim.entity_type==="team"?"/teams/"+claim.entity_id:"/coaches/"+claim.entity_id} className="hc-claim-admin-open">Open profile →</Link></div>
         <p><strong>Verification method:</strong> {claim.organization_email && claim.proof_document_path ? "Official organization email + documentary proof" : claim.organization_email ? "Email only — insufficient for team claims" : "Document only — insufficient for team claims"}</p>
         {claim.organization_email&&<p><strong>Organization email:</strong> {claim.organization_email}</p>}
-        {proofLinks[claim.id]&&<p><a className="hc-claim-admin-open" href={proofLinks[claim.id]} target="_blank" rel="noreferrer">Open private evidence (expires in 5 minutes) ↗</a></p>}
+        {claim.proof_document_path && <p><EvidenceDownload bucket="profile-claim-proofs" path={claim.proof_document_path} /></p>}
         {claim.status==="pending"?<><label className="hc-claim-admin-note">Admin note<textarea value={notes[claim.id]||""} onChange={event=>setNotes(current=>({...current,[claim.id]:event.target.value}))} rows={2} maxLength={1000} placeholder="Reason, domain check, or decision notes…"/></label><div className="hc-claim-admin-actions"><button type="button" className="btn" disabled={busyId===claim.id} onClick={()=>void decide(claim,"approved")}>{busyId===claim.id?"Saving…":"Approve Claim"}</button><button type="button" className="btn dark" disabled={busyId===claim.id} onClick={()=>void decide(claim,"rejected")}>Reject Claim</button></div></>:<p className="muted">Reviewed {claim.reviewed_at?new Date(claim.reviewed_at).toLocaleString():"—"}{claim.admin_note?" · "+claim.admin_note:""}</p>}
       </article>)}
       {!claims.length&&<div className="dashboard-card"><h2>No profile claims yet</h2><p className="muted">Submitted team and coach claim requests will appear here.</p></div>}

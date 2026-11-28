@@ -24,7 +24,9 @@ test("new owner appearance controls do not bypass the independent HoopGroups rol
   const groups=read("../components/HoopGroupsChannels.tsx");
   assert.match(route,/EXPO_PUBLIC_HOOPGROUPS_CHANNELS_ENABLED === "true"/);
   assert.match(route, /enabled \? <HoopGroupsChannels inviteSlug=\{inviteSlug\} \/>/);
-  assert.match(groups,/moderation_status:"pending"/);
+  const send=read("../src/native/hoopGroupsSend.ts");
+  assert.match(groups,/submitGroupSend\(supabase,message,"Bearer "\+token,abort.signal\)/);
+  assert.match(send,/moderation_status:"pending"/);
   assert.match(groups,/hoop_group_reports/);
   assert.match(groups,/hoop_group_blocks/);
   assert.doesNotMatch(route,/Browse official Team Fan Groups/);
@@ -37,4 +39,16 @@ test("group visuals come from approved fixed choices, not unmoderated image URLs
   assert.match(groups,/accessibilityRole="radio"/);
   assert.match(groups,/managing\?"Close group settings":"Manage group appearance"/);
   assert.doesNotMatch(groups,/upload.*banner|banner_url|cover_url/i);
+});
+
+test("group read and mutation requests pin the verified caller token and serialize writes",()=>{
+ const groups=read("../components/HoopGroupsChannels.tsx");
+ const catalog=groups.slice(groups.indexOf("async function load()"),groups.indexOf("void load();"));
+ assert.match(catalog,/const token=await safetyToken\(\)/);assert.equal((catalog.match(/setHeader\("Authorization",header\)/g)||[]).length,3);
+ assert.match(catalog,/current!==token/);assert.match(catalog,/controller.signal.aborted/);
+ for(const name of ["join","createGroup","saveGroup","leaveGroup","createChannel","send","report","block"]){
+  const start=groups.indexOf("async function "+name+"(");const end=groups.indexOf("\n  }",start);const body=groups.slice(start,end);
+  assert.match(body,/if\(mutationLocked.current\)return/);assert.match(body,/const token=await safetyToken\(\)/);if(name==="send"){assert.match(body,/submitGroupSend\(supabase,message,"Bearer "\+token,abort.signal\)/);const helper=read("../src/native/hoopGroupsSend.ts");assert.equal((helper.match(/setHeader\("Authorization",bearer\)\.abortSignal\(signal\)/g)||[]).length,2);}else assert.match(body,/setHeader\("Authorization",\s*"Bearer "\+token\)/);assert.match(body,/finally\{mutationLocked.current=false/);
+ }
+ assert.doesNotMatch(groups,/service_role/);
 });

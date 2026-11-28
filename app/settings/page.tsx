@@ -8,10 +8,8 @@ import { supabase } from "../../lib/supabase";
 import { useLanguage, type Language } from "../../components/LanguageProvider";
 import { useTheme } from "../../components/ThemeProvider";
 import ThemeToast from "../../components/ThemeToast";
-
-type Theme = "system" | "dark" | "light";
-const normalizeTheme = (value: unknown): Theme =>
-  value === "dark" || value === "light" || value === "system" ? value : value === "dynamic" ? "dark" : "system";
+import BlockedAccountsSettings from "../../components/BlockedAccountsSettings";
+import { normalizeThemePreference } from "../../lib/theme-preference";
 
 export default function SettingsPage() {
   const { t, language: activeLanguage, setLanguage: applyLanguage } = useLanguage();
@@ -31,7 +29,7 @@ export default function SettingsPage() {
   useEffect(() => {
     const localTheme = localStorage.getItem("hoopcheck-theme");
     const localLanguage = localStorage.getItem("hoopcheck-language");
-    if (localTheme) setTheme(normalizeTheme(localTheme));
+    if (localTheme) setTheme(normalizeThemePreference(localTheme));
     if (localLanguage && ["en", "es", "fr", "de", "tr", "pt", "it", "el", "ar", "ru", "az", "pl", "zh", "ja", "sr", "fi", "he", "lt", "uk"].includes(localLanguage)) {
       setLanguage(localLanguage as Language);
     }
@@ -47,7 +45,7 @@ export default function SettingsPage() {
       if (!active) return;
       setIsPlayer(profile?.account_type === "player");
       const cookieHasTheme = document.cookie.split(";").some((item) => item.trim().startsWith("hoopcheck-theme="));
-      if (profile?.theme_preference && !localTheme && !cookieHasTheme) setTheme(normalizeTheme(profile.theme_preference));
+      if (profile?.theme_preference && !localTheme && !cookieHasTheme) setTheme(normalizeThemePreference(profile.theme_preference));
       if (!languageChangedByUser.current && profile?.preferred_language && ["en", "es", "fr", "de", "tr", "pt", "it", "el", "ar", "ru", "az", "pl", "zh", "ja", "sr", "fi", "he", "lt", "uk"].includes(profile.preferred_language)) {
         setLanguage(profile.preferred_language as Language);
       }
@@ -71,15 +69,16 @@ export default function SettingsPage() {
       const { data: sessionData } = await supabase.auth.getSession();
       const user = sessionData.session?.user;
       if (user) {
+        const syncTheme = nextTheme !== "midnight";
         const [{ error: profileError }, { error: preferencesError }] = await Promise.all([
           supabase.from("profiles").update({
-            theme_preference: nextTheme,
+            ...(syncTheme ? { theme_preference: nextTheme } : {}),
             preferred_language: nextLanguage,
           }).eq("id", user.id),
           // user_preferences has theme + notifications_enabled; language belongs to profiles.
           supabase.from("user_preferences").upsert({
             user_id: user.id,
-            theme: nextTheme,
+            ...(syncTheme ? { theme: nextTheme } : {}),
             notifications_enabled: nextNotifications,
             updated_at: new Date().toISOString(),
           }, { onConflict: "user_id" }),
@@ -127,10 +126,13 @@ export default function SettingsPage() {
             <span className="card-kicker">{t("visualMode")}</span>
             <h2>{t("chooseAtmosphere")}</h2>
             <div className="theme-options">
-              {(["system", "dark", "light"] as Theme[]).map((option) => (
-                <button key={option} className={"theme-option " + (theme === option ? "active" : "")} onClick={() => void save(option, notifications, language)} type="button" aria-pressed={theme === option}>
-                  <strong>{option === "system" ? t("useDeviceSetting") : option === "dark" ? t("darkMode") : t("lightMode")}</strong>
-                  <small>{option === "system" ? t("followDeviceAppearance") : option === "dark" ? t("asphaltBlack") : t("cleanHardwood")}</small>
+              {(["system", "dark", "light", "midnight"] as const).map((option) => (
+                <button key={option} className={"theme-option " + (theme === option ? "active" : "")} onClick={() => {
+                  if (option === "midnight") setTheme(option);
+                  else void save(option, notifications, language);
+                }} type="button" aria-pressed={theme === option}>
+                  <strong>{option === "system" ? t("useDeviceSetting") : option === "dark" ? t("darkMode") : option === "midnight" ? "Midnight Black" : t("lightMode")}</strong>
+                  <small>{option === "system" ? t("followDeviceAppearance") : option === "dark" ? t("asphaltBlack") : option === "midnight" ? "Deep black surfaces on this device" : t("cleanHardwood")}</small>
                 </button>
               ))}
             </div>
@@ -155,6 +157,7 @@ export default function SettingsPage() {
               <Link href="/account/security">Security settings</Link>
             </div>
           </section>
+          <BlockedAccountsSettings />
         </div>
         <ThemeToast className="settings-save" tone={saving ? "info" : "success"}>{saving ? t("saving") : saveMessage || t("saved") + " " + t("otherPreferencesAutoSave")}</ThemeToast>
       </section>

@@ -21,7 +21,33 @@ REVOKE ALL ON FUNCTION hoopcheck_deletion_private.caller_not_frozen() FROM publi
 GRANT USAGE ON SCHEMA hoopcheck_deletion_private TO authenticated;
 GRANT EXECUTE ON FUNCTION hoopcheck_deletion_private.caller_not_frozen() TO authenticated;
 
--- Existing policies remain unchanged. A restrictive rule ANDs with them.
+-- A caller-bound proof for privileged server endpoints before they use service
+-- credentials. The caller's verified JWT, not a supplied UUID, selects the row.
+-- This is deliberately a separate proof from getUser or JWT expiry.
+CREATE OR REPLACE FUNCTION hoopcheck_deletion_private.active_caller_session()
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $$
+ SELECT coalesce(
+  auth.uid() IS NOT NULL AND auth.jwt()->>'role'='authenticated'
+  AND coalesce(auth.jwt()->>'is_anonymous','false')='false'
+  AND NOT (auth.jwt() ? 'client_id')
+  AND hoopcheck_deletion_private.caller_not_frozen()
+  AND EXISTS(SELECT 1 FROM auth.sessions s JOIN auth.users u ON u.id=s.user_id
+    WHERE s.id::text=auth.jwt()->>'session_id' AND s.user_id=auth.uid()
+      AND (s.not_after IS NULL OR s.not_after>now())
+      AND u.role='authenticated' AND (u.banned_until IS NULL OR u.banned_until<=now())),
+  false)
+$$;
+REVOKE ALL ON FUNCTION hoopcheck_deletion_private.active_caller_session() FROM public,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION hoopcheck_deletion_private.active_caller_session() TO authenticated;
+CREATE OR REPLACE FUNCTION public.confirm_active_account_session()
+RETURNS boolean LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$
+ SELECT hoopcheck_deletion_private.active_caller_session()
+$$;
+REVOKE ALL ON FUNCTION public.confirm_active_account_session() FROM public,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.confirm_active_account_session() TO authenticated;
+
+-- Existing policies remain unchanged. Require the same live, unfrozen session
+-- for rows served through PostgREST, Storage and Realtime.
 -- Newly created tables must receive the same protection before rollout.
 DO $$ DECLARE t record; BEGIN
  FOR t IN SELECT n.nspname,c.relname FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
@@ -29,7 +55,7 @@ DO $$ DECLARE t record; BEGIN
   AND (n.nspname='public' OR (n.nspname='storage' AND c.relname='objects') OR (n.nspname='realtime' AND c.relname='messages'))
  LOOP
   EXECUTE format('DROP POLICY IF EXISTS hoopcheck_deletion_freeze ON %I.%I',t.nspname,t.relname);
-  EXECUTE format('CREATE POLICY hoopcheck_deletion_freeze ON %I.%I AS RESTRICTIVE FOR ALL TO authenticated USING ((SELECT hoopcheck_deletion_private.caller_not_frozen())) WITH CHECK ((SELECT hoopcheck_deletion_private.caller_not_frozen()))',t.nspname,t.relname);
+  EXECUTE format('CREATE POLICY hoopcheck_deletion_freeze ON %I.%I AS RESTRICTIVE FOR ALL TO authenticated USING ((SELECT hoopcheck_deletion_private.active_caller_session())) WITH CHECK ((SELECT hoopcheck_deletion_private.active_caller_session()))',t.nspname,t.relname);
  END LOOP;
 END $$;
 
@@ -50,8 +76,8 @@ RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path='' AS $$
 BEGIN
  PERFORM hoopcheck_security.require_mfa();
  IF auth.jwt()->>'role'='authenticated' THEN
-  IF NOT hoopcheck_deletion_private.caller_not_frozen() THEN
-   RAISE EXCEPTION 'Account deletion is processing' USING ERRCODE='42501';
+  IF NOT hoopcheck_deletion_private.active_caller_session() THEN
+   RAISE EXCEPTION 'Account session is unavailable' USING ERRCODE='42501';
   END IF;
  END IF;
 END $$;
@@ -138,28 +164,3 @@ RETURNS boolean LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$
 $$;
 REVOKE ALL ON FUNCTION public.verify_deletion_auth_login_block(uuid,uuid,uuid) FROM public,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION public.verify_deletion_auth_login_block(uuid,uuid,uuid) TO service_role;
-
--- A caller-bound proof for privileged server endpoints before they use service
--- credentials. The caller's verified JWT, not a supplied UUID, selects the row.
--- This is deliberately a separate proof from getUser or JWT expiry.
-CREATE OR REPLACE FUNCTION hoopcheck_deletion_private.active_caller_session()
-RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $$
- SELECT coalesce(
-  auth.uid() IS NOT NULL AND auth.jwt()->>'role'='authenticated'
-  AND coalesce(auth.jwt()->>'is_anonymous','false')='false'
-  AND NOT (auth.jwt() ? 'client_id')
-  AND hoopcheck_deletion_private.caller_not_frozen()
-  AND EXISTS(SELECT 1 FROM auth.sessions s JOIN auth.users u ON u.id=s.user_id
-    WHERE s.id::text=auth.jwt()->>'session_id' AND s.user_id=auth.uid()
-      AND (s.not_after IS NULL OR s.not_after>now())
-      AND u.role='authenticated' AND (u.banned_until IS NULL OR u.banned_until<=now())),
-  false)
-$$;
-REVOKE ALL ON FUNCTION hoopcheck_deletion_private.active_caller_session() FROM public,anon,authenticated,service_role;
-GRANT EXECUTE ON FUNCTION hoopcheck_deletion_private.active_caller_session() TO authenticated;
-CREATE OR REPLACE FUNCTION public.confirm_active_account_session()
-RETURNS boolean LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$
- SELECT hoopcheck_deletion_private.active_caller_session()
-$$;
-REVOKE ALL ON FUNCTION public.confirm_active_account_session() FROM public,anon,authenticated,service_role;
-GRANT EXECUTE ON FUNCTION public.confirm_active_account_session() TO authenticated;

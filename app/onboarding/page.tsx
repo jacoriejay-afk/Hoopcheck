@@ -6,8 +6,10 @@ import {useRouter} from "next/navigation";
 import Link from "next/link";
 import {supabase} from "../../lib/supabase";
 import TeamLeaguePicker from "../../components/TeamLeaguePicker";
+import { readOwnProfile } from "../../lib/read-own-profile";
+import { isOnboardingRole, safeOnboardingReturn, type OnboardingRole } from "../../lib/onboarding-boundary";
 
-type AccountType="player"|"coach"|"scout"|"agent"|"fan";
+type AccountType=OnboardingRole;
 
 export default function OnboardingPage(){
  const router=useRouter();
@@ -17,31 +19,56 @@ export default function OnboardingPage(){
  const [country,setCountry]=useState(""); const [favoriteTeamName,setFavoriteTeamName]=useState("");
  const [basketballType,setBasketballType]=useState<"mens"|"womens">("mens");
  const [loading,setLoading]=useState(true); const [saving,setSaving]=useState(false); const [message,setMessage]=useState(""); const [returnTo,setReturnTo]=useState("");
+ const [owner,setOwner]=useState<string|null>(null); const [loadFailed,setLoadFailed]=useState(false);
 
- useEffect(()=>{const candidate=new URLSearchParams(window.location.search).get("returnTo")||"";if(candidate.startsWith("/")&&!candidate.startsWith("//")&&!candidate.includes("\\")&&!candidate.startsWith("/login"))setReturnTo(candidate);(async()=>{
-  const {data:{session}}=await supabase.auth.getSession();
-  if(!session?.user){router.replace("/login");return;}
-  const {data:p}=await supabase.from("profiles").select("display_name,account_type,bio,position,years_pro,country,basketball_type,favorite_teams").eq("id",session.user.id).maybeSingle();
-  setAccountType((p?.account_type||session.user.user_metadata?.account_type||"player") as AccountType);
-  setDisplayName(p?.display_name||session.user.user_metadata?.full_name||""); setBio(p?.bio||"");
-  setPosition(p?.position||"PG"); setYearsPro(String(p?.years_pro??0)); setCountry(p?.country||""); setBasketballType(p?.basketball_type||"mens");
-  if(p?.favorite_teams){setFavoriteTeamName(String(p.favorite_teams).split(",")[0].trim());}
-  setLoading(false);
- })()},[router]);
+ useEffect(()=>{
+  let active=true;
+  setReturnTo(safeOnboardingReturn(new URLSearchParams(window.location.search).get("returnTo"),window.location.origin));
+  void (async()=>{try{
+   const {data:{user},error:authError}=await supabase.auth.getUser();
+   if(!active)return;
+   if(authError)throw authError;
+   if(!user){router.replace("/login");return;}
+   const {data:p,error}=await readOwnProfile<{id:string;account_type:unknown;display_name:string|null;bio:string|null;position:string|null;years_pro:number|null;country:string|null;basketball_type:string|null;favorite_teams:string|null}>(user.id,"id,display_name,account_type,bio,position,years_pro,country,basketball_type,favorite_teams");
+   if(!active)return;
+   if(error||!p||p.id!==user.id||!isOnboardingRole(p.account_type))throw new Error("Profile unavailable");
+   setOwner(user.id); setAccountType(p.account_type);
+   setDisplayName(p.display_name||""); setBio(p.bio||"");
+   setPosition(p.position||"PG"); setYearsPro(String(p.years_pro??0)); setCountry(p.country||""); setBasketballType(p.basketball_type==="womens"?"womens":"mens");
+   setFavoriteTeamName(String(p.favorite_teams||"").split(",")[0].trim());
+  }catch{if(active)setLoadFailed(true);}finally{if(active)setLoading(false);}})();
+  return()=>{active=false;};
+ },[router]);
 
  async function save(){
+  if(saving||!owner||loadFailed)return;
   setSaving(true);setMessage("");
-  const {data:{user}}=await supabase.auth.getUser(); if(!user){router.replace("/login");return;}
-  const favorite=favoriteTeamName;
-  const updates:any={display_name:displayName.trim().slice(0,80)||null,bio:bio.trim().slice(0,500)||null,favorite_teams:favorite,basketball_type:basketballType};
-  if(accountType==="player"){updates.position=position;updates.years_pro=Number(yearsPro);updates.country=country||null;}
-  const {error}=await supabase.from("profiles").update(updates).eq("id",user.id);
-  if(error)setMessage(error.message);else{setMessage("Profile setup saved.");setTimeout(()=>router.push(returnTo||"/dashboard"),500);}
-  setSaving(false);
+  try{
+   const {data:{user},error:authError}=await supabase.auth.getUser();
+   if(authError||!user||user.id!==owner)throw new Error("Account changed");
+   const {data:sessionData,error:sessionError}=await supabase.auth.getSession();
+   const session=sessionData.session;
+   if(sessionError||session?.user.id!==owner||!session.access_token)throw new Error("Account changed");
+   const token=session.access_token;
+   const {data:profile,error:profileError}=await readOwnProfile<{id:string;account_type:unknown}>(owner,"id,account_type");
+   if(profileError||!profile||profile.id!==owner||profile.account_type!==accountType)throw new Error("Role changed");
+   const current=await supabase.auth.getSession();
+   if(current.error||current.data.session?.user.id!==owner||current.data.session.access_token!==token)throw new Error("Session changed");
+   const updates:Record<string,string|number|null>={display_name:displayName.trim().slice(0,80)||null,bio:bio.trim().slice(0,500)||null,favorite_teams:favoriteTeamName};
+   if(accountType==="player"||accountType==="fan")updates.basketball_type=basketballType;
+   if(accountType==="player"){updates.position=position;updates.years_pro=Number(yearsPro);updates.country=country||null;}
+   const {data,error}=await supabase.from("profiles").update(updates).eq("id",owner).setHeader("Authorization",`Bearer ${token}`).select("id").maybeSingle();
+   if(error||data?.id!==owner)throw new Error("Save not confirmed");
+   const after=await supabase.auth.getSession();
+   if(after.error||after.data.session?.user.id!==owner||after.data.session.access_token!==token)throw new Error("Session changed");
+   router.replace(returnTo||"/dashboard");
+  }catch{setMessage("Your profile could not be saved. Check your connection or sign in again and retry.");}
+  finally{setSaving(false);}
  }
 
  if(loading)return <main className="page-shell"><HoopLoading label="Loading HoopCheck…" /></main>;
- const label={player:"Player",coach:"Coach",scout:"Scout",agent:"Agent",fan:"Fan"}[accountType];
+ if(loadFailed||!owner)return <main className="page-shell"><div className="page-container"><section className="hero-card"><h1>Profile setup unavailable</h1><p role="alert">Your account profile could not be verified. Sign in again or contact support.</p><div className="actions"><Link className="btn" href="/login">Sign in</Link><Link className="btn dark" href="/support">Contact support</Link></div></section></div></main>;
+ const label={player:"Player",coach:"Coach",scout:"Scout",agent:"Agent",fan:"Fan",manager:"Team Manager"}[accountType];
  const nonPlayer=accountType!=="player";
  return <main className="page-shell hc-onboarding-page"><div className="page-container signup-complete-shell">
   <nav aria-label="Profile setup links" className="actions"><Link href="/support" className="btn dark">Help</Link><Link href="/login" className="btn dark">Sign in</Link></nav>
@@ -60,7 +87,7 @@ export default function OnboardingPage(){
    <TeamLeaguePicker mode="team" label="Team to follow" value={favoriteTeamName} returnValue="name" onChange={setFavoriteTeamName} basketballType={basketballType} placeholder="Search teams by name, city or country" />
    {accountType==="player"&&<div><label>Basketball</label><div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:6}}><button type="button" className={basketballType==="mens"?"btn":"btn dark"} onClick={()=>{setBasketballType("mens");setFavoriteTeamName("");}}>Men’s</button><button type="button" className={basketballType==="womens"?"btn":"btn dark"} onClick={()=>{setBasketballType("womens");setFavoriteTeamName("");}}>Women’s</button></div></div>}
    <label>Bio<textarea value={bio} onChange={e=>setBio(e.target.value)} rows={5} maxLength={500} placeholder="Tell the basketball community about yourself." /></label>
-   {message&&<p className="muted">{message}</p>}
+   {message&&<p className="muted" role="alert">{message}</p>}
    <button className="btn" onClick={save} disabled={saving}>{saving?"Saving...":"Save & Go to Dashboard"}</button>
   </section>
  </div></main>;

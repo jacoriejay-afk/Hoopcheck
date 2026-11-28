@@ -14,7 +14,7 @@ grant select on public.admin_roles to authenticated;
 \i supabase/migrations/20261106190000_add_account_deletion_requests.sql
 create schema hoopcheck_deletion_private;
 \i supabase/candidates/appstore_deletion_worker_state.sql
-\i .compliance-apple/supabase/candidates/appstore_apple_authorization_vault.sql
+\i supabase/candidates/appstore_apple_authorization_vault.sql
 \i supabase/candidates/appstore_deletion_apple_revocations.sql
 insert into auth.users values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',now(),'authenticated'),('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',now(),'authenticated');
 insert into auth.identities values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','apple','apple-a'),('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','apple','apple-b');

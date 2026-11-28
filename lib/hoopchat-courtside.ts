@@ -2,7 +2,7 @@ export type ChatRequest = {
   id:string; requester_id:string; player_id:string; message:string|null;
   status:string; created_at:string;
 };
-export type ChatMessage = {id:string; request_id:string; sender_id:string; body:string; created_at:string};
+export type ChatMessage = {id:string; request_id:string; sender_id:string; body:string; created_at:string; reply_to_id?:string|null};
 export type ChatContact = {id:string;display_name:string|null;username:string|null;account_type:string|null};
 export type ChatAppearance = {
   layout:"courtside"|"classic"; density:"comfortable"|"compact";
@@ -57,10 +57,23 @@ export function lastByThread(messages:ChatMessage[]){
 export function unreadCount(request:ChatRequest,messages:ChatMessage[],me:string,lastSeen:string|undefined){
   if(request.status!=="accepted")return request.status==="pending"&&request.player_id===me?1:0;
   return messages.filter(m=>m.request_id===request.id&&m.sender_id!==me
-    &&(!lastSeen||m.created_at>lastSeen)).length;
+    &&(!lastSeen||Date.parse(m.created_at)>Date.parse(lastSeen))).length;
 }
 export function sortThreads(rows:ChatRequest[],last:Map<string,ChatMessage>,pinned:string[]){
   const pins=new Set(pinned);
   return [...rows].sort((a,b)=>Number(pins.has(b.id))-Number(pins.has(a.id))
     ||(last.get(b.id)?.created_at||b.created_at).localeCompare(last.get(a.id)?.created_at||a.created_at));
+}
+
+/** A local seen marker must come from confirmed history, never an inbox preview. */
+export function advanceSeenMarker(rows:ChatMessage[],thread:string,viewer:string,previous:string|undefined){
+  if(!thread||!viewer)return previous;
+  let best=previous;
+  let time=best?Date.parse(best):NaN;
+  for(const row of rows){
+    if(row.request_id!==thread||row.sender_id===viewer)continue;
+    const next=Date.parse(row.created_at);
+    if(Number.isFinite(next)&&(!Number.isFinite(time)||next>time)){best=row.created_at;time=next;}
+  }
+  return best;
 }

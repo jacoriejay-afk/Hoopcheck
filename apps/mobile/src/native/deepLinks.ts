@@ -1,4 +1,5 @@
 import { supportTopic } from "./supportTopic.ts";
+import { appRecoveryPath, recoveryLink } from "../../../../lib/auth/password-recovery.ts";
 
 /** A shared group slug is a navigation hint, never an access credential. */
 export function parseGroupInvite(value:unknown):string|null {
@@ -10,17 +11,18 @@ export function findInvitedGroup<T extends {slug:string}>(visibleGroups:readonly
 }
 
 const host = "hoopcheck.online";
+export const canonicalWebOrigin = `https://${host}`;
 const safeId = /^[A-Za-z0-9_-]{1,100}$/;
 
 export function nativeDestination(path: string): string {
   try {
     if (path.length > 8192) return "/";
     const isRelative = path.startsWith("/") && !path.startsWith("//");
-    let url = new URL(path, `https://${host}`);
+    let url = new URL(path, canonicalWebOrigin);
     if (!isRelative && url.protocol === "hoopcheck:") {
       if (url.username || url.password || url.port) return "/";
       const nativePath = url.hostname ? `/${url.hostname}${url.pathname}` : url.pathname;
-      url = new URL(`${nativePath}${url.search}${url.hash}`, `https://${host}`);
+      url = new URL(`${nativePath}${url.search}${url.hash}`, canonicalWebOrigin);
     }
     if (url.protocol !== "https:" || url.hostname !== host || url.username || url.password || url.port) return "/";
     const parts = url.pathname.split("/").filter(Boolean);
@@ -97,17 +99,19 @@ export function nativeDestination(path: string): string {
       return "/search" + (serialized ? `?${serialized}` : "");
     }
 
-    if (url.pathname === "/auth/callback" || url.pathname === "/reset-password") {
+    if (url.pathname === "/reset-password" || url.pathname === appRecoveryPath) {
+      const fragment = new URLSearchParams(url.hash.slice(1));
+      const link = recoveryLink(url.searchParams, fragment);
+      if (link?.token) return `/reset-password?token_hash=${link.token}&type=recovery`;
+      if (link?.code && url.pathname === "/reset-password") return `/reset-password?code=${link.code}`;
+      return url.search || url.hash ? "/reset-password?error_code=invalid_link" : "/reset-password";
+    }
+    if (url.pathname === "/auth/callback") {
       // Re-encode only the PKCE/error fields understood by native auth screens.
       // Invalid percent sequences must not reach the router's legacy decoder.
       const query = new URLSearchParams();
       const code = url.searchParams.get("code");
-      const token = url.searchParams.get("token_hash");
-      if (url.pathname === "/reset-password" && code && token) return "/reset-password?error_code=invalid_link";
       if (code && code.length <= 2048 && url.searchParams.getAll("code").length === 1) query.set("code", code);
-      if (url.pathname === "/reset-password" && !code && token && token.length <= 2048 && url.searchParams.getAll("token_hash").length === 1 && url.searchParams.getAll("type").length === 1 && url.searchParams.get("type") === "recovery") {
-        query.set("token_hash", token); query.set("type", "recovery");
-      }
       const fragment = new URLSearchParams(url.hash.slice(1));
       for (const field of ["error", "error_description", "error_code"]) {
         const value = url.searchParams.get(field) ?? fragment.get(field);

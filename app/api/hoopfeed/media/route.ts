@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { feedMediaId, resolveFeedMedia } from "../../../../lib/feed-media-reference";
+import { expiringFeedMediaTtl, feedMediaId, resolveFeedMedia } from "../../../../lib/feed-media-reference";
 
 export const runtime = "nodejs";
 
@@ -42,21 +42,32 @@ export async function POST(request: Request) {
   let sourceId = postId;
   let kind: "image" | "video" | undefined;
   let media: ReturnType<typeof resolveFeedMedia> = null;
+  let earliestExpiry = Number.POSITIVE_INFINITY;
   while (true) {
     if (visited.has(sourceId) || visited.size >= 32) {
       return NextResponse.json({ error: "Post unavailable" }, { status: 404 });
     }
     visited.add(sourceId);
     const { data: post, error } = await viewer.from("feed_posts")
-      .select("author_id,image_url,image_urls,video_url,shared_post_id")
+      .select("author_id,image_url,image_urls,video_url,shared_post_id,expires_at,post_kind")
       .eq("id", sourceId).eq("status", "approved").maybeSingle();
     if (error || !post) return NextResponse.json({ error: "Post unavailable" }, { status: 404 });
+    if (post.expires_at !== null) {
+      const expiry = typeof post.expires_at === "string" ? Date.parse(post.expires_at) : NaN;
+      if (!Number.isFinite(expiry) || expiry <= Date.now()) return NextResponse.json({ error: "Post unavailable" }, { status: 404 });
+      earliestExpiry = Math.min(earliestExpiry, expiry);
+    }
 
     const attachedKind = post.video_url === mediaUrl ? "video"
       : post.image_url === mediaUrl || (Array.isArray(post.image_urls) && post.image_urls.includes(mediaUrl)) ? "image"
       : undefined;
     if (!attachedKind || (kind && attachedKind !== kind)) {
       return NextResponse.json({ error: "Media not attached to post" }, { status: 403 });
+    }
+    // Never sign a video Story on the strength of row approval alone,
+    // including when the attachment is reached through a source chain.
+    if (post.post_kind === "story" && attachedKind === "video") {
+      return NextResponse.json({ error:"Video Stories are unavailable" }, {status:404});
     }
     kind = attachedKind;
     if (!post.shared_post_id) {
@@ -68,7 +79,11 @@ export async function POST(request: Request) {
   if (!media) return NextResponse.json({ error: "Unsupported media reference" }, { status: 400 });
 
   const admin = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
-  const { data, error } = await admin.storage.from(media.bucket).createSignedUrl(media.path, 60);
-  if (error || !data?.signedUrl) return NextResponse.json({ error: "Media unavailable" }, { status: 404 });
-  return NextResponse.json({ url: data.signedUrl, expires_in: 60 }, { headers: { "Cache-Control": "no-store" } });
+  // Do not issue a full-minute link for a post or ancestor about to expire.
+  // Leave a conservative margin for signing latency and decline late responses.
+  const ttl = expiringFeedMediaTtl(earliestExpiry);
+  if (ttl < 1) return NextResponse.json({ error: "Post unavailable" }, { status: 404 });
+  const { data, error } = await admin.storage.from(media.bucket).createSignedUrl(media.path, ttl);
+  if (error || !data?.signedUrl || Date.now() + ttl * 1000 > earliestExpiry) return NextResponse.json({ error: "Media unavailable" }, { status: 404 });
+  return NextResponse.json({ url: data.signedUrl, expires_in: ttl }, { headers: { "Cache-Control": "no-store" } });
 }

@@ -21,3 +21,14 @@ Exit 1 means structural drift, 2 means invalid evidence, 0 means counts match on
 6. Require separately approved retention rules, complete worker effects, provider setup, signed device acceptance and deployment authorization. Do not mark #1073 complete from this audit.
 
 The existing project is a divergent fixture environment, not a production-equivalent staging database. This change provides a reproducible preflight, not a complete migration rehearsal.
+
+## Baseline and ledger handoff
+
+The database owner and an independent reviewer must provide the following artifacts through an approved private channel. Pin all artifacts to the same read-only catalog snapshot and record the source environment identity, UTC capture time, PostgreSQL 17 minor version, export tool and version, schema include and exclude list, and SHA-256 of each reviewed artifact.
+
+- Schema-only PostgreSQL export for the application-owned schemas and dependencies. Include table and column definitions, generated values, sequences, constraints and foreign keys, indexes, views, functions, triggers, comments relevant to security, RLS and forced-RLS flags and policies, object ownership, role memberships, object grants and default grants.
+- Managed-service contract for the required Auth, Storage and Realtime objects, role names, extensions and versions, publications, bucket configuration, and relevant cron job definitions with credentials and destinations redacted. Record which definitions the local service must supply and how each managed dependency was checked.
+- Applied migration ledger from the same source snapshot. Include every applied version, name where recorded, and a checksum or reviewed source mapping where available. Document manually applied deltas and unresolved mappings separately. Supply the pinned Git commit and file inventory for the forward-only guard.
+- Reviewer confirmation that the artifacts contain schema and operational metadata only. Exclude account rows, credentials, API keys, role passwords, signed URLs, storage object payloads, raw webhooks, and secret-bearing SQL configuration.
+
+Restore the reviewed baseline into a new network-isolated PostgreSQL 17 environment with local Auth and Storage equivalents. Compare object definitions and privileges before applying candidate migrations. Classify ledger discrepancies by inspected source and effective schema, and use a new forward migration for reviewed corrections. Keep applied historical files and ledger entries intact. Record baseline and candidate digests, the migration sequence, fixture outcomes, elapsed restore time, and the synthetic recovery point.
