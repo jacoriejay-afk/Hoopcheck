@@ -147,8 +147,8 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
       if(realtime||!alive||(AppState.currentState!=="active"&&AppState.currentState!==null)||process.env.EXPO_PUBLIC_HOOPGROUPS_REALTIME_ENABLED!=="true")return;
       const filter="channel_id=eq."+channel!.id;
       const subscription=supabase.channel("hoopgroups-native:"+userId+":"+channel!.id)
-        .on("postgres_changes",{event:"INSERT",schema:"public",table:"hoop_group_posts",filter},()=>queue.request())
-        .on("postgres_changes",{event:"UPDATE",schema:"public",table:"hoop_group_posts",filter},()=>queue.request());
+        .on("postgres_changes",{event:"INSERT",schema:"public",table:"hoop_group_posts",filter},()=>{if(realtime===subscription)queue.request();})
+        .on("postgres_changes",{event:"UPDATE",schema:"public",table:"hoop_group_posts",filter},()=>{if(realtime===subscription)queue.request();});
       realtime=subscription;
       subscription.subscribe(status=>{if(realtime===subscription&&status==="SUBSCRIBED")queue.request();});
     }
@@ -167,7 +167,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
         if(!alive||controller.signal.aborted)return;
         if(membership.error)throw Error("Membership could not be verified.");
         if(membership.data?.space_id!==channel!.space_id){
-          setJoined(current=>current.filter(id=>id!==channel!.space_id));setPostSnapshot(null);stopRealtime();return;
+          stopRealtime();setJoined(current=>current.filter(id=>id!==channel!.space_id));setPostSnapshot(null);return;
         }
         const blocked=await readOutgoingBlocks(supabase,userId,controller.signal);
         if(!alive||controller.signal.aborted)return;

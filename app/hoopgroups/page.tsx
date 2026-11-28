@@ -170,8 +170,8 @@ export default function HoopGroupsPage() {
       // consume payloads, publish tables, or subscribe across channels.
       const filter="channel_id=eq."+currentChannel;
       const subscription=supabase.channel("hoopgroups-web:"+userId+":"+currentChannel)
-        .on("postgres_changes",{event:"INSERT",schema:"public",table:"hoop_group_posts",filter},()=>queue.request())
-        .on("postgres_changes",{event:"UPDATE",schema:"public",table:"hoop_group_posts",filter},()=>queue.request());
+        .on("postgres_changes",{event:"INSERT",schema:"public",table:"hoop_group_posts",filter},()=>{if(realtime===subscription)queue.request();})
+        .on("postgres_changes",{event:"UPDATE",schema:"public",table:"hoop_group_posts",filter},()=>{if(realtime===subscription)queue.request();});
       realtime=subscription;
       subscription.subscribe(status=>{if(realtime===subscription&&status==="SUBSCRIBED")queue.request();});
     }

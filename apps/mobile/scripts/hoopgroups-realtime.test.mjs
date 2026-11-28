@@ -18,7 +18,7 @@ test("web and native use channel-scoped invalidation only after verified reads; 
  const native=readFileSync(new URL("../components/HoopGroupsChannels.tsx",import.meta.url),"utf8");
  const web=readFileSync(new URL("../../../app/hoopgroups/page.tsx",import.meta.url),"utf8");
  for(const source of [native,web]){
-  assert.match(source,/table:"hoop_group_posts",filter\},\(\)=>queue\.request\(\)/);
+  assert.match(source,/table:"hoop_group_posts",filter\},\(\)=>\{if\(realtime===subscription\)queue\.request\(\);/);
   assert.match(source,/const filter="channel_id=eq\."\+/);
   assert.match(source,/status==="SUBSCRIBED"\)queue\.request\(\)/);
   assert.match(source,/supabase\.removeChannel\(previous\)/);
