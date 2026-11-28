@@ -3,12 +3,14 @@ import type {createDisposablePlayRuntime} from "./disposable-runtime";
 type Runtime=ReturnType<typeof createDisposablePlayRuntime>;
 const response=(body:unknown,status=200)=>Response.json(body,{status,headers:{"Cache-Control":"no-store"}});
 /** In-process test transport. No deployed route or provider credentials. */
-export function createDisposablePlayHandler(runtime:Runtime,scope:"disposable_pg17"){
+export function createDisposablePlayHandler(runtime:Runtime,scope:"disposable_pg17",approvedOrigin="https://fixture.invalid"){
  if(scope!=="disposable_pg17")throw Error("Disposable runtime required");
+ const origin=new URL(approvedOrigin);
+ if(origin.protocol!=="https:"||origin.href!==origin.origin+"/"||/(^|\.)hoopcheck\.online$/i.test(origin.hostname)||origin.hostname==="ucbdceaieyenljcwlhnj.supabase.co")throw Error("Isolated runtime origin required");
  return async(request:Request):Promise<Response>=>{
   try{
    const url=new URL(request.url);
-   if(url.origin!=="https://fixture.invalid"||url.search||request.method!=="POST")return response(null,404);
+   if(url.origin!==origin.origin||url.search||request.method!=="POST")return response(null,404);
    const action=url.pathname.match(/^\/api\/mobile\/play\/runtime\/(identity|issue|consume|sync|replacement)$/)?.[1];
    if(!action||!request.headers.get("content-type")?.startsWith("application/json"))return response(null,400);
    const reader=request.body?.getReader();if(!reader)return response(null,400);

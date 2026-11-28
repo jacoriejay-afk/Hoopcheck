@@ -15,3 +15,31 @@ export function createPlayCredentialDeletionEffect(db:Db,guards:{assertLease(lea
   return {confirmed:true as const,receipt:"play_test_credentials_purged"};
  };
 }
+
+/** Attach to #1203 freeze_account_writes, before session revocation, and to
+ * preserve_lawful_billing_records only after the policy explicitly approves
+ * credential purge. No retention duration is inferred by this adapter. */
+export function composePlayDeletionEffects<T extends {confirmed:true;receipt:string}>(db:Db,guards:{assertLease(lease:Lease):Promise<void>;assertFrozen(lease:Lease):Promise<void>;assertApprovedCredentialPurge(lease:Lease):Promise<void>},existing:{
+ freeze_account_writes:(lease:Lease,key:string)=>Promise<T>;
+ preserve_lawful_billing_records:(lease:Lease,key:string)=>Promise<T>;
+}){
+ const purge=createPlayCredentialDeletionEffect(db,guards);
+ return {
+  async freeze_account_writes(lease:Lease,key:string){
+   if(key!==lease.requestId+":freeze_account_writes")throw Error("Invalid deletion step");
+   await guards.assertLease(lease);
+   const result=await existing.freeze_account_writes(lease,key);
+   if(result.confirmed!==true)throw Error("Freeze not confirmed");
+   await guards.assertLease(lease);await guards.assertFrozen(lease);
+   if(!await db.holdOwner(lease.ownerId))throw Error("Play hold unavailable");
+   return result;
+  },
+  async preserve_lawful_billing_records(lease:Lease,key:string){
+   if(key!==lease.requestId+":preserve_lawful_billing_records")throw Error("Invalid deletion step");
+   await guards.assertLease(lease);await guards.assertFrozen(lease);await guards.assertApprovedCredentialPurge(lease);
+   const result=await existing.preserve_lawful_billing_records(lease,key);
+   if(result.confirmed!==true)throw Error("Billing retention not confirmed");
+   await purge(lease);return result;
+  }
+ };
+}

@@ -231,7 +231,7 @@ create policy binding_read on play_billing_candidate.intent_purchase_bindings fo
 create policy binding_write on play_billing_candidate.intent_purchase_bindings for insert to service_role with check(true);
 create trigger hold_binding_write before insert on play_billing_candidate.intent_purchase_bindings for each row execute function play_billing_candidate.guard_test_owner_write();
 create function play_billing_candidate.claim_bound_test_purchase(
- p_owner uuid,p_account text,p_fingerprint text,p_envelope text,p_product text,p_plan text,p_intent uuid
+ p_owner uuid,p_account text,p_fingerprint text,p_envelope text,p_product text,p_plan text,p_intent uuid,p_previous text default null
 ) returns text language plpgsql volatile security invoker set search_path='' as $body$
 declare i uuid; existing uuid; result text;
 begin
@@ -251,6 +251,8 @@ begin
  -- Consumed intents are immutable by RLS; the owner advisory lock already serializes binding.
  ;
  if not found then return 'retry'; end if;
+ if exists(select 1 from play_billing_candidate.replacement_intents where intent_id=i and (p_previous is null or previous_fingerprint<>p_previous or owner_id<>p_owner))
+ or (p_previous is not null and not exists(select 1 from play_billing_candidate.replacement_intents where intent_id=i and previous_fingerprint=p_previous and owner_id=p_owner)) then return 'catalog_conflict'; end if;
  result:=play_billing_candidate.claim_test_purchase(p_fingerprint,p_owner,1::smallint,p_envelope,p_product,p_plan);
  if result not in ('claimed','already_claimed') then return result; end if;
  insert into play_billing_candidate.intent_purchase_bindings(intent_id,fingerprint,owner_id) values(i,p_fingerprint,p_owner);
@@ -266,8 +268,8 @@ begin
  return play_billing_candidate.commit_test_fulfillment(p_fingerprint,p_owner,p_generation,p_expiry);
 end
 $body$;
-revoke all on function play_billing_candidate.claim_bound_test_purchase(uuid,text,text,text,text,text,uuid),play_billing_candidate.finish_and_fulfill_test_purchase(text,uuid,bigint,text,timestamptz) from public,anon,authenticated,service_role;
-grant execute on function play_billing_candidate.claim_bound_test_purchase(uuid,text,text,text,text,text,uuid),play_billing_candidate.finish_and_fulfill_test_purchase(text,uuid,bigint,text,timestamptz) to service_role;
+revoke all on function play_billing_candidate.claim_bound_test_purchase(uuid,text,text,text,text,text,uuid,text),play_billing_candidate.finish_and_fulfill_test_purchase(text,uuid,bigint,text,timestamptz) from public,anon,authenticated,service_role;
+grant execute on function play_billing_candidate.claim_bound_test_purchase(uuid,text,text,text,text,text,uuid,text),play_billing_candidate.finish_and_fulfill_test_purchase(text,uuid,bigint,text,timestamptz) to service_role;
 -- Immutable same-owner replacement chain. A reservation does not suppress
 -- the predecessor until the successor has acknowledged, fulfilled evidence.
 create table play_billing_candidate.purchase_replacements(
@@ -336,7 +338,7 @@ begin
  and not exists(select 1 from play_billing_candidate.purchase_replacements where previous_fingerprint=p_old and successor_fingerprint=p_new and owner_id=p_owner) then return 'catalog_conflict'; end if;
  if not exists(select 1 from play_billing_candidate.purchase_replacements where previous_fingerprint=p_old and successor_fingerprint=p_new and owner_id=p_owner)
  and not exists(select 1 from play_billing_candidate.replacement_intents where intent_id=p_intent and owner_id=p_owner and previous_fingerprint=p_old) then return 'catalog_conflict'; end if;
- result:=play_billing_candidate.claim_bound_test_purchase(p_owner,p_account,p_new,p_envelope,p_product,p_plan,p_intent);
+ result:=play_billing_candidate.claim_bound_test_purchase(p_owner,p_account,p_new,p_envelope,p_product,p_plan,p_intent,p_old);
  if result not in ('claimed','already_claimed') then return result; end if;
  insert into play_billing_candidate.purchase_replacements(previous_fingerprint,successor_fingerprint,owner_id)
  values(p_old,p_new,p_owner) on conflict(previous_fingerprint) do nothing;
