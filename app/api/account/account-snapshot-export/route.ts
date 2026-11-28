@@ -12,10 +12,8 @@ const headers = {
 const limit = 100;
 const maxBytes = 4 * 1024 * 1024;
 const uuid = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
-const profileFields = ["id","display_name","username","first_name","last_name","bio","account_type",
-  "country","current_country","current_country_public","current_team","position","years_pro",
-  "basketball_type","profile_visibility","free_agent","created_at","updated_at","preferred_language",
-  "theme_preference","agreed_to_terms","terms_accepted_at","terms_version"] as const;
+// Keep this allowlist within the reviewed get_own_profile RPC projection.
+const profileFields = ["id","display_name","username","first_name","last_name","bio","account_type","current_country","current_country_public","current_team","position","years_pro","profile_visibility","free_agent","created_at","updated_at","agreed_to_terms"] as const;
 const sections = [
   { name:"reviews", table:"reviews", owner:"author_id", fields:["id","title","body","status","overall_rating","player_season","team_id","coach_id","league_id","is_anonymous","created_at"] },
   { name:"womens_reviews", table:"womens_team_reviews", owner:"author_id", fields:["id","title","body","status","overall_rating","womens_team_id","is_anonymous","created_at"] },
