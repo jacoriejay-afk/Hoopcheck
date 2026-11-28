@@ -92,9 +92,10 @@ export default function TeamReviewScreen() {
     if (!/^\d{4}(-\d{2,4})?$/.test(season.trim())) {
       setError("Enter the season you played for this team (for example, 2025-26)."); return;
     }
-    if (body.trim().length < 10 || body.trim().length > 5000) {
-      setError("Your review must be between 10 and 5,000 characters."); return;
+    if (Array.from(body.trim()).length < 20 || body.trim().length > 5000) {
+      setError("Your review must be between 20 and 5,000 characters."); return;
     }
+    if (title.trim() && Array.from(title.trim()).length < 3) { setError("The title must be at least 3 characters."); return; }
     if (title.trim().length > 120) { setError("The title must be 120 characters or fewer."); return; }
 
     setSubmitting(true);
@@ -174,7 +175,7 @@ export default function TeamReviewScreen() {
         <TextInput value={title} onChangeText={setTitle} placeholder="Summarize your experience" placeholderTextColor={theme.muted} style={styles.input} maxLength={120} />
         <Text style={styles.label}>YOUR REVIEW</Text>
         <TextInput value={body} onChangeText={setBody} placeholder="Describe your experience with specific, factual details. Avoid personal information and claims you cannot support." placeholderTextColor={theme.muted} style={[styles.input, styles.textArea]} multiline textAlignVertical="top" maxLength={5000} />
-        <Text style={styles.charCount}>{body.length}/5000 characters (minimum 10)</Text>
+        <Text style={styles.charCount}>{body.length}/5000 characters (minimum 20)</Text>
         <View style={styles.anonymousRow}>
           <View style={styles.anonymousCopy}>
             <Text style={styles.anonymousTitle}>Submit anonymously</Text>

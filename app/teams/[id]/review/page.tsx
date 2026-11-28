@@ -317,7 +317,7 @@ export default function TeamReviewPage() {
     if (
       trimmedTitle.length > 0 &&
       (
-        trimmedTitle.length < 3 ||
+        Array.from(trimmedTitle).length < 3 ||
         trimmedTitle.length > 120
       )
     ) {
@@ -328,11 +328,11 @@ export default function TeamReviewPage() {
     }
 
     if (
-      trimmedBody.length < 10 ||
+      Array.from(trimmedBody).length < 20 ||
       trimmedBody.length > 5000
     ) {
       setMessage(
-        "Your review must be between 10 and 5,000 characters."
+        "Your review must be between 20 and 5,000 characters."
       );
       return;
     }
@@ -654,7 +654,7 @@ export default function TeamReviewPage() {
                 )
               }
               placeholder="Share your experience with this team..."
-              minLength={10}
+              minLength={20}
               maxLength={5000}
               required
             />
