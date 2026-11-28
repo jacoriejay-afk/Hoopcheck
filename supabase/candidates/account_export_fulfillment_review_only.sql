@@ -11,7 +11,9 @@ CREATE TABLE hoopcheck_export_private.policy (
  download_ttl interval CHECK(download_ttl > interval '0'),
  max_attempts integer CHECK(max_attempts BETWEEN 1 AND 20),
  retry_delay interval CHECK(retry_delay > interval '0'),
- CHECK(NOT enabled OR (scope_version='owned-records-v1' AND download_ttl IS NOT NULL AND max_attempts IS NOT NULL AND retry_delay IS NOT NULL))
+ request_interval interval CHECK(request_interval > interval '0'),
+ max_rows integer CHECK(max_rows BETWEEN 1 AND 1000000),
+ CHECK(NOT enabled OR (scope_version='owned-records-v1' AND download_ttl IS NOT NULL AND max_attempts IS NOT NULL AND retry_delay IS NOT NULL AND request_interval IS NOT NULL AND max_rows IS NOT NULL))
 );
 INSERT INTO hoopcheck_export_private.policy(singleton) VALUES(true);
 CREATE TABLE hoopcheck_export_private.jobs (
@@ -27,6 +29,7 @@ CREATE TABLE hoopcheck_export_private.jobs (
  row_count bigint NOT NULL DEFAULT 0 CHECK(row_count>=0),
  CHECK(state<>'ready' OR expires_at IS NOT NULL)
 );
+CREATE INDEX export_owner_request_history ON hoopcheck_export_private.jobs(owner_id,created_at DESC);
 CREATE UNIQUE INDEX export_one_active_per_owner ON hoopcheck_export_private.jobs(owner_id) WHERE state IN ('queued','ready');
 CREATE TABLE hoopcheck_export_private.records (
  job_id uuid NOT NULL REFERENCES hoopcheck_export_private.jobs(id) ON DELETE CASCADE,
@@ -90,6 +93,8 @@ BEGIN
  IF NOT FOUND AND p_action='request' THEN
   SELECT * INTO j FROM hoopcheck_export_private.jobs WHERE owner_id=uid AND state IN ('queued','ready') FOR UPDATE;
   IF NOT FOUND THEN
+   IF EXISTS(SELECT 1 FROM hoopcheck_export_private.jobs WHERE owner_id=uid AND created_at>clock_timestamp()-pol.request_interval)
+   THEN RAISE EXCEPTION 'Export request unavailable' USING ERRCODE='42501'; END IF;
    INSERT INTO hoopcheck_export_private.jobs(id,owner_id,scope_version,state) VALUES(p_job,uid,pol.scope_version,'queued') ON CONFLICT(id) DO NOTHING RETURNING * INTO j;
    IF NOT FOUND THEN RAISE EXCEPTION 'Export unavailable' USING ERRCODE='42501'; END IF;
    INSERT INTO hoopcheck_export_private.events(job_id,event) VALUES(j.id,'queued');
@@ -110,7 +115,9 @@ BEGIN
   THEN RAISE EXCEPTION 'Export integrity check failed'; END IF;
   IF j.expires_at<=clock_timestamp() OR hoopcheck_export_private.verified_owner() IS DISTINCT FROM uid
   THEN RAISE EXCEPTION 'Export unavailable' USING ERRCODE='42501'; END IF;
-  INSERT INTO hoopcheck_export_private.events(job_id,event) VALUES(j.id,'download');
+  IF NOT EXISTS(SELECT 1 FROM hoopcheck_export_private.events WHERE job_id=j.id AND event='download') THEN
+   INSERT INTO hoopcheck_export_private.events(job_id,event) VALUES(j.id,'download');
+  END IF;
   RETURN jsonb_build_object('id',j.id,'scope',j.scope_version,'complete',false,'rows',page,'next_after',CASE WHEN last_ordinal<j.row_count THEN last_ordinal ELSE NULL END,'row_count',j.row_count,'expires_at',j.expires_at);
  END IF;
  RETURN jsonb_build_object('id',j.id,'state',j.state,'scope',j.scope_version,'complete',false,'row_count',j.row_count,'expires_at',j.expires_at);
@@ -199,8 +206,9 @@ BEGIN
  SELECT 'posting_activity'::text AS section, to_jsonb(r) AS payload FROM (SELECT activity_date,created_at FROM public.feed_posting_activity WHERE user_id=j.owner_id) r
  UNION ALL
  SELECT 'live_chat_messages'::text AS section, to_jsonb(r) AS payload FROM (SELECT id,game_id,body,created_at FROM public.fan_live_chat_messages WHERE user_id=j.owner_id) r
-  ) q;
+  ) q LIMIT pol.max_rows+1;
   GET DIAGNOSTICS n=ROW_COUNT;
+  IF n>pol.max_rows THEN RAISE EXCEPTION 'Export exceeds approved row limit'; END IF;
   UPDATE hoopcheck_export_private.jobs SET state='ready',row_count=n,finished_at=clock_timestamp(),expires_at=clock_timestamp()+pol.download_ttl WHERE id=j.id;
   INSERT INTO hoopcheck_export_private.events(job_id,event) VALUES(j.id,'ready');
   RETURN 'ready';

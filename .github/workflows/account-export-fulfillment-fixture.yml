@@ -1,0 +1,37 @@
+name: Account export fulfillment synthetic fixture
+on:
+  pull_request:
+    paths:
+      - 'supabase/candidates/account_export_fulfillment_review_only.sql'
+      - 'supabase/tests/account_export_fulfillment_isolated.sql'
+      - '.github/workflows/account-export-fulfillment-fixture.yml'
+permissions:
+  contents: read
+jobs:
+  fixture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: synthetic_fixture_only
+          POSTGRES_DB: hoopcheck_export_fixture
+        options: >-
+          --health-cmd "pg_isready -U postgres -d hoopcheck_export_fixture"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Run isolated synthetic lifecycle
+        env:
+          FIXTURE_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          set -euo pipefail
+          docker exec "$FIXTURE_CONTAINER" mkdir -p /tmp/export-fixture/candidates /tmp/export-fixture/tests
+          docker cp supabase/candidates/account_export_fulfillment_review_only.sql "$FIXTURE_CONTAINER:/tmp/export-fixture/candidates/"
+          docker cp supabase/tests/account_export_fulfillment_isolated.sql "$FIXTURE_CONTAINER:/tmp/export-fixture/tests/"
+          docker exec "$FIXTURE_CONTAINER" psql -X -v ON_ERROR_STOP=1 -U postgres -d hoopcheck_export_fixture -f /tmp/export-fixture/tests/account_export_fulfillment_isolated.sql
