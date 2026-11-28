@@ -1,6 +1,6 @@
 import { blockNativeAccount, readOutgoingBlocks } from "../src/native/accountBlocking";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, AppState, Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
+import { Alert, AppState, Platform, Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { Button, GlassCard } from "../src/primitives";
 import { useEntryTheme } from "../src/theme";
@@ -10,6 +10,8 @@ import { useNativeAccount } from "../src/native/useNativeAccount";
 import { GroupModerationPanel } from "./GroupModerationPanel";
 import { HoopCheckLoading } from "./HoopCheckLoading";
 import { randomUUID } from "expo-crypto";
+import { deleteItemAsync, getItemAsync, setItemAsync, WHEN_UNLOCKED_THIS_DEVICE_ONLY } from "expo-secure-store";
+import { createGroupOutbox } from "../src/native/hoopGroupsOutbox";
 import { readGroupUnread,markGroupVisibleRead,type GroupUnread } from "../src/native/hoopGroupsRead";
 import { prepareGroupSend, submitGroupSend, type GroupSend } from "../src/native/hoopGroupsSend";
 import { createGroupRefreshQueue } from "../src/native/hoopGroupsRefresh";
@@ -29,6 +31,11 @@ function validateGroupPostRows(value:unknown,replies:boolean):Post[]{
  });
 }
 
+const outbox = Platform.OS === "web" ? null : createGroupOutbox({
+  getItem: key => getItemAsync(key),
+  setItem: (key, value) => setItemAsync(key, value, { keychainAccessible: WHEN_UNLOCKED_THIS_DEVICE_ONLY }),
+  removeItem: key => deleteItemAsync(key),
+});
 const repliesEnabled=process.env.EXPO_PUBLIC_HOOPGROUPS_REPLIES_ENABLED==="true";
 const readStateEnabled=process.env.EXPO_PUBLIC_HOOPGROUPS_READ_STATE_ENABLED==="true";
 const colorOptions = { orange:"#FF873C", blue:"#60A5FA", purple:"#A78BFA", green:"#4ADE80", pink:"#F472B6", gold:"#FBBF24" } as const;
@@ -40,7 +47,7 @@ export default function HoopGroupsChannels({inviteSlug = null}:{inviteSlug?:stri
   const {offline}=useNetwork();
   const userId=account?.user.id||"";
   // Never carry a previous account's local membership, drafts or requests across identities.
-  return <ScopedHoopGroups key={JSON.stringify([userId,offline])} userId={userId} offline={offline} role={account?.user.accountType||""} inviteSlug={inviteSlug} />;
+  return <ScopedHoopGroups key={userId} userId={userId} offline={offline} role={account?.user.accountType||""} inviteSlug={inviteSlug} />;
 }
 function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offline:boolean;role:string;inviteSlug:string|null}) {
   const theme=useEntryTheme();
@@ -62,6 +69,11 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
   const [busy,setBusy]=useState(false);
   const mutationLocked=useRef(false);
   const pendingSend=useRef<GroupSend|null>(null);
+  const delivery=useRef<AbortController|null>(null);
+  const activeOutbox=useRef<AbortController|null>(null);
+  const [queued,setQueued]=useState<GroupSend|null>(null);
+  const [outboxReady,setOutboxReady]=useState<string|null>(null);
+  const [delivering,setDelivering]=useState(false);
   const [error,setError]=useState("");
   const [revision,setRevision]=useState(0);
   const [query,setQuery]=useState("");
@@ -89,7 +101,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
   },[userId]);
 
   useFocusEffect(useCallback(()=> {
-    if(!userId || offline) {setSpaces([]);setPostSnapshot(null);setLoading(false);return;}
+    if(!userId || offline) {setPostSnapshot(null);setLoading(false);return;}
     let alive=true;
     const controller=new AbortController(),deadline=setTimeout(()=>controller.abort(),15000);
     async function load() {
@@ -114,7 +126,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
       finally{clearTimeout(deadline);if(alive)setLoading(false);}
     }
     void load();
-    return ()=>{alive=false;clearTimeout(deadline);controller.abort();setPostSnapshot(null);setJoined([]);};
+    return ()=>{alive=false;clearTimeout(deadline);controller.abort();setPostSnapshot(null);};
   },[userId,offline,revision,safetyToken]));
 
   useEffect(()=>{
@@ -140,13 +152,72 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
   const availableChannels=channels.filter(item=>item.space_id===selected?.id);
   const channel=availableChannels.find(item=>item.id===channelId)||availableChannels[0];
   const member=Boolean(selected&&joined.includes(selected.id));
-  const posts=member&&channel&&postSnapshot?.channelId===channel.id?postSnapshot.posts:[];
-  const unread=member&&channel&&unreadSnapshot?.channelId===channel.id?unreadSnapshot.counts:null;
+  const posts=!offline&&member&&channel&&postSnapshot?.channelId===channel.id?postSnapshot.posts:[];
+  const unread=!offline&&member&&channel&&unreadSnapshot?.channelId===channel.id?unreadSnapshot.counts:null;
   const draft=member&&channel&&draftState?.channelId===channel.id?draftState.value:"";
   const replyId=member&&channel&&replySnapshot?.channelId===channel.id?replySnapshot.id:"";
   const replyParent=posts.find(p=>p.id===replyId&&p.moderation_status==="approved");
   function setDraft(value:string) {setDraftState(value&&channel?{channelId:channel.id,value}:null);}
   const managing=editing&&editingGroupId===selected?.id;
+  const queueScope = member && channel && userId ? channel.id : null;
+  const saved = queued?.channel === queueScope ? queued : null;
+
+  const deliverQueued = useCallback(async (message: GroupSend, spaceId: string, controller: AbortController) => {
+    if (!outbox || controller.signal.aborted || delivery.current) return;
+    delivery.current = controller;
+    setDelivering(true);
+    const signal = controller.signal;
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    try {
+      const token = await safetyToken();
+      if (signal.aborted) return;
+      const bearer = "Bearer " + token;
+      const membership = await supabase.from("hoop_group_members").select("space_id")
+        .eq("space_id", spaceId).eq("user_id", message.owner)
+        .setHeader("Authorization", bearer).abortSignal(signal).maybeSingle();
+      if (signal.aborted) return;
+      if (membership.error || membership.data?.space_id !== spaceId) throw Error("Group membership could not be verified.");
+      await submitGroupSend(supabase, message, bearer, signal);
+      if (signal.aborted) return;
+      const currentToken = await safetyToken();
+      if (signal.aborted || currentToken !== token) return;
+      await outbox.remove(message);
+      if (!signal.aborted) {
+        setQueued(current => current?.id === message.id ? null : current);
+        setPostRefresh(value => value + 1);
+      }
+    } catch {
+      if (!signal.aborted) setError("Saved message could not be confirmed. Retry or remove it.");
+    } finally {
+      clearTimeout(timeout);
+      if (delivery.current === controller) {
+        delivery.current = null;
+        setDelivering(false);
+      }
+    }
+  }, [safetyToken]);
+
+  useFocusEffect(useCallback(() => {
+    if (!outbox || !queueScope || !channel) return;
+    const controller = new AbortController();
+    activeOutbox.current = controller;
+    setOutboxReady(null);
+    void outbox.load(userId, queueScope).then(message => {
+      if (controller.signal.aborted) return;
+      setQueued(message);
+      setOutboxReady(queueScope);
+      if (message && !offline) void deliverQueued(message, channel.space_id, controller);
+    }).catch(() => {
+      if (!controller.signal.aborted) setError("Saved messages could not be opened.");
+    });
+    return () => {
+      controller.abort();
+      activeOutbox.current = null;
+      delivery.current?.abort();
+      delivery.current = null;
+      setDelivering(false);
+    };
+  }, [userId, queueScope, channel?.space_id, offline, deliverQueued]));
 
   useFocusEffect(useCallback(()=>{
     if(!userId||offline||!member||!channel?.id){setPostSnapshot(null);setPostLoading(false);setPostError("");return;}
@@ -334,21 +405,57 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
     finally{clearTimeout(deadline);mutationLocked.current=false;setBusy(false);}
   }
   async function send() {
-    if(!channel||!member||!userId||offline||busy||!draft.trim())return;
-    if(mutationLocked.current)return;
-    mutationLocked.current=true;setBusy(true);setError("");
-    try{
-      const token=await safetyToken();
-      if(repliesEnabled&&replyId&&!replyParent)throw Error("Reply unavailable. Clear the reply or refresh.");
-      const submittedReply=repliesEnabled&&replyParent?replyParent.id:undefined;
-      const message=prepareGroupSend(pendingSend.current,userId,channel.id,draft,randomUUID,submittedReply);
-      pendingSend.current=message;
-      const abort=new AbortController(),deadline=setTimeout(()=>abort.abort(),15000);
-      try{await submitGroupSend(supabase,message,"Bearer "+token,abort.signal);if(await safetyToken()!==token)throw Error("Session changed.");if(pendingSend.current===message)pendingSend.current=null;}
-      finally{clearTimeout(deadline);}
-      setDraftState(current=>current?.channelId===channel.id&&current.value===draft?null:current);setReplySnapshot(current=>current?.channelId===channel.id&&current.id===submittedReply?null:current);setPostRefresh(value=>value+1);
-    }catch(failure){setError(failure instanceof Error?failure.message:"Message was not submitted.");}
-    finally{mutationLocked.current=false;setBusy(false);}
+    if (!channel || !member || !userId || busy || !draft.trim() || mutationLocked.current) return;
+    const active = activeOutbox.current;
+    if (outbox ? !active || outboxReady !== channel.id || Boolean(saved) : offline) return;
+    mutationLocked.current = true;
+    setBusy(true);
+    setError("");
+    try {
+      if (repliesEnabled && replyId && !replyParent) throw Error("Reply unavailable. Clear the reply or refresh.");
+      const submittedReply = repliesEnabled && replyParent ? replyParent.id : undefined;
+      const message = prepareGroupSend(outbox ? null : pendingSend.current, userId, channel.id, draft, randomUUID, submittedReply);
+      if (outbox) {
+        if (!offline) await safetyToken();
+        if (!active || active.signal.aborted) return;
+        await outbox.save(message);
+        if (active.signal.aborted) return;
+        setQueued(message);
+        if (!offline) void deliverQueued(message, channel.space_id, new AbortController());
+      } else {
+        const token = await safetyToken();
+        pendingSend.current = message;
+        const abort = new AbortController(), deadline = setTimeout(() => abort.abort(), 15000);
+        try {
+          await submitGroupSend(supabase, message, "Bearer " + token, abort.signal);
+          if (await safetyToken() !== token) throw Error("Session changed.");
+          pendingSend.current = null;
+        } finally { clearTimeout(deadline); }
+        setPostRefresh(value => value + 1);
+      }
+      setDraftState(current => current?.channelId === channel.id && current.value === draft ? null : current);
+      setReplySnapshot(current => current?.channelId === channel.id && current.id === submittedReply ? null : current);
+    } catch (failure) {
+      setError(failure instanceof Error && !outbox ? failure.message : "Message could not be saved or submitted.");
+    } finally {
+      mutationLocked.current = false;
+      setBusy(false);
+    }
+  }
+
+  async function removeSaved(message: GroupSend) {
+    if (!outbox || delivery.current || mutationLocked.current) return;
+    mutationLocked.current = true;
+    setBusy(true);
+    try {
+      await outbox.remove(message);
+      setQueued(current => current?.id === message.id ? null : current);
+    } catch {
+      setError("Saved message could not be removed.");
+    } finally {
+      mutationLocked.current = false;
+      setBusy(false);
+    }
   }
   async function report(item:Post,reason:string) {
     if(!userId||offline||busy||!member||!posts.some(post=>post.id===item.id))return;
@@ -463,7 +570,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
           onPress={()=>void createGroup()}>{busy?"Creating…":"Create group"}</Button>
       </GlassCard>:null}
     </>:null}
-    {Boolean(filtered.length)&&<>
+    {Boolean(filtered.length)&&(!offline||Boolean(outbox))&&<>
       <Text accessibilityRole="header" style={{color:theme.foreground,fontSize:17,fontWeight:"900"}}>
         {filter==="joined"?"Joined groups":filter==="mine"?"Your groups":"Discover communities"}
       </Text>
@@ -569,7 +676,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
       {member&&channel?<GlassCard style={{gap:8,backgroundColor:"transparent",borderWidth:0,padding:4}}>
         <Text style={{color:theme.foreground,fontSize:19,fontFamily:"HoopCheckDisplay"}}># {channel.name}</Text>
         <Text style={{color:theme.muted,fontSize:12}}>Members only · moderated posts · 20-second slow mode</Text>
-        <Pressable accessibilityRole="button" accessibilityLabel="Refresh channel messages" disabled={postLoading||busy} onPress={()=>setPostRefresh(value=>value+1)} style={{minHeight:44,justifyContent:"center",alignSelf:"flex-start"}}><Text style={{color:theme.accent,fontWeight:"700"}}>Refresh channel</Text></Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel="Refresh channel messages" disabled={postLoading||busy||offline} onPress={()=>setPostRefresh(value=>value+1)} style={{minHeight:44,justifyContent:"center",alignSelf:"flex-start"}}><Text style={{color:theme.accent,fontWeight:"700"}}>Refresh channel</Text></Pressable>
         {readStateEnabled?<Button secondary disabled={busy||postLoading||Boolean(postError)||!posts.length} onPress={()=>void markVisibleRead()}>Mark loaded messages read</Button>:null}
         {postLoading?<HoopCheckLoading compact label="Loading channel messages…" />:null}
         {postError?<Text accessibilityRole="alert" style={{color:theme.accent}}>{postError}</Text>:null}
@@ -586,11 +693,17 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
           </Pressable>:null}
         </View>):!postLoading&&!postError&&postSnapshot?.channelId===channel.id?<Text style={{color:theme.muted,marginVertical:12}}>No approved messages yet.</Text>:null}
         {repliesEnabled&&replyId?<View><Text style={{color:theme.muted}}>{replyParent?"Replying to: "+replyParent.body.slice(0,120):"Original message unavailable"}</Text><Button secondary disabled={busy} onPress={()=>setReplySnapshot(null)}>Clear reply</Button></View>:null}
+        {saved?<View accessibilityLiveRegion="polite" style={{gap:6}}>
+          <Text style={{color:theme.foreground}}>{saved.body}</Text>
+          <Text style={{color:theme.muted}}>{delivering?"Submitting…":offline?"Queued until you reconnect":"Saved on this device · delivery unconfirmed"}</Text>
+          <Button secondary disabled={offline||busy||delivering} onPress={()=>void deliverQueued(saved, channel.space_id, new AbortController())}>Retry submission</Button>
+          <Button secondary disabled={busy||delivering} onPress={()=>void removeSaved(saved)}>Remove saved copy</Button>
+        </View>:null}
         <TextInput accessibilityLabel={"Message in "+channel.name} multiline maxLength={1200}
-          editable={!busy&&!offline} value={draft} onChangeText={setDraft} placeholder="Post to this discussion…" placeholderTextColor={theme.muted}
+          editable={!busy&&(!offline||Boolean(outbox))} value={draft} onChangeText={setDraft} placeholder="Post to this discussion…" placeholderTextColor={theme.muted}
           style={{backgroundColor:theme.input,color:theme.foreground,borderWidth:1,borderColor:theme.border,
             padding:12,minHeight:72,textAlignVertical:"top",borderRadius:14}} />
-        <Button disabled={busy||offline||!draft.trim()} onPress={()=>void send()}>{busy?"Submitting…":"Post for approval"}</Button>
+        <Button disabled={busy||!draft.trim()||(outbox?outboxReady!==channel.id||Boolean(saved):offline)} onPress={()=>void send()}>{busy?"Saving…":offline?"Queue for approval":"Post for approval"}</Button>
       </GlassCard>:null}
     </>}
     {!loading&&!filtered.length&&!error?<Text style={{color:theme.muted}}>

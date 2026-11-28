@@ -26,7 +26,7 @@ test("channel refresh is bounded, foreground scoped, session verified and preser
   assert.match(source,/if\(!alive\|\|controller\.signal\.aborted\|\|current!==token\)throw Error/);
   assert.match(source,/setInterval\(\(\)=>void loadPosts\(\),25000\)/);
   assert.match(source,/clearInterval\(refreshTimer\);appState\.remove\(\);activeController\?\.abort\(\)/);
-  assert.match(source,/setDraftState\(current=>current\?\.channelId===channel\.id&&current\.value===draft\?null:current\)/);
+  assert.match(source,/setDraftState\(current => current\?\.channelId === channel\.id && current\.value === draft \? null : current\)/);
   assert.match(source,/accessibilityLabel="Refresh channel messages"/);
   assert.match(source,/!postLoading&&!postError&&postSnapshot\?\.channelId===channel\.id/);
   assert.match(source,/\.order\("created_at",\{ascending:false\}\)\.order\("id",\{ascending:false\}\)\.limit\(100\)/);
