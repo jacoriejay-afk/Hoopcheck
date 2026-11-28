@@ -121,3 +121,15 @@ assert.equal(sql("select count(*) from play_billing_candidate.shadow_membership_
 assert.equal(sql("select count(*) from public.membership_sources where user_id="+q(owner)),"0");
 assert.equal(sql("select status from play_billing_candidate.notification_jobs where message_id='987654322'"),"done");
 console.log("End-to-end synthetic Google Play integration passed: intent, encrypted ownership, provider verification, durable fulfillment, simulated acknowledgment, shadow membership, authenticated notification, dedupe and revocation.");
+
+// Privacy hold: stop credential lookup and all future fulfillment; do not
+// claim a legal retention policy or destroy immutable ownership evidence.
+assert.equal(sql("select play_billing_candidate.hold_test_owner("+q(owner)+")"),"t");
+assert.equal(await adapter.lookup(fp),null);
+await assert.rejects(()=>adapter.credential({owner,fingerprint:fp,productId:product.productId,basePlanId:product.basePlanId}));
+await assert.rejects(()=>adapter.begin({owner,fingerprint:fp,productId:product.productId,basePlanId:product.basePlanId}));
+assert.equal(sql("select count(*) from play_billing_candidate.shadow_membership_entitlements where user_id="+q(owner)),"0");
+assert.equal(sql("select count(*) from play_billing_candidate.purchase_claims where fingerprint="+q(fp)),"1");
+assert.equal(sql("select has_table_privilege('authenticated','play_billing_candidate.owner_holds','SELECT')"),"f");
+assert.equal(sql("select has_table_privilege('service_role','play_billing_candidate.owner_holds','DELETE')"),"f");
+console.log("Test owner deletion freeze passed: credential lookup blocked, no future writes, shadow access absent, no client privileges.");

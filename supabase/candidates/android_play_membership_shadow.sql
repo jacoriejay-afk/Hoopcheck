@@ -17,6 +17,7 @@ from play_billing_candidate.purchase_claims c
 join play_billing_candidate.purchase_observations o using(environment,package_name,fingerprint)
 join play_billing_candidate.test_fulfillments f using(environment,package_name,fingerprint,generation)
 where c.environment='test' and c.package_name='online.hoopcheck.app'
+ and not exists(select 1 from play_billing_candidate.owner_holds h where h.owner_id=c.owner_id)
  and f.owner_id=c.owner_id and f.product_id=c.product_id and f.base_plan_id=c.base_plan_id
  and f.expires_at=o.expires_at and o.generation=o.completed_generation
  and o.state='eligible_for_reconciliation'

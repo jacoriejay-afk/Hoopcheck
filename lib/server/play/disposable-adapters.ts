@@ -35,13 +35,13 @@ export function createDisposablePlayAdapters(options:{scope:"disposable_pg17";en
    return {subscription:v.subscription,messageId:v.message_id,fingerprint:v.fingerprint,leaseId:v.lease_id};
   },
   async lookup(f:string):Promise<Claim|null>{
-   const v=await run("select row_to_json(x) from (select owner_id,product_id,base_plan_id,fingerprint from play_billing_candidate.purchase_claims where environment='test' and package_name='online.hoopcheck.app' and fingerprint=$1) x",[f]);
+   const v=await run("select row_to_json(x) from (select owner_id,product_id,base_plan_id,fingerprint from play_billing_candidate.purchase_claims where environment='test' and package_name='online.hoopcheck.app' and fingerprint=$1 and not exists(select 1 from play_billing_candidate.owner_holds h where h.owner_id=purchase_claims.owner_id)) x",[f]);
    if(v===null)return null;
    if(!record(v)||typeof v.owner_id!=="string"||!uuid.test(v.owner_id)||typeof v.product_id!=="string"||typeof v.base_plan_id!=="string"||v.fingerprint!==f)throw Error("Invalid ownership record");
    return {owner:v.owner_id,productId:v.product_id,basePlanId:v.base_plan_id,fingerprint:f};
   },
   async credential(c:Claim):Promise<SealedPurchase>{
-   const v=await run("select row_to_json(x) from (select credential_version,credential_envelope,fingerprint from play_billing_candidate.purchase_claims where environment='test' and package_name='online.hoopcheck.app' and fingerprint=$1 and owner_id=$2::uuid) x",[c.fingerprint,c.owner]);
+   const v=await run("select row_to_json(x) from (select credential_version,credential_envelope,fingerprint from play_billing_candidate.purchase_claims where environment='test' and package_name='online.hoopcheck.app' and fingerprint=$1 and owner_id=$2::uuid and not exists(select 1 from play_billing_candidate.owner_holds h where h.owner_id=purchase_claims.owner_id)) x",[c.fingerprint,c.owner]);
    if(!record(v)||v.credential_version!==1||typeof v.credential_envelope!=="string"||v.fingerprint!==c.fingerprint)throw Error("Invalid credential record");
    return {version:1,envelope:v.credential_envelope,fingerprint:c.fingerprint};
   },

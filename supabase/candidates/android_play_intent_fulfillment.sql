@@ -167,4 +167,50 @@ $body$;
 revoke all on function play_billing_candidate.issue_test_intent_bound(uuid,uuid,text,text,text,text,text),play_billing_candidate.consume_test_intent_bound(uuid,uuid,uuid,text,text,text,text,text,bigint),play_billing_candidate.finish_test_reconciliation(text,uuid,bigint,text,timestamptz) from public,anon,authenticated,service_role;
 grant execute on function play_billing_candidate.issue_test_intent_bound(uuid,uuid,text,text,text,text,text),play_billing_candidate.consume_test_intent_bound(uuid,uuid,uuid,text,text,text,text,text,bigint),play_billing_candidate.finish_test_reconciliation(text,uuid,bigint,text,timestamptz) to service_role;
 
+
+-- Test-only deletion freeze. No policy duration, legal retention determination,
+-- or automatic erasure is implied. Only the reviewed deletion workflow may
+-- invoke this transition; production integration is a separate acceptance gate.
+create table play_billing_candidate.owner_holds(
+ owner_id uuid primary key, held_at timestamptz not null default clock_timestamp()
+);
+alter table play_billing_candidate.owner_holds enable row level security;
+alter table play_billing_candidate.owner_holds force row level security;
+revoke all on play_billing_candidate.owner_holds from public,anon,authenticated,service_role;
+grant select,insert on play_billing_candidate.owner_holds to service_role;
+create policy held_owner_read on play_billing_candidate.owner_holds for select to service_role using(true);
+create policy held_owner_insert on play_billing_candidate.owner_holds for insert to service_role with check(true);
+create function play_billing_candidate.hold_test_owner(p_owner uuid)
+returns boolean language plpgsql volatile security invoker set search_path='' as $body$
+begin
+ if p_owner is null then return false; end if;
+ perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('hoopcheck-play-hold:'||p_owner::text,0));
+ insert into play_billing_candidate.owner_holds(owner_id) values(p_owner) on conflict do nothing;
+ return true;
+end
+$body$;
+-- Serialize all candidate billing writes with an irreversible test owner hold.
+create function play_billing_candidate.guard_test_owner_write()
+returns trigger language plpgsql volatile security invoker set search_path='' as $body$
+declare owner uuid;
+begin
+ if tg_table_name='purchase_observations' then
+  select owner_id into owner from play_billing_candidate.purchase_claims
+   where environment=new.environment and package_name=new.package_name and fingerprint=new.fingerprint;
+ else owner:=new.owner_id; end if;
+ if owner is null then raise exception 'candidate owner unavailable'; end if;
+ perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('hoopcheck-play-hold:'||owner::text,0));
+ if exists(select 1 from play_billing_candidate.owner_holds where owner_id=owner) then
+  raise exception 'candidate owner unavailable';
+ end if;
+ return new;
+end
+$body$;
+create trigger hold_claim_write before insert on play_billing_candidate.purchase_claims for each row execute function play_billing_candidate.guard_test_owner_write();
+create trigger hold_intent_write before insert or update on play_billing_candidate.purchase_intents for each row execute function play_billing_candidate.guard_test_owner_write();
+create trigger hold_observation_write before insert or update on play_billing_candidate.purchase_observations for each row execute function play_billing_candidate.guard_test_owner_write();
+create trigger hold_receipt_write before insert on play_billing_candidate.test_fulfillments for each row execute function play_billing_candidate.guard_test_owner_write();
+revoke all on function play_billing_candidate.hold_test_owner(uuid),play_billing_candidate.guard_test_owner_write() from public,anon,authenticated,service_role;
+grant execute on function play_billing_candidate.hold_test_owner(uuid),play_billing_candidate.guard_test_owner_write() to service_role;
+
 commit;
