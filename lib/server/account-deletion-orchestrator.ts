@@ -99,13 +99,17 @@ export function createDeletionWorkerAdapter(client:Rpc,effects:DeletionEffects,e
  async function acknowledged(name:string,args:Record<string,unknown>){
   if(await rpc(name,args)!==true)throw Error("Deletion worker transition not confirmed.");
  }
+ const isEnabled=()=>enabled&&process.env.ACCOUNT_DELETION_WORKER_ENABLED==="true"&&deletionSteps.every(step=>typeof effects[step]==="function");
  return {
-  enabled:async()=>enabled&&process.env.ACCOUNT_DELETION_WORKER_ENABLED==="true"&&deletionSteps.every(step=>typeof effects[step]==="function"),
+  enabled:async()=>isEnabled(),
   claim:async()=>decodeClaim(await rpc("claim_account_deletion_worker")),
   assertLease:async lease=>acknowledged("assert_account_deletion_worker",bindings(lease)),
   execute:async(lease,step,key)=>{
-   if(key!==lease.requestId+":"+step||typeof effects[step]!=="function")throw Error("Deletion effect unavailable.");
+   if(!isEnabled()||key!==lease.requestId+":"+step||typeof effects[step]!=="function")throw Error("Deletion effect unavailable.");
    await acknowledged("assert_account_deletion_worker",bindings(lease));
+   // The inner RPC is asynchronous: the outer orchestration boundary alone
+   // cannot prevent a dispatch if the kill switch changes during this RPC.
+   if(!isEnabled())throw Error("Deletion effect unavailable.");
    return effects[step](lease,key);
   },
   checkpoint:async(lease,step,receipt)=>acknowledged("checkpoint_account_deletion_worker",{...bindings(lease),p_step:step,p_receipt:receipt}),
