@@ -15,6 +15,7 @@ import HoopFeedCommentsDialog from "../../components/HoopFeedCommentsDialog";
 import HoopFeedEntityTag from "../../components/HoopFeedEntityTag";
 import HoopFeedToday from "../../components/HoopFeedToday";
 import HoopFeedReportAction from "../../components/HoopFeedReportAction";
+import HoopFeedPhotoStories from "../../components/HoopFeedPhotoStories";
 import { compareFeedPosts, entityHref, loadFeedWorld, SEGMENTS, type EntityTag, type FeedSort, type FeedWorld, type Segment, type TaggedPost } from "../../lib/hoopfeed-organization";
 import { classifyFeedPublication } from "../../apps/mobile/src/native/publicationResult";
 import "./feed-organization.css";
@@ -150,7 +151,7 @@ export default function Feed(){
       feedRows.push(...(data ?? []));
       cursor = data?.length === 200 ? data[199] : undefined;
     } while (cursor);
-    const linkedPost = linkedPostResult?.data;
+    const linkedPost = linkedPostResult?.data?.post_kind === "story" ? null : linkedPostResult?.data;
     const sourceRows = linkedPost && !feedRows.some(row => row.id === linkedPost.id)
       ? [linkedPost, ...feedRows]
       : feedRows;
@@ -163,7 +164,7 @@ export default function Feed(){
       sharedPostsById=Object.fromEntries((sharedRows||[]).map((r:any)=>[r.id,{...r,profiles:Array.isArray(r.profiles)?(r.profiles[0]??null):(r.profiles??null)}]));
     }
     const nowTs=Date.now();
-    const rows=sourceRows.filter((r:any)=>!archiveIds.has(r.id)).map((r:any)=>{const post={...r,shared_post:r.shared_post_id?sharedPostsById[r.shared_post_id]||null:null,profiles:Array.isArray(r.profiles)?(r.profiles[0]??null):(r.profiles??null)} as Post;return {...post,ageLabel:ago(post.created_at,nowTs)};});
+    const rows=sourceRows.filter((r:any)=>r.post_kind !== "story" && !archiveIds.has(r.id)).map((r:any)=>{const post={...r,shared_post:r.shared_post_id?sharedPostsById[r.shared_post_id]||null:null,profiles:Array.isArray(r.profiles)?(r.profiles[0]??null):(r.profiles??null)} as Post;return {...post,ageLabel:ago(post.created_at,nowTs)};});
     const sourceById = new Map(sourceRows.map(source => [source.id, source]));
     for (const row of rows) {
       const source = sourceById.get(row.id);
@@ -558,6 +559,7 @@ export default function Feed(){
     </div>
     <div className="hf5-type-row hc-liquid-glass-filter" role="group" aria-label="Filter HoopFeed by post type">{TYPE_FILTERS.map(t=><button type="button" key={t} className={"hf5-type-chip"+(typeFilter===t?" is-active":"")} aria-pressed={typeFilter===t} onClick={()=>{setTypeFilter(t);setVisibleLimit(30);}}>{t}</button>)}{process.env.NEXT_PUBLIC_HOOPCHECK_REELS_ENABLED === "true" && <Link href="/reels" className="hf5-type-chip hc-feed-reels-tab" aria-label="Watch HoopFeed Reels">▶ Reels</Link>}</div>
 
+    <HoopFeedPhotoStories key={user.id} uid={user.id}/>
     {!composerExpanded && <button type="button" className="hc-feed-slim-composer" onClick={() => setComposerExpanded(true)} aria-controls="hc-feed-composer-fields">
       <span className="hc-feed-composer__avatar" aria-hidden="true">{profile?.avatar_url ? <img src={profile.avatar_url} alt="" /> : "HC"}</span>
       <span>Share something…</span>

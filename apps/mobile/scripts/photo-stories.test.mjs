@@ -73,3 +73,37 @@ test("Story multipart supports the validated React Native file descriptor and br
  const browser=new FormData();appendStoryPhoto(browser,photo,new Blob(["data"],{type:"image/jpeg"}));assert.equal(browser.get("image").size,4);
  const adapter=readFileSync(new URL("../src/native/mediaSelection.ts",import.meta.url),"utf8");assert.match(adapter,/!file\.exists \|\| file\.size !== photo\.size/);
 });
+
+test("explicit web community flag admits only approved private photo Stories and retains default follower scope",async()=>{
+ const {db,calls}=fixture();const page=await readPhotoStories(db,uid,new AbortController().signal,undefined,now,true);
+ assert.deepEqual(page.stories.map(x=>x.id),[id(0),id(2)]);
+ assert.equal(calls[0].searchParams.has("community_visible"),false);
+ assert.equal(page.stories[1].audience,"community");
+ const photo={uri:"browser-file",name:"photo.jpg",type:"image/jpeg",size:4,width:720,height:720};
+ const args=["https://api.test",uid,"token","Training",photo,new AbortController().signal,async()=>new Blob(["data"],{type:"image/jpeg"})];
+ await assert.rejects(publishPhotoStory(...args,async()=>{throw Error("must not send");},"community",false),/audience unavailable/);
+ const expiry=new Date(Date.now()+86400000).toISOString();
+ assert.equal(await publishPhotoStory(...args,async(_,options)=>{
+   assert.equal(options.body.get("audience"),"community");
+   assert.equal(options.body.has("expires_at"),false);
+   return Response.json({allowed:true,story_expires_at:expiry});
+ },"community",true),expiry);
+});
+test("cancelled publication acknowledgement is not reported as success",async()=>{
+ const photo={uri:"browser-file",name:"photo.jpg",type:"image/jpeg",size:4,width:720,height:720};
+ const controller=new AbortController();
+ await assert.rejects(publishPhotoStory("https://api.test",uid,"token","Training",photo,controller.signal,async()=>new Blob(["data"],{type:"image/jpeg"}),async()=>{
+  controller.abort();return Response.json({allowed:true,story_expires_at:new Date(Date.now()+86400000).toISOString()});
+ }),/could not be confirmed/);
+});
+test("web Stories are separately default off, scoped to the live account, and use protected media and server expiry",()=>{
+ const web=readFileSync(new URL("../../../components/HoopFeedPhotoStories.tsx",import.meta.url),"utf8");
+ const feed=readFileSync(new URL("../../../app/feed/page.tsx",import.meta.url),"utf8");
+ assert.match(web,/NEXT_PUBLIC_HOOPCHECK_PHOTO_STORIES_ENABLED === "true"/);
+ assert.match(web,/userId !== uid/);assert.match(web,/request.current\?\.abort\(\)/);
+ assert.match(web,/storyVisible\(row,now\)/);assert.match(web,/HoopFeedPrivateMedia/);
+ assert.match(web,/HoopFeedReportAction/);assert.match(web,/blockNativeAccount/);
+ assert.match(web,/eq\("author_id",uid\).eq\("post_kind","story"\)/);
+ assert.match(feed,/r.post_kind !== "story"/);assert.match(feed,/<HoopFeedPhotoStories key=\{user.id\} uid=\{user.id\}/);
+ assert.doesNotMatch(web,/localStorage|sessionStorage|createSignedUrl/);
+});
