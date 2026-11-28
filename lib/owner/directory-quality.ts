@@ -148,9 +148,11 @@ export function deriveDirectoryQuality(leagues:DirectoryLeague[],teams:Directory
     const unexpected=evidence?clubs.filter(club=>!expected.some(e=>matches(club,e))).map(club=>club.name):[];
     return {id:league.id,name:league.name,country:league.country,side:league.basketball_type,season:league.season,actual:clubs.length,evidence,expected:evidence?expected.length:null,missing,unexpected,ambiguous};
   }).sort((a,b)=>Number(!!b.evidence)-Number(!!a.evidence)||(a.country||"").localeCompare(b.country||"")||a.name.localeCompare(b.name)||a.id.localeCompare(b.id));
+  const linkedIdentityIds=new Map<string,string[]>();
+  for(const team of teams)if(team.league_id){const key=identityKey(team);const ids=linkedIdentityIds.get(key)||[];ids.push(team.id);linkedIdentityIds.set(key,ids);}
   const unlinkedReview=teams.filter(team=>!team.league_id).map(team=>{
     const candidates=coverage.filter(row=>row.evidence&&(row.evidence.side||"mens")===team.basketball_type&&row.evidence.clubs.some(club=>normalized(team.country)===normalized(club.country)&&[club.name,...(club.aliases||[])].some(name=>normalized(name)===normalized(team.name))));
-    const sameNameLinkedIds=teams.filter(other=>other.id!==team.id&&other.league_id&&identityKey(other)===identityKey(team)).map(other=>other.id);
+    const sameNameLinkedIds=linkedIdentityIds.get(identityKey(team))||[];
     return {id:team.id,name:team.name,country:team.country,side:team.basketball_type,currentMembershipLeagueIds:[...(currentByTeam.get(team.id)||[])],reviewedRosterLeagueIds:candidates.map(row=>row.id),sameNameLinkedIds};
   });
   return {countries:countryLabels.size,leagues:leagues.length,teams:teams.length,
