@@ -37,7 +37,11 @@ async function verify(browser,theme){
    if(table==='teams'){
     const row={id:current,name:'Current Club',country:'Spain',city:'Madrid',league_name:'Season League',website:null};
     if(req.headers().accept?.includes('vnd.pgrst.object'))return json(row);
-    return json(u.searchParams.get('id')?.includes(past)?[{id:past,name:'Historical Club',country:'Spain'}]:[row]);
+    if(u.searchParams.get('id')?.includes(past)){
+      assert.equal(u.searchParams.has('active'),false,'Historical club lookup must include readable archived identities');
+      return json([{id:past,name:'Historical Club',country:'Spain',active:false}]);
+    }
+    return json([row]);
    }
    if(table==='player_team_affiliations'){assert.equal(u.searchParams.get('user_id'),'eq.'+uid);assert.equal(u.searchParams.get('verified'),'eq.true');return json([{id:id(9),user_id:uid,team_id:current,relationship:'current',verified:true,start_date:'2026-01-01',end_date:null}]);}
    if(table==='get_public_player_profile')return json([{id:uid,display_name:'Owner Player',player_position:'PG',player_verified:true,years_pro:3,current_team:'Current Club',bio:'Profile reported'}]);
@@ -48,10 +52,10 @@ async function verify(browser,theme){
  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
  try{
   await page.goto(base+'/leagues/'+league);await page.getByText('Current Club',{exact:true}).scrollIntoViewIfNeeded();
-  const input=page.getByRole('textbox',{name:'League season',exact:true});await input.fill('2025–26');await page.getByRole('button',{name:'Apply season',exact:true}).click();await page.getByText('Historical Club',{exact:true}).waitFor();assert.equal(await page.getByText('Current Club',{exact:true}).count(),0);
+  const input=page.getByRole('textbox',{name:'League season',exact:true});await input.fill('2025–26');await page.getByRole('button',{name:'Apply season',exact:true}).click();await page.getByText('Historical Club',{exact:true}).waitFor();await page.getByText('Spain · Archived club',{exact:true}).waitFor();assert.equal(await page.getByText('Current Club',{exact:true}).count(),0);
   await require('./compact-layout.cjs').capture(page,{path:`${output}/historical-season-${theme}.png`,fullPage:true});
-  await input.fill('1900–01');await page.getByRole('button',{name:'Apply season',exact:true}).click();await page.getByText('No active directory clubs recorded for this season.',{exact:true}).waitFor();
-  await input.fill('unavailable');await page.getByRole('button',{name:'Apply season',exact:true}).click();await page.getByText('League clubs could not load.',{exact:true}).waitFor();failSeason=false;await page.getByRole('button',{name:'Retry league clubs',exact:true}).click();await page.getByText('No active directory clubs recorded for this season.',{exact:true}).waitFor();
+  await input.fill('1900–01');await page.getByRole('button',{name:'Apply season',exact:true}).click();await page.getByText('No visible directory clubs recorded for this season.',{exact:true}).waitFor();
+  await input.fill('unavailable');await page.getByRole('button',{name:'Apply season',exact:true}).click();await page.getByText('League clubs could not load.',{exact:true}).waitFor();failSeason=false;await page.getByRole('button',{name:'Retry league clubs',exact:true}).click();await page.getByText('No visible directory clubs recorded for this season.',{exact:true}).waitFor();
   await page.getByRole('button',{name:'Current clubs',exact:true}).click();await page.getByText('Current Club',{exact:true}).waitFor();
   await page.goto(base+'/teams/'+current);await page.getByText('Roster research is unavailable in this release.',{exact:true}).scrollIntoViewIfNeeded();await page.getByText('Trust Index access follows your HoopCheck membership.',{exact:true}).waitFor();await require('./compact-layout.cjs').capture(page,{path:`${output}/default-roster-${theme}.png`,fullPage:true});
   await page.goto(base+'/players/'+uid);await page.getByText('Career history is unavailable in this release.',{exact:true}).scrollIntoViewIfNeeded();await page.getByText('Verified current link',{exact:true}).scrollIntoViewIfNeeded();await require('./compact-layout.cjs').capture(page,{path:`${output}/owner-team-links-${theme}.png`,fullPage:true});await page.getByRole('button',{name:'Preview Player Passport',exact:true}).click();await page.getByRole('button',{name:'Export & share PDF',exact:true}).click();await page.getByText('Passport file sharing is available in the iOS and Android app.',{exact:true}).waitFor();
