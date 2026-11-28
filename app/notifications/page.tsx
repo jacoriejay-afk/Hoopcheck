@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {readNotifications,markNotificationsRead,verifiedAlertSession,withAlertDeadline,notificationPath,appendNotificationPage} from "../../apps/mobile/src/native/notifications";
+import {readNotifications,markNotificationsRead,verifiedAlertSession,withAlertDeadline,notificationPath,appendNotificationPage,NOTIFICATION_PAGE_SIZE} from "../../apps/mobile/src/native/notifications";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
 import WatchButton from "../../components/WatchButton";
 import { HoopIcon } from "../../components/HoopCheckUI";
 import HoopChatInbox from "../../components/HoopChatInbox";
-import { ALERT_FILTERS, ALERT_LIST_LIMIT, matchesAlertFilter, matchesAlertSearch, type AlertFilter } from "../../lib/alert-list";
+import { ALERT_FILTERS, matchesAlertFilter, matchesAlertSearch, type AlertFilter } from "../../lib/alert-list";
 import "./notifications-threads.css";
 
 type Notice={id:string;target_type:"team"|"coach"|"league"|"game";target_id:string;notification_type:"review"|"rating"|"update"|"trust_score"|"roster_spot"|"pay_warning"|"game_reminder";title:string;body:string;read_at:string|null;created_at:string};
@@ -29,10 +29,10 @@ export default function NotificationsPage(){
   useEffect(()=>{if(new URLSearchParams(window.location.search).get("tab")==="messages")setSection("messages");},[]);
   useEffect(()=>{
     let timer:ReturnType<typeof setTimeout>|undefined;
-    const clear=()=>{generation.current++;owner.current=null;setItems([]);setQuery("");setFilter("all");setHasMore(false);setLoadingOlder(false);setMarking(false);};
+    const clear=()=>{generation.current++;owner.current=null;locked.current=false;setItems([]);setQuery("");setFilter("all");setHasMore(false);setLoadingOlder(false);setMarking(false);};
     async function loadAlerts(){
       const rev=++generation.current;
-      owner.current=null;setLoading(true);setErrorMessage("");setLoadFailed(false);setItems([]);setHasMore(false);setLoadingOlder(false);
+      owner.current=null;locked.current=false;setMarking(false);setLoading(true);setErrorMessage("");setLoadFailed(false);setItems([]);setHasMore(false);setLoadingOlder(false);
       try{
         const result=await withAlertDeadline(async signal=>{
           const scope=await verifiedAlertSession(supabase,signal);
@@ -40,7 +40,7 @@ export default function NotificationsPage(){
           return {uid:scope.uid,rows:await readNotifications(supabase,scope.uid,undefined,scope)};
         });
         if(rev!==generation.current)return;
-        owner.current=result.uid;setItems(result.rows as Notice[]);setHasMore(result.rows.length===ALERT_LIST_LIMIT);
+        owner.current=result.uid;setItems(result.rows as Notice[]);setHasMore(result.rows.length===NOTIFICATION_PAGE_SIZE);
       }catch{
         if(rev===generation.current){setItems([]);setErrorMessage("Alerts could not be loaded. Please try again.");setLoadFailed(true);}
       }finally{if(rev===generation.current)setLoading(false);}
@@ -65,10 +65,10 @@ export default function NotificationsPage(){
         return readNotifications(supabase,uid,cursor,scope);
       });
       if(rev!==generation.current||owner.current!==uid)return;
-      const page=appendNotificationPage(items,older);
-      setItems(page.rows as Notice[]);setHasMore(page.hasMore);
+      const page=appendNotificationPage(items,older as Notice[]);
+      setItems(page.rows);setHasMore(page.hasMore);
     }catch{if(rev===generation.current)setErrorMessage("Older alerts could not be loaded. Please retry.");}
-    finally{locked.current=false;if(rev===generation.current)setLoadingOlder(false);}
+    finally{if(rev===generation.current){locked.current=false;setLoadingOlder(false);}}
   }
   async function markRead(notificationId?:string){
     const uid=owner.current,rev=generation.current;
@@ -82,7 +82,7 @@ export default function NotificationsPage(){
       });
       if(rev===generation.current&&owner.current===uid)setItems(v=>v.map(n=>result.ids.includes(n.id)?{...n,read_at:n.read_at||result.readAt}:n));
     }catch{if(rev===generation.current)setErrorMessage("Could not mark alerts as read. Please retry.");}
-    finally{locked.current=false;if(rev===generation.current)setMarking(false);}
+    finally{if(rev===generation.current){locked.current=false;setMarking(false);}}
   }
   const unreadCount=items.filter(n=>!n.read_at).length;
   const searched=items.filter(n=>matchesAlertSearch(n,query));
@@ -124,7 +124,7 @@ export default function NotificationsPage(){
           {(!n.read_at||(href&&n.target_type!=="game"))&&<div className="hc-alert-card__controls">{!n.read_at&&<button type="button" disabled={marking||loadingOlder} onClick={()=>void markRead(n.id)} aria-label={"Mark alert as read: "+n.title}>Mark read</button>}{href&&n.target_type!=="game"&&<WatchButton targetType={n.target_type} targetId={n.target_id} targetName={n.title}/>}</div>}
         </article>;
       }) : <div className="hc-alerts-empty" role="status"><strong>{items.length?(query.trim()?"No matching alerts":"No alerts in this category"):"No notifications yet"}</strong><p>{items.length?(query.trim()?"Try another search or filter.":"Try a different filter."):"Follow a team to get updates here."}</p>{!items.length&&<Link href="/teams">Explore teams</Link>}</div>}
-      {hasMore&&<button type="button" className="hc-alerts-heading__read" disabled={loadingOlder||marking} onClick={()=>void loadOlder()}>{loadingOlder?"Loading older alerts…":"Load older alerts"}</button>}
+      {hasMore&&<button type="button" className="hc-alerts-heading__read" disabled={loadingOlder||marking||loading} onClick={()=>void loadOlder()} aria-busy={loadingOlder}>{loadingOlder?"Loading older alerts…":"Load older alerts"}</button>}
     </section>}
   </div></main>;
 }

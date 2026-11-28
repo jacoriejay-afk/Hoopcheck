@@ -55,7 +55,7 @@ export async function markNotificationsRead(client: SupabaseClient, userId: stri
 }
 // Stable keyset pages can overlap during concurrent refreshes. Never duplicate
 // rows or loop on a page that did not advance the cursor.
-export function appendNotificationPage(previous: Notice[], older: Notice[]) {
+export function appendNotificationPage<T extends {id:string}>(previous: readonly T[], older: readonly T[]) {
   const seen = new Set(previous.map(row => row.id));
   const additions = older.filter(row => {
     if (seen.has(row.id)) return false;
