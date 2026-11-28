@@ -46,7 +46,8 @@ BEGIN
   SELECT author_id,id,title,body,status,overall_rating,womens_team_id,is_anonymous,created_at
   FROM public.womens_team_reviews WHERE author_id=v_owner ORDER BY id LIMIT 101
  ) r;
- RETURN jsonb_build_object('owner_id',v_owner,'reviews',v_men,'womens_reviews',v_women);
+ RETURN jsonb_build_object('owner_id',v_owner,'reviews',v_men,'reviews_count',jsonb_array_length(v_men),
+   'womens_reviews',v_women,'womens_reviews_count',jsonb_array_length(v_women));
 END $snapshot$;
 REVOKE ALL ON FUNCTION hoopcheck_review_private.own_review_snapshot() FROM PUBLIC,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION hoopcheck_review_private.own_review_snapshot() TO authenticated;
