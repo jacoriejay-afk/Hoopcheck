@@ -203,6 +203,13 @@ export const verifiedRosters: RosterEvidence[] = [{
  ["Basket Hills Bielsko-Biała"],["pempaVita Resovia Rzeszów"],["AZS AGH Kraków"],["KS Cracovia 1906 Kraków"],["AZS Jarosław"],["UJK Kielce"],["GMS KKS Tarnowskie Góry"],["Zagłębie Sosnowiec"],["MKS II Dąbrowa Górnicza"],["MKKS Rybnik"],["Wisła Veneo Kraków"],["Miners Katowice"],["ZKS Stal Stalowa Wola"],["UKS Regis Wieliczka"],["MKKS Siarka Tarnobrzeg"],["GTK II Gliwice"],
  ["EIG Kangoo Basket Gorzów"],["Kosz Ciepłomax Kompaktowy Pleszew"],["Pogoń Prudnik"],["KS Sudety Jelenia Góra"],["PGE GiEK Turów Zgorzelec"],["Roben Gimbasket Wrocław"],["U&R Calor Twierdza Kłodzko"],["MKS Smyk Prudnik"],["Pyra AZS Szkoła Gortata Poznań"],["Dijo Polkąty Maximus Kąty Wrocł."],["Enea Basket II Poznań"],["SKM Zastal Zielona Góra"],["Exact Forestall Śląsk Wrocław"],["WKK II Active Hotel Wrocław"],["AK Orły Wrocław","AK Orły Worcław"],["DGP Basket Legnica"]
  ].map(([name,...aliases])=>({name,country:"Poland",aliases}))
+},{
+ name:"Premier League",country:"Belarus",season:"2026-27",side:"mens",leagueAliases:["Belarusian Premier League","BETERA Championship"],
+ source:"https://belarus.russiabasket.ru/competitions",verifiedAt:"2026-11-28",confidence:"Federation Group A and B standings enumerate 14 teams; 13 season IDs reviewed, Grodno-93 GrSU identity unresolved, Minsk alias and BC Barsy primary retained for review",
+ clubs:[
+ ["BK Grodno-93","Grodno-93"],["Borisfen Mogilev","Borisfen"],["BC Tsmoki-Minsk","BC Minsk","Minsk"],["Rubon Vitebsk","Rubon"],["GOCOR-Soj Gomel","Gomel Lynxes","Gomelskie Rysi"],["Grodno-93 GrSU","BC Grodno 93 Grsu"],["Brest Region","BOK Victoria Brest","Brest"],
+ ["Minsk Youth","Minsk 2"],["Borisfen Mogilev Youth","Borisfen 2"],["Rubon Vitebsk Youth","Rubon II"],["RCOP-SDUSHOR","SDUSHOR Minsk"],["Gomel Lynxes Youth","Gomel 2"],["SDUSHOR Victoria Brest","Brest 2"],["RGUOR Minsk","Rguor Minsk"]
+ ].map(([name,...aliases])=>({name,country:"Belarus",aliases}))
 }];
 const normalized=(v:string|null)=> (v||"").normalize("NFKD").replace(/\p{M}/gu,"").toLocaleLowerCase("en").replace(/[^\p{L}\p{N}]+/gu,"");
 const identityKey=(row:DirectoryIdentity)=>[normalized(row.country),row.basketball_type,normalized(row.name)].join(":");
