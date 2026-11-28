@@ -21,15 +21,32 @@ export default function WomensLeaguePage() {
     let active = true;
     setLeague(undefined);
     setClubs(null);
-    void Promise.all([
-      supabase.from("womens_leagues").select("name,country,level").eq("id", id).eq("active", true).maybeSingle(),
-      supabase.from("womens_teams").select("id,name,city,country").eq("league_id", id).eq("active", true).order("name"),
-    ]).then(([leagueResult, clubResult]) => {
-      if (!active) return;
-      setLeague(leagueResult.data);
-      setClubs(clubResult.error ? null : clubResult.data ?? []);
-    });
-    return () => { active = false; };
+    const controller = new AbortController();
+    async function loadClubs() {
+      const byId = new Map<string, Club>();
+      for (let offset = 0; offset < 10000; offset += 100) {
+        const result = await supabase.from("womens_teams").select("id,name,city,country")
+          .eq("league_id", id).eq("active", true).order("id").range(offset, offset + 99).abortSignal(controller.signal);
+        if (result.error || !result.data || controller.signal.aborted) throw Error("Women's league clubs unavailable");
+        for (const row of result.data) {
+          if (byId.has(row.id)) throw Error("Women's league membership changed during paging");
+          byId.set(row.id, row);
+        }
+        if (result.data.length < 100) return [...byId.values()].sort((a,b)=>a.name.localeCompare(b.name)||a.id.localeCompare(b.id));
+      }
+      throw Error("Women's league club paging limit reached");
+    }
+    void (async()=>{
+      const leagueResult=await supabase.from("womens_leagues").select("name,country,level").eq("id", id).eq("active", true).abortSignal(controller.signal).maybeSingle();
+      if(!active)return;
+      setLeague(leagueResult.error?null:leagueResult.data);
+      if(leagueResult.error||!leagueResult.data)return;
+      try{
+        const rows=await loadClubs();
+        if(active)setClubs(rows);
+      }catch{if(active)setClubs(null);}
+    })().catch(()=>{if(active){setLeague(null);setClubs(null);}});
+    return () => { active = false; controller.abort(); };
   }, [id]);
 
   return <main className="hc-entity-profile-page hc-league-entity-profile">
