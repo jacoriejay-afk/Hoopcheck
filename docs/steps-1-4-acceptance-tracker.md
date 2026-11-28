@@ -24,3 +24,19 @@ Snapshot 2026-11-28; master [#1137](https://github.com/jacoriejay-afk/Hoopcheck/
 | Step 4C native capabilities | Partial | Candidate | Blocked | Signed capability procedure in runbook | eec040a381a30411da4845e6dfc400181535bd69 | #1137 #1199 | Dynamic Island, Live Activities, share extension, PiP, deep links, permissions, push, lifecycle | Exact signed devices and authorized provider access |
 | Step 4C release evidence evaluator | Corrected; 30 evaluator tests passed | #1199 review | Partial | [#1199](https://github.com/jacoriejay-afk/Hoopcheck/pull/1199); exact-head CI required | PR head, see #1199 | #1199 | Fresh CI and review, actual evidence gates | None for evaluator; independent review of evidence required |
 | Final release | HOLD | Master draft | NO-GO | #1137 | eec040a381a30411da4845e6dfc400181535bd69 | #1137 | All open gates, actual combined acceptance and separate release approval | Owner authorization only after evidence complete |
+
+## 2026-11-28 continuation — implementation and integration checkpoint
+
+Master merge `e653e4369162affcf6b67a3a19912da2f6024205` incorporates #1199 after all four exact-head workflows passed on `291d3f2f74599d1d404f832e7bcd715bf7d31a05`. The prior 15 gates and 30 evaluator tests remain; this does not establish actual provider, signed device, or full schema acceptance. Fresh combined master CI is required.
+
+| PR | Implementation and evidence | Outstanding acceptance / integration |
+| --- | --- | --- |
+| #1199 | Merged; [web/evaluator](https://github.com/jacoriejay-afk/Hoopcheck/actions/runs/46135951492), [mobile](https://github.com/jacoriejay-afk/Hoopcheck/actions/runs/46135951519), [entitlements](https://github.com/jacoriejay-afk/Hoopcheck/actions/runs/46135951513), [unsigned iOS](https://github.com/jacoriejay-afk/Hoopcheck/actions/runs/46135951490) | Real evidence gates remain fail-closed |
+| #1200 | Notification history, caller scoping, stable cursor, cancellation and deduplication; web/mobile/entitlement passed on `32f4cb0543c6c3aaaec20d79a8e24d49939b6cc2`; current-base reconciliation adds no-progress cursor regression | Fresh exact-head CI; coordinate overlapping #1198 notification changes |
+| #1201 | Scoped web/native Realtime invalidations, verified re-fetch, cleanup and polling fallback; `74ff9e5453496fb3de2b3fa8fba3975a26f1b7b7` | CI and actual publication/RLS; replies, unread/read-state, durable delivery remain; coordinate #1198 |
+| #1202 | Local video selection/recording/preview and server rejection of video Stories publication and signing; `dac0e2fe39cc7eaa986b999297d020309e87aa72` | CI; approved quarantine, upload/processing, visual/audio moderation, approved playback and device acceptance |
+| #1203 | Bounded scheduler-callable worker and private owner-bound export staging, [40/40 isolated fixture tests](https://github.com/jacoriejay-afk/Hoopcheck/actions/runs/46137473193) on `4e511da0eab9a9e19e872f79ae0f86d387918502` | Actual schema mappings, retention/disclosure approval, durable export storage, real effects and scheduler registration; fresh CI |
+| #1198 / #1195 | Concurrent combined security changes; #1197 merged and preserved | Verify current exact SQL/test equivalence and actual full PG17 assertions and rollback before merge or supersession |
+| #1183 | Worldwide correction candidate remains open | Actual schema and worldwide scope acceptance; preserve historical identity and reviews |
+
+The private Codespace runner and its log were not accessible from this session. No actual 57-assertion execution or rollback result is asserted. Do not replace this gate with synthetic fixtures. No production, deployment, paid build, provider activation or release authorization. HOLD.
