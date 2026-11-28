@@ -104,8 +104,8 @@ test("foreground rejects expired or MFA-invalid session without restoring",async
 test("recovery sends the exact durable intent only for matching product and account",async()=>{
  const f=fixture(),seen=[];f.deps.sync=async(i,p,t)=>{seen.push([i,p]);return {owner,environment:"test",outcome:"test_fulfillment_confirmed"};};
  assert.equal(await f.client.prepare(quote),true);assert.equal(await f.client.launch(),"launched");
- const next=createPlayPurchaseCoordinator({...f.deps,journal:createPlayRecoveryJournal(f.storage)});next.setOwner(owner);
  f.deps.restore=async()=>({accountId,pendingCount:0,candidates:[{accountId,productId:"hoopcheck.premium",token:"synthetic-other-purchase"},{accountId,productId:quote.productId,token:"synthetic-purchase-token"}]});
+ const next=createPlayPurchaseCoordinator({...f.deps,journal:createPlayRecoveryJournal(f.storage)});next.setOwner(owner);
  assert.deepEqual(await next.foreground(),{verified:2,pending:0,failed:0});
  assert.deepEqual(seen,[[null,"hoopcheck.premium"],[f.intent.intentId,quote.productId]]);
 });
