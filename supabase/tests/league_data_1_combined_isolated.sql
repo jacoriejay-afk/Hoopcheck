@@ -203,6 +203,36 @@ insert into pg_temp.ld1_teams(id,name,country,league_id,league_name,basketball_t
 ('dc77b516-b343-4e4b-a4a3-acd098ca9462','Korihait','Finland','1c883516-158f-4099-8b48-02876e43f07d','Korisliiga','mens',true),
 ('dcd4874a-121e-4683-80de-80e01d9418e4','Dziki Warszawa','Poland','b408d347-2758-4458-9531-4783ba66f10a','ORLEN Basket Liga','mens',true),
 ('edd50f0f-ced8-4bcb-a92a-822b1c242b2a','Kipinä Basket','Finland','1c883516-158f-4099-8b48-02876e43f07d','Korisliiga','mens',true);
+insert into pg_temp.ld1_leagues(id,name,country,season,basketball_type,active) values
+('551948e7-410a-4cab-b39f-feb5ff10cf6d','Basketball Zweite Liga','Austria','2026-27','mens',true),
+('ea2c29f1-229b-478b-9df3-ac25e0ce76e5','Basketball Superliga','Austria','2026-27','mens',true);
+insert into pg_temp.ld1_teams(id,name,country,league_id,league_name,basketball_type,active) values
+('0bf96da1-3a1d-4ff0-afbd-d44a2c50ef84','Vienna United','Austria','551948e7-410a-4cab-b39f-feb5ff10cf6d','Basketball Zweite Liga','mens',true),
+('153076a7-7c46-4f00-a4ac-4de2553c80fa','POLFIN KOŠ Celovec','Austria','551948e7-410a-4cab-b39f-feb5ff10cf6d','Basketball Zweite Liga','mens',true),
+('1545ed7d-d34d-4d2f-a47a-75ba2118bdbb','UNGER STEEL Gunners Oberwart','Austria','ea2c29f1-229b-478b-9df3-ac25e0ce76e5','Basketball Superliga','mens',true),
+('1903f0c1-721b-409c-a543-9abf33836ccb','BK Karbon-X Dukes','Austria','ea2c29f1-229b-478b-9df3-ac25e0ce76e5','Basketball Superliga','mens',true),
+('2189926c-b21a-4273-9618-93155a6fd86c','BC Vienna','Austria','ea2c29f1-229b-478b-9df3-ac25e0ce76e5','Basketball Superliga · FIBA Europe Cup · AdmiralBet ABA League','mens',true),
+('34e83e06-0250-441c-9f86-4d6dd26d1fa8','Raiffeisen Flyers Wels','Austria','ea2c29f1-229b-478b-9df3-ac25e0ce76e5','Basketball Superliga','mens',true),
+('3dcdb610-7969-46f2-bff4-154f859c07c6','Future Team Steiermark','Austria','551948e7-410a-4cab-b39f-feb5ff10cf6d','Basketball Zweite Liga','mens',true),
+('60e3c61e-e033-4cef-b093-3b4bcbb67eff','HEFTE HELFEN Bulls Kapfenberg','Austria','ea2c29f1-229b-478b-9df3-ac25e0ce76e5','Basketball Superliga','mens',true),
+('6209c6a2-8af4-4377-830b-7e5335f50628','BBU Salzburg','Austria','551948e7-410a-4cab-b39f-feb5ff10cf6d','Basketball Zweite Liga','mens',true),
+('625da67d-548e-4510-b7c1-eb26c1800b50','druck.at Traiskirchen Lions','Austria','ea2c29f1-229b-478b-9df3-ac25e0ce76e5','Basketball Superliga','mens',true),
+('6440fd33-89ef-458d-ad27-5d769abb8885','SKN St. Pölten Basketball','Austria','ea2c29f1-229b-478b-9df3-ac25e0ce76e5','Basketball Superliga','mens',true),
+('7256aca8-4789-426c-abe1-7b40a77d0607','Pirlo Kufstein Towers','Austria','ea2c29f1-229b-478b-9df3-ac25e0ce76e5','Basketball Superliga','mens',true),
+('75900f03-087a-4e35-b8c8-1d83ec9f098f','Basketball Klub Rapid Wien','Austria','551948e7-410a-4cab-b39f-feb5ff10cf6d','Basketball Zweite Liga','mens',true),
+('7a1a633b-61ae-4daa-9c44-8146a36ed3c6','Safare Traiskirchen Lions NexGen','Austria','551948e7-410a-4cab-b39f-feb5ff10cf6d','Basketball Zweite Liga','mens',true),
+('90901ff7-6c21-45b2-8870-9b5438ed8618','Haustechnik Güssing Blackbirds','Austria','551948e7-410a-4cab-b39f-feb5ff10cf6d','Basketball Zweite Liga','mens',true),
+('9218ee90-f7fb-4a18-b274-2098f6aaba63','Upper Austrian Ballers','Austria','551948e7-410a-4cab-b39f-feb5ff10cf6d','Basketball Zweite Liga','mens',true),
+('999f330c-363a-442f-91ee-6b00188b0fa6','UKJ Mistelbach Mustangs','Austria','551948e7-410a-4cab-b39f-feb5ff10cf6d','Basketball Zweite Liga','mens',true),
+('a0ed5191-6ed2-44d9-a17d-43134b94177f','Vienna Timberwolves','Austria','551948e7-410a-4cab-b39f-feb5ff10cf6d','Basketball Zweite Liga','mens',true),
+('b6c81f3a-6f48-4d20-a9b1-665e2f05d85a','ASKÖ Radenthein Garnets','Austria','551948e7-410a-4cab-b39f-feb5ff10cf6d','Basketball Zweite Liga','mens',true),
+('ba41323f-a2a3-4a33-8c3c-87f9ba4a3b44','SWARCO Raiders Tirol','Austria','551948e7-410a-4cab-b39f-feb5ff10cf6d','Basketball Zweite Liga','mens',true),
+('c6fa8ee9-5238-49ad-9260-5b72f37b4ea5','COLDAMARIS BBC Nord Dragonz','Austria','ea2c29f1-229b-478b-9df3-ac25e0ce76e5','Basketball Superliga','mens',true),
+('cd8d17c5-1711-46b6-807c-fb8797eaf08e','Eagles Raiffeisen UBSC Graz','Austria','ea2c29f1-229b-478b-9df3-ac25e0ce76e5','Basketball Superliga','mens',true),
+('d53c5c05-b59a-4fe6-b844-562c37b011c1','Wörthersee Piraten','Austria','551948e7-410a-4cab-b39f-feb5ff10cf6d','Basketball Zweite Liga','mens',true),
+('d6651191-c56d-4d60-ac30-cc7b8a5edbfb','Raiffeisen Mattersburg Rocks','Austria','551948e7-410a-4cab-b39f-feb5ff10cf6d','Basketball Zweite Liga','mens',true),
+('e02748c0-22b9-443c-9eed-dfb2cfe0e8b7','Raiffeisen Swans Gmunden','Austria','ea2c29f1-229b-478b-9df3-ac25e0ce76e5','Basketball Superliga','mens',true),
+('e867479f-71a5-4bdd-81d8-35b2da7b1e88','Union Deutsch Wagram Alligators','Austria','551948e7-410a-4cab-b39f-feb5ff10cf6d','Basketball Zweite Liga','mens',true);
 create temporary table before_ld1_leagues on commit drop as select * from pg_temp.ld1_leagues;
 create temporary table before_ld1_teams on commit drop as select * from pg_temp.ld1_teams;
 create temporary table before_ld1_memberships on commit drop as select * from pg_temp.ld1_memberships;
@@ -216,6 +246,7 @@ create temporary table before_ld1_legacy_teams on commit drop as select * from p
 \ir ../../reports/league-data-1/portugal-shadow-correction.sql
 \ir ../../reports/league-data-1/euroleague-shadow-memberships.sql
 \ir ../../reports/league-data-1/finland-poland-shadow-memberships.sql
+\ir ../../reports/league-data-1/austria-shadow-memberships.sql
 create temporary table after_ld1_leagues on commit drop as select * from pg_temp.ld1_leagues;
 create temporary table after_ld1_teams on commit drop as select * from pg_temp.ld1_teams;
 create temporary table after_ld1_memberships on commit drop as select * from pg_temp.ld1_memberships;
@@ -229,6 +260,7 @@ create temporary table after_ld1_legacy_teams on commit drop as select * from pg
 \ir ../../reports/league-data-1/portugal-shadow-correction.sql
 \ir ../../reports/league-data-1/euroleague-shadow-memberships.sql
 \ir ../../reports/league-data-1/finland-poland-shadow-memberships.sql
+\ir ../../reports/league-data-1/austria-shadow-memberships.sql
 do $combined$ begin
 if (select count(*) from pg_temp.ld1_leagues)<>(select count(*)+5 from pg_temp.before_ld1_leagues) then raise exception 'ld1_leagues: unexpected delta';end if;
 if exists(select * from pg_temp.after_ld1_leagues except select * from pg_temp.ld1_leagues) or exists(select * from pg_temp.ld1_leagues except select * from pg_temp.after_ld1_leagues) then raise exception 'ld1_leagues: second run changed state';end if;
@@ -236,7 +268,7 @@ if exists(select id from pg_temp.before_ld1_leagues except select id from pg_tem
 if (select count(*) from pg_temp.ld1_teams)<>(select count(*)+22 from pg_temp.before_ld1_teams) then raise exception 'ld1_teams: unexpected delta';end if;
 if exists(select * from pg_temp.after_ld1_teams except select * from pg_temp.ld1_teams) or exists(select * from pg_temp.ld1_teams except select * from pg_temp.after_ld1_teams) then raise exception 'ld1_teams: second run changed state';end if;
 if exists(select id from pg_temp.before_ld1_teams except select id from pg_temp.ld1_teams) then raise exception 'ld1_teams: lost existing ID';end if;
-if (select count(*) from pg_temp.ld1_memberships)<>(select count(*)+122 from pg_temp.before_ld1_memberships) then raise exception 'ld1_memberships: unexpected delta';end if;
+if (select count(*) from pg_temp.ld1_memberships)<>(select count(*)+148 from pg_temp.before_ld1_memberships) then raise exception 'ld1_memberships: unexpected delta';end if;
 if exists(select * from pg_temp.after_ld1_memberships except select * from pg_temp.ld1_memberships) or exists(select * from pg_temp.ld1_memberships except select * from pg_temp.after_ld1_memberships) then raise exception 'ld1_memberships: second run changed state';end if;
 if exists(select id from pg_temp.before_ld1_memberships except select id from pg_temp.ld1_memberships) then raise exception 'ld1_memberships: lost existing ID';end if;
 if (select count(*) from pg_temp.ld1_legacy_leagues)<>(select count(*)+1 from pg_temp.before_ld1_legacy_leagues) then raise exception 'ld1_legacy_leagues: unexpected delta';end if;
