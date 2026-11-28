@@ -551,6 +551,29 @@ insert into pg_temp.ld1_teams(id,name,country,league_id,league_name,basketball_t
 ('c6cc1fc0-40b0-43cb-a450-28d92a8e3472','Brest Region','Belarus',null,'Belarusian Premier League','mens',true),
 ('d095ee76-a2a6-4319-aae4-feab8b1cc360','Rubon Vitebsk','Belarus',null,'Belarusian Premier League','mens',true),
 ('e7c7303e-a5c4-4471-b8e9-407fbfded6d8','BC Barsy','Belarus','51b5eb75-e46d-4029-8803-a3eea5088637','Premier League','mens',true);
+-- Source-confirmed Australia WNBL directory snapshot (no account data).
+insert into pg_temp.ld1_leagues(id,name,country,season,basketball_type,active) values ('c7aa0182-a9ab-483a-9e51-323e593506b1','WNBL','Australia','2026-27','womens',true);
+insert into pg_temp.ld1_teams(id,name,country,league_id,league_name,basketball_type,active) values
+('035ca6ee-6cd0-4a25-bd3d-bad0a84d1894','Perth Lynx','Australia',null,'WNBL','womens',true),
+('0d5c11d4-fe27-4e4b-be1c-3378b8af9e79','Geelong Venom','Australia','c7aa0182-a9ab-483a-9e51-323e593506b1','WNBL','womens',true),
+('21af15c4-3aef-486e-87f5-4393af237970','Sydney Flames','Australia',null,'WNBL','womens',true),
+('243702e4-b4a4-4230-becd-a16a46d61033','Townsville Fire','Australia','c7aa0182-a9ab-483a-9e51-323e593506b1','WNBL','womens',true),
+('2675e357-d642-4734-ba99-616e82337be9','Adelaide Lightning','Australia',null,'WNBL','womens',true),
+('372cfd90-a3cd-47e2-85a1-20f7e744a014','Southside Melbourne Flyers','Australia',null,'WNBL','womens',true),
+('3a9fea39-4a1b-46b8-b560-878ef37e1365','Canberra Capitals','Australia','c7aa0182-a9ab-483a-9e51-323e593506b1','WNBL','womens',true),
+('3d39f076-9ce5-4df0-9b0d-1b91c66573b3','Canberra Capitals','Australia',null,'WNBL','womens',false),
+('50899bcf-96cc-43bf-88f5-ef654f4eb60d','Bendigo Spirit','Australia',null,'WNBL','womens',true),
+('58355c85-eebe-4ce0-915d-7848e838ab03','Tasmania Jewels','Australia','c7aa0182-a9ab-483a-9e51-323e593506b1','WNBL','womens',true),
+('6db3a348-4805-4ecd-9643-a432c2b0d0f1','Bendigo Spirit','Australia','c7aa0182-a9ab-483a-9e51-323e593506b1','WNBL','womens',true),
+('7ae90ad5-cb60-4ae4-a2a7-6d52578de0c2','Sydney Flames','Australia','c7aa0182-a9ab-483a-9e51-323e593506b1','WNBL','womens',true),
+('85f94a5b-255e-4d5d-92d5-c1a57dd6a0d5','Townsville Fire','Australia',null,'WNBL','womens',true),
+('88e00642-e7a9-4c9c-9b6d-ada5caf089be','Perth Lynx','Australia','c7aa0182-a9ab-483a-9e51-323e593506b1','WNBL','womens',true),
+('8ddf86bb-733c-4af0-9e20-3cda8c229f6b','Southside Flyers','Australia','c7aa0182-a9ab-483a-9e51-323e593506b1','WNBL','womens',true),
+('adf28d26-89c4-4879-9784-e4ac3f4bb5d0','UC Capitals','Australia',null,'WNBL','womens',true),
+('bd4cc1b1-2830-4ab2-b6c2-21cf2eae6b48','Tasmania Jewels','Australia',null,'WNBL','womens',true),
+('c0177d35-3da5-4fac-873b-4838d038609e','Geelong United','Australia',null,'WNBL','womens',true),
+('e102707c-4187-4d44-bc0c-edbb456c66cb','Geelong Venom','Australia',null,'WNBL','womens',true),
+('e11d8652-598a-4e0d-bbea-44d297bee99d','Adelaide Lightning','Australia','c7aa0182-a9ab-483a-9e51-323e593506b1','WNBL','womens',true);
 create temporary table before_ld1_leagues on commit drop as select * from pg_temp.ld1_leagues;
 create temporary table before_ld1_teams on commit drop as select * from pg_temp.ld1_teams;
 create temporary table before_ld1_memberships on commit drop as select * from pg_temp.ld1_memberships;
@@ -577,6 +600,7 @@ create temporary table before_ld1_legacy_teams on commit drop as select * from p
 \ir ../../reports/league-data-1/poland-lower-divisions-shadow-correction.sql
 \ir ../../reports/league-data-1/poland-third-tier-expansion-shadow.sql
 \ir ../../reports/league-data-1/belarus-shadow-correction.sql
+\ir ../../reports/league-data-1/australia-wnbl-shadow-memberships.sql
 create temporary table after_ld1_leagues on commit drop as select * from pg_temp.ld1_leagues;
 create temporary table after_ld1_teams on commit drop as select * from pg_temp.ld1_teams;
 create temporary table after_ld1_memberships on commit drop as select * from pg_temp.ld1_memberships;
@@ -603,6 +627,7 @@ create temporary table after_ld1_legacy_teams on commit drop as select * from pg
 \ir ../../reports/league-data-1/poland-lower-divisions-shadow-correction.sql
 \ir ../../reports/league-data-1/poland-third-tier-expansion-shadow.sql
 \ir ../../reports/league-data-1/belarus-shadow-correction.sql
+\ir ../../reports/league-data-1/australia-wnbl-shadow-memberships.sql
 do $combined$ begin
 if (select count(*) from pg_temp.ld1_leagues)<>(select count(*)+20 from pg_temp.before_ld1_leagues) then raise exception 'ld1_leagues: unexpected delta';end if;
 if exists(select * from pg_temp.after_ld1_leagues except select * from pg_temp.ld1_leagues) or exists(select * from pg_temp.ld1_leagues except select * from pg_temp.after_ld1_leagues) then raise exception 'ld1_leagues: second run changed state';end if;
@@ -610,7 +635,7 @@ if exists(select id from pg_temp.before_ld1_leagues except select id from pg_tem
 if (select count(*) from pg_temp.ld1_teams)<>(select count(*)+81 from pg_temp.before_ld1_teams) then raise exception 'ld1_teams: unexpected delta';end if;
 if exists(select * from pg_temp.after_ld1_teams except select * from pg_temp.ld1_teams) or exists(select * from pg_temp.ld1_teams except select * from pg_temp.after_ld1_teams) then raise exception 'ld1_teams: second run changed state';end if;
 if exists(select id from pg_temp.before_ld1_teams except select id from pg_temp.ld1_teams) then raise exception 'ld1_teams: lost existing ID';end if;
-if (select count(*) from pg_temp.ld1_memberships)<>(select count(*)+406 from pg_temp.before_ld1_memberships) then raise exception 'ld1_memberships: unexpected delta';end if;
+if (select count(*) from pg_temp.ld1_memberships)<>(select count(*)+415 from pg_temp.before_ld1_memberships) then raise exception 'ld1_memberships: unexpected delta';end if;
 if exists(select * from pg_temp.after_ld1_memberships except select * from pg_temp.ld1_memberships) or exists(select * from pg_temp.ld1_memberships except select * from pg_temp.after_ld1_memberships) then raise exception 'ld1_memberships: second run changed state';end if;
 if exists(select id from pg_temp.before_ld1_memberships except select id from pg_temp.ld1_memberships) then raise exception 'ld1_memberships: lost existing ID';end if;
 if (select count(*) from pg_temp.ld1_legacy_leagues)<>(select count(*)+3 from pg_temp.before_ld1_legacy_leagues) then raise exception 'ld1_legacy_leagues: unexpected delta';end if;
