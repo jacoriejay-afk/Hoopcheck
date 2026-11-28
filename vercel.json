@@ -63,6 +63,7 @@
       "qa/android-play-verified-api": false,
       "qa/step4c-explicit-release-gates-20261128": false,
       "qa/step3-video-story-local-safety-20261128": false,
+      "qa/independent-membership-parity": false,
       "qa/independent-live-room-status": false
     }
   }

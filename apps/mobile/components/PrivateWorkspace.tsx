@@ -6,14 +6,14 @@ import { useNativeAccount } from "../src/native/useNativeAccount";
 import { useActiveScreen } from "../src/native/useActiveScreen";
 import { useNetwork } from "../src/native/network";
 import { readWithDeadline } from "../src/native/readDeadline";
-import { readWorkspace, type Workspace, type WorkspaceKind } from "../src/native/workspaceClient";
+import { commissionBreakdown, readWorkspace, type Workspace, type WorkspaceKind } from "../src/native/workspaceClient";
 import { supabase } from "../src/lib/supabase";
 const origin=process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim()||"https://hoopcheck.online";
 function money(amount:number|null|undefined,currency="USD") {
   if(typeof amount!=="number"||!Number.isFinite(amount))return "Unavailable";
   try{return new Intl.NumberFormat("en-US",{style:"currency",currency}).format(amount/100);}catch{return "Unavailable";}
 }
-function date(value:string|null){return value&&Number.isFinite(Date.parse(value))?new Date(value).toLocaleDateString():"Pending";}
+function date(value:string|null){return value&&Number.isFinite(Date.parse(value))?new Intl.DateTimeFormat("en-US",{dateStyle:"medium",timeZone:"UTC"}).format(new Date(value)):"Pending";}
 export function PrivateWorkspace({kind}:{kind:WorkspaceKind}) {
   const t=useEntryTheme(),{account,loading,retry}=useNativeAccount(),active=useActiveScreen(),{offline}=useNetwork();
   const owner=account?.user.id,allowed=Boolean(owner&&account?.workspaces?.[kind]===true&&!offline);
@@ -29,7 +29,7 @@ export function PrivateWorkspace({kind}:{kind:WorkspaceKind}) {
         if(session.error||!session.data.session||session.data.session.user.id!==owner||!owner)throw Error("Verify your account again.");
         const data=await readWorkspace(origin,session.data.session.access_token,owner,kind,controller.signal);
         const after=await readWithDeadline(()=>supabase.auth.getSession());
-        if(after.error||after.data.session?.user.id!==owner)throw Error("Account changed.");
+        if(after.error||after.data.session?.user.id!==owner||after.data.session.access_token!==session.data.session.access_token||controller.signal.aborted)throw Error("Account changed.");
         if(live)setState({owner,data,error:""});
       }catch(e){if(live&&owner)setState({owner,data:null,error:e instanceof Error?e.message:"Workspace unavailable."});}
       finally{clearTimeout(deadline);}
@@ -60,12 +60,21 @@ export function PrivateWorkspace({kind}:{kind:WorkspaceKind}) {
       {data.dashboard.totals.map(v=>row("Commission earnings · "+v.currency,money(v.earned,v.currency)))}
       {data.dashboard.active&&/^[A-Za-z0-9_-]{1,64}$/.test(data.dashboard.code)?<>
         {row("Referral code",data.dashboard.code)}
-        <Button onPress={()=>{void Share.share({message:"https://hoopcheck.online/referral/"+data.dashboard.code}).catch(()=>{});}}>Share referral link</Button>
+        <Button onPress={()=>{void Share.share({message:"Know who you’re signing with. Explore HoopCheck™ with my referral link. I may earn a commission if you subscribe.\nhttps://hoopcheck.online/referral/"+data.dashboard.code}).catch(()=>{});}}>Share referral link</Button>
       </>:null}
       <Text accessibilityRole="header" style={title}>RECENT REFERRALS</Text>
-      {data.dashboard.referrals.length?data.dashboard.referrals.map(v=>row("Referral "+v.id.slice(0,8)+" · "+date(v.captured_at),v.stripe_status||"Signed up")):<Text style={muted}>No verified signups yet.</Text>}
+      {data.dashboard.referrals.length?data.dashboard.referrals.map(v=>row("Referral "+v.id.slice(0,8)+" · "+date(v.captured_at)+(v.first_paid_at?" · Converted "+date(v.first_paid_at):""),v.stripe_status||"Signed up")):<Text style={muted}>No verified signups yet.</Text>}
       <Text accessibilityRole="header" style={title}>COMMISSIONS</Text>
-      {data.dashboard.commissions.length?data.dashboard.commissions.map(v=>row(date(v.paid_invoice_at)+" · "+v.subscription_plan+" · "+v.commission_rate_bps/100+"% · "+v.status,money(v.earnings,v.currency))):<Text style={muted}>No commissions yet.</Text>}
+      {data.dashboard.commissions.length ? data.dashboard.commissions.map(v => {
+        const detail = commissionBreakdown(v);
+        return <View key={v.id} style={{gap: 3}}>
+          {row(date(v.paid_invoice_at)+" · "+v.subscription_plan+" · "+v.commission_rate_bps/100+"% · "+(detail?.status ?? v.status),money(v.earnings,v.currency))}
+          {detail ? <Text style={muted}>
+            Referral {detail.referral} · {money(detail.gross,v.currency)} collected · {money(detail.deductions,v.currency)} in deductions
+            {detail.discount > 0 ? " · "+money(detail.discount,v.currency)+" pre-payment discount" : ""}
+          </Text> : <Text style={muted}>Commission breakdown unavailable for this invoice.</Text>}
+        </View>;
+      }) : <Text style={muted}>No commissions yet.</Text>}
       <Text accessibilityRole="header" style={title}>PAYMENT HISTORY</Text>
       {data.dashboard.payouts.length?data.dashboard.payouts.map(v=>row(date(v.paid_at||v.approved_at)+" · "+v.status,money(v.amount_minor,v.currency))):<Text style={muted}>No payments recorded yet.</Text>}
     </>:null}
