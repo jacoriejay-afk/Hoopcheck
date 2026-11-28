@@ -9,7 +9,7 @@ test('exact historical season excludes current links and includes inactive histo
  const result=await readLeagueClubs(db,id(1),{season:' 2025–26 '});assert.equal(result.season,'2025–26');assert.equal(result.clubs[0].name,'Historical club');assert.equal(requests,2);
 });
 test('current mode unions active memberships and direct links without duplicate clubs',async()=>{
- const db=client(async input=>{const u=new URL(String(input));if(u.pathname.endsWith('/team_league_memberships')){assert.equal(u.searchParams.get('active'),'eq.true');assert.equal(u.searchParams.has('season'),false);return Response.json([{team_id:id(2)}]);}return Response.json([{id:id(2),name:'Current club',country:null}]);});assert.equal((await readLeagueClubs(db,id(1))).clubs.length,1);
+ const db=client(async input=>{const u=new URL(String(input));if(u.pathname.endsWith('/leagues'))return Response.json({season:'2026-27'});if(u.pathname.endsWith('/team_league_memberships')){assert.equal(u.searchParams.get('active'),'eq.true');assert.equal(u.searchParams.get('season'),'eq.2026-27');return Response.json([{team_id:id(2)}]);}return Response.json([{id:id(2),name:'Current club',country:null}]);});assert.equal((await readLeagueClubs(db,id(1))).clubs.length,1);
 });
 test('bad season and aborted requests make no reads; server failures are not empty seasons',async()=>{
  let reads=0;const db=client(async()=>{reads++;return Response.json({message:'unavailable'},{status:503});});await assert.rejects(readLeagueClubs(db,id(1),{season:'x'.repeat(81)}));const controller=new AbortController();controller.abort();await assert.rejects(readLeagueClubs(db,id(1),{signal:controller.signal}));assert.equal(reads,0);await assert.rejects(readLeagueClubs(db,id(1),{season:'2025–26'}),/could not load/);
@@ -25,4 +25,29 @@ test('season sample reports truncation and fails closed on read failure',async()
  const broken=client(async()=>Response.json({message:'unavailable'},{status:503}));
  await assert.rejects(readRecordedLeagueSeasons(broken,id(1)),/could not load/);
  const aborted=new AbortController();aborted.abort();await assert.rejects(readRecordedLeagueSeasons(db,id(1),aborted.signal));
+});
+
+test('large league paginates all club IDs and preserves foreign origin',async()=>{
+ const teams=Array.from({length:205},(_,i)=>({id:id(i+2),name:'Club '+String(i+1).padStart(3,'0'),country:i===204?'Kazakhstan':'Armenia'}));
+ let membershipPages=0,directPages=0;
+ const db=client(async input=>{
+   const u=new URL(String(input)),offset=Number(u.searchParams.get('offset')||0),limit=Number(u.searchParams.get('limit')||100);
+   if(u.pathname.endsWith('/leagues'))return Response.json({season:'2026-27'});
+   if(u.pathname.endsWith('/team_league_memberships')){
+     membershipPages++;assert.equal(u.searchParams.get('season'),'eq.2026-27');
+     return Response.json(teams.slice(offset,offset+limit).map(t=>({team_id:t.id})));
+   }
+   if(u.searchParams.has('league_id')){directPages++;return Response.json(teams.slice(0,150).slice(offset,offset+limit));}
+   const filter=u.searchParams.get('id');
+   assert.ok(filter);
+   return Response.json(teams.filter(t=>filter.includes(t.id)).slice(offset,offset+limit));
+ });
+ const result=await readLeagueClubs(db,id(1));
+ assert.equal(result.clubs.length,205);assert.equal(result.limited,false);
+ assert.equal(result.clubs.find(t=>t.id===id(206)).country,'Kazakhstan');
+ assert.equal(membershipPages,3);assert.equal(directPages,2);
+});
+test('missing stored season retains legacy active membership fallback',async()=>{
+ const db=client(async input=>{const u=new URL(String(input));if(u.pathname.endsWith('/leagues'))return Response.json({season:null});if(u.pathname.endsWith('/team_league_memberships')){assert.equal(u.searchParams.get('active'),'eq.true');assert.equal(u.searchParams.has('season'),false);return Response.json([]);}return Response.json([{id:id(2),name:'Legacy club',country:'Georgia'}]);});
+ assert.equal((await readLeagueClubs(db,id(1))).clubs[0].country,'Georgia');
 });
