@@ -1,4 +1,4 @@
-import {useRef,useState} from "react";
+import {useEffect,useRef,useState} from "react";
 import {Alert,Text,TextInput,View} from "react-native";
 import {randomUUID} from "expo-crypto";
 import {Button} from "../src/primitives";
@@ -6,9 +6,10 @@ import {useEntryTheme} from "../src/theme";
 import {supabase} from "../src/lib/supabase";
 import {useGroupAccess} from "../src/native/useGroupAccess";
 import type {GroupAccessAction} from "../src/native/groupAccess";
-export function GroupAccessPanel({uid,space,onChanged}:{uid:string;space:string|null;onChanged:()=>void}){
- const t=useEntryTheme(),{snapshot,busy,notice,run,rosterNext,rosterPage,pageRoster}=useGroupAccess(supabase,uid,space,onChanged);
+export function GroupAccessPanel({uid,space,onChanged,invitationHint=null,channel=null,alertsEnabled=false}:{uid:string;space:string|null;onChanged:()=>void;invitationHint?:string|null;channel?:string|null;alertsEnabled?:boolean}){
+ const t=useEntryTheme(),{snapshot,busy,notice,run,rosterNext,rosterPage,pageRoster,alertPrefs,toggleAlert}=useGroupAccess(supabase,uid,space,onChanged,invitationHint,channel,alertsEnabled);
  const [name,setName]=useState(""),[description,setDescription]=useState(""),[member,setMember]=useState("");
+ useEffect(()=>{if(alertsEnabled&&invitationHint)void run();},[invitationHint,alertsEnabled]);
  const [rosterSearch,setRosterSearch]=useState("");
  const intent=useRef<{key:string;id:string}|null>(null);
  async function create(action:"create_private_group"|"create_private_channel"){
@@ -28,6 +29,8 @@ export function GroupAccessPanel({uid,space,onChanged}:{uid:string;space:string|
   <Button secondary disabled={busy||name.trim().length<3} onPress={()=>void create("create_private_group")}>Create private community</Button>
   {snapshot?.is_owner&&space?<Button secondary disabled={busy||name.trim().length<2||name.trim().length>50} onPress={()=>void create("create_private_channel")}>Create private channel</Button>:null}
   {notice?<Text accessibilityLiveRegion="polite" style={{color:t.muted}}>{notice}</Text>:null}
+  {alertPrefs?<View style={{gap:6}}><Text style={{color:t.foreground,fontWeight:"800"}}>Discussion notifications</Text><Button secondary disabled={busy} onPress={()=>void toggleAlert("community")}>{alertPrefs.community?"Community alerts on":"Community alerts off"}</Button>{alertPrefs.channel!==null?<Button secondary disabled={busy} onPress={()=>void toggleAlert("channel")}>{alertPrefs.channel?"Channel alerts on":"Channel alerts off"}</Button>:null}<Text style={{color:t.muted}}>In-app alerts appear when you refresh Alerts. Community alerts include channels you can access.</Text></View>:null}
+  {invitationHint&&snapshot&&!snapshot.invitations.some(i=>i.id===invitationHint)?<Text accessibilityRole="alert" style={{color:t.muted}}>This invitation is no longer available.</Text>:null}
   {snapshot?<><Text style={{color:t.foreground,fontWeight:"800"}}>Your invitations</Text>{snapshot.invitations.length?snapshot.invitations.map(i=><View key={i.id} style={{gap:4}}><Text style={{color:t.foreground}}>{i.group_name} · expires {new Date(i.expires_at).toLocaleDateString()}</Text>{button("Accept",{action:"accept_invite",target:i.id})}{button("Decline",{action:"decline_invite",target:i.id})}</View>):<Text style={{color:t.muted}}>No pending invitations.</Text>}
   {snapshot.is_owner?<><Text style={{color:t.foreground,fontWeight:"800"}}>Invite accepted contacts</Text>{snapshot.contacts.map(c=><View key={c.id} style={{gap:4}}><Text style={{color:t.foreground}}>{c.name}</Text>{button("Invite",{action:"invite",target:c.id})}</View>)}{snapshot.pending_invites.map(i=><View key={i.id}><Text style={{color:t.muted}}>Pending · {new Date(i.expires_at).toLocaleDateString()}</Text>{button("Revoke invite",{action:"revoke_invite",target:i.id})}</View>)}
   <Text style={{color:t.foreground,fontWeight:"800"}}>Manage members</Text><TextInput accessibilityLabel="Search all members" placeholder="Search all members" placeholderTextColor={t.muted} value={rosterSearch} onChangeText={setRosterSearch} maxLength={80} style={{color:t.foreground,backgroundColor:t.input,padding:10,minHeight:44}}/><Button secondary disabled={busy} onPress={()=>{setMember("");void pageRoster("search",rosterSearch);}}>Search roster</Button><Text style={{color:t.muted}}>Roster page {rosterPage}</Text><Button secondary disabled={busy||rosterPage<=1} onPress={()=>{setMember("");void pageRoster("previous");}}>Previous members</Button><Button secondary disabled={busy||!rosterNext} onPress={()=>{setMember("");void pageRoster("next");}}>Next members</Button>{snapshot.members.filter(m=>m.role!=="owner").map(m=><Button secondary key={m.user_id} disabled={busy} onPress={()=>setMember(m.user_id)}>{m.name} · {m.role} · {m.user_id.slice(0,6)}</Button>)}

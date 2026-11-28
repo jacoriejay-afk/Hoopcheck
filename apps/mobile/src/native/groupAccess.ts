@@ -68,3 +68,22 @@ export async function readGroupMemberPage(client:SupabaseClient,uid:string,space
  }
  await check();return {members,next:v.has_more?next:null};
 }
+
+export async function readGroupInvitation(client:SupabaseClient,uid:string,invite:string,signal:AbortSignal):Promise<Invite|null>{
+ if(!id(invite))throw Error("Invalid invitation.");
+ const {header,check}=await verified(client,uid,signal);
+ const r=await client.rpc("hoop_group_invitation_detail",{p_invite:invite}).setHeader("Authorization",header).abortSignal(signal);
+ if(signal.aborted||r.error)throw Error("Invitation unavailable.");
+ await check();
+ if(r.data===null)return null;
+ const v=r.data;
+ if(!record(v)||v.id!==invite||!label(v.group_name,80)||!date(v.expires_at))throw Error("Invalid invitation.");
+ return {id:invite,group_name:v.group_name,expires_at:v.expires_at};
+}
+export async function groupAlertPreference(client:SupabaseClient,uid:string,space:string,channel:string|null,enabled:boolean|null,signal:AbortSignal){
+ if(!id(space)||channel!==null&&!id(channel)||enabled!==null&&typeof enabled!=="boolean")throw Error("Invalid group alert preference.");
+ const {header,check}=await verified(client,uid,signal);
+ const r=await client.rpc("hoop_group_alert_preference",{p_space:space,p_channel:channel,p_enabled:enabled}).setHeader("Authorization",header).abortSignal(signal);
+ if(signal.aborted||r.error||typeof r.data!=="boolean"||enabled!==null&&r.data!==enabled)throw Error("Group notification preference unavailable.");
+ await check();return r.data as boolean;
+}

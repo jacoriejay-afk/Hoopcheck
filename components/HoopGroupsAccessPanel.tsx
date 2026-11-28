@@ -1,11 +1,12 @@
 "use client";
-import {useRef,useState} from "react";
+import {useEffect,useRef,useState} from "react";
 import {supabase} from "../lib/supabase";
 import {useGroupAccess} from "../apps/mobile/src/native/useGroupAccess";
 import type {GroupAccessAction} from "../apps/mobile/src/native/groupAccess";
-export default function HoopGroupsAccessPanel({uid,space,onChanged}:{uid:string;space:string|null;onChanged:()=>void}){
- const {snapshot,busy,notice,run,rosterNext,rosterPage,pageRoster}=useGroupAccess(supabase,uid,space,onChanged);
+export default function HoopGroupsAccessPanel({uid,space,onChanged,invitationHint=null,channel=null,alertsEnabled=false}:{uid:string;space:string|null;onChanged:()=>void;invitationHint?:string|null;channel?:string|null;alertsEnabled?:boolean}){
+ const {snapshot,busy,notice,run,rosterNext,rosterPage,pageRoster,alertPrefs,toggleAlert}=useGroupAccess(supabase,uid,space,onChanged,invitationHint,channel,alertsEnabled);
  const [name,setName]=useState(""),[description,setDescription]=useState(""),[member,setMember]=useState("");
+ useEffect(()=>{if(alertsEnabled&&invitationHint)void run();},[invitationHint,alertsEnabled]);
  const [rosterSearch,setRosterSearch]=useState("");
  const intent=useRef<{key:string;id:string}|null>(null);
  async function create(action:"create_private_group"|"create_private_channel"){
@@ -24,6 +25,8 @@ export default function HoopGroupsAccessPanel({uid,space,onChanged}:{uid:string;
   <button type="button" disabled={busy||name.trim().length<3} onClick={()=>void create("create_private_group")}>Create private community</button>
   {snapshot?.is_owner&&space&&<button type="button" disabled={busy||name.trim().length<2||name.trim().length>50} onClick={()=>void create("create_private_channel")}>Create private channel</button>}
   {notice&&<p role="status">{notice}</p>}
+  {alertPrefs&&<div><h4>Discussion notifications</h4><button type="button" disabled={busy} aria-pressed={alertPrefs.community} onClick={()=>void toggleAlert("community")}>{alertPrefs.community?"Community alerts on":"Community alerts off"}</button>{alertPrefs.channel!==null&&<button type="button" disabled={busy} aria-pressed={alertPrefs.channel} onClick={()=>void toggleAlert("channel")}>{alertPrefs.channel?"Channel alerts on":"Channel alerts off"}</button>}<p>In-app alerts appear when you refresh Alerts. Community alerts include channels you can access.</p></div>}
+  {invitationHint&&snapshot&&!snapshot.invitations.some(i=>i.id===invitationHint)&&<p role="status">This invitation is no longer available.</p>}
   {snapshot&&<><h4>Your invitations</h4>{snapshot.invitations.length?snapshot.invitations.map(i=><div key={i.id}><strong>{i.group_name}</strong> · expires {new Date(i.expires_at).toLocaleDateString()} {button("Accept",{action:"accept_invite",target:i.id})} {button("Decline",{action:"decline_invite",target:i.id})}</div>):<p>No pending invitations.</p>}
    {snapshot.is_owner&&<><h4>Invite an accepted contact</h4>{snapshot.contacts.map(c=><div key={c.id}>{c.name} {button("Invite",{action:"invite",target:c.id})}</div>)}
    {snapshot.pending_invites.map(i=><div key={i.id}>Pending invitation · {new Date(i.expires_at).toLocaleDateString()} {button("Revoke invite",{action:"revoke_invite",target:i.id})}</div>)}
