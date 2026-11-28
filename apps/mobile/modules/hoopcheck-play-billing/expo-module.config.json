@@ -4,7 +4,8 @@
   ],
   "android": {
     "modules": [
-      "expo.modules.hoopcheckplaybilling.HoopcheckPlayBillingModule"
+      "expo.modules.hoopcheckplaybilling.HoopcheckPlayBillingModule",
+      "expo.modules.hoopcheckplaybilling.PlayBillingRuntimeModule"
     ]
   }
 }

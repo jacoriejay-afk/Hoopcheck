@@ -8,11 +8,11 @@ type Transport=(action:"identity"|"issue"|"consume"|"sync",token:string,body?:Re
  * or membership mutation. A future signed sandbox bridge must separately
  * enforce its storefront/license-test release gate. */
 export function createPlaySandboxBridge(p:{
- scope:"synthetic";enabled():boolean;available():boolean;session:CoordinatorPorts["session"];
+ scope:"synthetic"|"signed_sandbox";enabled():boolean;available():boolean;session:CoordinatorPorts["session"];
  request:Transport;native:{launch(intent:Intent):Promise<unknown>;restore(accountId:string):Promise<unknown>};
  journal:ReturnType<typeof createPlayRecoveryJournal>;now():number;
 }){
- if(p.scope!=="synthetic")throw Error("Synthetic billing required");
+ if(p.scope!=="synthetic"&&p.scope!=="signed_sandbox")throw Error("Sandbox billing required");
  const quote=(v:Quote)=>({productId:v.productId,basePlanId:v.basePlanId,priceMicros:v.priceMicros,currency:v.currency});
  return createPlayPurchaseCoordinator({
   enabled:p.enabled,available:p.available,session:p.session,journal:p.journal,now:p.now,
