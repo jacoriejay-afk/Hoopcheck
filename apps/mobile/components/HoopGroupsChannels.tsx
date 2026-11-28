@@ -60,7 +60,7 @@ export default function HoopGroupsChannels({inviteSlug = null, jumpToPost}:{invi
     const expiry = setTimeout(() => setPrevious(null), Math.max(0, expiresAt - Date.now()));
     return () => clearTimeout(expiry);
   }, [expiresAt, previous, verifiedId]);
-  const cached = outbox && security.phase === "ready" && security.state && security.state.expiresAt > Date.now()
+  const cached = outbox && security.phase === "ready" && expiresAt
     && previous?.id === security.owner ? previous : null;
   // Cached identity only retains local composer state. Replay always uses the
   // live caller and the existing membership/RLS boundary.
@@ -79,6 +79,13 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug,jumpToPost}:{userId:st
   const [channelId,setChannelId]=useState("");
   const [postSnapshot,setPostSnapshot]=useState<{channelId:string;posts:Post[]}|null>(null);
   const postViews = useRef(new Map<string, View>());
+  const rememberPost = useCallback((id: string, view: View | null) => {
+    if (view) postViews.current.set(id, view); else postViews.current.delete(id);
+  }, []);
+  const jumpToVisiblePost = useCallback((id: string) => {
+    const view = postViews.current.get(id);
+    if (view) jumpToPost(view);
+  }, [jumpToPost]);
   const [postLoading,setPostLoading]=useState(false);
   const [unreadSnapshot,setUnreadSnapshot]=useState<{channelId:string;counts:GroupUnread}|null>(null);
   const [postError,setPostError]=useState("");
@@ -700,19 +707,16 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug,jumpToPost}:{userId:st
         {readStateEnabled?<Button secondary disabled={busy||postLoading||Boolean(postError)||!posts.length} onPress={()=>void markVisibleRead()}>Mark loaded messages read</Button>:null}
         {postLoading?<HoopCheckLoading compact label="Loading channel messages…" />:null}
         {postError?<Text accessibilityRole="alert" style={{color:theme.accent}}>{postError}</Text>:null}
-        {posts.length?posts.map(post=><View key={post.id} collapsable={false} ref={view => {
-          if (view) postViews.current.set(post.id, view); else postViews.current.delete(post.id);
-        }}
+        {posts.length?posts.map(post=>{
+          const parent = posts.find(p => p.id === post.reply_to_id && p.moderation_status === "approved");
+          return <View key={post.id} collapsable={false} ref={view => rememberPost(post.id, view)}
           style={{borderBottomWidth:1,borderColor:theme.border,paddingVertical:10,gap:5}}>
           <Text style={{color:theme.foreground,fontWeight:"700"}}>{post.author_id===userId?"You":"Community member"}</Text>
-          {repliesEnabled && post.was_reply ? (() => {
-            const parent = posts.find(p => p.id === post.reply_to_id && p.moderation_status === "approved");
-            return parent ? <Pressable accessibilityRole="button" accessibilityLabel="Jump to original message"
-              onPress={() => { const view = postViews.current.get(parent.id); if (view) jumpToPost(view); }}
+          {repliesEnabled && post.was_reply ? (parent ? <Pressable accessibilityRole="button" accessibilityLabel="Jump to original message"
+              onPress={() => jumpToVisiblePost(parent.id)}
               style={{minHeight:44,justifyContent:"center"}}>
               <Text style={{color:theme.accent}} numberOfLines={2}>{parent.body.slice(0,100)}</Text>
-            </Pressable> : <Text style={{color:theme.muted}}>Original message unavailable</Text>;
-          })() : null}
+            </Pressable> : <Text style={{color:theme.muted}}>Original message unavailable</Text>) : null}
           <Text style={{color:theme.foreground}}>{post.body}</Text>
           {repliesEnabled&&post.moderation_status==="approved"?<Button secondary disabled={busy} onPress={()=>setReplySnapshot({channelId:channel.id,id:post.id})}>Reply</Button>:null}
           <Text style={{color:theme.muted,fontSize:11}}>{post.moderation_status==="approved"?"Approved":"Pending review · visible only to you"} · {new Date(post.created_at).toLocaleString()}</Text>
@@ -720,7 +724,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug,jumpToPost}:{userId:st
             style={{minHeight:40,justifyContent:"center"}} onPress={()=>actions(post)}>
             <Text style={{color:theme.accent}}>Report or block</Text>
           </Pressable>:null}
-        </View>):!postLoading&&!postError&&postSnapshot?.channelId===channel.id?<Text style={{color:theme.muted,marginVertical:12}}>No approved messages yet.</Text>:null}
+        </View>; }):!postLoading&&!postError&&postSnapshot?.channelId===channel.id?<Text style={{color:theme.muted,marginVertical:12}}>No approved messages yet.</Text>:null}
         {repliesEnabled&&replyId?<View><Text style={{color:theme.muted}}>{replyParent?"Replying to: "+replyParent.body.slice(0,120):"Original message unavailable"}</Text><Button secondary disabled={busy} onPress={()=>setReplySnapshot(null)}>Clear reply</Button></View>:null}
         {saved?<View accessibilityLiveRegion="polite" style={{gap:6}}>
           <Text style={{color:theme.foreground}}>{posts.some(post=>post.id===saved.id)?"Saved copy for this message":saved.body}</Text>
