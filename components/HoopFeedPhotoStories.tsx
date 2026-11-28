@@ -7,11 +7,12 @@ import HoopFeedPrivateMedia from "./HoopFeedPrivateMedia";
 import HoopFeedReportAction from "./HoopFeedReportAction";
 import { readPhotoStories, publishPhotoStory, storyVisible, adjacentStoryId, type Story, type StoryCursor, type StoryAudience } from "../apps/mobile/src/native/photoStories";
 import { PublicationUnconfirmed } from "../apps/mobile/src/native/mediaClient";
-import {readMyVideoStoryJobs,videoStoryPhaseLabel,type VideoStoryJob} from "../apps/mobile/src/native/storyVideoReview";
+import {publishReviewedVideoStory,readMyVideoStoryJobs,videoStoryPhaseLabel,type VideoStoryJob} from "../apps/mobile/src/native/storyVideoReview";
 import {uploadStoryDraft,validateStoryVideoInput,type StoryVideoInput} from "../apps/mobile/src/native/storyVideoStaging";
 import { blockNativeAccount } from "../apps/mobile/src/native/accountBlocking";
 
 const enabled = process.env.NEXT_PUBLIC_HOOPCHECK_PHOTO_STORIES_ENABLED === "true";
+const reviewedPublicationEnabled=process.env.NEXT_PUBLIC_HOOPCHECK_REVIEWED_VIDEO_STORIES_ENABLED==="true";
 const stagingEnabled=process.env.NEXT_PUBLIC_HOOPCHECK_VIDEO_STORY_STAGING_ENABLED==="true";
 const statusEnabled=process.env.NEXT_PUBLIC_HOOPCHECK_VIDEO_STORY_REVIEW_LIFECYCLE_ENABLED==="true";
 const community = process.env.NEXT_PUBLIC_HOOPCHECK_COMMUNITY_PHOTO_STORIES_ENABLED === "true";
@@ -50,7 +51,7 @@ function StoriesPanel({uid,close}:{uid:string;close:()=>void}){
     await run(async controller=>{
       if(!before){setRows([]);setSelected(null);setCursor(null);}
       try{
-        const page=await readPhotoStories(supabase,uid,controller.signal,before,new Date(),community);
+        const page=await readPhotoStories(supabase,uid,controller.signal,before,new Date(),community,reviewedPublicationEnabled);
         if(!active(controller))throw Error("Story access could not be verified.");
         setRows(previous=>before?[...new Map([...previous,...page.stories].map(row=>[row.id,row])).values()]:page.stories);
         setCursor(page.next);setNow(Date.now());
@@ -105,6 +106,15 @@ function StoriesPanel({uid,close}:{uid:string;close:()=>void}){
       }finally{if(live.current)setVideoProgress(null);}
     },180000);
   }
+  async function publishReviewed(job:string){
+    if(!reviewedPublicationEnabled||!window.confirm("Publish this reviewed video to followers for 24 hours, without a custom caption?"))return;
+    let success=false;
+    await run(async controller=>{
+      await publishReviewedVideoStory(supabase,uid,job,controller.signal);
+      if(active(controller)){success=true;setJobs(old=>old.filter(j=>j.id!==job));setVideo(null);setVideoStaged(false);if(localPreview.current)URL.revokeObjectURL(localPreview.current);localPreview.current=null;}
+    });
+    if(success&&live.current){await refresh();if(live.current)setMessage("Reviewed video published to followers for 24 hours.");}
+  }
   async function publish(){
     if(!file||video||uncertain)return;
     const photoFile=file;let published=false;
@@ -145,8 +155,8 @@ function StoriesPanel({uid,close}:{uid:string;close:()=>void}){
     <p className="muted">Photos are visible to the selected eligible audience for 24 hours. Expiration does not erase copies already downloaded.</p>
     <label>Story photo (JPEG, up to 750 KB)<input type="file" accept="image/jpeg" disabled={busy||uncertain} onChange={event=>{const next=event.target.files?.[0];if(next){if(localPreview.current)URL.revokeObjectURL(localPreview.current);localPreview.current=null;setVideo(null);setVideoStaged(false);setFile(next);}event.target.value="";}}/></label>
     {file&&<p>{file.name} <button type="button" disabled={busy||uncertain} onClick={()=>setFile(null)}>Remove photo</button></p>}
-    {stagingEnabled&&<section aria-label="Private video Story draft"><label>Choose or record video (up to 60 seconds, 50 MB)<input type="file" accept="video/mp4,video/quicktime,video/webm" capture="environment" disabled={busy||uncertain} onChange={e=>{pickVideo(e.target.files?.[0]??null);e.target.value="";}}/></label>{video&&<><video key={video.id} src={video.url} controls playsInline preload="metadata" style={{width:"100%",maxHeight:260}} onLoadedMetadata={e=>{const ms=Math.ceil(e.currentTarget.duration*1000);setVideo(v=>v?.id===video.id?{...v,duration:Number.isFinite(ms)&&ms<=60000?ms:0}:v);}} onError={()=>setMessage("This clip cannot be previewed.")}/><button type="button" disabled={busy||!video.duration||videoStaged} onClick={()=>void stageVideo()}>{videoStaged?"Staged privately":"Stage privately for moderation"}</button>{videoProgress!==null&&<><p role="status">{videoProgress===100?"Upload received; confirming private staging…":"Uploading privately…"}</p><button type="button" onClick={()=>request.current?.abort()}>Cancel upload</button></>}<button type="button" disabled={busy} onClick={()=>{if(localPreview.current)URL.revokeObjectURL(localPreview.current);localPreview.current=null;setVideo(null);setVideoStaged(false);}}>Discard local preview</button></>}<p>Video drafts remain private. Captions and publication are not enabled for video yet.</p></section>}
-    {statusEnabled&&<section aria-label="Private video processing"><button type="button" disabled={busy} onClick={()=>void refreshVideoStatus()}>Check my video processing</button>{jobs.map(j=><p key={j.id}>{new Date(j.created_at).toLocaleString()} · {videoStoryPhaseLabel[j.phase]}</p>)}</section>}
+    {stagingEnabled&&<section aria-label="Private video Story draft"><label>Choose or record video (up to 60 seconds, 50 MB)<input type="file" accept="video/mp4,video/quicktime,video/webm" capture="environment" disabled={busy||uncertain} onChange={e=>{pickVideo(e.target.files?.[0]??null);e.target.value="";}}/></label>{video&&<><video key={video.id} src={video.url} controls playsInline preload="metadata" style={{width:"100%",maxHeight:260}} onLoadedMetadata={e=>{const ms=Math.ceil(e.currentTarget.duration*1000);setVideo(v=>v?.id===video.id?{...v,duration:Number.isFinite(ms)&&ms<=60000?ms:0}:v);}} onError={()=>setMessage("This clip cannot be previewed.")}/><button type="button" disabled={busy||!video.duration||videoStaged} onClick={()=>void stageVideo()}>{videoStaged?"Staged privately":"Stage privately for moderation"}</button>{videoProgress!==null&&<><p role="status">{videoProgress===100?"Upload received; confirming private staging…":"Uploading privately…"}</p><button type="button" onClick={()=>request.current?.abort()}>Cancel upload</button></>}<button type="button" disabled={busy} onClick={()=>{if(localPreview.current)URL.revokeObjectURL(localPreview.current);localPreview.current=null;setVideo(null);setVideoStaged(false);}}>Discard local preview</button></>}<p>Video drafts remain private until reviewed. {reviewedPublicationEnabled?"Use processing status to publish a reviewed video to followers.":"Video publication is disabled."} Custom captions are not enabled for video.</p></section>}
+    {statusEnabled&&<section aria-label="Private video processing"><button type="button" disabled={busy} onClick={()=>void refreshVideoStatus()}>Check my video processing</button>{jobs.map(j=><div key={j.id}><p>{new Date(j.created_at).toLocaleString()} · {videoStoryPhaseLabel[j.phase]}</p>{reviewedPublicationEnabled&&j.phase==="review_approved"&&<button type="button" disabled={busy} onClick={()=>void publishReviewed(j.id)}>Publish reviewed video</button>}</div>)}</section>}
     <label>Story caption<textarea maxLength={2000} value={caption} disabled={busy||uncertain} onChange={event=>setCaption(event.target.value)}/></label>
     {community&&<label>Story audience<select value={audience} disabled={busy||uncertain} onChange={event=>setAudience(event.target.value==="community"?"community":"followers")}><option value="followers">Followers</option><option value="community">Eligible community</option></select></label>}
     <div className="actions"><button className="btn" type="button" disabled={!file||!!video||busy||uncertain} onClick={()=>void publish()}>Publish Story · 24h</button><button className="btn dark" type="button" disabled={busy} onClick={()=>void refresh()}>Refresh Stories</button></div>
@@ -154,7 +164,7 @@ function StoriesPanel({uid,close}:{uid:string;close:()=>void}){
     {message&&<p role="status">{message}</p>}
     {current?<div>
       <p>{current.profiles?.display_name||"HoopCheck member"} · {current.audience} · expires {new Date(current.expires_at).toLocaleString()}</p>
-      <HoopFeedPrivateMedia key={current.id} postId={current.id} reference={current.image_url} kind="image" alt="Story photo"/>
+      <HoopFeedPrivateMedia key={current.id} postId={current.id} reference={current.video_url||current.image_url} kind={current.video_url?"video":"image"} alt="Story media"/>
       {current.body&&<p>{current.body}</p>}
       {current.author_id===uid?<button type="button" disabled={busy} onClick={()=>void remove(current)}>Remove Story</button>:<><HoopFeedReportAction uid={uid} postId={current.id} authorId={current.author_id}/><button type="button" disabled={busy} onClick={()=>void block(current)}>Block account</button></>}
       <div className="actions">

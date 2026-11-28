@@ -16,3 +16,13 @@ test("previous video jobs recover only validated status records, never publicati
  await assert.rejects(readMyVideoStoryJobs("https://fixture.invalid","token",signal,async()=>Response.json({jobs:[{...job,published:true}]})));
  await assert.rejects(readMyVideoStoryJobs("https://fixture.invalid","token",signal,async()=>Response.json({jobs:[job,job]})));
 });
+
+import {publishReviewedVideoStory} from "../src/native/storyVideoReview.ts";
+test("reviewed publication requires same verified account and exact server receipt",async()=>{
+ const owner="11111111-1111-4111-8111-111111111111",job="22222222-2222-4222-8222-222222222222",post="33333333-3333-4333-8333-333333333333",expires_at=new Date(Date.now()+86400000).toISOString(),signal=new AbortController().signal;
+ const client={auth:{getSession:async()=>({data:{session:{user:{id:owner},access_token:"token"}}}),getUser:async()=>({data:{user:{id:owner}}})},rpc(name,args){assert.equal(name,"publish_reviewed_story_video");assert.deepEqual(args,{p_job:job});return {setHeader(key,value){assert.equal(value,"Bearer token");return this;},async abortSignal(){return {data:{state:"published",post_id:post,expires_at}};}};}};
+ assert.deepEqual(await publishReviewedVideoStory(client,owner,job,signal),{postId:post,expiresAt:expires_at});
+ await assert.rejects(publishReviewedVideoStory(client,post,job,signal));
+ const deny={...client,rpc:()=>({setHeader(){return this;},async abortSignal(){return {data:{state:"unavailable"}};}})};
+ await assert.rejects(publishReviewedVideoStory(deny,owner,job,signal));
+});
