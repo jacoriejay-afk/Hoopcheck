@@ -490,3 +490,20 @@ test("missing Iceland women's league is visible even without any stored league o
  assert.equal(repaired.coverage[0].actual,10);assert.equal(repaired.coverage[0].expected,10);assert.deepEqual(repaired.coverage[0].missing,[]);
  assert.equal(repaired.missingReviewedCompetitions.some(row=>row.country==="Iceland"&&row.side==="womens"),false);
 });
+
+test("women's parity is identity-based and flags ambiguous league labels without auto-linking",async()=>{
+ const compiled=ts.transpileModule(read("lib/owner/directory-quality.ts"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+ const {deriveWomensCatalogParity,verifiedRosters}=await import("data:text/javascript;base64,"+Buffer.from(compiled).toString("base64"));
+ const women={id:"wc",name:"WNBL",country:"Australia",basketball_type:"womens",logo_url:null,season:"2026-27"};
+ const men={...women,id:"mc",basketball_type:"mens"};
+ const canonical=[{...women,id:"shared",name:"Townsville Fire",league_id:null},{...women,id:"canonical-only",name:"Townsville Fire",league_id:"wc"},{...men,id:"men-team",name:"Townsville Fire",league_id:"mc"}];
+ const legacy=[{id:"shared",name:"Townsville Fire",country:"Australia",league_id:"wl"},{id:"legacy-only",name:"New club",country:"Australia",league_id:"wl"}];
+ const leagues=[{id:"wl",name:"WNBL",country:"Australia"}];
+ const parity=deriveWomensCatalogParity([women,men],canonical,leagues,legacy);
+ assert.equal(parity.sharedIds,1);assert.equal(parity.missingLegacy,1);assert.equal(parity.missingCanonical,1);assert.equal(parity.linkedLegacyWithoutCanonicalPrimary,1);
+ assert.deepEqual(parity.legacyLeagueCandidates[0].candidateIds,["wc"]);
+ const ambiguous=deriveWomensCatalogParity([women,{...women,id:"duplicate"}],canonical,leagues,legacy);
+ assert.equal(ambiguous.exactLeagueCandidates,0);
+ assert.equal(verifiedRosters.find(row=>row.name==="WNBL").clubs.length,9);
+ assert.equal(verifiedRosters.filter(row=>row.country==="Portugal").length,2);
+});
