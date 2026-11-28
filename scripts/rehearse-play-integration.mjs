@@ -23,6 +23,7 @@ const {createDisposablePlayAdapters}=load("../lib/server/play/disposable-adapter
 const {createDisposablePlayRuntime}=load("../lib/server/play/disposable-runtime.ts",{...base,"./intent-request":{playIntentRequest},"./test-fulfillment":{reconcileTestPurchase}});
 const {createDisposablePlayHandler}=load("../lib/server/play/disposable-handler.ts",base);
 const {createPlayCatalogAdapter}=load("../lib/server/play/catalog-adapter.ts",base);
+const {createPlayRuntimeApplication}=load("../lib/server/play/runtime-application.ts",{...base,"./disposable-adapters":{createDisposablePlayAdapters},"./disposable-runtime":{createDisposablePlayRuntime},"./disposable-handler":{createDisposablePlayHandler},"./catalog-adapter":{createPlayCatalogAdapter},"./notification-runtime":{createPlayNotificationRuntime}});
 const {createPlaySandboxTransport}=load("../apps/mobile/src/native/playSandboxTransport.ts");
 const coordinator=load("../apps/mobile/src/native/playPurchaseCoordinator.ts",{"../../../../lib/billing/play-products":products});
 const {createPlayRecoveryJournal}=load("../apps/mobile/src/native/playRecoveryJournal.ts");
@@ -37,10 +38,11 @@ function sql(statement,admin=false){
  return result.stdout.trim();
 }
 // CI driver only: fixed statements, strictly escaped generated synthetic parameters.
-const adapter=createDisposablePlayAdapters({scope:"disposable_pg17",enabled:()=>true,query:async(statement,parameters)=>{
+const repository={scope:"disposable_pg17",enabled:()=>true,query:async(statement,parameters)=>{
  const rendered=statement.replace(/\$(\d+)/g,(_,n)=>{const v=parameters[Number(n)-1];if(v===null)return "null";if(typeof v==="number")return integer(v);if(typeof v==="boolean")return String(v);return q(v);});
  const v=sql(rendered);if(!v)return null;if(v==="t"||v==="f")return v==="t";if(/^\d+$/.test(v))return Number(v);if(v.startsWith("{"))return JSON.parse(v);return v;
-}});
+}};
+const adapter=createDisposablePlayAdapters(repository);
 const owner="66666666-6666-4666-8666-666666666666",foreign="77777777-7777-4777-8777-777777777777",session="88888888-8888-4888-8888-888888888888";
 const token="synthetic-e2e-"+crypto.randomBytes(16).toString("hex");
 const product=products.playProduct("hoopcheck.premium","annual");
@@ -109,8 +111,16 @@ assert.equal(await runtime.sync(new Request("https://fixture.invalid/sync"),prod
 assert.equal((await runtime.sync(authenticated,product.productId,token))?.outcome,"pending_fulfillment");
 let marker=null,launches=0,storeState="empty",launchOutcome="cancelled";
 const storage={read:async()=>marker,write:async v=>{marker=v;},remove:async()=>{marker=null;}};
-const handler=createDisposablePlayHandler(runtime,"disposable_pg17");
-const request=createPlaySandboxTransport("https://fixture.invalid",()=>true,async(url,init)=>handler(new Request(url,init)));
+const appOptions={scope:"disposable_pg17",origin:"https://fixture.invalid",repository,
+ authorize:async request=>allowed&&request.headers.get("authorization")==="Bearer synthetic-session"?{owner,sessionId:session,role:"player"}:null,
+ approvedRegion:async()=> "US",canStartPlayBilling:async()=>true,provider:client,vault,now:Date.now,
+ simulateAcknowledgment:async(receipt,t)=>(await acknowledgeTestPurchase(receipt,t,{verify:(o,x)=>client.verifyRuntime(o,x,t=>vault.fingerprint(t,"test")),fingerprint:x=>vault.fingerprint(x,"test"),confirmDurableFulfillment:r=>adapter.confirm(r,r.generation,r.expiresAt),accessToken:async()=>"fixture-oauth",request:fakeRequest,now:Date.now}))==="reverify_required",
+ notification:{config:{audience:"https://fixture.invalid/play/push",email:env.HOOPCHECK_PLAY_SERVICE_ACCOUNT_EMAIL,subject:"123456789",subscription:"projects/fixture-project/subscriptions/fixture-play"},keyRequest:(...args)=>keyRequest(...args)}};
+const app=createPlayRuntimeApplication({...appOptions,enabled:()=>true});
+const heldApp=createPlayRuntimeApplication(appOptions);
+assert.equal((await heldApp.POST(new Request("https://fixture.invalid/api/mobile/play/runtime/identity",{method:"POST"}))).status,503);
+assert.equal(await heldApp.tick(),"held");
+const request=createPlaySandboxTransport("https://fixture.invalid",()=>true,async(url,init)=>app.POST(new Request(url,init)));
 assert.equal(await request("identity","invalid"),null);
 assert.equal(await request("identity","synthetic-session",{owner:foreign}),null);
 assert.equal((await request("identity","synthetic-session")).accountId,account);
@@ -152,7 +162,7 @@ const keyRequest=async(url,init)=>{assert.equal(url,"https://www.googleapis.com/
 const event={subscription:sub,message:{messageId:"987654321",data:Buffer.from(JSON.stringify({version:"1.0",packageName:"online.hoopcheck.app",eventTimeMillis:String(now),subscriptionNotification:{version:"1.0",notificationType:13,purchaseToken:token}})).toString("base64")}};
 const ingress={enabled:()=>true,authenticate:a=>authenticatePlayPush(a,config,keyRequest,now),subscription:sub,fingerprint:t=>vault.fingerprint(t,"test"),enqueue:adapter.enqueue,now:()=>now};
 const pushOptions={scope:"disposable_pg17",config:{...config,subscription:sub},db:adapter,runtime,vault,keyRequest,now:()=>now};
-const push=createPlayNotificationRuntime({...pushOptions,enabled:()=>true});
+const push={POST:app.notificationPOST,tick:app.tick};
 const heldPush=createPlayNotificationRuntime(pushOptions);
 const send=async(e,authorization=auth)=>push.POST(new Request(config.audience,{method:"POST",headers:{"Content-Type":"application/json",authorization},body:JSON.stringify(e)}));
 assert.equal((await heldPush.POST(new Request(config.audience,{method:"POST"}))).status,503);
@@ -185,10 +195,26 @@ assert.equal(sql("select play_billing_candidate.confirm_test_fulfillment("+args(
 async function replacePurchase(previous,quote){
  const t="synthetic-replacement-"+crypto.randomBytes(16).toString("hex"),v={previous,quote,state:"SUBSCRIPTION_STATE_ACTIVE",ack:false,acks:0};
  replacements.set(t,v);
- const offer=await request("issue","synthetic-session",quote);assert.ok(offer?.intentId);
- const approval=await request("replacement","synthetic-session",{intentId:offer.intentId,oldToken:previous});assert.equal(approval?.mode,quote.productId==="hoopcheck.pro"?"without_proration":"charge_full_price");
- const consumed=await request("consume","synthetic-session",{...quote,intentId:offer.intentId,expiresAt:offer.expiresAt});assert.ok(consumed);
- assert.equal((await request("sync","synthetic-session",{productId:quote.productId,purchaseToken:t,intentId:offer.intentId}))?.outcome,"test_fulfillment_confirmed");
+ const oldProduct=previous===token?product.productId:replacements.get(previous).quote.productId;
+ let candidate={productId:oldProduct,accountId:account,token:previous},nativeLaunches=0;
+ const makeReplacement=()=>{
+  const bridge=createPlaySandboxBridge({scope:"synthetic",enabled:()=>true,available:()=>true,session:async()=>({owner,token:"synthetic-session",role:"player"}),request,journal:createPlayRecoveryJournal(storage),now:Date.now,native:{
+   launch:async(i,change)=>{
+    assert.equal(change?.oldToken,previous);assert.equal(change?.oldProduct,oldProduct);assert.equal(change?.mode,quote.productId==="hoopcheck.pro"?"without_proration":"charge_full_price");
+    assert.equal(i.productId,quote.productId);nativeLaunches++;candidate={productId:quote.productId,accountId:account,token:t};return "launched";
+   },restore:async id=>({accountId:id,pendingCount:0,unmatchedCount:0,candidates:[candidate]})
+  }});bridge.setOwner(owner);return bridge;
+ };
+ let bridge=makeReplacement();
+ assert.equal(await bridge.prepare(quote,true),true);
+ assert.equal(await bridge.launch(),"launched");
+ assert.equal(nativeLaunches,1);assert.ok(marker);
+ const intentId=JSON.parse(marker).intentId;
+ assert.equal(sql("select count(*) from play_billing_candidate.replacement_intents where intent_id="+q(intentId)),"1");
+ // A non-linked claim cannot steal the replacement reservation.
+ assert.equal(await adapter.claimBound(owner,account,products.playProduct(quote.productId,quote.basePlanId),vault.seal("synthetic-unlinked-"+crypto.randomBytes(12).toString("hex"),owner,"test"),intentId),"catalog_conflict");
+ bridge=makeReplacement();
+ assert.deepEqual(await bridge.foreground(),{verified:1,pending:0,failed:0});assert.equal(marker,null);
  assert.equal((await request("sync","synthetic-session",{productId:quote.productId,purchaseToken:t,intentId:null}))?.outcome,"test_fulfillment_confirmed");
  assert.equal(v.acks,1);
  assert.equal(sql("select count(*) from play_billing_candidate.shadow_play_sources where user_id="+q(owner)),"1");
@@ -217,7 +243,12 @@ assert.equal(sql("select provider_state from play_billing_candidate.lifecycle_me
 console.log("Replacement upgrade/downgrade, same-owner fencing, cancellation and refund/expiry without predecessor resurrection passed.");
 // Privacy hold: stop credential lookup and all future fulfillment; do not
 // claim a legal retention policy or destroy immutable ownership evidence.
-assert.equal(await adapter.holdOwner(owner),true);
+const {createPlayCredentialDeletionEffect,composePlayDeletionEffects}=load("../lib/server/play/deletion-effect.ts",base);
+const lease={requestId:"99999999-9999-4999-8999-999999999999",ownerId:owner,fence:session,policyVersion:"fixture-approved-v1"};
+const guards={assertLease:async()=>{},assertFrozen:async()=>{},assertApprovedCredentialPurge:async()=>{}};
+const effects=composePlayDeletionEffects(adapter,guards,{freeze_account_writes:async()=>({confirmed:true,receipt:"fixture_frozen"}),preserve_lawful_billing_records:async()=>({confirmed:true,receipt:"fixture_preserved"})});
+assert.equal((await effects.freeze_account_writes(lease,lease.requestId+":freeze_account_writes")).confirmed,true);
+assert.equal(await adapter.ownerHeld(owner),true);
 assert.equal(await mobile.foreground(),null);
 assert.equal(await mobile.prepare(localized),false);
 assert.equal(sql("select play_billing_candidate.confirm_test_fulfillment("+args(owner,activeGeneration,expiry)+")"),"f");
@@ -230,13 +261,11 @@ assert.equal(sql("select has_table_privilege('authenticated','play_billing_candi
 assert.equal(sql("select has_table_privilege('service_role','play_billing_candidate.owner_holds','DELETE')"),"f");
 console.log("Test owner deletion freeze passed: credential lookup blocked, no future writes, shadow access absent, no client privileges.");
 
-const {createPlayCredentialDeletionEffect}=load("../lib/server/play/deletion-effect.ts",base);
-const lease={requestId:"99999999-9999-4999-8999-999999999999",ownerId:owner,fence:session,policyVersion:"fixture-approved-v1"};
 const effect=createPlayCredentialDeletionEffect(adapter,{assertLease:async()=>{},assertFrozen:async()=>assert.equal(await adapter.ownerHeld(owner),true),assertApprovedCredentialPurge:async()=>{}});
 await assert.rejects(()=>effect(lease));
 sql("insert into play_billing_candidate.credential_cleanup_approvals values("+[q(lease.requestId),q(owner),q(session),q(lease.policyVersion)].join(",")+") returning 1",true);
 await assert.rejects(()=>effect({...lease,fence:foreign}));
-assert.equal((await effect(lease)).confirmed,true);
+assert.equal((await effects.preserve_lawful_billing_records(lease,lease.requestId+":preserve_lawful_billing_records")).confirmed,true);
 assert.equal((await effect(lease)).confirmed,true);
 assert.equal(sql("select count(*) from play_billing_candidate.purchase_claims where owner_id="+q(owner)+" and credential_envelope is not null"),"0");
 assert.equal(sql("select count(*) from play_billing_candidate.purchase_claims where owner_id="+q(owner)),"3");

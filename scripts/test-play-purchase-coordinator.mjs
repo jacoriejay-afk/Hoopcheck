@@ -109,3 +109,15 @@ test("recovery sends the exact durable intent only for matching product and acco
  assert.deepEqual(await next.foreground(),{verified:2,pending:0,failed:0});
  assert.deepEqual(seen,[[null,"hoopcheck.premium"],[f.intent.intentId,quote.productId]]);
 });
+
+test("replacement review rejects unapproved or foreign predecessor and forwards exact mode only after intent consumption",async()=>{
+ const f=fixture(),old="synthetic-previous-premium",launches=[];
+ f.deps.restore=async()=>({accountId,pendingCount:0,unmatchedCount:0,candidates:[{accountId,productId:"hoopcheck.premium",token:old}]});
+ f.deps.reviewReplacement=async(i,t)=>({owner,environment:"test",intentId:i.intentId,oldProduct:"hoopcheck.premium",mode:"without_proration"});
+ f.deps.launch=async(i,change)=>{launches.push(change);return "launched";};
+ assert.equal(await f.client.prepare(quote,true),true);
+ assert.equal(await f.client.launch(),"launched");
+ assert.deepEqual(launches,[{oldProduct:"hoopcheck.premium",oldToken:old,mode:"without_proration"}]);
+ const g=fixture();g.deps.restore=f.deps.restore;g.deps.reviewReplacement=async i=>({owner,environment:"test",intentId:i.intentId,oldProduct:"hoopcheck.premium",mode:"charge_full_price"});
+ assert.equal(await g.client.prepare(quote,true),false);assert.equal(await g.client.launch(),"held");
+});

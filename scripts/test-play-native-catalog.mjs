@@ -39,3 +39,14 @@ test("internal purchase operations use reviewed current quotes and account-scope
  assert.doesNotMatch(read(base+"index.ts"),/launch|restore|purchaseToken/);
  assert.doesNotMatch(read(base+"android/src/main/java/expo/modules/hoopcheckplaybilling/HoopcheckPlayBillingModule.kt"),/PlayPurchaseOperations/);
 });
+
+test("native replacement is explicit, fresh, same-account and independently held",()=>{
+ const base="../apps/mobile/modules/hoopcheck-play-billing/android/src/main/java/expo/modules/hoopcheckplaybilling/";
+ const operations=read(base+"PlayPurchaseOperations.kt"),module=read(base+"PlayBillingRuntimeModule.kt");
+ assert.match(operations,/setSubscriptionProductReplacementParams/);assert.match(operations,/setOldPurchaseToken/);
+ assert.match(operations,/ReplacementMode.CHARGE_FULL_PRICE/);assert.match(operations,/ReplacementMode.WITHOUT_PRORATION/);
+ assert.match(module,/private val signedSandboxAccepted = false/);
+ assert.match(module,/prior.acknowledged/);assert.match(module,/prior.token == value/);
+ assert.match(module,/scan.pendingCount == 0 && scan.unmatchedCount == 0/);
+ assert.doesNotMatch(module,/acknowledgePurchase\(|consumeAsync\(/);
+});
