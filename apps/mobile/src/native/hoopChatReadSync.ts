@@ -35,3 +35,17 @@ export async function markServerChatRead(client: SupabaseClient, threadId: strin
     throw Error("Read marker could not be synchronized.");
   }
 }
+
+/** Existing RPC stays bounded at 100 per call; publish only a complete batch
+ * result for the same verified caller. */
+export async function readPagedChatCounts(client:SupabaseClient,threadIds:string[],session:ReadSession){
+ if(threadIds.length>501||new Set(threadIds).size!==threadIds.length)throw Error("Invalid conversation list.");
+ const counts=new Map<string,number>();
+ for(let i=0;i<threadIds.length;i+=100){
+  if(session.signal.aborted)throw Error("Synced unread counts unavailable.");
+  const page=await readServerChatCounts(client,threadIds.slice(i,i+100),session);
+  for(const [id,count] of page)counts.set(id,count);
+ }
+ if(session.signal.aborted)throw Error("Synced unread counts unavailable.");
+ return counts;
+}

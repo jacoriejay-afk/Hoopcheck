@@ -13,7 +13,7 @@ import {prepareConversationMessage,sendConversationMessage} from "../apps/mobile
 import {quoteConversationMessage} from "../apps/mobile/src/native/hoopChatQuote";
 import {forwardDestinations,forwardDraft,readForwardDraft,type ForwardSelection} from "../apps/mobile/src/native/hoopChatForward";
 import {makeReplyTarget,scopedReplyTarget,type ReplyTarget} from "../apps/mobile/src/native/hoopChatReply";
-import {markServerChatRead,readServerChatCounts} from "../apps/mobile/src/native/hoopChatReadSync";
+import {markServerChatRead,readPagedChatCounts} from "../apps/mobile/src/native/hoopChatReadSync";
 const structuredReplies=process.env.NEXT_PUBLIC_HOOPCHECK_STRUCTURED_REPLIES_ENABLED==="true";
 const syncReadMarkers=process.env.NEXT_PUBLIC_HOOPCHECK_CHAT_READ_SYNC_ENABLED==="true";
 import {
@@ -34,11 +34,14 @@ const formatTime=(date:string)=>new Date(date).toLocaleString(undefined,{month:"
 const initials=(name:string)=>name.trim().split(/\s+/).slice(0,2).map(part=>part[0]).join("").toUpperCase()||"HC";
 
 import {parseChatThread,readLinkedChatThread} from "../apps/mobile/src/native/hoopChatLink";
+import {readChatInbox,chatInboxBatches,CHAT_INBOX_MAX_PAGES} from "../apps/mobile/src/native/hoopChatInbox";
 
 export default function HoopChatCourtside(){
   const [userId,setUserId]=useState("");
   const [sessionRevision,setSessionRevision]=useState(0);
   const [requests,setRequests]=useState<ChatRequest[]>([]);
+  const inboxPages=useRef(1);
+  const [inboxMore,setInboxMore]=useState(false),[inboxLimit,setInboxLimit]=useState(false);
   const [messages,setMessages]=useState<ChatMessage[]>([]);
   const [serverUnread,setServerUnread]=useState<{owner:string;counts:Map<string,number>}|null>(null);
   const [historyPage,setHistoryPage]=useState<HistoryPage|null>(null);
@@ -121,37 +124,31 @@ export default function HoopChatCourtside(){
           throw new Error("Blocked accounts could not be verified.");
         }
         const blockedIds=new Set(blocked.data.map(row=>row.blocked_id));
-        const {data:requestRows,error:requestError}=await supabase.from("player_contact_requests")
-          .select("id,requester_id,player_id,message,status,created_at")
-          .or(`requester_id.eq.${user.id},player_id.eq.${user.id}`)
-          .order("created_at",{ascending:false}).limit(100).setHeader("Authorization",header).abortSignal(signal);
+        const inbox=await readChatInbox(supabase,user.id,header,signal,inboxPages.current,blockedIds);
         if(!valid()||signal.aborted)return;
-        if(requestError)throw new Error("Could not load private conversations.");
-        const rows=((requestRows||[]) as ChatRequest[]).filter(row=>
-          !blockedIds.has(row.requester_id===user.id?row.player_id:row.requester_id));
+        const rows=inbox.rows;
         const fromUrl=parseChatThread(new URLSearchParams(window.location.search).get("thread"));
         if(fromUrl&&!rows.some(r=>r.id===fromUrl)){
           const linked=await readLinkedChatThread(supabase,user.id,fromUrl,blockedIds,header,signal);
           if(!valid()||signal.aborted)return;
-          if(linked){rows.unshift(linked);if(rows.length>100)rows.pop();}
+          if(linked)rows.unshift(linked);
         }
         const peers=[...new Set(rows.map(r=>r.requester_id===user.id?r.player_id:r.requester_id))];
         const accepted=rows.filter(r=>r.status==="accepted").map(r=>r.id);
-        const [history,profileResult,unread]=await Promise.all([
-          accepted.length?supabase.from("player_contact_messages")
-            .select("id,request_id,sender_id,body,created_at").in("request_id",accepted)
-            .order("created_at",{ascending:false}).limit(600).setHeader("Authorization",header).abortSignal(signal)
-            :Promise.resolve({data:[] as ChatMessage[],error:null}),
-          peers.length?supabase.from("profiles").select("id,display_name,username,account_type").in("id",peers)
-            .setHeader("Authorization",header).abortSignal(signal)
-            :Promise.resolve({data:[] as ChatContact[],error:null}),
-          syncReadMarkers?readServerChatCounts(supabase,rows.map(row=>row.id),{bearer:header,signal}).catch(()=>null):null,
+        const [historyPages,profilePages,unread]=await Promise.all([
+          Promise.all(chatInboxBatches(accepted).map(ids=>supabase.from("player_contact_messages")
+            .select("id,request_id,sender_id,body,created_at").in("request_id",ids).order("created_at",{ascending:false}).limit(600).setHeader("Authorization",header).abortSignal(signal))),
+          Promise.all(chatInboxBatches(peers).map(ids=>supabase.from("profiles").select("id,display_name,username,account_type").in("id",ids).setHeader("Authorization",header).abortSignal(signal))),
+          syncReadMarkers?readPagedChatCounts(supabase,rows.map(row=>row.id),{bearer:header,signal}).catch(()=>null):null,
         ]);
+        const latestSession=await supabase.auth.getSession();
+        if(latestSession.error||latestSession.data.session?.user.id!==user.id||latestSession.data.session.access_token!==session.access_token)throw Error("Account changed.");
         if(!valid()||signal.aborted)return;
-        if(history.error)throw new Error("Message history could not be loaded.");
+        if(historyPages.some(result=>result.error)||profilePages.some(result=>result.error))throw new Error("Conversation previews could not be loaded.");
+        setInboxMore(inbox.hasMore);setInboxLimit(inbox.atLimit);
         setServerUnread(unread?{owner:user.id,counts:unread}:null);
-        setRequests(rows);setMessages((history.data||[]) as ChatMessage[]);
-        setContacts(Object.fromEntries(((profileResult.data||[]) as ChatContact[]).map(c=>[c.id,c])));
+        setRequests(rows);setMessages(historyPages.flatMap(result=>(result.data||[]) as ChatMessage[]));
+        setContacts(Object.fromEntries(profilePages.flatMap(result=>(result.data||[]) as ChatContact[]).map(c=>[c.id,c])));
         setSelectedId(current=>{
           if(fromUrl)return rows.some(r=>r.id===fromUrl)?fromUrl:null;
           if(current&&rows.some(r=>r.id===current))return current;
@@ -172,7 +169,7 @@ export default function HoopChatCourtside(){
 
   useEffect(()=>{
     accountGeneration.current+=1;loadSequence.current+=1;
-    userIdRef.current="";
+    userIdRef.current="";inboxPages.current=1;setInboxMore(false);setInboxLimit(false);
     pendingMessages.current.clear();
     setUserId("");setRequests([]);setMessages([]);setContacts({});
     setServerUnread(null);
@@ -560,6 +557,8 @@ export default function HoopChatCourtside(){
             <p>{requests.length?"Change your search or filters.":"Connect with another player to start a private thread."}</p>
             <Link href="/players">Discover players</Link></div>}
         </nav>
+        <small role="status">{requests.length} conversations loaded{inboxLimit?" · loading limit reached":inboxMore?" · older conversations available":""}. Search covers loaded conversations.</small>
+        {inboxMore&&!inboxLimit&&<button type="button" disabled={syncing||sending||loading} onClick={()=>{if(inboxRequest.current||inboxPages.current>=CHAT_INBOX_MAX_PAGES)return;inboxPages.current++;void load();}}>Load older conversations</button>}
       </aside>
       <div className="hc-courtside-stage">
         {selected?<><header className="hc-courtside-stage-header">
