@@ -1,3 +1,4 @@
+import type {SupabaseClient} from "@supabase/supabase-js";
 export const videoStoryPhases=["awaiting_upload","inspecting","transcoding","awaiting_review","review_approved","rejected","retry_required"] as const;
 export type VideoStoryPhase=typeof videoStoryPhases[number];
 const uuid=/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
@@ -26,4 +27,18 @@ export async function readMyVideoStoryJobs(origin:string,token:string,signal:Abo
   seen.add(j.id);jobs.push({id:j.id,created_at:j.created_at,duration_ms:j.duration_ms,phase:j.phase});
  }
  return jobs;
+}
+
+export async function publishReviewedVideoStory(client:SupabaseClient,owner:string,job:string,signal:AbortSignal){
+ if(!uuid.test(owner)||!uuid.test(job)||signal.aborted)throw Error("Invalid video publication.");
+ const session=await client.auth.getSession(),token=session.data.session?.access_token;
+ if(session.error||session.data.session?.user.id!==owner||!token||signal.aborted)throw Error("Verify account.");
+ const verified=await client.auth.getUser(token);
+ if(verified.error||verified.data.user?.id!==owner||signal.aborted)throw Error("Verify account.");
+ const r=await client.rpc("publish_reviewed_story_video",{p_job:job}).setHeader("Authorization","Bearer "+token).abortSignal(signal);
+ const after=await client.auth.getSession();
+ if(signal.aborted||r.error||after.error||after.data.session?.user.id!==owner||after.data.session.access_token!==token)throw Error("Publication unconfirmed. Check this same job before retrying.");
+ const data=r.data;
+ if(data?.state!=="published"||!uuid.test(data.post_id)||typeof data.expires_at!=="string"||!Number.isFinite(Date.parse(data.expires_at))||Date.parse(data.expires_at)<=Date.now()||Date.parse(data.expires_at)>Date.now()+86400000+60000)throw Error("This video is not available for publication.");
+ return {postId:data.post_id as string,expiresAt:data.expires_at as string};
 }

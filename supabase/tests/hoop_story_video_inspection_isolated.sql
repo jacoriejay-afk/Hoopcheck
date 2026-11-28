@@ -91,3 +91,57 @@ SELECT 'PASS explicit asset-bound human visual/audio review, owner-only status a
 DO $$BEGIN
  IF has_function_privilege('authenticated','public.story_video_owner_jobs(uuid)','EXECUTE') OR has_function_privilege('authenticated','public.story_video_review_queue(uuid)','EXECUTE') OR has_function_privilege('authenticated','public.revoke_story_video_review(uuid,uuid,uuid)','EXECUTE') THEN RAISE EXCEPTION 'Private review service function exposed';END IF;
 END$$;
+
+-- Explicit synthetic publication fixture; never sourced by actual acceptance.
+CREATE SCHEMA private;CREATE SCHEMA hoopcheck_security;
+GRANT USAGE ON SCHEMA auth,private,hoopcheck_security TO authenticated;
+CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$SELECT (current_setting('request.jwt.claims',true)::jsonb->>'sub')::uuid$$;
+CREATE FUNCTION public.confirm_active_account_session() RETURNS boolean LANGUAGE sql STABLE AS $$SELECT current_setting('fixture.active',true)='yes'$$;
+CREATE FUNCTION hoopcheck_security.mfa_satisfied() RETURNS boolean LANGUAGE sql STABLE AS $$SELECT current_setting('fixture.mfa',true)='yes'$$;
+CREATE FUNCTION public.can_use_unified_hoopfeed() RETURNS boolean LANGUAGE sql STABLE AS $$SELECT current_setting('fixture.paid',true)='yes'$$;
+CREATE FUNCTION private.hoopfeed_can_read_author(p_author uuid) RETURNS boolean LANGUAGE sql STABLE AS $$SELECT auth.uid()=p_author OR current_setting('fixture.following',true)='yes'$$;
+CREATE TABLE public.profiles(id uuid PRIMARY KEY,moderation_status text);
+INSERT INTO public.profiles VALUES('11111111-1111-4111-8111-111111111111','normal'),('44444444-4444-4444-8444-444444444444','normal');
+CREATE TABLE public.feed_posts(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),author_id uuid,body text,status text,post_kind text,community_visible boolean,created_at timestamptz,expires_at timestamptz,video_url text,image_url text,image_urls jsonb,shared_post_id uuid);
+ALTER TABLE public.feed_posts ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "unified hoopfeed approved posts read" ON public.feed_posts FOR SELECT TO authenticated USING(status='approved' AND expires_at>now() AND private.hoopfeed_can_read_author(author_id) AND public.can_use_unified_hoopfeed());
+GRANT SELECT,INSERT,UPDATE,DELETE ON public.feed_posts TO authenticated;
+CREATE POLICY fixture_insert ON public.feed_posts FOR INSERT TO authenticated WITH CHECK(author_id=auth.uid());
+CREATE POLICY fixture_update ON public.feed_posts FOR UPDATE TO authenticated USING(author_id=auth.uid()) WITH CHECK(author_id=auth.uid());
+CREATE POLICY fixture_delete ON public.feed_posts FOR DELETE TO authenticated USING(author_id=auth.uid());
+\ir ../candidates/hoop_story_video_publication_review_only.sql
+-- Reset only synthetic asset catalog and explicit test decision before publish.
+UPDATE storage.objects SET version='video-v1' WHERE name LIKE 'story-processed/%/video.mp4';
+UPDATE hoopcheck_story_inspection.reviews SET revoked_at=NULL;
+SET fixture.active='yes';SET fixture.mfa='yes';SET fixture.paid='yes';SET fixture.following='no';
+SET ROLE authenticated;
+SET request.jwt.claims='{"role":"authenticated","sub":"11111111-1111-4111-8111-111111111111"}';
+DO $$BEGIN IF public.publish_reviewed_story_video('22222222-2222-4222-8222-222222222222')->>'state' IS DISTINCT FROM 'disabled' THEN RAISE EXCEPTION 'Default-off publication bypass';END IF;END$$;
+RESET ROLE;
+UPDATE hoopcheck_story_inspection.publication_config SET enabled=true;
+UPDATE hoopcheck_story_inspection.reviews SET revoked_at=now();
+SET ROLE authenticated;
+DO $$BEGIN IF public.publish_reviewed_story_video('22222222-2222-4222-8222-222222222222')->>'state' IS DISTINCT FROM 'unavailable' THEN RAISE EXCEPTION 'Revoked publication accepted';END IF;END$$;
+RESET ROLE;
+UPDATE hoopcheck_story_inspection.reviews SET revoked_at=NULL;
+SET ROLE authenticated;
+DO $f$ DECLARE x jsonb;y jsonb; BEGIN
+ x:=public.publish_reviewed_story_video('22222222-2222-4222-8222-222222222222');
+ IF x->>'state' IS DISTINCT FROM 'published' THEN RAISE EXCEPTION 'Approved publication missing';END IF;
+ y:=public.publish_reviewed_story_video('22222222-2222-4222-8222-222222222222');
+ IF x IS DISTINCT FROM y OR (SELECT count(*) FROM public.feed_posts)<>1 THEN RAISE EXCEPTION 'Duplicate publication';END IF;
+ BEGIN UPDATE public.feed_posts SET community_visible=true;RAISE EXCEPTION 'Audience mutation accepted';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
+END $f$;
+SET request.jwt.claims='{"role":"authenticated","sub":"44444444-4444-4444-8444-444444444444"}';
+DO $$BEGIN IF EXISTS(SELECT FROM public.feed_posts) THEN RAISE EXCEPTION 'Non-follower sees Story';END IF;IF public.publish_reviewed_story_video('22222222-2222-4222-8222-222222222222')->>'state' IS DISTINCT FROM 'unavailable' THEN RAISE EXCEPTION 'Foreign job published';END IF;END$$;
+SET fixture.following='yes';
+DO $$BEGIN IF (SELECT count(*) FROM public.feed_posts)<>1 THEN RAISE EXCEPTION 'Follower playback scope missing';END IF;END$$;
+SET fixture.mfa='no';
+DO $$BEGIN IF EXISTS(SELECT FROM public.feed_posts) THEN RAISE EXCEPTION 'AAL denied viewer sees video';END IF;END$$;
+RESET ROLE;
+SET fixture.mfa='yes';
+SET request.jwt.claims='{"role":"service_role"}';
+DO $$BEGIN IF NOT EXISTS(SELECT FROM public.feed_posts f WHERE public.resolve_reviewed_story_video(f.id,f.video_url) IS NOT NULL) THEN RAISE EXCEPTION 'Approved asset not resolved';END IF;END$$;
+UPDATE hoopcheck_story_inspection.reviews SET revoked_at=now();
+DO $$BEGIN IF EXISTS(SELECT FROM public.feed_posts f WHERE public.resolve_reviewed_story_video(f.id,f.video_url) IS NOT NULL) THEN RAISE EXCEPTION 'Revoked asset resolved';END IF;END$$;
+SELECT 'PASS reviewed video publication receipt, audience, MFA, mutation protection and revocation';
