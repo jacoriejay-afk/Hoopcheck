@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
+import { readGroupUnread,markGroupVisibleRead,type GroupUnread } from "../../apps/mobile/src/native/hoopGroupsRead";
 import { prepareGroupSend, submitGroupSend, type GroupSend } from "../../apps/mobile/src/native/hoopGroupsSend";
 import { createGroupRefreshQueue } from "../../apps/mobile/src/native/hoopGroupsRefresh";
 import { withHoopChatDeadline } from "../../apps/mobile/src/native/hoopChatLoad";
@@ -17,6 +18,7 @@ type Space = GroupSpace;
 type Channel = GroupChannel;
 type Post = { id: string; author_id: string; body: string; moderation_status: string; created_at: string };
 const enabled = process.env.NEXT_PUBLIC_HOOPGROUPS_CHANNELS_ENABLED === "true";
+const readStateEnabled=process.env.NEXT_PUBLIC_HOOPGROUPS_READ_STATE_ENABLED==="true";
 const planned = [
   { slug:"world-basketball", name:"World Basketball", category:"global", description:"All leagues, all levels, one basketball world." },
   { slug:"players-network", name:"Players Network", category:"players", description:"Player-to-player community and career experiences." },
@@ -38,6 +40,7 @@ export default function HoopGroupsPage() {
   const [draftSnapshot, setDraftSnapshot] = useState<{scope:string;value:string}|null>(null);
   const [postRevision,setPostRevision]=useState(0);
   const [postLoading,setPostLoading]=useState(false);
+  const [unreadSnapshot,setUnreadSnapshot]=useState<{scope:string;value:GroupUnread}|null>(null);
   const [postError,setPostError]=useState("");
   const sendingPost=useRef(false);
   const pendingSend=useRef<GroupSend|null>(null);
@@ -132,6 +135,7 @@ export default function HoopGroupsPage() {
   const joined = Boolean(selected && memberships.includes(selected.id));
   const scope = groupChannelScope(userId,channel?.id,joined&&backendReady&&ready);
   const posts = scopedGroupValue(postSnapshot,scope,[]);
+  const unread=scopedGroupValue(unreadSnapshot,scope,null);
   const draft = scopedGroupValue(draftSnapshot,scope,"");
   function setDraft(value:string){if(scope)setDraftSnapshot({scope,value});}
   useEffect(() => { channelRef.current = channel?.id || ""; }, [channel?.id]);
@@ -158,7 +162,7 @@ export default function HoopGroupsPage() {
     const currentChannel=channel.id,currentSpace=channel.space_id;
     const generation=loadGeneration.current;
     const current=()=>active&&generation===loadGeneration.current&&channelRef.current===currentChannel;
-    setPostSnapshot(null);setPostLoading(true);setPostError("");
+    setPostSnapshot(null);setUnreadSnapshot(null);setPostLoading(true);setPostError("");
     // Visibility can change during awaited Auth or PostgREST calls.
     const isHidden=()=>document.visibilityState==="hidden";
     const queue=createGroupRefreshQueue(()=>current()&&!isHidden(),()=>{
@@ -196,6 +200,7 @@ export default function HoopGroupsPage() {
             .select("id,author_id,body,moderation_status,created_at").eq("channel_id",currentChannel)
             .order("created_at",{ascending:false}).order("id",{ascending:false}).limit(100).setHeader("Authorization",header).abortSignal(signal);
           if(error||signal.aborted)throw Error("Could not load group discussion posts.");
+          if(readStateEnabled){try{const counts=await readGroupUnread(supabase,currentSpace,header,signal);if(current()&&!isHidden()&&!signal.aborted)setUnreadSnapshot({scope,value:counts});}catch{if(current())setUnreadSnapshot(null);}}
           const after=await verifiedHeader(userId,signal);
           if(after!==header||!current()||signal.aborted)throw Error("Session changed. Refresh messages.");
           return visibleGroupPosts((data||[]) as Post[],userId,new Set(blocks.data.map(row=>row.blocked_id))).reverse();
@@ -238,6 +243,20 @@ export default function HoopGroupsPage() {
   async function refresh() {
     if (!channel || !joined || busy || !backendReady) return;
     setPostRevision(value=>value+1);
+  }
+  async function markVisibleRead(){
+    if(!readStateEnabled||!scope||!channel||!joined||busy||postLoading||postError||sendingPost.current)return;
+    const rev=loadGeneration.current,channelId=channel.id;
+    const ids=posts.filter(p=>p.author_id!==userId&&p.moderation_status==="approved").map(p=>p.id);
+    if(!ids.length)return;
+    sendingPost.current=true;setBusy(true);
+    try{await withHoopChatDeadline(async signal=>{
+      const header=await verifiedHeader(userId,signal);
+      if(rev!==loadGeneration.current||channelRef.current!==channelId||signal.aborted)throw Error("Channel changed.");
+      await markGroupVisibleRead(supabase,channelId,ids,header,signal);
+    });if(rev===loadGeneration.current&&channelRef.current===channelId)setPostRevision(value=>value+1);}
+    catch{if(rev===loadGeneration.current&&channelRef.current===channelId)setFeedback("Read state could not be confirmed.");}
+    finally{if(rev===loadGeneration.current){sendingPost.current=false;setBusy(false);}}
   }
   async function send() {
     if (!channel || !userId || !scope || !joined || !draft.trim() || busy || !backendReady || sendingPost.current) return;
@@ -309,12 +328,12 @@ export default function HoopGroupsPage() {
       <aside className="hc-hoopgroups-channels"><h2>{selected?.name || "Choose a group"}</h2><p>{selected?.description}</p>
         {selected&&<div className="hc-hoopgroups-community-meta"><span>{selected.owner_id===userId?"Your group":joined?"Joined":"Discover"}</span><button type="button" onClick={()=>void shareInvite()}>Copy invite</button></div>}
         <strong>DISCUSSION TOPICS</strong>
-        <nav aria-label="Group discussion topics">{availableChannels.map(item=><button key={item.id} type="button" aria-pressed={channel?.id===item.id} onClick={()=>setChannelId(item.id)}>{item.name}</button>)}</nav>
+        <nav aria-label="Group discussion topics">{availableChannels.map(item=><button key={item.id} type="button" aria-pressed={channel?.id===item.id} onClick={()=>setChannelId(item.id)}>{item.name}{unread&&unread[item.id]>0?` · ${unread[item.id]} unread`:""}</button>)}</nav>
         {selected && !joined && <button type="button" className="btn" disabled={busy} onClick={()=>void join()}>Join group</button>}
         {selected && joined && <button type="button" className="hc-hoopgroups-leave" disabled={busy} onClick={()=>void leave()}>Leave group</button>}
         
       </aside>
-      <section className={"hc-hoopgroups-chat "+(chatPrefs.density==="compact"?"is-compact ":"")+(chatPrefs.style==="plain"?"is-plain ":"")+(chatPrefs.scale==="large"?"is-large":"")} aria-label="Community channel"><header><div className="hc-hoopgroups-channel-title"><strong>{channel?.name || "Discussion"}</strong><small>{joined ? "You're a member" : "Join to read and post"} · moderated group discussion</small></div><div className="hc-hoopgroups-chat-tools"><HoopGroupsChatSettings userId={userId} spaceId={selected?.id||""} onChange={setChatPrefs}/><button type="button" className="hc-hoopgroups-refresh" onClick={()=>void refresh()} disabled={!joined || !channel || busy}>Refresh messages</button></div></header>
+      <section className={"hc-hoopgroups-chat "+(chatPrefs.density==="compact"?"is-compact ":"")+(chatPrefs.style==="plain"?"is-plain ":"")+(chatPrefs.scale==="large"?"is-large":"")} aria-label="Community channel"><header><div className="hc-hoopgroups-channel-title"><strong>{channel?.name || "Discussion"}</strong><small>{joined ? "You're a member" : "Join to read and post"} · moderated group discussion</small></div><div className="hc-hoopgroups-chat-tools"><HoopGroupsChatSettings userId={userId} spaceId={selected?.id||""} onChange={setChatPrefs}/><button type="button" className="hc-hoopgroups-refresh" onClick={()=>void refresh()} disabled={!joined || !channel || busy}>Refresh messages</button>{readStateEnabled&&joined&&channel&&<button type="button" disabled={busy||postLoading||Boolean(postError)||!posts.length} onClick={()=>void markVisibleRead()}>Mark loaded messages read</button>}</div></header>
         <div className="hc-hoopgroups-messages" role="log" aria-label="Community discussion" aria-live="polite" aria-relevant="additions text">{joined ? posts.length ? posts.map(post => <article key={post.id}><div className="hc-hoopgroups-post-head"><span className="hc-hoopgroups-post-avatar" aria-hidden="true">{post.author_id===userId?"YOU":post.author_id.slice(0,2).toUpperCase()}</span><div><strong>{post.author_id===userId?"You":"Community member"}</strong><small>{new Date(post.created_at).toLocaleString()}</small></div></div><p>{post.body}</p>{post.moderation_status!=="approved" ? <small>Pending moderation · visible to you</small> : post.author_id!==userId && <div className="actions"><button type="button" onClick={()=>void report(post)}>Report</button><button type="button" onClick={()=>void block(post)}>Block member</button></div>}</article>) : <p>{postError|| (postLoading?"Loading discussion…":"No approved discussion posts yet.")}</p> : <p>Join this group to see community posts.</p>}</div>
         {feedback && <p role="status">{feedback}</p>}
         {joined && channel && <form className="hc-hoopgroups-compose" onSubmit={event=>{event.preventDefault();void send();}}><label htmlFor="hc-group-post">Post in {selected?.name || "HoopGroups"} · {channel.name}</label><textarea id="hc-group-post" value={draft} maxLength={1200} rows={3} onChange={event=>setDraft(event.target.value)} placeholder="Share a basketball discussion… (review required)" /><button type="submit" className="btn" disabled={busy || !draft.trim()}>Post for approval</button></form>}

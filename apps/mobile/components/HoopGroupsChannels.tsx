@@ -10,6 +10,7 @@ import { useNativeAccount } from "../src/native/useNativeAccount";
 import { GroupModerationPanel } from "./GroupModerationPanel";
 import { HoopCheckLoading } from "./HoopCheckLoading";
 import { randomUUID } from "expo-crypto";
+import { readGroupUnread,markGroupVisibleRead,type GroupUnread } from "../src/native/hoopGroupsRead";
 import { prepareGroupSend, submitGroupSend, type GroupSend } from "../src/native/hoopGroupsSend";
 import { createGroupRefreshQueue } from "../src/native/hoopGroupsRefresh";
 import { readWithDeadline } from "../src/native/readDeadline";
@@ -18,6 +19,7 @@ import { findInvitedGroup } from "../src/native/deepLinks";
 type Space = { id:string;slug:string;name:string;category:string;description:string;owner_id:string|null;accent_color:string;icon_key:string };
 type Channel = { id:string;space_id:string;name:string;slug:string;sort_index:number };
 type Post = { id:string;author_id:string;body:string;moderation_status:string;created_at:string };
+const readStateEnabled=process.env.EXPO_PUBLIC_HOOPGROUPS_READ_STATE_ENABLED==="true";
 const colorOptions = { orange:"#FF873C", blue:"#60A5FA", purple:"#A78BFA", green:"#4ADE80", pink:"#F472B6", gold:"#FBBF24" } as const;
 const iconOptions = { basketball:"🏀", flame:"🔥", globe:"🌐", star:"⭐", trophy:"🏆", users:"👥" } as const;
 const accent = (name:string) => colorOptions[name as keyof typeof colorOptions] ?? colorOptions.orange;
@@ -40,6 +42,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
   const [channelId,setChannelId]=useState("");
   const [postSnapshot,setPostSnapshot]=useState<{channelId:string;posts:Post[]}|null>(null);
   const [postLoading,setPostLoading]=useState(false);
+  const [unreadSnapshot,setUnreadSnapshot]=useState<{channelId:string;counts:GroupUnread}|null>(null);
   const [postError,setPostError]=useState("");
   const [postRefresh,setPostRefresh]=useState(0);
   const [draftState,setDraftState]=useState<{channelId:string;value:string}|null>(null);
@@ -126,6 +129,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
   const channel=availableChannels.find(item=>item.id===channelId)||availableChannels[0];
   const member=Boolean(selected&&joined.includes(selected.id));
   const posts=member&&channel&&postSnapshot?.channelId===channel.id?postSnapshot.posts:[];
+  const unread=member&&channel&&unreadSnapshot?.channelId===channel.id?unreadSnapshot.counts:null;
   const draft=member&&channel&&draftState?.channelId===channel.id?draftState.value:"";
   function setDraft(value:string) {setDraftState(value&&channel?{channelId:channel.id,value}:null);}
   const managing=editing&&editingGroupId===selected?.id;
@@ -138,7 +142,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
     let initial=true;
     let resumePending=false;
     let realtime:ReturnType<typeof supabase.channel>|null=null;
-    setPostSnapshot(null);setPostError("");
+    setPostSnapshot(null);setUnreadSnapshot(null);setPostError("");
     const queue=createGroupRefreshQueue(()=>alive&&(AppState.currentState==="active"||AppState.currentState===null),()=>{
       if(running)resumePending=true;else void loadPosts();
     });
@@ -179,6 +183,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
           .eq("channel_id",channel!.id).order("created_at",{ascending:false}).order("id",{ascending:false}).limit(100)
           .setHeader("Authorization","Bearer "+token).abortSignal(controller.signal);
         if(readError||controller.signal.aborted)throw Error("Channel messages could not be loaded.");
+        if(readStateEnabled){try{const counts=await readGroupUnread(supabase,channel!.space_id,"Bearer "+token,controller.signal);if(alive&&!controller.signal.aborted)setUnreadSnapshot({channelId:channel!.id,counts});}catch{if(alive)setUnreadSnapshot(null);}}
         const current=await safetyToken();
         if(!alive||controller.signal.aborted||current!==token)throw Error("Session changed. Refresh the channel.");
         if(AppState.currentState!=="active"&&AppState.currentState!==null)return;
@@ -302,6 +307,16 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
     catch { setError("Could not share the group invitation. Please try again."); }
   }
 
+  async function markVisibleRead(){
+    if(!readStateEnabled||!member||!channel||offline||busy||postLoading||postError||mutationLocked.current)return;
+    const ids=posts.filter(p=>p.author_id!==userId&&p.moderation_status==="approved").map(p=>p.id);
+    if(!ids.length)return;
+    mutationLocked.current=true;setBusy(true);
+    const abort=new AbortController(),deadline=setTimeout(()=>abort.abort(),15000);
+    try{const token=await safetyToken();await markGroupVisibleRead(supabase,channel.id,ids,"Bearer "+token,abort.signal);if(await safetyToken()!==token)throw Error("Session changed.");setPostRefresh(value=>value+1);}
+    catch{setError("Read state could not be confirmed.");}
+    finally{clearTimeout(deadline);mutationLocked.current=false;setBusy(false);}
+  }
   async function send() {
     if(!channel||!member||!userId||offline||busy||!draft.trim())return;
     if(mutationLocked.current)return;
@@ -521,7 +536,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
               onPress={()=>{setChannelId(item.id);setDraft("");}}
               style={{minHeight:44,justifyContent:"center",paddingHorizontal:11,borderRadius:11,
                 backgroundColor:channel?.id===item.id?theme.accentSurface:theme.chip}}>
-              <Text style={{color:theme.foreground,fontWeight:"700"}}># {item.name}</Text>
+              <Text style={{color:theme.foreground,fontWeight:"700"}}># {item.name}{unread&&unread[item.id]>0?` · ${unread[item.id]} unread`:""}</Text>
             </Pressable>)}
           </ScrollView>
           {selected?.owner_id===userId&&availableChannels.length<12?<View style={{flexDirection:"row",gap:8}}>
@@ -537,6 +552,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug}:{userId:string;offlin
         <Text style={{color:theme.foreground,fontSize:19,fontFamily:"HoopCheckDisplay"}}># {channel.name}</Text>
         <Text style={{color:theme.muted,fontSize:12}}>Members only · moderated posts · 20-second slow mode</Text>
         <Pressable accessibilityRole="button" accessibilityLabel="Refresh channel messages" disabled={postLoading||busy} onPress={()=>setPostRefresh(value=>value+1)} style={{minHeight:44,justifyContent:"center",alignSelf:"flex-start"}}><Text style={{color:theme.accent,fontWeight:"700"}}>Refresh channel</Text></Pressable>
+        {readStateEnabled?<Button secondary disabled={busy||postLoading||Boolean(postError)||!posts.length} onPress={()=>void markVisibleRead()}>Mark loaded messages read</Button>:null}
         {postLoading?<HoopCheckLoading compact label="Loading channel messages…" />:null}
         {postError?<Text accessibilityRole="alert" style={{color:theme.accent}}>{postError}</Text>:null}
         {posts.length?posts.map(post=><View key={post.id}
