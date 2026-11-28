@@ -153,7 +153,7 @@ export default function HoopChatCourtside(){
         setRequests(rows);setMessages((history.data||[]) as ChatMessage[]);
         setContacts(Object.fromEntries(((profileResult.data||[]) as ChatContact[]).map(c=>[c.id,c])));
         setSelectedId(current=>{
-          if(fromUrl)return rows.some(r=>r.id===fromUrl&&r.status==="accepted")?fromUrl:null;
+          if(fromUrl)return rows.some(r=>r.id===fromUrl)?fromUrl:null;
           if(current&&rows.some(r=>r.id===current))return current;
           return rows[0]?.id||null;
         });
