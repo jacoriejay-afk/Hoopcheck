@@ -82,6 +82,18 @@ jobs:
           createdb -h 127.0.0.1 -U postgres hoopcheck_build8_owner_test
           node scripts/check-build8-owner-profile.mjs | psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_build8_owner_test
 
+      - name: Verify caller-bound HoopChat destinations in disposable PostgreSQL
+        env:
+          PGPASSWORD: postgres
+        run: |
+          createdb -h 127.0.0.1 -U postgres hoopcheck_chat_destination_test
+          psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d hoopcheck_chat_destination_test \
+            -f supabase/tests/hoopchat_destination_fixture.sql \
+            -f supabase/candidates/hoopchat_destination_review_only.sql \
+            -f supabase/tests/hoopchat_destination_assertions.sql
+          dropdb -h 127.0.0.1 -U postgres hoopcheck_chat_destination_test
+          psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d postgres -c "DROP ROLE anon, authenticated"
+
       - name: Verify staged HoopChat contact-request UPDATE privileges
         run: node scripts/check-hoopchat-contact-privileges.mjs
 
