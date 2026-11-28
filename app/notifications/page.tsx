@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {readNotifications,markNotificationsRead,verifiedAlertSession,withAlertDeadline,notificationPath} from "../../apps/mobile/src/native/notifications";
+import {readNotifications,markNotificationsRead,verifiedAlertSession,withAlertDeadline,notificationPath,appendNotificationPage} from "../../apps/mobile/src/native/notifications";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import HoopLoading from "../../components/HoopLoading";
@@ -20,6 +20,8 @@ export default function NotificationsPage(){
   const [errorMessage,setErrorMessage]=useState("");
   const [loadFailed,setLoadFailed]=useState(false);
   const [marking,setMarking]=useState(false);
+  const [hasMore,setHasMore]=useState(false);
+  const [loadingOlder,setLoadingOlder]=useState(false);
   const [retryKey,setRetryKey]=useState(0);
   const [filter,setFilter]=useState<AlertFilter>("all");
   const [query,setQuery]=useState("");
@@ -27,10 +29,10 @@ export default function NotificationsPage(){
   useEffect(()=>{if(new URLSearchParams(window.location.search).get("tab")==="messages")setSection("messages");},[]);
   useEffect(()=>{
     let timer:ReturnType<typeof setTimeout>|undefined;
-    const clear=()=>{generation.current++;owner.current=null;setItems([]);setQuery("");setFilter("all");};
+    const clear=()=>{generation.current++;owner.current=null;setItems([]);setQuery("");setFilter("all");setHasMore(false);setLoadingOlder(false);setMarking(false);};
     async function loadAlerts(){
       const rev=++generation.current;
-      owner.current=null;setLoading(true);setErrorMessage("");setLoadFailed(false);setItems([]);
+      owner.current=null;setLoading(true);setErrorMessage("");setLoadFailed(false);setItems([]);setHasMore(false);setLoadingOlder(false);
       try{
         const result=await withAlertDeadline(async signal=>{
           const scope=await verifiedAlertSession(supabase,signal);
@@ -38,7 +40,7 @@ export default function NotificationsPage(){
           return {uid:scope.uid,rows:await readNotifications(supabase,scope.uid,undefined,scope)};
         });
         if(rev!==generation.current)return;
-        owner.current=result.uid;setItems(result.rows as Notice[]);
+        owner.current=result.uid;setItems(result.rows as Notice[]);setHasMore(result.rows.length===ALERT_LIST_LIMIT);
       }catch{
         if(rev===generation.current){setItems([]);setErrorMessage("Alerts could not be loaded. Please try again.");setLoadFailed(true);}
       }finally{if(rev===generation.current)setLoading(false);}
@@ -52,7 +54,23 @@ export default function NotificationsPage(){
     void loadAlerts();
     return ()=>{generation.current++;owner.current=null;clearTimeout(timer);data.subscription.unsubscribe();};
   },[retryKey]);
-  async function markAll(){
+  async function loadOlder(){
+    const uid=owner.current,rev=generation.current,cursor=items[items.length-1];
+    if(!uid||!cursor||!hasMore||locked.current||loadFailed||loading)return;
+    locked.current=true;setLoadingOlder(true);setErrorMessage("");
+    try{
+      const older=await withAlertDeadline(async signal=>{
+        const scope=await verifiedAlertSession(supabase,signal,uid);
+        if(rev!==generation.current||owner.current!==uid)throw Error("Account changed.");
+        return readNotifications(supabase,uid,cursor,scope);
+      });
+      if(rev!==generation.current||owner.current!==uid)return;
+      const page=appendNotificationPage(items,older);
+      setItems(page.rows as Notice[]);setHasMore(page.hasMore);
+    }catch{if(rev===generation.current)setErrorMessage("Older alerts could not be loaded. Please retry.");}
+    finally{locked.current=false;if(rev===generation.current)setLoadingOlder(false);}
+  }
+  async function markRead(notificationId?:string){
     const uid=owner.current,rev=generation.current;
     if(locked.current||loadFailed||!uid)return;
     locked.current=true;setMarking(true);setErrorMessage("");
@@ -60,11 +78,11 @@ export default function NotificationsPage(){
       const result=await withAlertDeadline(async signal=>{
         const scope=await verifiedAlertSession(supabase,signal,uid);
         if(rev!==generation.current||owner.current!==uid)throw Error("Account changed.");
-        return markNotificationsRead(supabase,uid,new Date(),undefined,scope);
+        return markNotificationsRead(supabase,uid,new Date(),notificationId,scope);
       });
       if(rev===generation.current&&owner.current===uid)setItems(v=>v.map(n=>result.ids.includes(n.id)?{...n,read_at:n.read_at||result.readAt}:n));
     }catch{if(rev===generation.current)setErrorMessage("Could not mark alerts as read. Please retry.");}
-    finally{locked.current=false;setMarking(false);}
+    finally{locked.current=false;if(rev===generation.current)setMarking(false);}
   }
   const unreadCount=items.filter(n=>!n.read_at).length;
   const searched=items.filter(n=>matchesAlertSearch(n,query));
@@ -74,7 +92,7 @@ export default function NotificationsPage(){
   return <main className="page-shell hc-notifications-page"><div className="page-container">
     <header className="hc-alerts-heading">
       <div className="hc-alerts-heading__title"><HoopIcon name="bell" size={21} /><h1>Alerts</h1>{unreadCount>0&&<span className="hc-alerts-heading__count" aria-label="Unread alerts in loaded list">{unreadCount}</span>}</div>
-      {section==="alerts"&&unreadCount>0&&<button className="hc-alerts-heading__read" type="button" onClick={markAll} disabled={marking||loadFailed}>{marking?"Updating…":"Mark all read"}</button>}
+      {section==="alerts"&&(unreadCount>0||hasMore)&&<button className="hc-alerts-heading__read" type="button" onClick={()=>void markRead()} disabled={marking||loadingOlder||loading||loadFailed}>{marking?"Updating…":"Mark all read"}</button>}
     </header>
     <nav className="hc-notifications-main-tabs" aria-label="Inbox sections">
       {(["alerts","messages"] as const).map(tab=><button key={tab} type="button" aria-pressed={section===tab} onClick={()=>{
@@ -83,7 +101,7 @@ export default function NotificationsPage(){
     </nav>
     {section==="messages"&&<><div className="hc-notifications-messages-link"><span>PRIVATE HOOPCHAT</span><Link href="/messages">Open full Courtside inbox</Link></div><HoopChatInbox /></>}
     {section==="alerts"&&errorMessage&&<div role="alert" className="hc-smooth-inbox-error"><span>{errorMessage}</span> {loadFailed&&<button type="button" onClick={()=>setRetryKey(v=>v+1)}>Retry loading alerts</button>}</div>}
-    {section==="alerts"&&!loadFailed&&<><div className="hc-alert-search"><label htmlFor="alert-search">Search loaded alerts</label><div><input id="alert-search" type="search" value={query} maxLength={120} placeholder="Search titles and messages" onChange={event=>setQuery(event.target.value)} />{query&&<button type="button" onClick={()=>setQuery("")}>Clear</button>}</div><small role="status">{filtered.length} matching {filtered.length===1?"alert":"alerts"} · {items.length===ALERT_LIST_LIMIT?"Latest 100 loaded; older alerts are not included.":items.length+" loaded"}</small></div>
+    {section==="alerts"&&!loadFailed&&<><div className="hc-alert-search"><label htmlFor="alert-search">Search loaded alerts</label><div><input id="alert-search" type="search" value={query} maxLength={120} placeholder="Search titles and messages" onChange={event=>setQuery(event.target.value)} />{query&&<button type="button" onClick={()=>setQuery("")}>Clear</button>}</div><small role="status">{filtered.length} matching {filtered.length===1?"alert":"alerts"} · {items.length+" loaded"+(hasMore?" · load older alerts to search more":"")}</small></div>
     <nav className="hc-smooth-inbox-tabs hc-alerts-filters" aria-label="Filter alerts">{ALERT_FILTERS.map(([key,label])=><button key={key} type="button" aria-pressed={filter===key} className={filter===key?"is-active":""} onClick={()=>setFilter(key)}>{label}<span>{searched.filter(n=>matchesAlertFilter(n,key)).length}</span></button>)}</nav></>}
     {section==="alerts"&&!loadFailed&&<section className="hc-alert-list" aria-label="Basketball notifications">
       {filtered.length ? filtered.map(n => {
@@ -103,9 +121,10 @@ export default function NotificationsPage(){
             <span className={"hc-alert-type hc-alert-type--" + n.notification_type}><HoopIcon name={item.icon} size={14} />{item.label} · {new Date(n.created_at).toLocaleString()}</span>
             <strong>{n.title}</strong><small>{n.body}</small>
           </Link>
-          {href && n.target_type !== "game" && <div className="hc-alert-card__controls"><WatchButton targetType={n.target_type} targetId={n.target_id} targetName={n.title} /></div>}
+          {(!n.read_at||(href&&n.target_type!=="game"))&&<div className="hc-alert-card__controls">{!n.read_at&&<button type="button" disabled={marking||loadingOlder} onClick={()=>void markRead(n.id)} aria-label={"Mark alert as read: "+n.title}>Mark read</button>}{href&&n.target_type!=="game"&&<WatchButton targetType={n.target_type} targetId={n.target_id} targetName={n.title}/>}</div>}
         </article>;
       }) : <div className="hc-alerts-empty" role="status"><strong>{items.length?(query.trim()?"No matching alerts":"No alerts in this category"):"No notifications yet"}</strong><p>{items.length?(query.trim()?"Try another search or filter.":"Try a different filter."):"Follow a team to get updates here."}</p>{!items.length&&<Link href="/teams">Explore teams</Link>}</div>}
+      {hasMore&&<button type="button" className="hc-alerts-heading__read" disabled={loadingOlder||marking} onClick={()=>void loadOlder()}>{loadingOlder?"Loading older alerts…":"Load older alerts"}</button>}
     </section>}
   </div></main>;
 }

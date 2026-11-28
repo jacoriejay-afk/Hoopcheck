@@ -36,6 +36,7 @@ export async function readNotifications(client: SupabaseClient, userId: string, 
   requireAlertScope(userId,scope);
   if(scope)query=query.setHeader("Authorization",scope.bearer).abortSignal(scope.signal);
   const result = await query;
+  requireAlertScope(userId,scope);
   if (result.error) throw new Error("Alerts could not load. Try again.");
   return (result.data ?? []) as Notice[];
 }
@@ -48,8 +49,20 @@ export async function markNotificationsRead(client: SupabaseClient, userId: stri
   requireAlertScope(userId,scope);
   if(scope)query=query.setHeader("Authorization",scope.bearer).abortSignal(scope.signal);
   const result = await query.select("id");
+  requireAlertScope(userId,scope);
   if (result.error) throw new Error("Alerts could not be marked as read. Try again.");
   return { ids: (result.data ?? []).map(row => row.id as string), readAt };
+}
+// Stable keyset pages can overlap during concurrent refreshes. Never duplicate
+// rows or loop on a page that did not advance the cursor.
+export function appendNotificationPage(previous: Notice[], older: Notice[]) {
+  const seen = new Set(previous.map(row => row.id));
+  const additions = older.filter(row => {
+    if (seen.has(row.id)) return false;
+    seen.add(row.id);
+    return true;
+  });
+  return { rows: [...previous, ...additions], hasMore: older.length === NOTIFICATION_PAGE_SIZE && additions.length > 0 && additions[additions.length - 1].id === older[older.length - 1].id };
 }
 export function notificationPath(notice: Pick<Notice, "target_type" | "target_id">) {
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(notice.target_id)) return null;

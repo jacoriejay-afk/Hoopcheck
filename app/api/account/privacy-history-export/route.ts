@@ -30,25 +30,32 @@ export async function POST(request: Request) {
       global: { headers: { Authorization: "Bearer " + token } },
       auth: { autoRefreshToken: false, persistSession: false },
     });
+    const deadline = AbortSignal.any([request.signal, AbortSignal.timeout(15000)]);
+    const unavailable = () => fail("Privacy history could not be verified.", 503);
+    if (deadline.aborted) return unavailable();
     async function verifiedOwner() {
+      if (deadline.aborted) return null;
       const { data, error } = await scoped.auth.getUser(token!);
       const user = data.user;
       if (error || !user?.email_confirmed_at || !uuid.test(user.id) || user.is_anonymous) return null;
       const claims = await scoped.auth.getClaims(token!);
-      if (claims.error || claims.data?.claims.sub !== user.id || claims.data.claims.role !== "authenticated") return null;
+      const verified = claims.data?.claims;
+      if (claims.error || !verified || verified.sub !== user.id || verified.role !== "authenticated" ||
+          "client_id" in verified || (verified.is_anonymous !== undefined && verified.is_anonymous !== false)) return null;
       if (assuranceForVerifiedUser(token!, user).required) return null;
       const active = await scoped.rpc("confirm_active_account_session");
-      if (active.error || active.data !== true) return null;
+      if (deadline.aborted || active.error || active.data !== true) return null;
       return user.id;
     }
     const owner = await verifiedOwner();
+    if (deadline.aborted) return unavailable();
     if (!owner) return fail("Verify your account and sign in again.", 403);
     const result = await scoped.from("privacy_requests")
       .select("id,requester_id,request_type,status,details,created_at", { count: "exact" })
       .eq("requester_id", owner).order("created_at", { ascending: false })
       .order("id", { ascending: false }).limit(limit)
-      .abortSignal(AbortSignal.timeout(15000));
-    if (result.error || !Array.isArray(result.data) || !Number.isSafeInteger(result.count) || result.count === null)
+      .abortSignal(deadline);
+    if (deadline.aborted || result.error || !Array.isArray(result.data) || !Number.isSafeInteger(result.count) || result.count === null)
       return fail("Privacy history could not be verified.", 503);
     if (result.count > limit) return fail("Your request history exceeds this download limit. Contact support for a complete copy.", 409);
     if (result.count !== result.data.length || new Set(result.data.map(row => row.id)).size !== result.data.length)
@@ -61,7 +68,10 @@ export async function POST(request: Request) {
         throw Error("Invalid privacy history row.");
       return { id: row.id, request_type: row.request_type, status: row.status, details: row.details, created_at: row.created_at };
     });
-    if (await verifiedOwner() !== owner) return fail("Verify your account and sign in again.", 403);
+    if (deadline.aborted) return unavailable();
+    const finalOwner = await verifiedOwner();
+    if (deadline.aborted) return unavailable();
+    if (finalOwner !== owner) return fail("Verify your account and sign in again.", 403);
     return NextResponse.json({
       format: 1, scope: "privacy_request_history_only",
       note: "This is not a full account data export or confirmation that any request was fulfilled.",
