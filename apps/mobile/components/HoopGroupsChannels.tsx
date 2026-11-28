@@ -13,6 +13,7 @@ import { randomUUID } from "expo-crypto";
 import { readGroupUnread,markGroupVisibleRead,type GroupUnread } from "../src/native/hoopGroupsRead";
 import { prepareGroupSend, submitGroupSend, type GroupSend } from "../src/native/hoopGroupsSend";
 import {GroupAccessPanel} from "./GroupAccessPanel";
+import {readGroupDirectoryPage,type DirectoryMode} from "../src/native/groupDirectoryPage";
 import {resolveGroupChannelLink} from "../src/native/groupAlertLinks";
 import {readGroupChannelAccess} from "../src/native/hoopGroupsChannelAccess";
 import { createGroupRefreshQueue } from "../src/native/hoopGroupsRefresh";
@@ -34,6 +35,7 @@ function validateGroupPostRows(value:unknown,replies:boolean):Post[]{
  });
 }
 
+const directoryEnabled=process.env.EXPO_PUBLIC_HOOPGROUPS_DIRECTORY_ENABLED==="true";
 const groupAlertsEnabled=process.env.EXPO_PUBLIC_HOOPGROUPS_ALERTS_ENABLED==="true";
 const privateAccessEnabled=process.env.EXPO_PUBLIC_HOOPGROUPS_PRIVATE_ACCESS_ENABLED==="true";
 const repliesEnabled=process.env.EXPO_PUBLIC_HOOPGROUPS_REPLIES_ENABLED==="true";
@@ -72,6 +74,8 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug,invitationHint,discuss
   const [error,setError]=useState("");
   const [revision,setRevision]=useState(0);
   const [query,setQuery]=useState("");
+  const directoryInput=useRef<{query:string;mode:DirectoryMode;stack:(string|null)[];slug:string|null}>({query:"",mode:"all",stack:[null],slug:null});
+  const [directoryNext,setDirectoryNext]=useState<string|null>(null),[directoryPage,setDirectoryPage]=useState(1),[directoryApplied,setDirectoryApplied]=useState("");
   const [filter,setFilter]=useState<"discover"|"joined"|"mine">("discover");
   const [creating,setCreating]=useState(false);
   const [newName,setNewName]=useState("");
@@ -105,7 +109,20 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug,invitationHint,discuss
         const token=await safetyToken();
         if(!alive||controller.signal.aborted)return;
         const header="Bearer "+token;
-        const [a,b,c]=await Promise.all([
+        let directory:Awaited<ReturnType<typeof readGroupDirectoryPage>>|null=null;
+        if(directoryEnabled){
+          const d=directoryInput.current;
+          directory=await readGroupDirectoryPage(supabase,userId,header,{query:d.query,mode:d.mode,after:d.stack.at(-1)??null},controller.signal);
+          const shared=d.slug||inviteSlug;
+          if(shared&&/^[a-z0-9-]{3,60}$/.test(shared)&&!directory.spaces.some(s=>s.slug===shared)){
+            const linked=await readGroupDirectoryPage(supabase,userId,header,{query:"",mode:"all",after:null,slug:shared},controller.signal);
+            directory.spaces.unshift(...linked.spaces);directory.channels.unshift(...linked.channels);directory.joined.push(...linked.joined);
+          }
+          if(!alive||controller.signal.aborted)return;
+        }
+        const [a,b,c]=directory?[
+          {data:directory.spaces,error:null},{data:directory.channels,error:null},{data:directory.joined.map(space_id=>({space_id})),error:null}
+        ]:await Promise.all([
           supabase.from("hoop_group_spaces").select("id,slug,name,category,description,owner_id,accent_color,icon_key").order("name").setHeader("Authorization",header).abortSignal(controller.signal),
           supabase.from("hoop_group_channels").select("id,space_id,name,slug,sort_index").order("sort_index").setHeader("Authorization",header).abortSignal(controller.signal),
           supabase.from("hoop_group_members").select("space_id").eq("user_id",userId).setHeader("Authorization",header).abortSignal(controller.signal),
@@ -120,12 +137,13 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug,invitationHint,discuss
         if(linked){if(!spaces.some(s=>s.id===linked.space.id))spaces.unshift(linked.space);if(!channels.some(c=>c.id===linked.channel.id))channels.unshift(linked.channel);if(!memberIds.includes(linked.space.id))memberIds.push(linked.space.id);setSpaceId(linked.space.id);setChannelId(linked.channel.id);setQuery("");setFilter("discover");}
         else {if(groupAlertsEnabled&&discussionHint)setError("This discussion is no longer available.");setSpaceId(current=>spaces.some(row=>row.id===current)?current:"");}
         setSpaces(spaces);setChannels(channels);setJoined(memberIds);
+        if(directory){setDirectoryNext(directory.next);setDirectoryPage(directoryInput.current.stack.length);setDirectoryApplied(directoryInput.current.query);}
       }catch(failure){if(alive){setSpaces([]);setChannels([]);setJoined([]);setPostSnapshot(null);setError(failure instanceof Error?failure.message:"Could not open HoopGroups.");}}
       finally{clearTimeout(deadline);if(alive)setLoading(false);}
     }
     void load();
     return ()=>{alive=false;clearTimeout(deadline);controller.abort();setPostSnapshot(null);setJoined([]);};
-  },[userId,offline,revision,safetyToken,discussionHint]));
+  },[userId,offline,revision,safetyToken,discussionHint,inviteSlug]));
 
   useEffect(()=>{
     if(!inviteSlug){setHandledInvite(null);setInviteUnavailable(false);return;}
@@ -144,7 +162,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug,invitationHint,discuss
     if(filter==="joined" && !joined.includes(space.id))return false;
     if(filter==="mine" && space.owner_id!==userId)return false;
     const needle=query.trim().toLocaleLowerCase();
-    return !needle || [space.name,space.description,space.category].some(value=>value.toLocaleLowerCase().includes(needle));
+    return directoryEnabled || !needle || [space.name,space.description,space.category].some(value=>value.toLocaleLowerCase().includes(needle));
   });
   const selected=filtered.find(item=>item.id===spaceId)||filtered[0];
   const availableChannels=channels.filter(item=>item.space_id===selected?.id);
@@ -157,6 +175,14 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug,invitationHint,discuss
   const replyParent=posts.find(p=>p.id===replyId&&p.moderation_status==="approved");
   function setDraft(value:string) {setDraftState(value&&channel?{channelId:channel.id,value}:null);}
   const managing=editing&&editingGroupId===selected?.id;
+  function navigateDirectory(direction:"search"|"next"|"previous",mode:"discover"|"joined"|"mine"=filter){
+    if(!directoryEnabled||offline||loading||busy||mutationLocked.current||draft.trim())return;
+    const current=directoryInput.current;
+    if(direction==="next"){if(!directoryNext)return;current.stack.push(directoryNext);}
+    else if(direction==="previous"){if(current.stack.length<=1)return;current.stack.pop();}
+    else {current.stack=[null];current.query=query.trim().slice(0,80);current.mode=mode==="discover"?"all":mode;setFilter(mode);}
+    current.slug=null;setDirectoryNext(null);setSpaceId("");setChannelId("");setPostSnapshot(null);setUnreadSnapshot(null);setDraftState(null);setReplySnapshot(null);setEditing(false);setRevision(v=>v+1);
+  }
 
   useFocusEffect(useCallback(()=>{
     if(!userId||offline||!member||!channel?.id){setPostSnapshot(null);setPostLoading(false);setPostError("");return;}
@@ -284,6 +310,7 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug,invitationHint,discuss
         .select("id,slug,name,category,description,owner_id,accent_color,icon_key").single();
       if(createError||!data)throw Error("Group creation was not confirmed. You can own up to three groups.");
       setSpaces(current=>[...current,data as Space]);setSpaceId(data.id);
+      if(directoryEnabled)directoryInput.current={query:"",mode:"all",stack:[null],slug:data.slug};
       setFilter("discover");setQuery("");setCreating(false);setNewName("");setNewDescription("");
       setRevision(value=>value+1);
     }catch(failure){setError(failure instanceof Error?failure.message:"Could not create group.");}
@@ -450,14 +477,15 @@ function ScopedHoopGroups({userId,offline,role,inviteSlug,invitationHint,discuss
     {!userId&&!loading?<Text style={{color:theme.muted}}>Sign in to discover HoopGroups.</Text>:null}
     {Boolean(userId)&&!offline?<>
       <TextInput accessibilityLabel="Search HoopGroups" placeholder="Search group names and topics…" placeholderTextColor={theme.muted}
-        value={query} maxLength={100} onChangeText={setQuery}
+        value={query} maxLength={directoryEnabled?80:100} onChangeText={setQuery}
         style={{minHeight:46,paddingHorizontal:12,color:theme.foreground,backgroundColor:theme.input,
           borderColor:theme.glassBorder,borderWidth:1,borderRadius:14}} />
+      {directoryEnabled?<View style={{gap:6}}><Button secondary disabled={loading||busy||!!draft.trim()} onPress={()=>navigateDirectory("search")}>Search all communities</Button><Text style={{color:theme.muted}}>Page {directoryPage}{directoryApplied?` · Search: ${directoryApplied}`:""}</Text><View style={{flexDirection:"row",flexWrap:"wrap",gap:6}}><Button secondary disabled={loading||busy||!!draft.trim()||directoryPage<=1} onPress={()=>navigateDirectory("previous")}>Previous page</Button><Button secondary disabled={loading||busy||!!draft.trim()||!directoryNext} onPress={()=>navigateDirectory("next")}>Next page</Button></View>{draft.trim()?<Text style={{color:theme.muted}}>Finish or clear the discussion draft before changing directory pages.</Text>:null}</View>:null}
       <View accessibilityRole="tablist" style={{flexDirection:"row",gap:6}}>
         {(["discover","joined","mine"] as const).map(value=><Pressable key={value}
           accessibilityRole="tab" accessibilityState={{selected:filter===value}}
           accessibilityLabel={value==="discover"?"Discover groups":value==="joined"?"Joined groups":"My groups"}
-          onPress={()=>setFilter(value)}
+          disabled={directoryEnabled&&(loading||busy||!!draft.trim())} onPress={()=>{if(directoryEnabled)navigateDirectory("search",value);else setFilter(value);}}
           style={{minHeight:44,flex:1,justifyContent:"center",alignItems:"center",borderRadius:12,
             backgroundColor:filter===value?theme.accentSurface:"transparent",
             borderBottomWidth:filter===value?2:0,borderColor:theme.accent}}>

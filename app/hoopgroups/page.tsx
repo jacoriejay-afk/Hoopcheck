@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import { readGroupUnread,markGroupVisibleRead,type GroupUnread } from "../../apps/mobile/src/native/hoopGroupsRead";
 import { prepareGroupSend, submitGroupSend, type GroupSend } from "../../apps/mobile/src/native/hoopGroupsSend";
+import {readGroupDirectoryPage,type DirectoryMode} from "../../apps/mobile/src/native/groupDirectoryPage";
 import {groupAlertId,resolveGroupChannelLink} from "../../apps/mobile/src/native/groupAlertLinks";
 import {readGroupChannelAccess} from "../../apps/mobile/src/native/hoopGroupsChannelAccess";
 import { createGroupRefreshQueue } from "../../apps/mobile/src/native/hoopGroupsRefresh";
@@ -32,6 +33,7 @@ function validateGroupPostRows(value:unknown,replies:boolean):Post[]{
 }
 
 const enabled = process.env.NEXT_PUBLIC_HOOPGROUPS_CHANNELS_ENABLED === "true";
+const directoryEnabled=process.env.NEXT_PUBLIC_HOOPGROUPS_DIRECTORY_ENABLED==="true";
 const groupAlertsEnabled=process.env.NEXT_PUBLIC_HOOPGROUPS_ALERTS_ENABLED==="true";
 const privateAccessEnabled=process.env.NEXT_PUBLIC_HOOPGROUPS_PRIVATE_ACCESS_ENABLED==="true";
 const repliesEnabled=process.env.NEXT_PUBLIC_HOOPGROUPS_REPLIES_ENABLED==="true";
@@ -71,6 +73,8 @@ export default function HoopGroupsPage() {
   const [returnTo,setReturnTo] = useState("/hoopgroups");
   const [invitationHint,setInvitationHint]=useState<string|null>(null);
   const [discoverQuery,setDiscoverQuery] = useState("");
+  const directoryInput=useRef<{query:string;mode:DirectoryMode;stack:(string|null)[];slug:string|null}>({query:"",mode:"all",stack:[null],slug:null});
+  const [directoryNext,setDirectoryNext]=useState<string|null>(null),[directoryPage,setDirectoryPage]=useState(1),[directoryApplied,setDirectoryApplied]=useState("");
   const [discoverFilter,setDiscoverFilter] = useState<"all"|"joined"|"mine"|"recommended">("all");
   const [chatPrefs,setChatPrefs] = useState<ChatPrefs>({density:"cozy",style:"cards",scale:"normal"});
   const loadGeneration = useRef(0);
@@ -92,7 +96,26 @@ export default function HoopGroupsPage() {
     if (generation !== loadGeneration.current) return;
     setAccountRole(profile?.account_type || "");
     if (!enabled) { setReady(true); return; }
-    const [spaceResult, channelResult, memberResult] = await Promise.all([
+    let directory:Awaited<ReturnType<typeof readGroupDirectoryPage>>|null=null;
+    if(directoryEnabled){
+      try{
+        directory=await withHoopChatDeadline(async signal=>{
+          const header=await verifiedHeader(user.id,signal),d=directoryInput.current;
+          const result=await readGroupDirectoryPage(supabase,user.id,header,{query:d.query,mode:d.mode,after:d.stack.at(-1)??null},signal);
+          const shared=d.slug||new URLSearchParams(window.location.search).get("group");
+          if(shared&&/^[a-z0-9-]{3,60}$/.test(shared)&&!result.spaces.some(s=>s.slug===shared)){
+            const linked=await readGroupDirectoryPage(supabase,user.id,header,{query:"",mode:"all",after:null,slug:shared},signal);
+            result.spaces.unshift(...linked.spaces);result.channels.unshift(...linked.channels);result.joined.push(...linked.joined);
+          }
+          return result;
+        });
+      }catch{if(generation===loadGeneration.current){setFeedback("Community directory unavailable. Refresh to retry.");setReady(true);}return;}
+      if(generation!==loadGeneration.current)return;
+      setDirectoryNext(directory.next);setDirectoryPage(directoryInput.current.stack.length);setDirectoryApplied(directoryInput.current.query);
+    }
+    const [spaceResult, channelResult, memberResult] = directory?[
+      {data:directory.spaces,error:null},{data:directory.channels,error:null},{data:directory.joined.map(space_id=>({space_id})),error:null}
+    ]:await Promise.all([
       supabase.from("hoop_group_spaces").select("id,slug,name,category,description,owner_id,accent_color,icon_key").order("name"),
       supabase.from("hoop_group_channels").select("id,space_id,slug,name,sort_index").order("sort_index"),
       supabase.from("hoop_group_members").select("space_id").eq("user_id", user.id),
@@ -116,7 +139,7 @@ export default function HoopGroupsPage() {
     }
     setSpaces(discovered);
     // Shared links select a server while retaining the sign-in requirement.
-    const shared=new URLSearchParams(window.location.search).get("group");
+    const shared=directoryInput.current.slug||new URLSearchParams(window.location.search).get("group");
     if(linked){setSpaceId(linked.space.id);setChannelId(linked.channel.id);setDiscoverQuery("");setDiscoverFilter("all");}
     else if(shared) setSpaceId(discovered.find(space=>space.slug===shared)?.id||"");
     setChannels(channelRows);
@@ -147,7 +170,7 @@ export default function HoopGroupsPage() {
       pendingSend.current=null;sendingPost.current=false;setUnreadSnapshot(null);setReplySnapshot(null);setReady(false); setBackendReady(false); setUserId(""); setPostSnapshot(null);
       setMemberships([]); setDraftSnapshot(null); setAccountRole(""); setSpaces([]); setChannels([]);
       setSpaceId(""); setChannelId(""); setFeedback(""); setBusy(false);
-      setDiscoverQuery(""); setDiscoverFilter("all");
+      setDiscoverQuery(""); setDiscoverFilter("all");directoryInput.current={query:"",mode:"all",stack:[null],slug:null};setDirectoryNext(null);setDirectoryPage(1);setDirectoryApplied("");
       setSessionRevision(value => value + 1);
     });
     return () => subscription.unsubscribe();
@@ -160,7 +183,7 @@ export default function HoopGroupsPage() {
     if(discoverFilter==="joined" && !memberships.includes(space.id)) return false;
     if(discoverFilter==="mine" && space.owner_id!==userId) return false;
     const q=discoverQuery.trim().toLocaleLowerCase();
-    return !q || [space.name,space.description,space.category].some(value=>value.toLocaleLowerCase().includes(q));
+    return directoryEnabled || !q || [space.name,space.description,space.category].some(value=>value.toLocaleLowerCase().includes(q));
   });
   const selected = visibleSpaces.find(item => item.id === spaceId) || visibleSpaces[0] || null;
   const availableChannels = channels.filter(item => item.space_id === selected?.id);
@@ -352,6 +375,16 @@ export default function HoopGroupsPage() {
     if (generation !== loadGeneration.current) return;
     setFeedback(error ? "Report could not be submitted or was already filed." : "Report submitted for review.");
   }
+  function navigateDirectory(direction:"search"|"next"|"previous",mode:DirectoryMode=discoverFilter){
+    if(!directoryEnabled||!ready||busy||sendingPost.current||membershipMutation.current||draft.trim())return;
+    const current=directoryInput.current;
+    if(direction==="next"){if(!directoryNext)return;current.stack.push(directoryNext);}
+    else if(direction==="previous"){if(current.stack.length<=1)return;current.stack.pop();}
+    else {current.stack=[null];current.query=discoverQuery.trim().slice(0,80);current.mode=mode;setDiscoverFilter(mode);}
+    current.slug=null;
+    const url=new URL(window.location.href);url.searchParams.delete("group");url.searchParams.delete("channel");window.history.replaceState(null,"",url.pathname+url.search+url.hash);
+    setDirectoryNext(null);void load();
+  }
   async function block(post: Post) {
     if (!userId || post.author_id === userId || !window.confirm("Hide this member's messages from your HoopGroups?")) return;
     const generation = loadGeneration.current;
@@ -370,14 +403,15 @@ export default function HoopGroupsPage() {
     {ready && userId && backendReady && <>
       <div className="hc-hoopgroups-discovery">
         <div><strong>Discover your people</strong><span>Find basketball communities and create your own group.</span></div>
-        <label>Search groups<input value={discoverQuery} onChange={event=>setDiscoverQuery(event.target.value)} type="search" placeholder="Search groups or topics"/></label>
+        <label>Search groups<input value={discoverQuery} onChange={event=>setDiscoverQuery(event.target.value)} type="search" maxLength={80} placeholder="Search groups or topics"/></label>
+        {directoryEnabled&&<div><button type="button" disabled={busy||postLoading||!!draft.trim()} onClick={()=>navigateDirectory("search")}>Search all communities</button><button type="button" disabled={busy||postLoading||!!draft.trim()||directoryPage<=1} onClick={()=>navigateDirectory("previous")}>Previous page</button><button type="button" disabled={busy||postLoading||!!draft.trim()||!directoryNext} onClick={()=>navigateDirectory("next")}>Next page</button><small role="status">Page {directoryPage}{directoryApplied?` · Search: ${directoryApplied}`:""}</small>{draft.trim()&&<small>Finish or clear the discussion draft before changing directory pages.</small>}</div>}
         <div className="hc-hoopgroups-discovery-tabs" role="group" aria-label="Show communities">
-          {(["all","recommended","joined","mine"] as const).map(filter=><button key={filter} type="button" aria-pressed={discoverFilter===filter} onClick={()=>{if(discoverFilter===filter)return;setDraftSnapshot(null);setDiscoverFilter(filter);setSpaceId("");setChannelId("");}}>{filter==="all"?"Discover groups":filter==="recommended"?"For your role":filter==="joined"?"Joined groups":"My groups"}</button>)}
+          {(["all","recommended","joined","mine"] as const).map(filter=><button key={filter} type="button" aria-pressed={discoverFilter===filter} disabled={directoryEnabled&&(busy||!!draft.trim())} onClick={()=>{if(discoverFilter===filter)return;if(directoryEnabled){navigateDirectory("search",filter);return;}setDraftSnapshot(null);setDiscoverFilter(filter);setSpaceId("");setChannelId("");}}>{filter==="all"?"Discover groups":filter==="recommended"?"For your role":filter==="joined"?"Joined groups":"My groups"}</button>)}
         </div>
       </div>
       {discoverFilter==="recommended" && <p className="muted">Suggestions are based only on your account role and groups available in this directory that you have not joined or created. They are not popularity rankings.</p>}
       <HoopGroupsManage userId={userId} selected={selected} channels={availableChannels}
-        onCreated={async created=>{await load();setDiscoverFilter("all");setDiscoverQuery("");setSpaceId(created.id);setChannelId("");}}
+        onCreated={async created=>{if(directoryEnabled)directoryInput.current={query:"",mode:"all",stack:[null],slug:created.slug};await load();setDiscoverFilter("all");setDiscoverQuery("");setSpaceId(created.id);setChannelId("");}}
         onUpdated={updated=>setSpaces(items=>items.map(item=>item.id===updated.id?updated:item))}
         onChannelCreated={created=>{setChannels(items=>[...items,created]);setChannelId(created.id);}}
         onChannelUpdated={(id,name)=>setChannels(items=>items.map(item=>item.id===id?{...item,name}:item))}/>
