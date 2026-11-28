@@ -1,0 +1,24 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+import ts from "typescript";
+const read=p=>readFileSync(new URL(p,import.meta.url),"utf8");
+const load=(path,requires={})=>{const exports={};new Function("exports","require",ts.transpileModule(read(path),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(exports,key=>{if(Object.hasOwn(requires,key))return requires[key];throw Error("Unexpected import");});return exports;};
+const products=load("../lib/billing/play-products.ts");
+const {parsePlayCatalog}=load("../lib/server/play/catalog-contract.ts",{"../../billing/play-products":products});
+const fixture=()=>products.PLAY_PRODUCTS.map(p=>({productId:p.productId,basePlanId:p.basePlanId,billingPeriod:({1:"P1M",6:"P6M",12:"P1Y"})[p.months],displayPrice:"5,99 €",currency:"EUR",priceMicros:"5990000"}));
+test("six verified localized base-plan quotes retained, without offer or purchase tokens",()=>{
+ assert.deepEqual(parsePlayCatalog(fixture()),fixture());
+});
+test("missing, duplicate, malformed, zero-priced and unexpected product quotes rejected",()=>{
+ for(const mutate of [v=>v.pop(),v=>v[1]=v[0],v=>v[0].productId="foreign",v=>v[0].billingPeriod="P1Y",v=>v[0].priceMicros="0",v=>v[0].currency="unknown",v=>v[0].offerToken="synthetic",v=>v[0].displayPrice=""]){const rows=fixture();mutate(rows);assert.throws(()=>parsePlayCatalog(rows),{message:"Google Play catalog is unavailable."});}
+});
+test("native candidate exposes read-only catalog; does not launch or acknowledge billing",()=>{
+ const base="../apps/mobile/modules/hoopcheck-play-billing/";
+ const kt=read(base+"android/src/main/java/expo/modules/hoopcheckplaybilling/HoopcheckPlayBillingModule.kt");
+ assert.match(kt,/AsyncFunction\("queryCatalog"\)/);
+ assert.doesNotMatch(kt,/launchBillingFlow\(|acknowledgePurchase\(|consumeAsync\(|purchaseToken/);
+ assert.match(read(base+"android/build.gradle"),/billing:9\.1\.0/);
+ assert.deepEqual(JSON.parse(read(base+"expo-module.config.json")).platforms,["android"]);
+ assert.doesNotMatch(read("../apps/mobile/app/membership.tsx"),/playReadOnlyNative/);
+});
