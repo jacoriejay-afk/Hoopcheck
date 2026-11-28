@@ -57,7 +57,8 @@
       "ops/step4-migration-forward-guard": false,
       "qa/steps-1-4-operations": false,
       "qa/steps-1-4-security-acceptance": false,
-      "qa/steps-1-4-chat-read-sync": false
+      "qa/steps-1-4-chat-read-sync": false,
+      "ops/step5-launch-preparation": false
     }
   }
 }
