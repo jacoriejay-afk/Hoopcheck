@@ -1,0 +1,9 @@
+# Step 5 launch review control
+
+Owner-only /owner-hq/launch-readiness is advisory and read-only. Disabled unless HOOPCHECK_LAUNCH_REVIEW_ENABLED=true. The packet is read from HOOPCHECK_LAUNCH_REVIEW_JSON and must match the actual VERCEL_GIT_COMMIT_SHA. Without platform commit identity, hold. No environment changes or rollout are authorized.
+
+Required packet fields: sha, iosBuild, androidBuild, stage (internal, closed_beta, controlled_release, expansion), openP0, openP1 (nonnegative integer counts from reviewed operations observation; must both be zero), observedAt (canonical UTC timestamp within seven days), previousStage (null for internal, otherwise immediately preceding stage, windowStart, windowEnd, evidence, reviewer), gates (each required gate once). Each gate must contain gate, sha, iosBuild, androidBuild, stage, result (pass), evidence (repository evidence link), reviewer (nonidentifying operator label), checkedAt (canonical UTC timestamp within seven days). Prior observation window is at least seven days before controlled release and expansion; closed beta requires reviewed internal acceptance. Evidence links and reported counts must be independently verified.
+
+Gates: technical, store, privacy_legal, support_moderation, incident_rollback, tester_consent, owner_scope. Technical requires the full existing Step 4 evidence checker plus independent review. Owner scope is a reviewed proposal, not permission to deploy. This page never replaces the existing release gates or creates deployment authorization. A structurally complete packet always says review required. No raw data, tester names, customer IDs, secrets or contact details. No auto-launch, public invitations, builds, purchases or migrations.
+
+Run node --test scripts/test-step5-launch-review.mjs. The build runs these synthetic tests. Read STEP5-LAUNCH-PREPARATION.md and STEP4-OPERATIONS-RUNBOOK.md before independent approval.
