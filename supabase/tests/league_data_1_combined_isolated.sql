@@ -348,6 +348,50 @@ insert into pg_temp.ld1_legacy_teams(id,name,country,league_id,league_name,activ
 ('d9979ede-9fd5-4b26-8c6d-6a10f6726d4e','Sampaio Basquete','Brazil','656c1095-d1ef-4aaf-8291-f57cbb9123a6','Brazilian LBF',true),
 ('ea76f41d-588c-499b-8228-229fb6b61f23','Sodiê Mesquita','Brazil','656c1095-d1ef-4aaf-8291-f57cbb9123a6','Brazilian LBF',true),
 ('f65ab92b-240a-4a7e-a990-4e4d796fd31d','AZS UMCS Lublin Women','Poland','8198b77d-8ad4-4ca5-b8c9-1f4cfc9e3992','Polish Women’s Basketball League',true);
+insert into pg_temp.ld1_teams(id,name,country,league_id,league_name,basketball_type,active) values
+('06ebd739-7cc7-4cfb-9b20-14acb39fbc4b','Independiente Neuquén Women','Argentina',null,'Argentina Women’s Basketball League','womens',true),
+('3617b1c3-d22d-457b-8740-855086b99c52','Instituto Women','Argentina',null,'Argentina Women’s Basketball League','womens',true),
+('44e20cab-1815-4d71-a943-0733a4fdc377','Boca Juniors Women','Argentina',null,'Argentina Women’s Basketball League','womens',true),
+('493dd967-2f76-4d1b-97b4-fe0301bb113c','Náutico Sportivo Avellaneda Women','Argentina',null,'Argentina Women’s Basketball League','womens',true),
+('54d597a0-ecf1-4a5f-9674-4a84f580533c','El Biguá Women','Argentina',null,'Argentina Women’s Basketball League','womens',true),
+('64194c72-d593-4e09-8d8b-7e3d79e34276','Obras Basket Women','Argentina',null,'Argentina Women’s Basketball League','womens',true),
+('6f1ef03e-9794-4327-9c09-b49e644eff7f','Quilmes Women','Argentina',null,'Argentina Women’s Basketball League','womens',true),
+('7b96d6cc-97f2-4b2b-9c21-e2980e5356f3','Unión Bahía Women','Argentina',null,'Argentina Women’s Basketball League','womens',true),
+('93ebb134-24d4-447d-9252-b45ef5403f46','Deportivo Berazategui Women','Argentina',null,'Argentina Women’s Basketball League','womens',true),
+('9cdd59c7-928a-4b65-8544-fb3701afd135','Rocamora Women','Argentina',null,'Argentina Women’s Basketball League','womens',true),
+('a3d553a9-fe1e-4d89-a95f-339a1aab2106','Chañares Women','Argentina',null,'Argentina Women’s Basketball League','womens',true),
+('ac46a861-efcd-4707-be7d-b694990dc05c','Hindú Club Córdoba Women','Argentina',null,'Argentina Women’s Basketball League','womens',true),
+('ae5a06eb-9f00-4058-9d29-c5c7306ef637','Unión Florida Women','Argentina',null,'Argentina Women’s Basketball League','womens',true),
+('d81e6e25-9f94-492d-a635-c17bbb7fcd36','Vélez Sarsfield Women','Argentina',null,'Argentina Women’s Basketball League','womens',true),
+('e1252fbb-461b-4e64-9214-4f2d49a61889','Sociedad Española Women','Argentina',null,'Argentina Women’s Basketball League','womens',true),
+('e7cd8a94-b125-4449-840c-7557b492bf27','Ferro Carril Oeste Women','Argentina',null,'Argentina Women’s Basketball League','womens',true),
+('e9eee4dd-f560-4e2f-a5aa-7ed2f7ea5456','Regatas San Nicolás Women','Argentina',null,'Argentina Women’s Basketball League','womens',true),
+('f61d016d-45d4-44e8-b650-aca5f8cd9974','Peñarol Mar del Plata Women','Argentina',null,'Argentina Women’s Basketball League','womens',true),
+('fafe3d53-ea35-45ac-85d9-8437d0f66e6d','San José Mendoza Women','Argentina',null,'Argentina Women’s Basketball League','womens',true),
+('fca0b404-b098-419c-afa2-5852adc96814','El Talar Women','Argentina',null,'Argentina Women’s Basketball League','womens',true);
+insert into pg_temp.ld1_legacy_leagues(id,name,country,active) values
+('5c2e00b7-391d-4630-bba1-fd8887fb9c39','Argentina Women’s Basketball League','Argentina',true);
+insert into pg_temp.ld1_legacy_teams(id,name,country,league_id,league_name,active) values
+('06ebd739-7cc7-4cfb-9b20-14acb39fbc4b','Independiente Neuquén Women','Argentina','5c2e00b7-391d-4630-bba1-fd8887fb9c39','Argentina Women’s Basketball League',true),
+('3617b1c3-d22d-457b-8740-855086b99c52','Instituto Women','Argentina','5c2e00b7-391d-4630-bba1-fd8887fb9c39','Argentina Women’s Basketball League',true),
+('44e20cab-1815-4d71-a943-0733a4fdc377','Boca Juniors Women','Argentina','5c2e00b7-391d-4630-bba1-fd8887fb9c39','Argentina Women’s Basketball League',true),
+('493dd967-2f76-4d1b-97b4-fe0301bb113c','Náutico Sportivo Avellaneda Women','Argentina','5c2e00b7-391d-4630-bba1-fd8887fb9c39','Argentina Women’s Basketball League',true),
+('54d597a0-ecf1-4a5f-9674-4a84f580533c','El Biguá Women','Argentina','5c2e00b7-391d-4630-bba1-fd8887fb9c39','Argentina Women’s Basketball League',true),
+('64194c72-d593-4e09-8d8b-7e3d79e34276','Obras Basket Women','Argentina','5c2e00b7-391d-4630-bba1-fd8887fb9c39','Argentina Women’s Basketball League',true),
+('6f1ef03e-9794-4327-9c09-b49e644eff7f','Quilmes Women','Argentina','5c2e00b7-391d-4630-bba1-fd8887fb9c39','Argentina Women’s Basketball League',true),
+('7b96d6cc-97f2-4b2b-9c21-e2980e5356f3','Unión Bahía Women','Argentina','5c2e00b7-391d-4630-bba1-fd8887fb9c39','Argentina Women’s Basketball League',true),
+('93ebb134-24d4-447d-9252-b45ef5403f46','Deportivo Berazategui Women','Argentina','5c2e00b7-391d-4630-bba1-fd8887fb9c39','Argentina Women’s Basketball League',true),
+('9cdd59c7-928a-4b65-8544-fb3701afd135','Rocamora Women','Argentina','5c2e00b7-391d-4630-bba1-fd8887fb9c39','Argentina Women’s Basketball League',true),
+('a3d553a9-fe1e-4d89-a95f-339a1aab2106','Chañares Women','Argentina','5c2e00b7-391d-4630-bba1-fd8887fb9c39','Argentina Women’s Basketball League',true),
+('ac46a861-efcd-4707-be7d-b694990dc05c','Hindú Club Córdoba Women','Argentina','5c2e00b7-391d-4630-bba1-fd8887fb9c39','Argentina Women’s Basketball League',true),
+('ae5a06eb-9f00-4058-9d29-c5c7306ef637','Unión Florida Women','Argentina','5c2e00b7-391d-4630-bba1-fd8887fb9c39','Argentina Women’s Basketball League',true),
+('d81e6e25-9f94-492d-a635-c17bbb7fcd36','Vélez Sarsfield Women','Argentina','5c2e00b7-391d-4630-bba1-fd8887fb9c39','Argentina Women’s Basketball League',true),
+('e1252fbb-461b-4e64-9214-4f2d49a61889','Sociedad Española Women','Argentina','5c2e00b7-391d-4630-bba1-fd8887fb9c39','Argentina Women’s Basketball League',true),
+('e7cd8a94-b125-4449-840c-7557b492bf27','Ferro Carril Oeste Women','Argentina','5c2e00b7-391d-4630-bba1-fd8887fb9c39','Argentina Women’s Basketball League',true),
+('e9eee4dd-f560-4e2f-a5aa-7ed2f7ea5456','Regatas San Nicolás Women','Argentina','5c2e00b7-391d-4630-bba1-fd8887fb9c39','Argentina Women’s Basketball League',true),
+('f61d016d-45d4-44e8-b650-aca5f8cd9974','Peñarol Mar del Plata Women','Argentina','5c2e00b7-391d-4630-bba1-fd8887fb9c39','Argentina Women’s Basketball League',true),
+('fafe3d53-ea35-45ac-85d9-8437d0f66e6d','San José Mendoza Women','Argentina','5c2e00b7-391d-4630-bba1-fd8887fb9c39','Argentina Women’s Basketball League',true),
+('fca0b404-b098-419c-afa2-5852adc96814','El Talar Women','Argentina','5c2e00b7-391d-4630-bba1-fd8887fb9c39','Argentina Women’s Basketball League',true);
 create temporary table before_ld1_leagues on commit drop as select * from pg_temp.ld1_leagues;
 create temporary table before_ld1_teams on commit drop as select * from pg_temp.ld1_teams;
 create temporary table before_ld1_memberships on commit drop as select * from pg_temp.ld1_memberships;
@@ -365,6 +409,7 @@ create temporary table before_ld1_legacy_teams on commit drop as select * from p
 \ir ../../reports/league-data-1/italy-serie-b-shadow-correction.sql
 \ir ../../reports/league-data-1/wnba-shadow-correction.sql
 \ir ../../reports/league-data-1/brazil-poland-womens-shadow-correction.sql
+\ir ../../reports/league-data-1/argentina-womens-shadow-correction.sql
 create temporary table after_ld1_leagues on commit drop as select * from pg_temp.ld1_leagues;
 create temporary table after_ld1_teams on commit drop as select * from pg_temp.ld1_teams;
 create temporary table after_ld1_memberships on commit drop as select * from pg_temp.ld1_memberships;
@@ -382,14 +427,15 @@ create temporary table after_ld1_legacy_teams on commit drop as select * from pg
 \ir ../../reports/league-data-1/italy-serie-b-shadow-correction.sql
 \ir ../../reports/league-data-1/wnba-shadow-correction.sql
 \ir ../../reports/league-data-1/brazil-poland-womens-shadow-correction.sql
+\ir ../../reports/league-data-1/argentina-womens-shadow-correction.sql
 do $combined$ begin
-if (select count(*) from pg_temp.ld1_leagues)<>(select count(*)+9 from pg_temp.before_ld1_leagues) then raise exception 'ld1_leagues: unexpected delta';end if;
+if (select count(*) from pg_temp.ld1_leagues)<>(select count(*)+10 from pg_temp.before_ld1_leagues) then raise exception 'ld1_leagues: unexpected delta';end if;
 if exists(select * from pg_temp.after_ld1_leagues except select * from pg_temp.ld1_leagues) or exists(select * from pg_temp.ld1_leagues except select * from pg_temp.after_ld1_leagues) then raise exception 'ld1_leagues: second run changed state';end if;
 if exists(select id from pg_temp.before_ld1_leagues except select id from pg_temp.ld1_leagues) then raise exception 'ld1_leagues: lost existing ID';end if;
 if (select count(*) from pg_temp.ld1_teams)<>(select count(*)+22 from pg_temp.before_ld1_teams) then raise exception 'ld1_teams: unexpected delta';end if;
 if exists(select * from pg_temp.after_ld1_teams except select * from pg_temp.ld1_teams) or exists(select * from pg_temp.ld1_teams except select * from pg_temp.after_ld1_teams) then raise exception 'ld1_teams: second run changed state';end if;
 if exists(select id from pg_temp.before_ld1_teams except select id from pg_temp.ld1_teams) then raise exception 'ld1_teams: lost existing ID';end if;
-if (select count(*) from pg_temp.ld1_memberships)<>(select count(*)+222 from pg_temp.before_ld1_memberships) then raise exception 'ld1_memberships: unexpected delta';end if;
+if (select count(*) from pg_temp.ld1_memberships)<>(select count(*)+242 from pg_temp.before_ld1_memberships) then raise exception 'ld1_memberships: unexpected delta';end if;
 if exists(select * from pg_temp.after_ld1_memberships except select * from pg_temp.ld1_memberships) or exists(select * from pg_temp.ld1_memberships except select * from pg_temp.after_ld1_memberships) then raise exception 'ld1_memberships: second run changed state';end if;
 if exists(select id from pg_temp.before_ld1_memberships except select id from pg_temp.ld1_memberships) then raise exception 'ld1_memberships: lost existing ID';end if;
 if (select count(*) from pg_temp.ld1_legacy_leagues)<>(select count(*)+1 from pg_temp.before_ld1_legacy_leagues) then raise exception 'ld1_legacy_leagues: unexpected delta';end if;
@@ -402,7 +448,7 @@ if exists(select 1 from pg_temp.before_ld1_leagues b join pg_temp.ld1_leagues a 
 if exists(select * from pg_temp.before_ld1_memberships except select * from pg_temp.ld1_memberships) then raise exception 'ld1_memberships: existing record changed';end if;
 if exists(select * from pg_temp.before_ld1_legacy_leagues except select * from pg_temp.ld1_legacy_leagues) then raise exception 'ld1_legacy_leagues: existing record changed';end if;
 if exists(select * from pg_temp.before_ld1_legacy_teams except select * from pg_temp.ld1_legacy_teams) then raise exception 'ld1_legacy_teams: existing record changed';end if;
-if (select count(*) from (select * from pg_temp.before_ld1_teams except select * from pg_temp.ld1_teams) q)<>80 then raise exception 'unexpected existing team changes';end if;
+if (select count(*) from (select * from pg_temp.before_ld1_teams except select * from pg_temp.ld1_teams) q)<>100 then raise exception 'unexpected existing team changes';end if;
 if exists(select 1 from pg_temp.before_ld1_teams b join pg_temp.ld1_teams a using(id) where (b.name,b.country,b.basketball_type,b.active) is distinct from (a.name,a.country,a.basketball_type,a.active)) then raise exception 'team identity altered';end if;
 end $combined$;
 select 'PASS: combined league data correction, twice applied, original identities and historical records preserved' result;
