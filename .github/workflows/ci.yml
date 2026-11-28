@@ -216,6 +216,9 @@ jobs:
       - name: Verify native bootstrap authorization
         run: node --test scripts/test-mobile-bootstrap.mjs scripts/test-mobile-workspaces.mjs
 
+      - name: Verify owner-scoped privacy history export offline
+        run: node --test scripts/test-privacy-history-export.mjs
+
       - name: Rehearse guarded legacy player privacy functions with synthetic PostgreSQL roles
         env:
           PGPASSWORD: postgres
