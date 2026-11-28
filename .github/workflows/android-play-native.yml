@@ -9,7 +9,7 @@ permissions:
   contents: read
 jobs:
   android-compile:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     defaults:
       run:
@@ -34,7 +34,17 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
-      - uses: android-actions/setup-android@v3
+      # GitHub's hosted image already supplies a supported SDK. The legacy
+      # setup-android v3 action requests the removed "tools" SDK package.
+      - name: Verify runner Android SDK
+        run: |
+          set -euo pipefail
+          sdk="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          test -n "$sdk" && test -d "$sdk/platforms" && test -d "$sdk/build-tools"
+          test -x "$sdk/platform-tools/adb"
+          printf 'ANDROID_HOME=%s\nANDROID_SDK_ROOT=%s\n' "$sdk" "$sdk" >> "$GITHUB_ENV"
+          ls "$sdk/platforms" "$sdk/build-tools"
+          java -version
       - run: npm ci --no-audit
       - name: Generate Android project locally
         run: npx --no-install expo prebuild --platform android --no-install
