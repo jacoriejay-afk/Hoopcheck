@@ -12,7 +12,7 @@ import { useActiveScreen } from "../src/native/useActiveScreen";
 import { requireOnline, useNetwork } from "../src/native/network";
 import { useEntryTheme } from "../src/theme";
 import { supabase } from "../src/lib/supabase";
-import { readBasketballSide, readLiveGames, saveBasketballSide } from "../src/native/liveGames";
+import { readBasketballSide, readLinkedLiveGame, readLiveGames, saveBasketballSide } from "../src/native/liveGames";
 import { gameDisplayState, lastCheckedLabel } from "../src/native/gameFreshness";
 const origin = process.env.EXPO_PUBLIC_HOOPCHECK_API_URL?.trim() || "https://hoopcheck.online";
 type Games = Awaited<ReturnType<typeof readLiveGames>>;
@@ -20,6 +20,7 @@ export default function LiveGames() {
   const theme = useEntryTheme();
   const router = useRouter();
   const { gameId, side: requestedSide } = useLocalSearchParams<{ gameId?: string; side?: string }>();
+  const exactId = typeof gameId === "string" && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(gameId) ? gameId.toLowerCase() : null;
   const { account, loading: accountLoading, error: accountError, retry } = useNativeAccount();
   const { offline } = useNetwork();
   const active = useActiveScreen();
@@ -33,7 +34,7 @@ export default function LiveGames() {
   const [panel, setPanel] = useState<"chat" | "predictions">("chat");
   useEffect(() => { if (account?.user.accountType === "player" && !account.features.canUseLiveGameChat) setPanel("predictions"); }, [account?.user.accountType, account?.features.canUseLiveGameChat]);
   const allowed = Boolean(uid && !offline && (account.features.canUseLiveGameHub || account.user.accountType === "player"));
-  const scope = `${uid ?? ""}:${side}:${account?.features.canUseLiveGameHub ? "hub" : "predictions"}`;
+  const scope = `${uid ?? ""}:${side}:${account?.features.canUseLiveGameHub ? "hub" : "predictions"}:${exactId ?? ""}`;
   useEffect(() => {
     if (!allowed || !uid) { setSideChoice(null); return; }
     let valid = true;
@@ -57,14 +58,17 @@ export default function LiveGames() {
     return () => clearInterval(ticker);
   }, [active]);
   useEffect(() => {
-    if (!allowed || !uid || sideChoice?.owner !== uid || !active) { setSnapshot(null); return; }
+    const canOpenLinkedGame = Boolean(exactId && account?.features.canUseLiveGameHub);
+    if (!allowed || !uid || !active || (!canOpenLinkedGame && sideChoice?.owner !== uid)) { setSnapshot(null); return; }
     let valid = true, inFlight = false, hasSnapshot = snapshot?.scope === scope;
     const load = async () => {
       if (inFlight) return; inFlight = true; setLoading(!hasSnapshot); setError("");
       try {
         const { data, error: authError } = await supabase.auth.getSession();
         if (authError || data.session?.user.id !== uid) throw new Error("Missing session");
-        const games = await readLiveGames(supabase, side, account.features.canUseLiveGameHub ? null : { origin, token: data.session.access_token });
+        const games = exactId && account.features.canUseLiveGameHub
+          ? await readLinkedLiveGame(supabase, exactId, uid, data.session.access_token)
+          : await readLiveGames(supabase, side, account.features.canUseLiveGameHub ? null : { origin, token: data.session.access_token });
         if (valid && viewer.current.scope === scope && viewer.current.allowed) {
           setSnapshot({ scope, data: games, checkedAtMs: Date.now() });
           hasSnapshot = true;
@@ -90,9 +94,9 @@ export default function LiveGames() {
     };
     void load(); const timer = setInterval(() => void load(), 20000);
     return () => { valid = false; clearInterval(timer); };
-  }, [allowed, uid, active, side, sideChoice?.owner, scope, revision, account?.features.canUseLiveGameHub]);
+  }, [allowed, uid, active, side, sideChoice?.owner, scope, revision, exactId, account?.features.canUseLiveGameHub]);
   const data = allowed && snapshot?.scope === scope ? snapshot.data : null;
-  const game = typeof gameId === "string" ? data?.games.find(item => item.id === gameId) : undefined;
+  const game = exactId ? data?.games.find(item => item.id === exactId) : undefined;
   const checkedAtMs = data && snapshot?.scope === scope ? snapshot.checkedAtMs : null;
   const activeLiveCount = data?.games.filter(item => gameDisplayState(item, clockMs, checkedAtMs).isLive).length ?? 0;
   const textStyle = { color: theme.foreground };
@@ -149,6 +153,7 @@ export default function LiveGames() {
         {lastCheckedLabel(checkedAtMs!, clockMs)} · {activeLiveCount ? `${activeLiveCount} reported live` : "No games currently reported live"} · Provider scores may lag
       </Text> : null}
       {error ? <View style={{ gap: 8 }}><Text accessibilityRole="alert" style={{ color: theme.muted }}>{error}</Text><Button secondary onPress={() => { if(sideChoice?.owner!==uid)setSideRevision(v=>v+1); else setRevision(value => value + 1); }}>Retry game refresh</Button></View> : null}
+      {gameId && data && !game && !loading ? <Text accessibilityRole="alert" style={{color:theme.muted}}>This game is unavailable for your account.</Text> : null}
       {gameId ? <Button secondary onPress={() => router.replace({pathname:"/fan-live",params:{side}})}>All games</Button> : null}
     </View>
     {game ? <View style={{ flex: 1, paddingHorizontal: 12, paddingBottom: 12, gap: 8 }}>

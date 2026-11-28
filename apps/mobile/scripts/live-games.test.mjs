@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createClient } from '@supabase/supabase-js';
-import { readBasketballSide, saveBasketballSide, readLiveGames, readGameRoom, sendGameMessage, setGameChatControl, reportGameMessage, readPrediction, pickGameWinner, predictionMatchupReady } from '../src/native/liveGames.ts';
+import { readBasketballSide, saveBasketballSide, readLinkedLiveGame, readLiveGames, readGameRoom, sendGameMessage, setGameChatControl, reportGameMessage, readPrediction, pickGameWinner, predictionMatchupReady } from '../src/native/liveGames.ts';
 const id=n=>`11111111-1111-4111-8111-${String(n).padStart(12,'0')}`;
 const now=new Date('2026-11-18T12:00:00Z');
 const game=(n,overrides={})=>({id:id(n),team_id:id(10),opponent_team_id:id(11),opponent_name:'Away',status:'scheduled',scheduled_at:'2026-11-18T12:30:00Z',...overrides});
@@ -103,4 +103,27 @@ test('native score source presentation hides expired, future, unverified and fin
   assert.deepEqual(nativeScoreDisplay(primary,stamp),{homeScore:80,awayScore:90,sourceLabel:'API-Sports',warning:null,showPeriod:true});
   assert.equal(nativeScoreDisplay({...primary,home_score:-1},stamp).homeScore,null);
   assert.equal(nativeScoreDisplay({...primary,score_source:undefined,provider_source:undefined},stamp).sourceLabel,null);
+});
+
+test("exact linked game verifies identity and includes legacy women's away teams outside discovery", async () => {
+ const calls = [];
+ const db = withSession(client(async (input, options) => {
+   const url=new URL(String(input)); calls.push(url);
+   assert.equal(new Headers(options.headers).get("authorization"),"Bearer fixture-account-token");
+   if(url.pathname.endsWith("/fan_live_games")){
+     assert.equal(url.searchParams.get("id"),`eq.${id(1)}`);
+     assert.equal(url.searchParams.has("scheduled_at"),false);
+     return Response.json(game(1,{scheduled_at:"2025-01-01T00:00:00Z"}));
+   }
+   assert.equal(url.searchParams.has("basketball_type"),false);
+   return Response.json(url.pathname.endsWith("/womens_teams")?[{id:id(11),name:"Away women"}]:[]);
+ }));
+ const result=await readLinkedLiveGame(db,id(1),id(30),"fixture-account-token");
+ assert.equal(result.games[0].id,id(1));
+ assert.equal(result.teams[id(11)].name,"Away women");
+ assert.equal(calls.length,3);
+ await assert.rejects(readLinkedLiveGame(db,id(1),id(31),"fixture-account-token"),/session changed/);
+ assert.equal(calls.length,3);
+ const foreign=withSession(client(async()=>Response.json(game(2))));
+ await assert.rejects(readLinkedLiveGame(foreign,id(1),id(30),"fixture-account-token"),/Invalid game response/);
 });
